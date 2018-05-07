@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GRACE_harmonics.py
-Written by Tyler Sutterley (10/2017)
+Written by Tyler Sutterley (05/2018)
 
 Reads GRACE datafile and extracts spherical harmonic data and drift rates (RL04)
 Adds drift rates to clm and slm for release 4 harmonics
@@ -30,6 +30,7 @@ PYTHON DEPENDENCIES:
 	numpy: Scientific Computing Tools For Python (http://www.numpy.org)
 
 UPDATE HISTORY:
+	Updated 05/2018: updates to file name structure with release 6 and GRACE-FO
 	Written 10/2017 for public release
 """
 import os
@@ -40,7 +41,7 @@ import numpy as np
 #-- PURPOSE: read Level-2 GRACE spherical harmonic files
 def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
 	#-- compile numerical expression operator for parameters from files
-	regex_pattern = ('(.*?)-2_(\d+)-(\d+)_(\d+)_(UTCSR|EIGEN|JPLEM|JPLMSC)_'
+	regex_pattern = ('(.*?)-2_(\d+)-(\d+)_(.*?)_(UTCSR|EIGEN|JPLEM|JPLMSC)_'
 		'(.*?)_(\d+)(.*?)(\.gz|\.gfc)?$')
 	rx = re.compile(regex_pattern, re.VERBOSE)
 	#-- extract parameters from input filename
@@ -65,7 +66,6 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
 	#-- output python dictionary with GRACE data and date information
 	grace_L2_input = {}
 	#-- extract GRACE date information from input file name
-	n_days = np.int(N)
 	start_yr = np.float(SD[:4])
 	end_yr = np.float(ED[:4])
 	start_day = np.float(SD[4:])
