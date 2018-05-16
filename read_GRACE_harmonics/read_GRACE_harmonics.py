@@ -106,7 +106,7 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
 	#-- spherical harmonic uncalibrated standard deviations
 	grace_L2_input['eclm'] = np.zeros((LMAX+1,MMAX+1))
 	grace_L2_input['eslm'] = np.zeros((LMAX+1,MMAX+1))
-	if ((N == 'GRAC') and (DREL == 4) and (DSET == 'GSM')):
+	if ((DREL == 4) and (DSET == 'GSM')):
 		#-- clm and slm drift rates for RL04
 		drift_c = np.zeros((LMAX+1,MMAX+1))
 		drift_s = np.zeros((LMAX+1,MMAX+1))
@@ -161,7 +161,7 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
 	#-- Will convert the secular rates into a stokes contribution
 	#-- Currently removes 2003.3 to get the temporal average close to 0.
 	#-- note: += means grace_xlm = grace_xlm + drift_x
-	if ((N == 'GRAC') and (DREL == 4) and (DSET == 'GSM')):
+	if ((DREL == 4) and (DSET == 'GSM')):
 		#-- time since 2003.3
 		dt = (grace_L2_input['time']-2003.3)
 		grace_L2_input['clm'][:,:] += dt*drift_c[:,:]
