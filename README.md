@@ -1,7 +1,7 @@
 read-GRACE-harmonics
 ====================
 
-#### Reads Level-2 spherical harmonic coefficients from the NASA/DLR Gravity Recovery and Climate Experiment (GRACE) mission
+Reads Level-2 spherical harmonic coefficients from the NASA/DLR Gravity Recovery and Climate Experiment (GRACE) and the NASA/GFZ Gravity Recovery and Climate Experiment Follow-On (GRACE-FO) missions  
 
 - [NASA GRACE mission site](http://www.nasa.gov/mission_pages/Grace/index.html)  
 - [JPL GRACE Tellus site](http://grace.jpl.nasa.gov/)  
@@ -35,9 +35,11 @@ JPLMSC_input = read_GRACE_harmonics('GSM-2_2003001-2003031_0029_JPLMSC_0719_0005
  - `slm`: sine spherical harmonics of input data  
  - `eclm`: cosine spherical harmonic uncalibrated standard deviations  
  - `eslm`: sine spherical harmonic uncalibrated standard deviations  
+ - `header`: text header of the GRACE file (will parse new YAML headers)  
 
 #### Dependencies
-[numpy: Scientific Computing Tools For Python](http://www.numpy.org)
+ - [numpy: Scientific Computing Tools For Python](http://www.numpy.org)  
+ - [PyYAML: YAML parser and emitter for Python](https://github.com/yaml/pyyaml)  
 
 #### Download
 The program homepage is:   

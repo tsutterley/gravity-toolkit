@@ -28,21 +28,29 @@ OUTPUTS:
 
 PYTHON DEPENDENCIES:
 	numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+	PyYAML: YAML parser and emitter for Python (https://github.com/yaml/pyyaml)
 
 UPDATE HISTORY:
 	Updated 05/2018: updates to file name structure with release 6 and GRACE-FO
+		output file headers and parse new YAML headers for RL06 and GRACE-FO
 	Written 10/2017 for public release
 """
 import os
 import re
 import gzip
+import yaml
 import numpy as np
 
-#-- PURPOSE: read Level-2 GRACE spherical harmonic files
+#-- PURPOSE: read Level-2 GRACE and GRACE-FO spherical harmonic files
 def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
 	#-- compile numerical expression operator for parameters from files
-	regex_pattern = ('(.*?)-2_(\d+)-(\d+)_(.*?)_(UTCSR|EIGEN|JPLEM|JPLMSC)_'
-		'(.*?)_(\d+)(.*?)(\.gz|\.gfc)?$')
+	#-- UTCSR: The University of Texas at Austin Center for Space Research
+	#-- EIGEN: GFZ German Research Center for Geosciences (RL01-RL05)
+	#-- GFZOP: GFZ German Research Center for Geosciences (RL06+GRACE-FO)
+	#-- JPLEM: NASA Jet Propulsion Laboratory (harmonic solutions)
+	#-- JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
+	regex_pattern = ('(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
+		'(\.gz|\.gfc)?$').format('UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC')
 	rx = re.compile(regex_pattern, re.VERBOSE)
 	#-- extract parameters from input filename
 	PFX,SD,ED,N,PRC,F1,DRL,F2,SFX=rx.findall(os.path.basename(input_file)).pop()
@@ -84,7 +92,7 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
 	grace_L2_input['time'] = start_yr + mid_day/dpy
 	#-- Calculating the Julian dates of the start and end date
 	grace_L2_input['start'] = np.float(367.0*start_yr - np.floor(7.0*start_yr/4.0) -
-		np.floor(3.0*(np.floor((start_yr - 8.0/7.0)/100.0) + 1.0)/4.0) +\
+		np.floor(3.0*(np.floor((start_yr - 8.0/7.0)/100.0) + 1.0)/4.0) +
 		np.floor(275.0/9.0) + start_day + 1721028.5)
 	grace_L2_input['end'] = np.float(367.0*end_yr - np.floor(7.0*end_yr/4.0) -
 		np.floor(3.0*(np.floor((end_yr - 8.0/7.0)/100.0) + 1.0)/4.0) +
@@ -98,7 +106,7 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
 	#-- spherical harmonic uncalibrated standard deviations
 	grace_L2_input['eclm'] = np.zeros((LMAX+1,MMAX+1))
 	grace_L2_input['eslm'] = np.zeros((LMAX+1,MMAX+1))
-	if ((DREL == 4) and (DSET == 'GSM')):
+	if ((N == 'GRAC') and (DREL == 4) and (DSET == 'GSM')):
 		#-- clm and slm drift rates for RL04
 		drift_c = np.zeros((LMAX+1,MMAX+1))
 		drift_s = np.zeros((LMAX+1,MMAX+1))
@@ -114,7 +122,16 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
 		with open(os.path.expanduser(input_file),'r') as f:
 			file_contents = f.read().splitlines()
 
-	#-- for each line in the GRACE file
+	#-- extract GRACE and GRACE-FO file headers
+	head=[l for l in file_contents if not re.match('{0}|GRDOTA'.format(FLAG),l)]
+	if ((N == 'GRAC') and (DREL >= 6)) or (N == 'GRFO'):
+		#-- parse the YAML header for RL06 or GRACE-FO
+		grace_L2_input.update(yaml.load('\n'.join(head)))
+	else:
+		#-- save lines of the GRACE file header removing empty lines
+		grace_L2_input['header'] = [l.rstrip() for l in head if l]
+
+	#-- for each line in the GRACE/GRACE-FO file
 	for line in file_contents:
 		#-- find if line starts with data marker flag (e.g. GRCOF2)
 		if bool(re.match(FLAG,line)):
@@ -144,7 +161,7 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
 	#-- Will convert the secular rates into a stokes contribution
 	#-- Currently removes 2003.3 to get the temporal average close to 0.
 	#-- note: += means grace_xlm = grace_xlm + drift_x
-	if ((DREL == 4) and (DSET == 'GSM')):
+	if ((N == 'GRAC') and (DREL == 4) and (DSET == 'GSM')):
 		#-- time since 2003.3
 		dt = (grace_L2_input['time']-2003.3)
 		grace_L2_input['clm'][:,:] += dt*drift_c[:,:]
@@ -179,7 +196,7 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
 			grace_L2_input['clm'][2,1] -= C21_PT
 			grace_L2_input['slm'][2,1] -= S21_PT
 		#-- GFZ Pole Tide Correction
-		elif ((PRC == 'EIGEN') and (DSET == 'GSM')):
+		elif PRC in ('EIGEN','GFZOP'):
 			#-- pole tide values for GFZ
 			#-- GFZ removes only a constant pole position
 			C21_PT = -1.551e-9*(-0.62e-3*dt) - 0.012e-9*(3.48e-3*dt)
