@@ -1,11 +1,11 @@
 from setuptools import setup, find_packages
 setup(
 	name='read-GRACE-harmonics',
-	version='1.0.0.4',
+	version='1.0.0.5',
 	description='Reads Level-2 spherical harmonic coefficients from the NASA/DLR Gravity Recovery and Climate Experiment (GRACE) mission',
 	url='https://github.com/tsutterley/read-GRACE-harmonics',
 	author='Tyler Sutterley',
-	author_email='tyler.c.sutterley@nasa.gov',
+	author_email='tsutterl@uw.edu',
 	license='MIT',
 	classifiers=[
 		'Development Status :: 3 - Alpha',
