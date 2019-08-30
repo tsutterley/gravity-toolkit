@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GRACE_harmonics.py
-Written by Tyler Sutterley (07/2019)
+Written by Tyler Sutterley (08/2019)
 
 Reads GRACE datafile and extracts spherical harmonic data and drift rates (RL04)
 Adds drift rates to clm and slm for release 4 harmonics
@@ -31,6 +31,7 @@ PYTHON DEPENDENCIES:
 	PyYAML: YAML parser and emitter for Python (https://github.com/yaml/pyyaml)
 
 UPDATE HISTORY:
+	Updated 08/2019: specify yaml loader (PyYAML yaml.load(input) Deprecation)
 	Updated 07/2019: replace colons in yaml header if within quotations
 	Updated 11/2018: decode gzip read with ISO-8859-1 for python3 compatibility
 	Updated 05/2018: updates to file name structure with release 6 and GRACE-FO
@@ -130,7 +131,7 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
 		if not re.match('{0}|GRDOTA'.format(FLAG),l)]
 	if ((N == 'GRAC') and (DREL >= 6)) or (N == 'GRFO'):
 		#-- parse the YAML header for RL06 or GRACE-FO
-		grace_L2_input.update(yaml.load('\n'.join(head)))
+		grace_L2_input.update(yaml.load('\n'.join(head),Loader=yaml.FullLoader))
 	else:
 		#-- save lines of the GRACE file header removing empty lines
 		grace_L2_input['header'] = [l.rstrip() for l in head if l]
