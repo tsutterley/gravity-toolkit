@@ -130,8 +130,8 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
 	head = [re.sub(r'\"(.*?)\:\s(.*?)\"',r'"\1, \2"',l) for l in file_contents
 		if not re.match('{0}|GRDOTA'.format(FLAG),l)]
 	if ((N == 'GRAC') and (DREL >= 6)) or (N == 'GRFO'):
-		#-- parse the YAML header for RL06 or GRACE-FO
-		grace_L2_input.update(yaml.load('\n'.join(head),Loader=yaml.FullLoader))
+		#-- parse the YAML header for RL06 or GRACE-FO (specifying yaml loader)
+		grace_L2_input.update(yaml.load('\n'.join(head),Loader=yaml.BaseLoader))
 	else:
 		#-- save lines of the GRACE file header removing empty lines
 		grace_L2_input['header'] = [l.rstrip() for l in head if l]
