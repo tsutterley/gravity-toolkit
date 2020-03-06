@@ -1,6 +1,11 @@
 read-GRACE-harmonics
 ====================
 
+[![Language](https://img.shields.io/badge/python-v3.7-green.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/LICENSE)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tsutterley/read-GRACE-harmonics/master)
+[![Binder](https://binder.pangeo.io/badge.svg)](https://binder.pangeo.io/v2/gh/tsutterley/read-GRACE-harmonics/master)
+
 Reads Level-2 spherical harmonic coefficients from the NASA/DLR Gravity Recovery and Climate Experiment (GRACE) and the NASA/GFZ Gravity Recovery and Climate Experiment Follow-On (GRACE-FO) missions  
 
 - [NASA GRACE mission site](http://www.nasa.gov/mission_pages/Grace/index.html)  
@@ -40,6 +45,8 @@ JPLMSC_input = read_GRACE_harmonics('GSM-2_2003001-2003031_0029_JPLMSC_0719_0005
 #### Dependencies
  - [numpy: Scientific Computing Tools For Python](http://www.numpy.org)  
  - [PyYAML: YAML parser and emitter for Python](https://github.com/yaml/pyyaml)  
+ - [lxml: processing XML and HTML in Python](https://pypi.python.org/pypi/lxml)
+ - [future: Compatibility layer between Python 2 and Python 3](http://python-future.org/)  
 
 #### Download
 The program homepage is:   
