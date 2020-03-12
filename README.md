@@ -17,7 +17,7 @@ Reads Level-2 spherical harmonic coefficients from the NASA/DLR Gravity Recovery
 
 #### Calling Sequence
 ```
-from read_GRACE_harmonics import read_GRACE_harmonics
+from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 CSR_L2_input = read_GRACE_harmonics('GSM-2_2002095-2002120_0021_UTCSR_0060_0005.gz',60)
 GFZ_L2_input = read_GRACE_harmonics('GSM-2_2002094-2002120_0024_EIGEN_G---_005a.gz',90)
 JPL_L2_input = read_GRACE_harmonics('GSM-2_2002091-2002120_0018_JPLEM_0001_0005.gz',60)
