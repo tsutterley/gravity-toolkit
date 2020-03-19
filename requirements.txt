@@ -2,3 +2,7 @@ numpy
 pyyaml
 lxml
 future
+matplotlib
+cartopy
+netCDF4
+h5py

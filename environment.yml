@@ -8,3 +8,9 @@ dependencies:
   - pyyaml
   - lxml
   - future
+  - matplotlib
+  - cartopy
+  - netCDF4
+  - h5py
+  - pip:
+     - git+https://github.com/tsutterley/read-GRACE-geocenter.git
