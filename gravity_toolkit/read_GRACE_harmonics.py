@@ -3,13 +3,13 @@ u"""
 read_GRACE_harmonics.py
 Written by Tyler Sutterley (08/2019)
 
-Reads GRACE datafile and extracts spherical harmonic data and drift rates (RL04)
+Reads GRACE files and extracts spherical harmonic data and drift rates (RL04)
 Adds drift rates to clm and slm for release 4 harmonics
 Correct GSM data for drift in pole tide following Wahr et al. (2015)
-Extracts date of GRACE datafile from file name and calculates mean of range
+Extracts date of GRACE/GRACE-FO files and calculates mean of range
 
 INPUTS:
-    input_file: GRACE Level-2 spherical harmonic datafile
+    input_file: GRACE Level-2 spherical harmonic data file
     LMAX: Maximum degree of spherical harmonics (degree of truncation)
 
 OPTIONS:

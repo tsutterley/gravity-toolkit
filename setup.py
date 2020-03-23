@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
     name='read-GRACE-harmonics',
-    version='1.0.0.8',
+    version='1.0.1.0',
     description='Reads Level-2 spherical harmonic coefficients from the NASA/DLR GRACE and NASA/GFZ GRACE Follow-on missions',
     url='https://github.com/tsutterley/read-GRACE-harmonics',
     author='Tyler Sutterley',
@@ -17,5 +17,6 @@ setup(
     ],
     keywords='GRACE, GRACE-FO, Gravity, satellite geodesy, spherical harmonics',
     packages=find_packages(),
-    install_requires=['numpy','pyyaml','lxml','future'],
+    install_requires=['numpy','pyyaml','lxml','future','matplotlib','cartopy','netCDF4','h5py'],
+    dependency_links=['https://github.com/tsutterley/read-GRACE-geocenter/tarball/master'],
 )
