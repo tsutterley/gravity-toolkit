@@ -1,0 +1,54 @@
+read-GRACE-harmonics
+====================
+
+Python tools for obtaining and working with Level-2 spherical harmonic
+coefficients from the NASA/DLR Gravity Recovery and Climate Experiment (GRACE)
+and the NASA/GFZ Gravity Recovery and Climate Experiment Follow-On (GRACE-FO)
+missions
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Getting Started:
+
+    getting_started/Install.md
+    getting_started/Getting-Started.md
+    getting_started/NASA-Earthdata.md
+    getting_started/GRACE-Data-File-Formats.md
+    getting_started/Resources.md
+    getting_started/Citations.md
+
+.. toctree::
+    :maxdepth: 1
+    :caption: User Guide:
+
+    user_guide/aod1b_geocenter.md
+    user_guide/combine_harmonics.md
+    user_guide/convert_calendar_decimal.md
+    user_guide/convert_julian.md
+    user_guide/destripe_harmonics.md
+    user_guide/gauss_weights.md
+    user_guide/geocenter.md
+    user_guide/gfz_isdc_grace_ftp.md
+    user_guide/grace_date.md
+    user_guide/grace_find_months.md
+    user_guide/grace_input_months.md
+    user_guide/hdf5_read.md
+    user_guide/hdf5_read_stokes.md
+    user_guide/hdf5_stokes.md
+    user_guide/hdf5_write.md
+    user_guide/ncdf_read.md
+    user_guide/ncdf_read_stokes.md
+    user_guide/ncdf_stokes.md
+    user_guide/ncdf_write.md
+    user_guide/plm_colombo.md
+    user_guide/plm_holmes.md
+    user_guide/plm_mohlenkamp.md
+    user_guide/podaac_grace_sync.md
+    user_guide/read_CSR_monthly_6x1.md
+    user_guide/read_GRACE_harmonics.md
+    user_guide/read_love_numbers.md
+    user_guide/read_SLR_C20.md
+    user_guide/read_SLR_C30.md
+    user_guide/read_SLR_geocenter.md
+    user_guide/read_tellus_geocenter.md
+

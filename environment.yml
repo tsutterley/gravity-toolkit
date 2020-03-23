@@ -1,8 +1,9 @@
-name: example-environment
+name: read-GRACE-harmonics
 channels:
   - conda-forge
 dependencies:
   - python>=3.6
+  - pip
   - notebook
   - numpy
   - pyyaml

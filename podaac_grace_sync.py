@@ -3,7 +3,7 @@ u"""
 podaac_grace_sync.py
 Written by Tyler Sutterley (03/2020)
 
-Syncs GRACE/GRACE-FO and auxilary data from the NASA JPL PO.DAAC Drive Server
+Syncs GRACE/GRACE-FO and auxiliary data from the NASA JPL PO.DAAC Drive Server
 Syncs CSR/GFZ/JPL files for RL04/RL05 GAA/GAB/GAC/GAD/GSM
     GAA and GAB are GFZ/JPL only
 Gets the latest technical note (TN) files
