@@ -22,6 +22,7 @@ missions
     :caption: User Guide:
 
     user_guide/aod1b_geocenter.md
+    user_guide/aod1b_oblateness.md
     user_guide/combine_harmonics.md
     user_guide/convert_calendar_decimal.md
     user_guide/convert_julian.md
@@ -51,4 +52,3 @@ missions
     user_guide/read_SLR_C30.md
     user_guide/read_SLR_geocenter.md
     user_guide/read_tellus_geocenter.md
-

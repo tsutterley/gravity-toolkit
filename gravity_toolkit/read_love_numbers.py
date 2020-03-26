@@ -3,7 +3,7 @@ u"""
 read_love_numbers.py
 Written by Tyler Sutterley (03/2020)
 
-Reads sets of load Love numbers output from PREM
+Reads sets of load Love numbers from PREM and applies isomorphic parameters
 
 INPUTS:
     love_numbers_file: Elastic load Love numbers computed using Preliminary
@@ -16,6 +16,12 @@ OUTPUTS:
 
 OPTIONS:
     HEADER: file contains header text to be skipped (default: True)
+    REFERENCE: Reference frame for calculating degree 1 love numbers
+        CF: Center of Surface Figure
+        CL: Center of Surface Lateral Figure
+        CH: Center of Surface Height Figure
+        CM: Center of Mass of Earth System
+        CE: Center of Mass of Solid Earth (default)
     FORMAT: format of output variables
         'dict': dictionary with variable keys as listed above
         'tuple': tuple with variable order hl,kl,ll
@@ -24,14 +30,8 @@ OPTIONS:
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (http://www.numpy.org)
 
-NOTES:
-    love_numbers file must be in the base directory
-    for l=1 coordinate system center is the center of mass of the system
-    to change to a center of figure reference frame:
-        replace kl[1] with -(hl[1]+2.0*ll[1])/3.0
-        following Wahr (1998) and Trupin (1992)
-
 UPDATE HISTORY:
+    Updated 03/2020: added reference frame transformations within function
     Updated 03/2020 for public release
 """
 import os
@@ -39,7 +39,8 @@ import re
 import numpy as np
 
 #-- PURPOSE: read load love numbers from PREM
-def read_love_numbers(love_numbers_file, HEADER=True, FORMAT='tuple'):
+def read_love_numbers(love_numbers_file, HEADER=True, REFERENCE='CE',
+    FORMAT='tuple'):
 
     #-- check that load love number data file is present in file system
     if not os.access(os.path.expanduser(love_numbers_file), os.F_OK):
@@ -88,6 +89,28 @@ def read_love_numbers(love_numbers_file, HEADER=True, FORMAT='tuple'):
         hl[l] = np.float(love_numbers[1])
         kl[l] = np.float(love_numbers[2])
         ll[l] = np.float(love_numbers[3])
+
+    #-- calculate isomorphic parameters for different reference frames
+    #-- From Blewitt (2003), Wahr (1998), Trupin (1992) and Farrell (1972)
+    if (REFERENCE == 'CF'):
+        #-- Center of Surface Figure
+        alpha = (hl[1] + 2.0*ll[1])/3.0
+    elif (REFERENCE == 'CL'):
+        #-- Center of Surface Lateral Figure
+        alpha = ll[1].copy()
+    elif (REFERENCE == 'CH'):
+        #-- Center of Surface Height Figure
+        alpha = hl[1].copy()
+    elif (REFERENCE == 'CM'):
+        #-- Center of Mass of Earth System
+        alpha = 1.0
+    elif (REFERENCE == 'CE'):
+        #-- Center of Mass of Solid Earth
+        alpha = 0.0
+    #-- apply isomorphic parameters
+    hl[1] -= alpha
+    kl[1] -= alpha
+    ll[1] -= alpha
 
     #-- return love numbers in output format (default python dictionary)
     if (FORMAT == 'dict'):
