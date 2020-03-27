@@ -16,13 +16,17 @@ grace_files = grace_date(base_dir, PROC=PROC, DREL=DREL, DSET=DSET)
 
 #### Options  
  - `PROC`: GRACE data processing center (CSR/CNES/JPL/GFZ)  
- - `DREL`: GRACE data release  
+    * `'CSR'`: University of Texas Center for Space Research  
+    * `'GFZ'`: German Research Centre for Geosciences (GeoForschungsZentrum)
+    * `'JPL'`: Jet Propulsion Laboratory    
+    * `'CNES'`: French Centre National D'Etudes Spatiales
+ - `DREL`: GRACE data release (RL04/RL05/RL06)
  - `DSET`: GRACE dataset (GAA/GAB/GAC/GAD/GSM)  
-   - `GAA` is the non-tidal atmospheric correction  
-   - `GAB` is the non-tidal oceanic correction  
-   - `GAC` is the combined non-tidal atmospheric and oceanic correction  
-   - `GAD` is the GRACE ocean bottom pressure product  
-   - `GSM` is corrected monthly GRACE/GRACE-FO static field product  
+    * `'GAA'`: non-tidal atmospheric correction  
+    * `'GAB'`: non-tidal oceanic correction  
+    * `'GAC'`: combined non-tidal atmospheric and oceanic correction  
+    * `'GAD'`: GRACE/GRACE-FO ocean bottom pressure product  
+    * `'GSM'`: corrected monthly GRACE/GRACE-FO static field product  
  - `OUTPUT`: create index of dates for GRACE/GRACE-FO data  
 
 #### Outputs

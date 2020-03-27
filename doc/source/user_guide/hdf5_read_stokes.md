@@ -24,6 +24,6 @@ file_inp = hdf5_read_stokes(filename, DATE=True, VERBOSE=False)
  - `time`: time of measurement (if specified by DATE)
  - `month`: GRACE/GRACE-FO month (if specified by DATE)
  - `attributes`: HDF5 attributes for:
-     - spherical harmonics (`clm`,`slm`)
-     - variables (`l`,`m`,`time`,`month`)
-     - title
+     * spherical harmonics (`clm`,`slm`)
+     * variables (`l`,`m`,`time`,`month`)
+     * title

@@ -1,0 +1,395 @@
+#!/usr/bin/env python
+u"""
+read_GIA_model.py
+Written by Tyler Sutterley (03/2020)
+
+Reads GIA data files that can come in various formats depending on the group
+Outputs spherical harmonics for the GIA rates and the GIA model parameters
+Can also output geodesy normalized harmonics to netCDF4 or HDF5 formatted files
+
+INPUTS:
+    input_file: GIA file to read
+
+OPTIONS:
+    GIA: GIA model type to read and output
+        IJ05-R2: Ivins R2 GIA Models
+        W12a: Whitehouse GIA Models
+        SM09: Simpson/Milne GIA Models
+        ICE6G: ICE-6G GIA Models
+        Wu10: Wu (2010) GIA Correction
+        AW13-ICE6G: Geruo A ICE-6G GIA Models
+        Caron: Caron JPL GIA Assimilation
+        ICE6G-D: ICE-6G Version-D GIA Models
+    LMAX: maximum degree of spherical harmonics
+    DATAFORM: Spherical harmonic data output format
+        None: output only as variables
+        netCDF4: output to netCDF4 format (.nc)
+        HDF5: output to HDF5 format (.H5)
+    MODE: permissions mode of output spherical harmonic files
+
+OUTPUTS:
+    clm: cosine spherical harmonic of GIA rate
+    slm: sine spherical harmonic of GIA rate
+    title: parameters of GIA model
+
+PYTHON DEPENDENCIES:
+    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    netCDF4: Python interface to the netCDF C library
+        (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
+    h5py: Pythonic interface to the HDF5 binary data format.
+        (http://www.h5py.org/)
+
+PROGRAM DEPENDENCIES:
+    ncdf_stokes.py: writes output spherical harmonic data to netcdf
+    hdf5_stokes.py: writes output spherical harmonic data to HDF5
+
+REFERENCES:
+    E. R. Ivins, T. S. James, J. Wahr, E. J. O. Schrama, F. W. Landerer, and
+    K. M. Simon, "Antarctic contribution to sea level rise observed by
+    GRACE with improved GIA correction." Journal of Geophysical Research:
+    Solid Earth, 118(6), 3126-3141 (2013). https://doi.org/10.1002/jgrb.50208
+
+    P. L. Whitehouse, M. J. Bentley, G. A. Milne, M. A. King, and I. D. Thomas,
+    "A new glacial isostatic adjustment model for Antarctica: calibrated and
+    tested using observations of relative sea-level change and present-day
+    uplift rates." Geophysical Journal International, 190(3), 1464-1482 (2012).
+    https://doi.org/10.1111/j.1365-246X.2012.05557.x
+
+    M. J. R. Simpson, L. Wake, G. A. Milne, and P. Huybrechts, "The influence of
+    decadal- to millennial-scale ice mass changes on present-day vertical land
+    motion in Greenland: Implications for the interpretation of GPS
+    observations." Journal of Geophysical Research: Solid Earth, 116(B2),
+    B02406 (2011). https://doi.org/10.1029/2010JB007776
+
+    W. R. Peltier, D. F. Argus, and R. Drummond, "Space geodesy constrains ice
+    age terminal deglaciation: The global ICE‐6G_C (VM5a) model." Journal of
+    Geophysical Research: Solid Earth, 120(1), 450-487 (2015).
+    https://doi.org/10.1002/2014JB011176
+
+    X. Wu, M. B. Heflin, H. Schotman, B. L. A. Vermeersen, D. Dong, R. S. Gross,
+    E. R. Ivins, A. W. Moore, S. E. Owen, "Simultaneous estimation of global
+    present-day water transport and glacial isostatic adjustment." Nature
+    Geoscience, 3(9), 642-646 (2010). https://doi.org/10.1038/ngeo938
+
+    G. A, J. Wahr, S. Zhong, "Computations of the viscoelastic response of a 3-D
+    compressible Earth to surface loading: an application to Glacial Isostatic
+    Adjustment in Antarctica and Canada." Geophysical Journal International,
+    192(2), 557-572 (2013). https://doi.org/10.1093/gji/ggs030
+
+    L. Caron, E. R. Ivins, E. Larour, S. Adhikari, J. Nilsson, and G. Blewitt,
+    "GIA Model Statistics for GRACE Hydrology, Cryosphere, and Ocean Science."
+    Geophysical Research Letters, 45(5), 2203-2212 (2018).
+    https://doi.org/10.1002/2017GL076644
+
+    W. R. Peltier, D. F. Argus, and R. Drummond, "Comment on 'An Assessment of
+    the ICE-6G_C (VM5a) Glacial Isostatic Adjustment Model' by Purcell et al."
+    Journal of Geophysical Research: Solid Earth, 123(2), 2019-2028 (2018).
+    https://doi.org/10.1002/2016JB013844
+
+UPDATE HISTORY:
+    UPDATED 03/2020: updated for public release
+    UPDATED 08/2019: added ICE-6G Version D
+    UPDATED 07/2019: added Geruo ICE-6G models and Caron JPL assimilation
+    UPDATED 06/2018: using python3 compatible octal and input
+    UPDATED 02/2017: added MODE to set output file permissions
+    UPDATED 05-06/2016: using __future__ print function, use format for output
+    UPDATED 08/2015: changed sys.exit to raise ValueError
+    UPDATED 02/2015: update to reading the original file index index_orig
+        and using regular expressions for some cases
+    UPDATED 11/2014: added output option HDF5
+    UPDATED 06/2014: changed message to sys.exit
+    UPDATED 05/2014: added test IJ05 files
+    UPDATED 09/2013: changed Wu parameter to 2010 (previously was in the name)
+        this is in case the inversion is updated
+    UPDATED 08/2013: updated comments (expanded)
+        merged IJ05 with G13, W12a, SM09
+        simplified ICE-6G code
+        changed Wu code to convert to numerical array first
+            then unwrapping the numerical array (vs. string)
+    UPDATED 05/2013: converted to python and updated SM09 with latest best
+        updated SM09 parameters to be automated from file input
+    UPDATED 12/2012: changed the naming scheme for Simpson and Whitehouse
+    UPDATED 09/2012: combined several GIA read programs into this standard
+"""
+from __future__ import print_function
+
+import os
+import re
+import numpy as np
+from gravity_toolkit.ncdf_stokes import ncdf_stokes
+from gravity_toolkit.hdf5_stokes import hdf5_stokes
+
+def read_GIA_model(input_file, GIA=None, LMAX=60, DATAFORM=None, MODE=0o775):
+
+    #-- allocate for output Ylms
+    gia_Ylms = {}
+    gia_Ylms['clm'] = np.zeros((LMAX+1,LMAX+1))
+    gia_Ylms['slm'] = np.zeros((LMAX+1,LMAX+1))
+
+    if (GIA == 'IJ05-R2'):#-- Ivins R2 IJ05 Models
+        prefix = 'IJ05_R2'
+        #-- regular expression file pattern
+        file_pattern = 'Stokes.R2_(.*?)_L120'
+    elif (GIA == 'W12a'):#-- Whitehouse W12a
+        prefix = 'W12a'
+        parameters = dict(B='Best', L='Lower', U='Upper')
+        #-- regular expression file pattern
+        file_pattern = 'grate_(B|L|U).clm'
+    elif (GIA == 'SM09'):#-- Simpson Milne SM09
+        prefix = 'SM09_Huy2'
+        #-- regular expression file pattern
+        file_pattern = 'grate_(\d+)p(\d)(\d+).clm'
+    elif (GIA == 'ICE6G'):#-- ICE-6G VM5 viscosity profile
+        prefix = 'ICE6G'
+        #-- regular expression file pattern for test cases
+        #file_pattern = 'Stokes_G_Rot_60_I6_A_(.*?)_L90'
+        #-- regular expression file pattern for VM5
+        file_pattern = 'Stokes_G_Rot_60_I6_A_(.*)'
+    elif (GIA == 'Wu10'):#-- Wu Global Isnversion
+        gia_Ylms['title'] = 'Wu_2010'
+    elif (GIA == 'AW13-ICE6G'):#-- Geruo A ICE-6G model versions
+        prefix = 'AW13'
+        #-- regular expressions file pattern
+        file_pattern = 'stokes\.(ice6g)[\.\_](.*?)(\.txt)?$'
+    elif (GIA == 'Caron'): #-- Caron et al. (2018) expected GIA rate
+        gia_Ylms['title'] = 'Caron_expt'
+    elif (GIA == 'ICE6G-D'):#-- ICE-6G Version-D viscosity profile
+        prefix = 'ICE6G-D'
+        #-- regular expression file pattern for Version-D
+        file_pattern = '(ICE-6G_)?(.*?)[_]?Stokes_trend[_]?(.*?)\.txt$'
+
+    #-- compile numerical expression operator
+    rx = re.compile('[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?')
+
+    #-- Header lines and scale factors for individual models
+    if GIA in ('IJ05-R2','ICE6G'):
+        #-- IJ05
+        start = 0
+        #-- scale factor for geodesy normalization
+        scale = 1e-11
+    elif (GIA == 'ICE6G-D'):
+        #-- ICE-6G Version-D
+        #-- header lines to skip
+        header = 1
+        start = 17
+        #-- scale factor for geodesy normalization
+        scale = 1.0
+    else:
+        start = 0
+        scale = 1.0
+
+
+    #-- Reading GIA files (ICE-6G and Wu have more complex formats)
+    if GIA in ('IJ05-R2','W12a','SM09','AW13-ICE6G'):
+        #-- AW13, IJ05, W12a, SM09
+        #-- AW13 notes: file headers
+        #-- IJ05 notes: need to scale by 1e-11 for geodesy-normalization
+        #-- exponents are denoted with D for double
+
+        #-- opening gia data file and read contents
+        with open(os.path.expanduser(input_file),'r') as f:
+            gia_data = f.read().splitlines()
+        #-- number of lines in file
+        gia_lines = len(gia_data)
+
+        #-- Skipping file header for geruo files with header
+        for ii in range(start,gia_lines):
+            #-- check if contents in line
+            flag = bool(rx.search(gia_data[ii].replace('D','E')))
+            if flag:
+                #-- find numerical instances in line including exponents,
+                #-- decimal points and negatives
+                #-- Replacing Double Exponent with Standard Exponent
+                line = rx.findall(gia_data[ii].replace('D','E'))
+                l1 = np.int(line[0])
+                m1 = np.int(line[1])
+                #-- truncate to LMAX
+                if (l1 <= LMAX) and (m1 <= LMAX):
+                    #-- scaling to geodesy normalization
+                    gia_Ylms['clm'][l1,m1] = np.float(line[2])*scale
+                    gia_Ylms['slm'][l1,m1] = np.float(line[3])*scale
+
+    elif (GIA == 'ICE6G'):
+        #-- ICE-6G VM5 notes
+        #-- need to scale by 1e-11 for geodesy-normalization
+        #-- spherical harmonic degrees listed only on order 0
+        #-- spherical harmonic order is not listed in file
+
+        #-- opening gia data file and read contents
+        with open(os.path.expanduser(input_file),'r') as f:
+            gia_data = f.read().splitlines()
+
+        #-- counter variable
+        ii = 0
+        for l in range(0, LMAX+1):
+            for m in range(0, l+1):
+                if ((m % 2) == 0):
+                    #-- reading gia line if the order is even
+                    #-- find numerical instances in line including exponents,
+                    #-- decimal points and negatives
+                    line = rx.findall(gia_data[ii])
+                    #-- counter to next line
+                    ii += 1
+                    #-- if m is even: clm column = 1, slm column = 2
+                    c = 0
+                else: #-- if m is odd: clm column = 3, slm column = 4
+                    c = 2
+                if ((m == 0) or (m == 1)):
+                    #-- l is column 1 if m == 0 or 1
+                    #-- degree is not listed for other SHd: column 1 = clm
+                    c += 1
+                if (len(line) > 0):
+                    #-- no empty lines
+                    #-- convert to float and scale
+                    gia_Ylms['clm'][l,m] = np.float(line[0+c])*scale
+                    gia_Ylms['slm'][l,m] = np.float(line[1+c])*scale
+
+    elif (GIA == 'Wu10'):
+        #-- Wu (2010) notes:
+        #-- Need to convert from mm geoid to geodesy normalized
+        rad_e = 6.371e9#-- Average Radius of the Earth [mm]
+        #-- The file starts with a header.
+        #-- converting to numerical array (note 64 bit floating point)
+        gia_data = np.loadtxt(os.path.expanduser(input_file), \
+            skiprows=1, dtype='f8')
+
+        #-- counter variable to upwrap gia file
+        ii = 0
+
+        #-- Order of harmonics in the file:
+        #--    1    0   c
+        #--    1    1   c
+        #--    1    1   s
+        #--    2    0   c
+        #--    2    1   c
+        for l in range(1, LMAX+1):
+            for m in range(0, l+1):
+                for cs in range(0, 2):
+                    #-- unwrapping GIA file and converting to geoid
+                    #-- Clm
+                    if (cs == 0):
+                        gia_Ylms['clm'][l,m] = gia_data[ii]/rad_e
+                        ii += 1
+                    #-- Slm
+                    if (m != 0) and (cs == 1):
+                        gia_Ylms['slm'][l,m] = gia_data[ii]/rad_e
+                        ii += 1
+
+    elif (GIA == 'Caron'):
+        #-- Caron et al. (2018)
+        #-- The file starts with a header.
+        #-- converting to numerical array (note 64 bit floating point)
+        gia_data=np.loadtxt(os.path.expanduser(input_file),skiprows=4,
+            dtype={'names':('l','m','Ylms'),'formats':('i','i','f8')})
+        #-- Order of harmonics in the file
+        #--    0    0   c
+        #--    1    1   s
+        #--    1    0   c
+        #--    1    1   c
+        #--    2    2   s
+        #--    2    1   s
+        #--    2    0   c
+        #--    2    1   c
+        #--    2    2   c
+        for l,m,Ylm in zip(gia_data['l'],gia_data['m'],gia_data['Ylms']):
+            #-- unwrapping GIA file
+            if (m >= 0) and (l <= LMAX) and (m <= LMAX):#-- Clm
+                gia_Ylms['clm'][l,m] = Ylm.copy()
+            elif (m < 0) and (l <= LMAX) and (m <= LMAX):#-- Slm
+                gia_Ylms['slm'][l,np.abs(m)] = Ylm.copy()
+
+    #-- Reading ICE-6G Version-D  GIA files
+    elif (GIA == 'ICE6G-D'):
+        #-- opening gia data file and read contents
+        with open(os.path.expanduser(input_file),'r') as f:
+            gia_data = f.read().splitlines()
+        #-- number of lines in file
+        gia_lines = len(gia_data)
+
+        #-- Calculating number of cos and sin harmonics to read from header
+        n_harm = (2**2 + 3*2)//2 + 1
+        #-- extract header for GRACE approximation
+        for ii in range(header,header+n_harm):
+            #-- check if contents in line
+            flag = bool(rx.search(gia_data[ii].replace('D','E')))
+            if flag:
+                #-- find numerical instances in line including exponents,
+                #-- decimal points and negatives
+                #-- Replacing Double Exponent with Standard Exponent
+                line = rx.findall(gia_data[ii].replace('D','E'))
+                l1 = np.int(line[0])
+                m1 = np.int(line[1])
+                #-- truncate to LMAX
+                if (l1 <= LMAX) and (m1 <= LMAX):
+                    #-- scaling to geodesy normalization
+                    gia_Ylms['clm'][l1,m1] = np.float(line[2])*scale
+                    gia_Ylms['slm'][l1,m1] = np.float(line[3])*scale
+
+        #-- Skipping rest of file header
+        for ii in range(start,gia_lines):
+            #-- check if contents in line
+            flag = bool(rx.search(gia_data[ii].replace('D','E')))
+            if flag:
+                #-- find numerical instances in line including exponents,
+                #-- decimal points and negatives
+                #-- Replacing Double Exponent with Standard Exponent
+                line = rx.findall(gia_data[ii].replace('D','E'))
+                l1 = np.int(line[0])
+                m1 = np.int(line[1])
+                #-- truncate to LMAX
+                if (l1 <= LMAX) and (m1 <= LMAX):
+                    #-- scaling to geodesy normalization
+                    gia_Ylms['clm'][l1,m1] = np.float(line[2])*scale
+                    gia_Ylms['slm'][l1,m1] = np.float(line[3])*scale
+
+    #-- extract rheology from the file name
+    if GIA in ('IJ05-R2','ICE6G'):
+        #-- for IJ05 and ICE-6G models:
+        #-- adding file specific earth parameters
+        parameters, = re.findall(file_pattern,os.path.basename(input_file))
+        gia_Ylms['title'] = '{0}_{1}'.format(prefix,parameters)
+    elif (GIA == 'W12a'):
+        #-- for Whitehouse W12a (BEST, LOWER, UPPER):
+        model = re.findall(file_pattern,os.path.basename(input_file)).pop()
+        gia_Ylms['title'] = '{0}_{1}'.format(prefix,parameters[model])
+    elif (GIA == 'SM09'):
+        #-- for SM09:
+        #-- making parameters in the file similar to IJ05
+        #-- split rheological parameters between lithospheric thickness,
+        #-- upper mantle viscosity and lower mantle viscosity
+        LTh,UMV,LMV=re.findall(file_pattern,os.path.basename(input_file)).pop()
+        #-- formatting rheology parameters similar to IJ05 models
+        gia_Ylms['title'] = '{0}_{1}_.{2}_{3}'.format(prefix,LTh,UMV,LMV)
+    elif (GIA == 'ICE6G-D'):
+        #-- for ICE-6G Version-D models:
+        #-- adding file specific earth parameters
+        m1,p1,p2 = re.findall(file_pattern,os.path.basename(input_file)).pop()
+        gia_Ylms['title'] = '{0}_{1}{2}'.format(prefix,p1,p2)
+    elif (GIA == 'AW13-ICE6G'):
+        #-- for Geruo ICE-6G cases
+        #-- extract the ice history and case flags
+        hist,case,sf=re.findall(file_pattern,os.path.basename(input_file)).pop()
+        gia_Ylms['title'] = '{0}_{1}_{2}'.format(prefix,hist,case)
+
+    #-- output harmonics to netCDF4 or HDF5 file
+    if (DATAFORM == 'netCDF4'):
+        #-- netcdf (.nc)
+        l_out,m_out = (np.arange(LMAX+1),np.arange(LMAX+1))
+        output_file = 'stokes_{0}_L{1:d}.nc'.format(gia_Ylms['title'],LMAX)
+        ncdf_stokes(gia_Ylms['clm'], gia_Ylms['slm'], l_out, m_out, 0, 0,
+            FILENAME=os.path.join(os.path.dirname(input_file),output_file),
+            TITLE=gia_Ylms['title'], VERBOSE=False, DATE=False)
+        #-- set permissions level of output file
+        os.chmod(os.path.join(os.path.dirname(input_file),output_file), MODE)
+    elif (DATAFORM == 'HDF5'):
+        #-- HDF5 (.H5)
+        l_out,m_out = (np.arange(LMAX+1),np.arange(LMAX+1))
+        output_file = 'stokes_{0}_L{1:d}.H5'.format(gia_Ylms['title'],LMAX)
+        hdf5_stokes(gia_Ylms['clm'], gia_Ylms['slm'], l_out, m_out, 0, 0,
+            FILENAME=os.path.join(os.path.dirname(input_file),output_file),
+            TITLE=gia_Ylms['title'], VERBOSE=False, DATE=False)
+        #-- set permissions level of output file
+        os.chmod(os.path.join(os.path.dirname(input_file),output_file), MODE)
+
+    #-- return the harmonics and the parameters
+    return gia_Ylms
