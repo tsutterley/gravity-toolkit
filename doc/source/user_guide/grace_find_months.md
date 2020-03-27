@@ -11,12 +11,21 @@ grace_months = grace_find_months(base_dir, PROC, DREL, DSET=DSET)
 ```
 
 #### Inputs
- - `base_dir`: Working data directory for GRACE/GRACE-FO data
- - `PROC`: GRACE/GRACE-FO data processing center (CSR, CNES, JPL, GFZ)
- - `DREL`: GRACE/GRACE-FO data release (RL04, RL05, RL06)
+ 1. `base_dir`: Working data directory for GRACE/GRACE-FO data
+ 2. `PROC`: GRACE/GRACE-FO data processing center (CSR, CNES, JPL, GFZ)  
+    * `'CSR'`: University of Texas Center for Space Research  
+    * `'GFZ'`: German Research Centre for Geosciences (GeoForschungsZentrum)
+    * `'JPL'`: Jet Propulsion Laboratory    
+    * `'CNES'`: French Centre National D'Etudes Spatiales
+ 3. `DREL`: GRACE data release (RL04, RL05, RL06)
 
 #### Options
  - `DSET`: GRACE dataset (GSM, GAC, GAD, GAB, GAA)
+    * `'GAA'`: non-tidal atmospheric correction  
+    * `'GAB'`: non-tidal oceanic correction  
+    * `'GAC'`: combined non-tidal atmospheric and oceanic correction  
+    * `'GAD'`: GRACE/GRACE-FO ocean bottom pressure product  
+    * `'GSM'`: corrected monthly GRACE/GRACE-FO static field product
 
 #### Outputs
  - `start`: First month in a GRACE/GRACE-FO dataset

@@ -15,9 +15,9 @@ YEAR,MONTH,DAY,HOUR,MINUTE,SECOND = convert_julian(JD, FORMAT='tuple')
 #### Options
  - `ASTYPE`: convert output to variable type  
  - `FORMAT`: format of output variables  
-    - `'dict'`: dictionary with variable keys as listed above  
-    - `'tuple'`: tuple with variable order YEAR,MONTH,DAY,HOUR,MINUTE,SECOND  
-    - `'zip'`: aggregated variable sets  
+    * `'dict'`: dictionary with variable keys as listed above  
+    * `'tuple'`: tuple with variable order YEAR,MONTH,DAY,HOUR,MINUTE,SECOND  
+    * `'zip'`: aggregated variable sets  
 
 #### Outputs
  - `year`: Number of the desired year

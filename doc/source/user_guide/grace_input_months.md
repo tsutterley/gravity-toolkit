@@ -17,30 +17,39 @@ GRACE_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
 ```
 
 #### Inputs
- - `base_dir`: Working data directory for GRACE/GRACE-FO data
- - `PROC`: GRACE/GRACE-FO data processing center (CSR, CNES, JPL, GFZ)  
- - `DREL`: GRACE/GRACE-FO data release (RL04, RL05, RL06)  
- - `DSET`: GRACE/GRACE-FO data product (GAA, GAB, GAC, GAD, GSM)  
- - `LMAX`: Upper bound of Spherical Harmonic Degrees  
- - `start_mon`: starting month to consider in analysis  
- - `end_mon`: ending month to consider in analysis  
- - `missing`: missing months to not consider in analysis  
- - `SLR_C20`: Replaces C20 with values from Satellite Laser Ranging (SLR)  
-   - `None`: use original values  
-   - `CSR`: use values from CSR (TN-07, TN-09, TN-11)  
-   - `GSFC`: use values from GSFC (TN-14)  
- - `DEG1`: Use Degree 1 coefficients  
-   - `None`: No degree 1  
-   - `Tellus`: [GRACE/GRACE-FO TN-13 coefficients from PO.DAAC](https://grace.jpl.nasa.gov/data/get-data/geocenter/)  
-   - `SLR`: [Satellite laser ranging coefficients from CSR](ftp://ftp.csr.utexas.edu/pub/slr/geocenter/)  
-   - `SLF`: [Sutterley and Velicogna coefficients, Remote Sensing (2019)](https://doi.org/10.6084/m9.figshare.7388540)  
+ 1. `base_dir`: Working data directory for GRACE/GRACE-FO data
+ 2. `PROC`: GRACE/GRACE-FO data processing center (CSR, CNES, JPL, GFZ)  
+    * `'CSR'`: University of Texas Center for Space Research  
+    * `'GFZ'`: German Research Centre for Geosciences (GeoForschungsZentrum)
+    * `'JPL'`: Jet Propulsion Laboratory    
+    * `'CNES'`: French Centre National D'Etudes Spatiales
+ 3. `DREL`: GRACE/GRACE-FO data release (RL04, RL05, RL06)  
+ 4. `DSET`: GRACE/GRACE-FO data product (GAA, GAB, GAC, GAD, GSM)  
+    * `'GAA'`: non-tidal atmospheric correction  
+    * `'GAB'`: non-tidal oceanic correction  
+    * `'GAC'`: combined non-tidal atmospheric and oceanic correction  
+    * `'GAD'`: GRACE/GRACE-FO ocean bottom pressure product  
+    * `'GSM'`: corrected monthly GRACE/GRACE-FO static field product
+ 5. `LMAX`: Upper bound of Spherical Harmonic Degrees  
+ 6. `start_mon`: starting month to consider in analysis  
+ 7. `end_mon`: ending month to consider in analysis  
+ 8. `missing`: missing months to not consider in analysis  
+ 9. `SLR_C20`: Replaces C20 with values from Satellite Laser Ranging (SLR)  
+    * `None`: use original values  
+    * `'CSR'`: use values from CSR (TN-07, TN-09, TN-11)  
+    * `'GSFC'`: use values from GSFC (TN-14)  
+ 10. `DEG1`: Use Degree 1 coefficients  
+    * `None`: No degree 1  
+    * `'Tellus'`: [GRACE/GRACE-FO TN-13 coefficients from PO.DAAC](https://grace.jpl.nasa.gov/data/get-data/geocenter/)  
+    * `'SLR'`: [Satellite laser ranging coefficients from CSR](ftp://ftp.csr.utexas.edu/pub/slr/geocenter/)  
+    * `'SLF'`: [Sutterley and Velicogna coefficients, Remote Sensing (2019)](https://doi.org/10.6084/m9.figshare.7388540)  
 
 #### Options
  - `MMAX`: Upper bound of Spherical Harmonic Orders  
  - `SLR_C30`: Replaces C30 with values from Satellite Laser Ranging (SLR)  
-    - `None`: use original values  
-    - `CSR`: use values from CSR (5x5 with 6,1)  
-    - `GSFC`: use values from GSFC (TN-14)  
+    * `None`: use original values  
+    * `'CSR'`: use values from CSR (5x5 with 6,1)  
+    * `'GSFC'`: use values from GSFC (TN-14)  
  - `POLE_TIDE`: correct GSM data for pole tide drift  
  - `ATM`: correct data with ECMWF "jump" corrections GAE, GAF and GAG  
  - `MODEL_DEG1`: least-squares model missing degree 1 coefficients  

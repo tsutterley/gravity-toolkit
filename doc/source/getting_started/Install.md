@@ -1,5 +1,5 @@
-Install
-=======
+Installation
+============
 
 Presently read-GRACE-harmonics is only available for use as a [github repository](https://github.com/tsutterley/read-GRACE-harmonics).
 The contents of the repository can be download as a [zipped file](https://github.com/tsutterley/read-GRACE-harmonics/archive/master.zip)  or cloned.

@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
     name='read-GRACE-harmonics',
-    version='1.0.1.1',
+    version='1.0.1.2',
     description='Reads Level-2 spherical harmonic coefficients from the NASA/DLR GRACE and NASA/GFZ GRACE Follow-on missions',
     url='https://github.com/tsutterley/read-GRACE-harmonics',
     author='Tyler Sutterley',
