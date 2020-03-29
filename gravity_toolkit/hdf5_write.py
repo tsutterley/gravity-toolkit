@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_write.py
-Written by Tyler Sutterley (09/2019)
+Written by Tyler Sutterley (03/2020)
 
 Writes spatial data to HDF5 files
 
@@ -34,6 +34,7 @@ PYTHON DEPENDENCIES:
         (http://h5py.org)
 
 UPDATE HISTORY:
+    Updated 03/2020: only include title if not None
     Updated 10/2019: changing Y/N flags to True/False
     Updated 09/2019 for public release
     Updated 08/2019: don't include time (HH:MM:SS) in creation date
@@ -110,7 +111,9 @@ def hdf5_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     h5[TIMENAME].attrs['long_name'] = TIME_LONGNAME
     h5[TIMENAME].attrs['units'] = TIME_UNITS
     #-- description of file
-    fileID.attrs['description'] = TITLE
+    if TITLE:
+        fileID.attrs['description'] = TITLE
+    #-- date created
     fileID.attrs['date_created'] = time.strftime('%Y-%m-%d',time.localtime())
 
     #-- Output HDF5 structure information

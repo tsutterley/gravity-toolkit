@@ -14,6 +14,7 @@ file_inp = ncdf_read_stokes(filename, DATE=True, VERBOSE=False)
 
 #### Options
  - `DATE`: netCDF4 file has date information
+ - `ATTRIBUTES`: netCDF4 variables contain attribute parameters
  - `VERBOSE`: will print to screen the netCDF4 structure parameters
 
 #### Outputs

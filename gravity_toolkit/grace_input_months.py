@@ -35,10 +35,12 @@ INPUTS:
             https://doi.org/10.6084/m9.figshare.7388540
 
 OUTPUTS:
-    clm: GRACE/GRACE-FO cosine spherical harmonic with lmax: LMAX
-    slm: GRACE/GRACE-FO sine spherical harmonic with lmax: LMAX
+    clm: GRACE/GRACE-FO cosine spherical harmonic to degree/order LMAX and MMAX
+    slm: GRACE/GRACE-FO sine spherical harmonic to degree/order LMAX and MMAX
     time: time of each GRACE/GRACE-FO measurement (mid-month)
     month: GRACE/GRACE-FO months of input datasets
+    l: spherical harmonic degree to LMAX
+    m: spherical harmonic order to MMAX
     title: string denoting low degree zonals, geocenter and corrections
     mean: mean spherical harmonic fields as a dictionary with fields clm/slm
     directory: directory of exact GRACE/GRACE-FO product
@@ -71,7 +73,7 @@ PROGRAM DEPENDENCIES:
     read_GRACE_harmonics.py: reads an input GRACE data file and calculates date
 
 UPDATE HISTORY:
-    Updated 03/2020 for public release
+    Updated 03/2020 for public release.  output degree and order in dict
 """
 from __future__ import print_function, division
 
@@ -193,6 +195,9 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
     grace_slm = np.zeros((LMAX+1,MMAX+1,n_cons))
     tdec = np.zeros((n_cons))
     mon = np.zeros((n_cons),dtype=np.int)
+    #-- output dimensions
+    lout = np.arange(LMAX+1)
+    mout = np.arange(MMAX+1)
 
     #-- associate GRACE/GRACE-FO files with each GRACE/GRACE-FO month
     grace_files=grace_date(base_dir,PROC=PROC,DREL=DREL,DSET=DSET,OUTPUT=False)
@@ -308,7 +313,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
                 grace_slm[l,m,:] -= mean_Ylms['slm'][l,m]
 
     return {'clm':grace_clm, 'slm':grace_slm, 'time':tdec, 'month':mon,
-        'mean':mean_Ylms, 'title':out_str, 'directory':grace_dir}
+        'l':lout, 'm':mout, 'mean':mean_Ylms, 'title':out_str,
+        'directory':grace_dir}
 
 #-- PURPOSE: read atmospheric jump corrections from Fagiolini et al. (2015)
 def read_ecmwf_corrections(base_dir, LMAX, months, MMAX=None):

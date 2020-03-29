@@ -20,6 +20,7 @@ OPTIONS:
         AW13-ICE6G: Geruo A ICE-6G GIA Models
         Caron: Caron JPL GIA Assimilation
         ICE6G-D: ICE-6G Version-D GIA Models
+        ascii: reformatted GIA in ascii format
         netCDF4: reformatted GIA in netCDF4 format
         HDF5: reformatted GIA in HDF5 format
     LMAX: maximum degree of spherical harmonics
@@ -91,7 +92,7 @@ REFERENCES:
     https://doi.org/10.1002/2016JB013844
 
 UPDATE HISTORY:
-    UPDATED 03/2020: updated for public release
+    UPDATED 03/2020: updated for public release.  added reformatted ascii option
     UPDATED 08/2019: added ICE-6G Version D
     UPDATED 07/2019: added Geruo ICE-6G models and Caron JPL assimilation
     UPDATED 06/2018: using python3 compatible octal and input
@@ -348,6 +349,37 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, DATAFORM=None, MODE=0o775):
                     gia_Ylms['clm'][l1,m1] = np.float(line[2])*scale
                     gia_Ylms['slm'][l1,m1] = np.float(line[3])*scale
 
+    elif (GIA == 'ascii'):
+        #-- reading GIA data from reformatted (simplified) ascii files
+        dtype = {'names':('l','m','clm','slm'), 'formats':('i','i','f8','f8')}
+        Ylms = np.loadtxt(os.path.expanduser(input_file), dtype=dtype)
+        for ll,mm,clm,slm in zip(Ylms['l'],Ylms['m'],Ylms['clm'],Ylms['slm']):
+            #-- only using coefficients within the spherical harmonic range
+            if ((ll <= LMAX) and (mm <= MMAX)):
+                gia_Ylms['clm'][ll,mm] = clm.copy()
+                gia_Ylms['slm'][ll,mm] = slm.copy()
+        #-- copy filename (without extension) for parameters
+        gia_Ylms['title'] = os.path.basename(os.path.splitext(input_file)[0])
+
+    elif (GIA == 'netCDF4'):
+        #-- reading GIA data from reformatted netCDF4 files
+        Ylms = ncdf_read_stokes(os.path.expanduser(input_file),DATE=False)
+        #-- truncate to degree and order LMAX
+        gia_Ylms['clm'][:,:] = Ylms['clm'][:LMAX+1,:LMAX+1]
+        gia_Ylms['slm'][:,:] = Ylms['slm'][:LMAX+1,:LMAX+1]
+        #-- copy title for parameters
+        gia_Ylms['title'] = Ylms['attributes']['title']
+
+    elif (GIA == 'HDF5'):
+        #-- reading GIA data from reformatted HDF5 files
+        Ylms = hdf5_read_stokes(os.path.expanduser(input_file),DATE=False)
+        #-- truncate to degree and order LMAX
+        gia_Ylms['clm'][:,:] = Ylms['clm'][:LMAX+1,:LMAX+1]
+        gia_Ylms['slm'][:,:] = Ylms['slm'][:LMAX+1,:LMAX+1]
+        #-- copy title for parameters
+        gia_Ylms['title'] = Ylms['attributes']['title']
+
+
     #-- extract rheology from the file name
     if GIA in ('IJ05-R2','ICE6G'):
         #-- for IJ05 and ICE-6G models:
@@ -376,22 +408,6 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, DATAFORM=None, MODE=0o775):
         #-- extract the ice history and case flags
         hist,case,sf=re.findall(file_pattern,os.path.basename(input_file)).pop()
         gia_Ylms['title'] = '{0}_{1}_{2}'.format(prefix,hist,case)
-    elif (GIA == 'netCDF4'):
-        #-- reading GIA data from reformatted netCDF4 files
-        Ylms = ncdf_read_stokes(os.path.expanduser(input_file),DATE=False)
-        #-- truncate to degree and order LMAX
-        gia_Ylms['clm'][:,:] = Ylms['clm'][:LMAX+1,:LMAX+1]
-        gia_Ylms['slm'][:,:] = Ylms['slm'][:LMAX+1,:LMAX+1]
-        #-- copy title for parameters
-        gia_Ylms['title'] = Ylms['attributes']['title']
-    elif (GIA == 'HDF5'):
-        #-- reading GIA data from reformatted HDF5 files
-        Ylms = hdf5_read_stokes(os.path.expanduser(input_file),DATE=False)
-        #-- truncate to degree and order LMAX
-        gia_Ylms['clm'][:,:] = Ylms['clm'][:LMAX+1,:LMAX+1]
-        gia_Ylms['slm'][:,:] = Ylms['slm'][:LMAX+1,:LMAX+1]
-        #-- copy title for parameters
-        gia_Ylms['title'] = Ylms['attributes']['title']
 
     #-- output harmonics to netCDF4 or HDF5 file
     if (DATAFORM == 'netCDF4'):

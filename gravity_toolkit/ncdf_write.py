@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_write.py
-Written by Tyler Sutterley (10/2019)
+Written by Tyler Sutterley (03/2020)
 
 Writes spatial data to COARDS-compliant NetCDF4 files
 
@@ -34,6 +34,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 03/2020: only include title if not None
     Updated 10/2019: changing Y/N flags to True/False
     Updated 09/2019 for public release
     Updated 08/2019: don't include time (HH:MM:SS) in creation date
@@ -113,7 +114,9 @@ def ncdf_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     nc[TIMENAME].long_name = TIME_LONGNAME
     nc[TIMENAME].units = TIME_UNITS
     #-- global variable of NetCDF file
-    fileID.TITLE = TITLE
+    if TITLE:
+        fileID.TITLE = TITLE
+    #-- date created
     fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
 
     #-- Output NetCDF structure information

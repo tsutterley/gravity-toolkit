@@ -57,10 +57,12 @@ GRACE_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
  - `MEAN`: remove mean of harmonics  
 
 #### Outputs
- - `clm`: GRACE/GRACE-FO cosine spherical harmonics  
- - `slm`: GRACE/GRACE-FO sine spherical harmonics  
+ - `clm`: GRACE/GRACE-FO cosine spherical harmonics to degree/order LMAX and MMAX  
+ - `slm`: GRACE/GRACE-FO sine spherical harmonics to degree/order LMAX and MMAX  
  - `time`: time of each GRACE measurement (mid-month)  
  - `month`: GRACE/GRACE-FO months of input datasets  
+ - `l`: spherical harmonic degree to LMAX
+ - `m`: spherical harmonic order to MMAX
  - `title`: string denoting low degree zonals replacement, geocenter usage and corrections  
  - `mean`: mean spherical harmonic fields as a dictionary with fields clm/slm  
  - `directory`: directory of exact GRACE/GRACE-FO product  

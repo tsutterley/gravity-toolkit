@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_read_stokes.py
-Written by Tyler Sutterley (10/2019)
+Written by Tyler Sutterley (03/2020)
 
 Reads spherical harmonic data from HDF5 files
 
@@ -23,6 +23,7 @@ OUTPUTS:
 
 OPTIONS:
     DATE: HDF5 file has date information
+    ATTRIBUTES: HDF5 variables contain attribute parameters
     VERBOSE: will print to screen the HDF5 structure parameters
 
 PYTHON DEPENDENCIES:
@@ -31,6 +32,7 @@ PYTHON DEPENDENCIES:
         (http://h5py.org)
 
 UPDATE HISTORY:
+    Updated 03/2020: added ATTRIBUTES option to check if file has attributes
     Updated 10/2019: changing Y/N flags to True/False.  check if time is array
     Updated 03/2019: print variables keys in list for Python3 compatibility
     Updated 06/2016: using __future__ print function
@@ -48,7 +50,7 @@ from __future__ import print_function
 import h5py
 import numpy as np
 
-def hdf5_read_stokes(filename, DATE=True, VERBOSE=False):
+def hdf5_read_stokes(filename, DATE=True, ATTRIBUTES=True, VERBOSE=False):
     #-- Open the HDF5 file for reading
     fileID = h5py.File(filename, 'r')
     #-- allocate python dictionary for output variables
@@ -99,23 +101,24 @@ def hdf5_read_stokes(filename, DATE=True, VERBOSE=False):
             dinput['slm'][ll[lm],mm[lm]] = SLM[lm]
 
     #-- Getting attributes of clm/slm and included variables
-    dinput['attributes'] = {}
-    dinput['attributes']['l'] = [fileID['l'].attrs['units'], \
-        fileID['l'].attrs['long_name']]
-    dinput['attributes']['m'] = [fileID['m'].attrs['units'], \
-        fileID['m'].attrs['long_name']]
-    dinput['attributes']['clm'] = [fileID['clm'].attrs['units'], \
-        fileID['clm'].attrs['long_name']]
-    dinput['attributes']['slm'] = [fileID['slm'].attrs['units'], \
-        fileID['slm'].attrs['long_name']]
-    #-- time attributes
-    if DATE:
-        dinput['attributes']['time'] = [fileID['time'].attrs['units'], \
-            fileID['time'].attrs['long_name']]
-        dinput['attributes']['month'] = [fileID['month'].attrs['units'], \
-            fileID['month'].attrs['long_name']]
-    #-- Global attribute description
-    dinput['attributes']['title'] = fileID.attrs['description']
+    if ATTRIBUTES:
+        dinput['attributes'] = {}
+        dinput['attributes']['l'] = [fileID['l'].attrs['units'], \
+            fileID['l'].attrs['long_name']]
+        dinput['attributes']['m'] = [fileID['m'].attrs['units'], \
+            fileID['m'].attrs['long_name']]
+        dinput['attributes']['clm'] = [fileID['clm'].attrs['units'], \
+            fileID['clm'].attrs['long_name']]
+        dinput['attributes']['slm'] = [fileID['slm'].attrs['units'], \
+            fileID['slm'].attrs['long_name']]
+        #-- time attributes
+        if DATE:
+            dinput['attributes']['time'] = [fileID['time'].attrs['units'], \
+                fileID['time'].attrs['long_name']]
+            dinput['attributes']['month'] = [fileID['month'].attrs['units'], \
+                fileID['month'].attrs['long_name']]
+        #-- Global attribute description
+        dinput['attributes']['title'] = fileID.attrs['description']
 
     #-- Closing the HDF5 file
     fileID.close()

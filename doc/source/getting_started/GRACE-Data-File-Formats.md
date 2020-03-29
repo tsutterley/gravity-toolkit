@@ -2,15 +2,15 @@ GRACE Data File Formats
 =======================
 
 #### Product Identifier  
-GRACE Level-2 products consist of spherical harmonic coefficients of the Earth's gravitational field.  The data files are typically gzipped ascii files with names formatted as the following: `PID-2_YYYYDOY-yyyydoy_ndays_center_flag_rrrr`    
+GRACE Level-2 products consist of spherical harmonic coefficients of the Earth's gravitational field.  The data files are typically gzipped ascii files with names formatted as the following: `PID-2_YYYYDOY-yyyydoy_ndays_center_flag_rrrr` or `PID-2_YYYYDOY-yyyydoy_mssn_center_flag_rrrr`     
  - `PID` is a product identification string (for standard products: GSM, GAD, GAC, GAA, GAB)   
  - `-2` denotes that the data is a GRACE Level-2 product  
  - `YYYYDOY` denotes the start date (year and day-of-year) of the measurement range  
  - `yyyydoy` denotes the end date (year and day-of-year) of the measurement range  
  - `ndays` is the number of calendar days used to produce the monthly estimate  
- - `center` is an institution specific string (UTCSR for CSR, JPLEM for JPL Spherical Harmonics, JPLMSC for JPL Mascons, EIGEN for GFZ)  
- - `flag` is a 4 character processing center dependent string (CSR denotes the maximum degree and possibly maximum order of the solutions, JPL denotes if the data is an intermediate release, GFZ denotes constrained versus unconstrained solutions)  
-
+ - `mssn` is the mission GRAC for GRACE and GRFO for GRACE Follow-On
+ - `center` is an institution specific string (UTCSR for CSR, JPLEM for JPL Spherical Harmonics, JPLMSC for JPL Mascons, EIGEN or GFZOP for GFZ)  
+ - `flag` is a 4 character processing center dependent string (CSR denotes the maximum degree and possibly maximum order of the solutions, JPL denotes if the data is an intermediate release, GFZ denotes constrained versus unconstrained solutions).  For Release-6 and beyond this flag denotes the processing.  
  - `rrrr` is a 4 character release string which is typically a 4 digit number (GFZ datasets can denote intermediate releases in the 4<sup>th</sup> character)  
 
 #### Character Description

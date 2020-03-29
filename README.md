@@ -30,6 +30,7 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
 - [`grace_date`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/grace_date.md) - Calculates dates of each GRACE/GRACE-FO file and assigns the month number  
 - [`grace_find_months`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/grace_find_months.md) - Finds the months available for a GRACE/GRACE-FO product  
 - [`grace_input_months`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/grace_input_months.md) - Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order and for a specified date range  
+- [`harmonics`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/harmonics.md) - Spherical harmonic data class for correcting GRACE/GRACE-FO Level-2 data
 - [`hdf5_read_stokes`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/hdf5_read_stokes.md) - Reads spherical harmonic data from HDF5 files  
 - [`hdf5_read`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/hdf5_read.md) - Reads spatial data from HDF5 files  
 - [`hdf5_stokes`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/hdf5_stokes.md) - Writes spherical harmonic data to HDF5 files  

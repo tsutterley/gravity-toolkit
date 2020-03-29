@@ -33,6 +33,7 @@ missions
     user_guide/grace_date.md
     user_guide/grace_find_months.md
     user_guide/grace_input_months.md
+    user_guide/harmonics.md
     user_guide/hdf5_read.md
     user_guide/hdf5_read_stokes.md
     user_guide/hdf5_stokes.md

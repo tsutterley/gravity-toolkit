@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_read_stokes.py
-Written by Tyler Sutterley (10/2019)
+Written by Tyler Sutterley (03/2020)
 
 Reads spherical harmonic data from netCDF4 files
 
@@ -23,6 +23,7 @@ OUTPUTS:
 
 OPTIONS:
     DATE: netCDF4 file has date information
+    ATTRIBUTES: netCDF4 variables contain attribute parameters
     VERBOSE: will print to screen the netCDF4 structure parameters
 
 PYTHON DEPENDENCIES:
@@ -31,6 +32,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 03/2020: added ATTRIBUTES option to check if file has attributes
     Updated 10/2019: changing Y/N flags to True/False
     Updated 03/2019: print variables keys in list for Python3 compatibility
     Updated 09/2016: slicing of clm and slm on numpy arrays not netcdf variables
@@ -59,7 +61,7 @@ import netCDF4
 import numpy as np
 import re
 
-def ncdf_read_stokes(filename, DATE=True, VERBOSE=False):
+def ncdf_read_stokes(filename, DATE=True, ATTRIBUTES=True, VERBOSE=False):
     #-- Open the NetCDF file for reading
     fileID = netCDF4.Dataset(filename, 'r')
     #-- create python dictionary for output variables
@@ -111,17 +113,19 @@ def ncdf_read_stokes(filename, DATE=True, VERBOSE=False):
             dinput['clm'][ll[lm],mm[lm]] = clm[lm]
             dinput['slm'][ll[lm],mm[lm]] = slm[lm]
 
-    #-- for each variable
-    #-- get attributes for the included variables
-    for key in dinput.keys():
-        attributes[key] = [fileID.variables[key].units, \
-            fileID.variables[key].long_name]
-    #-- put attributes in output python dictionary
-    dinput['attributes'] = attributes
-    #-- Global attribute (title of dataset)
-    rx = re.compile('TITLE',re.IGNORECASE)
-    title, = [st for st in dir(fileID) if rx.match(st)]
-    dinput['attributes']['title'] = getattr(fileID, title)
+    #-- Getting attributes of clm/slm and included variables
+    if ATTRIBUTES:
+        #-- for each variable
+        #-- get attributes for the included variables
+        for key in dinput.keys():
+            attributes[key] = [fileID.variables[key].units, \
+                fileID.variables[key].long_name]
+        #-- put attributes in output python dictionary
+        dinput['attributes'] = attributes
+        #-- Global attribute (title of dataset)
+        rx = re.compile('TITLE',re.IGNORECASE)
+        title, = [st for st in dir(fileID) if rx.match(st)]
+        dinput['attributes']['title'] = getattr(fileID, title)
 
     #-- Closing the NetCDF file
     fileID.close()

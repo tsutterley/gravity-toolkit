@@ -26,3 +26,4 @@ from gravity_toolkit.ncdf_read_stokes import ncdf_read_stokes
 from gravity_toolkit.hdf5_read_stokes import hdf5_read_stokes
 from gravity_toolkit.ncdf_stokes import ncdf_stokes
 from gravity_toolkit.hdf5_stokes import hdf5_stokes
+from gravity_toolkit.harmonics import harmonics
