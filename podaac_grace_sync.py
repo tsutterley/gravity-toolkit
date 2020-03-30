@@ -4,7 +4,7 @@ podaac_grace_sync.py
 Written by Tyler Sutterley (03/2020)
 
 Syncs GRACE/GRACE-FO and auxiliary data from the NASA JPL PO.DAAC Drive Server
-Syncs CSR/GFZ/JPL files for RL04/RL05 GAA/GAB/GAC/GAD/GSM
+Syncs CSR/GFZ/JPL files for RL04/RL05/RL06 GAA/GAB/GAC/GAD/GSM
     GAA and GAB are GFZ/JPL only
 Gets the latest technical note (TN) files
 Gets the monthly GRACE/GRACE-FO newsletters
@@ -28,9 +28,9 @@ CALLING SEQUENCE:
 
 OUTPUTS:
     CSR RL04/RL05/RL06: GAC/GAD/GSM
-    GFZ RL04/RL05: GAA/GAB/GAC/GAD/GSM
-    JPL RL04/RL05: GAA/GAB/GAC/GAD/GSM
-    Tellus degree one coefficients
+    GFZ RL04/RL05/RL06: GAA/GAB/GAC/GAD/GSM
+    JPL RL04/RL05/RL06: GAA/GAB/GAC/GAD/GSM
+    Tellus degree one coefficients (TN-13)
     Technical notes for satellite laser ranging coefficients
     Technical notes for Release-05 atmospheric corrections
     Monthly GRACE newsletters
@@ -56,7 +56,7 @@ PYTHON DEPENDENCIES:
         (http://python-future.org/)
 
 UPDATE HISTORY:
-    Updated 03/2020 for public release
+    Updated 03/2020 for public release.  Set default release to RL06
 """
 from __future__ import print_function
 
@@ -142,7 +142,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
 
     #-- check if directory exists and recursively create if not
     os.makedirs(DIRECTORY,MODE) if not os.path.exists(DIRECTORY) else None
-    #-- RL04 has been moved on PO.DAAC to the retired directory
+    #-- RL04/RL05 have been moved on PO.DAAC to the retired directory
     remote_sub = {}
     remote_sub['RL04'] = 'retired'
     remote_sub['RL05'] = 'retired'
@@ -564,7 +564,7 @@ def main():
     #-- GRACE Processing Centers to run
     PROC = ['CSR', 'GFZ', 'JPL']
     #-- Data release
-    DREL = ['RL05']
+    DREL = ['RL06']
     NEWSLETTERS = False
     #-- Use hash for determining whether or not to overwrite
     CHECKSUM = False

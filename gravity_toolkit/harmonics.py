@@ -17,7 +17,7 @@ PROGRAM DEPENDENCIES:
     hdf5_stokes.py: writes output spherical harmonic data to HDF5
     ncdf_read_stokes.py: reads spherical harmonic data from netcdf
     hdf5_read_stokes.py: reads spherical harmonic data from HDF5
-    destripe_harmonics.py: filters spherical harmonics for correlated  errors
+    destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
     Written 03/2020
@@ -47,6 +47,7 @@ class harmonics(object):
     def from_ascii(self, filename):
         """
         read a harmonics object from an ascii file
+        Inputs: full path of input ascii file
         """
         self.filename = filename
         Ylms = np.loadtxt(os.path.expanduser(input_file), dtype={'names':
@@ -67,6 +68,7 @@ class harmonics(object):
     def from_netCDF4(self, filename):
         """
         read a harmonics object from a netCDF4 file
+        Inputs: full path of input netCDF4 file
         """
         self.filename = filename
         Ylms = ncdf_read_stokes(os.path.expanduser(filename),
@@ -84,6 +86,7 @@ class harmonics(object):
     def from_HDF5(self, filename):
         """
         read a harmonics object from a HDF5 file
+        Inputs: full path of input HDF5 file
         """
         self.filename = filename
         Ylms = hdf5_read_stokes(os.path.expanduser(filename),
@@ -101,6 +104,8 @@ class harmonics(object):
     def from_index(self, filename, format=None):
         """
         read a harmonics object from an index of ascii, netCDF4 or HDF5 files
+        Inputs: full path of index file to be read into a harmonics object
+        Options: format of files in index (ascii, netCDF4 or HDF5)
         """
         self.filename = filename
         #-- Read index file of input spherical harmonics
@@ -125,6 +130,7 @@ class harmonics(object):
     def from_list(self, object_list):
         """
         build a sorted harmonics object from a list of other harmonics objects
+        Inputs: list of harmonics object to be merged
         """
         #-- number of harmonic objects in list
         n = len(object_list)
@@ -152,6 +158,7 @@ class harmonics(object):
     def from_dict(self, d):
         """
         convert a dict object to a harmonics object
+        Inputs: dictionary object to be converted
         """
         #-- find valid keys within dictionary
         k = [k for k in ['l','m','clm','slm','time','month'] if k in d.keys()]
@@ -163,9 +170,30 @@ class harmonics(object):
         self.mmax = np.max(d['m'])
         return self
 
+    def to_netCDF4(self, filename):
+        """
+        write a harmonics object to netCDF4 file
+        Inputs: full path of output netCDF4 file
+        """
+        self.filename = filename
+        ncdf_stokes(self.clm, self.slm, self.l, self.m, self.time, self.month,
+            FILENAME=os.path.expanduser(filename), TIME_UNITS='years',
+            TIME_LONGNAME='Date_in_Decimal_Years', VERBOSE=False, DATE=True)
+
+    def to_HDF5(self, filename):
+        """
+        write a harmonics object to HDF5 file
+        Inputs: full path of output HDF5 file
+        """
+        self.filename = filename
+        hdf5_stokes(self.clm, self.slm, self.l, self.m, self.time, self.month,
+            FILENAME=os.path.expanduser(filename), TIME_UNITS='years',
+            TIME_LONGNAME='Date_in_Decimal_Years', VERBOSE=False, DATE=True)
+
     def add(self, temp):
         """
         add two harmonics objects
+        Inputs: harmonic object to be added
         """
         l1 = self.lmax+1 if (temp.lmax > self.lmax) else temp.lmax+1
         m1 = self.mmax+1 if (temp.mmax > self.mmax) else temp.mmax+1
@@ -180,6 +208,7 @@ class harmonics(object):
     def subtract(self, temp):
         """
         subtract one harmonics object from another
+        Inputs: harmonic object to be subtracted
         """
         l1 = self.lmax+1 if (temp.lmax > self.lmax) else temp.lmax+1
         m1 = self.mmax+1 if (temp.mmax > self.mmax) else temp.mmax+1
@@ -194,6 +223,7 @@ class harmonics(object):
     def index(self, indice):
         """
         subset a harmonics object to specific index
+        Inputs: indice in matrix to subset
         """
         #-- output harmonics object
         temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
@@ -207,6 +237,7 @@ class harmonics(object):
     def subset(self, months):
         """
         subset a harmonics object to specific GRACE/GRACE-FO months
+        Inputs: GRACE/GRACE-FO months
         """
         #-- number of months
         n = len(months)
@@ -235,6 +266,8 @@ class harmonics(object):
     def truncate(self, lmax, mmax=None):
         """
         truncate a harmonics object to a new degree and order
+        Inputs: lmax maximum degree of spherical harmonics
+        Options: mmax maximum order of spherical harmonics
         """
         #-- number of months
         n = len(self.month)
@@ -257,6 +290,7 @@ class harmonics(object):
     def mean(self, apply=False):
         """
         Compute mean gravitational field and remove from monthly if specified
+        Option: apply to remove the mean field from the input harmonics
         """
         temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
         #-- allocate for mean field
@@ -279,6 +313,7 @@ class harmonics(object):
     def convolve(self, var):
         """
         Convolve spherical harmonics with a degree-dependent array
+        Inputs: degree dependent array for convolution
         """
         for l in range(0,self.lmax+1):#-- LMAX+1 to include LMAX
             self.clm[l,:] *= var[l]
@@ -298,56 +333,3 @@ class harmonics(object):
         temp.time = np.copy(self.time)
         temp.month = np.copy(self.month)
         return temp
-
-    def units(self, hl, kl, ll):
-        """
-        Calculates degree dependent factors for converting units
-        """
-        # Earth Parameters
-        # Average Density of the Earth [g/cm^3]
-        rho_e = 5.517
-        # Average Radius of the Earth [cm]
-        rad_e = 6.371e8
-        # WGS84 Gravitational Constant of the Earth [cm^3/s^2]
-        GM_e = 3986004.418e14
-        # Gravitational Constant of the Earth's atmosphere
-        GM_atm = 3.5e14
-        # Gravitational Constant of the Earth (w/o atm)
-        GM = GM_e - GM_atm
-        # standard gravitational acceleration (World Meteorological Organization)
-        g_wmo = 980.665
-        # degree dependent coefficients
-        # norm, geodesy normalized spherical harmonics
-        self.norm = np.ones((self.lmax+1))
-        # cmwe, centimeters water equivalent
-        self.cmwe = rho_e*rad_e*(2.0*self.l+1.0)/(1.0 +kl[self.l])/3.0
-        # mmGH, millimeters geoid height
-        self.mmGH = np.ones((self.lmax+1))*(10.0*rad_e)
-        # mmCU, millimeters elastic crustal deformation
-        self.mmCU = 10.0*rad_e*hl[self.l]/(1.0 +kl[self.l])
-        # microGal, microGal gravity perturbations
-        self.microGal = 1.e6*GM*(self.l+1.0)/(rad_e**2.0)
-        # mbar, millibar equivalent surface pressure
-        self.mbar = g_wmo*rho_e*rad_e*(2.0*self.l+1.0)/(1.0 +kl[self.l])/3e3
-        # Pa, pascals equivalent surface pressure
-        self.Pa = g_wmo*rho_e*rad_e*(2.0*self.l+1.0)/(1.0 +kl[self.l])/30.0
-        # return the degree dependent unit conversions
-        return self
-
-    def to_netCDF4(self, filename):
-        """
-        write a harmonics object to netCDF4 file
-        """
-        self.filename = filename
-        ncdf_stokes(self.clm, self.slm, self.l, self.m, self.time, self.month,
-            FILENAME=os.path.expanduser(filename), TIME_UNITS='years',
-            TIME_LONGNAME='Date_in_Decimal_Years', VERBOSE=False, DATE=True)
-
-    def to_HDF5(self, filename):
-        """
-        write a harmonics object to HDF5 file
-        """
-        self.filename = filename
-        hdf5_stokes(self.clm, self.slm, self.l, self.m, self.time, self.month,
-            FILENAME=os.path.expanduser(filename), TIME_UNITS='years',
-            TIME_LONGNAME='Date_in_Decimal_Years', VERBOSE=False, DATE=True)

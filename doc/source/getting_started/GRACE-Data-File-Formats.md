@@ -36,9 +36,9 @@ GRACE Level-2 products consist of spherical harmonic coefficients of the Earth's
 *C* | Combination of non-tidal atmosphere and ocean <sup>2</sup>
 *D* | Ocean bottom pressure product <sup>3</sup>     
 
-[1]: Data files for this product also contain records with the epochs and rates used to model secular changes in the background gravity model.   
-[2]: see [AOD1B Description Document](https://podaac-tools.jpl.nasa.gov/drive/files/allData/gracefo/docs/AOD1B_PDD_RL06_v6.1.pdf).    
-[3]: Summation of non-tidal ocean and atmosphere over the ocean.  Atmospheric pressure values are equal to zero over the land.    
+1. Data files for this product also contain records with the epochs and rates used to model secular changes in the background gravity model  
+2. see [AOD1B Description Document](https://podaac-tools.jpl.nasa.gov/drive/files/allData/gracefo/docs/AOD1B_PDD_RL06_v6.1.pdf)  
+3. Summation of non-tidal ocean and atmosphere over the ocean.  Atmospheric pressure values are equal to zero over the land  
 
 #### Summary
 

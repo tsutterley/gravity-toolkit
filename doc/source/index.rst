@@ -33,7 +33,7 @@ missions
     user_guide/grace_date.md
     user_guide/grace_find_months.md
     user_guide/grace_input_months.md
-    user_guide/harmonics.md
+    user_guide/harmonics.rst
     user_guide/hdf5_read.md
     user_guide/hdf5_read_stokes.md
     user_guide/hdf5_stokes.md
@@ -54,3 +54,4 @@ missions
     user_guide/read_SLR_C30.md
     user_guide/read_SLR_geocenter.md
     user_guide/read_tellus_geocenter.md
+    user_guide/units.rst
