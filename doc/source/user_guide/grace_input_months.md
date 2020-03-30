@@ -7,7 +7,6 @@ grace_input_months.py
  - Replaces C30 with SLR values for months 179+ (if specified)  
  - Corrects for ECMWF atmospheric "jumps" using the GAE, GAF and GAG files following [Fagiolini et al. (2015)](https://doi.org/10.1093/gji/ggv276)  
  - Corrects for Pole Tide drift following [Wahr et al. (2015)](https://doi.org/10.1002/2015JB011986)  
- - Removes a temporal average gravity field to get geopotential anomalies  
 
 #### Calling Sequence
 ```python
@@ -54,7 +53,6 @@ GRACE_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
  - `ATM`: correct data with ECMWF "jump" corrections GAE, GAF and GAG  
  - `MODEL_DEG1`: least-squares model missing degree 1 coefficients  
  - `DEG1_GIA`: GIA-correction used when calculating degree 1 coefficients  
- - `MEAN`: remove mean of harmonics  
 
 #### Outputs
  - `clm`: GRACE/GRACE-FO cosine spherical harmonics to degree/order LMAX and MMAX  
@@ -64,5 +62,4 @@ GRACE_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
  - `l`: spherical harmonic degree to LMAX
  - `m`: spherical harmonic order to MMAX
  - `title`: string denoting low degree zonals replacement, geocenter usage and corrections  
- - `mean`: mean spherical harmonic fields as a dictionary with fields clm/slm  
  - `directory`: directory of exact GRACE/GRACE-FO product  

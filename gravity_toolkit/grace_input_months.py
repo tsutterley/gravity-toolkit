@@ -10,7 +10,6 @@ Replaces C20 with SLR values (if specified)
 Replaces C30 with SLR values for months 179+ (if specified)
 Corrects for ECMWF atmospheric "jumps" using the GAE, GAF and GAG files
 Corrects for Pole Tide drift following Wahr et al. (2015)
-Removes a temporal average gravity field to get geopotential anomalies
 
 INPUTS:
     base_dir: Working data directory for GRACE/GRACE-FO data
@@ -42,7 +41,6 @@ OUTPUTS:
     l: spherical harmonic degree to LMAX
     m: spherical harmonic order to MMAX
     title: string denoting low degree zonals, geocenter and corrections
-    mean: mean spherical harmonic fields as a dictionary with fields clm/slm
     directory: directory of exact GRACE/GRACE-FO product
 
 OPTIONS:
@@ -55,7 +53,6 @@ OPTIONS:
     ATM: correct data with ECMWF "jump" corrections GAE, GAF and GAG
     MODEL_DEG1: least-squares model missing degree 1 coefficients (True/False)
     DEG1_GIA: GIA-correction used when calculating degree 1 coefficients
-    MEAN: remove mean of harmonics (True/False)
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (http://www.numpy.org)
@@ -90,9 +87,8 @@ from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 
 def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
-    start_mon, end_mon, missing, SLR_C20, DEG1, MMAX=None,
-    SLR_C30='', MODEL_DEG1=False, DEG1_GIA='', ATM=False,
-    POLE_TIDE=False, MEAN=True):
+    start_mon, end_mon, missing, SLR_C20, DEG1, MMAX=None, SLR_C30='',
+    MODEL_DEG1=False, DEG1_GIA='', ATM=False, POLE_TIDE=False):
 
     #-- Directory of exact GRACE product
     grace_dir = os.path.join(base_dir, PROC, DREL, DSET)
@@ -294,27 +290,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
                     grace_clm[l,m,:] += atm_corr['clm'][l,m,:]
                     grace_slm[l,m,:] += atm_corr['slm'][l,m,:]
 
-    #-- Computing the mean gravitational field
-    mean_Ylms = {}
-    mean_Ylms['clm'] = np.zeros((LMAX+1,MMAX+1))
-    mean_Ylms['slm'] = np.zeros((LMAX+1,MMAX+1))
-    #-- Computes the mean of each spectral degree and order for
-    #-- the imported months
-    for m in range(0,MMAX+1):#-- MMAX+1 to include l
-        for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
-            #-- calculate static field using mean of input months
-            mean_Ylms['clm'][l,m] = np.mean(grace_clm[l,m,:])
-            mean_Ylms['slm'][l,m] = np.mean(grace_slm[l,m,:])
-            #-- Removing the mean from the Stokes coefficients
-            #-- removes the static component of gravity
-            if MEAN:
-                #-- Calculating the time-variable gravity field
-                grace_clm[l,m,:] -= mean_Ylms['clm'][l,m]
-                grace_slm[l,m,:] -= mean_Ylms['slm'][l,m]
-
     return {'clm':grace_clm, 'slm':grace_slm, 'time':tdec, 'month':mon,
-        'l':lout, 'm':mout, 'mean':mean_Ylms, 'title':out_str,
-        'directory':grace_dir}
+        'l':lout, 'm':mout, 'title':out_str, 'directory':grace_dir}
 
 #-- PURPOSE: read atmospheric jump corrections from Fagiolini et al. (2015)
 def read_ecmwf_corrections(base_dir, LMAX, months, MMAX=None):

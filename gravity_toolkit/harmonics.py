@@ -3,7 +3,7 @@ u"""
 harmonics.py
 Written by Tyler Sutterley (03/2020)
 
-Spherical harmonic data class for correcting GRACE/GRACE-FO Level-2 data
+Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (http://www.numpy.org)
@@ -17,6 +17,7 @@ PROGRAM DEPENDENCIES:
     hdf5_stokes.py: writes output spherical harmonic data to HDF5
     ncdf_read_stokes.py: reads spherical harmonic data from netcdf
     hdf5_read_stokes.py: reads spherical harmonic data from HDF5
+    destripe_harmonics.py: filters spherical harmonics for correlated  errors
 
 UPDATE HISTORY:
     Written 03/2020
@@ -28,18 +29,19 @@ from gravity_toolkit.ncdf_stokes import ncdf_stokes
 from gravity_toolkit.hdf5_stokes import hdf5_stokes
 from gravity_toolkit.ncdf_read_stokes import ncdf_read_stokes
 from gravity_toolkit.hdf5_read_stokes import hdf5_read_stokes
+from gravity_toolkit.destripe_harmonics import destripe_harmonics
 
 class harmonics(object):
     np.seterr(invalid='ignore')
-    def __init__(self):
+    def __init__(self, lmax=None, mmax=None):
         self.clm=None
         self.slm=None
-        self.l=None
-        self.m=None
         self.time=None
         self.month=None
-        self.lmax=None
-        self.mmax=None
+        self.lmax=lmax
+        self.mmax=mmax
+        self.l=np.arange(self.lmax+1) if self.lmax else None
+        self.m=np.arange(self.mmax+1) if self.mmax else None
         self.filename=None
 
     def from_ascii(self, filename):
@@ -161,6 +163,47 @@ class harmonics(object):
         self.mmax = np.max(d['m'])
         return self
 
+    def add(self, temp):
+        """
+        add two harmonics objects
+        """
+        l1 = self.lmax+1 if (temp.lmax > self.lmax) else temp.lmax+1
+        m1 = self.mmax+1 if (temp.mmax > self.mmax) else temp.mmax+1
+        if np.ndim(self.clm == 2):
+            self.clm[:l1,:m1] += temp.clm[:l1,:m1]
+            self.slm[:l1,:m1] += temp.slm[:l1,:m1]
+        else:
+            self.clm[:l1,:m1,:] += temp.clm[:l1,:m1,:]
+            self.slm[:l1,:m1,:] += temp.slm[:l1,:m1,:]
+        return self
+
+    def subtract(self, temp):
+        """
+        subtract one harmonics object from another
+        """
+        l1 = self.lmax+1 if (temp.lmax > self.lmax) else temp.lmax+1
+        m1 = self.mmax+1 if (temp.mmax > self.mmax) else temp.mmax+1
+        if np.ndim(self.clm == 2):
+            self.clm[:l1,:m1] -= temp.clm[:l1,:m1]
+            self.slm[:l1,:m1] -= temp.slm[:l1,:m1]
+        else:
+            self.clm[:l1,:m1,:] -= temp.clm[:l1,:m1,:]
+            self.slm[:l1,:m1,:] -= temp.slm[:l1,:m1,:]
+        return self
+
+    def index(self, indice):
+        """
+        subset a harmonics object to specific index
+        """
+        #-- output harmonics object
+        temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
+        #-- subset output harmonics
+        temp.clm = self.clm[:,:,indice]
+        temp.slm = self.slm[:,:,indice]
+        temp.time = self.time[indice].copy()
+        temp.month = self.month[indice].copy()
+        return temp
+
     def subset(self, months):
         """
         subset a harmonics object to specific GRACE/GRACE-FO months
@@ -175,13 +218,7 @@ class harmonics(object):
         #-- indices to sort data objects
         months_list = [i for i,m in enumerate(self.month) if m in months]
         #-- output harmonics object
-        temp = harmonics()
-        #-- maximum degree and order
-        temp.lmax = self.lmax.copy()
-        temp.mmax = self.mmax.copy()
-        #-- output degree and order
-        temp.l = self.l.copy()
-        temp.m = self.m.copy()
+        temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
         #-- create output harmonics
         temp.clm = np.zeros((temp.lmax+1,temp.mmax+1,n))
         temp.slm = np.zeros((temp.lmax+1,temp.mmax+1,n))
@@ -202,13 +239,8 @@ class harmonics(object):
         #-- number of months
         n = len(self.month)
         #-- output harmonics object
-        temp = harmonics()
-        #-- maximum degree and order
-        temp.lmax = np.copy(lmax)
-        temp.mmax = np.copy(lmax) if (mmax == None) else mmax
-        #-- output degree and order
-        temp.l = np.arange(temp.lmax+1)
-        temp.m = np.arange(temp.mmax+1)
+        mmax = np.copy(lmax) if (mmax == None) else mmax
+        temp = harmonics(lmax=lmax,mmax=mmax)
         #-- date variables
         temp.time = np.copy((self.time))
         temp.month = np.copy((self.month))
@@ -226,18 +258,13 @@ class harmonics(object):
         """
         Compute mean gravitational field and remove from monthly if specified
         """
-        temp = harmonics()
-        #-- copy dimensions
-        temp.l = np.copy(self.l)
-        temp.m = np.copy(self.m)
-        temp.lmax = np.copy(self.lmax)
-        temp.mmax = np.copy(self.mmax)
+        temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
         #-- allocate for mean field
-        temp.clm = np.zeros((self.lmax+1,self.mmax+1))
-        temp.slm = np.zeros((self.lmax+1,self.mmax+1))
+        temp.clm = np.zeros((temp.lmax+1,temp.mmax+1))
+        temp.slm = np.zeros((temp.lmax+1,temp.mmax+1))
         #-- Computes the mean for each spherical harmonic degree and order
-        for m in range(0,self.mmax+1):#-- MMAX+1 to include l
-            for l in range(m,self.lmax+1):#-- LMAX+1 to include LMAX
+        for m in range(0,temp.mmax+1):#-- MMAX+1 to include l
+            for l in range(m,temp.lmax+1):#-- LMAX+1 to include LMAX
                 #-- calculate mean static field
                 temp.clm[l,m] = np.mean(self.clm[l,m,:])
                 temp.slm[l,m] = np.mean(self.slm[l,m,:])
@@ -248,6 +275,64 @@ class harmonics(object):
                     self.slm[l,m,:] -= temp.slm[l,m]
         #-- return the mean field
         return temp
+
+    def convolve(self, var):
+        """
+        Convolve spherical harmonics with a degree-dependent array
+        """
+        for l in range(0,self.lmax+1):#-- LMAX+1 to include LMAX
+            self.clm[l,:] *= var[l]
+            self.slm[l,:] *= var[l]
+        #-- return the convolved field
+        return self
+
+    def destripe(self):
+        """
+        Filters spherical harmonic coefficients for correlated "striping" errors
+        """
+        temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
+        Ylms = destripe_harmonics(self.clm, self.slm, LMIN=1,
+            LMAX=self.lmax, MMAX=self.mmax)
+        temp.clm = Ylms['clm'].copy()
+        temp.slm = Ylms['slm'].copy()
+        temp.time = np.copy(self.time)
+        temp.month = np.copy(self.month)
+        return temp
+
+    def units(self, hl, kl, ll):
+        """
+        Calculates degree dependent factors for converting units
+        """
+        # Earth Parameters
+        # Average Density of the Earth [g/cm^3]
+        rho_e = 5.517
+        # Average Radius of the Earth [cm]
+        rad_e = 6.371e8
+        # WGS84 Gravitational Constant of the Earth [cm^3/s^2]
+        GM_e = 3986004.418e14
+        # Gravitational Constant of the Earth's atmosphere
+        GM_atm = 3.5e14
+        # Gravitational Constant of the Earth (w/o atm)
+        GM = GM_e - GM_atm
+        # standard gravitational acceleration (World Meteorological Organization)
+        g_wmo = 980.665
+        # degree dependent coefficients
+        # norm, geodesy normalized spherical harmonics
+        self.norm = np.ones((self.lmax+1))
+        # cmwe, centimeters water equivalent
+        self.cmwe = rho_e*rad_e*(2.0*self.l+1.0)/(1.0 +kl[self.l])/3.0
+        # mmGH, millimeters geoid height
+        self.mmGH = np.ones((self.lmax+1))*(10.0*rad_e)
+        # mmCU, millimeters elastic crustal deformation
+        self.mmCU = 10.0*rad_e*hl[self.l]/(1.0 +kl[self.l])
+        # microGal, microGal gravity perturbations
+        self.microGal = 1.e6*GM*(self.l+1.0)/(rad_e**2.0)
+        # mbar, millibar equivalent surface pressure
+        self.mbar = g_wmo*rho_e*rad_e*(2.0*self.l+1.0)/(1.0 +kl[self.l])/3e3
+        # Pa, pascals equivalent surface pressure
+        self.Pa = g_wmo*rho_e*rad_e*(2.0*self.l+1.0)/(1.0 +kl[self.l])/30.0
+        # return the degree dependent unit conversions
+        return self
 
     def to_netCDF4(self, filename):
         """
