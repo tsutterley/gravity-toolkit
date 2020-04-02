@@ -49,6 +49,7 @@ missions
     user_guide/read_CSR_monthly_6x1.md
     user_guide/read_GIA_model.md
     user_guide/read_GRACE_harmonics.md
+    user_guide/read_ICGEM_harmonics.md
     user_guide/read_love_numbers.md
     user_guide/read_SLR_C20.md
     user_guide/read_SLR_C30.md

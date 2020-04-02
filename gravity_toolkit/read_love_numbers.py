@@ -112,7 +112,7 @@ def read_love_numbers(love_numbers_file, HEADER=True, REFERENCE='CE',
     kl[1] -= alpha
     ll[1] -= alpha
 
-    #-- return love numbers in output format (default python dictionary)
+    #-- return love numbers in output format
     if (FORMAT == 'dict'):
         return {'kl':kl, 'hl':hl, 'll':ll}
     elif (FORMAT == 'tuple'):

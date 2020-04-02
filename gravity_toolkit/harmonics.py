@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (03/2020)
+Written by Tyler Sutterley (04/2020)
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 
@@ -17,9 +17,11 @@ PROGRAM DEPENDENCIES:
     hdf5_stokes.py: writes output spherical harmonic data to HDF5
     ncdf_read_stokes.py: reads spherical harmonic data from netcdf
     hdf5_read_stokes.py: reads spherical harmonic data from HDF5
+    read_ICGEM_harmonics.py: reads gravity model coefficients from GFZ ICGEM
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 04/2020: added from_gfc to read gravity model coefficients from GFZ
     Written 03/2020
 """
 import os
@@ -29,6 +31,7 @@ from gravity_toolkit.ncdf_stokes import ncdf_stokes
 from gravity_toolkit.hdf5_stokes import hdf5_stokes
 from gravity_toolkit.ncdf_read_stokes import ncdf_read_stokes
 from gravity_toolkit.hdf5_read_stokes import hdf5_read_stokes
+from gravity_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
 
 class harmonics(object):
@@ -99,6 +102,24 @@ class harmonics(object):
         self.m = Ylms['m'].copy()
         self.lmax = np.max(Ylms['l'])
         self.mmax = np.max(Ylms['m'])
+        return self
+
+    def from_gfc(self, filename):
+        """
+        read a harmonics object from a gfc gravity model file from the GFZ ICGEM
+        Inputs: full path of input gfc file
+        """
+        self.filename = filename
+        Ylms = read_ICGEM_harmonics(os.path.expanduser(filename))
+        self.clm = Ylms['clm'].copy()
+        self.slm = Ylms['slm'].copy()
+        self.lmax = np.int(Ylms['max_degree'])
+        self.mmax = np.int(Ylms['max_degree'])
+        self.l = np.arange(self.lmax+1)
+        self.m = np.arange(self.mmax+1)
+        self.GM = np.float(Ylms['earth_gravity_constant'])
+        self.R = np.float(Ylms['radius'])
+        self.tide = Ylms['tide_system']
         return self
 
     def from_index(self, filename, format=None):

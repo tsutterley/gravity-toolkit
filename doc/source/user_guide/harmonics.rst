@@ -93,28 +93,37 @@ General Attributes and Methods
     GRACE/GRACE-FO months variable of the spherical harmonics
 
 
-.. attribute:: object.from_ascii(filename)
+.. method:: object.from_ascii(filename)
 
     read a harmonics object from an ascii file
 
     Inputs: full path of input ascii file
 
 
-.. attribute:: object.from_netCDF4(filename)
+.. method:: object.from_netCDF4(filename)
 
     read a harmonics object from a netCDF4 file
 
     Inputs: full path of input netCDF4 file
 
 
-.. attribute:: object.from_HDF5(filename)
+.. method:: object.from_HDF5(filename)
 
     read a harmonics object from a HDF5 file
 
     Inputs: full path of input HDF5 file
 
 
-.. attribute:: object.from_index(filename, format=None)
+.. method:: object.from_gfc(filename)
+
+    read a harmonics object from a gfc gravity model file from the `GFZ ICGEM`__.
+
+    Inputs: full path of input gfc file
+
+.. __: http://icgem.gfz-potsdam.de/
+
+
+.. method:: object.from_index(filename, format=None)
 
     read a harmonics object from an index of ascii, netCDF4 or HDF5 files
 
@@ -123,62 +132,62 @@ General Attributes and Methods
     Options: format of files in index (ascii, netCDF4 or HDF5)
 
 
-.. attribute:: object.from_list(object_list)
+.. method:: object.from_list(object_list)
 
     build a sorted harmonics object from a list of other harmonics objects
 
     Inputs: list of harmonics object to be merged
 
 
-.. attribute:: object.from_dict(dict_object)
+.. method:: object.from_dict(dict_object)
 
     convert a dict object to a harmonics object
 
     Inputs: dictionary object to be converted
 
 
-.. attribute:: object.to_netCDF4(filename)
+.. method:: object.to_netCDF4(filename)
 
     write a harmonics object to netCDF4 file
 
     Inputs: full path of output netCDF4 file
 
 
-.. attribute:: object.to_HDF5(filename)
+.. method:: object.to_HDF5(filename)
 
     write a harmonics object to HDF5 file
 
     Inputs: full path of output HDF5 file
 
 
-.. attribute:: object.add(temp)
+.. method:: object.add(temp)
 
     add two harmonics objects
 
     Inputs: harmonic object to be added
 
 
-.. attribute:: object.subtract(temp)
+.. method:: object.subtract(temp)
 
     subtract one harmonics object from another
 
     Inputs: harmonic object to be subtracted
 
 
-.. attribute:: object.index(indice)
+.. method:: object.index(indice)
 
     subset a harmonics object to specific index
 
     Inputs: `indice` in matrix to subset
 
-.. attribute:: object.subset(months)
+.. method:: object.subset(months)
 
     subset a harmonics object to specific GRACE/GRACE-FO months
 
     Inputs: GRACE/GRACE-FO months
 
 
-.. attribute:: object.truncate(lmax, mmax=None)
+.. method:: object.truncate(lmax, mmax=None)
 
     truncate a harmonics object to a new degree and order
 
@@ -187,21 +196,21 @@ General Attributes and Methods
     Options: `mmax` maximum order of spherical harmonics
 
 
-.. attribute:: object.mean(apply=False)
+.. method:: object.mean(apply=False)
 
     Compute mean gravitational field from the harmonics object
 
     Option: `apply` to remove the mean field from the input harmonics
 
 
-.. attribute:: object.convolve(var)
+.. method:: object.convolve(var)
 
     Convolve spherical harmonics with a degree-dependent array
 
     Inputs: degree dependent array for convolution
 
 
-.. attribute:: object.destripe(self)
+.. method:: object.destripe()
 
     Filters spherical harmonic coefficients for correlated "striping" errors following `Swenson and Wahr (2006)`__.
 

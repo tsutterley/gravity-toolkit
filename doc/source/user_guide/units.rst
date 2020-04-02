@@ -62,8 +62,31 @@ General Attributes and Methods
 
     pascals equivalent surface pressure
 
+.. attribute:: object.a_axis
 
-.. attribute:: object.harmonic(hl, kl, ll)
+    semi-major axis of the WGS84 ellipsoid in cm
+
+.. attribute:: object.flat
+
+    flattening of the WGS84 ellipsoid
+
+.. attribute:: object.b_axis
+
+    semi-minor axis of the WGS84 ellipsoid in cm
+
+.. attribute:: object.rad_e
+
+    average radius of the Earth having the same volume as WGS84 in cm
+
+.. attribute:: object.g_wmo
+
+    standard gravitational acceleration in cm/s\ :sup:`2`
+
+.. attribute:: object.rho_e
+
+    average density of the Earth in g/cm\ :sup:`3`
+
+.. method:: object.harmonic(hl, kl, ll)
 
     Calculates degree dependent factors for converting harmonic units from `Wahr et al. (1998)`__
 
@@ -71,7 +94,7 @@ General Attributes and Methods
 
 .. __: https://doi.org/10.1029/98JB02844
 
-.. attribute:: object.spatial(hl, kl, ll)
+.. method:: object.spatial(hl, kl, ll)
 
     Calculates degree dependent factors for converting spatial units from `Wahr et al. (1998)`__
 
