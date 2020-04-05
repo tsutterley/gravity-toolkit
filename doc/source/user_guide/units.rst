@@ -48,7 +48,23 @@ General Attributes and Methods
 
 .. attribute:: object.mmCU
 
-     millimeters elastic crustal deformation (horizontal)
+    millimeters elastic crustal deformation (uplift)
+
+.. attribute:: object.mmCH
+
+    millimeters elastic crustal deformation (horizontal)
+
+.. attribute:: object.cmVCU
+
+    centimeters viscoelastic crustal uplift from `Wahr et al. (2000)`__
+
+.. __: https://doi.org/10.1029/2000JB900113
+
+.. attribute:: object.mVCU
+
+    meters viscoelastic crustal uplift from `Wahr et al. (2000)`__
+
+.. __: https://doi.org/10.1029/2000JB900113
 
 .. attribute:: object.microGal
 

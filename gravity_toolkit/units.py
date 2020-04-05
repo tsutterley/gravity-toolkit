@@ -21,27 +21,27 @@ class units(object):
     def __init__(self, lmax=None):
         # Earth Parameters
         # Average Density of the Earth [g/cm^3]
-        self.rho_e = 5.517
+        self.rho_e=5.517
         # Semi-major axis of the WGS84 ellipsoid [cm]
-        self.a_axis = 6.378137e8
+        self.a_axis=6.378137e8
         # Flattening of the WGS84 ellipsoid
-        self.flat = 1/298.257223563
+        self.flat=1/298.257223563
         # Semi-minor axis of the WGS84 ellipsoid [cm]
-        self.b_axis = (1.0 - self.flat)*self.a_axis
+        self.b_axis=(1.0 - self.flat)*self.a_axis
         # Average Radius of the Earth having the same volume as WGS84 [cm]
-        self.rad_e = self.a_axis*(1.0 - self.flat)**(1.0/3.0)
+        self.rad_e=self.a_axis*(1.0 - self.flat)**(1.0/3.0)
         # standard gravitational acceleration (World Meteorological Organization)
-        self.g_wmo = 980.665
+        self.g_wmo=980.665
         # Degree dependent parameters
-        self.norm = None
-        self.cmwe = None
-        self.mmwe = None
-        self.mmGH = None
-        self.mmCU = None
-        self.mmCH = None
-        self.microGal = None
-        self.mbar = None
-        self.Pa = None
+        self.norm=None
+        self.cmwe=None
+        self.mmwe=None
+        self.mmGH=None
+        self.mmCU=None
+        self.mmCH=None
+        self.microGal=None
+        self.mbar=None
+        self.Pa=None
         self.lmax=lmax
         self.l=np.arange(self.lmax+1) if self.lmax else None
 
@@ -52,11 +52,11 @@ class units(object):
         """
         # Earth Parameters
         # WGS84 Gravitational Constant of the Earth [cm^3/s^2]
-        GM_e = 3986004.418e14
+        GM_e=3986004.418e14
         # Gravitational Constant of the Earth's atmosphere
-        GM_atm = 3.5e14
+        GM_atm=3.5e14
         # Gravitational Constant of the Earth (w/o atm)
-        GM = GM_e - GM_atm
+        GM=GM_e-GM_atm
         # degree dependent coefficients
         # norm, geodesy normalized spherical harmonics
         self.norm=np.ones((self.lmax+1))
@@ -70,6 +70,10 @@ class units(object):
         self.mmCU=10.0*self.rad_e*hl[self.l]/(1.0+kl[self.l])
         # mmCH, millimeters elastic crustal deformation (horizontal)
         self.mmCH=10.0*self.rad_e*ll[self.l]/(1.0+kl[self.l])
+        # cmVCU, centimeters viscoelastic crustal uplift
+        self.cmVCU=self.rad_e*(2.0*self.l+1.0)/2.0
+        # mVCU, meters viscoelastic crustal uplift
+        self.mVCU=self.rad_e*(2.0*self.l+1.0)/200.0
         # microGal, microGal gravity perturbations
         self.microGal=1.e6*GM*(self.l+1.0)/(self.rad_e**2.0)
         # mbar, millibar equivalent surface pressure

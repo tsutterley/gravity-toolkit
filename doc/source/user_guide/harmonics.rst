@@ -10,7 +10,7 @@ Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
  - Can subset to a list of GRACE/GRACE-FO months
  - Can calculate the mean field of a harmonics object
  - Can filter harmonics for correlated "striping" errors
- - Can output harmonics objects to netCDF4 or HDF5 files
+ - Can output harmonics objects to ascii, netCDF4 or HDF5 files
 
 Calling Sequence
 ================
@@ -93,107 +93,168 @@ General Attributes and Methods
     GRACE/GRACE-FO months variable of the spherical harmonics
 
 
-.. method:: object.from_ascii(filename)
+.. method:: object.from_ascii(filename, date=True)
 
-    read a harmonics object from an ascii file
+    Read a harmonics object from an ascii file
 
     Inputs: full path of input ascii file
 
+    Options: ascii file contains date information
 
-.. method:: object.from_netCDF4(filename)
 
-    read a harmonics object from a netCDF4 file
+.. method:: object.from_netCDF4(filename, date=True)
+
+    Read a harmonics object from a netCDF4 file
 
     Inputs: full path of input netCDF4 file
 
+    Options: netCDF4 file contains date information
 
-.. method:: object.from_HDF5(filename)
 
-    read a harmonics object from a HDF5 file
+.. method:: object.from_HDF5(filename, date=True)
+
+    Read a harmonics object from a HDF5 file
 
     Inputs: full path of input HDF5 file
+
+    Options: HDF5 file contains date information
 
 
 .. method:: object.from_gfc(filename)
 
-    read a harmonics object from a gfc gravity model file from the `GFZ ICGEM`__.
+    Read a harmonics object from a gfc gravity model file from the `GFZ ICGEM`__.
 
     Inputs: full path of input gfc file
 
 .. __: http://icgem.gfz-potsdam.de/
 
 
-.. method:: object.from_index(filename, format=None)
+.. method:: object.from_index(filename, format=None, date=True, sort=True)
 
-    read a harmonics object from an index of ascii, netCDF4 or HDF5 files
+    Read a harmonics object from an index of ascii, netCDF4 or HDF5 files
 
     Inputs: full path of index file to be read into a harmonics object
 
-    Options: format of files in index (ascii, netCDF4 or HDF5)
+    Options:
+        format of files in index (ascii, netCDF4 or HDF5)
+
+        ascii, netCDF4, or HDF5 contains date information
+
+        sort harmonics objects by date information
 
 
-.. method:: object.from_list(object_list)
+.. method:: object.from_list(object_list, date=True, sort=True)
 
-    build a sorted harmonics object from a list of other harmonics objects
+    Build a sorted harmonics object from a list of other harmonics objects
 
     Inputs: list of harmonics object to be merged
+
+    Options:
+        harmonics objects contains date information
+
+        sort harmonics objects by date information
 
 
 .. method:: object.from_dict(dict_object)
 
-    convert a dict object to a harmonics object
+    Convert a dict object to a harmonics object
 
     Inputs: dictionary object to be converted
 
 
+.. method:: object.to_ascii(filename)
+
+    Write a harmonics object to ascii file
+
+    Inputs: full path of output ascii file
+
+    Options: harmonics objects contains date information
+
+
 .. method:: object.to_netCDF4(filename)
 
-    write a harmonics object to netCDF4 file
+    Write a harmonics object to netCDF4 file
 
     Inputs: full path of output netCDF4 file
+
+    Options: harmonics objects contains date information
 
 
 .. method:: object.to_HDF5(filename)
 
-    write a harmonics object to HDF5 file
+    Write a harmonics object to HDF5 file
 
     Inputs: full path of output HDF5 file
+
+    Options: harmonics objects contains date information
 
 
 .. method:: object.add(temp)
 
-    add two harmonics objects
+    Add two harmonics objects
 
     Inputs: harmonic object to be added
 
 
 .. method:: object.subtract(temp)
 
-    subtract one harmonics object from another
+    Subtract one harmonics object from another
 
     Inputs: harmonic object to be subtracted
 
 
+.. method:: object.multiply(temp)
+
+    Multiply two harmonics objects
+
+    Inputs: harmonic object to be multiplied
+
+
+.. method:: object.divide(temp)
+
+    Divide one harmonics object from another
+
+    Inputs: harmonic object to be divided
+
+
+.. method:: object.copy()
+
+    Copy a harmonics object to a new harmonics object
+
+
+.. method:: object.expand_dims()
+
+    Add a singleton dimension to a harmonics object if non-existent
+
+
+.. method:: object.squeeze()
+
+    Remove singleton dimensions from a harmonics object
+
+
 .. method:: object.index(indice)
 
-    subset a harmonics object to specific index
+    Subset a harmonics object to specific index
 
     Inputs: `indice` in matrix to subset
 
 .. method:: object.subset(months)
 
-    subset a harmonics object to specific GRACE/GRACE-FO months
+    Subset a harmonics object to specific GRACE/GRACE-FO months
 
     Inputs: GRACE/GRACE-FO months
 
 
-.. method:: object.truncate(lmax, mmax=None)
+.. method:: object.truncate(lmax, lmin=0, mmax=None)
 
-    truncate a harmonics object to a new degree and order
+    Truncate a harmonics object to a new degree and order
 
     Inputs: `lmax` maximum degree of spherical harmonics
 
-    Options: `mmax` maximum order of spherical harmonics
+    Options:
+        `lmin` minimum degree of spherical harmonics
+
+        `mmax` maximum order of spherical harmonics
 
 
 .. method:: object.mean(apply=False)
@@ -201,6 +262,20 @@ General Attributes and Methods
     Compute mean gravitational field from the harmonics object
 
     Option: `apply` to remove the mean field from the input harmonics
+
+
+.. method:: object.scale(var)
+
+    Multiply a harmonics object by a constant
+
+    Inputs: scalar value to which the harmonics object will be multiplied
+
+
+.. method:: object.power(pow)
+
+    Raise a harmonics object to a power
+
+    Inputs: power to which the harmonics object will be raised
 
 
 .. method:: object.convolve(var)
