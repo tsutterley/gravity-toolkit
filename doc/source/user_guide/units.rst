@@ -27,6 +27,10 @@ Calculating the degree dependent factors for converting spatial units
     dfactor = units(lmax=lmax).spatial(hl,kl,ll)
     from_cmwe = dfactor.cmwe
 
+`Source code`__
+
+.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/units.py
+
 General Attributes and Methods
 ==============================
 

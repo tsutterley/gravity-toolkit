@@ -9,6 +9,7 @@ read_love_numbers.py
 from gravity_toolkit.read_love_numbers import read_love_numbers
 hl,kl,ll = read_love_numbers(love_numbers_file, FORMAT='tuple', REFERENCE='CF')
 ```
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/read_love_numbers.py)
 
 #### Inputs
  - `love_numbers_file`: Elastic load Love numbers file

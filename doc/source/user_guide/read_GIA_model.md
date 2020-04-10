@@ -1,10 +1,17 @@
-
 read_GIA_model.py
 =================
 
  - Reads Glacial Isostatic Adjustment (GIA) files that can come in various formats depending on the group
  - Outputs spherical harmonics for the GIA rates and the GIA model parameters
  - Can also output geodesy normalized harmonics to netCDF4 or HDF5 formats
+
+#### Calling Sequence
+```python
+from gravity_toolkit.read_GIA_model import read_GIA_model
+GIA_Ylms = read_GIA_model('Stokes.R2_65_.2_1.5_L120',GIA='IJ05-R2',LMAX=60)
+```
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/read_GIA_model.py)
+
 
 #### Inputs:
  1. `input_file`: GIA file to read (ascii, netCDF4 or HDF5)
@@ -31,6 +38,8 @@ read_GIA_model.py
 #### Outputs:
  - `clm`: cosine spherical harmonic of GIA rate
  - `slm`: sine spherical harmonic of GIA rate
+ - `l`: spherical harmonic degree
+ - `m`: spherical harmonic order
  - `title`: parameters of GIA model
 
 #### References:

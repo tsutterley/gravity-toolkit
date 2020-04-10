@@ -14,6 +14,7 @@ GFZ_L2_input = read_GRACE_harmonics('GSM-2_2002094-2002120_0024_EIGEN_G---_005a.
 JPL_L2_input = read_GRACE_harmonics('GSM-2_2002091-2002120_0018_JPLEM_0001_0005.gz',60)
 JPLMSC_input = read_GRACE_harmonics('GSM-2_2003001-2003031_0029_JPLMSC_0719_0005',719)
 ```
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/read_GRACE_harmonics.py)
 
 #### Inputs
  1. full path to input GRACE file  

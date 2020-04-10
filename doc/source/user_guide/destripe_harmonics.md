@@ -8,6 +8,7 @@ destripe_harmonics.py
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
 Ylms = destripe_harmonics(clm,slm,LMAX=60)
 ```
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/destripe_harmonics.py)
 
 #### Inputs
  1. `clm`: cosine spherical harmonic coefficients  

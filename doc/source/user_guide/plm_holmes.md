@@ -9,6 +9,7 @@ plm_holmes.py
 from gravity_toolkit.plm_holmes import plm_holmes
 plm,dplm = plm_holmes(LMAX, x)
 ```
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/plm_holmes.py)
 
 #### Inputs
  - `LMAX`: Upper bound of Spherical Harmonic Degrees

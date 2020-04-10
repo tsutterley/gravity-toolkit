@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GIA_model.py
-Written by Tyler Sutterley (03/2020)
+Written by Tyler Sutterley (04/2020)
 
 Reads GIA data files that can come in various formats depending on the group
 Outputs spherical harmonics for the GIA rates and the GIA model parameters
@@ -33,6 +33,8 @@ OPTIONS:
 OUTPUTS:
     clm: cosine spherical harmonic of GIA rate
     slm: sine spherical harmonic of GIA rate
+    l: spherical harmonic degree
+    m: spherical harmonic order
     title: parameters of GIA model
 
 PYTHON DEPENDENCIES:
@@ -92,6 +94,7 @@ REFERENCES:
     https://doi.org/10.1002/2016JB013844
 
 UPDATE HISTORY:
+    UPDATED 04/2020: include spherical harmonic degree and order in output dict
     UPDATED 03/2020: updated for public release.  added reformatted ascii option
     UPDATED 08/2019: added ICE-6G Version D
     UPDATED 07/2019: added Geruo ICE-6G models and Caron JPL assimilation
@@ -409,22 +412,22 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, DATAFORM=None, MODE=0o775):
         hist,case,sf=re.findall(file_pattern,os.path.basename(input_file)).pop()
         gia_Ylms['title'] = '{0}_{1}_{2}'.format(prefix,hist,case)
 
+    #-- output spherical harmonic degree and order
+    gia_Ylms['l'],gia_Ylms['m'] = (np.arange(LMAX+1),np.arange(LMAX+1))
     #-- output harmonics to netCDF4 or HDF5 file
     if (DATAFORM == 'netCDF4'):
         #-- netcdf (.nc)
-        l_out,m_out = (np.arange(LMAX+1),np.arange(LMAX+1))
         output_file = 'stokes_{0}_L{1:d}.nc'.format(gia_Ylms['title'],LMAX)
-        ncdf_stokes(gia_Ylms['clm'], gia_Ylms['slm'], l_out, m_out, 0, 0,
-            FILENAME=os.path.join(os.path.dirname(input_file),output_file),
+        ncdf_stokes(gia_Ylms['clm'],gia_Ylms['slm'],gia_Ylms['l'],gia_Ylms['m'],
+            0,0,FILENAME=os.path.join(os.path.dirname(input_file),output_file),
             TITLE=gia_Ylms['title'], VERBOSE=False, DATE=False)
         #-- set permissions level of output file
         os.chmod(os.path.join(os.path.dirname(input_file),output_file), MODE)
     elif (DATAFORM == 'HDF5'):
         #-- HDF5 (.H5)
-        l_out,m_out = (np.arange(LMAX+1),np.arange(LMAX+1))
         output_file = 'stokes_{0}_L{1:d}.H5'.format(gia_Ylms['title'],LMAX)
-        hdf5_stokes(gia_Ylms['clm'], gia_Ylms['slm'], l_out, m_out, 0, 0,
-            FILENAME=os.path.join(os.path.dirname(input_file),output_file),
+        hdf5_stokes(gia_Ylms['clm'],gia_Ylms['slm'],gia_Ylms['l'],gia_Ylms['m'],
+            0,0,FILENAME=os.path.join(os.path.dirname(input_file),output_file),
             TITLE=gia_Ylms['title'], VERBOSE=False, DATE=False)
         #-- set permissions level of output file
         os.chmod(os.path.join(os.path.dirname(input_file),output_file), MODE)

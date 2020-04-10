@@ -9,6 +9,7 @@ from gravity_toolkit.convert_calendar_decimal import convert_calendar_decimal
 t_date = convert_calendar_decimal(year, month, DAY=day, \
     HOUR=hour, MINUTE=minute, SECOND=second)
 ```
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/convert_calendar_decimal.py)
 
 #### Inputs
  1. `year`: calendar year  

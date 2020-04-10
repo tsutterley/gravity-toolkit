@@ -14,6 +14,7 @@ from gravity_toolkit.grace_input_months import grace_input_months
 GRACE_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
     start_mon, end_mon, missing, SLR_C20, DEG1, SLR_C30=SLR_C30)
 ```
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/grace_input_months.py)
 
 #### Inputs
  1. `base_dir`: Working data directory for GRACE/GRACE-FO data

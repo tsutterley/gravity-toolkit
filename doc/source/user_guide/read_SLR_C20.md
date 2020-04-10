@@ -8,6 +8,7 @@ read_SLR_C20.py
 from gravity_toolkit.read_SLR_C20 import read_SLR_C20
 SLR_C20 = read_SLR_C20(SLR_file)
 ```
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/read_SLR_C20.py)
 
 #### Inputs
  - `SLR_file`: oblateness file from satellite laser ranging

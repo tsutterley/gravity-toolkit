@@ -10,6 +10,7 @@ from gravity_toolkit.geocenter import geocenter
 xyz = geocenter(C10=C10, C11=C11, S11=S11)
 Ylms = geocenter(X=x, Y=y, Z=z, INVERSE=True)
 ```
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/geocenter.py)
 
 #### Options
  1. `C10`: Cosine spherical harmonic of degree 1 and order 0  

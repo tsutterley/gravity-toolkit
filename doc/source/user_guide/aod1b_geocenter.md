@@ -13,6 +13,7 @@ aod1b_geocenter.py
 from gravity_toolkit.aod1b_geocenter import aod1b_geocenter
 aod1b_geocenter(base_dir, DREL='RL06', DSET='glo', CLOBBER=True)
 ```
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/aod1b_geocenter.py)
 
 #### Inputs
  1. `base_dir`: working data directory  

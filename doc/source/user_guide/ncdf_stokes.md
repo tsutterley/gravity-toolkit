@@ -8,6 +8,7 @@ ncdf_stokes.py
 from gravity_toolkit.ncdf_stokes import ncdf_stokes
 ncdf_stokes(clm, slm, linp, minp, tinp, month, FILENAME=output_netcdf4_file)
 ```
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/ncdf_stokes.py)
 
 #### Inputs
  - `clm`: Cosine spherical harmonic coefficients

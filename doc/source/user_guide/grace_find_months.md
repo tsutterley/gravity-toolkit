@@ -9,6 +9,7 @@ grace_find_months.py
 from gravity_toolkit.grace_find_months import grace_find_months
 grace_months = grace_find_months(base_dir, PROC, DREL, DSET=DSET)
 ```
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/grace_find_months.py)
 
 #### Inputs
  1. `base_dir`: Working data directory for GRACE/GRACE-FO data

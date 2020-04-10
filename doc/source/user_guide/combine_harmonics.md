@@ -8,6 +8,7 @@ combine_harmonics.py
 from gravity_toolkit.combine_harmonics import combine_harmonics
 spatial = combine_harmonics(clm,slm,lon,lat,LMAX=60)
 ```
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/combine_harmonics.py)
 
 #### Inputs:
  1. `clm`: cosine spherical harmonic coefficients

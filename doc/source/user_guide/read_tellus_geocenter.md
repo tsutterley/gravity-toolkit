@@ -8,6 +8,7 @@ read_tellus_geocenter.py
 from gravity_toolkit.read_tellus_geocenter import read_tellus_geocenter
 deg1_input = read_tellus_geocenter(geocenter_file, JPL=True)
 ```
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/read_tellus_geocenter.py)
 
 #### Inputs
  - `geocenter_file`: degree 1 file

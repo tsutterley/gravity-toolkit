@@ -8,6 +8,7 @@ read_ICGEM_harmonics.py
 from gravity_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 Ylms = read_ICGEM_harmonics(model_file)
 ```
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/read_ICGEM_harmonics.py)
 
 #### Inputs
  1. `model_file`: full path to GFZ ICGEM gfc spherical harmonic data file

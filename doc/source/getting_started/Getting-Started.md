@@ -7,8 +7,10 @@ Getting Started
 python podaac_grace_sync.py --user=<username> --directory=<path_to_grace_directory>
 ```
 - Move Load Love Numbers file from PREM into GRACE/GRACE-FO working directory  
-- If correcting for Glacial Isostatic Adjustment: copy full path to data file  
-    * These files can ascii files direct from many modeling groups or a reformatted netCDF4/HDF5 file  
+- If correcting for Glacial Isostatic Adjustment: have full path to data file known  
+    * These can be ascii files direct from many modeling groups or a reformatted ascii/netCDF4/HDF5 file  
+- If correcting for other geophysical processes such as terrestrial water storage: have full path known  
+    * These can be a single netCDF4 or HDF5 file or an index of ascii/netCDF4/HDF5 files  
 - Run Jupyter notebook `GRACE-Spatial-Maps.ipynb` to create monthly maps  
     * This program uses [Jupyter widgets](https://ipywidgets.readthedocs.io/en/latest/) to select [datasets](./GRACE-Data-File-Formats.md) and processing parameters  
     * Can output monthly spatial maps to netCDF4 or HDF5 in specified units

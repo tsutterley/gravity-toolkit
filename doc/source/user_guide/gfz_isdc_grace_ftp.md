@@ -9,6 +9,7 @@ gfz_isdc_grace_ftp.py
 ```bash
 python gfz_isdc_grace_ftp.py --directory=<path_to_grace_directory> --release=RL06
 ```
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gfz_isdc_grace_ftp.py)
 
 #### Command Line Options
  - `-D X`, `--directory=X`: Working Data Directory
