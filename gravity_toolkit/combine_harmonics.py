@@ -9,8 +9,8 @@ CALLING SEQUENCE:
     spatial = combine_harmonics(clm1, slm1, lon, lat, LMIN=0, LMAX=60)
 
 INPUTS:
-    clm: cosine spherical harmonic coefficients
-    slm: sine spherical harmonic coefficients
+    clm: cosine spherical harmonic coefficients in output units
+    slm: sine spherical harmonic coefficients in output units
     lon: longitude
     lat: latitude
 

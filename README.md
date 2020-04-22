@@ -25,6 +25,7 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
 - [`convert_julian`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/convert_julian.md) - Return the calendar date and time given Julian date  
 - [`destripe_harmonics`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/destripe_harmonics.md) - Filters spherical harmonic coefficients for correlated "striping" errors  
 - [`gauss_weights`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/gauss_weights.md) - Computes the Gaussian weights as a function of degree  
+- [`gen_stokes`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/gen_stokes.md) - Returns a series of spherical harmonics for an input spatial field  
 - [`geocenter`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/geocenter.md) - Converts degree 1 spherical harmonic coefficients to geocenter variations  
 - [`gfz_isdc_grace_ftp`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/gfz_isdc_grace_ftp.md) - Syncs GRACE/GRACE-FO and auxiliary data from the GFZ Information System and Data Center (ISDC)  
 - [`grace_date`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/grace_date.md) - Calculates dates of each GRACE/GRACE-FO file and assigns the month number  
@@ -39,6 +40,7 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
 - [`ncdf_read`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/ncdf_read.md) - Reads spatial data from netCDF4 files  
 - [`ncdf_stokes`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/ncdf_stokes.md) - Writes spherical harmonic data to netCDF4 files  
 - [`ncdf_write`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/ncdf_write.md) - Writes spatial data to netCDF4 files  
+- [`ocean_stokes`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/ocean_stokes.md) - Reads a land-sea mask and converts to a series of spherical harmonics  
 - [`plm_columbo`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/plm_columbo.md) - Computes fully-normalized associated Legendre Polynomials using the Colombo (1981) recursion relation  
 - [`plm_holmes`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/plm_holmes.md) - Computes fully-normalized associated Legendre Polynomials using the Holmes and Featherstone (2002) recursion relation  
 - [`plm_mohlenkamp`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/plm_mohlenkamp.md) - Computes fully-normalized associated Legendre Polynomials using Martin Mohlenkamp's recursion relation  
