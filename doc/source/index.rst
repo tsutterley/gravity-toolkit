@@ -28,6 +28,7 @@ missions
     user_guide/convert_julian.md
     user_guide/destripe_harmonics.md
     user_guide/gauss_weights.md
+    user_guide/gen_stokes.md
     user_guide/geocenter.md
     user_guide/gfz_isdc_grace_ftp.md
     user_guide/grace_date.md
@@ -42,6 +43,7 @@ missions
     user_guide/ncdf_read_stokes.md
     user_guide/ncdf_stokes.md
     user_guide/ncdf_write.md
+    user_guide/ocean_stokes.md
     user_guide/plm_colombo.md
     user_guide/plm_holmes.md
     user_guide/plm_mohlenkamp.md

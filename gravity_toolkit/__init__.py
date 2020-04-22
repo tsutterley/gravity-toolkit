@@ -17,6 +17,8 @@ from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.plm_colombo import plm_colombo
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.plm_mohlenkamp import plm_mohlenkamp
+from gravity_toolkit.gen_stokes import gen_stokes
+from gravity_toolkit.ocean_stokes import ocean_stokes
 from gravity_toolkit.combine_harmonics import combine_harmonics
 from gravity_toolkit.ncdf_read import ncdf_read
 from gravity_toolkit.hdf5_read import hdf5_read

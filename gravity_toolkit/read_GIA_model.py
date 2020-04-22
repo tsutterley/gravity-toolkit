@@ -24,6 +24,7 @@ OPTIONS:
         netCDF4: reformatted GIA in netCDF4 format
         HDF5: reformatted GIA in HDF5 format
     LMAX: maximum degree of spherical harmonics
+    MMAX: maximum order of spherical harmonics
     DATAFORM: Spherical harmonic data output format
         None: output only as variables
         netCDF4: output to netCDF4 format (.nc)
@@ -95,6 +96,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     UPDATED 04/2020: include spherical harmonic degree and order in output dict
+        added option to truncate to spherical harmonic order
     UPDATED 03/2020: updated for public release.  added reformatted ascii option
     UPDATED 08/2019: added ICE-6G Version D
     UPDATED 07/2019: added Geruo ICE-6G models and Caron JPL assimilation
@@ -129,9 +131,12 @@ from gravity_toolkit.hdf5_stokes import hdf5_stokes
 from gravity_toolkit.ncdf_read_stokes import ncdf_read_stokes
 from gravity_toolkit.hdf5_read_stokes import hdf5_read_stokes
 
-def read_GIA_model(input_file, GIA=None, LMAX=60, DATAFORM=None, MODE=0o775):
+def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
+    DATAFORM=None, MODE=0o775):
 
     #-- allocate for output Ylms
+    #-- initially read for spherical harmonic degree up to LMAX
+    #-- will truncate to MMAX before exiting program
     gia_Ylms = {}
     gia_Ylms['clm'] = np.zeros((LMAX+1,LMAX+1))
     gia_Ylms['slm'] = np.zeros((LMAX+1,LMAX+1))
@@ -358,7 +363,7 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, DATAFORM=None, MODE=0o775):
         Ylms = np.loadtxt(os.path.expanduser(input_file), dtype=dtype)
         for ll,mm,clm,slm in zip(Ylms['l'],Ylms['m'],Ylms['clm'],Ylms['slm']):
             #-- only using coefficients within the spherical harmonic range
-            if ((ll <= LMAX) and (mm <= MMAX)):
+            if ((ll <= LMAX) and (mm <= LMAX)):
                 gia_Ylms['clm'][ll,mm] = clm.copy()
                 gia_Ylms['slm'][ll,mm] = slm.copy()
         #-- copy filename (without extension) for parameters
@@ -431,6 +436,14 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, DATAFORM=None, MODE=0o775):
             TITLE=gia_Ylms['title'], VERBOSE=False, DATE=False)
         #-- set permissions level of output file
         os.chmod(os.path.join(os.path.dirname(input_file),output_file), MODE)
+
+    #-- truncate to MMAX if specified
+    if MMAX is not None:
+        #-- spherical harmonic variables
+        gia_Ylms['clm'] = gia_Ylms['clm'][:,:MMAX+1]
+        gia_Ylms['slm'] = gia_Ylms['slm'][:,:MMAX+1]
+        #-- spherical harmonic order
+        gia_Ylms['m'] = gia_Ylms['m'][:MMAX+1]
 
     #-- return the harmonics and the parameters
     return gia_Ylms

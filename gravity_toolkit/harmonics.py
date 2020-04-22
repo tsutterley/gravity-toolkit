@@ -417,6 +417,9 @@ class harmonics(object):
         Subset a harmonics object to specific GRACE/GRACE-FO months
         Inputs: GRACE/GRACE-FO months
         """
+        #-- check if months is an array or a single value
+        if (np.ndim(months) == 0):
+            months = np.array([months])
         #-- number of months
         n = len(months)
         #-- check that all months are available
@@ -439,7 +442,8 @@ class harmonics(object):
             temp.slm[:,:,t] = self.slm[:,:,i].copy()
             temp.time[t] = self.time[i].copy()
             temp.month[t] = self.month[i].copy()
-        return temp
+        #-- remove singleton dimensions if importing a single value
+        return temp.squeeze()
 
     def truncate(self, lmax, lmin=0, mmax=None):
         """
