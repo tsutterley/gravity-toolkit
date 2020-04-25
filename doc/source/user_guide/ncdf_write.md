@@ -27,5 +27,6 @@ ncdf_write(data, lon, lat, tim, FILENAME=output_netcdf4_file)
  - `TIME_UNITS`: time variable units
  - `TIME_LONGNAME`: time variable description
  - `TITLE`: title attribute of dataset
+ - `DATE`: data has date information
  - `CLOBBER`: will overwrite an existing netCDF4 file
  - `VERBOSE`: will print to screen the netCDF4 structure parameters

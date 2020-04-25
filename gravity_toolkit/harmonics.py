@@ -25,6 +25,7 @@ UPDATE HISTORY:
         add to_ascii and iterate over temporal fields in convolve and destripe
         make date optional for harmonic read functions.  add more math functions
         add option to sort if reading from an index or merging a list
+        add options to flatten and expand harmonics matrices or arrays
     Written 03/2020
 """
 import os
@@ -192,7 +193,7 @@ class harmonics(object):
         Build a sorted harmonics object from a list of other harmonics objects
         Inputs: list of harmonics object to be merged
         Options:
-            harmonics objects contains date information
+            harmonics objects contain date information
             sort harmonics objects by date information
         """
         #-- number of harmonic objects in list
@@ -200,8 +201,6 @@ class harmonics(object):
         #-- indices to sort data objects if harmonics list contain dates
         if date and sort:
             list_sort = np.argsort([d.time for d in object_list],axis=None)
-            self.time = np.zeros((n))
-            self.month = np.zeros((n),dtype=np.int)
         else:
             list_sort = np.arange(n)
         #-- truncate to maximum degree and order
@@ -213,6 +212,10 @@ class harmonics(object):
         #-- create output harmonics
         self.clm = np.zeros((self.lmax+1,self.mmax+1,n))
         self.slm = np.zeros((self.lmax+1,self.mmax+1,n))
+        #-- output dates
+        if date:
+            self.time = np.zeros((n))
+            self.month = np.zeros((n),dtype=np.int)
         #-- for each indice
         for t,i in enumerate(list_sort):
             self.clm[:,:,t] = object_list[i].clm[:self.lmax+1,:self.mmax+1]
@@ -242,7 +245,7 @@ class harmonics(object):
         """
         Write a harmonics object to ascii file
         Inputs: full path of output ascii file
-        Options: harmonics objects contains date information
+        Options: harmonics objects contain date information
         """
         self.filename = filename
         #-- open the output file
@@ -263,7 +266,7 @@ class harmonics(object):
         """
         Write a harmonics object to netCDF4 file
         Inputs: full path of output netCDF4 file
-        Options: harmonics objects contains date information
+        Options: harmonics objects contain date information
         """
         self.filename = filename
         ncdf_stokes(self.clm, self.slm, self.l, self.m, self.time, self.month,
@@ -274,7 +277,7 @@ class harmonics(object):
         """
         Write a harmonics object to HDF5 file
         Inputs: full path of output HDF5 file
-        Options: harmonics objects contains date information
+        Options: harmonics objects contain date information
         """
         self.filename = filename
         hdf5_stokes(self.clm, self.slm, self.l, self.m, self.time, self.month,
@@ -398,18 +401,95 @@ class harmonics(object):
         self.slm = np.squeeze(self.slm)
         return self
 
-    def index(self, indice):
+    def flatten(self, date=True):
+        """
+        Flatten harmonics matrices into arrays
+        Options: harmonics objects contain date information
+        """
+        n_harm = (self.lmax**2 + 3*self.lmax - (self.lmax-self.mmax)**2 -
+            (self.lmax-self.mmax))//2 + 1
+        #-- restructured degree and order
+        temp = harmonics(lmax=self.lmax, mmax=self.mmax)
+        temp.l = np.zeros((n_harm,), dtype=np.int32)
+        temp.m = np.zeros((n_harm,), dtype=np.int32)
+        #-- copy date variables if applicable
+        if date:
+            temp.time = np.copy(self.time)
+            temp.month = np.copy(self.month)
+        #-- restructured spherical harmonic arrays
+        if (np.ndim(self.clm) == 2):
+            temp.clm = np.zeros((n_harm))
+            temp.slm = np.zeros((n_harm))
+        else:
+            n = self.clm.shape[-1]
+            temp.clm = np.zeros((n_harm,n))
+            temp.slm = np.zeros((n_harm,n))
+        #-- create counter variable lm
+        lm = 0
+        for m in range(0,self.mmax+1):#-- MMAX+1 to include MMAX
+            for l in range(m,self.lmax+1):#-- LMAX+1 to include LMAX
+                temp.l[lm] = np.int(l)
+                temp.m[lm] = np.int(m)
+                if (np.ndim(self.clm) == 2):
+                    temp.clm[lm] = self.clm[l,m]
+                    temp.slm[lm] = self.slm[l,m]
+                else:
+                    temp.clm[lm,:] = self.clm[l,m,:]
+                    temp.slm[lm,:] = self.slm[l,m,:]
+                #-- add 1 to lm counter variable
+                lm += 1
+        #-- return the flattened arrays
+        return temp
+
+    def expand(self, date=True):
+        """
+        Expand flattened harmonics into matrices
+        Options: harmonics objects contain date information
+        """
+        n_harm = (self.lmax**2 + 3*self.lmax - (self.lmax-self.mmax)**2 -
+            (self.lmax-self.mmax))//2 + 1
+        #-- restructured degree and order
+        temp = harmonics(lmax=self.lmax, mmax=self.mmax)
+        #-- copy date variables if applicable
+        if date:
+            temp.time = np.copy(self.time)
+            temp.month = np.copy(self.month)
+        #-- restructured spherical harmonic matrices
+        if (np.ndim(self.clm) == 1):
+            temp.clm = np.zeros((self.lmax+1,self.mmax+1))
+            temp.slm = np.zeros((self.lmax+1,self.mmax+1))
+        else:
+            n = self.clm.shape[-1]
+            temp.clm = np.zeros((self.lmax+1,self.mmax+1,n))
+            temp.slm = np.zeros((self.lmax+1,self.mmax+1,n))
+        #-- create counter variable lm
+        for lm in range(n_harm):
+            l = self.l[lm]
+            m = self.m[lm]
+            if (np.ndim(self.clm) == 1):
+                temp.clm[l,m] = self.clm[lm]
+                temp.slm[l,m] = self.slm[lm]
+            else:
+                temp.clm[l,m,:] = self.clm[lm,:]
+                temp.slm[l,m,:] = self.slm[lm,:]
+        #-- return the expanded harmonics object
+        return temp
+
+    def index(self, indice, date=True):
         """
         Subset a harmonics object to specific index
         Inputs: indice in matrix to subset
+        Options: harmonics objects contain date information
         """
         #-- output harmonics object
         temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
         #-- subset output harmonics
         temp.clm = self.clm[:,:,indice].copy()
         temp.slm = self.slm[:,:,indice].copy()
-        temp.time = self.time[indice].copy()
-        temp.month = self.month[indice].copy()
+        #-- subset output dates
+        if date:
+            temp.time = self.time[indice].copy()
+            temp.month = self.month[indice].copy()
         return temp
 
     def subset(self, months):
@@ -465,7 +545,7 @@ class harmonics(object):
         #-- create output harmonics
         if (np.ndim(temp.clm) == 3):
             #-- number of months
-            n = len(temp.month)
+            n = temp.clm.shape[-1]
             self.clm = np.zeros((self.lmax+1,self.mmax+1,n))
             self.slm = np.zeros((self.lmax+1,self.mmax+1,n))
             self.clm[lmin:l1,:m1,:] = temp.clm[lmin:l1,:m1,:].copy()
@@ -559,10 +639,10 @@ class harmonics(object):
             temp.clm = Ylms['clm'].copy()
             temp.slm = Ylms['slm'].copy()
         else:
-            nt = len(self.time)
-            temp.clm = np.zeros((self.lmax+1,self.mmax+1,nt))
-            temp.slm = np.zeros((self.lmax+1,self.mmax+1,nt))
-            for i in range(nt):
+            n = self.clm.shape[-1]
+            temp.clm = np.zeros((self.lmax+1,self.mmax+1,n))
+            temp.slm = np.zeros((self.lmax+1,self.mmax+1,n))
+            for i in range(n):
                 Ylms = destripe_harmonics(self.clm[:,:,i], self.slm[:,:,i],
                     LMIN=1, LMAX=self.lmax, MMAX=self.mmax)
                 temp.clm[:,:,i] = Ylms['clm'].copy()

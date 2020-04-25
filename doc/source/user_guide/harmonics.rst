@@ -154,7 +154,7 @@ General Attributes and Methods
     Inputs: list of harmonics object to be merged
 
     Options:
-        harmonics objects contains date information
+        harmonics objects contain date information
 
         sort harmonics objects by date information
 
@@ -172,7 +172,7 @@ General Attributes and Methods
 
     Inputs: full path of output ascii file
 
-    Options: harmonics objects contains date information
+    Options: harmonics objects contain date information
 
 
 .. method:: object.to_netCDF4(filename)
@@ -181,7 +181,7 @@ General Attributes and Methods
 
     Inputs: full path of output netCDF4 file
 
-    Options: harmonics objects contains date information
+    Options: harmonics objects contain date information
 
 
 .. method:: object.to_HDF5(filename)
@@ -190,7 +190,7 @@ General Attributes and Methods
 
     Inputs: full path of output HDF5 file
 
-    Options: harmonics objects contains date information
+    Options: harmonics objects contain date information
 
 
 .. method:: object.add(temp)
@@ -236,11 +236,28 @@ General Attributes and Methods
     Remove singleton dimensions from a harmonics object
 
 
-.. method:: object.index(indice)
+.. method:: object.flatten(date=True)
+
+    Flatten harmonics matrices into arrays
+
+    Options: harmonics objects contain date information
+
+
+.. method:: expand.expand(date=True)
+
+    Expand flattened harmonics into matrices
+
+    Options: harmonics objects contain date information
+
+
+.. method:: object.index(indice, date=True)
 
     Subset a harmonics object to specific index
 
     Inputs: `indice` in matrix to subset
+
+    Options: harmonics objects contain date information
+
 
 .. method:: object.subset(months)
 

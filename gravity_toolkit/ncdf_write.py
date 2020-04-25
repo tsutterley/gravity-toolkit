@@ -27,6 +27,7 @@ OPTIONS:
     TITLE: title attribute of dataset
     CLOBBER: will overwrite an existing netCDF4 file
     VERBOSE: will print to screen the netCDF4 structure parameters
+    DATE: data has date information
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (http://www.numpy.org)
@@ -34,6 +35,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 04/2020: added option DATE if including time data
     Updated 03/2020: only include title if not None
     Updated 10/2019: changing Y/N flags to True/False
     Updated 09/2019 for public release
@@ -62,7 +64,7 @@ import numpy as np
 
 def ncdf_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     LATNAME='lat', TIMENAME='time', UNITS=None, LONGNAME=None, FILL_VALUE=None,
-    TIME_UNITS=None, TIME_LONGNAME=None, TITLE=None, CLOBBER=True,
+    TIME_UNITS=None, TIME_LONGNAME=None, TITLE=None, DATE=True, CLOBBER=True,
     VERBOSE=False):
 
     #-- setting NetCDF clobber attribute
@@ -94,13 +96,15 @@ def ncdf_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
         nc[VARNAME] = fileID.createVariable(VARNAME, data.dtype,
             (LATNAME,LONNAME,), fill_value=FILL_VALUE, zlib=True)
     #-- time
-    nc[TIMENAME] = fileID.createVariable(TIMENAME, 'f8', (TIMENAME,))
+    if DATE:
+        nc[TIMENAME] = fileID.createVariable(TIMENAME, 'f8', (TIMENAME,))
 
     #-- filling NetCDF variables
     nc[LONNAME][:] = lon
     nc[LATNAME][:] = lat
     nc[VARNAME][:,:] = data
-    nc[TIMENAME][:] = tim
+    if DATE:
+        nc[TIMENAME][:] = tim
 
     #-- Defining attributes for longitude and latitude
     nc[LONNAME].long_name = 'longitude'
@@ -110,9 +114,10 @@ def ncdf_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     #-- Defining attributes for dataset
     nc[VARNAME].long_name = LONGNAME
     nc[VARNAME].units = UNITS
-    #-- Defining attributes for date
-    nc[TIMENAME].long_name = TIME_LONGNAME
-    nc[TIMENAME].units = TIME_UNITS
+    #-- Defining attributes for date if applicable
+    if DATE:
+        nc[TIMENAME].long_name = TIME_LONGNAME
+        nc[TIMENAME].units = TIME_UNITS
     #-- global variable of NetCDF file
     if TITLE:
         fileID.TITLE = TITLE

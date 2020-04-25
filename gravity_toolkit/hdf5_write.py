@@ -27,6 +27,7 @@ OPTIONS:
     TITLE: title attribute of dataset
     CLOBBER: will overwrite an existing HDF5 file
     VERBOSE: will print to screen the HDF5 structure parameters
+    DATE: data has date information
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (http://www.numpy.org)
@@ -34,6 +35,7 @@ PYTHON DEPENDENCIES:
         (http://h5py.org)
 
 UPDATE HISTORY:
+    Updated 04/2020: added option DATE if including time data
     Updated 03/2020: only include title if not None
     Updated 10/2019: changing Y/N flags to True/False
     Updated 09/2019 for public release
@@ -62,7 +64,7 @@ import numpy as np
 
 def hdf5_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     LATNAME='lat', TIMENAME='time', UNITS=None, LONGNAME=None, FILL_VALUE=None,
-    TIME_UNITS=None, TIME_LONGNAME=None, TITLE=None, CLOBBER=True,
+    TIME_UNITS=None, TIME_LONGNAME=None, TITLE=None, DATE=True, CLOBBER=True,
     VERBOSE=False):
 
     #-- setting HDF5 clobber attribute
@@ -82,10 +84,11 @@ def hdf5_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
         dtype=lon.dtype, compression='gzip')
     h5[LATNAME] = fileID.create_dataset(LATNAME, lat.shape, data=lat,
         dtype=lat.dtype, compression='gzip')
-    h5[TIMENAME] = fileID.create_dataset(TIMENAME, (n_time,), data=tim,
-        dtype=np.float, compression='gzip')
     h5[VARNAME] = fileID.create_dataset(VARNAME, data.shape, data=data,
         dtype=data.dtype, fillvalue=FILL_VALUE, compression='gzip')
+    if DATE:
+        h5[TIMENAME] = fileID.create_dataset(TIMENAME, (n_time,), data=tim,
+            dtype=np.float, compression='gzip')
     #-- add dimensions
     h5[VARNAME].dims[0].label=LATNAME
     h5[VARNAME].dims[0].attach_scale(h5[LATNAME])
@@ -108,8 +111,9 @@ def hdf5_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     if (FILL_VALUE is not None):
         h5[VARNAME].attrs['_FillValue'] = FILL_VALUE
     #-- Defining attributes for date
-    h5[TIMENAME].attrs['long_name'] = TIME_LONGNAME
-    h5[TIMENAME].attrs['units'] = TIME_UNITS
+    if DATE:
+        h5[TIMENAME].attrs['long_name'] = TIME_LONGNAME
+        h5[TIMENAME].attrs['units'] = TIME_UNITS
     #-- description of file
     if TITLE:
         fileID.attrs['description'] = TITLE

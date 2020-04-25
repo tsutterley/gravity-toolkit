@@ -76,6 +76,15 @@ T. C. Sutterley and I. Velicogna, "Improved estimates of geocenter variability
 from time-variable gravity and ocean model outputs", *Remote Sensing*, 11(18),
 2108, (2019). [doi:10.3390/rs11182108](https://doi.org/10.3390/rs11182108)  
 
+#### Data Repositories
+T. C. Sutterley, I. Velicogna, and C.-W. Hsu, "Ice Mass and Regional Sea Level
+Estimates from Time-Variable Gravity", (2020).
+[doi:10.6084/m9.figshare.9702338](https://doi.org/10.6084/m9.figshare.9702338)
+
+T. C. Sutterley and I. Velicogna, "Geocenter Estimates from Time-Variable
+Gravity and Ocean Model Outputs", (2019).
+[doi:10.6084/m9.figshare.7388540](https://doi.org/10.6084/m9.figshare.7388540)
+
 #### Download
 The program homepage is:   
 https://github.com/tsutterley/read-GRACE-harmonics   
