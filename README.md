@@ -76,6 +76,16 @@ T. C. Sutterley and I. Velicogna, "Improved estimates of geocenter variability
 from time-variable gravity and ocean model outputs", *Remote Sensing*, 11(18),
 2108, (2019). [doi:10.3390/rs11182108](https://doi.org/10.3390/rs11182108)  
 
+J. Wahr, M. Molenaar, and F. Bryan, "Time variability of the Earth's gravity
+field: Hydrological and oceanic effects and their possible detection using
+GRACE", *Journal of Geophysical Research: Solid Earth*, 103(B12), (1998).
+[doi: 10.1029/98JB02844](https://doi.org/10.1029/98JB02844)
+
+D. Han and J. Wahr, "The viscoelastic relaxation of a realistically stratified
+earth, and a further analysis of postglacial rebound", *Geophysical Journal
+International*, 120(2), (1995).
+[doi: 10.1111/j.1365-246X.1995.tb01819.x](https://doi.org/10.1111/j.1365-246X.1995.tb01819.x)
+
 #### Data Repositories
 T. C. Sutterley, I. Velicogna, and C.-W. Hsu, "Ice Mass and Regional Sea Level
 Estimates from Time-Variable Gravity", (2020).

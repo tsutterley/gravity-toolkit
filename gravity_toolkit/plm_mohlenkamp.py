@@ -9,7 +9,7 @@ Uses Martin Mohlenkamp's recursion relation derived from the
     Szego (1939) Recurrence formula for Jacobi Polynomials (Pg 71)
 
     A User's Guide to Spherical Harmonics
-    http://www.ohio.edu/people/mohlenka/research/uguide.pdf
+    http://www.ohiouniversityfaculty.com/mohlenka/research/uguide.pdf
 
 With this algorithm, the associated Legendre Functions are
     constructed as an amplitude times a Jacobi Polynomial
