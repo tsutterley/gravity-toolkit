@@ -28,7 +28,7 @@ OUTPUTS:
     tide_system: tide system of gravity model (mean_tide, zero_tide, tide_free)
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
     Updated 07/2017: include parameters to change the tide system

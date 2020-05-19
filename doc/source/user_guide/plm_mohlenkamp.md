@@ -14,7 +14,7 @@ plm = plm_mohlenkamp(LMAX, x)
 
 #### Inputs
  - `LMAX`: Upper bound of Spherical Harmonic Degrees
- - `x`: typically cos(theta), where theta is the colatitude in radians
+ - `x`: elements ranging from -1 to 1. Typically cos(theta), where theta is the colatitude in radians
 
 #### Options
  - `MMAX`: Upper bound of Spherical Harmonic Orders (default = LMAX)

@@ -38,7 +38,7 @@ OPTIONS:
     C30_MEAN: mean C30 to add to LARES C30 anomalies
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 PROGRAM DEPENDENCIES:
     convert_julian.py: returns the calendar date and time given a Julian date

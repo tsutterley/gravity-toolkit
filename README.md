@@ -20,22 +20,30 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
 
 #### Programs
 - [`aod1b_geocenter`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/aod1b_geocenter.md) - Creates monthly files of geocenter variations due to non-tidal atmospheric or oceanic variation at 6-hour intervals  
-- [`combine_harmonics`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/combine_harmonics.md) - Returns the spatial field for a series of spherical harmonics  
-- [`convert_calendar_decimal`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/convert_calendar_decimal.md) - Converts from calendar date into decimal years taking into account leap years    
+- [`aod1b_oblateness`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/aod1b_oblateness.md) - Creates monthly files of oblateness variations due to non-tidal atmospheric or oceanic variation at 6-hour intervals  
+- [`clenshaw_summation`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/clenshaw_summation.md) - Returns the spatial field for a series of spherical harmonics at a sequence of ungridded points  
+- [`convert_calendar_decimal`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/convert_calendar_decimal.md) - Converts from calendar date into decimal years taking into account leap years  
 - [`convert_julian`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/convert_julian.md) - Return the calendar date and time given Julian date  
 - [`destripe_harmonics`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/destripe_harmonics.md) - Filters spherical harmonic coefficients for correlated "striping" errors  
 - [`gauss_weights`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/gauss_weights.md) - Computes the Gaussian weights as a function of degree  
+- [`gen_disc_load`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/gen_disc_load.md) - Calculates gravitational spherical harmonic coefficients for a uniform disc load  
+- [`gen_harmonics`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/gen_harmonics.md) - Calculates the spherical harmonic coefficients of a spatial field  
+- [`gen_point_load`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/gen_point_load.md) - Calculates gravitational spherical harmonic coefficients for point masses  
+- [`gen_spherical_cap`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/gen_spherical_cap.md) - Calculates gravitational spherical harmonic coefficients for a spherical cap  
 - [`gen_stokes`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/gen_stokes.md) - Returns a series of spherical harmonics for an input spatial field  
 - [`geocenter`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/geocenter.md) - Converts degree 1 spherical harmonic coefficients to geocenter variations  
 - [`gfz_isdc_grace_ftp`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/gfz_isdc_grace_ftp.md) - Syncs GRACE/GRACE-FO and auxiliary data from the GFZ Information System and Data Center (ISDC)  
 - [`grace_date`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/grace_date.md) - Calculates dates of each GRACE/GRACE-FO file and assigns the month number  
 - [`grace_find_months`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/grace_find_months.md) - Finds the months available for a GRACE/GRACE-FO product  
 - [`grace_input_months`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/grace_input_months.md) - Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order and for a specified date range  
+- [`harmonic_summation`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/harmonic_summation.md) - Returns the spatial field for a series of spherical harmonics  
 - [`harmonics`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/harmonics.rst) - Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 - [`hdf5_read_stokes`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/hdf5_read_stokes.md) - Reads spherical harmonic data from HDF5 files  
 - [`hdf5_read`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/hdf5_read.md) - Reads spatial data from HDF5 files  
 - [`hdf5_stokes`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/hdf5_stokes.md) - Writes spherical harmonic data to HDF5 files  
 - [`hdf5_write`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/hdf5_write.md) - Writes spatial data to HDF5 files  
+- [`legendre`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/legendre.md) - Computes associated Legendre functions of degree l  
+- [`legendre_polynomials`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/legendre_polynomials.md) - Computes fully normalized Legendre polynomials and their first derivative  
 - [`ncdf_read_stokes`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/ncdf_read_stokes.md) - Reads spherical harmonic data from netCDF4 files  
 - [`ncdf_read`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/ncdf_read.md) - Reads spatial data from netCDF4 files  
 - [`ncdf_stokes`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/ncdf_stokes.md) - Writes spherical harmonic data to netCDF4 files  
@@ -57,11 +65,12 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
 - [`units`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/units.rst) - Class for converting GRACE/GRACE-FO Level-2 data to specific units
 
 #### Dependencies
-- [numpy: Scientific Computing Tools For Python](http://www.numpy.org)  
+- [numpy: Scientific Computing Tools For Python](https://www.numpy.org)  
+- [scipy: Scientific Tools for Python](https://docs.scipy.org/doc/)
 - [PyYAML: YAML parser and emitter for Python](https://github.com/yaml/pyyaml)  
 - [lxml: processing XML and HTML in Python](https://pypi.python.org/pypi/lxml)  
-- [future: Compatibility layer between Python 2 and Python 3](http://python-future.org/)  
-- [matplotlib: Python 2D plotting library](http://matplotlib.org/)  
+- [future: Compatibility layer between Python 2 and Python 3](https://python-future.org/)  
+- [matplotlib: Python 2D plotting library](https://matplotlib.org/)  
 - [cartopy: Python package designed for geospatial data processing](https://scitools.org.uk/cartopy/docs/latest/)  
 - [netCDF4: Python interface to the netCDF C library](https://unidata.github.io/netcdf4-python/)  
 - [h5py: Python interface for Hierarchal Data Format 5 (HDF5)](https://www.h5py.org/)  

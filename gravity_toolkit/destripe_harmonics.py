@@ -37,7 +37,7 @@ OPTIONS:
     NARROW: Clm=Slm=0 if number of points is less than window size (False)
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 REFERENCE:
     Sean Swenson and John Wahr, "Post-processing removal of correlated errors in

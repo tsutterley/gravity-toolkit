@@ -26,7 +26,7 @@ REFERENCE:
     2011, DOI:10.1029/2010JB000850.
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 PROGRAM DEPENDENCIES:
     convert_calendar_decimal.py: converts from calendar dates to decimal years

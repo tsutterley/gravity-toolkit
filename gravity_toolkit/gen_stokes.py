@@ -31,7 +31,7 @@ OPTIONS:
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 PROGRAM DEPENDENCIES:
     plm_holmes.py: computes fully-normalized associated Legendre polynomials
@@ -112,7 +112,7 @@ def gen_stokes(data, lon, lat, UNITS=1, LMIN=0, LMAX=60, MMAX=None,
         #-- Input in gigatonnes (Gt)
         dfactor = factors.cmwe
         #-- rad_e: Average Radius of the Earth [cm]
-        int_fact[:] = 1.e15/(factors.rad_e**2)
+        int_fact[:] = 1e15/(factors.rad_e**2)
     elif (UNITS == 3):
         #-- Input in kg/m^2 (mm w.e.)
         dfactor = factors.mmwe

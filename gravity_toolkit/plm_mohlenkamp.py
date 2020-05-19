@@ -20,7 +20,8 @@ CALLING SEQUENCE:
 
 INPUTS:
     LMAX: Upper bound of Spherical Harmonic Degrees
-    x: typically cos(theta), where theta is the colatitude in radians
+    x: elements ranging from -1 to 1
+        typically cos(theta), where theta is the colatitude in radians
 
 OUTPUT:
     plm: Legendre polynomials (geodesy normalization)
@@ -29,7 +30,7 @@ OPTIONS:
     MMAX: Upper bound of Spherical Harmonic Orders (default = LMAX)
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 NOTES:
     Modified and updated from IDL plm_x.pro coded by Sean Swenson

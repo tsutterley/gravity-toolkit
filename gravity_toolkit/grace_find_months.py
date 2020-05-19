@@ -22,7 +22,7 @@ OUTPUTS:
     time: center dates of all available months in a GRACE/GRACE-FO dataset
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 PROGRAM DEPENDENCIES:
     grace_date.py: reads GRACE index file and calculates dates for each month

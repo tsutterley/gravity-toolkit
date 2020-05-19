@@ -39,7 +39,7 @@ OPTIONS:
     JPL: use JPL TN-13 geocenter files with self-attraction and loading
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
     Updated 08/2019: add catch to verify input geocenter file exists

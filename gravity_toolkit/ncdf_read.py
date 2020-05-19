@@ -30,7 +30,7 @@ OPTIONS:
     TITLE: netCDF4 file contains title attribute parameter
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
     netCDF4: Python interface to the netCDF C library
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 

@@ -17,9 +17,16 @@ from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.plm_colombo import plm_colombo
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.plm_mohlenkamp import plm_mohlenkamp
+from gravity_toolkit.legendre_polynomials import legendre_polynomials
+from gravity_toolkit.legendre import legendre
 from gravity_toolkit.gen_stokes import gen_stokes
+from gravity_toolkit.gen_point_load import gen_point_load
+from gravity_toolkit.gen_disc_load import gen_disc_load
+from gravity_toolkit.gen_spherical_cap import gen_spherical_cap
+from gravity_toolkit.gen_harmonics import gen_harmonics
 from gravity_toolkit.ocean_stokes import ocean_stokes
-from gravity_toolkit.combine_harmonics import combine_harmonics
+from gravity_toolkit.harmonic_summation import harmonic_summation
+from gravity_toolkit.clenshaw_summation import clenshaw_summation
 from gravity_toolkit.ncdf_read import ncdf_read
 from gravity_toolkit.hdf5_read import hdf5_read
 from gravity_toolkit.ncdf_write import ncdf_write

@@ -39,11 +39,11 @@ OUTPUTS:
     title: parameters of GIA model
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
     netCDF4: Python interface to the netCDF C library
         (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
     h5py: Pythonic interface to the HDF5 binary data format.
-        (http://www.h5py.org/)
+        (https://www.h5py.org/)
 
 PROGRAM DEPENDENCIES:
     ncdf_stokes.py: writes output spherical harmonic data to netcdf

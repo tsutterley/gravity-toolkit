@@ -30,9 +30,9 @@ OPTIONS:
     TITLE: HDF5 file contains description attribute parameter
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
     h5py: Python interface for Hierarchal Data Format 5 (HDF5)
-        (http://h5py.org)
+        (https://www.h5py.org)
 
 UPDATE HISTORY:
     Updated 10/2019: changing Y/N flags to True/False

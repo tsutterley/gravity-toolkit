@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 u"""
-combine_harmonics.py
+harmonic_summation.py
 Written by Tyler Sutterley (05/2015)
 
 Returns the spatial field for a series of spherical harmonics
 
 CALLING SEQUENCE:
-    spatial = combine_harmonics(clm1, slm1, lon, lat, LMIN=0, LMAX=60)
+    spatial = harmonic_summation(clm1, slm1, lon, lat, LMIN=0, LMAX=60)
 
 INPUTS:
     clm: cosine spherical harmonic coefficients in output units
@@ -21,7 +21,7 @@ OPTIONS:
     PLM: plm coefficients (if computed outside the function)
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 PROGRAM DEPENDENCIES:
     plm_holmes.py: Computes fully-normalized associated Legendre polynomials
@@ -33,7 +33,7 @@ UPDATE HISTORY:
 import numpy as np
 from gravity_toolkit.plm_holmes import plm_holmes
 
-def combine_harmonics(clm1,slm1,lon,lat,LMIN=0,LMAX=0,MMAX=None,PLM=None):
+def harmonic_summation(clm1,slm1,lon,lat,LMIN=0,LMAX=0,MMAX=None,PLM=None):
 
     #-- if LMAX is not specified, will use the size of the input harmonics
     if (LMAX == 0):

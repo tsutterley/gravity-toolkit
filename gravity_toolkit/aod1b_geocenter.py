@@ -35,7 +35,7 @@ COMMAND LINE OPTIONS:
     -V, --verbose: Output information for each output file
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 PROGRAM DEPENDENCIES:
     geocenter.py: converts degree 1 Stokes Coefficients to geocenter variations

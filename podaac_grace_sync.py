@@ -50,10 +50,10 @@ COMMAND LINE OPTIONS:
 
 PYTHON DEPENDENCIES:
     lxml: Pythonic XML and HTML processing library using libxml2/libxslt
-        http://lxml.de/
+        https://lxml.de/
         https://github.com/lxml/lxml
     future: Compatibility layer between Python 2 and Python 3
-        (http://python-future.org/)
+        https://python-future.org/
 
 UPDATE HISTORY:
     Updated 03/2020 for public release.  Set default release to RL06

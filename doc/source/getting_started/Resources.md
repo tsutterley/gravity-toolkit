@@ -25,3 +25,9 @@ Resources
 - [GRACE-FO CSR Level-2 Processing Standards Document](https://podaac-tools.jpl.nasa.gov/drive/files/GeodeticsGravity/gracefo/docs/GRACE-FO_L2-CSR_ProcStds_v1.1.pdf)  
 - [GRACE-FO GFZ Level-2 Processing Standards Document](https://podaac-tools.jpl.nasa.gov/drive/files/GeodeticsGravity/gracefo/docs/GRACE-FO_L2-GFZ_ProcStds_v1.0.pdf)  
 - [GRACE-FO JPL Level-2 Processing Standards Document](https://podaac-tools.jpl.nasa.gov/drive/files/GeodeticsGravity/gracefo/docs/GRACE-FO_L2-JPL_ProcStds_v1.0.pdf)  
+
+#### Software
+- [podaacpy: python utility library for interacting with NASA JPL's PO.DAAC](https://github.com/nasa/podaacpy)  
+- [NASA PO.DAAC Tools and Services](https://github.com/nasa/podaac_tools_and_services)  
+- [GRACE_Tiles: GRACE gravity field inversion package](https://github.com/swensosc/GRACE_Tiles)  
+- [frommle: python/C++ software suite for geodesy and Earth Sciences](https://github.com/strawpants/frommle)  

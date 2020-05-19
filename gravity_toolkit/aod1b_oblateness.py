@@ -35,7 +35,7 @@ COMMAND LINE OPTIONS:
     -V, --verbose: Output information for each output file
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATED HISTORY:
     Updated 06/2019: using python3 compatible regular expression patterns

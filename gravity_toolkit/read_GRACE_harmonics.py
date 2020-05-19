@@ -27,7 +27,7 @@ OUTPUTS:
     eslm: sine spherical harmonic uncalibrated standard deviations (LMAX,MMAX)
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
     PyYAML: YAML parser and emitter for Python (https://github.com/yaml/pyyaml)
 
 UPDATE HISTORY:

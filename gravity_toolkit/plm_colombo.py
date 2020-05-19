@@ -19,7 +19,8 @@ CALLING SEQUENCE:
 
 INPUTS:
     LMAX: Upper bound of Spherical Harmonic Degrees
-    x: typically cos(theta), where theta is the colatitude in radians
+    x: elements ranging from -1 to 1
+        typically cos(theta), where theta is the colatitude in radians
 
 OUTPUT:
     plms: Legendre polynomials of x (geodesy normalization)
@@ -29,7 +30,7 @@ OPTIONS:
     ASTYPE: output variable type (e.g. np.float128).  Default is np.float64
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
     Updated 07/2017: output first differential of legendre polynomials

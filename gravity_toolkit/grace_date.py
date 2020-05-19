@@ -26,9 +26,9 @@ OUTPUTS:
     dictionary of files mapped by GRACE/GRACE-FO month
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
     future: Compatibility layer between Python 2 and Python 3
-        (http://python-future.org/)
+        (https://python-future.org/)
 
 PROGRAM DEPENDENCIES:
     convert_julian.py: converts a julian date into a calendar date

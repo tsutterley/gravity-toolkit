@@ -6,7 +6,7 @@ Written by Tyler Sutterley (04/2020)
 Class for converting GRACE/GRACE-FO Level-2 data to specific units
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
     Updated 04/2020: include earth parameters as attributes

@@ -15,7 +15,7 @@ OPTIONS:
     INVERSE: calculates the Stokes Coefficients from geocenter (True/False)
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
     Updated 06/2019: added option RADIUS to manually set the Earth's radius

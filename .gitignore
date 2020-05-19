@@ -30,6 +30,7 @@
 .Rhistory
 __pycache__
 build/
+run/
 develop-eggs/
 wheels/
 *.egg-info/

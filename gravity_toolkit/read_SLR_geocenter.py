@@ -31,6 +31,9 @@ OUTPUTS:
     eC11: Cosine d1/o1 Stokes Coefficients Error
     eS11: Sine d1/o1 Stokes Coefficients Error
 
+PYTHON DEPENDENCIES:
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
+
 UPDATE HISTORY:
     Updated 08/2019: add catch to verify input geocenter file exists
     Updated 06/2019: added option RADIUS for setting the Earth's radius

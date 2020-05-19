@@ -22,11 +22,12 @@ from time-variable gravity and ocean model outputs", *Remote Sensing*, 11(18),
 
 #### Dependencies
 This software is also dependent on other commonly used Python packages:
-- [numpy: Scientific Computing Tools For Python](http://www.numpy.org)  
+- [numpy: Scientific Computing Tools For Python](https://numpy.org)  
+- [scipy: Scientific Tools for Python](https://docs.scipy.org/doc/)  
 - [PyYAML: YAML parser and emitter for Python](https://github.com/yaml/pyyaml)  
 - [lxml: processing XML and HTML in Python](https://pypi.python.org/pypi/lxml)  
-- [future: Compatibility layer between Python 2 and Python 3](http://python-future.org/)  
-- [matplotlib: Python 2D plotting library](http://matplotlib.org/)  
+- [future: Compatibility layer between Python 2 and Python 3](https://python-future.org/)  
+- [matplotlib: Python 2D plotting library](https://matplotlib.org/)  
 - [cartopy: Python package designed for geospatial data processing](https://scitools.org.uk/cartopy/docs/latest/)  
 - [netCDF4: Python interface to the netCDF C library](https://unidata.github.io/netcdf4-python/)  
 - [h5py: Python interface for Hierarchal Data Format 5 (HDF5)](https://www.h5py.org/)  

@@ -28,7 +28,7 @@ OPTIONS:
         'zip': aggregated variable sets
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (http://www.numpy.org)
+    numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
     Updated 03/2020: added reference frame transformations within function
