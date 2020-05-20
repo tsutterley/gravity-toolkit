@@ -11,13 +11,13 @@ The https updates are designed to increase performance and improve security duri
 The [Physical Oceanography Distributed Active Archive Center (PO.DAAC)](https://podaac.jpl.nasa.gov/) provides data and related information pertaining to the physical processes and conditions of the global oceans, including measurements of ocean winds, temperature, topography, salinity, circulation and currents, and sea ice.  If any problems contact JPL PO.DAAC support at [podaac@podaac.jpl.nasa.gov](mailto:podaac@podaac.jpl.nasa.gov) or the NASA EOSDIS support team [support@earthdata.nasa.gov](mailto:support@earthdata.nasa.gov).  
 
 #### WebDAV  
-PO.DAAC uses passwords generated using the Web Distributed Authoring and Versioning (WebDAV) API.  This password is created at the [PO.DAAC Drive](https://podaac-tools.jpl.nasa.gov/drive) website.  Use this password rather than your Earthdata password when retrieving data from PO.DAAC.  [More information](https://podaac-tools.jpl.nasa.gov/drive/help).
+PO.DAAC uses passwords generated using the Web Distributed Authoring and Versioning (WebDAV) API.  This password is created at the [PO.DAAC Drive](https://podaac-tools.jpl.nasa.gov/drive) website.  Use this password rather than your Earthdata password when retrieving data from PO.DAAC.  [More information](https://podaac-tools.jpl.nasa.gov/drive/help).   
 
 #### Steps to Sync from PO.DAAC
 1. [Register with NASA Earthdata Login system](https://urs.earthdata.nasa.gov/users/new)  
 2. [After registering, login to the system](https://urs.earthdata.nasa.gov/home)
 3. Add `PO.DAAC Drive OPS` [application to Earthdata](https://wiki.earthdata.nasa.gov/display/EL/How+To+Pre-authorize+an+application)  
-4. Retrieve [WebDAV password](https://podaac-tools.jpl.nasa.gov/drive/) to access PO.DAAC servers and sync data
+4. Retrieve [WebDAV password](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/podaac_webdav.py) to access PO.DAAC servers and [sync data](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/podaac_grace_sync.py)  
 
 #### Other Data Access Examples   
 -  [Curl and Wget](https://wiki.earthdata.nasa.gov/display/EL/How+To+Access+Data+With+cURL+And+Wget)   

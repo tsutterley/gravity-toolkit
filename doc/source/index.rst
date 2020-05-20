@@ -54,6 +54,7 @@ missions
     user_guide/plm_holmes.md
     user_guide/plm_mohlenkamp.md
     user_guide/podaac_grace_sync.md
+    user_guide/podaac_webdav.md
     user_guide/read_CSR_monthly_6x1.md
     user_guide/read_GIA_model.md
     user_guide/read_GRACE_harmonics.md

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_grace_sync.py
-Written by Tyler Sutterley (03/2020)
+Written by Tyler Sutterley (05/2020)
 
 Syncs GRACE/GRACE-FO and auxiliary data from the NASA JPL PO.DAAC Drive Server
 Syncs CSR/GFZ/JPL files for RL04/RL05/RL06 GAA/GAB/GAC/GAD/GSM
@@ -38,6 +38,7 @@ OUTPUTS:
 COMMAND LINE OPTIONS:
     --help: list the command line options
     -U X, --user=X: username for NASA Earthdata Login
+    -N X, --netrc=X: path to .netrc file for authentication
     -D X, --directory=X: working data directory
     -C X, --center=X: GRACE Processing Center
     -R X, --release=X: GRACE data releases to sync (RL05,RL06)
@@ -56,6 +57,8 @@ PYTHON DEPENDENCIES:
         https://python-future.org/
 
 UPDATE HISTORY:
+    Updated 05/2020: simplified PO.DAAC Drive login
+        added netrc option for alternative authentication method
     Updated 03/2020 for public release.  Set default release to RL06
 """
 from __future__ import print_function
@@ -65,6 +68,7 @@ import os
 import re
 import io
 import ssl
+import netrc
 import getopt
 import shutil
 import base64
@@ -170,14 +174,6 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
         #-- standard output (terminal output)
         fid1 = sys.stdout
 
-    #-- https://docs.python.org/3/howto/urllib2.html#id5
-    #-- create a password manager
-    password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-    #-- Add the username for NASA Earthdata Login system and password for WebDAV
-    password_mgr.add_password(None, 'https://urs.earthdata.nasa.gov',
-        USER, PASSWORD)
-    #-- Encode username/password for request authorization headers
-    base64_string = base64.b64encode('{0}:{1}'.format(USER, PASSWORD).encode())
     #-- compile HTML parser for lxml
     parser = lxml.etree.HTMLParser()
     #-- Create cookie jar for storing cookies. This is used to store and return
@@ -186,9 +182,10 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
     cookie_jar = CookieJar()
     #-- create "opener" (OpenerDirector instance)
     opener = urllib2.build_opener(
-        urllib2.HTTPBasicAuthHandler(password_mgr),
         urllib2.HTTPSHandler(context=ssl.SSLContext()),
         urllib2.HTTPCookieProcessor(cookie_jar))
+    #-- Encode username/password for request authorization headers
+    base64_string = base64.b64encode('{0}:{1}'.format(USER, PASSWORD).encode())
     #-- add Authorization header to opener
     authorization_header = "Basic {0}".format(base64_string.decode())
     opener.addheaders = [("Authorization", authorization_header)]
@@ -534,6 +531,7 @@ def get_mtime(collastmod, FORMAT='%Y-%m-%d %H:%M:%S'):
 def usage():
     print('\nHelp: {}'.format(os.path.basename(sys.argv[0])))
     print(' -U X, --user=X\t\tUsername for NASA Earthdata Login')
+    print(' -N X, --netrc=X\t\tPath to .netrc file for authentication')
     print(' -D X, --directory=X\tWorking Data Directory')
     print(' -C X, --center=X\tGRACE Processing Center (CSR,GFZ,JPL)')
     print(' -R X, --release=X\tGRACE data releases to sync (RL05,RL06)')
@@ -550,12 +548,13 @@ def usage():
 #-- Main program that calls podaac_grace_sync()
 def main():
     #-- Read the system arguments listed after the program
-    long_options = ['help','user=','directory=','list','log','center=',
-        'release=','newsletters','clobber','checksum','mode=']
-    optlist,arglist = getopt.getopt(sys.argv[1:],'hU:D:lLC:R:M:',long_options)
+    long_options = ['help','user=','netrc=','directory=','list','log',
+        'center=','release=','newsletters','clobber','checksum','mode=']
+    optlist,arglist = getopt.getopt(sys.argv[1:],'hU:N:D:lLC:R:M:',long_options)
 
     #-- command line parameters
     USER = ''
+    NETRC = None
     #-- working data directory
     DIRECTORY = os.getcwd()
     LIST = False
@@ -576,6 +575,8 @@ def main():
             sys.exit()
         elif opt in ("-U","--user"):
             USER = arg
+        elif opt in ("-N","--netrc"):
+            NETRC = os.path.expanduser(arg)
         elif opt in ("-D","--directory"):
             DIRECTORY = os.path.expanduser(arg)
         elif opt in ("-L","--list"):
@@ -597,11 +598,17 @@ def main():
 
     #-- JPL PO.DAAC drive hostname
     HOST = 'podaac-tools.jpl.nasa.gov'
-    #-- check that NASA Earthdata credentials were entered
-    if not USER:
+    #-- get NASA Earthdata and JPL PO.DAAC drive credentials
+    if not USER and not NETRC:
+        #-- check that NASA Earthdata credentials were entered
         USER = builtins.input('Username for {0}: '.format(HOST))
-    #-- enter password securely from command-line
-    PASSWORD = getpass.getpass('WebDAV Password for {0}@{1}: '.format(USER,HOST))
+        #-- enter password securely from command-line
+        PASSWORD = getpass.getpass('Password for {0}@{1}: '.format(USER,HOST))
+    elif NETRC:
+        USER,LOGIN,PASSWORD = netrc.netrc(NETRC).authenticators(HOST)
+    else:
+        #-- enter password securely from command-line
+        PASSWORD = getpass.getpass('Password for {0}@{1}: '.format(USER,HOST))
 
     #-- check internet connection before attempting to run program
     if check_connection():

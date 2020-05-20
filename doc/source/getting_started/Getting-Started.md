@@ -2,7 +2,8 @@ Getting Started
 ===============
 
 - [Register at NASA Earthdata and add `PO.DAAC Drive OPS` as application](./NASA-Earthdata.md)
-- Run `podaac_grace_sync.py` program to acquire GRACE/GRACE-FO and auxiliary data  
+- Get PO.DAAC WebDAV credentials by running `podaac_webdav.py` or logging onto [PO.DAAC Drive](https://podaac-tools.jpl.nasa.gov/drive)  
+- Run `podaac_grace_sync.py` program with your WebDAV credentials to acquire GRACE/GRACE-FO and auxiliary data  
 ```bash
 python podaac_grace_sync.py --user=<username> --directory=<path_to_grace_directory>
 ```

@@ -1,8 +1,14 @@
 from setuptools import setup, find_packages
+
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 setup(
     name='read-GRACE-harmonics',
     version='1.0.1.12',
     description='Reads Level-2 spherical harmonic coefficients from the NASA/DLR GRACE and NASA/GFZ GRACE Follow-on missions',
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     url='https://github.com/tsutterley/read-GRACE-harmonics',
     author='Tyler Sutterley',
     author_email='tsutterl@uw.edu',

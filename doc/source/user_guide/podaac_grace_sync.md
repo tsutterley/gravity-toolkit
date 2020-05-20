@@ -15,6 +15,7 @@ python podaac_grace_sync.py --user=<username> --directory=<path_to_grace_directo
 
 #### Command Line Options
  - `-U X`, `--user=X`: Username for NASA Earthdata Login
+ - `-N X`, `--netrc=X`: Path to .netrc file for authentication
  - `-D X`, `--directory=X`: Working Data Directory
  - `-C X`, `--center=X`: GRACE Processing Center (CSR,GFZ,JPL)
  - `-R X`, `--release=X`: GRACE data releases to sync (RL05,RL06)

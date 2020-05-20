@@ -42,7 +42,7 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
 - [`hdf5_read`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/hdf5_read.md) - Reads spatial data from HDF5 files  
 - [`hdf5_stokes`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/hdf5_stokes.md) - Writes spherical harmonic data to HDF5 files  
 - [`hdf5_write`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/hdf5_write.md) - Writes spatial data to HDF5 files  
-- [`legendre`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/legendre.md) - Computes associated Legendre functions of degree l  
+- [`legendre`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/legendre.md) - Computes associated Legendre functions for a specific spherical harmonic degree  
 - [`legendre_polynomials`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/legendre_polynomials.md) - Computes fully normalized Legendre polynomials and their first derivative  
 - [`ncdf_read_stokes`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/ncdf_read_stokes.md) - Reads spherical harmonic data from netCDF4 files  
 - [`ncdf_read`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/ncdf_read.md) - Reads spatial data from netCDF4 files  
@@ -53,6 +53,7 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
 - [`plm_holmes`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/plm_holmes.md) - Computes fully-normalized associated Legendre Polynomials using the Holmes and Featherstone (2002) recursion relation  
 - [`plm_mohlenkamp`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/plm_mohlenkamp.md) - Computes fully-normalized associated Legendre Polynomials using Martin Mohlenkamp's recursion relation  
 - [`podaac_grace_sync`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/podaac_grace_sync.md) - Syncs GRACE/GRACE-FO and auxiliary data from the NASA JPL PO.DAAC Drive Server  
+- [`podaac_webdav`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/podaac_webdav.md) - Retrieves and prints a user's PO.DAAC WebDAV credentials  
 - [`read_CSR_monthly_6x1`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/read_CSR_monthly_6x1.md) - Reads the monthly low-degree spherical harmonic data files from satellite laser ranging (SLR)  
 - [`read_GIA_model`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/read_GIA_model.md) - Reads Glacial Isostatic Adjustment (GIA) files and extracts spherical harmonic data  
 - [`read_GRACE_harmonics`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/read_GRACE_harmonics.md) - Reads GRACE/GRACE-FO files and extracts spherical harmonic data  
