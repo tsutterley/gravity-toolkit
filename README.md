@@ -22,8 +22,11 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
 - [`aod1b_geocenter`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/aod1b_geocenter.md) - Creates monthly files of geocenter variations due to non-tidal atmospheric or oceanic variation at 6-hour intervals  
 - [`aod1b_oblateness`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/aod1b_oblateness.md) - Creates monthly files of oblateness variations due to non-tidal atmospheric or oceanic variation at 6-hour intervals  
 - [`clenshaw_summation`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/clenshaw_summation.md) - Returns the spatial field for a series of spherical harmonics at a sequence of ungridded points  
+- [`combine_harmonics`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/combine_harmonics.md) - Converts a file from the spherical harmonic domain into the spatial domain  
 - [`convert_calendar_decimal`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/convert_calendar_decimal.md) - Converts from calendar date into decimal years taking into account leap years  
+- [`convert_harmonics`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/convert_harmonics.md) - Converts a file from the spatial domain into the spherical harmonic domain  
 - [`convert_julian`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/convert_julian.md) - Return the calendar date and time given Julian date  
+- [`degree_amplitude`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/degree_amplitude.md) - Calculates the amplitude of each spherical harmonic degree  
 - [`destripe_harmonics`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/destripe_harmonics.md) - Filters spherical harmonic coefficients for correlated "striping" errors  
 - [`gauss_weights`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/gauss_weights.md) - Computes the Gaussian weights as a function of degree  
 - [`gen_disc_load`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/gen_disc_load.md) - Calculates gravitational spherical harmonic coefficients for a uniform disc load  
@@ -36,6 +39,7 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
 - [`grace_date`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/grace_date.md) - Calculates dates of each GRACE/GRACE-FO file and assigns the month number  
 - [`grace_find_months`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/grace_find_months.md) - Finds the months available for a GRACE/GRACE-FO product  
 - [`grace_input_months`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/grace_input_months.md) - Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order and for a specified date range  
+- [`grace_months_index`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/grace_months_index.md) - Creates an index of dates for all GRACE/GRACE-FO processing centers  
 - [`harmonic_summation`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/harmonic_summation.md) - Returns the spatial field for a series of spherical harmonics  
 - [`harmonics`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/harmonics.rst) - Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 - [`hdf5_read_stokes`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/hdf5_read_stokes.md) - Reads spherical harmonic data from HDF5 files  
@@ -63,6 +67,7 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
 - [`read_SLR_C30`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/read_SLR_C30.md) - Reads monthly degree 3 zonal spherical harmonic data files from satellite laser ranging (SLR)  
 - [`read_SLR_geocenter`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/read_SLR_geocenter.md) - Reads monthly geocenter spherical harmonic data files from satellite laser ranging (SLR)  
 - [`read_tellus_geocenter`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/read_tellus_geocenter.md) - Reads monthly geocenter spherical harmonic data files from GRACE Tellus Technical Notes  
+- [`run_grace_date`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/run_grace_date.md) - Wrapper program for running GRACE date and months programs  
 - [`units`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/units.rst) - Class for converting GRACE/GRACE-FO Level-2 data to specific units
 
 #### Dependencies

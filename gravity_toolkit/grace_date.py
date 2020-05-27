@@ -21,6 +21,7 @@ OPTIONS:
         GAD is the GRACE ocean bottom pressure product
         GSM is corrected monthly GRACE/GRACE-FO static field product
     OUTPUT: create index of dates for GRACE/GRACE-FO data
+    MODE: permissions mode of output files
 
 OUTPUTS:
     dictionary of files mapped by GRACE/GRACE-FO month

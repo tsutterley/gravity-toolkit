@@ -24,17 +24,22 @@ missions
     user_guide/aod1b_geocenter.md
     user_guide/aod1b_oblateness.md
     user_guide/clenshaw_summation.md
+    user_guide/combine_harmonics.md
     user_guide/convert_calendar_decimal.md
+    user_guide/convert_harmonics.md
     user_guide/convert_julian.md
+    user_guide/degree_amplitude.md
     user_guide/destripe_harmonics.md
     user_guide/gauss_weights.md
     user_guide/gen_disc_load.md
+    user_guide/gen_harmonics.md
     user_guide/gen_point_load.md
     user_guide/gen_spherical_cap.md
     user_guide/gen_stokes.md
     user_guide/geocenter.md
     user_guide/gfz_isdc_grace_ftp.md
     user_guide/grace_date.md
+    user_guide/grace_months_index.md
     user_guide/grace_find_months.md
     user_guide/grace_input_months.md
     user_guide/harmonic_summation.md
@@ -64,4 +69,5 @@ missions
     user_guide/read_SLR_C30.md
     user_guide/read_SLR_geocenter.md
     user_guide/read_tellus_geocenter.md
+    user_guide/run_grace_date.md
     user_guide/units.rst

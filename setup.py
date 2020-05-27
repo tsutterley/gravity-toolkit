@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='read-GRACE-harmonics',
-    version='1.0.1.12',
+    version='1.0.1.13',
     description='Reads Level-2 spherical harmonic coefficients from the NASA/DLR GRACE and NASA/GFZ GRACE Follow-on missions',
     long_description=long_description,
     long_description_content_type="text/markdown",

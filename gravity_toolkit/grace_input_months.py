@@ -56,7 +56,6 @@ OPTIONS:
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
-    scipy: Scientific Tools for Python (https://docs.scipy.org/doc/)
     PyYAML: YAML parser and emitter for Python (https://github.com/yaml/pyyaml)
 
 PROGRAM DEPENDENCIES:
