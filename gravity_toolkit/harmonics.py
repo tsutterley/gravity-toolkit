@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (04/2020)
+Written by Tyler Sutterley (06/2020)
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 
@@ -21,6 +21,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 06/2020: output list of filenames with from_list()
     Updated 04/2020: added from_gfc to read gravity model coefficients from GFZ
         add to_ascii and iterate over temporal fields in convolve and destripe
         make date optional for harmonic read functions.  add more math functions
@@ -212,6 +213,8 @@ class harmonics(object):
         #-- create output harmonics
         self.clm = np.zeros((self.lmax+1,self.mmax+1,n))
         self.slm = np.zeros((self.lmax+1,self.mmax+1,n))
+        #-- create list of files
+        self.filename = []
         #-- output dates
         if date:
             self.time = np.zeros((n))
@@ -223,6 +226,9 @@ class harmonics(object):
             if date:
                 self.time[t] = object_list[i].time[:].copy()
                 self.month[t] = object_list[i].month[:].copy()
+            #-- append filename to list
+            if getattr(object_list[i], 'filename'):
+                self.filename.append(object_list[i].filename)
         #-- return the single harmonic object
         return self
 
@@ -490,6 +496,9 @@ class harmonics(object):
         if date:
             temp.time = self.time[indice].copy()
             temp.month = self.month[indice].copy()
+        #-- subset filenames
+        if getattr(self, 'filename'):
+            temp.filename = self.filename[indice]
         return temp
 
     def subset(self, months):
@@ -516,12 +525,15 @@ class harmonics(object):
         temp.slm = np.zeros((temp.lmax+1,temp.mmax+1,n))
         temp.time = np.zeros((n))
         temp.month = np.zeros((n),dtype=np.int)
+        temp.filename = []
         #-- for each indice
         for t,i in enumerate(months_list):
             temp.clm[:,:,t] = self.clm[:,:,i].copy()
             temp.slm[:,:,t] = self.slm[:,:,i].copy()
             temp.time[t] = self.time[i].copy()
             temp.month[t] = self.month[i].copy()
+            if getattr(self, 'filename'):
+                temp.filename.append(self.filename[i])
         #-- remove singleton dimensions if importing a single value
         return temp.squeeze()
 

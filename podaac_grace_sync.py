@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_grace_sync.py
-Written by Tyler Sutterley (05/2020)
+Written by Tyler Sutterley (06/2020)
 
 Syncs GRACE/GRACE-FO and auxiliary data from the NASA JPL PO.DAAC Drive Server
 Syncs CSR/GFZ/JPL files for RL04/RL05/RL06 GAA/GAB/GAC/GAD/GSM
@@ -57,6 +57,7 @@ PYTHON DEPENDENCIES:
         https://python-future.org/
 
 UPDATE HISTORY:
+    Updated 06/2020: increased timeout to 2 minutes
     Updated 05/2020: simplified PO.DAAC Drive login
         added netrc option for alternative authentication method
     Updated 03/2020 for public release.  Set default release to RL06
@@ -90,7 +91,7 @@ def check_connection():
     #-- attempt to connect to https host for PO.DAAC
     try:
         HOST = posixpath.join('https://podaac-tools.jpl.nasa.gov','drive')
-        urllib2.urlopen(HOST,timeout=20,context=ssl.SSLContext())
+        urllib2.urlopen(HOST,timeout=120,context=ssl.SSLContext())
     except urllib2.URLError:
         raise RuntimeError('Check internet connection')
     else:
@@ -207,7 +208,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
     #-- open connection with PO.DAAC drive server at remote directory
     req = urllib2.Request(url=remote_dir)
     #-- read and parse request for files (find column names and modified dates)
-    tree = lxml.etree.parse(urllib2.urlopen(req, timeout=20), parser)
+    tree = lxml.etree.parse(urllib2.urlopen(req, timeout=120), parser)
     colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
     collastmod = tree.xpath('//tr/td[3]/text()')
     #-- TN-13 JPL degree 1 files
@@ -233,7 +234,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
     #-- open connection with PO.DAAC drive server at remote directory
     req = urllib2.Request(url=remote_dir)
     #-- read and parse request for files (find column names and modified dates)
-    tree = lxml.etree.parse(urllib2.urlopen(req, timeout=20), parser)
+    tree = lxml.etree.parse(urllib2.urlopen(req, timeout=120), parser)
     colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
     collastmod = tree.xpath('//tr/td[3]/text()')
     #-- compile regular expression operator for remote files
@@ -258,7 +259,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
     #-- open connection with PO.DAAC drive server at remote directory
     req = urllib2.Request(url=remote_dir)
     #-- read and parse request for files (find column names and modified dates)
-    tree = lxml.etree.parse(urllib2.urlopen(req, timeout=20), parser)
+    tree = lxml.etree.parse(urllib2.urlopen(req, timeout=120), parser)
     colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
     collastmod = tree.xpath('//tr/td[3]/text()')
     #-- compile regular expression operator for remote files
@@ -287,7 +288,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
     #-- open connection with PO.DAAC drive server at remote directory
     req = urllib2.Request(url=remote_dir)
     #-- read and parse request for files (find column names and modified dates)
-    tree = lxml.etree.parse(urllib2.urlopen(req, timeout=20), parser)
+    tree = lxml.etree.parse(urllib2.urlopen(req, timeout=120), parser)
     colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
     collastmod = tree.xpath('//tr/td[3]/text()')
     #-- compile regular expression operator for remote files
@@ -318,7 +319,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
             remote_dir = posixpath.join(HOST,'allData',*newsletter_sub[MISSION])
             req = urllib2.Request(url=remote_dir)
             #-- read and parse request for files (find names and modified dates)
-            tree = lxml.etree.parse(urllib2.urlopen(req, timeout=20), parser)
+            tree = lxml.etree.parse(urllib2.urlopen(req, timeout=120), parser)
             colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
             collastmod = tree.xpath('//tr/td[3]/text()')
             #-- compile regular expression operator for remote files
@@ -357,7 +358,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
             #-- open connection with PO.DAAC drive server at remote directory
             req = urllib2.Request(url=remote_dir)
             #-- read and parse request for files (names and modified dates)
-            tree = lxml.etree.parse(urllib2.urlopen(req,timeout=20), parser)
+            tree = lxml.etree.parse(urllib2.urlopen(req,timeout=120), parser)
             colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
             collastmod = tree.xpath('//tr/td[3]/text()')
             #-- DATA PRODUCTS (GAC, GAD, GSM, GAA, GAB)
@@ -396,7 +397,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
             #-- open connection with PO.DAAC drive server at remote directory
             req = urllib2.Request(url=remote_dir)
             #-- read and parse request for files (names and modified dates)
-            tree = lxml.etree.parse(urllib2.urlopen(req,timeout=20), parser)
+            tree = lxml.etree.parse(urllib2.urlopen(req,timeout=120), parser)
             colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
             collastmod = tree.xpath('//tr/td[3]/text()')
             years = [d for i,d in enumerate(colnames) if re.match(r'\d{4}',d)]
@@ -404,7 +405,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
                 #-- open connection with PO.DAAC drive server at remote directory
                 req = urllib2.Request(url=posixpath.join(remote_dir,yr))
                 #-- read and parse request for files (names and modified dates)
-                tree = lxml.etree.parse(urllib2.urlopen(req,timeout=20), parser)
+                tree = lxml.etree.parse(urllib2.urlopen(req,timeout=120), parser)
                 colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
                 collastmod = tree.xpath('//tr/td[3]/text()')
                 #-- DATA PRODUCTS (GAC, GAD, GSM, GAA, GAB)
@@ -473,7 +474,7 @@ def http_pull_file(fid, remote_file, remote_mtime, local_file, LIST, CLOBBER,
         #-- There are a wide range of exceptions that can be thrown here
         #-- including HTTPError and URLError.
         request = urllib2.Request(remote_file)
-        response = urllib2.urlopen(request, timeout=20)
+        response = urllib2.urlopen(request, timeout=120)
         #-- copy remote file contents to bytesIO object
         remote_buffer = io.BytesIO(response.read())
         remote_buffer.seek(0)
@@ -513,7 +514,7 @@ def http_pull_file(fid, remote_file, remote_mtime, local_file, LIST, CLOBBER,
                 #-- There are a wide range of exceptions that can be thrown here
                 #-- including HTTPError and URLError.
                 request = urllib2.Request(remote_file)
-                response = urllib2.urlopen(request, timeout=20)
+                response = urllib2.urlopen(request, timeout=120)
                 #-- copy contents to local file using chunked transfer encoding
                 #-- transfer should work properly with ascii and binary formats
                 with open(local_file, 'wb') as f:

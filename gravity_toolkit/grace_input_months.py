@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (03/2020)
+Written by Tyler Sutterley (06/2020)
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
     and for a specified date range
@@ -69,6 +69,7 @@ PROGRAM DEPENDENCIES:
     read_GRACE_harmonics.py: reads an input GRACE data file and calculates date
 
 UPDATE HISTORY:
+    Updated 06/2020: set relative time to mean of input within regress_model
     Updated 03/2020 for public release.  output degree and order in dict
 """
 from __future__ import print_function, division
@@ -350,7 +351,6 @@ def read_ecmwf_corrections(base_dir, LMAX, months, MMAX=None):
 
 #-- PURPOSE: calculate a regression model for extrapolating values
 def regress_model(t_in, d_in, t_out, ORDER=2, CYCLES=None, RELATIVE=None):
-
     #-- remove singleton dimensions
     t_in = np.squeeze(t_in)
     d_in = np.squeeze(d_in)
@@ -358,8 +358,9 @@ def regress_model(t_in, d_in, t_out, ORDER=2, CYCLES=None, RELATIVE=None):
     #-- check dimensions of output
     if (np.ndim(t_out) == 0):
         t_out = np.array([t_out])
-
-    #-- CREATING DESIGN MATRIX FOR REGRESSION
+    #-- set relative to mean of input time
+    if not RELATIVE: RELATIVE = np.mean(t_in)
+    #-- create design matrix based on polynomial order and harmonics
     DMAT = []
     MMAT = []
     #-- add polynomial orders (0=constant, 1=linear, 2=quadratic)
@@ -372,10 +373,8 @@ def regress_model(t_in, d_in, t_out, ORDER=2, CYCLES=None, RELATIVE=None):
         DMAT.append(np.cos(2.0*np.pi*t_in/np.float(c)))
         MMAT.append(np.sin(2.0*np.pi*t_out/np.float(c)))
         MMAT.append(np.cos(2.0*np.pi*t_out/np.float(c)))
-
     #-- Calculating Least-Squares Coefficients
     #-- Standard Least-Squares fitting (the [0] denotes coefficients output)
     beta_mat = np.linalg.lstsq(np.transpose(DMAT), d_in, rcond=-1)[0]
-
     #-- return modeled time-series
     return np.dot(np.transpose(MMAT),beta_mat)

@@ -111,7 +111,6 @@ def grace_months_index(base_dir, DREL=['RL06'], MODE=None):
     #-- max_mon+1 to include max_mon
     for m in range(4, max_mon+1):
         #-- finding the month name e.g. Apr
-        #-- using an approximate mid-month date for the month
         calendar_year = 2002 + (m-1)//12
         calendar_month = (m-1) % 12 + 1
         month_string = calendar.month_abbr[calendar_month]
