@@ -68,6 +68,7 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
 - [`read_SLR_geocenter`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/read_SLR_geocenter.md) - Reads monthly geocenter spherical harmonic data files from satellite laser ranging (SLR)  
 - [`read_tellus_geocenter`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/read_tellus_geocenter.md) - Reads monthly geocenter spherical harmonic data files from GRACE Tellus Technical Notes  
 - [`run_grace_date`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/run_grace_date.md) - Wrapper program for running GRACE date and months programs  
+- [`spatial`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/spatial.rst) - Spatial data class for reading, writing and processing spatial data
 - [`units`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/units.rst) - Class for converting GRACE/GRACE-FO Level-2 data to specific units
 
 #### Dependencies

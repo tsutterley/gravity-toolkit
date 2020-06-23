@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ocean_stokes.py
-Written by Tyler Sutterley (04/2020)
+Written by Tyler Sutterley (06/2020)
 
 Reads a land-sea mask and converts to a series of spherical harmonics
 
@@ -28,12 +28,19 @@ PYTHON DEPENDENCIES:
         https://numpy.org
     netCDF4: Python interface to the netCDF C library
         https://unidata.github.io/netcdf4-python/netCDF4/index.html
+    h5py: Python interface for Hierarchal Data Format 5 (HDF5)
+        https://www.h5py.org
 
 PROGRAM DEPENDENCIES
-    ncdf_read.py: reads a spatial grid from a netcdf file
     gen_stokes.py: converts a spatial field into a series of spherical harmonics
+    spatial.py: spatial data class for reading, writing and processing data
+    ncdf_read.py: reads input spatial data from netCDF4 files
+    hdf5_read.py: reads input spatial data from HDF5 files
+    ncdf_write.py: writes output spatial data to netCDF4
+    hdf5_write.py: writes output spatial data to HDF5
 
 UPDATE HISTORY:
+    Updated 06/2020: using spatial data class for input and output operations
     Updated 04/2020 for public release
     Updated 04/2020: added option LOVE for passing load love numbers
     Updated 09/2017: added option MASK for different input masks
@@ -42,7 +49,7 @@ UPDATE HISTORY:
 """
 import os
 import numpy as np
-from gravity_toolkit.ncdf_read import ncdf_read
+from gravity_toolkit.spatial import spatial
 from gravity_toolkit.gen_stokes import gen_stokes
 
 def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None):
@@ -51,17 +58,18 @@ def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None):
     #-- Read Land-Sea Mask of specified input file
     #-- 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
     #-- Open the land-sea NetCDF file for reading
-    landsea = ncdf_read(os.path.expanduser(LANDMASK),
-        VARNAME='LSMASK', DATE=False, ATTRIBUTES=False)
+    landsea = spatial().from_netCDF4(LANDMASK,
+        date=False, varname='LSMASK')
     #-- create land function
-    land_function = np.zeros_like(landsea['data'])
+    nth,nphi = landsea.shape
+    land_function = np.zeros((nth,nphi),dtype=np.float)
     #-- combine land and island levels for land function
-    indx,indy = np.nonzero((landsea['data'] >= 1) & (landsea['data'] <= 3))
+    indx,indy = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))
     land_function[indx,indy] = 1.0
     #-- ocean function reciprocal of land function
     ocean_function = 1.0 - land_function
     #-- convert to spherical harmonics (1 cm w.e.)
-    ocean_Ylms = gen_stokes(ocean_function, landsea['lon'], landsea['lat'],
-        UNITS=1, LMIN=0, LMAX=LMAX, MMAX=MMAX, LOVE=LOVE)
+    ocean_Ylms = gen_stokes(ocean_function.T,landsea.lon,landsea.lat,
+        UNITS=1,LMIN=0,LMAX=LMAX,MMAX=MMAX,LOVE=LOVE)
     #-- return the spherical harmonic coefficients
     return ocean_Ylms

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_write.py
-Written by Tyler Sutterley (03/2020)
+Written by Tyler Sutterley (04/2020)
 
 Writes spatial data to HDF5 files
 

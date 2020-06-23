@@ -263,7 +263,7 @@ class harmonics(object):
         #-- write to file for each spherical harmonic degree and order
         for m in range(0, self.mmax+1):
             for l in range(m, self.lmax+1):
-                args = (l, m, Ylms.clm[l,m], Ylms.slm[l,m], Ylms.time)
+                args = (l, m, self.clm[l,m], self.slm[l,m], self.time)
                 print(file_format.format(*args), file=fid)
         #-- close the output file
         fid.close()
@@ -572,7 +572,7 @@ class harmonics(object):
 
     def mean(self, apply=False):
         """
-        Compute mean gravitational field and remove from monthly if specified
+        Compute mean gravitational field and remove from data if specified
         Option: apply to remove the mean field from the input harmonics
         """
         temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))

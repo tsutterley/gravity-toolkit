@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 combine_harmonics.py
-Written by Tyler Sutterley (04/2020)
+Written by Tyler Sutterley (06/2020)
 Converts a file from the spherical harmonic domain into the spatial domain
 
 CALLING SEQUENCE:
@@ -61,11 +61,15 @@ PROGRAM DEPENDENCIES:
     ncdf_stokes.py: writes output spherical harmonic data to netcdf
     hdf5_read_stokes.py: reads spherical harmonic HDF5 files
     hdf5_stokes.py: writes output spherical harmonic data to HDF5
-    ncdf_write.py: writes output spatial data to netCDF4 files
-    hdf5_write.py: writes output spatial data to HDF5 files
+    spatial.py: spatial data class for reading, writing and processing data
+    ncdf_read.py: reads input spatial data from netCDF4 files
+    hdf5_read.py: reads input spatial data from HDF5 files
+    ncdf_write.py: writes output spatial data to netCDF4
+    hdf5_write.py: writes output spatial data to HDF5
     units.py: class for converting GRACE/GRACE-FO Level-2 data to specific units
 
 UPDATE HISTORY:
+    Updated 06/2020: using spatial data class for input and output operations
     Updated 04/2020: using the harmonics class for spherical harmonic operations
         updated load love numbers read function
     Updated 03/2020: switched to destripe_harmonics for filtering harmonics
@@ -88,9 +92,8 @@ from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.ocean_stokes import ocean_stokes
 from gravity_toolkit.harmonic_summation import harmonic_summation
 from gravity_toolkit.harmonics import harmonics
+from gravity_toolkit.spatial import spatial
 from gravity_toolkit.units import units
-from gravity_toolkit.ncdf_write import ncdf_write
-from gravity_toolkit.hdf5_write import hdf5_write
 
 #-- PURPOSE: read load love numbers for the range of spherical harmonic degrees
 def load_love_numbers(love_numbers_file, LMAX, REFERENCE='CF'):
@@ -169,6 +172,11 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None,
     else:
         wt = np.ones((LMAX+1))
 
+    #-- Output spatial data
+    grid = spatial()
+    grid.time = np.copy(input_Ylms.time)
+    grid.month = np.copy(input_Ylms.month)
+
     #-- Output Degree Spacing
     if (len(DDEG) == 1):
         #-- dlon == dlat
@@ -183,21 +191,21 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None,
         #-- (0:360,90:-90)
         nlon = np.int((360.0/dlon)+1.0)
         nlat = np.int((180.0/dlat)+1.0)
-        glon = dlon*np.arange(0,nlon)
-        glat = 90.0 - dlat*np.arange(0,nlat)
+        grid.lon = dlon*np.arange(0,nlon)
+        grid.lat = 90.0 - dlat*np.arange(0,nlat)
     elif (INTERVAL == 2):
         #-- (Degree spacing)/2
-        glon = np.arange(dlon/2.0,360+dlon/2.0,dlon)
-        glat = np.arange(90.0-dlat/2.0,-90.0-dlat/2.0,-dlat)
-        nlon = len(glon)
-        nlat = len(glat)
+        grid.lon = np.arange(dlon/2.0,360+dlon/2.0,dlon)
+        grid.lat = np.arange(90.0-dlat/2.0,-90.0-dlat/2.0,-dlat)
+        nlon = len(grid.lon)
+        nlat = len(grid.lat)
     elif (INTERVAL == 3):
         #-- non-global grid set with BOUNDS parameter
         minlon,maxlon,minlat,maxlat = BOUNDS.copy()
-        glon = np.arange(minlon+dlon/2.0,maxlon+dlon/2.0,dlon)
-        glat = np.arange(maxlat-dlat/2.0,minlat-dlat/2.0,-dlat)
-        nlon = len(glon)
-        nlat = len(glat)
+        grid.lon = np.arange(minlon+dlon/2.0,maxlon+dlon/2.0,dlon)
+        grid.lat = np.arange(maxlat-dlat/2.0,minlat-dlat/2.0,-dlat)
+        nlon = len(grid.lon)
+        nlat = len(grid.lat)
 
     #-- Setting units factor for output
     #-- dfactor computes the degree dependent coefficients
@@ -221,33 +229,33 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None,
             '(elastic)\n4:microGal\n5: Pa'))
 
     #-- Computing plms for converting to spatial domain
-    theta = (90.0-glat)*np.pi/180.0
+    theta = (90.0-grid.lat)*np.pi/180.0
     PLM,dPLM = plm_holmes(LMAX,np.cos(theta))
 
     #-- output spatial grid
     nt = len(input_Ylms.time)
-    spatial = np.zeros((nlat,nlon,nt))
+    grid.data = np.zeros((nlat,nlon,nfiles))
     #-- converting harmonics to truncated, smoothed coefficients in output units
     for t in range(nt):
         #-- spherical harmonics for time t
         Ylms = input_Ylms.index(t)
         Ylms.convolve(dfactor*wt)
         #-- convert spherical harmonics to output spatial grid
-        spatial[:,:,t] = harmonic_summation(Ylms.clm, Ylms.slm, glon, glat,
-            LMAX=LMAX, PLM=PLM).T
+        grid.data[:,:,t] = harmonic_summation(Ylms.clm, Ylms.slm,
+            grid.lon, grid.lat, LMAX=LMAX, PLM=PLM).T
 
     #-- if verbose output: print input and output file names
     if VERBOSE:
         print('{0}:'.format(os.path.basename(sys.argv[0])))
         print('{0} -->\n\t{1}\n'.format(INPUT_FILE,OUTPUT_FILE))
     #-- outputting data to file
-    output_data(np.squeeze(spatial), glon, glat, input_Ylms.time,
-        FILENAME=OUTPUT_FILE, DATAFORM=DATAFORM, UNITS=UNITS)
+    output_data(grid.squeeze() FILENAME=OUTPUT_FILE,
+        DATAFORM=DATAFORM, UNITS=UNITS)
     #-- change output permissions level to MODE
     os.chmod(OUTPUT_FILE,MODE)
 
 #-- PURPOSE: wrapper function for outputting data to file
-def output_data(data, lon, lat, tdec, FILENAME=None, DATAFORM=None, UNITS=None):
+def output_data(data, FILENAME=None, DATAFORM=None, UNITS=None):
     #-- output units and units longname
     unit_short = ['cmwe', 'mmGH' , 'mmCU', 'microGal', 'Pa']
     unit_name = ['Equivalent Water Thickness', 'Geoid Height',
@@ -255,21 +263,15 @@ def output_data(data, lon, lat, tdec, FILENAME=None, DATAFORM=None, UNITS=None):
         'Equivalent Surface Pressure']
     if (DATAFORM == 1):
         #-- ascii (.txt)
-        #-- open output ascii file
-        f = open(FILENAME, 'w')
-        for i,lt in enumerate(lat):
-            for j,ln in enumerate(lon):
-                args = (ln,lt,data[j,i],tdec)
-                f.write('{0:7.2f} {1:7.2f} {2:12.6f} {3:12.6f}\n'.format(*args))
-        f.close()
+        data.to_ascii(FILENAME)
     elif (DATAFORM == 2):
         #-- netcdf (.nc)
-        ncdf_write(data, lon, lat, tdec, FILENAME=FILENAME,
-            UNITS=unit_short[UNITS-1], LONGNAME=unit_name[UNITS-1])
+        data.to_netCDF4(FILENAME, units=unit_short[UNITS-1],
+            longname=unit_name[UNITS-1])
     elif (DATAFORM == 3):
         #-- HDF5 (.H5)
-        hdf5_write(data, lon, lat, tdec, FILENAME=FILENAME,
-            UNITS=unit_short[UNITS-1], LONGNAME=unit_name[UNITS-1])
+        data.to_HDF5(FILENAME, units=unit_short[UNITS-1],
+            longname=unit_name[UNITS-1])
 
 #-- PURPOSE: help module to describe the optional input parameters
 def usage():

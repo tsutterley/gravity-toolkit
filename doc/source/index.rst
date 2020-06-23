@@ -70,4 +70,5 @@ missions
     user_guide/read_SLR_geocenter.md
     user_guide/read_tellus_geocenter.md
     user_guide/run_grace_date.md
+    user_guide/spatial.rst
     user_guide/units.rst

@@ -41,4 +41,5 @@ from gravity_toolkit.read_SLR_C20 import read_SLR_C20
 from gravity_toolkit.read_SLR_C30 import read_SLR_C30
 from gravity_toolkit.read_SLR_geocenter import read_SLR_geocenter
 from gravity_toolkit.read_tellus_geocenter import read_tellus_geocenter
+from gravity_toolkit.spatial import spatial
 from gravity_toolkit.units import units
