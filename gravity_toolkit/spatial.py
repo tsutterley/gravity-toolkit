@@ -40,12 +40,12 @@ class spatial(object):
         self.month=None
         self.fill_value=None
         self.extent=[np.inf,-np.inf,np.inf,-np.inf]
+        self.spacing=spacing
         self.shape=[nlat,nlon,None]
         self.ndim=None
-        self.spacing=spacing
         self.filename=None
 
-    def from_ascii(self, filename, verbose=False, date=True,
+    def from_ascii(self, filename, date=True, verbose=False,
         columns=['lon','lat','data','time']):
         """
         Read a spatial object from an ascii file
@@ -78,6 +78,7 @@ class spatial(object):
             ilat = np.int((90.0-np.float(d['lat']))//self.spacing[1])
             #-- convert fortran exponentials if applicable
             self.data[ilat,ilon] = np.float(d['data'].replace('D','E'))
+            self.mask[ilat,ilon] = False
             self.lon[ilon] = np.float(d['lon'])
             self.lat[ilat] = np.float(d['lat'])
             #-- if the ascii file contains date variables
@@ -103,6 +104,8 @@ class spatial(object):
             ATTRIBUTES=False, DATE=date, VARNAME=varname,
             LONNAME=lonname, LATNAME=latname, TIMENAME='time')
         self.data = data['data'].copy()
+        self.fill_value = data['attributes']['_FillValue']
+        self.mask = np.zeros_like(self.data, dtype=np.bool)
         self.lon = data['lon'].copy()
         self.lat = data['lat'].copy()
         if date:
@@ -127,6 +130,8 @@ class spatial(object):
             ATTRIBUTES=False, DATE=date, VARNAME=varname,
             LONNAME=lonname, LATNAME=latname, TIMENAME='time')
         self.data = data['data'].copy()
+        self.fill_value = data['attributes']['_FillValue']
+        self.mask = np.zeros_like(self.data, dtype=np.bool)
         self.lon = data['lon'].copy()
         self.m = data['lat'].copy()
         if date:
@@ -183,12 +188,14 @@ class spatial(object):
             list_sort = np.argsort([d.time for d in object_list],axis=None)
         else:
             list_sort = np.arange(n)
-        #-- truncate to maximum degree and order
+        #-- extract dimensions and grid spacing
         self.spacing = object_list[0].spacing
         self.extents = object_list[0].extents
         self.shape = object_list[0].shape
-        #-- create output spatial
+        #-- create output spatial grid and mask
         self.data = np.zeros((self.shape[0],self.shape[1],n))
+        self.mask = np.zeros((self.shape[0],self.shape[1],n),dtype=np.bool)
+        self.fill_value = object_list[0].fill_value
         #-- create list of files
         self.filename = []
         #-- output dates
@@ -198,6 +205,7 @@ class spatial(object):
         #-- for each indice
         for t,i in enumerate(list_sort):
             self.data[:,:,t] = object_list[i].data[:,:].copy()
+            self.mask[:,:,t] |= object_list[i].mask[:,:]
             if date:
                 self.time[t] = object_list[i].time[:].copy()
                 self.month[t] = object_list[i].month[:].copy()
@@ -220,6 +228,8 @@ class spatial(object):
         #-- assign variables to self
         for key in k:
             setattr(self, key, d[key].copy())
+        #-- create output mask for data
+        self.mask = np.zeros_like(self.data,dtype=np.bool)
         #-- get spacing and dimensions
         self.update_spacing()
         self.update_extents()
@@ -242,7 +252,7 @@ class spatial(object):
         else:
             file_format = '{0:10.4f} {1:10.4f} {2:12.4f}'
         #-- write to file for each valid latitude and longitude
-        ii,jj = np.nonzero(self.data != self.fill_value)
+        ii,jj = np.nonzero((self.data != self.fill_value) & (~self.mask))
         for ln,lt,dt in zip(self.lon[jj],self.lat[ii],self.data[ii,jj]):
             print(file_format.format(ln,lt,dt,self.time), file=fid)
         #-- close the output file
@@ -305,7 +315,8 @@ class spatial(object):
         """
         Update the mask of the spatial object
         """
-        self.mask = (self.data == self.fill_value)
+        self.mask |= (self.data == self.fill_value)
+        self.data[self.mask] = self.fill_value
         return self
 
     def copy(self):
@@ -424,9 +435,31 @@ class spatial(object):
         temp = spatial(nlon=self.shape[0],nlat=self.shape[1])
         #-- create output mean spatial object
         temp.data = np.mean((self.data),axis=2)
+        temp.mask = np.any(self.data,axis=2)
+        if getattr(self, 'time'):
+            temp.time = np.mean(self.time)
         #-- calculate the spatial anomalies by removing the mean field
         if apply:
             for i,t in enumerate(self.time):
                 self.data[:,:,i] -= temp.data[:,:]
         #-- return the mean field
         return temp
+
+    def replace_invalid(self, fill_value, mask=None):
+        """
+        Replace the masked values with a new fill_value
+        """
+        #-- validate current mask
+        self.update_mask()
+        #-- update the mask if specified
+        if mask:
+            if (np.shape(mask) == self.shape):
+                self.mask |= mask
+            elif (np.ndim(mask) == 2) & (self.ndim == 3):
+                temp = np.broadcast_to(mask, self.shape)
+                self.mask[:,:,i] |= temp
+        #-- update the fill value
+        self.fill_value = fill_value
+        #-- replace invalid values with new fill value
+        self.data[self.mask] = self.fill_value
+        return self

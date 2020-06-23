@@ -15,7 +15,6 @@ file_inp = ncdf_read(filename, DATE=True, VERBOSE=False)
 
 #### Options
  - `DATE`: netCDF4 file has date information
- - `MISSING`: netCDF4 variables have missing values
  - `VERBOSE`: will print to screen the netCDF4 structure parameters
  - `VARNAME`: z variable name in netCDF4 file
  - `LONNAME`: longitude variable name in netCDF4 file

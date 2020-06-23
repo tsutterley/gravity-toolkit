@@ -166,7 +166,7 @@ General Attributes and Methods
     Inputs: dictionary object to be converted
 
 
-.. method:: object.to_ascii(filename)
+.. method:: object.to_ascii(filename, date=True)
 
     Write a harmonics object to ascii file
 
@@ -175,7 +175,7 @@ General Attributes and Methods
     Options: harmonics objects contain date information
 
 
-.. method:: object.to_netCDF4(filename)
+.. method:: object.to_netCDF4(filename, date=True)
 
     Write a harmonics object to netCDF4 file
 
@@ -184,7 +184,7 @@ General Attributes and Methods
     Options: harmonics objects contain date information
 
 
-.. method:: object.to_HDF5(filename)
+.. method:: object.to_HDF5(filename, date=True)
 
     Write a harmonics object to HDF5 file
 

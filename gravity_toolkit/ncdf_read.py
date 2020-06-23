@@ -20,7 +20,6 @@ OUTPUTS:
 
 OPTIONS:
     DATE: netCDF4 file has date information
-    MISSING: netCDF4 dataset has missing values
     VERBOSE: will print to screen the netCDF4 structure parameters
     VARNAME: z variable name in netCDF4 file
     LONNAME: longitude variable name in netCDF4 file
@@ -36,6 +35,7 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 06/2020: output data as lat/lon following spatial module
+        attempt to read fill value attribute and set to None if not present
     Updated 10/2019: changing Y/N flags to True/False
     Updated 03/2019: print variables keys in list for Python3 compatibility
     Updated 06/2018: extract fill_value and title without variable attributes
@@ -65,8 +65,8 @@ import netCDF4
 import numpy as np
 import re
 
-def ncdf_read(filename, DATE=False, MISSING=False, VERBOSE=False, VARNAME='z',
-    LONNAME='lon', LATNAME='lat', TIMENAME='time', ATTRIBUTES=True, TITLE=True):
+def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
+    LATNAME='lat', TIMENAME='time', ATTRIBUTES=True, TITLE=True):
     #-- Open the NetCDF file for reading
     fileID = netCDF4.Dataset(filename, 'r')
     #-- create python dictionary for output variables
@@ -109,8 +109,10 @@ def ncdf_read(filename, DATE=False, MISSING=False, VERBOSE=False, VARNAME='z',
         #-- put attributes in output python dictionary
         dinput['attributes'] = attributes
     #-- missing data fill value
-    if MISSING:
-        dinput['attributes']['_FillValue']=fileID.variables[VARNAME]._FillValue
+    try:
+        dinput['attributes']['_FillValue'] = fileID[VARNAME].attrs['_FillValue']
+    except:
+        dinput['attributes']['_FillValue'] = None
     #-- Global attribute (title of dataset)
     if TITLE:
         rx = re.compile('TITLE',re.IGNORECASE)

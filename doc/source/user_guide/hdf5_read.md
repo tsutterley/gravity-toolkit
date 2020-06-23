@@ -15,7 +15,6 @@ file_inp = hdf5_read(filename, DATE=True, VERBOSE=False)
 
 #### Options
  - `DATE`: HDF5 file has date information
- - `MISSING`: HDF5 variables have missing values
  - `VERBOSE`: will print to screen the HDF5 structure parameters
  - `VARNAME`: z variable name in HDF5 file
  - `LONNAME`: longitude variable name in HDF5 file

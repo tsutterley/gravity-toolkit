@@ -20,7 +20,6 @@ OUTPUTS:
 
 OPTIONS:
     DATE: HDF5 file has date information
-    MISSING: HDF5 dataset has missing values
     VERBOSE: will print to screen the HDF5 structure parameters
     VARNAME: z variable name in HDF5 file
     LONNAME: longitude variable name in HDF5 file
@@ -36,6 +35,7 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 06/2020: output data as lat/lon following spatial module
+        attempt to read fill value attribute and set to None if not present
     Updated 10/2019: changing Y/N flags to True/False
     Updated 03/2019: print variables keys in list for Python3 compatibility
     Updated 06/2018: extract fill_value and title without variable attributes
@@ -60,8 +60,8 @@ from __future__ import print_function
 import h5py
 import numpy as np
 
-def hdf5_read(filename, DATE=False, MISSING=False, VERBOSE=False, VARNAME='z',
-    LONNAME='lon', LATNAME='lat', TIMENAME='time', ATTRIBUTES=True, TITLE=True):
+def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
+    LATNAME='lat', TIMENAME='time', ATTRIBUTES=True, TITLE=True):
     #-- Open the HDF5 file for reading
     fileID = h5py.File(filename, 'r')
     #-- allocate python dictionary for output variables
@@ -98,8 +98,10 @@ def hdf5_read(filename, DATE=False, MISSING=False, VERBOSE=False, VARNAME='z',
             dinput['attributes']['time'] = [fileID['time'].attrs['units'], \
                 fileID['time'].attrs['long_name']]
     #-- missing data fill value
-    if MISSING:
+    try:
         dinput['attributes']['_FillValue'] = fileID[VARNAME].attrs['_FillValue']
+    except:
+        dinput['attributes']['_FillValue'] = None
     #-- Global attribute description
     if TITLE:
         dinput['attributes']['title'] = fileID.attrs['description']

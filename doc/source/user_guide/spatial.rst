@@ -97,7 +97,12 @@ General Attributes and Methods
 
 .. attribute:: object.extent
 
-    invalid value for spatial grid data
+    spatial grid bounds `[minimum longitude, maximum longitude, minimum latitude, maximum latitude]`
+
+
+.. attribute:: object.spacing
+
+    grid step size `[longitude,latitude]`
 
 
 .. attribute:: object.shape
@@ -110,36 +115,54 @@ General Attributes and Methods
     number of grid dimensions
 
 
-.. attribute:: object.spacing
-
-    grid step size [longitudes,latitudes]
-
-
-.. method:: object.from_ascii(filename, date=True)
+.. method:: object.from_ascii(filename, date=True, verbose=False, columns=['lon','lat','data','time'])
 
     Read a spatial object from an ascii file
 
     Inputs: full path of input ascii file
 
-    Options: ascii file contains date information
+    Options:
+        `date` ascii file contains date information
+
+        `verbose` print ascii filename
+
+        `columns` variable names for each column
 
 
-.. method:: object.from_netCDF4(filename, date=True)
+.. method:: object.from_netCDF4(filename, date=True, verbose=False, varname='z', lonname='lon', latname='lat')
 
     Read a spatial object from a netCDF4 file
 
     Inputs: full path of input netCDF4 file
 
-    Options: netCDF4 file contains date information
+    Options:
+        `date` netCDF4 file contains date information
+
+        `verbose` print netCDF4 file information
+
+        `varname` input variable name in netCDF4 file
+        
+        `lonname` input longitude variable name in netCDF4 file
+        
+        `latname` input latitude variable units in netCDF4 file
 
 
-.. method:: object.from_HDF5(filename, date=True)
+.. method:: object.from_HDF5(filename, date=True, verbose=False, varname='z', lonname='lon', latname='lat')
 
     Read a spatial object from a HDF5 file
 
     Inputs: full path of input HDF5 file
 
-    Options: HDF5 file contains date information
+    Options:
+        `date` HDF5 file contains date information
+
+        `verbose` print HDF5 file information
+
+        `varname` input variable name in HDF5 file
+        
+        `lonname` input longitude variable name in HDF5 file
+        
+        `latname` input latitude variable units in HDF5 file
 
 
 .. method:: object.from_index(filename, format=None, date=True, sort=True)
@@ -175,31 +198,56 @@ General Attributes and Methods
     Inputs: dictionary object to be converted
 
 
-.. method:: object.to_ascii(filename)
+.. method:: object.to_ascii(filename, date=True, verbose=False)
 
     Write a spatial object to ascii file
 
     Inputs: full path of output ascii file
 
-    Options: spatial objects contain date information
+    Options:
+        `date` spatial objects contain date information
+
+        `verbose` print ascii file name
 
 
-.. method:: object.to_netCDF4(filename)
+.. method:: object.to_netCDF4(filename, date=True, varname='z', units=None, longname=None, title=None, verbose=False)
 
     Write a spatial object to netCDF4 file
 
     Inputs: full path of output netCDF4 file
 
-    Options: spatial objects contain date information
+    Options:
+        `date` spatial objects contain date information
+        
+        `varname` output variable name in netCDF4 file
+        
+        `units` output variable units in netCDF4 file
+        
+        `longname` output variable unit longname in netCDF4 file
+        
+        `title` output netCDF4 file title
+        
+        `verbose` print netCDF4 file information
 
 
-.. method:: object.to_HDF5(filename)
+.. method:: object.to_HDF5(filename, date=True, varname='z', units=None, longname=None, title=None, verbose=False)
 
     Write a spatial object to HDF5 file
 
     Inputs: full path of output HDF5 file
 
-    Options: spatial objects contain date information
+    Options:
+        `date` spatial objects contain date information
+        
+        `varname` output variable name in HDF5 file
+        
+        `units` output variable units in HDF5 file
+        
+        `longname` output variable unit longname in HDF5 file
+        
+        `title` output HDF5 file title
+        
+        `verbose` print HDF5 file information
 
 
 .. method:: object.update_spacing()
@@ -207,7 +255,7 @@ General Attributes and Methods
     Calculate the step size of spatial object
 
 
-.. method:: object.update_extent()
+.. method:: object.update_extents()
 
     Calculate the bounds of spatial object
 
@@ -255,6 +303,13 @@ General Attributes and Methods
 
 .. method:: object.mean(apply=False)
 
-    Compute mean gravitational field from the spatial object
+    Compute mean spatial field and remove from data if specified
 
     Option: `apply` to remove the mean field from the input spatial
+
+
+.. method:: object.replace_invalid(fill_value, mask=None)
+
+    Replace the masked values with a new fill_value
+
+    Option: `mask` to update the current mask
