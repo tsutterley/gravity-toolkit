@@ -7,7 +7,7 @@ combine_harmonics.py
 ```bash
 python combine_harmonics --format=2 --lmax=60 --units=1 input_file output_file
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/combine_harmonics.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/scripts/combine_harmonics.py)
 
 #### Command Line Options
  - `--help`: list the command line options

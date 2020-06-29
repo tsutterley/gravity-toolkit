@@ -8,7 +8,7 @@ podaac_webdav.py
 ```bash
 python podaac_webdav.py --user=<username> 
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/podaac_webdav.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/scripts/podaac_webdav.py)
 
 #### Command Line Options
  - `-U X`, `--user=X`: Username for NASA Earthdata Login

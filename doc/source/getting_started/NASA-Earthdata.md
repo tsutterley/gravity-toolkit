@@ -17,7 +17,7 @@ PO.DAAC uses passwords generated using the Web Distributed Authoring and Version
 1. [Register with NASA Earthdata Login system](https://urs.earthdata.nasa.gov/users/new)  
 2. [After registering, login to the system](https://urs.earthdata.nasa.gov/home)
 3. Add `PO.DAAC Drive OPS` [application to Earthdata](https://wiki.earthdata.nasa.gov/display/EL/How+To+Pre-authorize+an+application)  
-4. Retrieve [WebDAV password](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/podaac_webdav.py) to access PO.DAAC servers and [sync data](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/podaac_grace_sync.py)  
+4. Retrieve [WebDAV password](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/scripts/podaac_webdav.py) to access PO.DAAC servers and [sync data](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/scripts/podaac_grace_sync.py)  
 
 #### Other Data Access Examples   
 -  [Curl and Wget](https://wiki.earthdata.nasa.gov/display/EL/How+To+Access+Data+With+cURL+And+Wget)   

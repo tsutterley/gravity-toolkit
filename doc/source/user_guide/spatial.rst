@@ -262,7 +262,7 @@ General Attributes and Methods
 
 .. method:: object.update_dimensions()
 
-    Update the dimensions of the spatial object with new extents
+    Update the dimensions of the spatial object
 
 
 .. method:: object.update_mask()

@@ -19,6 +19,7 @@ PROGRAM DEPENDENCIES:
     hdf5_read.py: reads spatial data from HDF5
 
 UPDATE HISTORY:
+    Updated 06/2020: added zeros_like() for creating an empty spatial object
     Written 06/2020
 """
 import os
@@ -31,14 +32,14 @@ from gravity_toolkit.hdf5_read import hdf5_read
 
 class spatial(object):
     np.seterr(invalid='ignore')
-    def __init__(self, spacing=[None,None], nlat=None, nlon=None):
+    def __init__(self, spacing=[None,None], nlat=None, nlon=None, fill_value=None):
         self.data=None
         self.mask=None
         self.lon=None
         self.lat=None
         self.time=None
         self.month=None
-        self.fill_value=None
+        self.fill_value=fill_value
         self.extent=[np.inf,-np.inf,np.inf,-np.inf]
         self.spacing=spacing
         self.shape=[nlat,nlon,None]
@@ -83,8 +84,8 @@ class spatial(object):
             self.lat[ilat] = np.float(d['lat'])
             #-- if the ascii file contains date variables
             if date:
-                self.time = np.float(d['time'])
-                self.month = np.int(12.0*(self.time - 2002.0)) + 1
+                self.time = np.array(d['time'],dtype='f')
+                self.month = np.array(12.0*(self.time-2002.0)+1,dtype='i')
         #-- get spacing and dimensions
         self.update_spacing()
         self.update_extents()
@@ -110,7 +111,7 @@ class spatial(object):
         self.lat = data['lat'].copy()
         if date:
             self.time = data['time'].copy()
-            self.month = np.int(12.0*(self.time - 2002.0)) + 1
+            self.month = np.array(12.0*(self.time-2002.0)+1,dtype='i')
         #-- get spacing and dimensions
         self.update_spacing()
         self.update_extents()
@@ -136,7 +137,7 @@ class spatial(object):
         self.m = data['lat'].copy()
         if date:
             self.time = data['time'].copy()
-            self.month = np.int(12.0*(self.time - 2002.0)) + 1
+            self.month = np.array(12.0*(self.time-2002.0)+1,dtype='i')
         #-- get spacing and dimensions
         self.update_spacing()
         self.update_extents()
@@ -190,12 +191,14 @@ class spatial(object):
             list_sort = np.arange(n)
         #-- extract dimensions and grid spacing
         self.spacing = object_list[0].spacing
-        self.extents = object_list[0].extents
+        self.extent = object_list[0].extent
         self.shape = object_list[0].shape
         #-- create output spatial grid and mask
         self.data = np.zeros((self.shape[0],self.shape[1],n))
         self.mask = np.zeros((self.shape[0],self.shape[1],n),dtype=np.bool)
         self.fill_value = object_list[0].fill_value
+        self.lon = object_list[0].lon.copy()
+        self.lat = object_list[0].lat.copy()
         #-- create list of files
         self.filename = []
         #-- output dates
@@ -305,7 +308,7 @@ class spatial(object):
 
     def update_dimensions(self):
         """
-        Update the dimensions of the spatial object with new extents
+        Update the dimensions of the spatial object
         """
         self.shape = np.shape(self.data)
         self.ndim = np.ndim(self.data)
@@ -323,17 +326,44 @@ class spatial(object):
         """
         Copy a spatial object to a new spatial object
         """
-        temp = spatial()
+        temp = spatial(fill_value=self.fill_value)
         #-- assign variables to self
-        for key in ['lon','lat','data','time','month']:
-            val = getattr(self, key)
-            setattr(temp, key, np.copy(val))
+        var = ['lon','lat','data','mask','error','time','month']
+        for key in var:
+            try:
+                val = getattr(self, key)
+                setattr(temp, key, np.copy(val))
+            except:
+                pass
         #-- get spacing and dimensions
         temp.update_spacing()
         temp.update_extents()
         temp.update_dimensions()
+        temp.update_mask()
         return temp
 
+    def zeros_like(self):
+        """
+        Create a spatial object using the dimensions of another
+        """
+        temp = spatial(fill_value=self.fill_value)
+        #-- assign variables to self
+        temp.lon = self.lon.copy()
+        temp.lat = self.lat.copy()
+        var = ['data','mask','error','time','month']
+        for key in var:
+            try:
+                val = getattr(self, key)
+                setattr(temp, key, np.zeros_like(val))
+            except:
+                pass
+        #-- get spacing and dimensions
+        temp.update_spacing()
+        temp.update_extents()
+        temp.update_dimensions()
+        temp.update_mask()
+        return temp
+    
     def expand_dims(self):
         """
         Add a singleton dimension to a spatial object if non-existent
@@ -345,10 +375,12 @@ class spatial(object):
         #-- output spatial with a third dimension
         if (np.ndim(self.data) == 2):
             self.data = self.data[:,:,None]
+            self.mask = self.mask[:,:,None]
         #-- get spacing and dimensions
         self.update_spacing()
         self.update_extents()
         self.update_dimensions()
+        self.update_mask()
         return self
 
     def squeeze(self):
@@ -359,10 +391,12 @@ class spatial(object):
         self.time = np.squeeze(self.time)
         self.month = np.squeeze(self.month)
         self.data = np.squeeze(self.data)
+        self.mask = np.squeeze(self.mask)
         #-- get spacing and dimensions
         self.update_spacing()
         self.update_extents()
         self.update_dimensions()
+        self.update_mask()
         return self
 
     def index(self, indice, date=True):
@@ -372,9 +406,16 @@ class spatial(object):
         Options: spatial objects contain date information
         """
         #-- output spatial object
-        temp = spatial()
+        temp = spatial(fill_value=self.fill_value)
         #-- subset output spatial field
         temp.data = self.data[:,:,indice].copy()
+        temp.mask = self.mask[:,:,indice].copy()
+        #-- subset output spatial error
+        try:
+            temp.error = self.error[:,:,indice].copy()
+        except:
+            pass
+        #-- copy dimensions
         temp.lon = self.lon.copy()
         temp.lat = self.lat.copy()
         #-- subset output dates
@@ -408,19 +449,35 @@ class spatial(object):
         #-- indices to sort data objects
         months_list = [i for i,m in enumerate(self.month) if m in months]
         #-- output spatial object
-        temp = spatial(nlon=self.shape[0],nlat=self.shape[1])
+        temp = spatial(nlon=self.shape[0],nlat=self.shape[1],
+            fill_value=self.fill_value)
         #-- create output spatial object
         temp.data = np.zeros((temp.shape[0],temp.shape[1],n))
-        temp.lon = np.copy(self.lon)
-        temp.lat = np.copy(self.lat)
+        temp.mask = np.zeros((temp.shape[0],temp.shape[1],n))
+        #-- create output spatial error
+        try:
+            getattr(self, 'error')
+            temp.error = np.zeros((temp.shape[0],temp.shape[1],n))
+        except:
+            pass            
+        #-- copy dimensions
+        temp.lon = self.lon.copy()
+        temp.lat = self.lat.copy()
         temp.time = np.zeros((n))
         temp.month = np.zeros((n),dtype=np.int)
         temp.filename = []
         #-- for each indice
         for t,i in enumerate(months_list):
             temp.data[:,:,t] = self.data[:,:,i].copy()
+            temp.mask[:,:,t] = self.mask[:,:,i].copy()
+            try:
+                temp.error[:,:,t] = self.error[:,:,i].copy()
+            except:
+                pass
+            #-- copy time dimensions
             temp.time[t] = self.time[i].copy()
             temp.month[t] = self.month[i].copy()
+            #-- subset filenmaes
             if getattr(self, 'filename'):
                 temp.filename.append(self.filename[i])
         #-- remove singleton dimensions if importing a single value
@@ -432,7 +489,8 @@ class spatial(object):
         Option: apply to remove the mean field from the input data
         """
         #-- output spatial object
-        temp = spatial(nlon=self.shape[0],nlat=self.shape[1])
+        temp = spatial(nlon=self.shape[0],nlat=self.shape[1],
+            fill_value=self.fill_value)
         #-- create output mean spatial object
         temp.data = np.mean((self.data),axis=2)
         temp.mask = np.any(self.data,axis=2)
@@ -452,7 +510,7 @@ class spatial(object):
         #-- validate current mask
         self.update_mask()
         #-- update the mask if specified
-        if mask:
+        if mask is not None:
             if (np.shape(mask) == self.shape):
                 self.mask |= mask
             elif (np.ndim(mask) == 2) & (self.ndim == 3):

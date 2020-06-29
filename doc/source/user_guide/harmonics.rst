@@ -97,6 +97,16 @@ General Attributes and Methods
     GRACE/GRACE-FO months variable of the spherical harmonics
 
 
+.. attribute:: object.shape
+
+    dimensions of harmonics object
+
+
+.. attribute:: object.ndim
+
+    number of dimensions of harmonics object
+
+
 .. method:: object.from_ascii(filename, date=True)
 
     Read a harmonics object from an ascii file

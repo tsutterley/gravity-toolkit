@@ -85,11 +85,9 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     if DATE:
         NAMES['time'] = TIMENAME
     #-- for each variable
-    for key in NAMES.keys():
+    for key,nckey in NAMES.items():
         #-- Getting the data from each NetCDF variable
-        #-- filling numpy arrays with NetCDF objects
-        nc_variable = fileID.variables[NAMES[key]][:].copy()
-        dinput[key] = np.asarray(nc_variable).squeeze()
+        dinput[key] = fileID.variables[nckey][:]
 
     #-- switching data array to lat/lon if lon/lat
     sz = dinput['data'].shape

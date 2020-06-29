@@ -11,7 +11,7 @@ run_grace_date.py
 ```bash
 python run_grace_date.py --release=RL06 --mode=0o775
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/run_grace_date.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/scripts/run_grace_date.py)
 
 #### Command Line Options  
  - `-D X`, `--directory=X`: GRACE/GRACE-FO working data directory

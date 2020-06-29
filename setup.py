@@ -1,7 +1,11 @@
+import os
 from setuptools import setup, find_packages
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
+
+with open('requirements.txt') as fh:
+    install_requires = fh.read().splitlines()
 
 setup(
     name='read-GRACE-harmonics',
@@ -23,6 +27,7 @@ setup(
     ],
     keywords='GRACE, GRACE-FO, Gravity, satellite geodesy, spherical harmonics',
     packages=find_packages(),
-    install_requires=['numpy','pyyaml','lxml','future','matplotlib','cartopy','netCDF4','h5py'],
+    install_requires=install_requires,
     dependency_links=['https://github.com/tsutterley/read-GRACE-geocenter/tarball/master'],
+    scripts=[os.path.join('scripts',f) for f in os.listdir('scripts')],
 )

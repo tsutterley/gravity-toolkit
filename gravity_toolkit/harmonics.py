@@ -22,6 +22,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 06/2020: output list of filenames with from_list()
+        add ndim and shape attributes of harmonics objects
     Updated 04/2020: added from_gfc to read gravity model coefficients from GFZ
         add to_ascii and iterate over temporal fields in convolve and destripe
         make date optional for harmonic read functions.  add more math functions
@@ -50,6 +51,8 @@ class harmonics(object):
         self.mmax=mmax
         self.l=np.arange(self.lmax+1) if self.lmax else None
         self.m=np.arange(self.mmax+1) if self.mmax else None
+        self.shape=None
+        self.ndim=None
         self.filename=None
 
     def from_ascii(self, filename, date=True):
@@ -100,6 +103,9 @@ class harmonics(object):
             #-- convert fortran exponentials if applicable
             self.clm[ll,mm] = np.float(clm1.replace('D','E'))
             self.slm[ll,mm] = np.float(slm1.replace('D','E'))
+        #-- assign shape and ndim attributes
+        self.ndim = self.clm.ndim
+        self.shape = self.clm.shape
         return self
 
     def from_netCDF4(self, filename, date=True):
@@ -120,6 +126,9 @@ class harmonics(object):
         if date:
             self.time = Ylms['time'].copy()
             self.month = Ylms['month'].copy()
+        #-- assign shape and ndim attributes
+        self.ndim = self.clm.ndim
+        self.shape = self.clm.shape            
         return self
 
     def from_HDF5(self, filename, date=True):
@@ -140,6 +149,9 @@ class harmonics(object):
         if date:
             self.time = Ylms['time'].copy()
             self.month = Ylms['month'].copy()
+        #-- assign shape and ndim attributes
+        self.ndim = self.clm.ndim
+        self.shape = self.clm.shape            
         return self
 
     def from_gfc(self, filename):
@@ -155,9 +167,13 @@ class harmonics(object):
         self.mmax = np.int(Ylms['max_degree'])
         self.l = np.arange(self.lmax+1)
         self.m = np.arange(self.mmax+1)
+        #-- geophysical parameters of gravity model
         self.GM = np.float(Ylms['earth_gravity_constant'])
         self.R = np.float(Ylms['radius'])
         self.tide = Ylms['tide_system']
+        #-- assign shape and ndim attributes
+        self.ndim = self.clm.ndim
+        self.shape = self.clm.shape        
         return self
 
     def from_index(self, filename, format=None, date=True, sort=True):
@@ -229,6 +245,9 @@ class harmonics(object):
             #-- append filename to list
             if getattr(object_list[i], 'filename'):
                 self.filename.append(object_list[i].filename)
+        #-- assign shape and ndim attributes
+        self.ndim = self.clm.ndim
+        self.shape = self.clm.shape                
         #-- return the single harmonic object
         return self
 
@@ -237,14 +256,18 @@ class harmonics(object):
         Convert a dict object to a harmonics object
         Inputs: dictionary object to be converted
         """
-        #-- find valid keys within dictionary
-        k = [k for k in ['l','m','clm','slm','time','month'] if k in d.keys()]
-        #-- assign variables to self
-        for key in k:
-            setattr(self, key, d[key].copy())
+        #-- assign dictionary variables to self
+        for key in ['l','m','clm','slm','time','month']:
+            try:
+                setattr(self, key, d[key].copy())
+            except:
+                pass
         #-- maximum degree and order
         self.lmax = np.max(d['l'])
         self.mmax = np.max(d['m'])
+        #-- assign shape and ndim attributes
+        self.ndim = self.clm.ndim
+        self.shape = self.clm.shape        
         return self
 
     def to_ascii(self, filename, date=True):
@@ -297,10 +320,10 @@ class harmonics(object):
         """
         l1 = self.lmax+1 if (temp.lmax > self.lmax) else temp.lmax+1
         m1 = self.mmax+1 if (temp.mmax > self.mmax) else temp.mmax+1
-        if (np.ndim(self.clm) == 2):
+        if (self.ndim == 2):
             self.clm[:l1,:m1] += temp.clm[:l1,:m1]
             self.slm[:l1,:m1] += temp.slm[:l1,:m1]
-        elif (np.ndim(self.clm) == 3) and (np.ndim(temp.clm) == 2):
+        elif (self.ndim == 3) and (temp.ndim == 2):
             for i,t in enumerate(self.time):
                 self.clm[:l1,:m1,i] += temp.clm[:l1,:m1]
                 self.slm[:l1,:m1,i] += temp.slm[:l1,:m1]
@@ -316,10 +339,10 @@ class harmonics(object):
         """
         l1 = self.lmax+1 if (temp.lmax > self.lmax) else temp.lmax+1
         m1 = self.mmax+1 if (temp.mmax > self.mmax) else temp.mmax+1
-        if (np.ndim(self.clm) == 2):
+        if (self.ndim == 2):
             self.clm[:l1,:m1] -= temp.clm[:l1,:m1]
             self.slm[:l1,:m1] -= temp.slm[:l1,:m1]
-        elif (np.ndim(self.clm) == 3) and (np.ndim(temp.clm) == 2):
+        elif (self.ndim == 3) and (temp.ndim == 2):
             for i,t in enumerate(self.time):
                 self.clm[:l1,:m1,i] -= temp.clm[:l1,:m1]
                 self.slm[:l1,:m1,i] -= temp.slm[:l1,:m1]
@@ -335,10 +358,10 @@ class harmonics(object):
         """
         l1 = self.lmax+1 if (temp.lmax > self.lmax) else temp.lmax+1
         m1 = self.mmax+1 if (temp.mmax > self.mmax) else temp.mmax+1
-        if (np.ndim(self.clm) == 2):
+        if (self.ndim == 2):
             self.clm[:l1,:m1] *= temp.clm[:l1,:m1]
             self.slm[:l1,:m1] *= temp.slm[:l1,:m1]
-        elif (np.ndim(self.clm) == 3) and (np.ndim(temp.clm) == 2):
+        elif (self.ndim == 3) and (temp.ndim == 2):
             for i,t in enumerate(self.time):
                 self.clm[:l1,:m1,i] *= temp.clm[:l1,:m1]
                 self.slm[:l1,:m1,i] *= temp.slm[:l1,:m1]
@@ -359,10 +382,10 @@ class harmonics(object):
         #-- indices for sine spherical harmonics (excluding zonals)
         m0 = np.nonzero(mc != 0)
         ls,ms = (lc[m0],mc[m0])
-        if (np.ndim(self.clm) == 2):
+        if (self.ndim == 2):
             self.clm[lc,mc] /= temp.clm[lc,mc]
             self.slm[ls,ms] /= temp.slm[ls,ms]
-        elif (np.ndim(self.clm) == 3) and (np.ndim(temp.clm) == 2):
+        elif (self.ndim == 3) and (temp.ndim == 2):
             for i,t in enumerate(self.time):
                 self.clm[lc,mc,i] /= temp.clm[lc,mc]
                 self.slm[ls,ms,i] /= temp.slm[ls,ms]
@@ -376,10 +399,13 @@ class harmonics(object):
         Copy a harmonics object to a new harmonics object
         """
         temp = harmonics(lmax=self.lmax, mmax=self.mmax)
-        #-- assign variables to self
-        for key in ['clm','slm','time','month']:
-            val = getattr(self, key)
-            setattr(temp, key, np.copy(val))
+        #-- try to assign variables to self
+        for key in ['clm','slm','time','month','shape','ndim','filename']:
+            try:
+                val = getattr(self, key)
+                setattr(temp, key, np.copy(val))
+            except:
+                pass
         return temp
 
     def expand_dims(self):
@@ -391,9 +417,12 @@ class harmonics(object):
             self.time = np.array([self.time])
             self.month = np.array([self.month])
         #-- output harmonics with a third dimension
-        if (np.ndim(self.clm) == 2):
+        if (self.ndim == 2):
             self.clm = self.clm[:,:,None]
             self.slm = self.slm[:,:,None]
+        #-- reassign ndim and shape attributes
+        self.ndim = self.clm.ndim
+        self.shape = self.clm.shape
         return self
 
     def squeeze(self):
@@ -405,6 +434,9 @@ class harmonics(object):
         self.month = np.squeeze(self.month)
         self.clm = np.squeeze(self.clm)
         self.slm = np.squeeze(self.slm)
+        #-- reassign ndim and shape attributes
+        self.ndim = self.clm.ndim
+        self.shape = self.clm.shape
         return self
 
     def flatten(self, date=True):
@@ -423,7 +455,7 @@ class harmonics(object):
             temp.time = np.copy(self.time)
             temp.month = np.copy(self.month)
         #-- restructured spherical harmonic arrays
-        if (np.ndim(self.clm) == 2):
+        if (self.clm.ndim == 2):
             temp.clm = np.zeros((n_harm))
             temp.slm = np.zeros((n_harm))
         else:
@@ -436,7 +468,7 @@ class harmonics(object):
             for l in range(m,self.lmax+1):#-- LMAX+1 to include LMAX
                 temp.l[lm] = np.int(l)
                 temp.m[lm] = np.int(m)
-                if (np.ndim(self.clm) == 2):
+                if (self.clm.ndim == 2):
                     temp.clm[lm] = self.clm[l,m]
                     temp.slm[lm] = self.slm[l,m]
                 else:
@@ -444,6 +476,9 @@ class harmonics(object):
                     temp.slm[lm,:] = self.slm[l,m,:]
                 #-- add 1 to lm counter variable
                 lm += 1
+        #-- assign ndim and shape attributes
+        temp.ndim = temp.clm.ndim
+        temp.shape = temp.clm.shape                
         #-- return the flattened arrays
         return temp
 
@@ -461,7 +496,7 @@ class harmonics(object):
             temp.time = np.copy(self.time)
             temp.month = np.copy(self.month)
         #-- restructured spherical harmonic matrices
-        if (np.ndim(self.clm) == 1):
+        if (self.clm.ndim == 1):
             temp.clm = np.zeros((self.lmax+1,self.mmax+1))
             temp.slm = np.zeros((self.lmax+1,self.mmax+1))
         else:
@@ -472,12 +507,15 @@ class harmonics(object):
         for lm in range(n_harm):
             l = self.l[lm]
             m = self.m[lm]
-            if (np.ndim(self.clm) == 1):
+            if (self.clm.ndim == 1):
                 temp.clm[l,m] = self.clm[lm]
                 temp.slm[l,m] = self.slm[lm]
             else:
                 temp.clm[l,m,:] = self.clm[lm,:]
                 temp.slm[l,m,:] = self.slm[lm,:]
+        #-- assign ndim and shape attributes
+        temp.ndim = temp.clm.ndim
+        temp.shape = temp.clm.shape
         #-- return the expanded harmonics object
         return temp
 
@@ -496,6 +534,9 @@ class harmonics(object):
         if date:
             temp.time = self.time[indice].copy()
             temp.month = self.month[indice].copy()
+        #-- assign ndim and shape attributes
+        temp.ndim = temp.clm.ndim
+        temp.shape = temp.clm.shape            
         #-- subset filenames
         if getattr(self, 'filename'):
             temp.filename = self.filename[indice]
@@ -534,6 +575,9 @@ class harmonics(object):
             temp.month[t] = self.month[i].copy()
             if getattr(self, 'filename'):
                 temp.filename.append(self.filename[i])
+        #-- assign ndim and shape attributes
+        temp.ndim = temp.clm.ndim
+        temp.shape = temp.clm.shape                
         #-- remove singleton dimensions if importing a single value
         return temp.squeeze()
 
@@ -555,7 +599,7 @@ class harmonics(object):
         l1 = self.lmax+1 if (temp.lmax > self.lmax) else temp.lmax+1
         m1 = self.mmax+1 if (temp.mmax > self.mmax) else temp.mmax+1
         #-- create output harmonics
-        if (np.ndim(temp.clm) == 3):
+        if (temp.ndim == 3):
             #-- number of months
             n = temp.clm.shape[-1]
             self.clm = np.zeros((self.lmax+1,self.mmax+1,n))
@@ -567,6 +611,9 @@ class harmonics(object):
             self.slm = np.zeros((self.lmax+1,self.mmax+1))
             self.clm[lmin:l1,:m1] = temp.clm[lmin:l1,:m1].copy()
             self.slm[lmin:l1,:m1] = temp.slm[lmin:l1,:m1].copy()
+        #-- reassign ndim and shape attributes
+        self.ndim = self.clm.ndim
+        self.shape = self.clm.shape            
         #-- return the truncated or expanded harmonics object
         return self
 
@@ -590,6 +637,9 @@ class harmonics(object):
                 if apply:
                     self.clm[l,m,:] -= temp.clm[l,m]
                     self.slm[l,m,:] -= temp.slm[l,m]
+        #-- assign ndim and shape attributes
+        temp.ndim = temp.clm.ndim
+        temp.shape = temp.clm.shape                    
         #-- return the mean field
         return temp
 
@@ -601,12 +651,26 @@ class harmonics(object):
         temp = harmonics(lmax=self.lmax, mmax=self.mmax)
         temp.time = np.copy(self.time)
         temp.month = np.copy(self.month)
-        for key in ['clm','slm']:
-            val = getattr(self, key)
-            setattr(temp, key, val*var)
+        #-- multiply by a single constant or a time-variable scalar
+        if (np.ndim(var) == 0):
+            temp.clm = var*self.clm
+            temp.slm = var*self.slm
+        elif (np.ndim(var) == 1) and (self.ndim == 2):
+            temp.clm = np.zeros((temp.lmax+1,temp.mmax+1,len(var)))
+            temp.slm = np.zeros((temp.lmax+1,temp.mmax+1,len(var)))
+            for i,v in enumerate(var):
+                temp.clm[:,:,i] = v*self.clm
+                temp.slm[:,:,i] = v*self.slm
+        elif (np.ndim(var) == 1) and (self.ndim == 3):
+            for i,v in enumerate(var):
+                temp.clm[:,:,i] = v*self.clm[:,:,i]
+                temp.slm[:,:,i] = v*self.slm[:,:,i]
+        #-- assign ndim and shape attributes
+        temp.ndim = temp.clm.ndim
+        temp.shape = temp.clm.shape             
         return temp
 
-    def power(self, pow):
+    def power(self, power):
         """
         Raise a harmonics object to a power
         Inputs: power to which the harmonics object will be raised
@@ -616,7 +680,10 @@ class harmonics(object):
         temp.month = np.copy(self.month)
         for key in ['clm','slm']:
             val = getattr(self, key)
-            setattr(temp, key, np.power(val,pow))
+            setattr(temp, key, np.power(val,power))
+        #-- assign ndim and shape attributes
+        temp.ndim = temp.clm.ndim
+        temp.shape = temp.clm.shape             
         return temp
 
     def convolve(self, var):
@@ -625,7 +692,7 @@ class harmonics(object):
         Inputs: degree dependent array for convolution
         """
         #-- check if a single field or a temporal field
-        if (np.ndim(self.clm) == 2):
+        if (self.ndim == 2):
             for l in range(0,self.lmax+1):#-- LMAX+1 to include LMAX
                 self.clm[l,:] *= var[l]
                 self.slm[l,:] *= var[l]
@@ -645,13 +712,13 @@ class harmonics(object):
         temp.time = np.copy(self.time)
         temp.month = np.copy(self.month)
         #-- check if a single field or a temporal field
-        if (np.ndim(self.clm) == 2):
+        if (self.ndim == 2):
             Ylms = destripe_harmonics(self.clm, self.slm,
                 LMIN=1, LMAX=self.lmax, MMAX=self.mmax)
             temp.clm = Ylms['clm'].copy()
             temp.slm = Ylms['slm'].copy()
         else:
-            n = self.clm.shape[-1]
+            n = self.shape[-1]
             temp.clm = np.zeros((self.lmax+1,self.mmax+1,n))
             temp.slm = np.zeros((self.lmax+1,self.mmax+1,n))
             for i in range(n):
@@ -659,5 +726,8 @@ class harmonics(object):
                     LMIN=1, LMAX=self.lmax, MMAX=self.mmax)
                 temp.clm[:,:,i] = Ylms['clm'].copy()
                 temp.slm[:,:,i] = Ylms['slm'].copy()
+        #-- assign ndim and shape attributes
+        temp.ndim = temp.clm.ndim
+        temp.shape = temp.clm.shape                
         #-- return the destriped field
         return temp
