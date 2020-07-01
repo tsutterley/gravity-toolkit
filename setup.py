@@ -1,15 +1,20 @@
 import os
 from setuptools import setup, find_packages
 
+# get long_description from README.md
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+# get install requirements
 with open('requirements.txt') as fh:
     install_requires = fh.read().splitlines()
 
+# list of all scripts to be included with package
+scripts=[os.path.join('scripts',f) for f in os.listdir('scripts') if f.endswith('.py')]
+
 setup(
     name='read-GRACE-harmonics',
-    version='1.0.1.14',
+    version='1.0.1.15',
     description='Reads Level-2 spherical harmonic coefficients from the NASA/DLR GRACE and NASA/GFZ GRACE Follow-on missions',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -29,5 +34,5 @@ setup(
     packages=find_packages(),
     install_requires=install_requires,
     dependency_links=['https://github.com/tsutterley/read-GRACE-geocenter/tarball/master'],
-    scripts=[os.path.join('scripts',f) for f in os.listdir('scripts')],
+    scripts=scripts,
 )

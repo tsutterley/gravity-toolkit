@@ -141,9 +141,9 @@ General Attributes and Methods
         `verbose` print netCDF4 file information
 
         `varname` input variable name in netCDF4 file
-        
+
         `lonname` input longitude variable name in netCDF4 file
-        
+
         `latname` input latitude variable units in netCDF4 file
 
 
@@ -159,9 +159,9 @@ General Attributes and Methods
         `verbose` print HDF5 file information
 
         `varname` input variable name in HDF5 file
-        
+
         `lonname` input longitude variable name in HDF5 file
-        
+
         `latname` input latitude variable units in HDF5 file
 
 
@@ -218,15 +218,15 @@ General Attributes and Methods
 
     Options:
         `date` spatial objects contain date information
-        
+
         `varname` output variable name in netCDF4 file
-        
+
         `units` output variable units in netCDF4 file
-        
+
         `longname` output variable unit longname in netCDF4 file
-        
+
         `title` output netCDF4 file title
-        
+
         `verbose` print netCDF4 file information
 
 
@@ -238,15 +238,15 @@ General Attributes and Methods
 
     Options:
         `date` spatial objects contain date information
-        
+
         `varname` output variable name in HDF5 file
-        
+
         `units` output variable units in HDF5 file
-        
+
         `longname` output variable unit longname in HDF5 file
-        
+
         `title` output HDF5 file title
-        
+
         `verbose` print HDF5 file information
 
 
@@ -273,6 +273,11 @@ General Attributes and Methods
 .. method:: object.copy()
 
     Copy a spatial object to a new spatial object
+
+
+.. method:: object.zeros_like()
+
+    Create a spatial object using the dimensions of another
 
 
 .. method:: object.expand_dims()

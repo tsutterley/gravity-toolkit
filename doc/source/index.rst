@@ -42,6 +42,8 @@ missions
     user_guide/grace_months_index.md
     user_guide/grace_find_months.md
     user_guide/grace_input_months.md
+    user_guide/grace_mean_harmonics.md
+    user_guide/grace_spatial_maps.md
     user_guide/harmonic_summation.md
     user_guide/harmonics.rst
     user_guide/hdf5_read.md
@@ -69,6 +71,9 @@ missions
     user_guide/read_SLR_C30.md
     user_guide/read_SLR_geocenter.md
     user_guide/read_tellus_geocenter.md
+    user_guide/regress_grace_maps.md
     user_guide/run_grace_date.md
     user_guide/spatial.rst
+    user_guide/tsamplitude.md
+    user_guide/tsregress.md
     user_guide/units.rst

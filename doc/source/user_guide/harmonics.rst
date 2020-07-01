@@ -236,6 +236,11 @@ General Attributes and Methods
     Copy a harmonics object to a new harmonics object
 
 
+.. method:: object.zeros_like()
+
+    Create a harmonics object using the dimensions of another
+
+
 .. method:: object.expand_dims()
 
     Add a singleton dimension to a harmonics object if non-existent

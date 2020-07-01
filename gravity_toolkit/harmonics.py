@@ -22,6 +22,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 06/2020: output list of filenames with from_list()
+        zeros_like() creates a new harmonics object with dimensions of another
         add ndim and shape attributes of harmonics objects
     Updated 04/2020: added from_gfc to read gravity model coefficients from GFZ
         add to_ascii and iterate over temporal fields in convolve and destripe
@@ -128,7 +129,7 @@ class harmonics(object):
             self.month = Ylms['month'].copy()
         #-- assign shape and ndim attributes
         self.ndim = self.clm.ndim
-        self.shape = self.clm.shape            
+        self.shape = self.clm.shape
         return self
 
     def from_HDF5(self, filename, date=True):
@@ -151,7 +152,7 @@ class harmonics(object):
             self.month = Ylms['month'].copy()
         #-- assign shape and ndim attributes
         self.ndim = self.clm.ndim
-        self.shape = self.clm.shape            
+        self.shape = self.clm.shape
         return self
 
     def from_gfc(self, filename):
@@ -173,7 +174,7 @@ class harmonics(object):
         self.tide = Ylms['tide_system']
         #-- assign shape and ndim attributes
         self.ndim = self.clm.ndim
-        self.shape = self.clm.shape        
+        self.shape = self.clm.shape
         return self
 
     def from_index(self, filename, format=None, date=True, sort=True):
@@ -247,7 +248,7 @@ class harmonics(object):
                 self.filename.append(object_list[i].filename)
         #-- assign shape and ndim attributes
         self.ndim = self.clm.ndim
-        self.shape = self.clm.shape                
+        self.shape = self.clm.shape
         #-- return the single harmonic object
         return self
 
@@ -267,7 +268,7 @@ class harmonics(object):
         self.mmax = np.max(d['m'])
         #-- assign shape and ndim attributes
         self.ndim = self.clm.ndim
-        self.shape = self.clm.shape        
+        self.shape = self.clm.shape
         return self
 
     def to_ascii(self, filename, date=True):
@@ -406,6 +407,26 @@ class harmonics(object):
                 setattr(temp, key, np.copy(val))
             except:
                 pass
+        #-- assign ndim and shape attributes
+        temp.ndim = temp.clm.ndim
+        temp.shape = temp.clm.shape
+        return temp
+
+    def zeros_like(self):
+        """
+        Create a harmonics object using the dimensions of another
+        """
+        temp = harmonics(lmax=self.lmax, mmax=self.mmax)
+        #-- assign variables to self
+        for key in ['clm','slm','time','month']:
+            try:
+                val = getattr(self, key)
+                setattr(temp, key, np.zeros_like(val))
+            except:
+                pass
+        #-- assign ndim and shape attributes
+        temp.ndim = temp.clm.ndim
+        temp.shape = temp.clm.shape
         return temp
 
     def expand_dims(self):
@@ -478,7 +499,7 @@ class harmonics(object):
                 lm += 1
         #-- assign ndim and shape attributes
         temp.ndim = temp.clm.ndim
-        temp.shape = temp.clm.shape                
+        temp.shape = temp.clm.shape
         #-- return the flattened arrays
         return temp
 
@@ -536,7 +557,7 @@ class harmonics(object):
             temp.month = self.month[indice].copy()
         #-- assign ndim and shape attributes
         temp.ndim = temp.clm.ndim
-        temp.shape = temp.clm.shape            
+        temp.shape = temp.clm.shape
         #-- subset filenames
         if getattr(self, 'filename'):
             temp.filename = self.filename[indice]
@@ -577,7 +598,7 @@ class harmonics(object):
                 temp.filename.append(self.filename[i])
         #-- assign ndim and shape attributes
         temp.ndim = temp.clm.ndim
-        temp.shape = temp.clm.shape                
+        temp.shape = temp.clm.shape
         #-- remove singleton dimensions if importing a single value
         return temp.squeeze()
 
@@ -613,7 +634,7 @@ class harmonics(object):
             self.slm[lmin:l1,:m1] = temp.slm[lmin:l1,:m1].copy()
         #-- reassign ndim and shape attributes
         self.ndim = self.clm.ndim
-        self.shape = self.clm.shape            
+        self.shape = self.clm.shape
         #-- return the truncated or expanded harmonics object
         return self
 
@@ -639,7 +660,7 @@ class harmonics(object):
                     self.slm[l,m,:] -= temp.slm[l,m]
         #-- assign ndim and shape attributes
         temp.ndim = temp.clm.ndim
-        temp.shape = temp.clm.shape                    
+        temp.shape = temp.clm.shape
         #-- return the mean field
         return temp
 
@@ -667,7 +688,7 @@ class harmonics(object):
                 temp.slm[:,:,i] = v*self.slm[:,:,i]
         #-- assign ndim and shape attributes
         temp.ndim = temp.clm.ndim
-        temp.shape = temp.clm.shape             
+        temp.shape = temp.clm.shape
         return temp
 
     def power(self, power):
@@ -683,7 +704,7 @@ class harmonics(object):
             setattr(temp, key, np.power(val,power))
         #-- assign ndim and shape attributes
         temp.ndim = temp.clm.ndim
-        temp.shape = temp.clm.shape             
+        temp.shape = temp.clm.shape
         return temp
 
     def convolve(self, var):
@@ -728,6 +749,6 @@ class harmonics(object):
                 temp.slm[:,:,i] = Ylms['slm'].copy()
         #-- assign ndim and shape attributes
         temp.ndim = temp.clm.ndim
-        temp.shape = temp.clm.shape                
+        temp.shape = temp.clm.shape
         #-- return the destriped field
         return temp
