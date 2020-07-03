@@ -201,7 +201,12 @@ General Attributes and Methods
     Inputs: full path of output HDF5 file
 
     Options: harmonics objects contain date information
+    
 
+.. method:: object.update_dimensions()
+
+    Update the dimensions of the harmonics object
+    
 
 .. method:: object.add(temp)
 

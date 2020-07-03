@@ -44,4 +44,5 @@ from gravity_toolkit.read_tellus_geocenter import read_tellus_geocenter
 from gravity_toolkit.spatial import spatial
 from gravity_toolkit.tsamplitude import tsamplitude
 from gravity_toolkit.tsregress import tsregress
+from gravity_toolkit.tssmooth import tssmooth
 from gravity_toolkit.units import units

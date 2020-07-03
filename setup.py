@@ -14,8 +14,8 @@ scripts=[os.path.join('scripts',f) for f in os.listdir('scripts') if f.endswith(
 
 setup(
     name='read-GRACE-harmonics',
-    version='1.0.1.15',
-    description='Reads Level-2 spherical harmonic coefficients from the NASA/DLR GRACE and NASA/GFZ GRACE Follow-on missions',
+    version='1.0.1.16',
+    description='Python tools for obtaining and working with spherical harmonic coefficients from the NASA/DLR GRACE and NASA/GFZ GRACE Follow-on missions',
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/tsutterley/read-GRACE-harmonics',

@@ -43,6 +43,7 @@ missions
     user_guide/grace_find_months.md
     user_guide/grace_input_months.md
     user_guide/grace_mean_harmonics.md
+    user_guide/grace_spatial_error.md
     user_guide/grace_spatial_maps.md
     user_guide/harmonic_summation.md
     user_guide/harmonics.rst
@@ -76,4 +77,5 @@ missions
     user_guide/spatial.rst
     user_guide/tsamplitude.md
     user_guide/tsregress.md
+    user_guide/tssmooth.md
     user_guide/units.rst
