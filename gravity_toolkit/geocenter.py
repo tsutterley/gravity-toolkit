@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter.py
-Written by Tyler Sutterley (06/2019)
+Written by Tyler Sutterley (07/2020)
 
 Calculates the geocenter variation (in mm) from degree 1 Stokes Coefficients
 Calculates the Degree 1 Stokes Coefficients of a geocenter variation (in mm)
@@ -11,13 +11,20 @@ CALLING SEQUENCE:
     Ylms = geocenter(X=x, Y=y, Z=z, INVERSE=True)
 
 OPTIONS:
-    RADIUS: Earth's radius for calculating spherical harmonics from SLR data
-    INVERSE: calculates the Stokes Coefficients from geocenter (True/False)
+    C10: Cosine spherical harmonic of degree 1 and order 0
+    C11: Cosine spherical harmonic of degree 1 and order 1
+    S11: Sine spherical harmonic of degree 1 and order 1
+    X: X-component of geocenter variation
+    Y: Y-component of geocenter variation
+    Z: Z-component of geocenter variation
+    RADIUS: Earth's radius for calculating spherical harmonics
+    INVERSE: calculate the spherical harmonics coefficients from geocenter
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 06/2019: added option RADIUS to manually set the Earth's radius
     Updated 04/2017: changed option from INV to INVERSE and made True/False
     Updated 04/2015: calculate radius of the Earth directly in program
@@ -27,6 +34,21 @@ UPDATE HISTORY:
 import numpy as np
 
 def geocenter(C10=0,C11=0,S11=0,X=0,Y=0,Z=0,RADIUS=None,INVERSE=False):
+    """
+    Calculates the geocenter variation (in mm) from degree 1 Stokes Coefficients
+    Calculates the Degree 1 Stokes Coefficients of a geocenter variation (in mm)
+
+    Keyword arguments
+    -----------------
+    C10: Cosine spherical harmonic of degree 1 and order 0
+    C11: Cosine spherical harmonic of degree 1 and order 1
+    S11: Sine spherical harmonic of degree 1 and order 1
+    X: X-component of geocenter variation
+    Y: Y-component of geocenter variation
+    Z: Z-component of geocenter variation
+    RADIUS: Earth's radius for calculating spherical harmonics
+    INVERSE: calculate the spherical harmonics coefficients from geocenter
+    """
     if RADIUS is None:
         #-- WGS84 ellipsoid parameters
         a_axis = 6378137.0#-- [m] semimajor axis of the ellipsoid

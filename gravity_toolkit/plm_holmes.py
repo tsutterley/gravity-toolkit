@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 plm_holmes.py
-Written by Tyler Sutterley (10/2018)
+Written by Tyler Sutterley (07/2020)
 
 Computes fully-normalized associated Legendre Polynomials
     for a vector of x values (can also be singular)
@@ -15,13 +15,6 @@ It is stable up to very high degree and order (at least 3000).
 This is achieved by individually computing the sectorials to P_m,m
 and then iterating up to P_l,m divided by P_m,m and the scale factor 1e280.
 Eventually, the result is multiplied again with these to terms.
-
-Journal of Geodesy (2002) 76: 279-299
-DOI: 10.1007/s00190-002-0216-2
-http://link.springer.com/10.1007/s00190-002-0216-2
-
-Geoid Cookbook
-http://mitgcm.org/~mlosch/geoidcookbook.pdf
 
 CALLING SEQUENCE:
     plm,dplm = plm_holmes(LMAX, np.cos(theta))
@@ -41,7 +34,16 @@ OPTIONS:
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
+REFERENCES:
+    S. A. Holmes and W. E. Featherstone, "A unified approach to the Clenshaw
+    summation and the recursive computation of very high degree and order
+    normalised associated Legendre functions" Journal of Geodesy,
+    76: 279-299, 2002. https://doi.org/10.1007/s00190-002-0216-2
+
+    Geoid Cookbook: http://mitgcm.org/~mlosch/geoidcookbook.pdf
+
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 10/2018: using future division for python3 Compatibility
     Updated 07/2017: output first differential of legendre polynomials
     Written 05/2015
@@ -50,6 +52,24 @@ from __future__ import division
 import numpy as np
 
 def plm_holmes(LMAX, x, ASTYPE=np.float):
+    """
+    Computes fully-normalized associated Legendre Polynomials and
+    their first derivative using Holmes and Featherstone relation
+
+    Arguments
+    ---------
+    LMAX: Upper bound of Spherical Harmonic Degrees
+    x: elements ranging from -1 to 1
+
+    Keyword arguments
+    -----------------
+    ASTYPE: output variable data type
+
+    Returns
+    -------
+    plms: fully-normalized Legendre polynomials
+    dplms: first differentials of Legendre polynomials
+    """
 
     if (np.ndim(x) > 0):
         #-- length of the x array

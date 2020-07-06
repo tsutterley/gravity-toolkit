@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 u"""
 gen_stokes.py
-Written by Tyler Sutterley (04/2020)
+Written by Tyler Sutterley (07/2020)
 
-Returns a series of spherical harmonics for an input spatial field
+Converts data from the spatial domain to spherical harmonic coefficients
 
 CALLING SEQUENCE:
     Ylms = gen_stokes(data, lon, lat, UNITS=1, LMIN=0, LMAX=60, LOVE=(hl,kl,ll))
@@ -20,13 +20,13 @@ OUTPUTS:
     m: spherical harmonic order to MMAX
 
 OPTIONS:
+    LMIN: Lower bound of Spherical Harmonic Degrees (default = 0)
+    LMAX: Upper bound of Spherical Harmonic Degrees (default = 60)
+    MMAX: Upper bound of Spherical Harmonic Orders (default = LMAX)
     UNITS: input data units
         1: cm of water thickness (default)
         2: Gtons of mass
         3: kg/m^2
-    LMIN: Lower bound of Spherical Harmonic Degrees (default = 0)
-    LMAX: Upper bound of Spherical Harmonic Degrees (default = 60)
-    MMAX: Upper bound of Spherical Harmonic Orders (default = LMAX)
     PLM: input Legendre polynomials (for improving computational time)
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
@@ -38,6 +38,7 @@ PROGRAM DEPENDENCIES:
     units.py: class for converting spherical harmonic data to specific units
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 04/2020: reading load love numbers outside of this function
         using the units class for converting to normalized spherical harmonics
         include degrees and orders in output dictionary for harmonics class
@@ -60,8 +61,36 @@ import numpy as np
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.units import units
 
-def gen_stokes(data, lon, lat, UNITS=1, LMIN=0, LMAX=60, MMAX=None,
+def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     PLM=None, LOVE=None):
+    """
+    Converts data from the spatial domain to spherical harmonic coefficients
+
+    Arguments
+    ---------
+    data: data matrix
+    lon: longitude array
+    lat: latitude array
+
+    Keyword arguments
+    -----------------
+    LMIN: Lower bound of Spherical Harmonic Degrees
+    LMAX: Upper bound of Spherical Harmonic Degrees
+    MMAX: Upper bound of Spherical Harmonic Orders
+    UNITS: input data units
+        1: cm of water thickness
+        2: Gtons of mass
+        3: kg/m^2
+    PLM: input Legendre polynomials
+    LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
+
+    Returns
+    -------
+    clm: cosine spherical harmonic coefficients
+    slm: sine spherical harmonic coefficients
+    l: spherical harmonic degree to LMAX
+    m: spherical harmonic order to MMAX
+    """
 
     #-- converting LMIN and LMAX to integer
     LMIN = np.int(LMIN)

@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 u"""
 hdf5_stokes.py
-Written by Tyler Sutterley (03/2020)
+Written by Tyler Sutterley (07/2020)
 
 Writes spherical harmonic coefficients to HDF5 files
 
 CALLING SEQUENCE:
-    hdf5_stokes(clm, slm, linp, minp, tinp, month, FILENAME=output_HDF5_file)
+    hdf5_stokes(clm1,slm1,linp,minp,tinp,month,FILENAME=output_HDF5_file)
 
 INPUTS:
-    clm: Cosine Stokes Coefficient
-    slm: Sine Stokes Coefficient
-    linp: degree (l)
-    minp: order (m)
+    clm1: cosine spherical harmonic coefficients
+    slm1: sine spherical harmonic coefficients
+    linp: spherical harmonic degree (l)
+    minp: spherical harmonic order (m)
     tinp: date of measurement
     month: GRACE/GRACE-FO month
 
@@ -35,6 +35,7 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 03/2020: only include title if not None
     Updated 10/2019: changing Y/N flags to True/False
     Updated 08/2019: don't include time (HH:MM:SS) in creation date
@@ -71,6 +72,32 @@ def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
     UNITS='Geodesy_Normalization', TIME_UNITS=None, TIME_LONGNAME=None,
     MONTHS_NAME='month', MONTHS_UNITS='number', MONTHS_LONGNAME='GRACE_month',
     TITLE=None, DATE=True, CLOBBER=True, VERBOSE=False):
+    """
+    Writes spherical harmonic coefficients to HDF5 files
+
+    Arguments
+    ---------
+    clm1: cosine spherical harmonic coefficients
+    slm1: sine spherical harmonic coefficients
+    linp: spherical harmonic degree (l)
+    minp: spherical harmonic order (m)
+    tinp: date of measurement
+    month: GRACE/GRACE-FO month
+
+    Keyword arguments
+    -----------------
+    FILENAME: HDF5 filename
+    UNITS: spherical harmonic units
+    TIME_UNITS: time variable units
+    TIME_LONGNAME: time variable description
+    MONTHS_NAME: name of months variable within HDF5 file
+    MONTHS_UNITS: months variable units
+    MONTHS_LONGNAME: months variable description
+    TITLE: title attribute of dataset
+    CLOBBER: will overwrite an existing HDF5 file
+    VERBOSE: will print to screen the HDF5 structure parameters
+    DATE: harmonics have date information
+    """
 
     #-- setting HDF5 clobber attribute
     if CLOBBER:

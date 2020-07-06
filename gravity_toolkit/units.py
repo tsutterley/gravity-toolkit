@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 units.py
-Written by Tyler Sutterley (04/2020)
+Written by Tyler Sutterley (07/2020)
 
 Class for converting GRACE/GRACE-FO Level-2 data to specific units
 
@@ -9,6 +9,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 07/2020: added class docstring
     Updated 04/2020: include earth parameters as attributes
     Written 03/2020
 """
@@ -17,6 +18,9 @@ import re
 import numpy as np
 
 class units(object):
+    """
+    Class for converting spherical harmonic and spatial data to specific units
+    """
     np.seterr(invalid='ignore')
     def __init__(self, lmax=None):
         # Earth Parameters
@@ -27,9 +31,9 @@ class units(object):
         # Flattening of the WGS84 ellipsoid
         self.flat=1/298.257223563
         # Semi-minor axis of the WGS84 ellipsoid [cm]
-        self.b_axis=(1.0 - self.flat)*self.a_axis
+        self.b_axis=(1.0-self.flat)*self.a_axis
         # Average Radius of the Earth having the same volume as WGS84 [cm]
-        self.rad_e=self.a_axis*(1.0 - self.flat)**(1.0/3.0)
+        self.rad_e=self.a_axis*(1.0-self.flat)**(1.0/3.0)
         # standard gravitational acceleration (World Meteorological Organization)
         self.g_wmo=980.665
         # Degree dependent parameters

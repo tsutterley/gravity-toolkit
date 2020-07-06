@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_read.py
-Written by Tyler Sutterley (06/2020)
+Written by Tyler Sutterley (07/2020)
 
 Reads spatial data from HDF5 files
 
@@ -34,6 +34,7 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 06/2020: output data as lat/lon following spatial module
         attempt to read fill value attribute and set to None if not present
     Updated 10/2019: changing Y/N flags to True/False
@@ -62,6 +63,33 @@ import numpy as np
 
 def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     LATNAME='lat', TIMENAME='time', ATTRIBUTES=True, TITLE=True):
+    """
+    Reads spatial data from HDF5 files
+
+    Arguments
+    ---------
+    filename: HDF5 file to be opened and read
+
+    Keyword arguments
+    -----------------
+    DATE: HDF5 file has date information
+    VERBOSE: will print to screen the HDF5 structure parameters
+    VARNAME: z variable name in HDF5 file
+    LONNAME: longitude variable name in HDF5 file
+    LATNAME: latitude variable name in HDF5 file
+    TIMENAME: time variable name in HDF5 file
+    ATTRIBUTES: HDF5 variables contain attribute parameters
+    TITLE: HDF5 file contains a description attribute
+
+    Returns
+    -------
+    data: z value of dataset
+    lon: longitudinal array
+    lat: latitudinal array
+    time: time value of dataset
+    attributes: HDF5 attributes
+    """
+
     #-- Open the HDF5 file for reading
     fileID = h5py.File(filename, 'r')
     #-- allocate python dictionary for output variables

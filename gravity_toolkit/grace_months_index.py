@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_months_index.py
-Written by Tyler Sutterley (05/2020)
+Written by Tyler Sutterley (07/2020)
 
 Creates a file with the start and end days for each dataset
 Shows the range of each month for (CSR/GFZ/JPL) (RL04/RL05/RL06)
@@ -32,7 +32,18 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 05/2020 for public release
+    Updated 05-06/2018: GRACE release 6 (not all processing centers have RL06)
+    Updated 01/2017: added MODE to set file and directory permissions
+    Updated 05-06/2016: using __future__ print function. format month lines
+    Updated 03/2016: using getopt to set RL04 parameter, added new help module
+    Updated 10/2015: cleaned up and added a few comments
+    Updated 11/2014: minor updates to code. added main definition
+    Updated 10/2014: updated comments
+    Updated 05/2014: added OPTION to not run RL04
+    Updated 05/2013: added years to month label
+    Written 07/2012
 """
 from __future__ import print_function
 
@@ -43,7 +54,20 @@ import calendar
 import numpy as np
 
 def grace_months_index(base_dir, DREL=['RL06'], MODE=None):
+    """
+    Creates a file with the start and end days for each dataset
+    Shows the range of each month for (CSR/GFZ/JPL) (RL04/RL05/RL06)
+    Shows which months are missing for each dataset as **missing**
 
+    Arguments
+    ---------
+    base_dir: Working data directory for GRACE/GRACE-FO data
+
+    Keyword arguments
+    -----------------
+    DREL: GRACE/GRACE-FO data release (RL04, RL05, RL06)
+    MODE: Permissions mode of output index file
+    """
     #-- Output GRACE months file
     grace_months_file = 'GRACE_months.txt'
     fid = open(os.path.join(base_dir,grace_months_file), 'w')

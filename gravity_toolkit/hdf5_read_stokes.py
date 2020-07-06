@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_read_stokes.py
-Written by Tyler Sutterley (03/2020)
+Written by Tyler Sutterley (07/2020)
 
 Reads spherical harmonic data from HDF5 files
 
@@ -12,8 +12,8 @@ INPUTS:
     filename: HDF5 file to be opened and read
 
 OUTPUTS:
-    clm: Cosine Stokes Coefficient
-    slm: Sine Stokes Coefficient
+    clm: cosine spherical harmonic coefficients
+    slm: sine spherical harmonic coefficients
     l: degree (l)
     m: order (m)
     time: time of measurement (if specified by DATE)
@@ -32,6 +32,7 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 03/2020: added ATTRIBUTES option to check if file has attributes
     Updated 10/2019: changing Y/N flags to True/False.  check if time is array
     Updated 03/2019: print variables keys in list for Python3 compatibility
@@ -51,6 +52,30 @@ import h5py
 import numpy as np
 
 def hdf5_read_stokes(filename, DATE=True, ATTRIBUTES=True, VERBOSE=False):
+    """
+    Reads spherical harmonic data from HDF5 files
+
+    Arguments
+    ---------
+    filename: HDF5 file to be opened and read
+
+    Keyword arguments
+    -----------------
+    DATE: HDF5 file has date information
+    ATTRIBUTES: HDF5 variables contain attribute parameters
+    VERBOSE: will print to screen the HDF5 structure parameters
+
+    Returns
+    -------
+    clm: cosine spherical harmonic coefficients
+    slm: sine spherical harmonic coefficients
+    l: degree
+    m: order
+    time: time of measurement
+    month: GRACE/GRACE-FO month
+    attributes: HDF5 attributes for variables and file
+    """
+
     #-- Open the HDF5 file for reading
     fileID = h5py.File(filename, 'r')
     #-- allocate python dictionary for output variables

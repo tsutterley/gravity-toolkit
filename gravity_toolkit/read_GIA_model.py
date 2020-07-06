@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GIA_model.py
-Written by Tyler Sutterley (04/2020)
+Written by Tyler Sutterley (07/2020)
 
 Reads GIA data files that can come in various formats depending on the group
 Outputs spherical harmonics for the GIA rates and the GIA model parameters
@@ -133,6 +133,43 @@ from gravity_toolkit.hdf5_read_stokes import hdf5_read_stokes
 
 def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
     DATAFORM=None, MODE=0o775):
+    """
+    Reads Glacial Isostatic Adjustment (GIA) data files
+
+    Arguments
+    ---------
+    input_file: input GIA file
+
+    Keyword arguments
+    -----------------
+    GIA: GIA model type to read and output
+        IJ05-R2: Ivins R2 GIA Models
+        W12a: Whitehouse GIA Models
+        SM09: Simpson/Milne GIA Models
+        ICE6G: ICE-6G GIA Models
+        Wu10: Wu (2010) GIA Correction
+        AW13-ICE6G: Geruo A ICE-6G GIA Models
+        Caron: Caron JPL GIA Assimilation
+        ICE6G-D: ICE-6G Version-D GIA Models
+        ascii: reformatted GIA in ascii format
+        netCDF4: reformatted GIA in netCDF4 format
+        HDF5: reformatted GIA in HDF5 format
+    LMAX: maximum degree of spherical harmonics
+    MMAX: maximum order of spherical harmonics
+    DATAFORM: Spherical harmonic data output format
+        None: output only as variables
+        netCDF4: output to netCDF4 format (.nc)
+        HDF5: output to HDF5 format (.H5)
+    MODE: permissions mode of output spherical harmonic files
+
+    Returns
+    -------
+    clm: cosine spherical harmonic coefficients
+    slm: sine spherical harmonic coefficients
+    l: spherical harmonic degree
+    m: spherical harmonic order
+    title: parameters of GIA model
+    """
 
     #-- allocate for output Ylms
     #-- initially read for spherical harmonic degree up to LMAX

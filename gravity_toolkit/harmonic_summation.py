@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonic_summation.py
-Written by Tyler Sutterley (05/2015)
+Written by Tyler Sutterley (07/2020)
 
 Returns the spatial field for a series of spherical harmonics
 
@@ -9,16 +9,16 @@ CALLING SEQUENCE:
     spatial = harmonic_summation(clm1, slm1, lon, lat, LMIN=0, LMAX=60)
 
 INPUTS:
-    clm: cosine spherical harmonic coefficients in output units
-    slm: sine spherical harmonic coefficients in output units
-    lon: longitude
-    lat: latitude
+    clm1: cosine spherical harmonic coefficients in output units
+    slm1: sine spherical harmonic coefficients in output units
+    lon: longitude array for output spatial field
+    lat: latitude array for output spatial field
 
 OPTIONS:
     LMIN: Lower bound of Spherical Harmonic Degrees
     LMAX: Upper bound of Spherical Harmonic Degrees
     MMAX: Upper bound of Spherical Harmonic Orders (default = LMAX)
-    PLM: plm coefficients (if computed outside the function)
+    PLM: Fully-normalized associated Legendre polynomials
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
@@ -27,6 +27,7 @@ PROGRAM DEPENDENCIES:
     plm_holmes.py: Computes fully-normalized associated Legendre polynomials
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 05/2015: added parameter MMAX for MMAX != LMAX.
     Written 05/2013
 """
@@ -34,6 +35,27 @@ import numpy as np
 from gravity_toolkit.plm_holmes import plm_holmes
 
 def harmonic_summation(clm1,slm1,lon,lat,LMIN=0,LMAX=0,MMAX=None,PLM=None):
+    """
+    Converts data from spherical harmonic coefficients to a spatial field
+
+    Arguments
+    ---------
+    clm1: cosine spherical harmonic coefficients in output units
+    slm1: sine spherical harmonic coefficients in output units
+    lon: longitude array
+    lat: latitude array
+
+    Keyword arguments
+    -----------------
+    LMIN: Lower bound of Spherical Harmonic Degrees
+    LMAX: Upper bound of Spherical Harmonic Degrees
+    MMAX: Upper bound of Spherical Harmonic Orders
+    PLM: Fully-normalized associated Legendre polynomials
+
+    Returns
+    -------
+    spatial: spatial field
+    """
 
     #-- if LMAX is not specified, will use the size of the input harmonics
     if (LMAX == 0):

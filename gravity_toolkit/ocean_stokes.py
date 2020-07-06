@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ocean_stokes.py
-Written by Tyler Sutterley (06/2020)
+Written by Tyler Sutterley (07/2020)
 
 Reads a land-sea mask and converts to a series of spherical harmonics
 
@@ -39,7 +39,13 @@ PROGRAM DEPENDENCIES
     ncdf_write.py: writes output spatial data to netCDF4
     hdf5_write.py: writes output spatial data to HDF5
 
+REFERENCE:
+    T. C. Sutterley, I. Velicogna, and C.-W. Hsu, "Self‐Consistent Ice Mass
+    Balance and Regional Sea Level From Time‐Variable Gravity",
+    Earth and Space Science, 7, 2020. https://doi.org/10.1029/2019EA000860
+
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 06/2020: using spatial data class for input and output operations
     Updated 04/2020 for public release
     Updated 04/2020: added option LOVE for passing load love numbers
@@ -53,6 +59,26 @@ from gravity_toolkit.spatial import spatial
 from gravity_toolkit.gen_stokes import gen_stokes
 
 def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None):
+    """
+    Converts data from spherical harmonic coefficients to a spatial field
+
+    Arguments
+    ---------
+    LANDMASK: netCDF4 land mask file with variable name LSMASK
+    LMAX: maximum spherical harmonic degree
+
+    Keyword arguments
+    -----------------
+    MMAX: maximum spherical harmonic order of the output harmonics
+    LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
+
+    Returns
+    -------
+    clm: cosine spherical harmonic coefficients
+    slm: sine spherical harmonic coefficients
+    l: spherical harmonic degree to LMAX
+    m: spherical harmonic order to MMAX
+    """
     #-- maximum spherical harmonic order
     MMAX = np.copy(LMAX) if MMAX is None else MMAX
     #-- Read Land-Sea Mask of specified input file

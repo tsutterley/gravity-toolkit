@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 u"""
 read_SLR_geocenter.py
-Written by Tyler Sutterley (08/2019)
+Written by Tyler Sutterley (07/2020)
 
-Reads monthly geocenter spherical harmonic data files from SLR provided by CSR
+Reads monthly geocenter files from satellite laser ranging provided by CSR
     ftp://ftp.csr.utexas.edu/pub/slr/geocenter/
     RL04: GCN_RL04.txt
     RL05: GCN_RL05.txt
@@ -22,19 +22,20 @@ OPTIONS:
     skiprows: rows of data to skip when importing data
 
 OUTPUTS:
-    C10: Cosine d1/o0 Stokes Coefficients
-    C11: Cosine d1/o1 Stokes Coefficients
-    S11: Sine d1/o1 Stokes Coefficients
-    month: GRACE/GRACE-FO month (Apr 2002 = 004)
-    time: date of GRACE/GRACE-FO month in decimal format
-    eC10: Cosine d1/o0 Stokes Coefficients Error
-    eC11: Cosine d1/o1 Stokes Coefficients Error
-    eS11: Sine d1/o1 Stokes Coefficients Error
+    C10: cosine d1/o0 spherical harmonic coefficients
+    C11: cosine d1/o1 spherical harmonic coefficients
+    S11: sine d1/o1 spherical harmonic coefficients
+    eC10: cosine d1/o0 spherical harmonic coefficient error
+    eC11: cosine d1/o1 spherical harmonic coefficient error
+    eS11: sine d1/o1 spherical harmonic coefficient error
+    month: GRACE/GRACE-FO month
+    time: date of each month in year-decimal
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 08/2019: add catch to verify input geocenter file exists
     Updated 06/2019: added option RADIUS for setting the Earth's radius
     Updated 08/2018: using full release string (RL05 instead of 5)
@@ -58,6 +59,29 @@ from gravity_toolkit.convert_julian import convert_julian
 
 #-- PURPOSE: read geocenter data from Satellite Laser Ranging (SLR)
 def read_SLR_geocenter(geocenter_file, RADIUS=None, skiprows=0):
+    """
+    Reads monthly geocenter files from satellite laser ranging
+
+    Arguments
+    ---------
+    geocenter_file: Satellite Laser Ranging file
+
+    Keyword arguments
+    -----------------
+    RADIUS: Earth's radius for calculating spherical harmonics from SLR data
+    skiprows: rows of data to skip when importing data
+
+    Returns
+    -------
+    C10: cosine d1/o0 spherical harmonic coefficients
+    C11: cosine d1/o1 spherical harmonic coefficients
+    S11: sine d1/o1 spherical harmonic coefficients
+    eC10: cosine d1/o0 spherical harmonic coefficient error
+    eC11: cosine d1/o1 spherical harmonic coefficient error
+    eS11: sine d1/o1 spherical harmonic coefficient error
+    month: GRACE/GRACE-FO month
+    time: date of each month in year-decimal
+    """
 
     #-- check that geocenter file exists
     if not os.access(os.path.expanduser(geocenter_file), os.F_OK):

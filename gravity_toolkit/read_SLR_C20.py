@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C20.py
-Written by Tyler Sutterley (08/2019)
+Written by Tyler Sutterley (07/2020)
 
 Reads in C20 spherical harmonic coefficients derived from SLR measurements
 
@@ -47,6 +47,7 @@ PROGRAM DEPENDENCIES:
     convert_calendar_decimal.py: Return the decimal year for a calendar date
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 08/2019: add catch to verify input SLR file exists
     Updated 07/2019: added tilde-expansion of input SLR file
     Updated 06/2019: added new GRACE-FO special month (October 2018)
@@ -88,6 +89,25 @@ from gravity_toolkit.convert_calendar_decimal import convert_calendar_decimal
 
 #-- PURPOSE: read oblateness data from Satellite Laser Ranging (SLR)
 def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
+    """
+    Reads C20 spherical harmonic coefficients from SLR measurements
+
+    Arguments
+    ---------
+    SLR_file: Satellite Laser Ranging file
+
+    Keyword arguments
+    -----------------
+    AOD: remove background De-aliasing product from the SLR solution
+    HEADER: file contains header text to be skipped
+
+    Returns
+    -------
+    data: SLR degree 2 order 0 cosine stokes coefficients
+    error: SLR degree 2 order 0 cosine stokes coefficient error
+    month: GRACE/GRACE-FO month of measurement
+    date: date of SLR measurement
+    """
 
     #-- check that SLR file exists
     if not os.access(os.path.expanduser(SLR_file), os.F_OK):

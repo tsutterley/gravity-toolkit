@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C30.py
-Written by Yara Mohajerani and Tyler Sutterley (08/2019)
+Written by Yara Mohajerani and Tyler Sutterley (07/2020)
 
 Reads monthly degree 3 zonal spherical harmonic data files from SLR
     https://neptune.gsfc.nasa.gov/gngphys/index.php?section=519
@@ -46,6 +46,7 @@ PROGRAM DEPENDENCIES:
     read_CSR_monthly_6x1.py: reads monthly 5x5 spherical harmonic coefficients
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 08/2019: new GSFC format with more columns
         add catch to verify input SLR file exists
         added LARES filtered C30 files from John Ries (C30_LARES_filtered.txt)
@@ -63,6 +64,25 @@ from gravity_toolkit.read_CSR_monthly_6x1 import read_CSR_monthly_6x1
 
 #-- PURPOSE: read Degree 3 zonal data from Satellite Laser Ranging (SLR)
 def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
+    """
+    Reads C30 spherical harmonic coefficients from SLR measurements
+
+    Arguments
+    ---------
+    SLR_file: Satellite Laser Ranging file
+
+    Keyword arguments
+    -----------------
+    HEADER: file contains header text to be skipped (default: True)
+    C30_MEAN: mean C30 to add to LARES C30 anomalies
+
+    Returns
+    -------
+    data: SLR degree 3 order 0 cosine stokes coefficients
+    error: SLR degree 3 order 0 cosine stokes coefficient error
+    month: GRACE/GRACE-FO month of measurement
+    time: date of SLR measurement
+    """
 
     #-- check that SLR file exists
     if not os.access(os.path.expanduser(SLR_file), os.F_OK):

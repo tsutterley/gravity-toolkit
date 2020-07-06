@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 legendre_polynomials.py
-Written by Tyler Sutterley (07/2017)
+Written by Tyler Sutterley (07/2020)
 
 Computes fully normalized Legendre polynomials for an array of x values
     and their first derivative
@@ -16,14 +16,14 @@ INPUTS:
         typically cos(theta), where theta is the colatitude in radians
 
 OUTPUT:
-    pl: legendre polynomials (geodesy normalization)
-    dpl: first derivative of legendre polynomials
+    pl: Legendre polynomials (geodesy normalization)
+    dpl: first derivative of Legendre polynomials
 
 OPTIONS:
     ASTYPE: output variable type (e.g. np.float128).  Default is np.float64
 
 NOTES:
-    ptemp is a dummy array of length (0:lmax) storing unnormalized pls
+    ptemp is a dummy array of length (0:lmax) storing unnormalized pl values
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
@@ -33,6 +33,7 @@ REFERENCE:
         http://www.springerlink.com/content/978-3-211-33544-4
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 07/2017: added first derivative of Legendre polynomials (dpl)
         added option ASTYPE to output as different variable types e.g. np.float
     Written 03/2013
@@ -40,6 +41,23 @@ UPDATE HISTORY:
 import numpy as np
 
 def legendre_polynomials(lmax,x,ASTYPE=np.float):
+    """
+    Computes fully-normalized Legendre polynomials and their first derivative
+
+    Arguments
+    ---------
+    lmax: maximum degree of Legrendre polynomials
+    x: elements ranging from -1 to 1
+
+    Keyword arguments
+    -----------------
+    ASTYPE: output variable data type
+
+    Returns
+    -------
+    pl: fully-normalized Legendre polynomials
+    dpl: first derivative of Legendre polynomials
+    """
     #-- size of the x array
     dimx = np.ndim(x)
     if (dimx > 0):

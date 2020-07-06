@@ -3,7 +3,7 @@ u"""
 destripe_harmonics.py
 Original Fortran program remove_errors.f written by Isabella Velicogna
 Adapted by Chia-Wei Hsu (05/2018)
-Updated by Tyler Sutterley (03/2020)
+Updated by Tyler Sutterley (07/2020)
 
 Filters spherical harmonic coefficients for correlated "striping" errors
 
@@ -40,11 +40,12 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 REFERENCE:
-    Sean Swenson and John Wahr, "Post-processing removal of correlated errors in
+    S C Swenson and J Wahr, "Post-processing removal of correlated errors in
         GRACE data", Geophysical Research Letters, 33(L08402), 2006
         http://dx.doi.org/10.1029/2005GL025285
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 03/2020: Updated for public release
     Updated 05/2018: using __future__ print and updated flags comments
     Updated 08/2015: changed from sys.exit to raise ValueError
@@ -56,6 +57,27 @@ import numpy as np
 
 def destripe_harmonics(clm1, slm1, LMIN=2, LMAX=60, MMAX=None,
     ROUND=True, NARROW=False):
+    """
+    Filters spherical harmonic coefficients for correlated striping errors
+
+    Arguments
+    ---------
+    clm1: cosine spherical harmonic coefficients
+    slm1: sine spherical harmonic coefficients
+
+    Keyword arguments
+    -----------------
+    LMIN: Lower bound of Spherical Harmonic Degrees
+    LMAX: Upper bound of Spherical Harmonic Degrees
+    MMAX: Upper bound of Spherical Harmonic Orders
+    ROUND: use round to find nearest even
+    NARROW: set harmonics to 0 if less than window size
+
+    Returns
+    -------
+    Wclm: filtered cosine spherical harmonic coefficients
+    Wslm: filtered sine spherical harmonic coefficients
+    """
 
     #-- tests if spherical harmonics have been imported
     if (clm1.shape[0] == 1) or (slm1.shape[0] == 1):

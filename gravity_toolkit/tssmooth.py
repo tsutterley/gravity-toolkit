@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 tssmooth.py
-Written by Tyler Sutterley (10/2019)
+Written by Tyler Sutterley (07/2020)
 
 Computes a moving average of a time-series using three possible routines:
     1) centered moving average
@@ -48,6 +48,7 @@ PYTHON DEPENDENCIES:
     scipy: Scientific Tools for Python (https://docs.scipy.org/doc/)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 10/2019: changing Y/N flags to True/False. output amplitudes
     Updated 09/2019: calculate and output annual and semi-annual phase
     Updated 08/2018: use implicit import of scipy stats and special
@@ -79,6 +80,40 @@ import scipy.special
 
 def tssmooth(t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0,
     STDEV=0, CONF=0):
+    """
+    Solves sea level equation with option to include polar motion feedback
+
+    Arguments
+    ---------
+    t_in: input time array
+    d_in: input data array
+
+    Keyword arguments
+    -----------------
+    MOVING: calculates centered moving average using mean of window
+    WEIGHT: smoothing algorithm that backward models dates before
+        half-width and forward models dates after half-width
+        0: use unweighted Loess filter
+        1: use linear weights with Loess filter
+        2: use gaussian weights with Loess filter
+    HFWTH: half-width of the moving average
+    DATA_ERR: input error for known and equal errors
+    STDEV: standard deviation of output error
+    CONF: confidence interval of output error
+
+    Returns
+    -------
+    time: time after removing start and end half-windows
+    data: smoothed time-series
+    season: seasonal component calculated by the Loess filter
+    annual: annual component calculated by the Loess filter
+    semiann: semi-annual component calculated by the Loess filter
+    trend: instantaneous trend calculated by the Loess filter
+    error: estimated error of the instantaneous trend
+    noise: noise component after removing the Loess trend and seasonal components
+    reduce: original time series after removing start and end half-windows
+    """
+
     #-- remove singleton dimensions
     t_in = np.squeeze(t_in)
     d_in = np.squeeze(d_in)

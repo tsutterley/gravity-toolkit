@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_love_numbers.py
-Written by Tyler Sutterley (03/2020)
+Written by Tyler Sutterley (07/2020)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
 
@@ -31,6 +31,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 03/2020: added reference frame transformations within function
     Updated 03/2020 for public release
 """
@@ -41,6 +42,33 @@ import numpy as np
 #-- PURPOSE: read load love numbers from PREM
 def read_love_numbers(love_numbers_file, HEADER=True, REFERENCE='CE',
     FORMAT='tuple'):
+    """
+    Reads PREM load Love numbers file and applies isomorphic parameters
+
+    Arguments
+    ---------
+    love_numbers_file: Elastic load Love numbers file
+
+    Keyword arguments
+    -----------------
+    HEADER: file contains header text to be skipped
+    REFERENCE: Reference frame for calculating degree 1 love numbers
+        CF: Center of Surface Figure
+        CL: Center of Surface Lateral Figure
+        CH: Center of Surface Height Figure
+        CM: Center of Mass of Earth System
+        CE: Center of Mass of Solid Earth (default)
+    FORMAT: format of output variables
+        'dict': dictionary with variable keys as listed above
+        'tuple': tuple with variable order hl,kl,ll
+        'zip': aggregated variable sets
+
+    Returns
+    -------
+    kl: Love number of Gravitational Potential
+    hl: Love number of Vertical Displacement
+    ll: Love number of Horizontal Displacement
+    """
 
     #-- check that load love number data file is present in file system
     if not os.access(os.path.expanduser(love_numbers_file), os.F_OK):

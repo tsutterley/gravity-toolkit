@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_spherical_cap.py
-Written by Tyler Sutterley (05/2020)
+Written by Tyler Sutterley (07/2020)
 Calculates gravitational spherical harmonic coefficients for a spherical cap
 
 Spherical cap derivation from Longman (1962), Farrell (1972), Pollack (1973)
@@ -35,9 +35,7 @@ OPTIONS:
         1: cm of water thickness (default)
         2: gigatonnes of mass
         3: kg/m^2
-    PLM: input Legendre polynomials (for improving computational time)
-        input PLMs are the polynomials for cos(theta) (spherical cap center)
-        not for the spherical cap alpha plms
+    PLM: input Legendre polynomials
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
 PYTHON DEPENDENCIES:
@@ -55,6 +53,7 @@ REFERENCES:
     T. Jacob et al., Journal of Geodesy, Vol. 86, Pages 337-358 (Nov. 2012)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 05/2020: vectorize calculation over degrees to improve compute time
     Updated 04/2020: reading load love numbers outside of this function
         include degrees and orders in output dictionary for harmonics class
@@ -84,6 +83,34 @@ from gravity_toolkit.units import units
 
 def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     AREA=0, RAD_CAP=0, RAD_KM=0, UNITS=1, PLM=None, LOVE=None):
+    """
+    Calculates spherical harmonic coefficients for a spherical cap
+
+    Arguments
+    ---------
+    data: data magnitude
+    lon: longitude of spherical cap center
+    lat: latitude of spherical cap center
+
+    Keyword arguments
+    -----------------
+    LMAX: Upper bound of Spherical Harmonic Degrees
+    MMAX: Upper bound of Spherical Harmonic Orders
+    AREA: spherical cap area in cm^2
+    UNITS: input data units
+        1: cm of water thickness (default)
+        2: gigatonnes of mass
+        3: kg/m^2
+    PLM: input Legendre polynomials
+    LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
+
+    Returns
+    -------
+    clm: cosine spherical harmonic coefficients
+    slm: sine spherical harmonic coefficients
+    l: spherical harmonic degree to LMAX
+    m: spherical harmonic order to MMAX
+    """
 
     #-- upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:

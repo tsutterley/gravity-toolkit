@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 convert_julian.py
-Written by Tyler Sutterley (10/2017)
+Written by Tyler Sutterley (07/2020)
 
 Return the calendar date and time given Julian date.
 
@@ -37,6 +37,7 @@ NOTES:
         Quarterly Journal of the Royal Astronomical Society, 25(1), 1984.
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 10/2017: updated comments and formatting of algorithm
     Updated 06/2017: added option FORMAT to change the output variables format
     Updated 06/2016: added option to convert output to variable type (e.g. int)
@@ -48,6 +49,31 @@ UPDATE HISTORY:
 import numpy as np
 
 def convert_julian(JD, ASTYPE=None, FORMAT='dict'):
+    """
+    Converts from Julian day to calendar date and time
+
+    Arguments
+    ---------
+    JD: Julian Day (days since 01-01-4713 BCE at 12:00:00)
+
+    Keyword arguments
+    -----------------
+    ASTYPE: convert output to variable type
+    FORMAT: format of output variables
+        'dict': dictionary with variable keys
+        'tuple': tuple with variable order YEAR,MONTH,DAY,HOUR,MINUTE,SECOND
+        'zip': aggregated variable sets
+
+    Returns
+    -------
+    year: calendar year
+    month: calendar month
+    day: day of the month
+    hour: hour of the day
+    minute: minute of the hour
+    second: second of the minute
+    """
+
     #-- convert to array if only a single value was imported
     if (np.ndim(JD) == 0):
         JD = np.array([JD])

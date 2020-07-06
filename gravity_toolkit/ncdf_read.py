@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_read.py
-Written by Tyler Sutterley (06/2020)
+Written by Tyler Sutterley (07/2020)
 
 Reads spatial data from COARDS-compliant netCDF4 files
 
@@ -34,6 +34,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 06/2020: output data as lat/lon following spatial module
         attempt to read fill value attribute and set to None if not present
     Updated 10/2019: changing Y/N flags to True/False
@@ -67,6 +68,33 @@ import re
 
 def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     LATNAME='lat', TIMENAME='time', ATTRIBUTES=True, TITLE=True):
+    """
+    Reads spatial data from COARDS-compliant netCDF4 files
+
+    Arguments
+    ---------
+    filename: netCDF4 file to be opened and read
+
+    Keyword arguments
+    -----------------
+    DATE: netCDF4 file has date information
+    VERBOSE: will print to screen the netCDF4 structure parameters
+    VARNAME: z variable name in netCDF4 file
+    LONNAME: longitude variable name in netCDF4 file
+    LATNAME: latitude variable name in netCDF4 file
+    TIMENAME: time variable name in netCDF4 file
+    ATTRIBUTES: netCDF4 variables contain attribute parameters
+    TITLE: netCDF4 file contains a description attribute
+
+    Returns
+    -------
+    data: z value of dataset
+    lon: longitudinal array
+    lat: latitudinal array
+    time: time value of dataset
+    attributes: netCDF4 attributes
+    """
+
     #-- Open the NetCDF file for reading
     fileID = netCDF4.Dataset(filename, 'r')
     #-- create python dictionary for output variables

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (06/2020)
+Written by Tyler Sutterley (07/2020)
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 
@@ -21,6 +21,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 07/2020: added class docstring and using kwargs for output to file
     Updated 06/2020: output list of filenames with from_list()
         zeros_like() creates a new harmonics object with dimensions of another
         add ndim and shape attributes of harmonics objects
@@ -42,6 +43,9 @@ from gravity_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
 
 class harmonics(object):
+    """
+    Data class for reading, writing and processing spherical harmonic data
+    """
     np.seterr(invalid='ignore')
     def __init__(self, lmax=None, mmax=None):
         self.clm=None
@@ -286,27 +290,37 @@ class harmonics(object):
         #-- close the output file
         fid.close()
 
-    def to_netCDF4(self, filename, date=True):
+    def to_netCDF4(self, filename, date=True, **kwargs):
         """
         Write a harmonics object to netCDF4 file
         Inputs: full path of output netCDF4 file
         Options: harmonics objects contain date information
+        **kwargs: keyword arguments for ncdf_stokes
         """
         self.filename = filename
+        if 'TIME_UNITS' not in kwargs.keys():
+            kwargs['TIME_UNITS'] = 'years'
+        if 'TIME_LONGNAME' not in kwargs.keys():
+            kwargs['TIME_LONGNAME'] = 'Date_in_Decimal_Years'
         ncdf_stokes(self.clm, self.slm, self.l, self.m, self.time, self.month,
-            FILENAME=os.path.expanduser(filename), TIME_UNITS='years',
-            TIME_LONGNAME='Date_in_Decimal_Years', VERBOSE=False, DATE=date)
+            FILENAME=os.path.expanduser(filename), VERBOSE=False, DATE=date,
+            **kwargs)
 
-    def to_HDF5(self, filename, date=True):
+    def to_HDF5(self, filename, date=True, **kwargs):
         """
         Write a harmonics object to HDF5 file
         Inputs: full path of output HDF5 file
         Options: harmonics objects contain date information
+        **kwargs: keyword arguments for hdf5_stokes
         """
         self.filename = filename
+        if 'TIME_UNITS' not in kwargs.keys():
+            kwargs['TIME_UNITS'] = 'years'
+        if 'TIME_LONGNAME' not in kwargs.keys():
+            kwargs['TIME_LONGNAME'] = 'Date_in_Decimal_Years'
         hdf5_stokes(self.clm, self.slm, self.l, self.m, self.time, self.month,
-            FILENAME=os.path.expanduser(filename), TIME_UNITS='years',
-            TIME_LONGNAME='Date_in_Decimal_Years', VERBOSE=False, DATE=date)
+            FILENAME=os.path.expanduser(filename), VERBOSE=False, DATE=date,
+            **kwargs)
 
     def update_dimensions(self):
         """
@@ -733,9 +747,10 @@ class harmonics(object):
         #-- return the convolved field
         return self
 
-    def destripe(self):
+    def destripe(self, **kwargs):
         """
         Filters spherical harmonic coefficients for correlated "striping" errors
+        Option: keyword arguments for destripe_harmonics
         """
         #-- reassign shape and ndim attributes
         self.update_dimensions()
@@ -745,7 +760,7 @@ class harmonics(object):
         #-- check if a single field or a temporal field
         if (self.ndim == 2):
             Ylms = destripe_harmonics(self.clm, self.slm,
-                LMIN=1, LMAX=self.lmax, MMAX=self.mmax)
+                LMIN=1, LMAX=self.lmax, MMAX=self.mmax, **kwargs)
             temp.clm = Ylms['clm'].copy()
             temp.slm = Ylms['slm'].copy()
         else:
@@ -754,7 +769,7 @@ class harmonics(object):
             temp.slm = np.zeros((self.lmax+1,self.mmax+1,n))
             for i in range(n):
                 Ylms = destripe_harmonics(self.clm[:,:,i], self.slm[:,:,i],
-                    LMIN=1, LMAX=self.lmax, MMAX=self.mmax)
+                    LMIN=1, LMAX=self.lmax, MMAX=self.mmax, **kwargs)
                 temp.clm[:,:,i] = Ylms['clm'].copy()
                 temp.slm[:,:,i] = Ylms['slm'].copy()
         #-- assign ndim and shape attributes

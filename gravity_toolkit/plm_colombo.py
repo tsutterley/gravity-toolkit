@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 plm_colombo.py
-Written by Tyler Sutterley (07/2017)
+Written by Tyler Sutterley (07/2020)
 
 Computes fully-normalized associated Legendre Polynomials
     for a vector of x values (can also be singular)
@@ -10,9 +10,6 @@ Uses the Colombo (1981) recursion relation
     as the most popular recursive algorithm used for computing
     fully-normalized Legendre Polynomials in Geodesy
 This is a Standard forward column method
-
-Geoid Cookbook
-http://mitgcm.org/~mlosch/geoidcookbook.pdf
 
 CALLING SEQUENCE:
     plm,dplm = plm_colombo(LMAX, np.cos(theta))
@@ -27,12 +24,15 @@ OUTPUT:
     dplms: first differentials of Legendre polynomials of x
 
 OPTIONS:
-    ASTYPE: output variable type (e.g. np.float128).  Default is np.float64
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
+REFERENCES:
+    Geoid Cookbook: http://mitgcm.org/~mlosch/geoidcookbook.pdf
+
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 07/2017: output first differential of legendre polynomials
     Updated 09/2013: new format for file headers
     Written 03/2013
@@ -40,6 +40,24 @@ UPDATE HISTORY:
 import numpy as np
 
 def plm_colombo(LMAX, x, ASTYPE=np.float):
+    """
+    Computes fully-normalized associated Legendre Polynomials and
+    their first derivative using a Standard forward column method
+
+    Arguments
+    ---------
+    LMAX: Upper bound of Spherical Harmonic Degrees
+    x: elements ranging from -1 to 1
+
+    Keyword arguments
+    -----------------
+    ASTYPE: output variable data type
+
+    Returns
+    -------
+    plms: fully-normalized Legendre polynomials
+    dplms: first differentials of Legendre polynomials
+    """
 
     #-- Verify LMAX as integer
     LMAX = np.int(LMAX)

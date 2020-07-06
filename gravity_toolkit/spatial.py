@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (06/2020)
+Written by Tyler Sutterley (07/2020)
 
 Data class for reading, writing and processing spatial data
 
@@ -19,6 +19,7 @@ PROGRAM DEPENDENCIES:
     hdf5_read.py: reads spatial data from HDF5
 
 UPDATE HISTORY:
+    Updated 07/2020: added class docstring and using kwargs for output to file
     Updated 06/2020: added zeros_like() for creating an empty spatial object
     Written 06/2020
 """
@@ -31,6 +32,9 @@ from gravity_toolkit.ncdf_read import ncdf_read
 from gravity_toolkit.hdf5_read import hdf5_read
 
 class spatial(object):
+    """
+    Data class for reading, writing and processing spatial data
+    """
     np.seterr(invalid='ignore')
     def __init__(self, spacing=[None,None], nlat=None, nlon=None, fill_value=None):
         self.data=None
@@ -261,31 +265,41 @@ class spatial(object):
         #-- close the output file
         fid.close()
 
-    def to_netCDF4(self, filename, date=True, varname='z',
-        units=None, longname=None, title=None, verbose=False):
+    def to_netCDF4(self, filename, date=True, *kwargs):
         """
         Write a spatial object to netCDF4 file
         Inputs: full path of output netCDF4 file
         Options: spatial objects contain date information
+        **kwargs: keyword arguments for ncdf_write
         """
         self.filename = filename
+        for key,val in kwargs.items():
+            KWARGS[key.upper()] = val
+        if 'TIME_UNITS' not in KWARGS.keys():
+            KWARGS['TIME_UNITS'] = 'years'
+        if 'TIME_LONGNAME' not in KWARGS.keys():
+            KWARGS['TIME_LONGNAME'] = 'Date_in_Decimal_Years'
         ncdf_write(self.data, self.lon, self.lat, self.time,
-            FILENAME=os.path.expanduser(filename), UNITS=units, LONGNAME=longname,
-            TIME_UNITS='years', TIME_LONGNAME='Date_in_Decimal_Years',
-            TITLE=title, FILL_VALUE=self.fill_value, DATE=date, VERBOSE=verbose)
+            FILENAME=os.path.expanduser(filename), DATE=date,
+            FILL_VALUE=self.fill_value, **KWARGS)
 
-    def to_HDF5(self, filename, date=True, varname='z',
-        units=None, longname=None, title=None, verbose=False):
+    def to_HDF5(self, filename, date=True, **kwargs):
         """
         Write a spatial object to HDF5 file
         Inputs: full path of output HDF5 file
         Options: spatial objects contain date information
+        **kwargs: keyword arguments for hdf5_write
         """
         self.filename = filename
+        for key,val in kwargs.items():
+            KWARGS[key.upper()] = val
+        if 'TIME_UNITS' not in KWARGS.keys():
+            KWARGS['TIME_UNITS'] = 'years'
+        if 'TIME_LONGNAME' not in KWARGS.keys():
+            KWARGS['TIME_LONGNAME'] = 'Date_in_Decimal_Years'
         hdf5_write(self.data, self.lon, self.lat, self.time,
-            FILENAME=os.path.expanduser(filename), UNITS=units, LONGNAME=longname,
-            TIME_UNITS='years', TIME_LONGNAME='Date_in_Decimal_Years',
-            TITLE=title, FILL_VALUE=self.fill_value, DATE=date, VERBOSE=verbose)
+            FILENAME=os.path.expanduser(filename), DATE=date,
+            FILL_VALUE=self.fill_value, **KWARGS)
 
     def update_spacing(self):
         """
@@ -363,7 +377,7 @@ class spatial(object):
         temp.update_dimensions()
         temp.update_mask()
         return temp
-    
+
     def expand_dims(self):
         """
         Add a singleton dimension to a spatial object if non-existent
@@ -459,7 +473,7 @@ class spatial(object):
             getattr(self, 'error')
             temp.error = np.zeros((temp.shape[0],temp.shape[1],n))
         except:
-            pass            
+            pass
         #-- copy dimensions
         temp.lon = self.lon.copy()
         temp.lat = self.lat.copy()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 tsregress.py
-Written by Tyler Sutterley (10/2019)
+Written by Tyler Sutterley (07/2020)
 
 Fits a synthetic signal to the data over the time period by least-squares
     or weighted least-squares
@@ -36,6 +36,7 @@ OUTPUTS:
     DOF: degrees of freedom
     N: number of terms used in fit
     cov_mat: covariance matrix
+
 OPTIONS:
     DATA_ERR: data precision
         single value if equal
@@ -53,6 +54,7 @@ PYTHON DEPENDENCIES:
     scipy: Scientific Tools for Python (https://docs.scipy.org/doc/)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 10/2019: changing Y/N flags to True/False
     Updated 12/2018: put transpose of design matrix within FIT_TYPE if statement
     Updated 08/2018: import packages before function definition
@@ -109,6 +111,48 @@ import scipy.special
 
 def tsregress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], DATA_ERR=0,
     WEIGHT=False, RELATIVE=-1, STDEV=0, CONF=0, AICc=True):
+    """
+    Solves sea level equation with option to include polar motion feedback
+
+    Arguments
+    ---------
+    t_in: input time array
+    d_in: input data array
+
+    Keyword arguments
+    -----------------
+    DATA_ERR: data precision
+        single value if equal
+        array if unequal for weighted least squares
+    WEIGHT: Set if measurement errors for use in weighted least squares
+    RELATIVE: relative period
+    ORDER: maximum polynomial order in fit
+    CYCLES: list of cyclical terms
+    STDEV: standard deviation of output error
+    CONF: confidence interval of output error
+    AICc: use second order AIC
+
+    Returns
+    -------
+    beta: regressed coefficients array
+    error: regression fit error for each coefficient for an input deviation
+        STDEV: standard deviation of output error
+        CONF: confidence interval of output error
+    std_err: standard error for each coefficient
+    R2: coefficient of determination (r**2)
+    R2Adj: r**2 adjusted for the number of terms in the model
+    MSE: mean square error
+    WSSE: Weighted sum of squares error
+    NRMSE: normalized root mean square error
+    AIC: Akaike information criterion
+    BIC: Bayesian information criterion
+    model: modeled timeseries
+    simple: modeled timeseries without oscillating components
+    residual: model residual
+    DOF: degrees of freedom
+    N: number of terms used in fit
+    cov_mat: covariance matrix
+    """
 
     #-- remove singleton dimensions
     t_in = np.squeeze(t_in)

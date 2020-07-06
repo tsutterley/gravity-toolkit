@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_ICGEM_harmonics.py
-Written by Tyler Sutterley (07/2017)
+Written by Tyler Sutterley (07/2020)
 
 Read gfc files and extract gravity model spherical harmonics from the GFZ ICGEM
 
@@ -31,6 +31,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 07/2017: include parameters to change the tide system
     Written 12/2015
 """
@@ -40,6 +41,32 @@ import numpy as np
 
 #-- PURPOSE: read spherical harmonic coefficients of a gravity model
 def read_ICGEM_harmonics(model_file, FLAG='gfc'):
+    """
+    Extract gravity model spherical harmonics from GFZ ICGEM gfc files
+
+    Arguments
+    ---------
+    model_file: GFZ ICGEM gfc spherical harmonic data file
+
+    Keyword arguments
+    -----------------
+    FLAG: string denoting data lines
+
+    Returns
+    -------
+    clm: cosine spherical harmonics of input data
+    slm: sine spherical harmonics of input data
+    eclm: cosine spherical harmonic standard deviations of type errors
+    eslm: sine spherical harmonic standard deviations of type errors
+    modelname: name of the gravity model
+    earth_gravity_constant: GM constant of the Earth for gravity model
+    radius: semi-major axis of the Earth for gravity model
+    max_degree: maximum degree and order for gravity model
+    errors: error type of the gravity model
+    norm: normalization of the spherical harmonics
+    tide_system: tide system of gravity model
+    """
+
     #-- read input data
     with open(os.path.expanduser(model_file),'r') as f:
         file_contents = f.read().splitlines()

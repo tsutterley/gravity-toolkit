@@ -1,7 +1,7 @@
 ncdf_write.py
 =============
 
- - Writes spatial data to COARDS-compliant NetCDF4 files    
+ - Writes spatial data to COARDS-compliant netCDF4 files    
 
 #### Calling Sequence
 ```python

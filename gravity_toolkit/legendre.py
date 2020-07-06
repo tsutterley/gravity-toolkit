@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 u"""
-legendre.py (05/2020)
+legendre.py
+Written by Tyler Sutterley (07/2020)
 Computes associated Legendre functions of degree l evaluated for elements x
 l must be a scalar integer and x must contain real values ranging -1 <= x <= 1
 Parallels the MATLAB legendre function
@@ -29,6 +30,7 @@ REFERENCES:
     J. A. Jacobs, "Geomagnetism", Academic Press, 1987, Ch.4.
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 05/2020: added normalization option for output polynomials
     Updated 03/2019: calculate twocot separately to avoid divide warning
     Written 08/2016
@@ -37,6 +39,22 @@ import numpy as np
 import scipy.special
 
 def legendre(l,x,NORMALIZE=False):
+    """
+    Computes associated Legendre functions of degree l
+
+    Arguments
+    ---------
+    l: degree of Legrendre polynomials
+    x: elements ranging from -1 to 1
+
+    Keyword arguments
+    -----------------
+    NORMALIZE: output Fully-normalized Associated Legendre Functions
+
+    Returns
+    -------
+    Pl: legendre polynomials of degree l for orders 0 to l
+    """
     #-- Convert x to a single row vector
     x = np.squeeze(x).flatten()
     nx = len(x)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_write.py
-Written by Tyler Sutterley (04/2020)
+Written by Tyler Sutterley (07/2020)
 
 Writes spatial data to HDF5 files
 
@@ -35,6 +35,7 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 04/2020: added option DATE if including time data
     Updated 03/2020: only include title if not None
     Updated 10/2019: changing Y/N flags to True/False
@@ -66,6 +67,32 @@ def hdf5_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     LATNAME='lat', TIMENAME='time', UNITS=None, LONGNAME=None, FILL_VALUE=None,
     TIME_UNITS=None, TIME_LONGNAME=None, TITLE=None, DATE=True, CLOBBER=True,
     VERBOSE=False):
+    """
+    Writes spatial data to HDF5 files
+
+    Arguments
+    ---------
+    data: z data
+    lon: longitude array
+    lat: latitude array
+    tim: time array
+
+    Keyword arguments
+    -----------------
+    FILENAME: HDF5 filename
+    VARNAME: z variable name in HDF5 file
+    LONNAME: longitude variable name in HDF5 file
+    LATNAME: latitude variable name in HDF5 file
+    UNITS: z variable units
+    LONGNAME: z variable description
+    FILL_VALUE: missing value for z variable
+    TIME_UNITS: time variable units
+    TIME_LONGNAME: time variable description
+    TITLE: title attribute of dataset
+    CLOBBER: will overwrite an existing HDF5 file
+    VERBOSE: will print to screen the HDF5 structure parameters
+    DATE: data has date information
+    """
 
     #-- setting HDF5 clobber attribute
     if CLOBBER in ('Y','y'):

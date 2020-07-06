@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 u"""
 clenshaw_summation.py
-Written by Tyler Sutterley (04/2020)
-Returns the spatial field for a series of spherical harmonics at a sequence of
-    ungridded points
+Written by Tyler Sutterley (07/2020)
+Calculates the spatial field for a series of spherical harmonics for a
+    sequence of ungridded points
 
 CALLING SEQUENCE:
     spatial = clenshaw_summation(clm, slm, lon, lat, UNITS=1,
@@ -27,6 +27,9 @@ OPTIONS:
     LMAX: Upper bound of Spherical Harmonic Degrees
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
+OUTPUTS:
+    spatial: spatial field for lon/lat
+
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
@@ -43,6 +46,7 @@ REFERENCE:
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 04/2020: reading load love numbers outside of this function
         using the units class for converting normalized spherical harmonics
     Updated 03/2018: added option for output in pascals (UNITS=5)
@@ -54,6 +58,35 @@ from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.units import units
 
 def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None):
+    """
+    Calculates the spatial field for a series of spherical harmonics for a
+    sequence of ungridded points
+
+    Arguments
+    ---------
+    clm: cosine spherical harmonic coefficients
+    slm: sine spherical harmonic coefficients
+    lon: longitude of points
+    lat: latitude of points
+
+    Keyword arguments
+    -----------------
+    RAD: Gaussian smoothing radius (km)
+    UNITS: output data units
+        1: cm of water thickness
+        2: mm of geoid height
+        3: mm of elastic crustal deformation
+        4: microGal gravitational perturbation
+        5: Pa, equivalent surface pressure in Pascals
+        6: cm of viscoelastic rustal uplift (GIA)
+    LMAX: Upper bound of Spherical Harmonic Degrees
+    LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
+
+    Returns
+    -------
+    spatial: calculated spatial field for latitude and longitude
+    """
+
     #-- check if lat and lon are the same size
     if (len(lat) != len(lon)):
         raise ValueError('Incompatable vector dimensions (lon, lat)')
@@ -104,7 +137,7 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None):
         raise ValueError(('UNITS is invalid:\n1: cmH2O\n2: mmGH\n3: mmCU '
             '(elastic)\n4:microGal\n5: Pa\n6: cmVCU (viscoelastic)'))
 
-    #-- calculate clenshaw summations over colatitudes
+    #-- calculate arrays for clenshaw summations over colatitudes
     s_m_c = np.zeros((npts,LMAX*2+2))
     for m in range(LMAX, -1, -1):
         #-- convolve harmonics with unit factors and smoothing
@@ -134,15 +167,26 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None):
     #-- return the calculated spatial field
     return spatial
 
-#-- PURPOSE: compute Clenshaw summation of the fully normalized associated
-#-- Legendre's function for constant order m
-#-- t: cos(th)
-#-- c: degree dependent factors
-#-- m: spherical harmonic order
-#-- clm1: cosine spherical harmonics
-#-- slm1: sine spherical harmonics
-#-- lmax: maximum spherical harmonic degree
+#-- PURPOSE: compute conditioned arrays for Clenshaw summation from the
+#-- fully-normalized associated Legendre's function for an order m
 def clenshaw_s_m(t, c, m, clm1, slm1, lmax):
+    """
+    Compute conditioned arrays for Clenshaw summation from the fully-normalized
+    associated Legendre's function for an order m
+
+    Arguments
+    ---------
+    t: elements ranging from -1 to 1, typically cos(th)
+    c: degree dependent factors
+    m: spherical harmonic order
+    clm1: cosine spherical harmonics
+    slm1: sine spherical harmonics
+    lmax: maximum spherical harmonic degree
+
+    Returns
+    -------
+    s_m_c: conditioned array for clenshaw summation
+    """
     #-- allocate for output matrix
     N = len(t)
     s_m = np.zeros((N,2),dtype=np.float128)

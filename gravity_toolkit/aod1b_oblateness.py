@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 aod1b_oblateness.py
-Written by Tyler Sutterley (06/2019)
+Written by Tyler Sutterley (07/2020)
 
 Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
     atm: atmospheric loading from ECMWF
@@ -38,6 +38,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATED HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 06/2019: using python3 compatible regular expression patterns
     Updated 10/2018: using future division for python3 Compatibility
     Updated 08/2018: using full release string (RL05 instead of 5)
@@ -70,6 +71,26 @@ product['oba'] = 'Ocean bottom pressure from OMCT'
 #-- program module to read the C20 coefficients of the AOD1b data
 def aod1b_oblateness(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
     VERBOSE=False):
+    """
+    Creates monthly files of oblateness (C20) variations at 6-hour intervals
+    from GRACE/GRACE-FO level-1b dealiasing data files
+
+    Arguments
+    ---------
+    base_dir: working data directory
+
+    Keyword arguments
+    -----------------
+    DREL: GRACE/GRACE-FO data release
+    DSET: GRACE/GRACE-FO dataset
+        atm: atmospheric loading from ECMWF
+        ocn: oceanic loading from OMCT/MPIOM
+        glo: global atmospheric and oceanic loading
+        oba: ocean bottom pressure from OMCT/MPIOM
+    CLOBBER: overwrite existing data
+    MODE: Permission mode of directories and files
+    VERBOSE: Output information for each output file
+    """
 
     #-- compile regular expressions operators for file dates
     #-- will extract the year and month from the tar file (.tar.gz)

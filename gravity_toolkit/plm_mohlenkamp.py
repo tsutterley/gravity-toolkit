@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 u"""
 plm_mohlenkamp.py
-Written by Tyler Sutterley (05/2015)
+Written by Tyler Sutterley (07/2020)
 
 Computes fully-normalized associated Legendre Polynomials
     for an array of x values
 Uses Martin Mohlenkamp's recursion relation derived from the
     Szego (1939) Recurrence formula for Jacobi Polynomials (Pg 71)
-
-    A User's Guide to Spherical Harmonics
-    http://www.ohiouniversityfaculty.com/mohlenka/research/uguide.pdf
 
 With this algorithm, the associated Legendre Functions are
     constructed as an amplitude times a Jacobi Polynomial
@@ -41,13 +38,35 @@ NOTES:
         is poorly conditioned
     For spherical harmonic orders above ~1000 can cause overflows
 
+REFERENCES:
+    Martin Mohlenkamp, "A User's Guide to Spherical Harmonics"
+    http://www.ohiouniversityfaculty.com/mohlenka/research/uguide.pdf
+
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 05/2015: added parameter MMAX for MMAX != LMAX
     Written 09/2013
 """
 import numpy as np
 
 def plm_mohlenkamp(LMAX, x, MMAX=None):
+    """
+    Computes fully-normalized associated Legendre Polynomials
+    using Martin Mohlenkamp's recursion relation
+
+    Arguments
+    ---------
+    LMAX: Upper bound of Spherical Harmonic Degrees
+    x: elements ranging from -1 to 1
+
+    Keyword arguments
+    -----------------
+    MMAX: Upper bound of Spherical Harmonic Orders
+
+    Returns
+    -------
+    plms: fully-normalized Legendre polynomials
+    """
 
     #-- Verify LMAX as integer
     LMAX = np.int(LMAX)

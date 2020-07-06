@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (06/2020)
+Written by Tyler Sutterley (07/2020)
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
     and for a specified date range
@@ -69,8 +69,38 @@ PROGRAM DEPENDENCIES:
     read_GRACE_harmonics.py: reads an input GRACE data file and calculates date
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 06/2020: set relative time to mean of input within regress_model
-    Updated 03/2020 for public release.  output degree and order in dict
+    Updated 03/2020: for public release.  output degree and order in dict
+    Updated 10/2019: changing Y/N flags to True/False
+    Updated 09/2019: edit exception for degree 1 if no matching month is found
+    Updated 08/2019: added LARES C30 from John Ries (C30_LARES_filtered.txt)
+        added exceptions for C20, C30 and degree 1 if no matching month is found
+    Updated 07/2019: added option for reading SLR C30 data (TN-14)
+        added option DEG1_GIA to set the GIA used when calculating geocenter
+    Updated 11/2018: split atmospheric jump corrections into a separate function
+    Updated 10/2018: decode gzip read for python3 Compatibility
+    Updated 08/2018: using full release string (RL05 instead of 5)
+    Updated 05/2018: set filename for release 6 C20 coefficients from SLR
+    Updated 03/2018: include a flag if using ECMWF "jump" corrections
+    Updated 12/2015: added ECMWF GAG "jump" correction. New TN-09 GAF correction
+    Updated 09/2015: added sea level fingerprint geocenter option
+    Updated 08/2015: added ECMWF "jump" corrections GAE and GAF
+        as described in the AOD1B processing document (pages 21-26)
+        ftp://podaac.jpl.nasa.gov/allData/grace/docs/AOD1B_20140520.pdf
+        Made pole tide correction optional as POLE_TIDE (Y/N)
+    Updated 05/2015: added Pole Tide correction from Wahr et al. (2015):
+            The Pole Tide and its Effect on GRACE Time-Variable Gravity
+            Measurements: Implications for Estimates of Surface Mass Variations
+        Added MMAX option for new data files with a lower truncation
+    Updated 12/2014: added portion for using iterated geocenter coefficients
+    Updated 05/2014: can remove different means from an input file
+    Updated 02/2014: minor update to if statements.
+    Updated 01/2014: output directory of exact GRACE product
+    Updated 09/2013: added option to least-squares model the degree 1
+        coefficients for missing months
+    Updated 07/2013: can use different geocenter solutions
+    Written 05/2013
 """
 from __future__ import print_function, division
 
@@ -89,6 +119,58 @@ from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
     start_mon, end_mon, missing, SLR_C20, DEG1, MMAX=None, SLR_C30='',
     MODEL_DEG1=False, DEG1_GIA='', ATM=False, POLE_TIDE=False):
+    """
+    Reads GRACE/GRACE-FO files for a spherical harmonic degree and order
+        and a date range
+    Replaces Degree 1 with with input values (if specified)
+    Replaces C20 with SLR values (if specified)
+    Replaces C30 with SLR values for months 179+ (if specified)
+    Corrects for ECMWF atmospheric "jumps" using the GAE, GAF and GAG files
+    Corrects for Pole Tide drift following Wahr et al. (2015)
+
+    Arguments
+    ---------
+    base_dir: Working data directory for GRACE/GRACE-FO data
+    PROC: (CSR/CNES/JPL/GFZ) data processing center
+    DREL: (RL01,RL02,RL03,RL04,RL05,RL06) data release
+    DSET: (GAA/GAB/GAC/GAD/GSM) data product
+    LMAX: Upper bound of Spherical Harmonic Degrees
+    start_mon: starting month to consider in analysis
+    end_mon: ending month to consider in analysis
+    missing: missing months to not consider in analysis
+    SLR_C20: Replaces C20 with SLR values
+        N: use original values
+        CSR: use values from CSR (TN-07,TN-09,TN-11)
+        GSFC: use values from GSFC (TN-14)
+    DEG1: Use Degree 1 coefficients
+        None: No degree 1
+        Tellus: GRACE/GRACE-FO TN-13 coefficients from PO.DAAC
+        SLR: satellite laser ranging coefficients from CSR
+        SLF: Sutterley and Velicogna coefficients, Remote Sensing (2019)
+
+    Keyword arguments
+    -----------------
+    MMAX: Upper bound of Spherical Harmonic Orders
+    SLR_C30: replaces C30 with SLR values
+        None: use original values
+        CSR: use values from CSR (5x5 with 6,1)
+        GSFC: use values from GSFC (TN-14)
+    POLE_TIDE: correct GSM data with pole tides following Wahr et al (2015)
+    ATM: correct data with ECMWF "jump" corrections GAE, GAF and GAG
+    MODEL_DEG1: least-squares model missing degree 1 coefficients (True/False)
+    DEG1_GIA: GIA-correction used when calculating degree 1 coefficients
+
+    Returns
+    -------
+    clm: GRACE/GRACE-FO cosine spherical harmonics
+    slm: GRACE/GRACE-FO sine spherical harmonics
+    time: time of each GRACE/GRACE-FO measurement (mid-month)
+    month: GRACE/GRACE-FO months of input datasets
+    l: spherical harmonic degree to LMAX
+    m: spherical harmonic order to MMAX
+    title: string denoting low degree zonals replacement, geocenter usage and corrections
+    directory: directory of exact GRACE/GRACE-FO product
+    """
 
     #-- Directory of exact GRACE product
     grace_dir = os.path.join(base_dir, PROC, DREL, DSET)
@@ -295,6 +377,24 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
 
 #-- PURPOSE: read atmospheric jump corrections from Fagiolini et al. (2015)
 def read_ecmwf_corrections(base_dir, LMAX, months, MMAX=None):
+    """
+    Read atmospheric jump corrections from Fagiolini et al. (2015)
+
+    Arguments
+    ---------
+    base_dir: Working data directory for GRACE/GRACE-FO data
+    LMAX: Upper bound of Spherical Harmonic Degrees
+    months: list of GRACE/GRACE-FO months
+
+    Keyword arguments
+    -----------------
+    MMAX: Upper bound of Spherical Harmonic orders
+
+    Returns
+    -------
+    clm: atmospheric correction cosine spherical harmonics
+    slm: atmospheric correction sine spherical harmonics
+    """
     #-- correction files
     corr_file = {}
     corr_file['GAE'] = 'TN-08_GAE-2_2006032-2010031_0000_EIGEN_G---_0005.gz'
@@ -351,6 +451,26 @@ def read_ecmwf_corrections(base_dir, LMAX, months, MMAX=None):
 
 #-- PURPOSE: calculate a regression model for extrapolating values
 def regress_model(t_in, d_in, t_out, ORDER=2, CYCLES=None, RELATIVE=None):
+    """
+    Calculates a regression model for extrapolating values
+
+    Arguments
+    ---------
+    t_in: input time array
+    d_in: input data array
+    t_out: time array for output regressed values
+
+    Keyword arguments
+    -----------------
+    ORDER: maximum polynomial order for regression model
+    CYCLES: list of cyclical terms to include in regression model
+    RELATIVE: relative time for polynomial coefficients in fit
+
+    Returns
+    -------
+    d_out: output regressed value data array
+    """
+
     #-- remove singleton dimensions
     t_in = np.squeeze(t_in)
     d_in = np.squeeze(d_in)

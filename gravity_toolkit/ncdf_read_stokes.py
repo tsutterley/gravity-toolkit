@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_read_stokes.py
-Written by Tyler Sutterley (03/2020)
+Written by Tyler Sutterley (07/2020)
 
 Reads spherical harmonic data from netCDF4 files
 
@@ -32,6 +32,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 03/2020: added ATTRIBUTES option to check if file has attributes
     Updated 10/2019: changing Y/N flags to True/False
     Updated 03/2019: print variables keys in list for Python3 compatibility
@@ -62,6 +63,30 @@ import numpy as np
 import re
 
 def ncdf_read_stokes(filename, DATE=True, ATTRIBUTES=True, VERBOSE=False):
+    """
+    Reads spherical harmonic data from netCDF4 files
+
+    Arguments
+    ---------
+    filename: netCDF4 file to be opened and read
+
+    Keyword arguments
+    -----------------
+    DATE: netCDF4 file has date information
+    ATTRIBUTES: netCDF4 variables contain attribute parameters
+    VERBOSE: will print to screen the netCDF4 structure parameters
+
+    Returns
+    -------
+    clm: cosine spherical harmonic coefficients
+    slm: sine spherical harmonic coefficients
+    l: degree
+    m: order
+    time: time of measurement
+    month: GRACE/GRACE-FO month
+    attributes: netCDF4 attributes for variables and file
+    """
+
     #-- Open the NetCDF file for reading
     fileID = netCDF4.Dataset(filename, 'r')
     #-- create python dictionary for output variables

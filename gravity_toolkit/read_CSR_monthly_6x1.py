@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_CSR_monthly_6x1.py
-Written by Tyler Sutterley (07/2019)
+Written by Tyler Sutterley (07/2020)
 
 Reads in monthly 5x5 spherical harmonic coefficients with 1
     coefficient from degree 6 all calculated from SLR measurements
@@ -32,6 +32,7 @@ PROGRAM DEPENDENCIES:
     convert_calendar_decimal.py: converts from calendar dates to decimal years
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 07/2019: following new format with mean field in header and no C6,0
     Updated 10/2018: using future division for python3 Compatibility
     Updated 10/2017: include the 6,0 and 6,1 coefficients in output Ylms
@@ -46,6 +47,28 @@ from gravity_toolkit.convert_calendar_decimal import convert_calendar_decimal
 
 #-- PURPOSE: read low degree harmonic data from Satellite Laser Ranging (SLR)
 def read_CSR_monthly_6x1(input_file, HEADER=True):
+    """
+    Reads in monthly low degree and order spherical harmonic coefficients
+    from Satellite Laser Ranging (SLR) measurements
+
+    Arguments
+    ---------
+    input_file: input satellite laser ranging file from CSR
+
+    Keyword arguments
+    -----------------
+    HEADER: file contains header text to be skipped
+
+    Returns
+    -------
+    clm: Cosine spherical harmonic coefficients
+    slm: Sine spherical harmonic coefficients
+    error/clm: Cosine spherical harmonic coefficient uncertainty
+    error/slm: Sine spherical harmonic coefficients uncertainty
+    MJD: output date as Modified Julian Day
+    time: output date in year-decimal
+    """
+
     #-- read the file and get contents
     with open(os.path.expanduser(input_file),'r') as f:
         file_contents = f.read().splitlines()

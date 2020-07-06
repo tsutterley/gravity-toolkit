@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 u"""
 grace_date.py
-Written by Tyler Sutterley (03/2020)
+Written by Tyler Sutterley (07/2020)
 
-Reads dates of each GRACE/GRACE-FO data file and assigns the month number
-    reads the start and end date from the filename,
-    calculates the mean date in decimal format (correcting for leap years)
-Creates an index of dates for GRACE/GRACE-FO data if specified
+Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
+Parses dates of each GRACE/GRACE-FO file and assigns the month number
+Creates an index of dates for GRACE/GRACE-FO files
 
 INPUTS:
     base_dir: Working data directory for GRACE/GRACE-FO data
@@ -24,7 +23,7 @@ OPTIONS:
     MODE: permissions mode of output files
 
 OUTPUTS:
-    dictionary of files mapped by GRACE/GRACE-FO month
+    dictionary of GRACE/GRACE-FO files indexed by month
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
@@ -32,10 +31,45 @@ PYTHON DEPENDENCIES:
         (https://python-future.org/)
 
 PROGRAM DEPENDENCIES:
-    convert_julian.py: converts a julian date into a calendar date
+    convert_julian.py: converts a Julian date into a calendar date
 
 UPDATE HISTORY:
-    Updated 03/2020 for public release
+    Updated 07/2020: added function docstrings
+    Updated 03/2020: for public release
+    Updated 11/2018: updated regular expression pattern for RL06 GFZ
+    Updated 08/2018: using full release string (RL05 instead of 5)
+    Updated 06/2018: using python3 compatible octal and input
+    Updated 05/2018: can read new GRACE file format for RL06 and GRACE-FO
+    Updated 10/2017: added option OUTPUT to write the text file with GRACE dates
+        now will output from the function the GRACE month and file name
+        adjusted regular expression for extracting parameters from filename
+    Updated 02/2017: added mode to modify the permissions of the output file
+    Updated 05-06/2016: using __future__ print function, format date lines
+    Updated 01/2016: minor clean up.  using enumerate for loop
+    Updated 10/2015: added manual fix for month 161 (centered in 160)
+    Updated 05/2015: additional 2 digits to date file to reduce the differences
+        in dates if importing from date file or binary data file
+    Updated 03/2015: added main definition for running from command line
+        further generalization, calculates the Julian date of the GRACE date
+    Updated 11/2014: output more decimal points for date
+    Updated 09/2014: using regular expressions, general code updates
+    Updated 03/2014: printing grace month in form %003i
+    Updated 02/2014: minor update to if statements
+    Updated 01/2014: updated for CNES RL03 (monthly fields)
+    Updated 10/2013: created a directory with both RL04 and RL05 (combining)
+        made a slight edit for the drift rates
+    Updated 09/2013: changed dating schemes for all products
+        for CNES: Solution 1 == 001, versus 10-day from start of 2002
+    Updated 05/2013: modified for use with GUI program
+    Updated 07/2012: changed some variable names, and saving variables
+        start_yr, start_day, end_yr, end_day
+    Updated 07/2012: fix missing date for CSR RL05
+        One of the months 119 registered as 118 as half of 119 is in 118 due to
+        accelerometer issues during 119
+    Updated 06/2012: fixes missing dates to be automatic
+        Also added options to enter the processing center, the data release and
+        the dataset from an external main level program
+    Updated 04/2012: changes for RL05 data
 """
 from __future__ import print_function
 
@@ -47,6 +81,37 @@ import numpy as np
 from gravity_toolkit.convert_julian import convert_julian
 
 def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
+    """
+    Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
+    Parses dates of each GRACE/GRACE-FO file and assigns the month number
+    Creates an index of dates for GRACE/GRACE-FO files
+
+    Arguments
+    ---------
+    base_dir: working data directory
+
+    Keyword arguments
+    -----------------
+    PROC: GRACE data processing center
+        CSR: University of Texas Center for Space Research
+        GFZ: German Research Centre for Geosciences (GeoForschungsZentrum)
+        JPL: Jet Propulsion Laboratory
+        CNES: French Centre National D'Etudes Spatiales
+    DREL: GRACE/GRACE-FO data release
+    DSET: GRACE/GRACE-FO dataset
+        GAA: non-tidal atmospheric correction
+        GAB: non-tidal oceanic correction
+        GAC: combined non-tidal atmospheric and oceanic correction
+        GAD: ocean bottom pressure product
+        GSM: corrected monthly static gravity field product
+    OUTPUT: create index file of dates for GRACE/GRACE-FO data
+    MODE: Permission mode of directories and files
+
+    Returns
+    -------
+    output_files: dictionary of GRACE/GRACE-FO files indexed by month
+    """
+
     #--  Directory of exact product
     grace_dir = os.path.join(base_dir, PROC, DREL, DSET)
     #-- input index file containing GRACE data filenames

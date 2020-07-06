@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 u"""
-gen_disc_load.py (04/2020)
+gen_disc_load.py (07/2020)
 Calculates gravitational spherical harmonic coefficients for a uniform disc load
 
 CALLING SEQUENCE:
@@ -22,8 +22,6 @@ OPTIONS:
     LMAX: Upper bound of Spherical Harmonic Degrees
     MMAX: Upper bound of Spherical Harmonic Orders
     PLM: input Legendre polynomials (for improving computational time)
-        input PLMs are the polynomials for cos(theta) (disc center)
-        not for the spherical cap alpha plms
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
 PYTHON DEPENDENCIES:
@@ -40,6 +38,7 @@ REFERENCE:
         Associated Legendre Functions", Journal of Geodesy (2002)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 05/2020: vectorize calculation over degrees to improve compute time
         added option to precompute plms for disc load centers
     Updated 04/2020: reading load love numbers outside of this function
@@ -55,6 +54,30 @@ from gravity_toolkit.legendre_polynomials import legendre_polynomials
 from gravity_toolkit.units import units
 
 def gen_disc_load(data,lon,lat,area,LMAX=60,MMAX=None,PLM=None,LOVE=None):
+    """
+    Calculates spherical harmonic coefficients for a uniform disc load
+
+    Arguments
+    ---------
+    data: data magnitude in gigatonnes
+    lon: longitude of disc center
+    lat: latitude of disc center
+    area: area of disc in km^2
+
+    Keyword arguments
+    -----------------
+    LMAX: Upper bound of Spherical Harmonic Degrees
+    MMAX: Upper bound of Spherical Harmonic Orders
+    PLM: input Legendre polynomials
+    LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
+
+    Returns
+    -------
+    clm: cosine spherical harmonic coefficients
+    slm: sine spherical harmonic coefficients
+    l: spherical harmonic degree to LMAX
+    m: spherical harmonic order to MMAX
+    """
 
     #-- upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:

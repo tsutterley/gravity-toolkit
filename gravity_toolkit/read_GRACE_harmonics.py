@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 u"""
 read_GRACE_harmonics.py
-Written by Tyler Sutterley (08/2019)
+Written by Tyler Sutterley (07/2020)
 
 Reads GRACE files and extracts spherical harmonic data and drift rates (RL04)
 Adds drift rates to clm and slm for release 4 harmonics
 Correct GSM data for drift in pole tide following Wahr et al. (2015)
-Extracts date of GRACE/GRACE-FO files and calculates mean of range
+Parses date of GRACE/GRACE-FO data from filename
 
 INPUTS:
     input_file: GRACE Level-2 spherical harmonic data file
@@ -31,6 +31,7 @@ PYTHON DEPENDENCIES:
     PyYAML: YAML parser and emitter for Python (https://github.com/yaml/pyyaml)
 
 UPDATE HISTORY:
+    Updated 07/2020: added function docstrings
     Updated 08/2019: specify yaml loader (PyYAML yaml.load(input) Deprecation)
     Updated 07/2019: replace colons in yaml header if within quotations
     Updated 11/2018: decode gzip read with ISO-8859-1 for python3 compatibility
@@ -46,6 +47,33 @@ import numpy as np
 
 #-- PURPOSE: read Level-2 GRACE and GRACE-FO spherical harmonic files
 def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
+    """
+    Extracts spherical harmonic coefficients from GRACE/GRACE-FO files
+    Adds drift rates to spherical harmonics for Release 4 data
+    Correct data prior to Release 6 for pole tide drift
+    Parses date of GRACE/GRACE-FO data from filename
+
+    Arguments
+    ---------
+    input_file: GRACE Level-2 spherical harmonic data file
+    LMAX: Maximum degree of spherical harmonics (degree of truncation)
+
+    Keyword arguments
+    -----------------
+    MMAX: Maximum order of spherical harmonics
+    POLE_TIDE: correct for pole tide drift following Wahr et al. (2015)
+
+    Returns
+    -------
+    time: mid-month date in year-decimal
+    start: start date of range as Julian day
+    end: end date of range as Julian day
+    clm: cosine spherical harmonics coefficients
+    slm: sine spherical harmonics coefficients
+    eclm: cosine spherical harmonic uncalibrated standard deviations
+    eslm: sine spherical harmonic uncalibrated standard deviations
+    """
+
     #-- compile numerical expression operator for parameters from files
     #-- UTCSR: The University of Texas at Austin Center for Space Research
     #-- EIGEN: GFZ German Research Center for Geosciences (RL01-RL05)
