@@ -32,6 +32,10 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 03/2020 for public release
+    Updated 03/2020: new GFZ ISDC ftp server website
+    Updated 09/2019: added checksum option to not overwrite existing data files
+        added GRACE Follow-On data sync
+    Written 08/2018
 """
 from __future__ import print_function
 

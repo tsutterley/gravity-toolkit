@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 u"""
 podaac_grace_sync.py
-Written by Tyler Sutterley (06/2020)
+Written by Tyler Sutterley (07/2020)
 
 Syncs GRACE/GRACE-FO and auxiliary data from the NASA JPL PO.DAAC Drive Server
 Syncs CSR/GFZ/JPL files for RL04/RL05/RL06 GAA/GAB/GAC/GAD/GSM
     GAA and GAB are GFZ/JPL only
+Syncs GFZ AOD1b files for RL04/RL05/RL06
 Gets the latest technical note (TN) files
 Gets the monthly GRACE/GRACE-FO newsletters
 
@@ -33,7 +34,8 @@ OUTPUTS:
     Tellus degree one coefficients (TN-13)
     Technical notes for satellite laser ranging coefficients
     Technical notes for Release-05 atmospheric corrections
-    Monthly GRACE newsletters
+    GFZ RL04/RL05/RL06: Level-1b dealiasing solutions
+    Monthly GRACE/GRACE-FO newsletters
 
 COMMAND LINE OPTIONS:
     --help: list the command line options
@@ -42,7 +44,8 @@ COMMAND LINE OPTIONS:
     -D X, --directory=X: working data directory
     -C X, --center=X: GRACE Processing Center
     -R X, --release=X: GRACE data releases to sync (RL05,RL06)
-    --newsletters: sync GRACE newsletters
+    --aod1b: sync GRACE/GRACE-FO Level-1B dealiasing products
+    --newsletters: sync GRACE/GRACE-FO newsletters
     -L, --list: print files to be transferred, but do not execute transfer
     -l, --log: output log of files downloaded
     --clobber: Overwrite existing data in transfer
@@ -57,10 +60,80 @@ PYTHON DEPENDENCIES:
         https://python-future.org/
 
 UPDATE HISTORY:
+    Updated 07/2020: add back snippets to sync Level-1b dealiasing products
     Updated 06/2020: increased timeout to 2 minutes
     Updated 05/2020: simplified PO.DAAC Drive login
         added netrc option for alternative authentication method
     Updated 03/2020 for public release.  Set default release to RL06
+    Updated 12/2019: GSFC TN-14 oblateness and C30 file in gracefo documents
+        convert last modified time in a function for a given format
+    Updated 10/2019: add GRACE-FO newsletters
+    Updated 09/2019: added ssl context to urlopen headers
+        added checksum option to not overwrite existing data files
+    Updated 07/2019: added GSFC TN-14 oblateness and C30 files
+    Updated 06/2019: added JPL TN-13 geocenter files (CSR/GFZ/JPL)
+        added GRACE-FO spherical harmonic coefficient files.  RL06 AOD1b *.tgz
+    Updated 04/2019: new podaac drive website https://podaac-tools.jpl.nasa.gov
+    Updated 12/2018: decode authorization header for python3 compatibility
+    Updated 11/2018: encode base64 strings for python3 compatibility
+    Updated 08/2018: regular expression pattern for GFZ Release 6
+        new lxml expressions to match PO.DAAC Drive website updates
+    Updated 06/2018: using python3 compatible octal, input and urllib
+        updated regular expression pattern for JPL Release 6
+    Updated 05/2018: updated for CSR Release 6
+    Updated 03/2018: updated header for log file output
+    Updated 11/2017: increased urllib2.urlopen timeout to 20.  PROC as option
+    Updated 08/2017: use raw_input() to enter NASA Earthdata credentials rather
+        than exiting with error
+    Updated 05/2017: exception if NASA Earthdata credentials weren't entered
+        using os.makedirs to recursively create directories
+        using getpass to enter server password securely (remove --password)
+    Updated 04/2017: slight modification to AOD1b regular expression
+        changed from using --rl04 option to setting with --release
+        parsing HTML with lxml libraries (extract names and last modified dates)
+        Authorization header in urllib2 opener. changes to check_connection()
+    Updated 01-02/2017: converted to https (urllib2) for NASA Earthdata servers
+        GRACE newsletters no longer standard, use --newsletters option
+    Updated 01/2017: added --mode to set file and directory permissions. Cleanup
+    Updated 09/2016: rewritten to use libftp within python (no external calls)
+        previous lftp version renamed podaac_grace_lftp.py
+    Updated 06/2016: added --list option for a dry-run (do not transfer files)
+        absolute import of shutil package
+    Updated 05/2016: using __future__ print function
+    Updated 03/2016: using getopt to set parameters, whether or not to output a
+        log file, added new help module
+    Updated 02/2016: added option for CSR weekly 5X5 harmonics
+    Updated 01/2016: parallel downloading for lftp mirror portions (8 files)
+    Updated 12/2015: added ECMWF GAG "jump" correction. New TN-09 GAF correction
+        using clobber flag for mget portions (rather than initial delete)
+    Updated 08/2015: changed sys.exit to raise RuntimeError
+        Sync the TN-08 and TN-09 GAE and GAF products
+    UPDATED 05/2015: updated for Jan/Feb 2015 months (don't include LMAXx30)
+        improved regular expression usage to create indices
+    Updated 03/2015: update for JPL RL05.1 (see L2-JPL_ProcStds_v5.1.pdf)
+    Updated 01/2015: added internet connectivity check
+    Updated 11/2014: added main definition for parameters
+    Updated 09/2014: updates to code structure.  Removed globs
+    Updated 02/2014: minor update to if statements
+    Updated 12/2013: Updated for GFZ RL05a GSM products
+        These products are less constrained to the background model
+        and are denoted with *_005a.gz
+        Final directory is starting working directory (using getcwd)
+    Updated 10/2013: Adding option to create sync logs.
+        Updated filepaths with path.join to standardize for different OS
+    Updated 09/2013: added subprocess wait commands to prevent interruptions
+        in the system call
+    Updated 05/2013: added RETIRE flag for RL04 as podaac directory moved
+        added sorted to glob for linux computers
+        glob parallels ls -U and has to be sorted
+    Updated 03/2013: added argument tags for AOD1B, RL04, ECCO, and GLDAS
+    Updated 01/2013: downloads daily AOD1B products (GFZ RL04 and RL05)
+    Updated 11/2012: Turned off loop for RL04 as it is no longer updated and
+    Updated 07/2012: adjusted the output directory for generalization
+    Updated 06/2012: added in new SLR dataset for release 5 TN-07_C20_SLR.txt
+    Updated 06/2012: index file created only lists the wanted *.gz files
+    Updated 04/2012: added loops to run through the different products
+    Written 04/2012
 """
 from __future__ import print_function
 
@@ -142,8 +215,8 @@ def compile_regex_pattern(PROC, DREL, DSET):
 
 #-- PURPOSE: sync local GRACE/GRACE-FO files with JPL PO.DAAC drive server
 def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
-    NEWSLETTERS=False, LOG=False, LIST=False, CLOBBER=False, CHECKSUM=False,
-    MODE=None):
+    AOD1B=False, NEWSLETTERS=False, LOG=False, LIST=False, CLOBBER=False,
+    CHECKSUM=False, MODE=None):
 
     #-- check if directory exists and recursively create if not
     os.makedirs(DIRECTORY,MODE) if not os.path.exists(DIRECTORY) else None
@@ -325,6 +398,41 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
             #-- compile regular expression operator for remote files
             R1 = re.compile('{0}_SDS_NL_(\d+).pdf'.format(NAME), re.VERBOSE)
             remote_file_lines = [i for i,f in enumerate(colnames) if R1.match(f)]
+            #-- for each file on the remote server
+            for i in remote_file_lines:
+                #-- remote and local versions of the file
+                remote_file = posixpath.join(remote_dir,colnames[i])
+                local_file = os.path.join(local_dir,colnames[i])
+                #-- get last modified date of file and convert into unix time
+                remote_mtime = get_mtime(collastmod[i])
+                http_pull_file(fid1, remote_file, remote_mtime, local_file,
+                    LIST, CLOBBER, CHECKSUM, MODE)
+            #-- close request
+            req = None
+
+    #-- GRACE/GRACE-FO AOD1B DEALIASING PRODUCTS
+    #-- PROCESSING CENTER (GFZ)
+    #-- DATA RELEASES (RL04, RL05, RL06)
+    if AOD1B:
+        print('GRACE L1B Dealiasing Product:', file=fid1)
+        #-- for each data release
+        for rl in DREL:
+            #-- print string of exact data product
+            print('{0}/{1}/{2}/{3}'.format('L1B','GFZ','AOD1B',rl), file=fid1)
+            #-- remote and local directory for exact data product
+            remote_dir=posixpath.join(HOST,'allData','grace','L1B','GFZ','AOD1B',rl)
+            local_dir=os.path.join(DIRECTORY,'AOD1B',rl)
+            #-- check if AOD1B directory exists and recursively create if not
+            os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
+            #-- open connection with PO.DAAC drive server at remote directory
+            req = urllib2.Request(url=remote_dir)
+            #-- read and parse request for files (names and modified dates)
+            tree = lxml.etree.parse(urllib2.urlopen(req, timeout=20), parser)
+            colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
+            collastmod = tree.xpath('//tr/td[3]/text()')
+            #-- compile regular expression operator for remote files
+            R1 = re.compile('AOD1B_(20\d+)-(\d+)_\d+\.(tar\.gz|tgz)$', re.VERBOSE)
+            remote_file_lines=[i for i,f in enumerate(colnames) if R1.match(f)]
             #-- for each file on the remote server
             for i in remote_file_lines:
                 #-- remote and local versions of the file
@@ -536,7 +644,8 @@ def usage():
     print(' -D X, --directory=X\tWorking Data Directory')
     print(' -C X, --center=X\tGRACE Processing Center (CSR,GFZ,JPL)')
     print(' -R X, --release=X\tGRACE data releases to sync (RL05,RL06)')
-    print(' --newsletters\t\tSync GRACE Newsletters')
+    print(' --aod1b\t\tSync GRACE/GRACE-FO Level-1B dealiasing products')
+    print(' --newsletters\t\tSync GRACE/GRACE-FO Newsletters')
     print(' -L, --list\t\tOnly print files that are to be transferred')
     print(' --clobber\t\tOverwrite existing data in transfer')
     print(' --checksum\t\tCompare hashes to check if overwriting existing data')
@@ -550,7 +659,7 @@ def usage():
 def main():
     #-- Read the system arguments listed after the program
     long_options = ['help','user=','netrc=','directory=','list','log',
-        'center=','release=','newsletters','clobber','checksum','mode=']
+        'center=','release=','aod1b','newsletters','clobber','checksum','mode=']
     optlist,arglist = getopt.getopt(sys.argv[1:],'hU:N:D:lLC:R:M:',long_options)
 
     #-- command line parameters
@@ -565,6 +674,9 @@ def main():
     PROC = ['CSR', 'GFZ', 'JPL']
     #-- Data release
     DREL = ['RL06']
+    #-- GRACE/GRACE-FO level-1b dealiasing products
+    AOD1B = False
+    #-- GRACE/GRACE-FO newsletters
     NEWSLETTERS = False
     #-- Use hash for determining whether or not to overwrite
     CHECKSUM = False
@@ -584,15 +696,17 @@ def main():
             LIST = True
         elif opt in ("-l","--log"):
             LOG = True
-        elif opt in ("--clobber"):
+        elif opt in ("--clobber",):
             CLOBBER = True
         elif opt in ("-C","--center"):
             PROC = arg.upper().split(',')
         elif opt in ("-R","--release"):
             DREL = arg.upper().split(',')
-        elif (opt in '--newsletters'):
+        elif (opt in "--aod1b",):
+            AOD1B = True
+        elif (opt in "--newsletters",):
             NEWSLETTERS = True
-        elif opt in ("--checksum"):
+        elif opt in ("--checksum",):
             CHECKSUM = True
         elif opt in ("-M","--mode"):
             MODE = int(arg, 8)
@@ -614,8 +728,8 @@ def main():
     #-- check internet connection before attempting to run program
     if check_connection():
         podaac_grace_sync(DIRECTORY, PROC, USER=USER, PASSWORD=PASSWORD,
-            DREL=DREL, NEWSLETTERS=NEWSLETTERS, LIST=LIST, LOG=LOG,
-            CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
+            DREL=DREL, NEWSLETTERS=NEWSLETTERS, AOD1B=AOD1B, LIST=LIST,
+            LOG=LOG, CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
 
 #-- run main program
 if __name__ == '__main__':

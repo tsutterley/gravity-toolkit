@@ -265,7 +265,7 @@ class spatial(object):
         #-- close the output file
         fid.close()
 
-    def to_netCDF4(self, filename, date=True, *kwargs):
+    def to_netCDF4(self, filename, date=True, **kwargs):
         """
         Write a spatial object to netCDF4 file
         Inputs: full path of output netCDF4 file
@@ -273,6 +273,7 @@ class spatial(object):
         **kwargs: keyword arguments for ncdf_write
         """
         self.filename = filename
+        KWARGS = {}
         for key,val in kwargs.items():
             KWARGS[key.upper()] = val
         if 'TIME_UNITS' not in KWARGS.keys():
@@ -291,6 +292,7 @@ class spatial(object):
         **kwargs: keyword arguments for hdf5_write
         """
         self.filename = filename
+        KWARGS = {}
         for key,val in kwargs.items():
             KWARGS[key.upper()] = val
         if 'TIME_UNITS' not in KWARGS.keys():

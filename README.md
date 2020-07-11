@@ -35,6 +35,7 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
 - [`gen_spherical_cap`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/gen_spherical_cap.md) - Calculates gravitational spherical harmonic coefficients for a spherical cap
 - [`gen_stokes`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/gen_stokes.md) - Returns a series of spherical harmonics for an input spatial field
 - [`geocenter`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/geocenter.md) - Converts degree 1 spherical harmonic coefficients to geocenter variations
+- [`gfz_isdc_dealiasing_ftp`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/gfz_isdc_dealiasing_ftp.md) - Syncs GRACE Level-1b dealiasing products from the GFZ Information System and Data Center (ISDC)
 - [`gfz_isdc_grace_ftp`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/gfz_isdc_grace_ftp.md) - Syncs GRACE/GRACE-FO and auxiliary data from the GFZ Information System and Data Center (ISDC)
 - [`grace_date`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/grace_date.md) - Calculates dates of each GRACE/GRACE-FO file and assigns the month number
 - [`grace_find_months`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/grace_find_months.md) - Finds the months available for a GRACE/GRACE-FO product

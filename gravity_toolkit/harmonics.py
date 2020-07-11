@@ -303,8 +303,7 @@ class harmonics(object):
         if 'TIME_LONGNAME' not in kwargs.keys():
             kwargs['TIME_LONGNAME'] = 'Date_in_Decimal_Years'
         ncdf_stokes(self.clm, self.slm, self.l, self.m, self.time, self.month,
-            FILENAME=os.path.expanduser(filename), VERBOSE=False, DATE=date,
-            **kwargs)
+            FILENAME=os.path.expanduser(filename), DATE=date, **kwargs)
 
     def to_HDF5(self, filename, date=True, **kwargs):
         """
@@ -319,8 +318,7 @@ class harmonics(object):
         if 'TIME_LONGNAME' not in kwargs.keys():
             kwargs['TIME_LONGNAME'] = 'Date_in_Decimal_Years'
         hdf5_stokes(self.clm, self.slm, self.l, self.m, self.time, self.month,
-            FILENAME=os.path.expanduser(filename), VERBOSE=False, DATE=date,
-            **kwargs)
+            FILENAME=os.path.expanduser(filename), DATE=date, **kwargs)
 
     def update_dimensions(self):
         """

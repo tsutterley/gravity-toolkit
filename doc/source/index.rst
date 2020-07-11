@@ -37,6 +37,7 @@ missions
     user_guide/gen_spherical_cap.md
     user_guide/gen_stokes.md
     user_guide/geocenter.md
+    user_guide/gfz_isdc_dealiasing_ftp.md
     user_guide/gfz_isdc_grace_ftp.md
     user_guide/grace_date.md
     user_guide/grace_months_index.md
