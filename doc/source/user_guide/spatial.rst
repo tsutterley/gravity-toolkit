@@ -115,6 +115,11 @@ General Attributes and Methods
     number of grid dimensions
 
 
+.. method:: object.case_insensitive_filename(filename)
+
+    Searches a directory for a filename without case dependence
+
+
 .. method:: object.from_ascii(filename, date=True, verbose=False, columns=['lon','lat','data','time'])
 
     Read a spatial object from an ascii file
@@ -306,11 +311,42 @@ General Attributes and Methods
     Inputs: GRACE/GRACE-FO months
 
 
+.. method:: object.scale(var)
+
+    Multiply a spatial object by a constant
+
+    Inputs: scalar value to which the spatial object will be multiplied
+
+
 .. method:: object.mean(apply=False)
 
     Compute mean spatial field and remove from data if specified
 
     Option: `apply` to remove the mean field from the input spatial
+
+
+.. method:: object.sum(power=1)
+
+    Compute summation of spatial field
+
+    Option: apply a power before calculating summation
+
+
+.. method:: object.power(pow)
+
+    Raise a spatial object to a power
+
+    Inputs: power to which the spatial object will be raised
+
+
+.. method:: object.max()
+
+    Compute maximum value of spatial field
+
+
+.. method:: object.min()
+
+    Compute minimum value of spatial field
 
 
 .. method:: object.replace_invalid(fill_value, mask=None)

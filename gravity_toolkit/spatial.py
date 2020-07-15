@@ -20,6 +20,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 07/2020: added class docstring and using kwargs for output to file
+        added case_insensitive_filename function to search directories
     Updated 06/2020: added zeros_like() for creating an empty spatial object
     Written 06/2020
 """
@@ -50,6 +51,22 @@ class spatial(object):
         self.ndim=None
         self.filename=None
 
+    def case_insensitive_filename(self,filename):
+        """
+        Searches a directory for a filename without case dependence
+        """
+        self.filename = os.path.expanduser(filename)
+        #-- check if file presently exists with input case
+        if not os.access(self.filename,os.F_OK):
+            #-- search for filename without case dependence
+            basename = os.path.basename(filename)
+            directory = os.path.dirname(os.path.expanduser(filename))
+            f = [f for f in os.listdir(directory) if re.match(basename,f,re.I)]
+            if not f:
+                raise IOError('{0} not found in file system'.format(filename))
+            self.filename = os.path.join(directory,f.pop())
+        return self
+
     def from_ascii(self, filename, date=True, verbose=False,
         columns=['lon','lat','data','time']):
         """
@@ -57,10 +74,11 @@ class spatial(object):
         Inputs: full path of input ascii file
         Options: ascii file contains date information
         """
-        self.filename = filename
+        #-- set filename
+        self.case_insensitive_filename(filename)
         print(self.filename) if verbose else None
         #-- read input ascii file (.txt) and split lines
-        with open(os.path.expanduser(filename),'r') as f:
+        with open(self.filename,'r') as f:
             file_contents = f.read().splitlines()
         #-- compile regular expression operator for extracting numerical values
         #-- from input ascii files of spatial data
@@ -104,8 +122,10 @@ class spatial(object):
         Inputs: full path of input netCDF4 file
         Options: netCDF4 file contains date information
         """
-        self.filename = filename
-        data = ncdf_read(os.path.expanduser(filename), VERBOSE=verbose,
+        #-- set filename
+        self.case_insensitive_filename(filename)
+        #-- read data from netCDF4 file
+        data = ncdf_read(self.filename, VERBOSE=verbose,
             ATTRIBUTES=False, DATE=date, VARNAME=varname,
             LONNAME=lonname, LATNAME=latname, TIMENAME='time')
         self.data = data['data'].copy()
@@ -130,8 +150,10 @@ class spatial(object):
         Inputs: full path of input HDF5 file
         Options: HDF5 file contains date information
         """
-        self.filename = filename
-        data = hdf5_read(os.path.expanduser(filename), VERBOSE=verbose,
+        #-- set filename
+        self.case_insensitive_filename(filename)
+        #-- read data from HDF5 file
+        data = hdf5_read(self.filename, VERBOSE=verbose,
             ATTRIBUTES=False, DATE=date, VARNAME=varname,
             LONNAME=lonname, LATNAME=latname, TIMENAME='time')
         self.data = data['data'].copy()
@@ -158,9 +180,10 @@ class spatial(object):
             netCDF4, or HDF5 contains date information
             sort spatial objects by date information
         """
-        self.filename = filename
+        #-- set filename
+        self.case_insensitive_filename(filename)
         #-- Read index file of input spatial data
-        with open(os.path.expanduser(filename),'r') as f:
+        with open(self.filename,'r') as f:
             file_list = f.read().splitlines()
         #-- create a list of spatial objects
         h = []
@@ -250,10 +273,10 @@ class spatial(object):
         Inputs: full path of output ascii file
         Options: spatial objects contain date information
         """
-        self.filename = filename
+        self.filename = os.path.expanduser(filename)
         print(self.filename) if verbose else None
         #-- open the output file
-        fid = open(os.path.expanduser(filename), 'w')
+        fid = open(self.filename, 'w')
         if date:
             file_format = '{0:10.4f} {1:10.4f} {2:12.4f} {3:10.4f}'
         else:
@@ -272,7 +295,7 @@ class spatial(object):
         Options: spatial objects contain date information
         **kwargs: keyword arguments for ncdf_write
         """
-        self.filename = filename
+        self.filename = os.path.expanduser(filename)
         KWARGS = {}
         for key,val in kwargs.items():
             KWARGS[key.upper()] = val
@@ -281,7 +304,7 @@ class spatial(object):
         if 'TIME_LONGNAME' not in KWARGS.keys():
             KWARGS['TIME_LONGNAME'] = 'Date_in_Decimal_Years'
         ncdf_write(self.data, self.lon, self.lat, self.time,
-            FILENAME=os.path.expanduser(filename), DATE=date,
+            FILENAME=self.filename, DATE=date,
             FILL_VALUE=self.fill_value, **KWARGS)
 
     def to_HDF5(self, filename, date=True, **kwargs):
@@ -300,7 +323,7 @@ class spatial(object):
         if 'TIME_LONGNAME' not in KWARGS.keys():
             KWARGS['TIME_LONGNAME'] = 'Date_in_Decimal_Years'
         hdf5_write(self.data, self.lon, self.lat, self.time,
-            FILENAME=os.path.expanduser(filename), DATE=date,
+            FILENAME=self.filename, DATE=date,
             FILL_VALUE=self.fill_value, **KWARGS)
 
     def update_spacing(self):
@@ -499,6 +522,33 @@ class spatial(object):
         #-- remove singleton dimensions if importing a single value
         return temp.squeeze()
 
+    def scale(self, var):
+        """
+        Multiply a spatial object by a constant
+        Inputs: scalar value to which the spatial object will be multiplied
+        """
+        temp = self.copy()
+        #-- multiply by a single constant or a time-variable scalar
+        if (np.ndim(var) == 0):
+            temp.data = var*self.data
+        elif (np.ndim(var) == 1) and (self.ndim == 2):
+            n = len(var)
+            temp.data = np.zeros((temp.shape[0],temp.shape[1],n))
+            temp.mask = np.zeros((temp.shape[0],temp.shape[1],n),dtype=np.bool)
+            for i,v in enumerate(var):
+                temp.data[:,:,i] = v*self.data[:,:]
+                temp.mask[:,:,i] = np.copy(self.mask[:,:])
+        elif (np.ndim(var) == 1) and (self.ndim == 3):
+            for i,v in enumerate(var):
+                temp.data[:,:,i] = v*self.data[:,:,i]
+        #-- get spacing and dimensions
+        temp.update_spacing()
+        temp.update_extents()
+        temp.update_dimensions()
+        #-- update mask
+        temp.update_mask()
+        return temp
+
     def mean(self, apply=False):
         """
         Compute mean spatial field and remove from data if specified
@@ -507,16 +557,99 @@ class spatial(object):
         #-- output spatial object
         temp = spatial(nlon=self.shape[0],nlat=self.shape[1],
             fill_value=self.fill_value)
+        #-- copy dimensions
+        temp.lon = self.lon.copy()
+        temp.lat = self.lat.copy()
         #-- create output mean spatial object
-        temp.data = np.mean((self.data),axis=2)
-        temp.mask = np.any(self.data,axis=2)
+        temp.data = np.mean(self.data,axis=2)
+        temp.mask = np.any(self.mask,axis=2)
         if getattr(self, 'time'):
             temp.time = np.mean(self.time)
         #-- calculate the spatial anomalies by removing the mean field
         if apply:
             for i,t in enumerate(self.time):
                 self.data[:,:,i] -= temp.data[:,:]
-        #-- return the mean field
+        #-- get spacing and dimensions
+        temp.update_spacing()
+        temp.update_extents()
+        temp.update_dimensions()
+        #-- update mask
+        temp.update_mask()
+        return temp
+
+    def sum(self, power=1):
+        """
+        Compute summation of spatial field
+        Option: apply a power before calculating summation
+        """
+        #-- output spatial object
+        temp = spatial(nlon=self.shape[0],nlat=self.shape[1],
+            fill_value=self.fill_value)
+        #-- copy dimensions
+        temp.lon = self.lon.copy()
+        temp.lat = self.lat.copy()
+        #-- create output summation spatial object
+        temp.data = np.sum(np.power(self.data,power),axis=2)
+        temp.mask = np.any(self.mask,axis=2)
+        #-- get spacing and dimensions
+        temp.update_spacing()
+        temp.update_extents()
+        temp.update_dimensions()
+        #-- update mask
+        temp.update_mask()
+        return temp
+
+    def power(self, power):
+        """
+        Raise a spatial object to a power
+        Inputs: power to which the spatial object will be raised
+        """
+        temp = self.copy()
+        temp.data = np.power(self.data,power)
+        #-- assign ndim and shape attributes
+        temp.update_dimensions()
+        return temp
+
+    def max(self):
+        """
+        Compute maximum value of spatial field
+        """
+        #-- output spatial object
+        temp = spatial(nlon=self.shape[0],nlat=self.shape[1],
+            fill_value=self.fill_value)
+        #-- copy dimensions
+        temp.lon = self.lon.copy()
+        temp.lat = self.lat.copy()
+        #-- create output maximum spatial object
+        temp.data = np.max(self.data,axis=2)
+        temp.mask = np.any(self.mask,axis=2)
+        #-- get spacing and dimensions
+        temp.update_spacing()
+        temp.update_extents()
+        temp.update_dimensions()
+        #-- update mask
+        temp.update_mask()
+        return temp
+
+    def min(self):
+        """
+        Compute minimum value of spatial field
+        """
+        #-- output spatial object
+        temp = spatial(nlon=self.shape[0],nlat=self.shape[1],
+            fill_value=self.fill_value)
+        #-- copy dimensions
+        temp.lon = self.lon.copy()
+        temp.lat = self.lat.copy()
+        #-- create output minimum spatial object
+        temp.data = np.min(self.data,axis=2)
+        temp.mask = np.any(self.mask,axis=2)
+        #-- get spacing and dimensions
+        temp.update_spacing()
+        temp.update_extents()
+        temp.update_dimensions()
+        #-- update mask
+        temp.update_mask()
         return temp
 
     def replace_invalid(self, fill_value, mask=None):

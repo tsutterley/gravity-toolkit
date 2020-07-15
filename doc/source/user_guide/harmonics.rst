@@ -107,6 +107,11 @@ General Attributes and Methods
     number of dimensions of harmonics object
 
 
+.. method:: object.case_insensitive_filename(filename)
+
+    Searches a directory for a filename without case dependence
+
+
 .. method:: object.from_ascii(filename, date=True)
 
     Read a harmonics object from an ascii file

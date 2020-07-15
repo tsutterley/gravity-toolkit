@@ -22,6 +22,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 07/2020: added class docstring and using kwargs for output to file
+        added case_insensitive_filename function to search directories
     Updated 06/2020: output list of filenames with from_list()
         zeros_like() creates a new harmonics object with dimensions of another
         add ndim and shape attributes of harmonics objects
@@ -60,15 +61,32 @@ class harmonics(object):
         self.ndim=None
         self.filename=None
 
+    def case_insensitive_filename(self,filename):
+        """
+        Searches a directory for a filename without case dependence
+        """
+        self.filename = os.path.expanduser(filename)
+        #-- check if file presently exists with input case
+        if not os.access(self.filename,os.F_OK):
+            #-- search for filename without case dependence
+            basename = os.path.basename(filename)
+            directory = os.path.dirname(os.path.expanduser(filename))
+            f = [f for f in os.listdir(directory) if re.match(basename,f,re.I)]
+            if not f:
+                raise IOError('{0} not found in file system'.format(filename))
+            self.filename = os.path.join(directory,f.pop())
+        return self
+
     def from_ascii(self, filename, date=True):
         """
         Read a harmonics object from an ascii file
         Inputs: full path of input ascii file
         Options: ascii file contains date information
         """
-        self.filename = filename
+        #-- set filename
+        self.case_insensitive_filename(filename)
         #-- read input ascii file (.txt) and split lines
-        with open(os.path.expanduser(filename),'r') as f:
+        with open(self.filename,'r') as f:
             file_contents = f.read().splitlines()
         #-- compile regular expression operator for extracting numerical values
         #-- from input ascii files of spherical harmonics
@@ -118,8 +136,10 @@ class harmonics(object):
         Inputs: full path of input netCDF4 file
         Options: netCDF4 file contains date information
         """
-        self.filename = filename
-        Ylms = ncdf_read_stokes(os.path.expanduser(filename),
+        #-- set filename
+        self.case_insensitive_filename(filename)
+        #-- read data from netCDF4 file
+        Ylms = ncdf_read_stokes(self.filename,
             ATTRIBUTES=False, DATE=date)
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
@@ -140,8 +160,10 @@ class harmonics(object):
         Inputs: full path of input HDF5 file
         Options: HDF5 file contains date information
         """
-        self.filename = filename
-        Ylms = hdf5_read_stokes(os.path.expanduser(filename),
+        #-- set filename
+        self.case_insensitive_filename(filename)
+        #-- read data from HDF5 file
+        Ylms = hdf5_read_stokes(self.filename,
             ATTRIBUTES=False, DATE=date)
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
@@ -161,8 +183,10 @@ class harmonics(object):
         Read a harmonics object from a gfc gravity model file from the GFZ ICGEM
         Inputs: full path of input gfc file
         """
-        self.filename = filename
-        Ylms = read_ICGEM_harmonics(os.path.expanduser(filename))
+        #-- set filename
+        self.case_insensitive_filename(filename)
+        #-- read data from gfc file
+        Ylms = read_ICGEM_harmonics(self.filename)
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
         self.lmax = np.int(Ylms['max_degree'])
@@ -186,9 +210,10 @@ class harmonics(object):
             ascii, netCDF4, or HDF5 contains date information
             sort harmonics objects by date information
         """
-        self.filename = filename
+        #-- set filename
+        self.case_insensitive_filename(filename)
         #-- Read index file of input spherical harmonics
-        with open(os.path.expanduser(filename),'r') as f:
+        with open(self.filename,'r') as f:
             file_list = f.read().splitlines()
         #-- create a list of harmonic objects
         h = []
@@ -275,9 +300,9 @@ class harmonics(object):
         Inputs: full path of output ascii file
         Options: harmonics objects contain date information
         """
-        self.filename = filename
+        self.filename = os.path.expanduser(filename)
         #-- open the output file
-        fid = open(os.path.expanduser(filename), 'w')
+        fid = open(self.filename, 'w')
         if date:
             file_format = '{0:5d} {1:5d} {2:+21.12e} {3:+21.12e} {4:10.4f}'
         else:
@@ -297,13 +322,13 @@ class harmonics(object):
         Options: harmonics objects contain date information
         **kwargs: keyword arguments for ncdf_stokes
         """
-        self.filename = filename
+        self.filename = os.path.expanduser(filename)
         if 'TIME_UNITS' not in kwargs.keys():
             kwargs['TIME_UNITS'] = 'years'
         if 'TIME_LONGNAME' not in kwargs.keys():
             kwargs['TIME_LONGNAME'] = 'Date_in_Decimal_Years'
         ncdf_stokes(self.clm, self.slm, self.l, self.m, self.time, self.month,
-            FILENAME=os.path.expanduser(filename), DATE=date, **kwargs)
+            FILENAME=self.filename, DATE=date, **kwargs)
 
     def to_HDF5(self, filename, date=True, **kwargs):
         """
@@ -312,13 +337,13 @@ class harmonics(object):
         Options: harmonics objects contain date information
         **kwargs: keyword arguments for hdf5_stokes
         """
-        self.filename = filename
+        self.filename = os.path.expanduser(filename)
         if 'TIME_UNITS' not in kwargs.keys():
             kwargs['TIME_UNITS'] = 'years'
         if 'TIME_LONGNAME' not in kwargs.keys():
             kwargs['TIME_LONGNAME'] = 'Date_in_Decimal_Years'
         hdf5_stokes(self.clm, self.slm, self.l, self.m, self.time, self.month,
-            FILENAME=os.path.expanduser(filename), DATE=date, **kwargs)
+            FILENAME=self.filename, DATE=date, **kwargs)
 
     def update_dimensions(self):
         """

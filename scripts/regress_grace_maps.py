@@ -160,9 +160,21 @@ def regress_grace_maps(parameters,ORDER,CYCLES,VERBOSE,MODE):
     #-- output file format
     output_format = '{0}{1}_L{2:d}{3}{4}{5}_{6}{7}_{8:03d}-{9:03d}.{10}'
 
+    #-- Output Degree Spacing
+    dlon,dlat = (DDEG,DDEG) if (np.ndim(DDEG) == 0) else (DDEG[0],DDEG[1])
+    #-- Output Degree Interval
+    if (INTERVAL == 1):
+        #-- (-180:180,90:-90)
+        nlon = np.int((360.0/dlon)+1.0)
+        nlat = np.int((180.0/dlat)+1.0)
+    elif (INTERVAL == 2):
+        #-- (Degree spacing)/2
+        nlon = np.int(360.0/dlon)
+        nlat = np.int(180.0/dlat)
+
     #-- Setting output parameters for each fit type
     coef_str = ['x{0:d}'.format(o) for o in range(ORDER+1)]
-    unit_suffix = [' yr^-{0:d}'.format(o) if o else '' for o in range(ORDER+1)]
+    unit_suffix = [' yr^{0:d}'.format(-o) if o else '' for o in range(ORDER+1)]
     if (ORDER == 0):#-- Mean
         unit_longname = ['Mean']
     elif (ORDER == 1):#-- Trend
@@ -521,8 +533,8 @@ def usage():
 def main():
     #-- Read the system arguments listed after the program and run the analyses
     #-- with the specific parameters.
-    long_options = ['help','np=','start=','end=','order=','cycles=','verbose','mode=','log']
-    optlist,arglist = getopt.getopt(sys.argv[1:],'hP:S:E:F:VM:l',long_options)
+    lopt = ['help','np=','start=','end=','order=','cycles=','verbose','mode=','log']
+    optlist,arglist = getopt.getopt(sys.argv[1:],'hP:S:E:F:VM:l',lopt)
 
     #-- command line parameters
     PROCESSES = 0
