@@ -87,7 +87,7 @@ import os
 import time
 import getopt
 import numpy as np
-import multiprocessing as mp
+import multiprocessing
 import traceback
 from gravity_toolkit.grace_input_months import grace_input_months
 from gravity_toolkit.harmonics import harmonics
@@ -100,7 +100,6 @@ def info(title):
     if hasattr(os, 'getppid'):
         print('parent process: {0:d}'.format(os.getppid()))
     print('process id: {0:d}'.format(os.getpid()))
-    print()
 
 #-- PURPOSE: import GRACE/GRACE-FO files for a given months range
 #-- calculate the mean of the spherical harmonics and output to file
@@ -297,7 +296,7 @@ def main():
     #-- Read the system arguments listed after the program and run the analyses
     #-- with the specific parameters
     long_options = ['help','directory=','np=','log']
-    optlist, input_files=getopt.getopt(sys.argv[1:],'hD:P:l',long_options)
+    optlist,arglist = getopt.getopt(sys.argv[1:],'hD:P:l',long_options)
 
     #-- command line parameters
     base_dir = os.getcwd()
@@ -314,19 +313,19 @@ def main():
         elif opt in ("-l","--log"):
             LOG = True
 
-    if not input_files:
-        #-- Input Parameter Files (sys.argv[0] is the python code)
+    #-- raise exception if no parameter files entered
+    if not arglist:
         raise IOError('No Parameter File Specified')
 
     if (PROCESSES == 0):
         #-- run directly as series if PROCESSES = 0
-        for parameter_file in input_files:
+        for parameter_file in arglist:
             define_analysis(parameter_file,base_dir,LOG)
     else:
         #-- run in parallel with multiprocessing Pool
-        pool = mp.Pool(processes=PROCESSES)
+        pool = multiprocessing.Pool(processes=PROCESSES)
         #-- for each parameter file
-        for fi in input_files:
+        for fi in arglist:
             pool.apply_async(define_analysis, args=(fi,base_dir,LOG))
         #-- start multiprocessing jobs
         #-- close the pool

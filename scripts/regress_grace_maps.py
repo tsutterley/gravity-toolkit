@@ -94,7 +94,6 @@ def info(title):
     if hasattr(os, 'getppid'):
         print('parent process: {0:d}'.format(os.getppid()))
     print('process id: {0:d}'.format(os.getpid()))
-    print()
 
 #-- program module to run with specified parameters
 def regress_grace_maps(parameters,ORDER,CYCLES,VERBOSE,MODE):
@@ -566,8 +565,8 @@ def main():
         elif opt in ("-l","--log"):
             LOG = True
 
+    #-- raise exception if no parameter files entered
     if not arglist:
-        #-- Input Parameter Files (sys.argv[0] is the python code)
         raise IOError('No Parameter File Specified')
 
     #-- use parameter files from system arguments listed after the program.

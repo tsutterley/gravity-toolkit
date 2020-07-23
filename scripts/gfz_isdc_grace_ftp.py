@@ -40,16 +40,15 @@ UPDATE HISTORY:
 from __future__ import print_function
 
 import sys
-import getopt
 import os
 import re
 import io
+import getopt
+import ftplib
 import shutil
 import hashlib
-import builtins
 import posixpath
 import calendar, time
-import ftplib
 
 #-- PURPOSE: check internet connection
 def check_connection():

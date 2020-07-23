@@ -357,8 +357,9 @@ class spatial(object):
         """
         Update the mask of the spatial object
         """
-        self.mask |= (self.data == self.fill_value)
-        self.data[self.mask] = self.fill_value
+        if self.fill_value is not None:
+            self.mask |= (self.data == self.fill_value)
+            self.data[self.mask] = self.fill_value
         return self
 
     def copy(self):

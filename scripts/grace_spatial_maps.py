@@ -105,7 +105,7 @@ import re
 import time
 import numpy as np
 import getopt
-import multiprocessing as mp
+import multiprocessing
 import traceback
 
 from gravity_toolkit.grace_input_months import grace_input_months
@@ -127,7 +127,6 @@ def info(title):
     if hasattr(os, 'getppid'):
         print('parent process: {0:d}'.format(os.getppid()))
     print('process id: {0:d}'.format(os.getpid()))
-    print()
 
 #-- PURPOSE: read load love numbers for the range of spherical harmonic degrees
 def load_love_numbers(base_dir, LMAX, REFERENCE='CF'):
@@ -573,6 +572,10 @@ def main():
         elif opt in ("-M","--mode"):
             MODE = int(arg, 8)
 
+    #-- raise exception if no parameter files entered
+    if not arglist:
+        raise IOError('No Parameter File Specified')
+
     #-- use parameter files from system arguments listed after the program.
     if (PROCESSES == 0):
         #-- run directly as series if PROCESSES = 0
@@ -580,7 +583,7 @@ def main():
             define_analysis(os.path.expanduser(f),base_dir,LOG,VERBOSE,MODE)
     else:
         #-- run in parallel with multiprocessing Pool
-        pool = mp.Pool(processes=PROCESSES)
+        pool = multiprocessing.Pool(processes=PROCESSES)
         #-- for each parameter file
         for f in arglist:
             pool.apply_async(define_analysis, args=(os.path.expanduser(f),

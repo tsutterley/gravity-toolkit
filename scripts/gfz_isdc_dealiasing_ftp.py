@@ -29,8 +29,8 @@ from __future__ import print_function
 import sys
 import os
 import re
-import ftplib
 import getopt
+import ftplib
 import tarfile
 import posixpath
 import calendar, time
