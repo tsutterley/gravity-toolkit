@@ -45,7 +45,7 @@ class spatial(object):
         self.time=None
         self.month=None
         self.fill_value=fill_value
-        self.extent=[np.inf,-np.inf,np.inf,-np.inf]
+        self.extent=[None]*4
         self.spacing=spacing
         self.shape=[nlat,nlon,None]
         self.ndim=None
