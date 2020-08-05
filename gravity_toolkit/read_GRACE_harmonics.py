@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GRACE_harmonics.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (08/2020)
 
 Reads GRACE files and extracts spherical harmonic data and drift rates (RL04)
 Adds drift rates to clm and slm for release 4 harmonics
@@ -31,6 +31,7 @@ PYTHON DEPENDENCIES:
     PyYAML: YAML parser and emitter for Python (https://github.com/yaml/pyyaml)
 
 UPDATE HISTORY:
+    Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 08/2019: specify yaml loader (PyYAML yaml.load(input) Deprecation)
     Updated 07/2019: replace colons in yaml header if within quotations
@@ -80,8 +81,8 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
     #-- GFZOP: GFZ German Research Center for Geosciences (RL06+GRACE-FO)
     #-- JPLEM: NASA Jet Propulsion Laboratory (harmonic solutions)
     #-- JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
-    regex_pattern = ('(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
-        '(\.gz|\.gfc)?$').format('UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC')
+    regex_pattern = (r'(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
+        r'(\.gz|\.gfc)?$').format('UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC')
     rx = re.compile(regex_pattern, re.VERBOSE)
     #-- extract parameters from input filename
     PFX,SD,ED,N,PRC,F1,DRL,F2,SFX=rx.findall(os.path.basename(input_file)).pop()
@@ -90,17 +91,17 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
     if PRC in ('JPLMSC'):
         DSET = 'GSM'
         DREL = np.int(DRL)
-        FLAG = 'GRCOF2'
+        FLAG = r'GRCOF2'
     #-- Kusche et al. (2009) DDK filtered solutions 10.1007/s00190-009-0308-3
     elif PFX.startswith('kfilter_DDK'):
         DSET = 'GSM'
         DREL = np.int(DRL)
-        FLAG = 'gfc'
+        FLAG = r'gfc'
     #-- Standard GRACE solutions
     else:
         DSET = PFX
         DREL = np.int(DRL)
-        FLAG = 'GRCOF2'
+        FLAG = r'GRCOF2'
 
     #-- output python dictionary with GRACE data and date information
     grace_L2_input = {}
@@ -156,7 +157,7 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
     #-- extract GRACE and GRACE-FO file headers
     #-- replace colons in header if within quotations
     head = [re.sub(r'\"(.*?)\:\s(.*?)\"',r'"\1, \2"',l) for l in file_contents
-        if not re.match('{0}|GRDOTA'.format(FLAG),l)]
+        if not re.match(r'{0}|GRDOTA'.format(FLAG),l)]
     if ((N == 'GRAC') and (DREL >= 6)) or (N == 'GRFO'):
         #-- parse the YAML header for RL06 or GRACE-FO (specifying yaml loader)
         grace_L2_input.update(yaml.load('\n'.join(head),Loader=yaml.BaseLoader))
@@ -180,7 +181,7 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
                 grace_L2_input['eclm'][l1,m1] = np.float(line_contents[5])
                 grace_L2_input['eslm'][l1,m1] = np.float(line_contents[6])
         #-- find if line starts with drift rate flag
-        elif bool(re.match('GRDOTA',line)):
+        elif bool(re.match(r'GRDOTA',line)):
             #-- split the line into individual components
             line_contents = line.split()
             l1 = np.int(line_contents[1])

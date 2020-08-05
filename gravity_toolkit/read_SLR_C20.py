@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C20.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (08/2020)
 
 Reads in C20 spherical harmonic coefficients derived from SLR measurements
 
@@ -47,6 +47,7 @@ PROGRAM DEPENDENCIES:
     convert_calendar_decimal.py: Return the decimal year for a calendar date
 
 UPDATE HISTORY:
+    Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 08/2019: add catch to verify input SLR file exists
     Updated 07/2019: added tilde-expansion of input SLR file
@@ -154,7 +155,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
             #-- file line at count
             line = file_contents[count]
             #-- find PRODUCT: within line to set HEADER flag to False when found
-            HEADER = not bool(re.match('PRODUCT:+',line,re.IGNORECASE))
+            HEADER = not bool(re.match(r'PRODUCT:+',line,re.IGNORECASE))
             #-- add 1 to counter
             count += 1
 
@@ -170,7 +171,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
         for line in file_contents[count:]:
             #-- find numerical instances in line including exponents,
             #-- decimal points and negatives
-            line_contents = re.findall('[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
+            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
             #-- check for empty lines as there are
             #-- slight differences in RL04 TN-05_C20_SLR.txt
             #-- with blanks between the PRODUCT: line and the data
@@ -224,7 +225,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
             #-- file line at count
             line = file_contents[count]
             #-- find PRODUCT: within line to set HEADER flag to False when found
-            HEADER = not bool(re.match('PRODUCT:+',line))
+            HEADER = not bool(re.match(r'PRODUCT:+',line))
             #-- add 1 to counter
             count += 1
 
@@ -240,7 +241,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
         for line in file_contents[count:]:
             #-- find numerical instances in line including exponents,
             #-- decimal points and negatives
-            line_contents = re.findall('[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
+            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
             #-- check for empty lines as there are
             #-- slight differences in RL04 TN-05_C20_SLR.txt
             #-- with blanks between the PRODUCT: line and the data
@@ -257,7 +258,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
                 C20_input[t] = np.float(line_contents[2])
                 eC20_input[t] = np.float(line_contents[4])*1e-10
                 #-- line has * flag
-                if bool(re.search('\*',line)):
+                if bool(re.search(r'\*',line)):
                     slr_flag[t] = True
                 #-- add to t count
                 t += 1

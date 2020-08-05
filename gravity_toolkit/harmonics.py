@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (08/2020)
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 
@@ -21,6 +21,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 08/2020: added compression option for ascii files
     Updated 07/2020: added class docstring and using kwargs for output to file
         added case_insensitive_filename function to search directories
     Updated 06/2020: output list of filenames with from_list()
@@ -35,6 +36,7 @@ UPDATE HISTORY:
 """
 import os
 import re
+import gzip
 import numpy as np
 from gravity_toolkit.ncdf_stokes import ncdf_stokes
 from gravity_toolkit.hdf5_stokes import hdf5_stokes
@@ -77,7 +79,7 @@ class harmonics(object):
             self.filename = os.path.join(directory,f.pop())
         return self
 
-    def from_ascii(self, filename, date=True):
+    def from_ascii(self, filename, date=True, compressed=False):
         """
         Read a harmonics object from an ascii file
         Inputs: full path of input ascii file
@@ -86,11 +88,15 @@ class harmonics(object):
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- read input ascii file (.txt) and split lines
-        with open(self.filename,'r') as f:
-            file_contents = f.read().splitlines()
+        if compressed:
+            with gzip.open(self.filename,'r') as f:
+                file_contents = f.read().decode('ISO-8859-1').splitlines()
+        else:
+            with open(self.filename,'r') as f:
+                file_contents = f.read().splitlines()
         #-- compile regular expression operator for extracting numerical values
         #-- from input ascii files of spherical harmonics
-        regex_pattern = '[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[EeD][+-]?\d+)?'
+        regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[EeD][+-]?\d+)?'
         rx = re.compile(regex_pattern, re.VERBOSE)
         #-- find maximum degree and order of harmonics
         self.lmax = 0

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C30.py
-Written by Yara Mohajerani and Tyler Sutterley (07/2020)
+Written by Yara Mohajerani and Tyler Sutterley (08/2020)
 
 Reads monthly degree 3 zonal spherical harmonic data files from SLR
     https://neptune.gsfc.nasa.gov/gngphys/index.php?section=519
@@ -46,6 +46,7 @@ PROGRAM DEPENDENCIES:
     read_CSR_monthly_6x1.py: reads monthly 5x5 spherical harmonic coefficients
 
 UPDATE HISTORY:
+    Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 08/2019: new GSFC format with more columns
         add catch to verify input SLR file exists
@@ -105,7 +106,7 @@ def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
             #-- file line at count
             line = file_contents[count]
             #-- find PRODUCT: within line to set HEADER flag to False when found
-            HEADER = not bool(re.match('Product:+',line))
+            HEADER = not bool(re.match(r'Product:+',line))
             #-- add 1 to counter
             count += 1
 
@@ -121,7 +122,7 @@ def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
         for line in file_contents[count:]:
             #-- find numerical instances in line including exponents,
             #-- decimal points and negatives
-            line_contents = re.findall('[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
+            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
             count = len(line_contents)
             #-- only read lines where C30 data exists (don't read NaN lines)
             if (count > 7):

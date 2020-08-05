@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_read.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (08/2020)
 
 Reads spatial data from COARDS-compliant netCDF4 files
 
@@ -34,6 +34,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 06/2020: output data as lat/lon following spatial module
         attempt to read fill value attribute and set to None if not present
@@ -141,7 +142,7 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
         dinput['attributes']['_FillValue'] = None
     #-- Global attribute (title of dataset)
     if TITLE:
-        rx = re.compile('TITLE',re.IGNORECASE)
+        rx = re.compile(r'TITLE',re.IGNORECASE)
         title, = [st for st in dir(fileID) if rx.match(st)]
         dinput['attributes']['title'] = getattr(fileID, title)
 

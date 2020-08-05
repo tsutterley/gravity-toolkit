@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_grace_ftp.py
-Written by Tyler Sutterley (03/2020)
+Written by Tyler Sutterley (08/2020)
 Syncs GRACE/GRACE-FO data from the GFZ Information System and Data Center (ISDC)
 Syncs CSR/GFZ/JPL files for RL06 GAA/GAB/GAC/GAD/GSM
     GAA and GAB are GFZ/JPL only
@@ -31,6 +31,7 @@ PYTHON DEPENDENCIES:
         (http://python-future.org/)
 
 UPDATE HISTORY:
+    Updated 08/2020: flake8 compatible regular expression strings
     Updated 03/2020 for public release
     Updated 03/2020: new GFZ ISDC ftp server website
     Updated 09/2019: added checksum option to not overwrite existing data files
@@ -68,40 +69,40 @@ def compile_regex_pattern(PROC, DREL, DSET):
         #-- CSR GSM: only monthly degree 60 products
         #-- not the longterm degree 180, degree 96 dataset or the
         #-- special order 30 datasets for the high-resonance months
-        release, = re.findall('\d+', DREL)
+        release, = re.findall(r'\d+', DREL)
         args = (DSET, int(release))
-        regex_pattern='{0}-2_\d+-\d+_\d+_UTCSR_0060_000{1:d}.gz$' .format(*args)
+        regex_pattern=r'{0}-2_\d+-\d+_\d+_UTCSR_0060_000{1:d}.gz$' .format(*args)
     elif ((DSET == 'GSM') and (PROC == 'CSR') and (DREL == 'RL06')):
         #-- CSR GSM RL06: only monthly degree 60 products
-        release, = re.findall('\d+', DREL)
+        release, = re.findall(r'\d+', DREL)
         args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
-        regex_pattern='{0}-2_\d+-\d+_{1}_UTCSR_{2}_0{3:d}00.gz$' .format(*args)
+        regex_pattern=r'{0}-2_\d+-\d+_{1}_UTCSR_{2}_0{3:d}00.gz$' .format(*args)
     elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL04')):
         #-- GFZ RL04: only unconstrained solutions (not GK2 products)
-        regex_pattern='{0}-2_\d+-\d+_\d+_EIGEN_G---_0004.gz$'.format(DSET)
+        regex_pattern=r'{0}-2_\d+-\d+_\d+_EIGEN_G---_0004.gz$'.format(DSET)
     elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL05')):
         #-- GFZ RL05: updated RL05a products which are less constrained to
         #-- the background model.  Allow regularized fields
-        regex_unconst='{0}-2_\d+-\d+_\d+_EIGEN_G---_005a.gz$'.format(DSET)
-        regex_regular='{0}-2_\d+-\d+_\d+_EIGEN_GK2-_005a.gz$'.format(DSET)
-        regex_pattern='{0}|{1}'.format(regex_unconst,regex_regular)
+        regex_unconst=r'{0}-2_\d+-\d+_\d+_EIGEN_G---_005a.gz$'.format(DSET)
+        regex_regular=r'{0}-2_\d+-\d+_\d+_EIGEN_GK2-_005a.gz$'.format(DSET)
+        regex_pattern=r'{0}|{1}'.format(regex_unconst,regex_regular)
     elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL06')):
         #-- GFZ GSM RL06: only monthly degree 60 products
-        release, = re.findall('\d+', DREL)
+        release, = re.findall(r'\d+', DREL)
         args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
-        regex_pattern='{0}-2_\d+-\d+_{1}_GFZOP_{2}_0{3:d}00.gz$' .format(*args)
+        regex_pattern=r'{0}-2_\d+-\d+_{1}_GFZOP_{2}_0{3:d}00.gz$' .format(*args)
     elif (PROC == 'JPL') and DREL in ('RL04','RL05'):
         #-- JPL: RL04a and RL05a products (denoted by 0001)
-        release, = re.findall('\d+', DREL)
+        release, = re.findall(r'\d+', DREL)
         args = (DSET, int(release))
-        regex_pattern='{0}-2_\d+-\d+_\d+_JPLEM_0001_000{1:d}.gz$'.format(*args)
+        regex_pattern=r'{0}-2_\d+-\d+_\d+_JPLEM_0001_000{1:d}.gz$'.format(*args)
     elif ((DSET == 'GSM') and (PROC == 'JPL') and (DREL == 'RL06')):
         #-- JPL GSM RL06: only monthly degree 60 products
-        release, = re.findall('\d+', DREL)
+        release, = re.findall(r'\d+', DREL)
         args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
-        regex_pattern='{0}-2_\d+-\d+_{1}_JPLEM_{2}_0{3:d}00.gz$' .format(*args)
+        regex_pattern=r'{0}-2_\d+-\d+_{1}_JPLEM_{2}_0{3:d}00.gz$' .format(*args)
     else:
-        regex_pattern='{0}-2_(.*?).gz$'.format(DSET)
+        regex_pattern=r'{0}-2_(.*?).gz$'.format(DSET)
     #-- return the compiled regular expression operator used to find files
     return re.compile(regex_pattern, re.VERBOSE)
 
@@ -163,7 +164,7 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC, DREL=[], MISSION=['grace','grace-fo'],
                     if not os.path.exists(local_dir):
                         os.makedirs(local_dir,MODE)
                     #-- compile the regular expression operator to find files
-                    R1 = re.compile('({0}-(.*?)(gz|txt|dif))'.format(ds))
+                    R1 = re.compile(r'({0}-(.*?)(gz|txt|dif))'.format(ds))
                     #-- get filenames from remote directory
                     lines = [fi for fi in ftp.nlst(remote_dir) if R1.search(fi)]
                     for line in sorted(lines):
