@@ -5,6 +5,7 @@ dependencies:
   - python>=3.6
   - notebook
   - numpy
+  - scipy
   - pyyaml
   - lxml
   - future

@@ -33,6 +33,5 @@ setup(
     keywords='GRACE, GRACE-FO, Gravity, satellite geodesy, spherical harmonics',
     packages=find_packages(),
     install_requires=install_requires,
-    dependency_links=['https://github.com/tsutterley/read-GRACE-geocenter/tarball/master'],
     scripts=scripts,
 )

@@ -234,13 +234,13 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         # #-- SLR-derived degree-1 mass variations
         # #-- ftp://ftp.csr.utexas.edu/pub/slr/geocenter/
         # DEG1_file=os.path.join(base_dir,'geocenter','GCN_{0}.txt'.format(DREL))
-        # DEG1_input=aod_corrected_slr_deg1(DEG1_file,DREL,skiprows=16)
+        # DEG1_input=aod_corrected_SLR_geocenter(DEG1_file,DREL,skiprows=16)
 
         #-- new CF-CM file of degree-1 mass variations
         #-- https://cddis.nasa.gov/lw20/docs/2016/papers/14-Ries_paper.pdf
         #-- ftp://ftp.csr.utexas.edu/pub/slr/geocenter/GCN_L1_L2_30d_CF-CM.txt
         DEG1_file = os.path.join(base_dir,'geocenter','GCN_L1_L2_30d_CF-CM.txt')
-        DEG1_input = aod_corrected_slr_deg1(DEG1_file,DREL,skiprows=111)
+        DEG1_input = aod_corrected_SLR_geocenter(DEG1_file,DREL,skiprows=111)
         DEG1_str = '_w{0}_DEG1'.format(DEG1)
     elif (DEG1 == 'SLF'):
         #-- read iterated degree one files from Sutterley and Velicogna (2019)
