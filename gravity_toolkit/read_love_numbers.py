@@ -31,6 +31,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 03/2020: added reference frame transformations within function
     Updated 03/2020 for public release
@@ -87,12 +88,12 @@ def read_love_numbers(love_numbers_file, HEADER=True, REFERENCE='CE',
         line = file_contents[count]
         #-- find the final line within the header text
         #-- to set HEADER flag to False when found
-        HEADER = not bool(re.match('\*\*\*',line))
+        HEADER = not bool(re.match(r'\*\*\*',line))
         #-- add 1 to counter
         count += 1
 
     #-- compile regular expression operator to find numerical instances
-    regex_pattern = '[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
+    regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
     rx = re.compile(regex_pattern, re.VERBOSE)
 
     #-- maximum spherical harmonic degree in file

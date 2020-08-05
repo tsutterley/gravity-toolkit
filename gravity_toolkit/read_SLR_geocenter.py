@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_geocenter.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (08/2020)
 
 Reads monthly geocenter files from satellite laser ranging provided by CSR
     ftp://ftp.csr.utexas.edu/pub/slr/geocenter/
@@ -35,6 +35,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 08/2019: add catch to verify input geocenter file exists
     Updated 06/2019: added option RADIUS for setting the Earth's radius
@@ -221,7 +222,7 @@ def read_AOD1b_geocenter(AOD1B_file, calendar_month):
         raise IOError('AOD1b File {0} not in File System'.format(AOD1B_file))
     #-- read AOD1b geocenter skipping over commented header text
     with open(AOD1B_file, 'r') as f:
-        file_contents=[i for i in f.read().splitlines() if not re.match('#',i)]
+        file_contents=[i for i in f.read().splitlines() if not re.match(r'#',i)]
     #-- extract X,Y,Z from each line in the file
     #-- first column: ISO-formatted date and time
     #-- second-fourth columns: X, Y and Z geocenter variations

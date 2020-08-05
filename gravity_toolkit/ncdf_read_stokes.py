@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_read_stokes.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (08/2020)
 
 Reads spherical harmonic data from netCDF4 files
 
@@ -32,6 +32,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 03/2020: added ATTRIBUTES option to check if file has attributes
     Updated 10/2019: changing Y/N flags to True/False
@@ -148,7 +149,7 @@ def ncdf_read_stokes(filename, DATE=True, ATTRIBUTES=True, VERBOSE=False):
         #-- put attributes in output python dictionary
         dinput['attributes'] = attributes
         #-- Global attribute (title of dataset)
-        rx = re.compile('TITLE',re.IGNORECASE)
+        rx = re.compile(r'TITLE',re.IGNORECASE)
         title, = [st for st in dir(fileID) if rx.match(st)]
         dinput['attributes']['title'] = getattr(fileID, title)
 

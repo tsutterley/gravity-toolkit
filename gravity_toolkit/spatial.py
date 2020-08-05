@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (08/2020)
 
 Data class for reading, writing and processing spatial data
 
@@ -19,6 +19,7 @@ PROGRAM DEPENDENCIES:
     hdf5_read.py: reads spatial data from HDF5
 
 UPDATE HISTORY:
+    Updated 08/2020: added compression option for ascii files
     Updated 07/2020: added class docstring and using kwargs for output to file
         added case_insensitive_filename function to search directories
     Updated 06/2020: added zeros_like() for creating an empty spatial object
@@ -26,6 +27,7 @@ UPDATE HISTORY:
 """
 import os
 import re
+import gzip
 import numpy as np
 from gravity_toolkit.ncdf_write import ncdf_write
 from gravity_toolkit.hdf5_write import hdf5_write
@@ -37,7 +39,8 @@ class spatial(object):
     Data class for reading, writing and processing spatial data
     """
     np.seterr(invalid='ignore')
-    def __init__(self, spacing=[None,None], nlat=None, nlon=None, fill_value=None):
+    def __init__(self, spacing=[None,None], nlat=None, nlon=None,
+        extent=[None]*4, fill_value=None):
         self.data=None
         self.mask=None
         self.lon=None
@@ -45,7 +48,7 @@ class spatial(object):
         self.time=None
         self.month=None
         self.fill_value=fill_value
-        self.extent=[None]*4
+        self.extent=extent
         self.spacing=spacing
         self.shape=[nlat,nlon,None]
         self.ndim=None
@@ -67,7 +70,7 @@ class spatial(object):
             self.filename = os.path.join(directory,f.pop())
         return self
 
-    def from_ascii(self, filename, date=True, verbose=False,
+    def from_ascii(self, filename, date=True, compressed=False, verbose=False,
         columns=['lon','lat','data','time']):
         """
         Read a spatial object from an ascii file
@@ -78,15 +81,23 @@ class spatial(object):
         self.case_insensitive_filename(filename)
         print(self.filename) if verbose else None
         #-- read input ascii file (.txt) and split lines
-        with open(self.filename,'r') as f:
-            file_contents = f.read().splitlines()
+        if compressed:
+            with gzip.open(self.filename,'r') as f:
+                file_contents = f.read().decode('ISO-8859-1').splitlines()
+        else:
+            with open(self.filename,'r') as f:
+                file_contents = f.read().splitlines()
         #-- compile regular expression operator for extracting numerical values
         #-- from input ascii files of spatial data
-        regex_pattern = '[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[EeD][+-]?\d+)?'
+        regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[EeD][+-]?\d+)?'
         rx = re.compile(regex_pattern, re.VERBOSE)
         #-- output spatial data
-        self.lat = np.zeros((self.shape[0]))
-        self.lon = np.zeros((self.shape[1]))
+        if (None not in self.extent):
+            self.lat = np.linspace(self.extent[3],self.extent[2],self.shape[0])
+            self.lon = np.linspace(self.extent[0],self.extent[1],self.shape[1])
+        else:
+            self.lat = np.zeros((self.shape[0]))
+            self.lon = np.zeros((self.shape[1]))
         self.data = np.zeros((self.shape[0],self.shape[1]))
         self.mask = np.zeros((self.shape[0],self.shape[1]),dtype=np.bool)
         #-- remove time from list of column names if not date

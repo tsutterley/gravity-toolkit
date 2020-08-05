@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (08/2020)
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
     and for a specified date range
@@ -69,6 +69,7 @@ PROGRAM DEPENDENCIES:
     read_GRACE_harmonics.py: reads an input GRACE data file and calculates date
 
 UPDATE HISTORY:
+    Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 06/2020: set relative time to mean of input within regress_model
     Updated 03/2020: for public release.  output degree and order in dict
@@ -418,7 +419,7 @@ def read_ecmwf_corrections(base_dir, LMAX, months, MMAX=None):
         #-- for each line in the GRACE correction file
         for line in file_contents:
             #-- find if line starts with GRCOF2
-            if bool(re.match('GRCOF2',line)):
+            if bool(re.match(r'GRCOF2',line)):
                 #-- split the line into individual components
                 line_contents = line.split()
                 #-- degree and order for the line

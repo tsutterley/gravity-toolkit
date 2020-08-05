@@ -2,6 +2,8 @@
 u"""
 test_love_numbers.py (08/2020)
 """
+import os
+import inspect
 import warnings
 import pytest
 import gravity_toolkit.read_love_numbers
@@ -18,6 +20,13 @@ def get_love_numbers():
 
 #-- PURPOSE: Check that Load Love Numbers match expected for reference frame
 def test_love_numbers():
+    # valid low degree Love numbers for reference frame CF
     VALID = get_love_numbers()
-    TEST = gravity_toolkit.read_love_numbers('love_numbers',FORMAT='dict',REFERENCE='CF')
+    # path to load Love numbers file
+    filename = inspect.getframeinfo(inspect.currentframe()).filename
+    filepath = os.path.dirname(os.path.abspath(filename))
+    love_numbers_file = os.path.join(filepath,'..','love_numbers')
+    # read load Love numbers and convert to reference frame CF
+    TEST = gravity_toolkit.read_love_numbers(os.path.relpath(love_numbers_file),
+        FORMAT='dict',REFERENCE='CF')
     assert all((v==t).all() for key in ['hl','kl','ll'] for v,t in zip(VALID[key],TEST[key]))

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_tellus_geocenter.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (08/2020)
 
 Reads monthly geocenter spherical harmonic data files from GRACE Tellus
     Technical Notes (TN-13) calculated using GRACE/GRACE-FO measurements and
@@ -42,6 +42,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 08/2019: add catch to verify input geocenter file exists
     Updated 07/2019: month adjustments for new TN-13 geocenter files
@@ -126,7 +127,7 @@ def read_tellus_geocenter(geocenter_file, HEADER=True, JPL=False):
     eS1 = np.zeros((n_mon,2))
 
     #-- compile numerical expression operator
-    regex_pattern = '[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
+    regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
     rx = re.compile(regex_pattern, re.VERBOSE)
 
     #-- time count

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GIA_model.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (08/2020)
 
 Reads GIA data files that can come in various formats depending on the group
 Outputs spherical harmonics for the GIA rates and the GIA model parameters
@@ -95,6 +95,7 @@ REFERENCES:
     https://doi.org/10.1002/2016JB013844
 
 UPDATE HISTORY:
+    UPDATED 08/2020: flake8 compatible regular expression strings
     UPDATED 04/2020: include spherical harmonic degree and order in output dict
         added option to truncate to spherical harmonic order
     UPDATED 03/2020: updated for public release.  added reformatted ascii option
@@ -181,37 +182,37 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
     if (GIA == 'IJ05-R2'):#-- Ivins R2 IJ05 Models
         prefix = 'IJ05_R2'
         #-- regular expression file pattern
-        file_pattern = 'Stokes.R2_(.*?)_L120'
+        file_pattern = r'Stokes.R2_(.*?)_L120'
     elif (GIA == 'W12a'):#-- Whitehouse W12a
         prefix = 'W12a'
         parameters = dict(B='Best', L='Lower', U='Upper')
         #-- regular expression file pattern
-        file_pattern = 'grate_(B|L|U).clm'
+        file_pattern = r'grate_(B|L|U).clm'
     elif (GIA == 'SM09'):#-- Simpson Milne SM09
         prefix = 'SM09_Huy2'
         #-- regular expression file pattern
-        file_pattern = 'grate_(\d+)p(\d)(\d+).clm'
+        file_pattern = r'grate_(\d+)p(\d)(\d+).clm'
     elif (GIA == 'ICE6G'):#-- ICE-6G VM5 viscosity profile
         prefix = 'ICE6G'
         #-- regular expression file pattern for test cases
-        #file_pattern = 'Stokes_G_Rot_60_I6_A_(.*?)_L90'
+        #file_pattern = r'Stokes_G_Rot_60_I6_A_(.*?)_L90'
         #-- regular expression file pattern for VM5
-        file_pattern = 'Stokes_G_Rot_60_I6_A_(.*)'
+        file_pattern = r'Stokes_G_Rot_60_I6_A_(.*)'
     elif (GIA == 'Wu10'):#-- Wu Global Isnversion
         gia_Ylms['title'] = 'Wu_2010'
     elif (GIA == 'AW13-ICE6G'):#-- Geruo A ICE-6G model versions
         prefix = 'AW13'
         #-- regular expressions file pattern
-        file_pattern = 'stokes\.(ice6g)[\.\_](.*?)(\.txt)?$'
+        file_pattern = r'stokes\.(ice6g)[\.\_](.*?)(\.txt)?$'
     elif (GIA == 'Caron'): #-- Caron et al. (2018) expected GIA rate
         gia_Ylms['title'] = 'Caron_expt'
     elif (GIA == 'ICE6G-D'):#-- ICE-6G Version-D viscosity profile
         prefix = 'ICE6G-D'
         #-- regular expression file pattern for Version-D
-        file_pattern = '(ICE-6G_)?(.*?)[_]?Stokes_trend[_]?(.*?)\.txt$'
+        file_pattern = r'(ICE-6G_)?(.*?)[_]?Stokes_trend[_]?(.*?)\.txt$'
 
     #-- compile numerical expression operator
-    rx = re.compile('[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?')
+    rx = re.compile(r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?')
 
     #-- Header lines and scale factors for individual models
     if GIA in ('IJ05-R2','ICE6G'):

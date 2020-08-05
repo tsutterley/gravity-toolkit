@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_dealiasing_ftp.py
-Written by Tyler Sutterley (03/2020)
+Written by Tyler Sutterley (08/2020)
 Syncs GRACE Level-1b dealiasing products from the GFZ Information
     System and Data Center (ISDC)
 Optionally outputs as monthly tar files
@@ -19,6 +19,7 @@ COMMAND LINE OPTIONS:
     --clobber: Overwrite existing data in transfers
 
 UPDATE HISTORY:
+    Updated 08/2020: flake8 compatible regular expression strings
     Updated 03/2020: new GFZ ISDC ftp server website
     Updated 06/2019: different suffix with GRACE/GRACE-FO release 6
     Updated 03/2018: made tar file creation optional with --tar
@@ -76,7 +77,7 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False, LOG=False,
     else:
         regex_years = '|'.join('{0:d}'.format(y) for y in YEAR)
     #-- compile regular expression operator for years to sync
-    R1 = re.compile('({0})'.format(regex_years), re.VERBOSE)
+    R1 = re.compile(r'({0})'.format(regex_years), re.VERBOSE)
     #-- remote subdirectory for DREL on GFZ data server
     remote_sub=posixpath.join(posixpath.sep,'grace','Level-1B','GFZ','AOD',DREL)
     #-- suffix for each data release

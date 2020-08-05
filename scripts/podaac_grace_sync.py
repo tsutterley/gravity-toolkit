@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_grace_sync.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (08/2020)
 
 Syncs GRACE/GRACE-FO and auxiliary data from the NASA JPL PO.DAAC Drive Server
 Syncs CSR/GFZ/JPL files for RL04/RL05/RL06 GAA/GAB/GAC/GAD/GSM
@@ -60,6 +60,7 @@ PYTHON DEPENDENCIES:
         https://python-future.org/
 
 UPDATE HISTORY:
+    Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: add back snippets to sync Level-1b dealiasing products
     Updated 06/2020: increased timeout to 2 minutes
     Updated 05/2020: simplified PO.DAAC Drive login
@@ -176,40 +177,40 @@ def compile_regex_pattern(PROC, DREL, DSET):
         #-- CSR GSM: only monthly degree 60 products
         #-- not the longterm degree 180, degree 96 dataset or the
         #-- special order 30 datasets for the high-resonance months
-        release, = re.findall('\d+', DREL)
+        release, = re.findall(r'\d+', DREL)
         args = (DSET, int(release))
-        regex_pattern='{0}-2_\d+-\d+_\d+_UTCSR_0060_000{1:d}.gz$' .format(*args)
+        regex_pattern=r'{0}-2_\d+-\d+_\d+_UTCSR_0060_000{1:d}.gz$' .format(*args)
     elif ((DSET == 'GSM') and (PROC == 'CSR') and (DREL == 'RL06')):
         #-- CSR GSM RL06: only monthly degree 60 products
-        release, = re.findall('\d+', DREL)
+        release, = re.findall(r'\d+', DREL)
         args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
-        regex_pattern='{0}-2_\d+-\d+_{1}_UTCSR_{2}_0{3:d}00.gz$' .format(*args)
+        regex_pattern=r'{0}-2_\d+-\d+_{1}_UTCSR_{2}_0{3:d}00.gz$' .format(*args)
     elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL04')):
         #-- GFZ RL04: only unconstrained solutions (not GK2 products)
-        regex_pattern='{0}-2_\d+-\d+_\d+_EIGEN_G---_0004.gz$'.format(DSET)
+        regex_pattern=r'{0}-2_\d+-\d+_\d+_EIGEN_G---_0004.gz$'.format(DSET)
     elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL05')):
         #-- GFZ RL05: updated RL05a products which are less constrained to
         #-- the background model.  Allow regularized fields
-        regex_unconst='{0}-2_\d+-\d+_\d+_EIGEN_G---_005a.gz$'.format(DSET)
-        regex_regular='{0}-2_\d+-\d+_\d+_EIGEN_GK2-_005a.gz$'.format(DSET)
-        regex_pattern='{0}|{1}'.format(regex_unconst,regex_regular)
+        regex_unconst=r'{0}-2_\d+-\d+_\d+_EIGEN_G---_005a.gz$'.format(DSET)
+        regex_regular=r'{0}-2_\d+-\d+_\d+_EIGEN_GK2-_005a.gz$'.format(DSET)
+        regex_pattern=r'{0}|{1}'.format(regex_unconst,regex_regular)
     elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL06')):
         #-- GFZ GSM RL06: only monthly degree 60 products
-        release, = re.findall('\d+', DREL)
+        release, = re.findall(r'\d+', DREL)
         args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
-        regex_pattern='{0}-2_\d+-\d+_{1}_GFZOP_{2}_0{3:d}00.gz$' .format(*args)
+        regex_pattern=r'{0}-2_\d+-\d+_{1}_GFZOP_{2}_0{3:d}00.gz$' .format(*args)
     elif (PROC == 'JPL') and DREL in ('RL04','RL05'):
         #-- JPL: RL04a and RL05a products (denoted by 0001)
-        release, = re.findall('\d+', DREL)
+        release, = re.findall(r'\d+', DREL)
         args = (DSET, int(release))
-        regex_pattern='{0}-2_\d+-\d+_\d+_JPLEM_0001_000{1:d}.gz$'.format(*args)
+        regex_pattern=r'{0}-2_\d+-\d+_\d+_JPLEM_0001_000{1:d}.gz$'.format(*args)
     elif ((DSET == 'GSM') and (PROC == 'JPL') and (DREL == 'RL06')):
         #-- JPL GSM RL06: only monthly degree 60 products
-        release, = re.findall('\d+', DREL)
+        release, = re.findall(r'\d+', DREL)
         args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
-        regex_pattern='{0}-2_\d+-\d+_{1}_JPLEM_{2}_0{3:d}00.gz$' .format(*args)
+        regex_pattern=r'{0}-2_\d+-\d+_{1}_JPLEM_{2}_0{3:d}00.gz$' .format(*args)
     else:
-        regex_pattern='{0}-2_(.*?).gz$'.format(DSET)
+        regex_pattern=r'{0}-2_(.*?).gz$'.format(DSET)
     #-- return the compiled regular expression operator used to find files
     return re.compile(regex_pattern, re.VERBOSE)
 
@@ -286,7 +287,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
     collastmod = tree.xpath('//tr/td[3]/text()')
     #-- TN-13 JPL degree 1 files
     #-- compile regular expression operator for remote files
-    R1 = re.compile('TN-13_GEOC_(CSR|GFZ|JPL)_(.*?).txt', re.VERBOSE)
+    R1 = re.compile(r'TN-13_GEOC_(CSR|GFZ|JPL)_(.*?).txt', re.VERBOSE)
     remote_file_lines = [i for i,f in enumerate(colnames) if R1.match(f)]
     #-- for each file on the remote server
     for i in remote_file_lines:
@@ -311,7 +312,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
     colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
     collastmod = tree.xpath('//tr/td[3]/text()')
     #-- compile regular expression operator for remote files
-    R1 = re.compile('TN-(05|07|11)_C20_SLR.txt', re.VERBOSE)
+    R1 = re.compile(r'TN-(05|07|11)_C20_SLR.txt', re.VERBOSE)
     remote_file_lines = [i for i,f in enumerate(colnames) if R1.match(f)]
     #-- for each file on the remote server
     for i in remote_file_lines:
@@ -336,7 +337,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
     colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
     collastmod = tree.xpath('//tr/td[3]/text()')
     #-- compile regular expression operator for remote files
-    R1 = re.compile('TN-(14)_C30_C20_GSFC_SLR.txt', re.VERBOSE)
+    R1 = re.compile(r'TN-(14)_C30_C20_GSFC_SLR.txt', re.VERBOSE)
     remote_file_lines = [i for i,f in enumerate(colnames) if R1.match(f)]
     #-- for each file on the remote server
     for i in remote_file_lines:
@@ -365,7 +366,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
     colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
     collastmod = tree.xpath('//tr/td[3]/text()')
     #-- compile regular expression operator for remote files
-    R1 = re.compile('({0}|{1}|{2})'.format(*ECMWF_files), re.VERBOSE)
+    R1 = re.compile(r'({0}|{1}|{2})'.format(*ECMWF_files), re.VERBOSE)
     remote_file_lines = [i for i,f in enumerate(colnames) if R1.match(f)]
     #-- for each file on the remote server
     for i in remote_file_lines:
@@ -396,7 +397,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
             colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
             collastmod = tree.xpath('//tr/td[3]/text()')
             #-- compile regular expression operator for remote files
-            R1 = re.compile('{0}_SDS_NL_(\d+).pdf'.format(NAME), re.VERBOSE)
+            R1 = re.compile(r'{0}_SDS_NL_(\d+).pdf'.format(NAME), re.VERBOSE)
             remote_file_lines = [i for i,f in enumerate(colnames) if R1.match(f)]
             #-- for each file on the remote server
             for i in remote_file_lines:
@@ -431,7 +432,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
             colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
             collastmod = tree.xpath('//tr/td[3]/text()')
             #-- compile regular expression operator for remote files
-            R1 = re.compile('AOD1B_(20\d+)-(\d+)_\d+\.(tar\.gz|tgz)$', re.VERBOSE)
+            R1 = re.compile(r'AOD1B_(20\d+)-(\d+)_\d+\.(tar\.gz|tgz)$', re.VERBOSE)
             remote_file_lines=[i for i,f in enumerate(colnames) if R1.match(f)]
             #-- for each file on the remote server
             for i in remote_file_lines:
@@ -479,7 +480,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
                 if not os.path.exists(local_dir):
                     os.makedirs(local_dir,MODE)
                 #-- compile regular expression operator to find GRACE files
-                R1 = re.compile('({0}-(.*?)(gz|txt|dif))'.format(ds),re.VERBOSE)
+                R1 = re.compile(r'({0}-(.*?)(gz|txt|dif))'.format(ds),re.VERBOSE)
                 line = [i for i,f in enumerate(colnames) if R1.match(f)]
                 #-- for each file on the remote server
                 for i in line:
@@ -527,7 +528,7 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
                     if not os.path.exists(local_dir):
                         os.makedirs(local_dir,MODE)
                     #-- compile regular expression operator to find GRACE files
-                    R1 = re.compile('({0}-(.*?)(gz|txt|dif))'.format(ds))
+                    R1 = re.compile(r'({0}-(.*?)(gz|txt|dif))'.format(ds))
                     line = [i for i,f in enumerate(colnames) if R1.match(f)]
                     #-- for each file on the remote server
                     for i in line:
