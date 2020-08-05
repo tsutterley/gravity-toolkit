@@ -122,7 +122,7 @@ class harmonics(object):
             else:
                 l1,m1,clm1,slm1 = rx.findall(line)
             #-- convert line degree and order to integers
-            l1,m1 = np.array([l1,m1],dtype=np.int)
+            ll,mm = np.array([l1,m1],dtype=np.int)
             #-- convert fortran exponentials if applicable
             self.clm[ll,mm] = np.float(clm1.replace('D','E'))
             self.slm[ll,mm] = np.float(slm1.replace('D','E'))

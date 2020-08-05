@@ -138,7 +138,7 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None, UNITS=None,
 
     #-- read input spherical harmonic coefficients from file in DATAFORM
     if (DATAFORM == 1):
-        file_input = np.loadtxt(input_file,skiprows=HEADER,delimiter=DELIMITER)
+        file_input = np.loadtxt(INPUT_FILE,skiprows=HEADER,delimiter=DELIMITER)
         input_spatial['data'] = np.zeros((1,nlat,nlon))
         input_spatial['time'] = 1.0
         #-- number of files

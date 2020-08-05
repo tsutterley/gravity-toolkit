@@ -665,7 +665,7 @@ class spatial(object):
                 self.mask |= mask
             elif (np.ndim(mask) == 2) & (self.ndim == 3):
                 temp = np.broadcast_to(mask, self.shape)
-                self.mask[:,:,i] |= temp
+                self.mask |= temp
         #-- update the fill value
         self.fill_value = fill_value
         #-- replace invalid values with new fill value

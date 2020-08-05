@@ -702,9 +702,9 @@ def main():
             PROC = arg.upper().split(',')
         elif opt in ("-R","--release"):
             DREL = arg.upper().split(',')
-        elif (opt in "--aod1b",):
+        elif opt in ("--aod1b",):
             AOD1B = True
-        elif (opt in "--newsletters",):
+        elif opt in ("--newsletters",):
             NEWSLETTERS = True
         elif opt in ("--checksum",):
             CHECKSUM = True

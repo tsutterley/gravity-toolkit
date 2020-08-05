@@ -234,7 +234,7 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None,
 
     #-- output spatial grid
     nt = len(input_Ylms.time)
-    grid.data = np.zeros((nlat,nlon,nfiles))
+    grid.data = np.zeros((nlat,nlon,nt))
     #-- converting harmonics to truncated, smoothed coefficients in output units
     for t in range(nt):
         #-- spherical harmonics for time t
@@ -249,7 +249,7 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None,
         print('{0}:'.format(os.path.basename(sys.argv[0])))
         print('{0} -->\n\t{1}\n'.format(INPUT_FILE,OUTPUT_FILE))
     #-- outputting data to file
-    output_data(grid.squeeze() FILENAME=OUTPUT_FILE,
+    output_data(grid.squeeze(), FILENAME=OUTPUT_FILE,
         DATAFORM=DATAFORM, UNITS=UNITS)
     #-- change output permissions level to MODE
     os.chmod(OUTPUT_FILE,MODE)
