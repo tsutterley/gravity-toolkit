@@ -78,6 +78,7 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
 - [`tsregress`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/tsregress.md) - Fits a synthetic signal to data over a time period by least-squares or weighted least-squares
 - [`tssmooth`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/tssmooth.md) - Computes a moving average of a time-series
 - [`units`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/units.rst) - Class for converting GRACE/GRACE-FO Level-2 data to specific units
+- [`utilities.py`](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/doc/source/user_guide/utilities.rst) - Download and management utilities for syncing time and auxiliary files  
 
 #### Dependencies
 - [numpy: Scientific Computing Tools For Python](https://www.numpy.org)

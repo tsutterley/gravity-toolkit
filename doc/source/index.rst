@@ -80,3 +80,4 @@ missions
     user_guide/tsregress.md
     user_guide/tssmooth.md
     user_guide/units.rst
+    user_guide/utilities.rst

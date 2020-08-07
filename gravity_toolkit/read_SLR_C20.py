@@ -115,7 +115,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
         raise IOError('SLR file not found in file system')
 
     #-- determine if imported file is from PO.DAAC or CSR
-    if bool(re.search('C20_RL\d+',SLR_file)):
+    if bool(re.search(r'C20_RL\d+',SLR_file)):
         #-- SLR C20 file from CSR
         #-- Just for checking new months when TN series isn't up to date as the
         #-- SLR estimates always use the full set of days in each calendar month.
