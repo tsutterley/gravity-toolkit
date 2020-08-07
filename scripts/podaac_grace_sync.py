@@ -59,8 +59,12 @@ PYTHON DEPENDENCIES:
     future: Compatibility layer between Python 2 and Python 3
         https://python-future.org/
 
+PROGRAM DEPENDENCIES:
+    utilities: download and management utilities for syncing files
+
 UPDATE HISTORY:
     Updated 08/2020: flake8 compatible regular expression strings
+        moved urllib opener to utilities. add credential check
     Updated 07/2020: add back snippets to sync Level-1b dealiasing products
     Updated 06/2020: increased timeout to 2 minutes
     Updated 05/2020: simplified PO.DAAC Drive login
@@ -142,34 +146,22 @@ import sys
 import os
 import re
 import io
-import ssl
 import netrc
 import getopt
 import shutil
-import base64
 import hashlib
 import getpass
 import builtins
 import posixpath
 import lxml.etree
 import calendar, time
+import gravity_toolkit.utilities
 if sys.version_info[0] == 2:
     from cookielib import CookieJar
     import urllib2
 else:
     from http.cookiejar import CookieJar
     import urllib.request as urllib2
-
-#-- PURPOSE: check internet connection
-def check_connection():
-    #-- attempt to connect to https host for PO.DAAC
-    try:
-        HOST = posixpath.join('https://podaac-tools.jpl.nasa.gov','drive')
-        urllib2.urlopen(HOST,timeout=120,context=ssl.SSLContext())
-    except urllib2.URLError:
-        raise RuntimeError('Check internet connection')
-    else:
-        return True
 
 #-- PURPOSE: create and compile regular expression operator to find GRACE files
 def compile_regex_pattern(PROC, DREL, DSET):
@@ -215,9 +207,8 @@ def compile_regex_pattern(PROC, DREL, DSET):
     return re.compile(regex_pattern, re.VERBOSE)
 
 #-- PURPOSE: sync local GRACE/GRACE-FO files with JPL PO.DAAC drive server
-def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
-    AOD1B=False, NEWSLETTERS=False, LOG=False, LIST=False, CLOBBER=False,
-    CHECKSUM=False, MODE=None):
+def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
+    LOG=False, LIST=False, CLOBBER=False, CHECKSUM=False, MODE=None):
 
     #-- check if directory exists and recursively create if not
     os.makedirs(DIRECTORY,MODE) if not os.path.exists(DIRECTORY) else None
@@ -251,24 +242,6 @@ def podaac_grace_sync(DIRECTORY, PROC, USER=None, PASSWORD=None, DREL=[],
 
     #-- compile HTML parser for lxml
     parser = lxml.etree.HTMLParser()
-    #-- Create cookie jar for storing cookies. This is used to store and return
-    #-- the session cookie given to use by the data server (otherwise will just
-    #-- keep sending us back to Earthdata Login to authenticate).
-    cookie_jar = CookieJar()
-    #-- create "opener" (OpenerDirector instance)
-    opener = urllib2.build_opener(
-        urllib2.HTTPSHandler(context=ssl.SSLContext()),
-        urllib2.HTTPCookieProcessor(cookie_jar))
-    #-- Encode username/password for request authorization headers
-    base64_string = base64.b64encode('{0}:{1}'.format(USER, PASSWORD).encode())
-    #-- add Authorization header to opener
-    authorization_header = "Basic {0}".format(base64_string.decode())
-    opener.addheaders = [("Authorization", authorization_header)]
-    #-- Now all calls to urllib2.urlopen use our opener.
-    urllib2.install_opener(opener)
-    #-- All calls to urllib2.urlopen will now use handler
-    #-- Make sure not to include the protocol in with the URL, or
-    #-- HTTPPasswordMgrWithDefaultRealm will be confused.
 
     #-- remote https server for GRACE data
     HOST = posixpath.join('https://podaac-tools.jpl.nasa.gov','drive','files')
@@ -726,11 +699,16 @@ def main():
         #-- enter password securely from command-line
         PASSWORD = getpass.getpass('Password for {0}@{1}: '.format(USER,HOST))
 
+    #-- build a urllib opener for PO.DAAC Drive
+    #-- Add the username and password for NASA Earthdata Login system
+    gravity_toolkit.utilities.build_opener(USER,PASSWORD)
+
     #-- check internet connection before attempting to run program
-    if check_connection():
-        podaac_grace_sync(DIRECTORY, PROC, USER=USER, PASSWORD=PASSWORD,
-            DREL=DREL, NEWSLETTERS=NEWSLETTERS, AOD1B=AOD1B, LIST=LIST,
-            LOG=LOG, CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
+    #-- check JPL PO.DAAC Drive credentials before attempting to run program
+    if gravity_toolkit.utilities.check_credentials():
+        podaac_grace_sync(DIRECTORY, PROC, DREL=DREL, NEWSLETTERS=NEWSLETTERS,
+            AOD1B=AOD1B, LIST=LIST, LOG=LOG, CLOBBER=CLOBBER, CHECKSUM=CHECKSUM,
+            MODE=MODE)
 
 #-- run main program
 if __name__ == '__main__':
