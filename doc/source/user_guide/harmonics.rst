@@ -67,272 +67,288 @@ Converting a dictionary object to a harmonics object and removing the mean field
 General Attributes and Methods
 ==============================
 
-.. attribute:: object.lmax
+.. class:: harmonics(object)
 
-    maximum degree of the spherical harmonic field
 
+    .. attribute:: object.lmax
 
-.. attribute:: object.mmax
+        maximum degree of the spherical harmonic field
 
-    maximum order of the spherical harmonic field
 
+    .. attribute:: object.mmax
 
-.. attribute:: object.clm
+        maximum order of the spherical harmonic field
 
-    cosine spherical harmonics
 
+    .. attribute:: object.clm
 
-.. attribute:: object.slm
+        cosine spherical harmonics
 
-    sine spherical harmonics
 
+    .. attribute:: object.slm
 
-.. attribute:: object.time
+        sine spherical harmonics
 
-    time variable of the spherical harmonics
 
+    .. attribute:: object.time
 
-.. attribute:: object.month
+        time variable of the spherical harmonics
 
-    GRACE/GRACE-FO months variable of the spherical harmonics
 
+    .. attribute:: object.month
 
-.. attribute:: object.shape
+        GRACE/GRACE-FO months variable of the spherical harmonics
 
-    dimensions of harmonics object
 
+    .. attribute:: object.shape
 
-.. attribute:: object.ndim
+        dimensions of harmonics object
 
-    number of dimensions of harmonics object
 
+    .. attribute:: object.ndim
 
-.. method:: object.case_insensitive_filename(filename)
+        number of dimensions of harmonics object
 
-    Searches a directory for a filename without case dependence
 
+    .. method:: object.case_insensitive_filename(filename)
 
-.. method:: object.from_ascii(filename, date=True)
+        Searches a directory for a filename without case dependence
 
-    Read a harmonics object from an ascii file
 
-    Inputs: full path of input ascii file
+    .. method:: object.from_ascii(filename, date=True, compression=None, verbose=False)
 
-    Options: ascii file contains date information
+        Read a harmonics object from an ascii file
 
+        Inputs: full path of input ascii file
 
-.. method:: object.from_netCDF4(filename, date=True)
+        Options:
+            `date` ascii file contains date information
 
-    Read a harmonics object from a netCDF4 file
+            `compression` ascii file is compressed using gzip or zip
 
-    Inputs: full path of input netCDF4 file
+            `verbose` print ascii file information
 
-    Options: netCDF4 file contains date information
+    .. method:: object.from_netCDF4(filename, date=True, compression=None, verbose=False)
 
+        Read a harmonics object from a netCDF4 file
 
-.. method:: object.from_HDF5(filename, date=True)
+        Inputs: full path of input netCDF4 file
 
-    Read a harmonics object from a HDF5 file
+        Options:
+            `date` netCDF4 file contains date information
 
-    Inputs: full path of input HDF5 file
+            `compression` netCDF4 file is compressed using gzip or zip
 
-    Options: HDF5 file contains date information
+            `verbose` print netCDF4 file information
 
+    .. method:: object.from_HDF5(filename, date=True, compression=None, verbose=False)
 
-.. method:: object.from_gfc(filename)
+        Read a harmonics object from a HDF5 file
 
-    Read a harmonics object from a gfc gravity model file from the `GFZ ICGEM`__.
+        Inputs: full path of input HDF5 file
 
-    Inputs: full path of input gfc file
+        Options:
+            `date` HDF5 file contains date information
 
-.. __: http://icgem.gfz-potsdam.de/
+            `compression` HDF5 file is compressed using gzip or zip
 
+            `verbose` print HDF5 file information
 
-.. method:: object.from_index(filename, format=None, date=True, sort=True)
 
-    Read a harmonics object from an index of ascii, netCDF4 or HDF5 files
+    .. method:: object.from_gfc(filename)
 
-    Inputs: full path of index file to be read into a harmonics object
+        Read a harmonics object from a gfc gravity model file from the `GFZ ICGEM`__.
 
-    Options:
-        format of files in index (ascii, netCDF4 or HDF5)
+        Inputs: full path of input gfc file
 
-        ascii, netCDF4, or HDF5 contains date information
+    .. __: http://icgem.gfz-potsdam.de/
 
-        sort harmonics objects by date information
 
+    .. method:: object.from_index(filename, format=None, date=True, sort=True)
 
-.. method:: object.from_list(object_list, date=True, sort=True)
+        Read a harmonics object from an index of ascii, netCDF4 or HDF5 files
 
-    Build a sorted harmonics object from a list of other harmonics objects
+        Inputs: full path of index file to be read into a harmonics object
 
-    Inputs: list of harmonics object to be merged
+        Options:
+            format of files in index (ascii, netCDF4 or HDF5)
 
-    Options:
-        harmonics objects contain date information
+            ascii, netCDF4, or HDF5 contains date information
 
-        sort harmonics objects by date information
+            sort harmonics objects by date information
 
 
-.. method:: object.from_dict(dict_object)
+    .. method:: object.from_list(object_list, date=True, sort=True)
 
-    Convert a dict object to a harmonics object
+        Build a sorted harmonics object from a list of other harmonics objects
 
-    Inputs: dictionary object to be converted
+        Inputs: list of harmonics object to be merged
 
+        Options:
+            harmonics objects contain date information
 
-.. method:: object.to_ascii(filename, date=True)
+            sort harmonics objects by date information
 
-    Write a harmonics object to ascii file
 
-    Inputs: full path of output ascii file
+    .. method:: object.from_dict(dict_object)
 
-    Options: harmonics objects contain date information
+        Convert a dict object to a harmonics object
 
+        Inputs: dictionary object to be converted
 
-.. method:: object.to_netCDF4(filename, date=True)
 
-    Write a harmonics object to netCDF4 file
+    .. method:: object.to_ascii(filename, date=True)
 
-    Inputs: full path of output netCDF4 file
+        Write a harmonics object to ascii file
 
-    Options: harmonics objects contain date information
+        Inputs: full path of output ascii file
 
+        Options: harmonics objects contain date information
 
-.. method:: object.to_HDF5(filename, date=True)
 
-    Write a harmonics object to HDF5 file
+    .. method:: object.to_netCDF4(filename, date=True)
 
-    Inputs: full path of output HDF5 file
+        Write a harmonics object to netCDF4 file
 
-    Options: harmonics objects contain date information
-    
+        Inputs: full path of output netCDF4 file
 
-.. method:: object.update_dimensions()
+        Options: harmonics objects contain date information
 
-    Update the dimensions of the harmonics object
-    
 
-.. method:: object.add(temp)
+    .. method:: object.to_HDF5(filename, date=True)
 
-    Add two harmonics objects
+        Write a harmonics object to HDF5 file
 
-    Inputs: harmonic object to be added
+        Inputs: full path of output HDF5 file
 
+        Options: harmonics objects contain date information
 
-.. method:: object.subtract(temp)
 
-    Subtract one harmonics object from another
+    .. method:: object.update_dimensions()
 
-    Inputs: harmonic object to be subtracted
+        Update the dimensions of the harmonics object
 
 
-.. method:: object.multiply(temp)
+    .. method:: object.add(temp)
 
-    Multiply two harmonics objects
+        Add two harmonics objects
 
-    Inputs: harmonic object to be multiplied
+        Inputs: harmonic object to be added
 
 
-.. method:: object.divide(temp)
+    .. method:: object.subtract(temp)
 
-    Divide one harmonics object from another
+        Subtract one harmonics object from another
 
-    Inputs: harmonic object to be divided
+        Inputs: harmonic object to be subtracted
 
 
-.. method:: object.copy()
+    .. method:: object.multiply(temp)
 
-    Copy a harmonics object to a new harmonics object
+        Multiply two harmonics objects
 
+        Inputs: harmonic object to be multiplied
 
-.. method:: object.zeros_like()
 
-    Create a harmonics object using the dimensions of another
+    .. method:: object.divide(temp)
 
+        Divide one harmonics object from another
 
-.. method:: object.expand_dims()
+        Inputs: harmonic object to be divided
 
-    Add a singleton dimension to a harmonics object if non-existent
 
+    .. method:: object.copy()
 
-.. method:: object.squeeze()
+        Copy a harmonics object to a new harmonics object
 
-    Remove singleton dimensions from a harmonics object
 
+    .. method:: object.zeros_like()
 
-.. method:: object.flatten(date=True)
+        Create a harmonics object using the dimensions of another
 
-    Flatten harmonics matrices into arrays
 
-    Options: harmonics objects contain date information
+    .. method:: object.expand_dims()
 
+        Add a singleton dimension to a harmonics object if non-existent
 
-.. method:: expand.expand(date=True)
 
-    Expand flattened harmonics into matrices
+    .. method:: object.squeeze()
 
-    Options: harmonics objects contain date information
+        Remove singleton dimensions from a harmonics object
 
 
-.. method:: object.index(indice, date=True)
+    .. method:: object.flatten(date=True)
 
-    Subset a harmonics object to specific index
+        Flatten harmonics matrices into arrays
 
-    Inputs: `indice` in matrix to subset
+        Options: harmonics objects contain date information
 
-    Options: harmonics objects contain date information
 
+    .. method:: expand.expand(date=True)
 
-.. method:: object.subset(months)
+        Expand flattened harmonics into matrices
 
-    Subset a harmonics object to specific GRACE/GRACE-FO months
+        Options: harmonics objects contain date information
 
-    Inputs: GRACE/GRACE-FO months
 
+    .. method:: object.index(indice, date=True)
 
-.. method:: object.truncate(lmax, lmin=0, mmax=None)
+        Subset a harmonics object to specific index
 
-    Truncate a harmonics object to a new degree and order
+        Inputs: `indice` in matrix to subset
 
-    Inputs: `lmax` maximum degree of spherical harmonics
+        Options: harmonics objects contain date information
 
-    Options:
-        `lmin` minimum degree of spherical harmonics
 
-        `mmax` maximum order of spherical harmonics
+    .. method:: object.subset(months)
 
+        Subset a harmonics object to specific GRACE/GRACE-FO months
 
-.. method:: object.mean(apply=False)
+        Inputs: GRACE/GRACE-FO months
 
-    Compute mean gravitational field from the harmonics object
 
-    Option: `apply` to remove the mean field from the input harmonics
+    .. method:: object.truncate(lmax, lmin=0, mmax=None)
 
+        Truncate a harmonics object to a new degree and order
 
-.. method:: object.scale(var)
+        Inputs: `lmax` maximum degree of spherical harmonics
 
-    Multiply a harmonics object by a constant
+        Options:
+            `lmin` minimum degree of spherical harmonics
 
-    Inputs: scalar value to which the harmonics object will be multiplied
+            `mmax` maximum order of spherical harmonics
 
 
-.. method:: object.power(pow)
+    .. method:: object.mean(apply=False)
 
-    Raise a harmonics object to a power
+        Compute mean gravitational field from the harmonics object
 
-    Inputs: power to which the harmonics object will be raised
+        Option: `apply` to remove the mean field from the input harmonics
 
 
-.. method:: object.convolve(var)
+    .. method:: object.scale(var)
 
-    Convolve spherical harmonics with a degree-dependent array
+        Multiply a harmonics object by a constant
 
-    Inputs: degree dependent array for convolution
+        Inputs: scalar value to which the harmonics object will be multiplied
 
 
-.. method:: object.destripe()
+    .. method:: object.power(pow)
 
-    Filters spherical harmonic coefficients for correlated "striping" errors following `Swenson and Wahr (2006)`__.
+        Raise a harmonics object to a power
 
-.. __: https://doi.org/10.1029/2005GL025285
+        Inputs: power to which the harmonics object will be raised
+
+
+    .. method:: object.convolve(var)
+
+        Convolve spherical harmonics with a degree-dependent array
+
+        Inputs: degree dependent array for convolution
+
+
+    .. method:: object.destripe()
+
+        Filters spherical harmonic coefficients for correlated "striping" errors following `Swenson and Wahr (2006)`__.
+
+    .. __: https://doi.org/10.1029/2005GL025285

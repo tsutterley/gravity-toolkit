@@ -36,6 +36,19 @@ General Methods
         `local`: path to file
 
 
+.. method:: gravity_toolkit.utilities.get_unix_time(time_string, format='%Y-%m-%d %H:%M:%S')
+
+    Get the Unix timestamp value for a formatted date string
+
+    Arguments:
+
+        `time_string`: formatted time string to parse
+
+    Keyword arguments:
+
+        `format`: format for input time string
+
+
 .. method:: gravity_toolkit.utilities.ftp_list(HOST,timeout=None,basename=False,pattern=None,sort=False)
 
     List a directory on a ftp host
@@ -53,6 +66,13 @@ General Methods
         `pattern`: regular expression pattern for reducing list
 
         `sort`: sort output list
+
+
+    Returns:
+
+        `output`: list of items in a directory
+
+        `mtimes`: list of last modification times for items in the directory
 
 
 .. method:: gravity_toolkit.utilities.from_ftp(HOST,timeout=None,local=None,hash='',chunk=16384,verbose=False,mode=0o775)
@@ -121,7 +141,7 @@ General Methods
     Check that entered JPL PO.DAAC Drive credentials are valid
 
 
-.. method:: gravity_toolkit.utilities.from_podaac(HOST,username=None,password=None,timeout=None,local=None,hash='',chunk=16384,verbose=False,mode=0o775)
+.. method:: gravity_toolkit.utilities.podaac_list(HOST,username=None,password=None,build=True,timeout=None,parser=None,pattern='',sort=False)
 
     Download a file from a PO.DAAC Drive https server
 
@@ -134,6 +154,41 @@ General Methods
         `username`: NASA Earthdata username
 
         `password`: JPL PO.DAAC Drive WebDAV password
+
+        `build`: Build opener and check WebDAV credentials
+
+        `timeout`: timeout in seconds for blocking operations
+
+        `parser`: HTML parser for lxml
+
+        `pattern`: regular expression pattern for reducing list
+
+        `sort`: sort output list
+
+
+    Returns:
+
+        `colnames`: list of column names in a directory
+
+        `collastmod`: list of last modification times for items in the directory
+
+
+
+.. method:: gravity_toolkit.utilities.from_podaac(HOST,username=None,password=None,build=True,timeout=None,local=None,hash='',chunk=16384,verbose=False,mode=0o775)
+
+    Download a file from a PO.DAAC Drive https server
+
+    Arguments:
+
+        `HOST`: remote http host path split as list
+
+    Keyword arguments:
+
+        `username`: NASA Earthdata username
+
+        `password`: JPL PO.DAAC Drive WebDAV password
+
+        `build`: Build opener and check WebDAV credentials
 
         `timeout`: timeout in seconds for blocking operations
 

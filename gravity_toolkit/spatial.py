@@ -19,7 +19,7 @@ PROGRAM DEPENDENCIES:
     hdf5_read.py: reads spatial data from HDF5
 
 UPDATE HISTORY:
-    Updated 08/2020: added compression option for ascii files
+    Updated 08/2020: added compression options for ascii, netCDF4 and HDF5 files
     Updated 07/2020: added class docstring and using kwargs for output to file
         added case_insensitive_filename function to search directories
     Updated 06/2020: added zeros_like() for creating an empty spatial object
@@ -28,6 +28,7 @@ UPDATE HISTORY:
 import os
 import re
 import gzip
+import zipfile
 import numpy as np
 from gravity_toolkit.ncdf_write import ncdf_write
 from gravity_toolkit.hdf5_write import hdf5_write
@@ -70,34 +71,46 @@ class spatial(object):
             self.filename = os.path.join(directory,f.pop())
         return self
 
-    def from_ascii(self, filename, date=True, compressed=False, verbose=False,
+    def from_ascii(self, filename, date=True, compression=None, verbose=False,
         columns=['lon','lat','data','time']):
         """
         Read a spatial object from an ascii file
         Inputs: full path of input ascii file
-        Options: ascii file contains date information
+        Options:
+            ascii file contains date information
+            ascii file is compressed using gzip or zip
+            verbose output of file information
+            column names of ascii file
         """
         #-- set filename
         self.case_insensitive_filename(filename)
         print(self.filename) if verbose else None
-        #-- read input ascii file (.txt) and split lines
-        if compressed:
+        #-- open the ascii file and extract contents
+        if (compression == 'gzip'):
+            #-- read input ascii data from gzip compressed file and split lines
             with gzip.open(self.filename,'r') as f:
                 file_contents = f.read().decode('ISO-8859-1').splitlines()
+        elif (compression == 'zip'):
+            #-- read input ascii data from zipped file and split lines
+            base,extension = os.path.splitext(self.filename)
+            with zipfile.ZipFile(self.filename) as z:
+                file_contents = z.read(base).decode('ISO-8859-1').splitlines()
         else:
+            #-- read input ascii file (.txt, .asc) and split lines
             with open(self.filename,'r') as f:
                 file_contents = f.read().splitlines()
         #-- compile regular expression operator for extracting numerical values
         #-- from input ascii files of spatial data
         regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[EeD][+-]?\d+)?'
         rx = re.compile(regex_pattern, re.VERBOSE)
-        #-- output spatial data
+        #-- output spatial dimensions
         if (None not in self.extent):
             self.lat = np.linspace(self.extent[3],self.extent[2],self.shape[0])
             self.lon = np.linspace(self.extent[0],self.extent[1],self.shape[1])
         else:
             self.lat = np.zeros((self.shape[0]))
             self.lon = np.zeros((self.shape[1]))
+        #-- output spatial data
         self.data = np.zeros((self.shape[0],self.shape[1]))
         self.mask = np.zeros((self.shape[0],self.shape[1]),dtype=np.bool)
         #-- remove time from list of column names if not date
@@ -126,19 +139,23 @@ class spatial(object):
         self.update_mask()
         return self
 
-    def from_netCDF4(self, filename, date=True, verbose=False,
+    def from_netCDF4(self, filename, date=True, compression=None, verbose=False,
         varname='z', lonname='lon', latname='lat'):
         """
         Read a spatial object from a netCDF4 file
         Inputs: full path of input netCDF4 file
-        Options: netCDF4 file contains date information
+        Options:
+            netCDF4 file contains date information
+            netCDF4 file is compressed using gzip or zip
+            verbose output of file information
+            netCDF4 variable names of data, longitude and latitude
         """
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- read data from netCDF4 file
-        data = ncdf_read(self.filename, VERBOSE=verbose,
-            ATTRIBUTES=False, DATE=date, VARNAME=varname,
-            LONNAME=lonname, LATNAME=latname, TIMENAME='time')
+        data = ncdf_read(self.filename, VERBOSE=verbose, ATTRIBUTES=False,
+            DATE=date, VARNAME=varname, LONNAME=lonname, LATNAME=latname,
+            TIMENAME='time', COMPRESSION=compression)
         self.data = data['data'].copy()
         self.fill_value = data['attributes']['_FillValue']
         self.mask = np.zeros_like(self.data, dtype=np.bool)
@@ -154,19 +171,23 @@ class spatial(object):
         self.update_mask()
         return self
 
-    def from_HDF5(self, filename, date=True, verbose=False,
+    def from_HDF5(self, filename, date=True, compression=None, verbose=False,
         varname='z', lonname='lon', latname='lat'):
         """
         Read a spatial object from a HDF5 file
         Inputs: full path of input HDF5 file
-        Options: HDF5 file contains date information
+        Options:
+            HDF5 file contains date information
+            HDF5 file is compressed using gzip or zip
+            verbose output of file information
+            HDF5 variable names of data, longitude and latitude
         """
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- read data from HDF5 file
-        data = hdf5_read(self.filename, VERBOSE=verbose,
-            ATTRIBUTES=False, DATE=date, VARNAME=varname,
-            LONNAME=lonname, LATNAME=latname, TIMENAME='time')
+        data = hdf5_read(self.filename, VERBOSE=verbose, ATTRIBUTES=False,
+            DATE=date, VARNAME=varname, LONNAME=lonname, LATNAME=latname,
+            TIMENAME='time', COMPRESSION=compression)
         self.data = data['data'].copy()
         self.fill_value = data['attributes']['_FillValue']
         self.mask = np.zeros_like(self.data, dtype=np.bool)

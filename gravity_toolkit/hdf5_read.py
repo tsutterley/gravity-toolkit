@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 u"""
 hdf5_read.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (08/2020)
 
 Reads spatial data from HDF5 files
 
 CALLING SEQUENCE:
-    file_inp = hdf5_read(filename, DATE=False, VERBOSE=False)
+    dinput = hdf5_read(filename, DATE=False, VERBOSE=False)
 
 INPUTS:
     filename: HDF5 file to be opened and read
@@ -27,6 +27,7 @@ OPTIONS:
     TIMENAME: time variable name in HDF5 file
     ATTRIBUTES: HDF5 variables contain attribute parameters
     TITLE: HDF5 file contains description attribute parameter
+    COMPRESSION: HDF5 file is compressed using gzip or zip
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
@@ -34,6 +35,7 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 08/2020: add options to read from gzip or zip compressed files
     Updated 07/2020: added function docstrings
     Updated 06/2020: output data as lat/lon following spatial module
         attempt to read fill value attribute and set to None if not present
@@ -58,11 +60,17 @@ UPDATE HISTORY:
 """
 from __future__ import print_function
 
+import os
+import re
+import io
+import gzip
 import h5py
+import zipfile
 import numpy as np
 
 def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
-    LATNAME='lat', TIMENAME='time', ATTRIBUTES=True, TITLE=True):
+    LATNAME='lat', TIMENAME='time', ATTRIBUTES=True, TITLE=True,
+    COMPRESSION=None):
     """
     Reads spatial data from HDF5 files
 
@@ -80,6 +88,7 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     TIMENAME: time variable name in HDF5 file
     ATTRIBUTES: HDF5 variables contain attribute parameters
     TITLE: HDF5 file contains a description attribute
+    COMPRESSION: HDF5 file is compressed using gzip or zip
 
     Returns
     -------
@@ -91,7 +100,31 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     """
 
     #-- Open the HDF5 file for reading
-    fileID = h5py.File(filename, 'r')
+    if (COMPRESSION == 'gzip'):
+        #-- read gzip compressed file and extract into in-memory file object
+        with gzip.open(os.path.expanduser(filename),'r') as f:
+            fid = io.BytesIO(f.read())
+        #-- set filename of BytesIO object
+        fid.filename = os.path.basename(filename)
+        #-- rewind to start of file
+        fid.seek(0)
+        #-- read as in-memory (diskless) HDF5 dataset from BytesIO object
+        fileID = h5py.File(fid, 'r')
+    elif (COMPRESSION == 'zip'):
+        #-- read zipped file and extract file into in-memory file object
+        fileBasename,fileExtension = os.path.splitext(filename)
+        with zipfile.ZipFile(os.path.expanduser(filename)) as z:
+            #-- read bytes from zipfile into in-memory BytesIO object
+            fid = io.BytesIO(z.read(fileBasename))
+        #-- set filename of BytesIO object
+        fid.filename = os.path.basename(filename)
+        #-- rewind to start of file
+        fid.seek(0)
+        #-- read as in-memory (diskless) HDF5 dataset from BytesIO object
+        fileID = h5py.File(fid, 'r')
+    else:
+        #-- read HDF5 dataset
+        fileID = h5py.File(os.path.expanduser(filename), 'r')
     #-- allocate python dictionary for output variables
     dinput = {}
 
