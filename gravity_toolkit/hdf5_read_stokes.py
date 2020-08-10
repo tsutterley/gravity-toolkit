@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 u"""
 hdf5_read_stokes.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (08/2020)
 
 Reads spherical harmonic data from HDF5 files
 
 CALLING SEQUENCE:
-    file_inp = hdf5_read_stokes(filename, DATE=True, VERBOSE=False)
+    Ylms = hdf5_read_stokes(filename, DATE=True, VERBOSE=False)
 
 INPUTS:
     filename: HDF5 file to be opened and read
@@ -23,8 +23,9 @@ OUTPUTS:
 
 OPTIONS:
     DATE: HDF5 file has date information
-    ATTRIBUTES: HDF5 variables contain attribute parameters
     VERBOSE: will print to screen the HDF5 structure parameters
+    ATTRIBUTES: HDF5 variables contain attribute parameters
+    COMPRESSION: HDF5 file is compressed using gzip or zip
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
@@ -32,6 +33,7 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 08/2020: add options to read from gzip or zip compressed files
     Updated 07/2020: added function docstrings
     Updated 03/2020: added ATTRIBUTES option to check if file has attributes
     Updated 10/2019: changing Y/N flags to True/False.  check if time is array
@@ -48,10 +50,16 @@ UPDATE HISTORY:
 """
 from __future__ import print_function
 
+import os
+import re
+import io
+import gzip
 import h5py
+import zipfile
 import numpy as np
 
-def hdf5_read_stokes(filename, DATE=True, ATTRIBUTES=True, VERBOSE=False):
+def hdf5_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
+    COMPRESSION=None):
     """
     Reads spherical harmonic data from HDF5 files
 
@@ -62,8 +70,9 @@ def hdf5_read_stokes(filename, DATE=True, ATTRIBUTES=True, VERBOSE=False):
     Keyword arguments
     -----------------
     DATE: HDF5 file has date information
-    ATTRIBUTES: HDF5 variables contain attribute parameters
     VERBOSE: will print to screen the HDF5 structure parameters
+    ATTRIBUTES: HDF5 variables contain attribute parameters
+    COMPRESSION: HDF5 file is compressed using gzip or zip
 
     Returns
     -------
@@ -77,7 +86,31 @@ def hdf5_read_stokes(filename, DATE=True, ATTRIBUTES=True, VERBOSE=False):
     """
 
     #-- Open the HDF5 file for reading
-    fileID = h5py.File(filename, 'r')
+    if (COMPRESSION == 'gzip'):
+        #-- read gzip compressed file and extract into in-memory file object
+        with gzip.open(os.path.expanduser(filename),'r') as f:
+            fid = io.BytesIO(f.read())
+        #-- set filename of BytesIO object
+        fid.filename = os.path.basename(filename)
+        #-- rewind to start of file
+        fid.seek(0)
+        #-- read as in-memory (diskless) HDF5 dataset from BytesIO object
+        fileID = h5py.File(fid, 'r')
+    elif (COMPRESSION == 'zip'):
+        #-- read zipped file and extract file into in-memory file object
+        fileBasename,fileExtension = os.path.splitext(filename)
+        with zipfile.ZipFile(os.path.expanduser(filename)) as z:
+            #-- read bytes from zipfile into in-memory BytesIO object
+            fid = io.BytesIO(z.read(fileBasename))
+        #-- set filename of BytesIO object
+        fid.filename = os.path.basename(filename)
+        #-- rewind to start of file
+        fid.seek(0)
+        #-- read as in-memory (diskless) HDF5 dataset from BytesIO object
+        fileID = h5py.File(fid, 'r')
+    else:
+        #-- read HDF5 dataset
+        fileID = h5py.File(os.path.expanduser(filename), 'r')
     #-- allocate python dictionary for output variables
     dinput = {}
 

@@ -6,7 +6,7 @@ Written by Tyler Sutterley (08/2020)
 Reads spatial data from COARDS-compliant netCDF4 files
 
 CALLING SEQUENCE:
-    file_inp = ncdf_read(filename, DATE=False, VERBOSE=False)
+    dinput = ncdf_read(filename, DATE=False, VERBOSE=False)
 
 INPUTS:
     filename: netCDF4 file to be opened and read
@@ -27,6 +27,7 @@ OPTIONS:
     TIMENAME: time variable name in netCDF4 file
     ATTRIBUTES: netCDF4 variables contain attribute parameters
     TITLE: netCDF4 file contains title attribute parameter
+    COMPRESSION: netCDF4 file is compressed using gzip or zip
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
@@ -35,6 +36,7 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 08/2020: flake8 compatible regular expression strings
+        add options to read from gzip or zip compressed files
     Updated 07/2020: added function docstrings
     Updated 06/2020: output data as lat/lon following spatial module
         attempt to read fill value attribute and set to None if not present
@@ -63,12 +65,16 @@ UPDATE HISTORY:
 """
 from __future__ import print_function
 
-import netCDF4
-import numpy as np
+import os
 import re
+import gzip
+import netCDF4
+import zipfile
+import numpy as np
 
 def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
-    LATNAME='lat', TIMENAME='time', ATTRIBUTES=True, TITLE=True):
+    LATNAME='lat', TIMENAME='time', ATTRIBUTES=True, TITLE=True,
+    COMPRESSION=None):
     """
     Reads spatial data from COARDS-compliant netCDF4 files
 
@@ -86,6 +92,7 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     TIMENAME: time variable name in netCDF4 file
     ATTRIBUTES: netCDF4 variables contain attribute parameters
     TITLE: netCDF4 file contains a description attribute
+    COMPRESSION: netCDF4 file is compressed using gzip or zip
 
     Returns
     -------
@@ -96,8 +103,21 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     attributes: netCDF4 attributes
     """
 
-    #-- Open the NetCDF file for reading
-    fileID = netCDF4.Dataset(filename, 'r')
+    #-- Open the NetCDF4 file for reading
+    if (COMPRESSION == 'gzip'):
+        #-- read as in-memory (diskless) netCDF4 dataset
+        with gzip.open(os.path.expanduser(filename),'r') as f:
+            fileID = netCDF4.Dataset(os.path.basename(filename),memory=f.read())
+    elif (COMPRESSION == 'zip'):
+        #-- read zipped file and extract file into in-memory file object
+        fileBasename,fileExtension = os.path.splitext(filename)
+        with zipfile.ZipFile(os.path.expanduser(filename)) as z:
+            #-- read bytes from zipfile as in-memory (diskless) netCDF4 dataset
+            fileID = netCDF4.Dataset(os.path.basename(filename),
+                memory=z.read(fileBasename))
+    else:
+        #-- read netCDF4 dataset
+        fileID = netCDF4.Dataset(os.path.expanduser(filename), 'r')
     #-- create python dictionary for output variables
     dinput = {}
 
@@ -126,15 +146,11 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     #-- getting attributes of included variables
     dinput['attributes'] = {}
     if ATTRIBUTES:
-        #-- create python dictionary for variable attributes
-        attributes = {}
         #-- for each variable
         #-- get attributes for the included variables
         for key in NAMES.keys():
-            attributes[key] = [fileID.variables[NAMES[key]].units, \
+            dinput['attributes'][key] = [fileID.variables[NAMES[key]].units, \
                 fileID.variables[NAMES[key]].long_name]
-        #-- put attributes in output python dictionary
-        dinput['attributes'] = attributes
     #-- missing data fill value
     try:
         dinput['attributes']['_FillValue'] = fileID[VARNAME].attrs['_FillValue']
@@ -142,8 +158,7 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
         dinput['attributes']['_FillValue'] = None
     #-- Global attribute (title of dataset)
     if TITLE:
-        rx = re.compile(r'TITLE',re.IGNORECASE)
-        title, = [st for st in dir(fileID) if rx.match(st)]
+        title, = [st for st in dir(fileID) if re.match(r'TITLE',st,re.I)]
         dinput['attributes']['title'] = getattr(fileID, title)
 
     #-- Closing the NetCDF file

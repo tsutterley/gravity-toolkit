@@ -9,7 +9,7 @@ Correct GSM data for drift in pole tide following Wahr et al. (2015)
 Parses date of GRACE/GRACE-FO data from filename
 
 INPUTS:
-    input_file: GRACE Level-2 spherical harmonic data file
+    input_file: GRACE/GRACE-FO Level-2 spherical harmonic data file
     LMAX: Maximum degree of spherical harmonics (degree of truncation)
 
 OPTIONS:
@@ -32,6 +32,7 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 08/2020: flake8 compatible regular expression strings
+        input file can be "diskless" bytesIO object
     Updated 07/2020: added function docstrings
     Updated 08/2019: specify yaml loader (PyYAML yaml.load(input) Deprecation)
     Updated 07/2019: replace colons in yaml header if within quotations
@@ -42,6 +43,7 @@ UPDATE HISTORY:
 """
 import os
 import re
+import io
 import gzip
 import yaml
 import numpy as np
@@ -56,7 +58,7 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
 
     Arguments
     ---------
-    input_file: GRACE Level-2 spherical harmonic data file
+    input_file: GRACE/GRACE-FO Level-2 spherical harmonic data file
     LMAX: Maximum degree of spherical harmonics (degree of truncation)
 
     Keyword arguments
@@ -75,17 +77,9 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
     eslm: sine spherical harmonic uncalibrated standard deviations
     """
 
-    #-- compile numerical expression operator for parameters from files
-    #-- UTCSR: The University of Texas at Austin Center for Space Research
-    #-- EIGEN: GFZ German Research Center for Geosciences (RL01-RL05)
-    #-- GFZOP: GFZ German Research Center for Geosciences (RL06+GRACE-FO)
-    #-- JPLEM: NASA Jet Propulsion Laboratory (harmonic solutions)
-    #-- JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
-    regex_pattern = (r'(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
-        r'(\.gz|\.gfc)?$').format('UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC')
-    rx = re.compile(regex_pattern, re.VERBOSE)
-    #-- extract parameters from input filename
-    PFX,SD,ED,N,PRC,F1,DRL,F2,SFX=rx.findall(os.path.basename(input_file)).pop()
+    #-- parse filename
+    PFX,SD,ED,N,PRC,F1,DRL,F2,SFX = parse_file(input_file)
+    file_contents = extract_file(input_file, (SFX=='.gz'))
 
     #-- JPL Mascon solutions
     if PRC in ('JPLMSC'):
@@ -142,17 +136,6 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
         #-- clm and slm drift rates for RL04
         drift_c = np.zeros((LMAX+1,MMAX+1))
         drift_s = np.zeros((LMAX+1,MMAX+1))
-
-    #-- Opening data file to extract spherical harmonic coefficients
-    #-- check if file is compressed (read with gzip if gz)
-    if (SFX == '.gz'):
-        #-- GRACE file is compressed (gz) file
-        with gzip.open(os.path.expanduser(input_file),'rb') as f:
-            file_contents = f.read().decode('ISO-8859-1').splitlines()
-    else:
-        #-- GRACE file is standard ascii file
-        with open(os.path.expanduser(input_file),'r') as f:
-            file_contents = f.read().splitlines()
 
     #-- extract GRACE and GRACE-FO file headers
     #-- replace colons in header if within quotations
@@ -243,3 +226,51 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
     #-- return the GRACE data, GRACE date (mid-month in decimal), and the
     #-- start and end days as Julian dates
     return grace_L2_input
+
+#-- PURPOSE: extract parameters from filename
+def parse_file(input_file):
+    """
+    Extract parameters from filename
+
+    Arguments
+    ---------
+    input_file: GRACE/GRACE-FO Level-2 spherical harmonic data file
+    """
+    #-- compile numerical expression operator for parameters from files
+    #-- UTCSR: The University of Texas at Austin Center for Space Research
+    #-- EIGEN: GFZ German Research Center for Geosciences (RL01-RL05)
+    #-- GFZOP: GFZ German Research Center for Geosciences (RL06+GRACE-FO)
+    #-- JPLEM: NASA Jet Propulsion Laboratory (harmonic solutions)
+    #-- JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
+    regex_pattern = (r'(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
+        r'(\.gz|\.gfc)?$').format('UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC')
+    rx = re.compile(regex_pattern, re.VERBOSE)
+    #-- extract parameters from input filename
+    if isinstance(input_file, io.IOBase):
+        return rx.findall(input_file.filename).pop()
+    else:
+        return rx.findall(os.path.basename(input_file)).pop()
+
+#-- PURPOSE: read input file and extract contents
+def extract_file(input_file, compressed):
+    """
+    Read input file and extract contents
+
+    Arguments
+    ---------
+    input_file: GRACE/GRACE-FO Level-2 spherical harmonic data file
+    compressed: denotes if the file is compressed
+    """
+    #-- tilde expansion of input file if not byteIO object
+    if not isinstance(input_file, io.IOBase):
+        input_file = os.path.expanduser(input_file)
+    #-- check if file is uncompressed byteIO object
+    if isinstance(input_file, io.IOBase) and not compressed:
+        #-- extract spherical harmonic coefficients
+        return input_file.read().decode('ISO-8859-1').splitlines()
+    else:
+        #-- check if file is compressed (read with gzip if gz)
+        file_opener = gzip.open if compressed else open
+        #-- opening data file to extract spherical harmonic coefficients
+        with file_opener(input_file,'rb') as f:
+            return f.read().decode('ISO-8859-1').splitlines()

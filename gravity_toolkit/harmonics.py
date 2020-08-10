@@ -21,7 +21,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
-    Updated 08/2020: added compression option for ascii files
+    Updated 08/2020: added compression options for ascii, netCDF4 and HDF5 files
     Updated 07/2020: added class docstring and using kwargs for output to file
         added case_insensitive_filename function to search directories
     Updated 06/2020: output list of filenames with from_list()
@@ -37,6 +37,7 @@ UPDATE HISTORY:
 import os
 import re
 import gzip
+import zipfile
 import numpy as np
 from gravity_toolkit.ncdf_stokes import ncdf_stokes
 from gravity_toolkit.hdf5_stokes import hdf5_stokes
@@ -79,19 +80,30 @@ class harmonics(object):
             self.filename = os.path.join(directory,f.pop())
         return self
 
-    def from_ascii(self, filename, date=True, compressed=False):
+    def from_ascii(self, filename, date=True, compression=None, verbose=False):
         """
         Read a harmonics object from an ascii file
         Inputs: full path of input ascii file
-        Options: ascii file contains date information
+        Options:
+            ascii file contains date information
+            ascii file is compressed using gzip
+            verbose output of file information
         """
         #-- set filename
         self.case_insensitive_filename(filename)
-        #-- read input ascii file (.txt) and split lines
-        if compressed:
+        print(self.filename) if verbose else None
+        #-- open the ascii file and extract contents
+        if (compression == 'gzip'):
+            #-- read input ascii data from gzip compressed file and split lines
             with gzip.open(self.filename,'r') as f:
                 file_contents = f.read().decode('ISO-8859-1').splitlines()
+        elif (compression == 'zip'):
+            #-- read input ascii data from zipped file and split lines
+            base,extension = os.path.splitext(self.filename)
+            with zipfile.ZipFile(self.filename) as z:
+                file_contents = z.read(base).decode('ISO-8859-1').splitlines()
         else:
+            #-- read input ascii file (.txt, .asc) and split lines
             with open(self.filename,'r') as f:
                 file_contents = f.read().splitlines()
         #-- compile regular expression operator for extracting numerical values
@@ -114,6 +126,7 @@ class harmonics(object):
         #-- output spherical harmonics dimensions array
         self.l = np.arange(self.lmax+1)
         self.m = np.arange(self.mmax+1)
+        #-- output spherical harmonics data
         self.clm = np.zeros((self.lmax+1,self.mmax+1))
         self.slm = np.zeros((self.lmax+1,self.mmax+1))
         #-- if the ascii file contains date variables
@@ -136,17 +149,20 @@ class harmonics(object):
         self.update_dimensions()
         return self
 
-    def from_netCDF4(self, filename, date=True):
+    def from_netCDF4(self, filename, date=True, compression=None, verbose=False):
         """
         Read a harmonics object from a netCDF4 file
         Inputs: full path of input netCDF4 file
-        Options: netCDF4 file contains date information
+        Options:
+            netCDF4 file contains date information
+            netCDF4 file is compressed using gzip or zip
+            verbose output of file information
         """
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- read data from netCDF4 file
-        Ylms = ncdf_read_stokes(self.filename,
-            ATTRIBUTES=False, DATE=date)
+        Ylms = ncdf_read_stokes(self.filename, ATTRIBUTES=False,
+            DATE=date, COMPRESSION=compression, VERBOSE=verbose)
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
         self.l = Ylms['l'].copy()
@@ -160,17 +176,20 @@ class harmonics(object):
         self.update_dimensions()
         return self
 
-    def from_HDF5(self, filename, date=True):
+    def from_HDF5(self, filename, date=True, compression=None, verbose=False):
         """
         Read a harmonics object from a HDF5 file
         Inputs: full path of input HDF5 file
-        Options: HDF5 file contains date information
+        Options:
+            HDF5 file contains date information
+            HDF5 file is compressed using gzip or zip
+            verbose output of file information
         """
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- read data from HDF5 file
-        Ylms = hdf5_read_stokes(self.filename,
-            ATTRIBUTES=False, DATE=date)
+        Ylms = hdf5_read_stokes(self.filename, ATTRIBUTES=False,
+            DATE=date, COMPRESSION=compression, VERBOSE=verbose)
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
         self.l = Ylms['l'].copy()
@@ -655,7 +674,7 @@ class harmonics(object):
         """
         Truncate or expand a harmonics object to a new degree and order
         Inputs: lmax maximum degree of spherical harmonics
-        Option: lmin minimum degree of spherical harmonics
+        Options: lmin minimum degree of spherical harmonics
             mmax maximum order of spherical harmonics
         """
         #-- output harmonics object
@@ -689,7 +708,7 @@ class harmonics(object):
     def mean(self, apply=False):
         """
         Compute mean gravitational field and remove from data if specified
-        Option: apply to remove the mean field from the input harmonics
+        Options: apply to remove the mean field from the input harmonics
         """
         temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
         #-- allocate for mean field
@@ -779,7 +798,7 @@ class harmonics(object):
     def destripe(self, **kwargs):
         """
         Filters spherical harmonic coefficients for correlated "striping" errors
-        Option: keyword arguments for destripe_harmonics
+        Options: keyword arguments for destripe_harmonics
         """
         #-- reassign shape and ndim attributes
         self.update_dimensions()

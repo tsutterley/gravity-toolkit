@@ -59,298 +59,306 @@ Converting a dictionary object to a spatial object and removing the mean field
 General Attributes and Methods
 ==============================
 
+.. class:: spatial(object)
 
-.. attribute:: object.data
 
-    spatial grid data
+    .. attribute:: object.data
 
+        spatial grid data
 
-.. attribute:: object.mask
 
-    spatial grid mask
+    .. attribute:: object.mask
 
+        spatial grid mask
 
-.. attribute:: object.lat
 
-    grid latitudes
+    .. attribute:: object.lat
 
+        grid latitudes
 
-.. attribute:: object.lon
 
-    grid longitudes
+    .. attribute:: object.lon
 
+        grid longitudes
 
-.. attribute:: object.time
 
-    time variable of the spatial data
+    .. attribute:: object.time
 
+        time variable of the spatial data
 
-.. attribute:: object.month
 
-    GRACE/GRACE-FO months variable of the spatial data
+    .. attribute:: object.month
 
+        GRACE/GRACE-FO months variable of the spatial data
 
-.. attribute:: object.fill_value
 
-    invalid value for spatial grid data
+    .. attribute:: object.fill_value
 
+        invalid value for spatial grid data
 
-.. attribute:: object.extent
 
-    spatial grid bounds `[minimum longitude, maximum longitude, minimum latitude, maximum latitude]`
+    .. attribute:: object.extent
 
+        spatial grid bounds `[minimum longitude, maximum longitude, minimum latitude, maximum latitude]`
 
-.. attribute:: object.spacing
 
-    grid step size `[longitude,latitude]`
+    .. attribute:: object.spacing
 
+        grid step size `[longitude,latitude]`
 
-.. attribute:: object.shape
 
-    grid dimensions
+    .. attribute:: object.shape
 
+        grid dimensions
 
-.. attribute:: object.ndim
 
-    number of grid dimensions
+    .. attribute:: object.ndim
 
+        number of grid dimensions
 
-.. method:: object.case_insensitive_filename(filename)
 
-    Searches a directory for a filename without case dependence
+    .. method:: object.case_insensitive_filename(filename)
 
+        Searches a directory for a filename without case dependence
 
-.. method:: object.from_ascii(filename, date=True, verbose=False, columns=['lon','lat','data','time'])
 
-    Read a spatial object from an ascii file
+    .. method:: object.from_ascii(filename, date=True, compression=None, verbose=False, columns=['lon','lat','data','time'])
 
-    Inputs: full path of input ascii file
+        Read a spatial object from an ascii file
 
-    Options:
-        `date` ascii file contains date information
+        Inputs: full path of input ascii file
 
-        `verbose` print ascii filename
+        Options:
+            `date` ascii file contains date information
 
-        `columns` variable names for each column
+            `compression` ascii file is compressed using gzip or zip
 
+            `verbose` print ascii filename
 
-.. method:: object.from_netCDF4(filename, date=True, verbose=False, varname='z', lonname='lon', latname='lat')
+            `columns` variable names for each column
 
-    Read a spatial object from a netCDF4 file
 
-    Inputs: full path of input netCDF4 file
+    .. method:: object.from_netCDF4(filename, date=True, compression=None, verbose=False, varname='z', lonname='lon', latname='lat')
 
-    Options:
-        `date` netCDF4 file contains date information
+        Read a spatial object from a netCDF4 file
 
-        `verbose` print netCDF4 file information
+        Inputs: full path of input netCDF4 file
 
-        `varname` input variable name in netCDF4 file
+        Options:
+            `date` netCDF4 file contains date information
 
-        `lonname` input longitude variable name in netCDF4 file
+            `compression` netCDF4 file is compressed using gzip or zip
 
-        `latname` input latitude variable units in netCDF4 file
+            `verbose` print netCDF4 file information
 
+            `varname` input variable name in netCDF4 file
 
-.. method:: object.from_HDF5(filename, date=True, verbose=False, varname='z', lonname='lon', latname='lat')
+            `lonname` input longitude variable name in netCDF4 file
 
-    Read a spatial object from a HDF5 file
+            `latname` input latitude variable units in netCDF4 file
 
-    Inputs: full path of input HDF5 file
 
-    Options:
-        `date` HDF5 file contains date information
+    .. method:: object.from_HDF5(filename, date=True, compression=None, verbose=False, varname='z', lonname='lon', latname='lat')
 
-        `verbose` print HDF5 file information
+        Read a spatial object from a HDF5 file
 
-        `varname` input variable name in HDF5 file
+        Inputs: full path of input HDF5 file
 
-        `lonname` input longitude variable name in HDF5 file
+        Options:
+            `date` HDF5 file contains date information
 
-        `latname` input latitude variable units in HDF5 file
+            `compression` HDF5 file is compressed using gzip or zip
 
+            `verbose` print HDF5 file information
 
-.. method:: object.from_index(filename, format=None, date=True, sort=True)
+            `varname` input variable name in HDF5 file
 
-    Read a spatial object from an index of ascii, netCDF4 or HDF5 files
+            `lonname` input longitude variable name in HDF5 file
 
-    Inputs: full path of index file to be read into a spatial object
+            `latname` input latitude variable units in HDF5 file
 
-    Options:
-        format of files in index (ascii, netCDF4 or HDF5)
 
-        ascii, netCDF4, or HDF5 contains date information
+    .. method:: object.from_index(filename, format=None, date=True, sort=True)
 
-        sort spatial objects by date information
+        Read a spatial object from an index of ascii, netCDF4 or HDF5 files
 
+        Inputs: full path of index file to be read into a spatial object
 
-.. method:: object.from_list(object_list, date=True, sort=True)
+        Options:
+            format of files in index (ascii, netCDF4 or HDF5)
 
-    Build a sorted spatial object from a list of other spatial objects
+            ascii, netCDF4, or HDF5 contains date information
 
-    Inputs: list of spatial object to be merged
+            sort spatial objects by date information
 
-    Options:
-        spatial objects contain date information
 
-        sort spatial objects by date information
+    .. method:: object.from_list(object_list, date=True, sort=True)
 
+        Build a sorted spatial object from a list of other spatial objects
 
-.. method:: object.from_dict(dict_object)
+        Inputs: list of spatial object to be merged
 
-    Convert a dict object to a spatial object
+        Options:
+            spatial objects contain date information
 
-    Inputs: dictionary object to be converted
+            sort spatial objects by date information
 
 
-.. method:: object.to_ascii(filename, date=True, verbose=False)
+    .. method:: object.from_dict(dict_object)
 
-    Write a spatial object to ascii file
+        Convert a dict object to a spatial object
 
-    Inputs: full path of output ascii file
+        Inputs: dictionary object to be converted
 
-    Options:
-        `date` spatial objects contain date information
 
-        `verbose` print ascii file name
+    .. method:: object.to_ascii(filename, date=True, verbose=False)
 
+        Write a spatial object to ascii file
 
-.. method:: object.to_netCDF4(filename, date=True, varname='z', units=None, longname=None, title=None, verbose=False)
+        Inputs: full path of output ascii file
 
-    Write a spatial object to netCDF4 file
+        Options:
+            `date` spatial objects contain date information
 
-    Inputs: full path of output netCDF4 file
+            `verbose` print ascii file name
 
-    Options:
-        `date` spatial objects contain date information
 
-        `varname` output variable name in netCDF4 file
+    .. method:: object.to_netCDF4(filename, date=True, varname='z', units=None, longname=None, title=None, verbose=False)
 
-        `units` output variable units in netCDF4 file
+        Write a spatial object to netCDF4 file
 
-        `longname` output variable unit longname in netCDF4 file
+        Inputs: full path of output netCDF4 file
 
-        `title` output netCDF4 file title
+        Options:
+            `date` spatial objects contain date information
 
-        `verbose` print netCDF4 file information
+            `varname` output variable name in netCDF4 file
 
+            `units` output variable units in netCDF4 file
 
-.. method:: object.to_HDF5(filename, date=True, varname='z', units=None, longname=None, title=None, verbose=False)
+            `longname` output variable unit longname in netCDF4 file
 
-    Write a spatial object to HDF5 file
+            `title` output netCDF4 file title
 
-    Inputs: full path of output HDF5 file
+            `verbose` print netCDF4 file information
 
-    Options:
-        `date` spatial objects contain date information
 
-        `varname` output variable name in HDF5 file
+    .. method:: object.to_HDF5(filename, date=True, varname='z', units=None, longname=None, title=None, verbose=False)
 
-        `units` output variable units in HDF5 file
+        Write a spatial object to HDF5 file
 
-        `longname` output variable unit longname in HDF5 file
+        Inputs: full path of output HDF5 file
 
-        `title` output HDF5 file title
+        Options:
+            `date` spatial objects contain date information
 
-        `verbose` print HDF5 file information
+            `varname` output variable name in HDF5 file
 
+            `units` output variable units in HDF5 file
 
-.. method:: object.update_spacing()
+            `longname` output variable unit longname in HDF5 file
 
-    Calculate the step size of spatial object
+            `title` output HDF5 file title
 
+            `verbose` print HDF5 file information
 
-.. method:: object.update_extents()
 
-    Calculate the bounds of spatial object
+    .. method:: object.update_spacing()
 
+        Calculate the step size of spatial object
 
-.. method:: object.update_dimensions()
 
-    Update the dimensions of the spatial object
+    .. method:: object.update_extents()
 
+        Calculate the bounds of spatial object
 
-.. method:: object.update_mask()
 
-    Update the mask of the spatial object
+    .. method:: object.update_dimensions()
 
+        Update the dimensions of the spatial object
 
-.. method:: object.copy()
 
-    Copy a spatial object to a new spatial object
+    .. method:: object.update_mask()
 
+        Update the mask of the spatial object
 
-.. method:: object.zeros_like()
 
-    Create a spatial object using the dimensions of another
+    .. method:: object.copy()
 
+        Copy a spatial object to a new spatial object
 
-.. method:: object.expand_dims()
 
-    Add a singleton dimension to a spatial object if non-existent
+    .. method:: object.zeros_like()
 
+        Create a spatial object using the dimensions of another
 
-.. method:: object.squeeze()
 
-    Remove singleton dimensions from a spatial object
+    .. method:: object.expand_dims()
 
+        Add a singleton dimension to a spatial object if non-existent
 
-.. method:: object.index(indice, date=True)
 
-    Subset a spatial object to specific index
+    .. method:: object.squeeze()
 
-    Inputs: `indice` in matrix to subset
+        Remove singleton dimensions from a spatial object
 
-    Options: spatial objects contain date information
 
+    .. method:: object.index(indice, date=True)
 
-.. method:: object.subset(months)
+        Subset a spatial object to specific index
 
-    Subset a spatial object to specific GRACE/GRACE-FO months
+        Inputs: `indice` in matrix to subset
 
-    Inputs: GRACE/GRACE-FO months
+        Options: spatial objects contain date information
 
 
-.. method:: object.scale(var)
+    .. method:: object.subset(months)
 
-    Multiply a spatial object by a constant
+        Subset a spatial object to specific GRACE/GRACE-FO months
 
-    Inputs: scalar value to which the spatial object will be multiplied
+        Inputs: GRACE/GRACE-FO months
 
 
-.. method:: object.mean(apply=False)
+    .. method:: object.scale(var)
 
-    Compute mean spatial field and remove from data if specified
+        Multiply a spatial object by a constant
 
-    Option: `apply` to remove the mean field from the input spatial
+        Inputs: scalar value to which the spatial object will be multiplied
 
 
-.. method:: object.sum(power=1)
+    .. method:: object.mean(apply=False)
 
-    Compute summation of spatial field
+        Compute mean spatial field and remove from data if specified
 
-    Option: apply a power before calculating summation
+        Option: `apply` to remove the mean field from the input spatial
 
 
-.. method:: object.power(pow)
+    .. method:: object.sum(power=1)
 
-    Raise a spatial object to a power
+        Compute summation of spatial field
 
-    Inputs: power to which the spatial object will be raised
+        Option: apply a power before calculating summation
 
 
-.. method:: object.max()
+    .. method:: object.power(pow)
 
-    Compute maximum value of spatial field
+        Raise a spatial object to a power
 
+        Inputs: power to which the spatial object will be raised
 
-.. method:: object.min()
 
-    Compute minimum value of spatial field
+    .. method:: object.max()
 
+        Compute maximum value of spatial field
 
-.. method:: object.replace_invalid(fill_value, mask=None)
 
-    Replace the masked values with a new fill_value
+    .. method:: object.min()
 
-    Option: `mask` to update the current mask
+        Compute minimum value of spatial field
+
+
+    .. method:: object.replace_invalid(fill_value, mask=None)
+
+        Replace the masked values with a new fill_value
+
+        Option: `mask` to update the current mask

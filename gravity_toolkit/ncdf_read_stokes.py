@@ -6,7 +6,7 @@ Written by Tyler Sutterley (08/2020)
 Reads spherical harmonic data from netCDF4 files
 
 CALLING SEQUENCE:
-    file_inp = ncdf_read_stokes(filename, DATE=True, VERBOSE=False)
+    Ylms = ncdf_read_stokes(filename, DATE=True, VERBOSE=False)
 
 INPUTS:
     filename: netCDF4 file to be opened and read
@@ -23,8 +23,9 @@ OUTPUTS:
 
 OPTIONS:
     DATE: netCDF4 file has date information
-    ATTRIBUTES: netCDF4 variables contain attribute parameters
     VERBOSE: will print to screen the netCDF4 structure parameters
+    ATTRIBUTES: netCDF4 variables contain attribute parameters
+    COMPRESSION: netCDF4 file is compressed using gzip or zip
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
@@ -33,6 +34,7 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 08/2020: flake8 compatible regular expression strings
+        add options to read from gzip or zip compressed files
     Updated 07/2020: added function docstrings
     Updated 03/2020: added ATTRIBUTES option to check if file has attributes
     Updated 10/2019: changing Y/N flags to True/False
@@ -59,11 +61,15 @@ UPDATE HISTORY:
 """
 from __future__ import print_function
 
-import netCDF4
-import numpy as np
+import os
 import re
+import gzip
+import netCDF4
+import zipfile
+import numpy as np
 
-def ncdf_read_stokes(filename, DATE=True, ATTRIBUTES=True, VERBOSE=False):
+def ncdf_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
+    COMPRESSION=None):
     """
     Reads spherical harmonic data from netCDF4 files
 
@@ -74,8 +80,9 @@ def ncdf_read_stokes(filename, DATE=True, ATTRIBUTES=True, VERBOSE=False):
     Keyword arguments
     -----------------
     DATE: netCDF4 file has date information
-    ATTRIBUTES: netCDF4 variables contain attribute parameters
     VERBOSE: will print to screen the netCDF4 structure parameters
+    ATTRIBUTES: netCDF4 variables contain attribute parameters
+    COMPRESSION: netCDF4 file is compressed using gzip or zip
 
     Returns
     -------
@@ -88,12 +95,23 @@ def ncdf_read_stokes(filename, DATE=True, ATTRIBUTES=True, VERBOSE=False):
     attributes: netCDF4 attributes for variables and file
     """
 
-    #-- Open the NetCDF file for reading
-    fileID = netCDF4.Dataset(filename, 'r')
+    #-- Open the NetCDF4 file for reading
+    if (COMPRESSION == 'gzip'):
+        #-- read as in-memory (diskless) netCDF4 dataset
+        with gzip.open(os.path.expanduser(filename),'r') as f:
+            fileID = netCDF4.Dataset(os.path.basename(filename),memory=f.read())
+    elif (COMPRESSION == 'zip'):
+        #-- read zipped file and extract file into in-memory file object
+        fileBasename,fileExtension = os.path.splitext(filename)
+        with zipfile.ZipFile(os.path.expanduser(filename)) as z:
+            #-- read bytes from zipfile as in-memory (diskless) netCDF4 dataset
+            fileID = netCDF4.Dataset(os.path.basename(filename),
+                memory=z.read(fileBasename))
+    else:
+        #-- read netCDF4 dataset
+        fileID = netCDF4.Dataset(os.path.expanduser(filename), 'r')
     #-- create python dictionary for output variables
     dinput = {}
-    #-- create python dictionary for variable attributes
-    attributes = {}
 
     #-- Output NetCDF file information
     if VERBOSE:
@@ -144,13 +162,10 @@ def ncdf_read_stokes(filename, DATE=True, ATTRIBUTES=True, VERBOSE=False):
         #-- for each variable
         #-- get attributes for the included variables
         for key in dinput.keys():
-            attributes[key] = [fileID.variables[key].units, \
+            dinput['attributes'][key] = [fileID.variables[key].units, \
                 fileID.variables[key].long_name]
-        #-- put attributes in output python dictionary
-        dinput['attributes'] = attributes
         #-- Global attribute (title of dataset)
-        rx = re.compile(r'TITLE',re.IGNORECASE)
-        title, = [st for st in dir(fileID) if rx.match(st)]
+        title, = [st for st in dir(fileID) if re.match(r'TITLE',st,re.I)]
         dinput['attributes']['title'] = getattr(fileID, title)
 
     #-- Closing the NetCDF file

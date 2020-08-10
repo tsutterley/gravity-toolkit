@@ -65,6 +65,7 @@ PROGRAM DEPENDENCIES:
 UPDATE HISTORY:
     Updated 08/2020: flake8 compatible regular expression strings
         moved urllib opener to utilities. add credential check
+        moved urllib directory listing to utilities
     Updated 07/2020: add back snippets to sync Level-1b dealiasing products
     Updated 06/2020: increased timeout to 2 minutes
     Updated 05/2020: simplified PO.DAAC Drive login
@@ -212,11 +213,14 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
 
     #-- check if directory exists and recursively create if not
     os.makedirs(DIRECTORY,MODE) if not os.path.exists(DIRECTORY) else None
+
+    #-- remote https server for GRACE data
+    HOST = 'https://podaac-tools.jpl.nasa.gov'
     #-- RL04/RL05 have been moved on PO.DAAC to the retired directory
-    remote_sub = {}
-    remote_sub['RL04'] = 'retired'
-    remote_sub['RL05'] = 'retired'
-    remote_sub['RL06'] = ''
+    retired = {}
+    retired['RL04'] = 'retired'
+    retired['RL05'] = 'retired'
+    retired['RL06'] = ''
     #-- datasets for each processing center
     DSET = {}
     DSET['CSR'] = ['GAC', 'GAD', 'GSM']
@@ -226,6 +230,8 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
     newsletter_sub = {}
     newsletter_sub['grace'] = ['grace','docs','newsletters']
     newsletter_sub['gracefo'] = ['gracefo','docs','Newsletters']
+    #-- compile HTML parser for lxml
+    parser = lxml.etree.HTMLParser()
 
     #-- create log file with list of synchronized files (or print to terminal)
     if LOG:
@@ -240,35 +246,24 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
         #-- standard output (terminal output)
         fid1 = sys.stdout
 
-    #-- compile HTML parser for lxml
-    parser = lxml.etree.HTMLParser()
-
-    #-- remote https server for GRACE data
-    HOST = posixpath.join('https://podaac-tools.jpl.nasa.gov','drive','files')
-
     #-- DEGREE 1 COEFFICIENTS
     print('Degree 1 Coefficients:', file=fid1)
-    remote_dir = posixpath.join(HOST,'allData','tellus','L2','degree_1')
+    PATH = [HOST,'drive','files','allData','tellus','L2','degree_1']
+    remote_dir = posixpath.join(*PATH)
     local_dir = os.path.join(DIRECTORY,'geocenter')
     #-- check if geocenter directory exists and recursively create if not
     os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
-    #-- open connection with PO.DAAC drive server at remote directory
-    req = urllib2.Request(url=remote_dir)
-    #-- read and parse request for files (find column names and modified dates)
-    tree = lxml.etree.parse(urllib2.urlopen(req, timeout=120), parser)
-    colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
-    collastmod = tree.xpath('//tr/td[3]/text()')
     #-- TN-13 JPL degree 1 files
     #-- compile regular expression operator for remote files
     R1 = re.compile(r'TN-13_GEOC_(CSR|GFZ|JPL)_(.*?).txt', re.VERBOSE)
-    remote_file_lines = [i for i,f in enumerate(colnames) if R1.match(f)]
+    #-- open connection with PO.DAAC drive server at remote directory
+    files,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
+        timeout=120,build=False,parser=parser,pattern=R1,sort=True)
     #-- for each file on the remote server
-    for i in remote_file_lines:
+    for colname,remote_mtime in zip(files,mtimes):
         #-- remote and local versions of the file
-        remote_file = posixpath.join(remote_dir,colnames[i])
-        local_file = os.path.join(local_dir,colnames[i])
-        #-- get last modified date of file and convert into unix time
-        remote_mtime = get_mtime(collastmod[i])
+        remote_file = posixpath.join(remote_dir,colname)
+        local_file = os.path.join(local_dir,colname)
         http_pull_file(fid1, remote_file, remote_mtime, local_file,
             LIST, CLOBBER, CHECKSUM, MODE)
     #-- close request
@@ -276,24 +271,19 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
 
     #-- SLR C2,0 COEFFICIENTS
     print('C2,0 Coefficients:', file=fid1)
-    remote_dir = posixpath.join(HOST,'allData','grace','docs')
+    PATH = [HOST,'drive','files','allData','grace','docs']
+    remote_dir = posixpath.join(*PATH)
     local_dir = os.path.expanduser(DIRECTORY)
-    #-- open connection with PO.DAAC drive server at remote directory
-    req = urllib2.Request(url=remote_dir)
-    #-- read and parse request for files (find column names and modified dates)
-    tree = lxml.etree.parse(urllib2.urlopen(req, timeout=120), parser)
-    colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
-    collastmod = tree.xpath('//tr/td[3]/text()')
     #-- compile regular expression operator for remote files
     R1 = re.compile(r'TN-(05|07|11)_C20_SLR.txt', re.VERBOSE)
-    remote_file_lines = [i for i,f in enumerate(colnames) if R1.match(f)]
+    #-- open connection with PO.DAAC drive server at remote directory
+    files,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
+        timeout=120,build=False,parser=parser,pattern=R1,sort=True)
     #-- for each file on the remote server
-    for i in remote_file_lines:
+    for colname,remote_mtime in zip(files,mtimes):
         #-- remote and local versions of the file
-        remote_file = posixpath.join(remote_dir,colnames[i])
-        local_file = os.path.join(local_dir,colnames[i])
-        #-- get last modified date of file and convert into unix time
-        remote_mtime = get_mtime(collastmod[i])
+        remote_file = posixpath.join(remote_dir,colname)
+        local_file = os.path.join(local_dir,colname)
         http_pull_file(fid1, remote_file, remote_mtime, local_file,
             LIST, CLOBBER, CHECKSUM, MODE)
     #-- close request
@@ -301,24 +291,19 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
 
     #-- SLR C3,0 COEFFICIENTS
     print('C3,0 Coefficients:', file=fid1)
-    remote_dir = posixpath.join(HOST,'allData','gracefo','docs')
+    PATH = [HOST,'drive','files','allData','gracefo','docs']
+    remote_dir = posixpath.join(*PATH)
     local_dir = os.path.expanduser(DIRECTORY)
-    #-- open connection with PO.DAAC drive server at remote directory
-    req = urllib2.Request(url=remote_dir)
-    #-- read and parse request for files (find column names and modified dates)
-    tree = lxml.etree.parse(urllib2.urlopen(req, timeout=120), parser)
-    colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
-    collastmod = tree.xpath('//tr/td[3]/text()')
     #-- compile regular expression operator for remote files
     R1 = re.compile(r'TN-(14)_C30_C20_GSFC_SLR.txt', re.VERBOSE)
-    remote_file_lines = [i for i,f in enumerate(colnames) if R1.match(f)]
+    #-- open connection with PO.DAAC drive server at remote directory
+    files,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
+        timeout=120,build=False,parser=parser,pattern=R1,sort=True)
     #-- for each file on the remote server
-    for i in remote_file_lines:
+    for colname,remote_mtime in zip(files,mtimes):
         #-- remote and local versions of the file
-        remote_file = posixpath.join(remote_dir,colnames[i])
-        local_file = os.path.join(local_dir,colnames[i])
-        #-- get last modified date of file and convert into unix time
-        remote_mtime = get_mtime(collastmod[i])
+        remote_file = posixpath.join(remote_dir,colname)
+        local_file = os.path.join(local_dir,colname)
         http_pull_file(fid1, remote_file, remote_mtime, local_file,
             LIST, CLOBBER, CHECKSUM, MODE)
     #-- close request
@@ -326,28 +311,23 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
 
     #-- TN-08 GAE, TN-09 GAF and TN-10 GAG ECMWF atmosphere correction products
     print('TN-08 GAE, TN-09 GAF and TN-10 GAG products:', file=fid1)
-    remote_dir = posixpath.join(HOST,'allData','grace','docs')
+    PATH = [HOST,'drive','files','allData','grace','docs']
+    remote_dir = posixpath.join(*PATH)
     local_dir = os.path.expanduser(DIRECTORY)
     ECMWF_files = []
     ECMWF_files.append('TN-08_GAE-2_2006032-2010031_0000_EIGEN_G---_0005.gz')
     ECMWF_files.append('TN-09_GAF-2_2010032-2015131_0000_EIGEN_G---_0005.gz')
     ECMWF_files.append('TN-10_GAG-2_2015132-2099001_0000_EIGEN_G---_0005.gz')
-    #-- open connection with PO.DAAC drive server at remote directory
-    req = urllib2.Request(url=remote_dir)
-    #-- read and parse request for files (find column names and modified dates)
-    tree = lxml.etree.parse(urllib2.urlopen(req, timeout=120), parser)
-    colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
-    collastmod = tree.xpath('//tr/td[3]/text()')
     #-- compile regular expression operator for remote files
     R1 = re.compile(r'({0}|{1}|{2})'.format(*ECMWF_files), re.VERBOSE)
-    remote_file_lines = [i for i,f in enumerate(colnames) if R1.match(f)]
+    #-- open connection with PO.DAAC drive server at remote directory
+    files,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
+        timeout=120,build=False,parser=parser,pattern=R1,sort=True)
     #-- for each file on the remote server
-    for i in remote_file_lines:
+    for colname,remote_mtime in zip(files,mtimes):
         #-- remote and local versions of the file
-        remote_file = posixpath.join(remote_dir,colnames[i])
-        local_file = os.path.join(local_dir,colnames[i])
-        #-- get last modified date of file and convert into unix time
-        remote_mtime = get_mtime(collastmod[i])
+        remote_file = posixpath.join(remote_dir,colname)
+        local_file = os.path.join(local_dir,colname)
         http_pull_file(fid1, remote_file, remote_mtime, local_file,
             LIST, CLOBBER, CHECKSUM, MODE)
     #-- close request
@@ -362,23 +342,18 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
         #-- for each mission
         for MISSION,NAME in zip(['grace','gracefo'],['GRACE','GRACE_FO']):
             print('{0} Newsletters:'.format(NAME.replace('_','-')), file=fid1)
-            #-- open connection with PO.DAAC drive server at remote directory
-            remote_dir = posixpath.join(HOST,'allData',*newsletter_sub[MISSION])
-            req = urllib2.Request(url=remote_dir)
-            #-- read and parse request for files (find names and modified dates)
-            tree = lxml.etree.parse(urllib2.urlopen(req, timeout=120), parser)
-            colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
-            collastmod = tree.xpath('//tr/td[3]/text()')
+            PATH = [HOST,'drive','files','allData',*newsletter_sub[MISSION]]
+            remote_dir = posixpath.join(*PATH)
             #-- compile regular expression operator for remote files
             R1 = re.compile(r'{0}_SDS_NL_(\d+).pdf'.format(NAME), re.VERBOSE)
-            remote_file_lines = [i for i,f in enumerate(colnames) if R1.match(f)]
+            #-- open connection with PO.DAAC drive server at remote directory
+            files,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
+                timeout=120,build=False,parser=parser,pattern=R1,sort=True)
             #-- for each file on the remote server
-            for i in remote_file_lines:
+            for colname,remote_mtime in zip(files,mtimes):
                 #-- remote and local versions of the file
-                remote_file = posixpath.join(remote_dir,colnames[i])
-                local_file = os.path.join(local_dir,colnames[i])
-                #-- get last modified date of file and convert into unix time
-                remote_mtime = get_mtime(collastmod[i])
+                remote_file = posixpath.join(remote_dir,colname)
+                local_file = os.path.join(local_dir,colname)
                 http_pull_file(fid1, remote_file, remote_mtime, local_file,
                     LIST, CLOBBER, CHECKSUM, MODE)
             #-- close request
@@ -394,26 +369,21 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
             #-- print string of exact data product
             print('{0}/{1}/{2}/{3}'.format('L1B','GFZ','AOD1B',rl), file=fid1)
             #-- remote and local directory for exact data product
-            remote_dir=posixpath.join(HOST,'allData','grace','L1B','GFZ','AOD1B',rl)
-            local_dir=os.path.join(DIRECTORY,'AOD1B',rl)
+            PATH=[HOST,'drive','files','allData','grace','L1B','GFZ','AOD1B',rl]
+            remote_dir = posixpath.join(*PATH)
+            local_dir = os.path.join(DIRECTORY,'AOD1B',rl)
             #-- check if AOD1B directory exists and recursively create if not
             os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
-            #-- open connection with PO.DAAC drive server at remote directory
-            req = urllib2.Request(url=remote_dir)
-            #-- read and parse request for files (names and modified dates)
-            tree = lxml.etree.parse(urllib2.urlopen(req, timeout=20), parser)
-            colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
-            collastmod = tree.xpath('//tr/td[3]/text()')
             #-- compile regular expression operator for remote files
             R1 = re.compile(r'AOD1B_(20\d+)-(\d+)_\d+\.(tar\.gz|tgz)$', re.VERBOSE)
-            remote_file_lines=[i for i,f in enumerate(colnames) if R1.match(f)]
+            #-- open connection with PO.DAAC drive server at remote directory
+            files,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
+                timeout=120,build=False,parser=parser,pattern=R1,sort=True)
             #-- for each file on the remote server
-            for i in remote_file_lines:
+            for colname,remote_mtime in zip(files,mtimes):
                 #-- remote and local versions of the file
-                remote_file = posixpath.join(remote_dir,colnames[i])
-                local_file = os.path.join(local_dir,colnames[i])
-                #-- get last modified date of file and convert into unix time
-                remote_mtime = get_mtime(collastmod[i])
+                remote_file = posixpath.join(remote_dir,colname)
+                local_file = os.path.join(local_dir,colname)
                 http_pull_file(fid1, remote_file, remote_mtime, local_file,
                     LIST, CLOBBER, CHECKSUM, MODE)
             #-- close request
@@ -423,26 +393,22 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
     #-- PROCESSING CENTERS (CSR, GFZ, JPL)
     print('GRACE L2 Global Spherical Harmonics:', file=fid1)
     for pr in PROC:
+        PATH = [HOST,'drive','files','allData','grace']
         #-- DATA RELEASES (RL04, RL05, RL06)
         for rl in DREL:
             #-- modifiers for intermediate data releases
-            if (pr == 'JPL') and (rl == 'RL04'):
-                #-- JPL RELEASE 4 = RL4.1
-                drel_str = '{0}.1'.format(rl)
-            elif (pr == 'JPL') and (rl == 'RL05'):
+            if (pr == 'JPL') and (rl in ('RL04','RL05')):
+                #-- JPL RELEASE 4 = RL04.1
                 #-- JPL RELEASE 5 = RL05.1 (11/2014)
                 drel_str = '{0}.1'.format(rl)
             else:
                 drel_str = rl
             #-- remote directory for data release
-            remote_dir = posixpath.join(HOST,'allData','grace',remote_sub[rl],
-                'L2', pr, drel_str)
+            PATH.extend([retired[rl],'L2',pr,drel_str])
+            remote_dir = posixpath.join(*PATH)
             #-- open connection with PO.DAAC drive server at remote directory
-            req = urllib2.Request(url=remote_dir)
-            #-- read and parse request for files (names and modified dates)
-            tree = lxml.etree.parse(urllib2.urlopen(req,timeout=120), parser)
-            colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
-            collastmod = tree.xpath('//tr/td[3]/text()')
+            colnames,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
+                timeout=120,build=False,parser=parser,sort=True)
             #-- DATA PRODUCTS (GAC, GAD, GSM, GAA, GAB)
             for ds in DSET[pr]:
                 #-- print string of exact data product
@@ -460,9 +426,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
                     #-- remote and local versions of the file
                     remote_file = posixpath.join(remote_dir,colnames[i])
                     local_file = os.path.join(local_dir,colnames[i])
-                    #-- get last modified date and convert into unix time
-                    remote_mtime = get_mtime(collastmod[i])
-                    http_pull_file(fid1, remote_file, remote_mtime, local_file,
+                    http_pull_file(fid1, remote_file, mtimes[i], local_file,
                         LIST, CLOBBER, CHECKSUM, MODE)
 
     #-- GRACE-FO DATA
@@ -470,26 +434,23 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
     #-- GRACE-FO data are stored separately for each year
     print('GRACE-FO L2 Global Spherical Harmonics:', file=fid1)
     for pr in PROC:
+        PATH = [HOST,'drive','files','allData','gracefo']
         #-- DATA RELEASES (RL06)
         valid_gracefo_releases = [d for d in DREL if d not in ('RL04','RL05')]
         for rl in valid_gracefo_releases:
             #-- remote directory for data release
-            remote_dir = posixpath.join(HOST,'allData','gracefo',remote_sub[rl],
-                'L2', pr, rl)
+            PATH.extend([retired[rl],'L2',pr,rl])
+            remote_dir = posixpath.join(*PATH)
             #-- open connection with PO.DAAC drive server at remote directory
-            req = urllib2.Request(url=remote_dir)
-            #-- read and parse request for files (names and modified dates)
-            tree = lxml.etree.parse(urllib2.urlopen(req,timeout=120), parser)
-            colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
-            collastmod = tree.xpath('//tr/td[3]/text()')
-            years = [d for i,d in enumerate(colnames) if re.match(r'\d{4}',d)]
+            R2 = re.compile(r'\d{4}',re.VERBOSE)
+            years,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
+                timeout=120,build=False,parser=parser,pattern=R2,sort=True)
             for yr in years:
+                #-- add the year directory to the path
+                PATH.append(yr)
                 #-- open connection with PO.DAAC drive server at remote directory
-                req = urllib2.Request(url=posixpath.join(remote_dir,yr))
-                #-- read and parse request for files (names and modified dates)
-                tree = lxml.etree.parse(urllib2.urlopen(req,timeout=120), parser)
-                colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
-                collastmod = tree.xpath('//tr/td[3]/text()')
+                colnames,mtimes=gravity_toolkit.utilities.podaac_list(PATH,
+                    timeout=120,build=False,parser=parser,sort=True)
                 #-- DATA PRODUCTS (GAC, GAD, GSM, GAA, GAB)
                 for ds in DSET[pr]:
                     #-- print string of exact data product
@@ -508,10 +469,10 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
                         #-- remote and local versions of the file
                         remote_file = posixpath.join(remote_dir,yr,colnames[i])
                         local_file = os.path.join(local_dir,colnames[i])
-                        #-- get last modified date and convert into unix time
-                        remote_mtime = get_mtime(collastmod[i])
-                        http_pull_file(fid1, remote_file, remote_mtime,
+                        http_pull_file(fid1, remote_file, mtimes[i],
                             local_file, LIST, CLOBBER, CHECKSUM, MODE)
+                #-- remove the year directory to the path
+                PATH.remove(yr)
 
     #-- create index file for GRACE/GRACE-FO L2 Spherical Harmonic Data
     #-- PROCESSING CENTERS (CSR, GFZ, JPL)
@@ -604,11 +565,6 @@ def http_pull_file(fid, remote_file, remote_mtime, local_file, LIST, CLOBBER,
             #-- keep remote modification time of file and local access time
             os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
             os.chmod(local_file, MODE)
-
-#-- PURPOSE: returns the Unix timestamp value for a modification time
-def get_mtime(collastmod, FORMAT='%Y-%m-%d %H:%M:%S'):
-    lastmodtime = time.strptime(collastmod.rstrip(), FORMAT)
-    return calendar.timegm(lastmodtime)
 
 #-- PURPOSE: help module to describe the optional input parameters
 def usage():
