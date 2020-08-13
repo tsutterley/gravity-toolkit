@@ -1,6 +1,10 @@
 import os
 from setuptools import setup, find_packages
 
+# package description
+description = ('Python tools for obtaining and working with spherical harmonic'
+    'coefficients from the NASA/DLR GRACE and NASA/GFZ GRACE Follow-on missions')
+
 # get long_description from README.md
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -14,8 +18,8 @@ scripts=[os.path.join('scripts',f) for f in os.listdir('scripts') if f.endswith(
 
 setup(
     name='read-GRACE-harmonics',
-    version='1.0.1.19',
-    description='Python tools for obtaining and working with spherical harmonic coefficients from the NASA/DLR GRACE and NASA/GFZ GRACE Follow-on missions',
+    version='1.0.1.20',
+    description=description,
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/tsutterley/read-GRACE-harmonics',

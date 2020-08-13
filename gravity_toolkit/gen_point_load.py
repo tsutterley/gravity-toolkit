@@ -82,8 +82,6 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
     #-- SH Degree dependent factors to convert into geodesy normalized SH's
     #-- use splat operator to extract arrays of kl, hl, and ll Love Numbers
     factors = units(lmax=LMAX).spatial(*LOVE)
-    #-- Average Radius of the Earth [cm]
-    rad_e = factors.rad_e
     #-- extract degree dependent factor for specific units
     int_fact = np.zeros((npts))
     if (UNITS == 1):

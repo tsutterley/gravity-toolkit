@@ -182,5 +182,5 @@ def read_tellus_geocenter(geocenter_file, HEADER=True, JPL=False):
     eC11 = np.squeeze(eC1[:,1])
     eS11 = np.squeeze(eS1[:,1])
 
-    return {'month':mon, 'C10':C10, 'C11':C11, 'S11':S11, \
+    return {'month':mon, 'C10':C10, 'C11':C11, 'S11':S11,
         'eC10':eC10, 'eC11':eC11, 'eS11':eS11, 'time':tdec}

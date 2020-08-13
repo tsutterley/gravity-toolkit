@@ -196,7 +196,7 @@ def output_log_file(parameters,output_file):
         os.path.abspath(parameters['PARAMETER_FILE'])),file=fid)
     #-- print parameter values sorted alphabetically
     for p in sorted(list(set(parameters.keys())-set(['PARAMETER_FILE']))):
-        print('{0}: {1}' % (p, parameters[p]), file=fid)
+        print('{0}: {1}'.format(p, parameters[p]), file=fid)
     #-- print output files
     print('\n\nOUTPUT FILE:',file=fid)
     print('{0}'.format(output_file),file=fid)
@@ -217,7 +217,7 @@ def output_error_log_file(parameters):
         os.path.abspath(parameters['PARAMETER_FILE'])),file=fid)
     #-- print parameter values sorted alphabetically
     for p in sorted(list(set(parameters.keys())-set(['PARAMETER_FILE']))):
-        print('{0}: {1}' % (p, parameters[p]), file=fid)
+        print('{0}: {1}'.format(p, parameters[p]), file=fid)
     #-- print traceback error
     print('\n\nTRACEBACK ERROR:', file=fid)
     traceback.print_exc(file=fid)

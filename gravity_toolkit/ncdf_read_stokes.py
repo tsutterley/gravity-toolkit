@@ -162,7 +162,7 @@ def ncdf_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
         #-- for each variable
         #-- get attributes for the included variables
         for key in dinput.keys():
-            dinput['attributes'][key] = [fileID.variables[key].units, \
+            dinput['attributes'][key] = [fileID.variables[key].units,
                 fileID.variables[key].long_name]
         #-- Global attribute (title of dataset)
         title, = [st for st in dir(fileID) if re.match(r'TITLE',st,re.I)]

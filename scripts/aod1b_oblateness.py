@@ -104,6 +104,8 @@ def aod1b_oblateness(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
     #-- will extract the data from the file
     regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
     rx = re.compile(regex_pattern, re.VERBOSE)
+    #-- output formatting string
+    fstr = '{0:4d}-{1:02d}-{2:02d}T{3:02d}:00:00 {4:+16.8E}'
 
     #-- Maximum spherical harmonic degree (LMAX)
     LMAX = 100
@@ -198,8 +200,7 @@ def aod1b_oblateness(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
                 fid.close()
                 #-- write to file for each hour
                 for h in range(4):
-                    print(('{0:4d}-{1:02d}-{2:02d}T{3:02d}:00:00 {4:+16.8E}') \
-                        .format(YY,MM,DD,hours[h],C20[h]),file=f)
+                    print(fstr.format(YY,MM,DD,hours[h],C20[h]),file=f)
 
             #-- close the tar file
             tar.close()

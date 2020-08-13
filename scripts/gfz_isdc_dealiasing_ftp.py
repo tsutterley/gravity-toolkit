@@ -73,9 +73,9 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False, LOG=False,
 
     #-- compile regular expression operator for years to sync
     if YEAR is None:
-        regex_years = '\d{4}'
+        regex_years = r'\d{4}'
     else:
-        regex_years = '|'.join('{0:d}'.format(y) for y in YEAR)
+        regex_years = r'|'.join(r'{0:d}'.format(y) for y in YEAR)
     #-- compile regular expression operator for years to sync
     R1 = re.compile(r'({0})'.format(regex_years), re.VERBOSE)
     #-- remote subdirectory for DREL on GFZ data server
@@ -97,7 +97,7 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False, LOG=False,
             TEST = not os.access(os.path.join(grace_dir,FILE), os.F_OK)
             #-- compile regular expressions operators for file dates
             #-- will extract year and month and calendar day from the ascii file
-            regex_pattern = 'AOD1B_({0})-({1:02d})-(\d+)_X_\d+.asc.gz$'
+            regex_pattern = r'AOD1B_({0})-({1:02d})-(\d+)_X_\d+.asc.gz$'
             R2 = re.compile(regex_pattern.format(Y,M), re.VERBOSE)
             remote_files = [R2.search(fi).group(0) for fi in
                 ftp.nlst(remote_dir) if R2.search(fi)]

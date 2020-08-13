@@ -2,11 +2,11 @@
 A spherical harmonics toolkit for Python
 ========================================
 
-gravity_toolkit contains Python tools for working with Level-2 
-spherical harmonic coefficients from the NASA/DLR GRACE and 
+gravity_toolkit contains Python tools for working with Level-2
+spherical harmonic coefficients from the NASA/DLR GRACE and
 NASA/GFZ GRACE-FO missions
 
-The package works using scientific Python packages (numpy and scipy) 
+The package works using scientific Python packages (numpy and scipy)
 combined with data storage in ascii, netCDF4 and HDF5 and mapping with
 matplotlib and cartopy
 
@@ -15,8 +15,6 @@ the GRACE/GRACE-FO missions and to support their science applications
 
 Documentation is available at https://read-grace-harmonics.readthedocs.io
 """
-from gravity_toolkit.aod1b_geocenter import aod1b_geocenter
-from gravity_toolkit.aod1b_oblateness import aod1b_oblateness
 from gravity_toolkit.clenshaw_summation import clenshaw_summation
 from gravity_toolkit.convert_calendar_decimal import convert_calendar_decimal
 from gravity_toolkit.convert_julian import convert_julian

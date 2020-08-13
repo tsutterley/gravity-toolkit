@@ -161,19 +161,19 @@ def hdf5_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
     #-- Getting attributes of clm/slm and included variables
     if ATTRIBUTES:
         dinput['attributes'] = {}
-        dinput['attributes']['l'] = [fileID['l'].attrs['units'], \
+        dinput['attributes']['l'] = [fileID['l'].attrs['units'],
             fileID['l'].attrs['long_name']]
-        dinput['attributes']['m'] = [fileID['m'].attrs['units'], \
+        dinput['attributes']['m'] = [fileID['m'].attrs['units'],
             fileID['m'].attrs['long_name']]
-        dinput['attributes']['clm'] = [fileID['clm'].attrs['units'], \
+        dinput['attributes']['clm'] = [fileID['clm'].attrs['units'],
             fileID['clm'].attrs['long_name']]
-        dinput['attributes']['slm'] = [fileID['slm'].attrs['units'], \
+        dinput['attributes']['slm'] = [fileID['slm'].attrs['units'],
             fileID['slm'].attrs['long_name']]
         #-- time attributes
         if DATE:
-            dinput['attributes']['time'] = [fileID['time'].attrs['units'], \
+            dinput['attributes']['time'] = [fileID['time'].attrs['units'],
                 fileID['time'].attrs['long_name']]
-            dinput['attributes']['month'] = [fileID['month'].attrs['units'], \
+            dinput['attributes']['month'] = [fileID['month'].attrs['units'],
                 fileID['month'].attrs['long_name']]
         #-- Global attribute description
         dinput['attributes']['title'] = fileID.attrs['description']

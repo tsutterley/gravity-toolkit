@@ -440,7 +440,6 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
         for rl in valid_gracefo_releases:
             #-- remote directory for data release
             PATH.extend([retired[rl],'L2',pr,rl])
-            remote_dir = posixpath.join(*PATH)
             #-- open connection with PO.DAAC drive server at remote directory
             R2 = re.compile(r'\d{4}',re.VERBOSE)
             years,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
@@ -448,6 +447,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
             for yr in years:
                 #-- add the year directory to the path
                 PATH.append(yr)
+                remote_dir = posixpath.join(*PATH)
                 #-- open connection with PO.DAAC drive server at remote directory
                 colnames,mtimes=gravity_toolkit.utilities.podaac_list(PATH,
                     timeout=120,build=False,parser=parser,sort=True)
@@ -467,7 +467,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
                     #-- for each file on the remote server
                     for i in line:
                         #-- remote and local versions of the file
-                        remote_file = posixpath.join(remote_dir,yr,colnames[i])
+                        remote_file = posixpath.join(remote_dir,colnames[i])
                         local_file = os.path.join(local_dir,colnames[i])
                         http_pull_file(fid1, remote_file, mtimes[i],
                             local_file, LIST, CLOBBER, CHECKSUM, MODE)

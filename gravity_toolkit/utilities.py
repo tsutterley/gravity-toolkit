@@ -80,7 +80,7 @@ def get_unix_time(time_string, format='%Y-%m-%d %H:%M:%S'):
     """
     try:
         parsed_time = time.strptime(time_string.rstrip(), format)
-    except:
+    except (TypeError, ValueError):
         return None
     else:
         return calendar.timegm(parsed_time)
@@ -122,7 +122,7 @@ def ftp_list(HOST,timeout=None,basename=False,pattern=None,sort=False):
             try:
                 #-- try sending modification time command
                 mdtm = ftp.sendcmd('MDTM {0}'.format(f))
-            except:
+            except ftplib.error_perm:
                 #-- directories will return with an error
                 pass
             else:
@@ -235,7 +235,7 @@ def from_http(HOST,timeout=None,local=None,hash='',chunk=16384,
         #-- Create and submit request.
         request = urllib2.Request(posixpath.join(*HOST))
         response = urllib2.urlopen(request,timeout=timeout,context=ssl.SSLContext())
-    except:
+    except (urllib2.HTTPError, urllib2.URLError):
         raise Exception('Download error from {0}'.format(posixpath.join(*HOST)))
     else:
         #-- copy remote file contents to bytesIO object
@@ -341,7 +341,7 @@ def podaac_list(HOST,username=None,password=None,build=True,timeout=None,
         #-- Create and submit request.
         request = urllib2.Request(posixpath.join(*HOST))
         tree = lxml.etree.parse(urllib2.urlopen(request,timeout=timeout),parser)
-    except:
+    except (urllib2.HTTPError, urllib2.URLError):
         raise Exception('List error from {0}'.format(posixpath.join(*HOST)))
     else:
         #-- read and parse request for files (column names and modified times)
@@ -400,7 +400,7 @@ def from_podaac(HOST,username=None,password=None,build=True,timeout=None,
         #-- Create and submit request.
         request = urllib2.Request(posixpath.join(*HOST))
         response = urllib2.urlopen(request,timeout=timeout)
-    except:
+    except (urllib2.HTTPError, urllib2.URLError):
         raise Exception('Download error from {0}'.format(posixpath.join(*HOST)))
     else:
         #-- copy remote file contents to bytesIO object

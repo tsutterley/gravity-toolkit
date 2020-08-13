@@ -139,8 +139,8 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     #-- GFZOP: GFZ German Research Center for Geosciences (RL06+GRACE-FO)
     #-- JPLEM: NASA Jet Propulsion Laboratory (harmonic solutions)
     #-- JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
-    regex_pattern = ('(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
-        '(\.gz|\.gfc)?$').format('UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC')
+    regex_pattern = (r'(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
+       r'(\.gz|\.gfc)?$').format(r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC')
     rx = re.compile(regex_pattern, re.VERBOSE)
 
     #-- Output GRACE date ascii file
@@ -180,9 +180,9 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
         mid_day[t] = np.mean([start_day[t], end_plus])
 
         #-- Calculation of the Julian date from start_yr and mid_day
-        JD[t] = np.float(367.0*start_yr[t] - \
-            np.floor(7.0*(start_yr[t] + np.floor(10.0/12.0))/4.0) - \
-            np.floor(3.0*(np.floor((start_yr[t] - 8.0/7.0)/100.0) + 1.0)/4.0) +\
+        JD[t] = np.float(367.0*start_yr[t] -
+            np.floor(7.0*(start_yr[t] + np.floor(10.0/12.0))/4.0) -
+            np.floor(3.0*(np.floor((start_yr[t] - 8.0/7.0)/100.0) + 1.0)/4.0) +
             np.floor(275.0/9.0) + mid_day[t] + 1721028.5)
         #-- convert the julian date into calendar dates (hour, day, month, year)
         cal_date = convert_julian(JD[t])
