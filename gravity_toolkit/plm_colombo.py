@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 plm_colombo.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (08/2020)
 
 Computes fully-normalized associated Legendre Polynomials
     for a vector of x values (can also be singular)
@@ -32,6 +32,7 @@ REFERENCES:
     Geoid Cookbook: http://mitgcm.org/~mlosch/geoidcookbook.pdf
 
 UPDATE HISTORY:
+    Updated 08/2020: prevent zero divisions by changing u==0 to eps of data type
     Updated 07/2020: added function docstrings
     Updated 07/2017: output first differential of legendre polynomials
     Updated 09/2013: new format for file headers
@@ -73,7 +74,12 @@ def plm_colombo(LMAX, x, ASTYPE=np.float):
     dplm = np.zeros((LMAX+1,LMAX+1,jm))
     #-- removing singleton dimensions of x
     x = np.squeeze(x)
-    u = np.sqrt(1.0 - x**2)#-- for x=cos(th): u=sin(th)
+
+    #-- u is sine of colatitude (cosine of latitude) so that 0 <= s <= 1
+    #-- for x=cos(th): u=sin(th)
+    u = np.sqrt(1.0 - x**2)
+    #-- update where u==0 to eps of data type to prevent invalid divisions
+    u[u == 0] = np.finfo(u.dtype).eps
 
     #-- Calculating the initial polynomials for the recursion
     plm[0,0,:] = 1.0

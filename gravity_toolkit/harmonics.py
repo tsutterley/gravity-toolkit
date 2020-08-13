@@ -310,7 +310,7 @@ class harmonics(object):
         for key in ['l','m','clm','slm','time','month']:
             try:
                 setattr(self, key, d[key].copy())
-            except:
+            except (AttributeError, KeyError):
                 pass
         #-- maximum degree and order
         self.lmax = np.max(d['l'])
@@ -481,7 +481,7 @@ class harmonics(object):
             try:
                 val = getattr(self, key)
                 setattr(temp, key, np.copy(val))
-            except:
+            except AttributeError:
                 pass
         #-- assign ndim and shape attributes
         temp.update_dimensions()
@@ -497,7 +497,7 @@ class harmonics(object):
             try:
                 val = getattr(self, key)
                 setattr(temp, key, np.zeros_like(val))
-            except:
+            except AttributeError:
                 pass
         #-- assign ndim and shape attributes
         temp.update_dimensions()

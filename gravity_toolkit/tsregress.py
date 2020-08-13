@@ -227,7 +227,7 @@ def tsregress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], DATA_ERR=0,
     #-- Log-Likelihood with weights (if unweighted, weight portions == 0)
     #-- log(L) = -0.5*n*log(sigma^2) - 0.5*n*log(2*pi) - 0.5*n
     #log_lik = -0.5*nmax*(np.log(2.0 * np.pi) + 1.0 + np.log(np.sum((res**2)/nmax)))
-    log_lik = 0.5*(np.sum(np.log(wi)) - nmax*(np.log(2.0 * np.pi) + 1.0 - \
+    log_lik = 0.5*(np.sum(np.log(wi)) - nmax*(np.log(2.0 * np.pi) + 1.0 -
         np.log(nmax) + np.log(np.sum(wi * (res**2)))))
 
     #-- Aikaike's Information Criterion

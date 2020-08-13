@@ -9,7 +9,7 @@ Converts year, month (day, hour, minute, second)
 
 CALLING SEQUENCE:
     t_date = convert_calendar_decimal(year, month)
-    t_date = convert_calendar_decimal(year, month, DAY=day, \
+    t_date = convert_calendar_decimal(year, month, DAY=day,
         HOUR=hour, MINUTE=minute, SECOND=second)
 
 INPUTS:

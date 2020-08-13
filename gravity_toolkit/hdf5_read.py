@@ -148,20 +148,20 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     #-- Getting attributes of included variables
     dinput['attributes'] = {}
     if ATTRIBUTES:
-        dinput['attributes']['lon'] = [fileID[LONNAME].attrs['units'], \
+        dinput['attributes']['lon'] = [fileID[LONNAME].attrs['units'],
             fileID[LONNAME].attrs['long_name']]
-        dinput['attributes']['lat'] = [fileID[LATNAME].attrs['units'], \
+        dinput['attributes']['lat'] = [fileID[LATNAME].attrs['units'],
             fileID[LATNAME].attrs['long_name']]
-        dinput['attributes']['data'] = [fileID[VARNAME].attrs['units'], \
+        dinput['attributes']['data'] = [fileID[VARNAME].attrs['units'],
             fileID[VARNAME].attrs['long_name']]
         #-- time attributes
         if DATE:
-            dinput['attributes']['time'] = [fileID['time'].attrs['units'], \
+            dinput['attributes']['time'] = [fileID['time'].attrs['units'],
                 fileID['time'].attrs['long_name']]
     #-- missing data fill value
     try:
         dinput['attributes']['_FillValue'] = fileID[VARNAME].attrs['_FillValue']
-    except:
+    except AttributeError:
         dinput['attributes']['_FillValue'] = None
     #-- Global attribute description
     if TITLE:

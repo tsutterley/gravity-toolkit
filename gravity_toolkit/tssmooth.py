@@ -159,7 +159,7 @@ def tssmooth(t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0,
         tout = np.copy(t_in)
         if (WEIGHT == 1):
             #-- linear weights (range from 1:HFWTH+1:-1)
-            wi = np.concatenate((np.arange(1,HFWTH+2,dtype=np.float), \
+            wi = np.concatenate((np.arange(1,HFWTH+2,dtype=np.float),
                 np.arange(HFWTH,0,-1,dtype=np.float)),axis=0)
         elif (WEIGHT == 2):
             #-- gaussian weights
@@ -277,7 +277,7 @@ def tssmooth(t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0,
                 #-- Degrees of Freedom
                 nu = (2*HFWTH+1) - n_terms
                 #-- Mean square error
-                MSE = np.dot(np.transpose(d_in[ran] - np.dot(TMAT,beta_mat)), \
+                MSE = np.dot(np.transpose(d_in[ran] - np.dot(TMAT,beta_mat)),
                     (d_in[ran] - np.dot(TMAT,beta_mat)))/nu
                 #-- Covariance Matrix
                 #-- Multiplying the design matrix by itself

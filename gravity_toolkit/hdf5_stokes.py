@@ -151,25 +151,25 @@ def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
 
     #-- Defining the HDF5 dataset variables
     h5 = {}
-    h5['l'] = fileID.create_dataset('l', (n_harm,), \
+    h5['l'] = fileID.create_dataset('l', (n_harm,),
         data=lout, dtype=np.int, compression='gzip')
-    h5['m'] = fileID.create_dataset('m', (n_harm,), \
+    h5['m'] = fileID.create_dataset('m', (n_harm,),
         data=mout, dtype=np.int, compression='gzip')
     if DATE:
-        h5['time'] = fileID.create_dataset('time', (n_time,), \
+        h5['time'] = fileID.create_dataset('time', (n_time,),
             data=tinp, dtype=np.float, compression='gzip')
-        h5['month'] = fileID.create_dataset(MONTHS_NAME, (n_time,), \
+        h5['month'] = fileID.create_dataset(MONTHS_NAME, (n_time,),
             data=month, dtype=np.int, compression='gzip')
     #-- if more than 1 date in file
     if (n_time > 1):
-        h5['clm'] = fileID.create_dataset('clm', (n_harm,n_time,), \
+        h5['clm'] = fileID.create_dataset('clm', (n_harm,n_time,),
             data=clm, dtype=np.float, compression='gzip')
-        h5['slm'] = fileID.create_dataset('slm', (n_harm,n_time,), \
+        h5['slm'] = fileID.create_dataset('slm', (n_harm,n_time,),
             data=slm, dtype=np.float, compression='gzip')
     else:
-        h5['clm'] = fileID.create_dataset('clm', (n_harm,), \
+        h5['clm'] = fileID.create_dataset('clm', (n_harm,),
             data=clm, dtype=np.float, compression='gzip')
-        h5['slm'] = fileID.create_dataset('slm', (n_harm,), \
+        h5['slm'] = fileID.create_dataset('slm', (n_harm,),
             data=slm, dtype=np.float, compression='gzip')
 
     #-- filling HDF5 dataset attributes

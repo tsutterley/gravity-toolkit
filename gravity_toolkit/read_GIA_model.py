@@ -303,7 +303,7 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
         rad_e = 6.371e9#-- Average Radius of the Earth [mm]
         #-- The file starts with a header.
         #-- converting to numerical array (note 64 bit floating point)
-        gia_data = np.loadtxt(os.path.expanduser(input_file), \
+        gia_data = np.loadtxt(os.path.expanduser(input_file),
             skiprows=1, dtype='f8')
 
         #-- counter variable to upwrap gia file

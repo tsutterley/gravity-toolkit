@@ -109,6 +109,8 @@ def aod1b_geocenter(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
     #-- will extract the data from the file
     regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
     rx = re.compile(regex_pattern, re.VERBOSE)
+    #-- output formatting string
+    fstr = '{0:4d}-{1:02d}-{2:02d}T{3:02d}:00:00 {4:12.8f} {5:12.8f} {6:12.8f}'
 
     #-- Maximum spherical harmonic degree (LMAX)
     LMAX = 100
@@ -211,8 +213,7 @@ def aod1b_geocenter(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
                 XYZ = geocenter(C10=C10, C11=C11, S11=S11)
                 #-- write to file for each hour (iterates each 6-hour block)
                 for h,X,Y,Z in zip(hours,XYZ['x'],XYZ['y'],XYZ['z']):
-                    print(('{0:4d}-{1:02d}-{2:02d}T{3:02d}:00:00 {4:12.8f} '
-                        '{5:12.8f} {6:12.8f}').format(YY,MM,DD,h,X,Y,Z), file=f)
+                    print(fstr.format(YY,MM,DD,h,X,Y,Z), file=f)
 
             #-- close the tar file
             tar.close()

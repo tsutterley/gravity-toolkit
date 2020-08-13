@@ -285,11 +285,12 @@ class spatial(object):
         Convert a dict object to a spatial object
         Inputs: dictionary object to be converted
         """
-        #-- find valid keys within dictionary
-        k = [k for k in ['lon','lat','data','time','month'] if k in d.keys()]
         #-- assign variables to self
-        for key in k:
-            setattr(self, key, d[key].copy())
+        for key in ['lon','lat','data','error','time','month']:
+            try:
+                setattr(self, key, d[key].copy())
+            except (AttributeError, KeyError):
+                pass
         #-- create output mask for data
         self.mask = np.zeros_like(self.data,dtype=np.bool)
         #-- get spacing and dimensions
@@ -405,7 +406,7 @@ class spatial(object):
             try:
                 val = getattr(self, key)
                 setattr(temp, key, np.copy(val))
-            except:
+            except AttributeError:
                 pass
         #-- get spacing and dimensions
         temp.update_spacing()
@@ -427,7 +428,7 @@ class spatial(object):
             try:
                 val = getattr(self, key)
                 setattr(temp, key, np.zeros_like(val))
-            except:
+            except AttributeError:
                 pass
         #-- get spacing and dimensions
         temp.update_spacing()
@@ -485,7 +486,7 @@ class spatial(object):
         #-- subset output spatial error
         try:
             temp.error = self.error[:,:,indice].copy()
-        except:
+        except AttributeError:
             pass
         #-- copy dimensions
         temp.lon = self.lon.copy()
@@ -530,7 +531,7 @@ class spatial(object):
         try:
             getattr(self, 'error')
             temp.error = np.zeros((temp.shape[0],temp.shape[1],n))
-        except:
+        except AttributeError:
             pass
         #-- copy dimensions
         temp.lon = self.lon.copy()
@@ -544,7 +545,7 @@ class spatial(object):
             temp.mask[:,:,t] = self.mask[:,:,i].copy()
             try:
                 temp.error[:,:,t] = self.error[:,:,i].copy()
-            except:
+            except AttributeError:
                 pass
             #-- copy time dimensions
             temp.time[t] = self.time[i].copy()

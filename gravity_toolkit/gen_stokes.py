@@ -99,9 +99,7 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     MMAX = np.copy(LMAX) if (MMAX is None) else MMAX
 
     #-- grid dimensions
-    nlon = np.int(len(lon))
     nlat = np.int(len(lat))
-
     #-- grid step
     dlon = np.abs(lon[1]-lon[0])
     dlat = np.abs(lat[1]-lat[0])

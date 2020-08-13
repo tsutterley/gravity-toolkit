@@ -131,9 +131,9 @@ def read_SLR_geocenter(geocenter_file, RADIUS=None, skiprows=0):
         #-- calculation of day of the year (with decimals for fraction of day)
         DofY = dpy*(tdec % 1)
         #-- Calculation of the Julian date from year and DofY
-        JD[t] = np.float(367.0*year - \
-            np.floor(7.0*(year + np.floor(10.0/12.0))/4.0) - \
-            np.floor(3.0*(np.floor((year - 8.0/7.0)/100.0) + 1.0)/4.0) + \
+        JD[t] = np.float(367.0*year -
+            np.floor(7.0*(year + np.floor(10.0/12.0))/4.0) -
+            np.floor(3.0*(np.floor((year - 8.0/7.0)/100.0) + 1.0)/4.0) +
             np.floor(275.0/9.0) + DofY + 1721028.5)
         #-- convert the julian date into calendar dates (hour, day, month, year)
         cal_date = convert_julian(JD[t])

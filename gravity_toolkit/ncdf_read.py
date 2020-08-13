@@ -149,12 +149,12 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
         #-- for each variable
         #-- get attributes for the included variables
         for key in NAMES.keys():
-            dinput['attributes'][key] = [fileID.variables[NAMES[key]].units, \
+            dinput['attributes'][key] = [fileID.variables[NAMES[key]].units,
                 fileID.variables[NAMES[key]].long_name]
     #-- missing data fill value
     try:
-        dinput['attributes']['_FillValue'] = fileID[VARNAME].attrs['_FillValue']
-    except:
+        dinput['attributes']['_FillValue'] = fileID.variables[VARNAME]._FillValue
+    except AttributeError:
         dinput['attributes']['_FillValue'] = None
     #-- Global attribute (title of dataset)
     if TITLE:
