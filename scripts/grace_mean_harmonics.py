@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_mean_harmonics.py
-Written by Tyler Sutterley (04/2020)
+Written by Tyler Sutterley (08/2020)
 
 Calculates the temporal mean of the GRACE/GRACE-FO spherical harmonics
     for a given date range from a set of parameters
@@ -58,9 +58,22 @@ PYTHON DEPENDENCIES:
         https://numpy.org
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
 
+PROGRAM DEPENDENCIES:
+    grace_input_months.py: Reads GRACE/GRACE-FO files for a specified spherical
+            harmonic degree and order and for a specified date range
+        Replaces Degree 1 with with Swenson values (if specified)
+        Replaces C20 and C30 with SLR values (if specified)
+    harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
+        destripe_harmonics.py: calculates the decorrelation (destriping) filter
+            and filters the GRACE/GRACE-FO coefficients for striping errors
+        ncdf_read_stokes.py: reads spherical harmonic netcdf files
+        ncdf_stokes.py: writes output spherical harmonic data to netcdf
+        hdf5_read_stokes.py: reads spherical harmonic HDF5 files
+        hdf5_stokes.py: writes output spherical harmonic data to HDF5
+
 UPDATE HISTORY:
+    Updated 08/2020: use utilities to define path to load love numbers file
     Updated 04/2020: using the harmonics class for spherical harmonic operations
-        updated load love numbers read function
     Updated 10/2019: changing Y/N flags to True/False
     Updated 07/2019: can replace C30 with coefficients from SLR
     Updated 08/2018: using full release string (RL05 instead of 5)

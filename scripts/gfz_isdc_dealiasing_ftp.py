@@ -115,7 +115,7 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False, LOG=False,
                     os.remove(local_file)
                 #-- close tar file and set permissions level to MODE
                 tar.close()
-                print(' --> {0}\n'.format(os.path.join(grace_dir,FILE),file=fid1))
+                print(' --> {0}\n'.format(os.path.join(grace_dir,FILE)),file=fid1)
                 os.chmod(os.path.join(grace_dir,FILE), MODE)
             elif (file_count > 0) and not TAR:
                 #-- copy each gzip file and keep as individual daily files

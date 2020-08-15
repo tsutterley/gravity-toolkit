@@ -100,7 +100,7 @@ def plm_mohlenkamp(LMAX, x, MMAX=None):
         else: #-- if mm == 0: jlmm = 1/sqrt(2)
             jlmm[0,mm,:] = 1.0/np.sqrt(2.0)
         #-- Jk,m,m Terms
-        for k in range (1,(LMAX+1)):#-- computation for SH degrees
+        for k in range(1, LMAX+1):#-- computation for SH degrees
             #-- Initialization begins at -1
             #-- this is to make the formula parallel the function written in
             #-- Martin Mohlenkamp's Guide to Spherical Harmonics

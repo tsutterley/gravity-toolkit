@@ -480,7 +480,8 @@ def regress_model(t_in, d_in, t_out, ORDER=2, CYCLES=None, RELATIVE=None):
     if (np.ndim(t_out) == 0):
         t_out = np.array([t_out])
     #-- set relative to mean of input time
-    if not RELATIVE: RELATIVE = np.mean(t_in)
+    if not RELATIVE:
+        RELATIVE = np.mean(t_in)
     #-- create design matrix based on polynomial order and harmonics
     DMAT = []
     MMAT = []

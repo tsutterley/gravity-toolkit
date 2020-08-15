@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 convert_harmonics.py
-Written by Tyler Sutterley (04/2020)
+Written by Tyler Sutterley (08/2020)
 Converts a file from the spatial domain into the spherical harmonic domain
 
 CALLING SEQUENCE:
@@ -11,7 +11,6 @@ COMMAND LINE OPTIONS:
     --help: list the command line options
     --lmax=X: maximum spherical harmonic degree
     --mmax=X: maximum spherical harmonic order
-    --love=X: path to load love numbers file
     --reference=X: Reference frame for load love numbers
     -U X, --units=X: input units
         1: cm of water thickness (cmwe)
@@ -57,8 +56,10 @@ PROGRAM DEPENDENCIES:
     ncdf_read.py: reads spatial data from netCDF4 files
     hdf5_read.py: reads spatial data from HDF5 files
     units.py: class for converting GRACE/GRACE-FO Level-2 data to specific units
+    utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 08/2020: use utilities to define path to load love numbers file
     Updated 04/2020: updates to reading load love numbers
     Written 10/2019
 """
@@ -76,9 +77,12 @@ from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.harmonics import harmonics
 from gravity_toolkit.ncdf_read import ncdf_read
 from gravity_toolkit.hdf5_read import hdf5_read
+from gravity_toolkit.utilities import get_data_path
 
 #-- PURPOSE: read load love numbers for the range of spherical harmonic degrees
-def load_love_numbers(love_numbers_file, LMAX, REFERENCE='CF'):
+def load_love_numbers(LMAX, REFERENCE='CF'):
+    #-- load love numbers file
+    love_numbers_file = get_data_path(['data','love_numbers'])
     #-- LMAX of load love numbers from Han and Wahr (1995) is 696.
     #-- from Wahr (2007) linearly interpolating kl works
     #-- however, as we are linearly extrapolating out, do not make
@@ -104,9 +108,8 @@ def load_love_numbers(love_numbers_file, LMAX, REFERENCE='CF'):
 
 #-- PURPOSE: converts from the spatial domain into the spherical harmonic domain
 def convert_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None, UNITS=None,
-    LOVE_NUMBERS=None, REFERENCE=None, DDEG=None, INTERVAL=None, MISSING=False,
-    FILL_VALUE=None, HEADER=None, DELIMITER=None, DATAFORM=None, VERBOSE=False,
-    MODE=0o775):
+    REFERENCE=None, DDEG=None, INTERVAL=None, MISSING=False, FILL_VALUE=None,
+    HEADER=None, DELIMITER=None, DATAFORM=None, VERBOSE=False, MODE=0o775):
 
     #-- verify that output directory exists
     DIRECTORY = os.path.abspath(os.path.dirname(OUTPUT_FILE))
@@ -174,7 +177,7 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None, UNITS=None,
     nt,nlat,nlon = np.shape(input_spatial['data'])
 
     #-- read arrays of kl, hl, and ll Love Numbers
-    LOVE = load_love_numbers(LOVE_NUMBERS, LMAX, REFERENCE=REFERENCE)
+    LOVE = load_love_numbers(LMAX, REFERENCE=REFERENCE)
 
     #-- calculate associated Legendre polynomials
     th = (90.0 - input_spatial['lat'])*np.pi/180.0
@@ -220,7 +223,6 @@ def usage():
     print(' --mmax=X\t\tMaximum spherical harmonic order')
     print(' -U X, --units=X\tInput units')
     print('\t1: cm w.e.\n\t2: Gigatonnes (Gt)\n\t3: kg/m^2')
-    print(' --love=X\t\tPath to load Love numbers file')
     print(' --reference=X\t\tReference frame for load Love numbers')
     print(' -S X, --spacing=X\tSpatial resolution of input data (dlon,dlat)')
     print(' -I X, --interval=X\tInput grid interval')
@@ -239,9 +241,9 @@ def main():
     #-- Read the system arguments listed after the program and run the analyses
     #-- with the specific parameters.
     short_options = 'hU:S:I:F:VM:'
-    long_options = ['help','lmax=','mmax=','units=','love=','reference=',
-        'spacing=','interval=','missing','fill-value=','header=','delimiter=',
-        'format=','verbose','mode=']
+    long_options = ['help','lmax=','mmax=','units=','reference=','spacing=',
+        'interval=','missing','fill-value=','header=','delimiter=','format=',
+        'verbose','mode=']
     optlist, arglist = getopt.getopt(sys.argv[1:], short_options, long_options)
 
     #-- command line parameters
@@ -250,9 +252,7 @@ def main():
     MMAX = None
     #-- output units
     UNITS = 1
-    #-- path to load love numbers file
-    LOVE_NUMBERS = None
-    #-- option for setting gravitational load love number of degree 1
+    #-- option for setting reference frame for gravitational load love number
     #-- reference frame options (CF, CM, CE)
     REFERENCE = 'CF'
     #-- input grid parameters
@@ -278,8 +278,6 @@ def main():
             LMAX = np.int(arg)
         elif opt in ("-U","--units"):
             UNITS = np.int(arg)
-        elif opt in ("--love"):
-            LOVE_NUMBERS = os.path.expanduser(arg)
         elif opt in ("--reference"):
             REFERENCE = arg.upper()
         elif opt in ("-S","--spacing"):
@@ -302,9 +300,6 @@ def main():
             MODE = int(arg, 8)
 
     #-- verify inputs
-    #-- Input path to Load Love Numbers
-    if not LOVE_NUMBERS:
-        raise Exception('No Load Love Numbers file entered')
     #-- Input and Output Files
     if not arglist:
         raise Exception('No input and output files specified')
@@ -315,8 +310,8 @@ def main():
     OUTPUT_FILE = os.path.expanduser(arglist[1])
     #-- run program with parameters
     convert_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=LMAX, MMAX=MMAX,
-        UNITS=UNITS,LOVE_NUMBERS=LOVE_NUMBERS,REFERENCE=REFERENCE,DDEG=DDEG,
-        INTERVAL=INTERVAL,MISSING=MISSING,FILL_VALUE=FILL_VALUE,HEADER=HEADER,
+        UNITS=UNITS, REFERENCE=REFERENCE, DDEG=DDEG, INTERVAL=INTERVAL,
+        MISSING=MISSING, FILL_VALUE=FILL_VALUE, HEADER=HEADER,
         DELIMITER=DELIMITER, DATAFORM=DATAFORM, VERBOSE=VERBOSE, MODE=MODE)
 
 #-- run main program

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 combine_harmonics.py
-Written by Tyler Sutterley (06/2020)
+Written by Tyler Sutterley (08/2020)
 Converts a file from the spherical harmonic domain into the spatial domain
 
 CALLING SEQUENCE:
@@ -11,7 +11,6 @@ COMMAND LINE OPTIONS:
     --help: list the command line options
     --lmax=X: maximum spherical harmonic degree
     --mmax=X: maximum spherical harmonic order
-    --love=X: path to load love numbers file
     --reference=X: Reference frame for load love numbers
     -R X, --radius=X: Gaussian smoothing radius (km)
     -D, --destripe: use a decorrelation filter (destriping filter)
@@ -67,8 +66,10 @@ PROGRAM DEPENDENCIES:
     ncdf_write.py: writes output spatial data to netCDF4
     hdf5_write.py: writes output spatial data to HDF5
     units.py: class for converting GRACE/GRACE-FO Level-2 data to specific units
+    utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 08/2020: use utilities to define path to load love numbers file
     Updated 06/2020: using spatial data class for input and output operations
     Updated 04/2020: using the harmonics class for spherical harmonic operations
         updated load love numbers read function
@@ -94,9 +95,12 @@ from gravity_toolkit.harmonic_summation import harmonic_summation
 from gravity_toolkit.harmonics import harmonics
 from gravity_toolkit.spatial import spatial
 from gravity_toolkit.units import units
+from gravity_toolkit.utilities import get_data_path
 
 #-- PURPOSE: read load love numbers for the range of spherical harmonic degrees
-def load_love_numbers(love_numbers_file, LMAX, REFERENCE='CF'):
+def load_love_numbers(LMAX, REFERENCE='CF'):
+    #-- load love numbers file
+    love_numbers_file = get_data_path(['data','love_numbers'])
     #-- LMAX of load love numbers from Han and Wahr (1995) is 696.
     #-- from Wahr (2007) linearly interpolating kl works
     #-- however, as we are linearly extrapolating out, do not make
@@ -122,8 +126,8 @@ def load_love_numbers(love_numbers_file, LMAX, REFERENCE='CF'):
 
 #-- PURPOSE: converts from the spherical harmonic domain into the spatial domain
 def combine_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None,
-    LOVE_NUMBERS=None, REFERENCE=None, RAD=None, DESTRIPE=False, UNITS=None,
-    DDEG=None, INTERVAL=None, BOUNDS=None, REDISTRIBUTE=False, LSMASK=None,
+    REFERENCE=None, RAD=None, DESTRIPE=False, UNITS=None, DDEG=None,
+    INTERVAL=None, BOUNDS=None, REDISTRIBUTE=False, LSMASK=None,
     MEAN_FILE=None, DATAFORM=None, VERBOSE=False, MODE=0o775):
 
     #-- verify that output directory exists
@@ -145,7 +149,7 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None,
     input_Ylms = input_Ylms.truncate(lmax=LMAX, mmax=MMAX).expand_dims()
 
     #-- read arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = load_love_numbers(LOVE_NUMBERS, LMAX, REFERENCE=REFERENCE)
+    hl,kl,ll = load_love_numbers(LMAX, REFERENCE=REFERENCE)
 
     #-- distribute total mass uniformly over the ocean
     if REDISTRIBUTE:
@@ -257,7 +261,7 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None,
 #-- PURPOSE: wrapper function for outputting data to file
 def output_data(data, FILENAME=None, DATAFORM=None, UNITS=None):
     #-- output units and units longname
-    unit_short = ['cmwe', 'mmGH' , 'mmCU', 'microGal', 'Pa']
+    unit_short = ['cmwe', 'mmGH', 'mmCU', 'microGal', 'Pa']
     unit_name = ['Equivalent Water Thickness', 'Geoid Height',
         'Elastic Crustal Uplift', 'Gravitational Undulation',
         'Equivalent Surface Pressure']
@@ -278,7 +282,6 @@ def usage():
     print('\nHelp: {0}'.format(os.path.basename(sys.argv[0])))
     print(' --lmax=X\t\tMaximum spherical harmonic degree')
     print(' --mmax=X\t\tMaximum spherical harmonic order')
-    print(' --love=X\t\tPath to load Love numbers file')
     print(' --reference=X\t\tReference frame for load Love numbers')
     print(' -R X, --radius=X\tGaussian smoothing radius (km)')
     print(' -D, --destripe\t\tUse a decorrelation filter')
@@ -300,18 +303,16 @@ def main():
     #-- Read the system arguments listed after the program and run the analyses
     #-- with the specific parameters.
     short_options = 'hR:DU:S:I:B:OF:VM:'
-    long_options = ['help','lmax=','mmax=','love=','reference=','radius=',
-        'destripe','units=','spacing=','interval=','bounds=','ocean','mean=',
-        'format=','verbose','mode=']
+    long_options = ['help','lmax=','mmax=','reference=','radius=','destripe',
+        'units=','spacing=','interval=','bounds=','ocean','mean=','format=',
+        'verbose','mode=']
     optlist, arglist = getopt.getopt(sys.argv[1:], short_options, long_options)
 
     #-- command line parameters
     #-- maximum spherical harmonic degree and order
     LMAX = 60
     MMAX = None
-    #-- path to load love numbers file
-    LOVE_NUMBERS = None
-    #-- option for setting gravitational load love number of degree 1
+    #-- option for setting reference frame for gravitational load love number
     #-- reference frame options (CF, CM, CE)
     REFERENCE = 'CF'
     #-- Gaussian smoothing radius (km)
@@ -344,8 +345,6 @@ def main():
             LMAX = np.int(arg)
         elif opt in ("--mmax"):
             MMAX = np.int(arg)
-        elif opt in ("--love"):
-            LOVE_NUMBERS = os.path.expanduser(arg)
         elif opt in ("--reference"):
             REFERENCE = arg.upper()
         elif opt in ("-R","--radius"):
@@ -373,10 +372,6 @@ def main():
         elif opt in ("-M","--mode"):
             MODE = int(arg, 8)
 
-    #-- verify inputs
-    #-- Input path to Load Love Numbers
-    if not LOVE_NUMBERS:
-        raise Exception('No Load Love Numbers file entered')
     #-- Input and Output Files
     if not arglist:
         raise Exception('No input and output files specified')
