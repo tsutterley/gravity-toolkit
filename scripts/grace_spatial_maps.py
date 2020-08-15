@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_maps.py
-Written by Tyler Sutterley (06/2020)
+Written by Tyler Sutterley (08/2020)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly spatial fields
@@ -92,8 +92,10 @@ PROGRAM DEPENDENCIES:
     hdf5_read.py: reads input spatial data from HDF5 files
     ncdf_write.py: writes output spatial data to netCDF4
     hdf5_write.py: writes output spatial data to HDF5
+    utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 08/2020: use utilities to define path to load love numbers file
     Updated 06/2020: using spatial data class for output operations
     Updated 05/2020: for public release
 """
@@ -118,6 +120,7 @@ from gravity_toolkit.harmonic_summation import harmonic_summation
 from gravity_toolkit.harmonics import harmonics
 from gravity_toolkit.spatial import spatial
 from gravity_toolkit.units import units
+from gravity_toolkit.utilities import get_data_path
 
 #-- PURPOSE: keep track of multiprocessing threads
 def info(title):
@@ -129,9 +132,9 @@ def info(title):
     print('process id: {0:d}'.format(os.getpid()))
 
 #-- PURPOSE: read load love numbers for the range of spherical harmonic degrees
-def load_love_numbers(base_dir, LMAX, REFERENCE='CF'):
+def load_love_numbers(LMAX, REFERENCE='CF'):
     #-- load love numbers file
-    love_numbers_file = os.path.join(base_dir,'love_numbers')
+    love_numbers_file = get_data_path(['data','love_numbers'])
     #-- LMAX of load love numbers from Han and Wahr (1995) is 696.
     #-- from Wahr (2007) linearly interpolating kl works
     #-- however, as we are linearly extrapolating out, do not make
@@ -220,7 +223,7 @@ def grace_spatial_maps(base_dir, parameters, VERBOSE, MODE):
     format_str = ['ascii','netCDF4','HDF5'][DATAFORM-1]
 
     #-- read arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = load_love_numbers(base_dir, LMAX, REFERENCE='CF')
+    hl,kl,ll = load_love_numbers(LMAX, REFERENCE='CF')
 
     #-- Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):

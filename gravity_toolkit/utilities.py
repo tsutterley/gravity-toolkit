@@ -295,7 +295,7 @@ def check_credentials():
     Check that entered JPL PO.DAAC Drive credentials are valid
     """
     try:
-        url = posixpath.join('http://podaac-tools.jpl.nasa.gov','drive','files')
+        url=posixpath.join('https://podaac-tools.jpl.nasa.gov','drive','files')
         request = urllib2.Request(url=url)
         response = urllib2.urlopen(request, timeout=20)
     except urllib2.HTTPError:

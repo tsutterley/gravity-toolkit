@@ -7,7 +7,6 @@ Getting Started
 ```bash
 python podaac_grace_sync.py --user=<username> --directory=<path_to_grace_directory>
 ```
-- Move [Load Love Numbers file from PREM](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/love_numbers) into GRACE/GRACE-FO working directory  
 - If correcting for Glacial Isostatic Adjustment: have full path to data file known  
     * These can be ascii files direct from many modeling groups or a reformatted ascii/netCDF4/HDF5 file  
 - If correcting for other geophysical processes such as terrestrial water storage: have full path known  

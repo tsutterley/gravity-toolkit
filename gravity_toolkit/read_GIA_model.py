@@ -231,7 +231,6 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
         start = 0
         scale = 1.0
 
-
     #-- Reading GIA files (ICE-6G and Wu have more complex formats)
     if GIA in ('IJ05-R2','W12a','SM09','AW13-ICE6G'):
         #-- AW13, IJ05, W12a, SM09
@@ -424,7 +423,6 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
         gia_Ylms['slm'][:,:] = Ylms['slm'][:LMAX+1,:LMAX+1]
         #-- copy title for parameters
         gia_Ylms['title'] = Ylms['attributes']['title']
-
 
     #-- extract rheology from the file name
     if GIA in ('IJ05-R2','ICE6G'):
