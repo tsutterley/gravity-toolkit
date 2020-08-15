@@ -678,7 +678,7 @@ class harmonics(object):
             mmax maximum order of spherical harmonics
         """
         #-- output harmonics object
-        mmax = np.copy(lmax) if (mmax == None) else mmax
+        mmax = np.copy(lmax) if (mmax is None) else mmax
         #-- copy prior harmonics object
         temp = self.copy()
         #-- set new degree and order

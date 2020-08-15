@@ -18,14 +18,15 @@ import gravity_toolkit.gen_stokes
 import gravity_toolkit.harmonic_summation
 import gravity_toolkit.harmonics
 import gravity_toolkit.spatial
+from gravity_toolkit.utilities import get_data_path
 
 def test_harmonics():
     # path to load Love numbers file
     filename = inspect.getframeinfo(inspect.currentframe()).filename
     filepath = os.path.dirname(os.path.abspath(filename))
-    love_numbers = os.path.join(filepath,'..','love_numbers')
+    love_numbers_file = get_data_path(['data','love_numbers'])
     # read load Love numbers
-    hl,kl,ll = gravity_toolkit.read_love_numbers(os.path.relpath(love_numbers))
+    hl,kl,ll = gravity_toolkit.read_love_numbers(love_numbers_file)
 
     # read input spatial distribution file
     distribution_file = 'out.green_ice.grid.0.5.2008.cmh20.gz'
