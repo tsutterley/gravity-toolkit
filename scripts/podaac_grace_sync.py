@@ -147,6 +147,7 @@ import sys
 import os
 import re
 import io
+import time
 import netrc
 import getopt
 import shutil
@@ -155,13 +156,10 @@ import getpass
 import builtins
 import posixpath
 import lxml.etree
-import calendar, time
 import gravity_toolkit.utilities
 if sys.version_info[0] == 2:
-    from cookielib import CookieJar
     import urllib2
 else:
-    from http.cookiejar import CookieJar
     import urllib.request as urllib2
 
 #-- PURPOSE: create and compile regular expression operator to find GRACE files

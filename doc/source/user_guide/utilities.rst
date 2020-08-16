@@ -67,7 +67,6 @@ General Methods
 
         `sort`: sort output list
 
-
     Returns:
 
         `output`: list of items in a directory

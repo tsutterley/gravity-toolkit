@@ -26,6 +26,7 @@ jobs:
       run: |
         sudo apt-get install libproj-dev proj-data proj-bin libgeos-dev
         sudo apt-get install libhdf5-dev libnetcdf-dev
+        sudo apt-get install libxml2-dev libxslt1-dev
         pip install --upgrade pip
         pip install flake8 pytest pytest-cov numpy
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
@@ -36,6 +37,8 @@ jobs:
         brew install geos
         brew install hdf5
         brew install netcdf
+        brew install libxml2
+        brew install libxslt
         pip install --upgrade pip
         pip install flake8 pytest pytest-cov numpy
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi

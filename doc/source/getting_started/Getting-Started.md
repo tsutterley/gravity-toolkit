@@ -13,5 +13,6 @@ python podaac_grace_sync.py --user=<username> --directory=<path_to_grace_directo
     * These can be a single netCDF4 or HDF5 file or an index of ascii/netCDF4/HDF5 files  
 - Run Jupyter notebook `GRACE-Spatial-Maps.ipynb` to create monthly maps  
     * This program uses [Jupyter widgets](https://ipywidgets.readthedocs.io/en/latest/) to select [datasets](./GRACE-Data-File-Formats.md) and processing parameters  
+    * Can also sync the data from within the Jupyter Notebook using [magics](https://ipython.readthedocs.io/en/stable/interactive/magics.html)
     * Can output monthly spatial maps to netCDF4 or HDF5 in specified units
     * Will create an animation of the GRACE/GRACE-FO monthly data in the specified units  
