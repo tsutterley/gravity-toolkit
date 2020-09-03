@@ -157,10 +157,6 @@ import builtins
 import posixpath
 import lxml.etree
 import gravity_toolkit.utilities
-if sys.version_info[0] == 2:
-    import urllib2
-else:
-    import urllib.request as urllib2
 
 #-- PURPOSE: create and compile regular expression operator to find GRACE files
 def compile_regex_pattern(PROC, DREL, DSET):
@@ -264,8 +260,6 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
         local_file = os.path.join(local_dir,colname)
         http_pull_file(fid1, remote_file, remote_mtime, local_file,
             LIST, CLOBBER, CHECKSUM, MODE)
-    #-- close request
-    req = None
 
     #-- SLR C2,0 COEFFICIENTS
     print('C2,0 Coefficients:', file=fid1)
@@ -284,8 +278,6 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
         local_file = os.path.join(local_dir,colname)
         http_pull_file(fid1, remote_file, remote_mtime, local_file,
             LIST, CLOBBER, CHECKSUM, MODE)
-    #-- close request
-    req = None
 
     #-- SLR C3,0 COEFFICIENTS
     print('C3,0 Coefficients:', file=fid1)
@@ -304,8 +296,6 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
         local_file = os.path.join(local_dir,colname)
         http_pull_file(fid1, remote_file, remote_mtime, local_file,
             LIST, CLOBBER, CHECKSUM, MODE)
-    #-- close request
-    req = None
 
     #-- TN-08 GAE, TN-09 GAF and TN-10 GAG ECMWF atmosphere correction products
     print('TN-08 GAE, TN-09 GAF and TN-10 GAG products:', file=fid1)
@@ -328,8 +318,6 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
         local_file = os.path.join(local_dir,colname)
         http_pull_file(fid1, remote_file, remote_mtime, local_file,
             LIST, CLOBBER, CHECKSUM, MODE)
-    #-- close request
-    req = None
 
     #-- GRACE and GRACE-FO Newsletters
     if NEWSLETTERS:
@@ -354,8 +342,6 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
                 local_file = os.path.join(local_dir,colname)
                 http_pull_file(fid1, remote_file, remote_mtime, local_file,
                     LIST, CLOBBER, CHECKSUM, MODE)
-            #-- close request
-            req = None
 
     #-- GRACE/GRACE-FO AOD1B DEALIASING PRODUCTS
     #-- PROCESSING CENTER (GFZ)
@@ -384,8 +370,6 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
                 local_file = os.path.join(local_dir,colname)
                 http_pull_file(fid1, remote_file, remote_mtime, local_file,
                     LIST, CLOBBER, CHECKSUM, MODE)
-            #-- close request
-            req = None
 
     #-- GRACE DATA
     #-- PROCESSING CENTERS (CSR, GFZ, JPL)
@@ -514,10 +498,10 @@ def http_pull_file(fid, remote_file, remote_mtime, local_file, LIST, CLOBBER,
         #-- Create and submit request.
         #-- There are a wide range of exceptions that can be thrown here
         #-- including HTTPError and URLError.
-        request = urllib2.Request(remote_file)
-        response = urllib2.urlopen(request, timeout=120)
+        req=gravity_toolkit.utilities.urllib2.Request(remote_file)
+        resp=gravity_toolkit.utilities.urllib2.urlopen(req,timeout=120)
         #-- copy remote file contents to bytesIO object
-        remote_buffer = io.BytesIO(response.read())
+        remote_buffer = io.BytesIO(resp.read())
         remote_buffer.seek(0)
         #-- generate checksum hash for remote file
         remote_hash = hashlib.md5(remote_buffer.getvalue()).hexdigest()
@@ -554,12 +538,12 @@ def http_pull_file(fid, remote_file, remote_mtime, local_file, LIST, CLOBBER,
                 #-- Create and submit request.
                 #-- There are a wide range of exceptions that can be thrown here
                 #-- including HTTPError and URLError.
-                request = urllib2.Request(remote_file)
-                response = urllib2.urlopen(request, timeout=120)
+                req=gravity_toolkit.utilities.urllib2.Request(remote_file)
+                resp=gravity_toolkit.utilities.urllib2.urlopen(req,timeout=120)
                 #-- copy contents to local file using chunked transfer encoding
                 #-- transfer should work properly with ascii and binary formats
                 with open(local_file, 'wb') as f:
-                    shutil.copyfileobj(response, f, CHUNK)
+                    shutil.copyfileobj(resp, f, CHUNK)
             #-- keep remote modification time of file and local access time
             os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
             os.chmod(local_file, MODE)

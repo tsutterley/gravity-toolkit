@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_months_index.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (09/2020)
 
 Creates a file with the start and end days for each dataset
 Shows the range of each month for (CSR/GFZ/JPL) (RL04/RL05/RL06)
@@ -20,7 +20,8 @@ OUTPUTS:
     Column 2: Calendar Month and Year
     Column 3: CSR RL06 Dates
     Column 4: GFZ RL06 Dates
-    Column 5: JPL RL06 Dates
+    Column 5: GSFC v02.4 Mascon Dates
+    Column 6: JPL RL06 Dates
 
 COMMAND LINE OPTIONS:
     --help: list the command line options
@@ -32,6 +33,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 09/2020: add column for GSFC v02.4 GRACE mascons
     Updated 07/2020: added function docstrings
     Updated 05/2020 for public release
     Updated 05-06/2018: GRACE release 6 (not all processing centers have RL06)
@@ -53,7 +55,7 @@ import getopt
 import calendar
 import numpy as np
 
-def grace_months_index(base_dir, DREL=['RL06'], MODE=None):
+def grace_months_index(base_dir, DREL=['RL06','v02.4'], MODE=None):
     """
     Creates a file with the start and end days for each dataset
     Shows the range of each month for (CSR/GFZ/JPL) (RL04/RL05/RL06)
@@ -74,7 +76,7 @@ def grace_months_index(base_dir, DREL=['RL06'], MODE=None):
 
     #-- Initial parameters
     #-- processing centers
-    PROC = ['CSR', 'GFZ', 'JPL']
+    PROC = ['CSR', 'GFZ', 'GSFC', 'JPL']
     #-- read from GSM datasets
     DSET = 'GSM'
     #-- maximum month of the datasets

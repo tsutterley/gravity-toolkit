@@ -85,7 +85,7 @@ def run_grace_date(base_dir, PROC, DREL, VERBOSE=False, MODE=0o775):
     for p in PROC:
         #-- for each valid dataset release from the processing center
         drel = [r for r in DREL if r in VALID[p]]
-        for r in DREL:
+        for r in drel:
             #-- for number of data products
             for d in DSET[p][r]:
                 print('GRACE Date Program: {0} {1} {2}'.format(p,r,d))
@@ -117,7 +117,7 @@ def main():
     #-- GRACE Processing Centers to run
     PROC = ['CSR', 'GFZ', 'JPL']
     #-- Data release
-    DREL = ['RL06']
+    DREL = ['RL06', 'v02.4']
     #-- output file information
     VERBOSE = False
     #-- permissions mode of output files (e.g. 0o775)

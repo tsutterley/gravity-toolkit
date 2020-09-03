@@ -15,6 +15,8 @@ with open('requirements.txt') as fh:
 
 # list of all scripts to be included with package
 scripts=[os.path.join('scripts',f) for f in os.listdir('scripts') if f.endswith('.py')]
+scripts.append(os.path.join('gravity_toolkit','grace_date.py'))
+scripts.append(os.path.join('gravity_toolkit','grace_months_index.py'))
 
 setup(
     name='read-GRACE-harmonics',
@@ -32,7 +34,10 @@ setup(
         'Topic :: Scientific/Engineering :: Physics',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
     keywords='GRACE, GRACE-FO, Gravity, satellite geodesy, spherical harmonics',
     packages=find_packages(),
