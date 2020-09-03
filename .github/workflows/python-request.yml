@@ -14,6 +14,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         python-version: [3.5, 3.6, 3.7, 3.8]
+    env:
+      OS: ${{ matrix.os }}
+      PYTHON: ${{ matrix.python-version }}
 
     steps:
     - uses: actions/checkout@v2
@@ -24,6 +27,7 @@ jobs:
     - name: Install dependencies for Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
+        sudo apt-get update
         sudo apt-get install libproj-dev proj-data proj-bin libgeos-dev
         sudo apt-get install libhdf5-dev libnetcdf-dev
         sudo apt-get install libxml2-dev libxslt1-dev
@@ -51,6 +55,12 @@ jobs:
     - name: Test with pytest
       run: |
         pip install --no-deps .
-        pytest --username=${{ secrets.EARTHDATA_USERNAME }} \
+        pytest --cov=./ --cov-report=xml \
+            --username=${{ secrets.EARTHDATA_USERNAME }} \
             --password=${{ secrets.EARTHDATA_PASSWORD }} \
             --webdav=${{ secrets.PODAAC_PASSWORD }}
+    - name: Archive code coverage results
+      uses: actions/upload-artifact@v2
+      with:
+        name: code-coverage-report
+        path: ./coverage.xml
