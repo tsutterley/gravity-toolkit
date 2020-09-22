@@ -11,7 +11,7 @@ podaac_grace_sync.py
 ```bash
 python podaac_grace_sync.py --user=<username> --directory=<path_to_grace_directory> --release=RL06
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/scripts/podaac_grace_sync.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/podaac_grace_sync.py)
 
 #### Command Line Options
  - `-U X`, `--user=X`: Username for NASA Earthdata Login

@@ -1,9 +1,12 @@
 """
 utilities.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (09/2020)
 Download and management utilities for syncing time and auxiliary files
 
 UPDATE HISTORY:
+    Updated 09/2020: copy from http and https to bytesIO object in chunks
+        use netrc credentials if not entered from PO.DAAC functions
+        generalize build opener function for different Earthdata instances
     Updated 08/2020: add PO.DAAC Drive opener, login and download functions
     Written 08/2020
 """
@@ -14,6 +17,7 @@ import os
 import re
 import io
 import ssl
+import netrc
 import ftplib
 import shutil
 import base64
@@ -207,6 +211,23 @@ def from_ftp(HOST,timeout=None,local=None,hash='',chunk=16384,
         remote_buffer.seek(0)
         return remote_buffer
 
+#-- PURPOSE: check internet connection
+def check_connection(HOST):
+    """
+    Check internet connection
+
+    Arguments
+    ---------
+    HOST: remote http host
+    """
+    #-- attempt to connect to https host
+    try:
+        urllib2.urlopen(HOST,timeout=20,context=ssl.SSLContext())
+    except urllib2.URLError:
+        raise RuntimeError('Check internet connection')
+    else:
+        return True
+
 #-- PURPOSE: download a file from a http host
 def from_http(HOST,timeout=None,local=None,hash='',chunk=16384,
     verbose=False,mode=0o775):
@@ -239,7 +260,8 @@ def from_http(HOST,timeout=None,local=None,hash='',chunk=16384,
         raise Exception('Download error from {0}'.format(posixpath.join(*HOST)))
     else:
         #-- copy remote file contents to bytesIO object
-        remote_buffer = io.BytesIO(response.read())
+        remote_buffer = io.BytesIO()
+        shutil.copyfileobj(response, remote_buffer, chunk)
         remote_buffer.seek(0)
         #-- save file basename with bytesIO object
         remote_buffer.filename = HOST[-1]
@@ -260,29 +282,56 @@ def from_http(HOST,timeout=None,local=None,hash='',chunk=16384,
         remote_buffer.seek(0)
         return remote_buffer
 
+
 #-- PURPOSE: "login" to JPL PO.DAAC Drive with supplied credentials
-def build_opener(username, password):
+def build_opener(username, password, context=ssl.SSLContext(),
+    password_manager=False, get_ca_certs=False, redirect=False,
+    authorization_header=True, urs=None):
     """
-    build urllib opener for JPL PO.DAAC Drive with supplied credentials
+    build urllib opener for NASA Earthdata or JPL PO.DAAC Drive with
+    supplied credentials
 
     Arguments
     ---------
     username: NASA Earthdata username
-    password: PO.DAAC WebDAV password
+    password: NASA Earthdata or JPL PO.DAAC WebDAV password
+
+    Keyword arguments
+    -----------------
+    context: SSL context for opener object
+    password_manager: create password manager context using default realm
+    get_ca_certs: get list of loaded “certification authority” certificates
+    redirect: create redirect handler object
+    authorization_header: add base64 encoded authorization header to opener
+    urs: Earthdata login URS 3 host
     """
+    #-- https://docs.python.org/3/howto/urllib2.html#id5
+    handler = []
+    #-- create a password manager
+    if password_manager:
+        password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        #-- Add the username and password for NASA Earthdata Login system
+        password_mgr.add_password(None,urs,username,password)
+        handler.append(urllib2.HTTPBasicAuthHandler(password_mgr))
     #-- Create cookie jar for storing cookies. This is used to store and return
     #-- the session cookie given to use by the data server (otherwise will just
     #-- keep sending us back to Earthdata Login to authenticate).
     cookie_jar = CookieJar()
+    handler.append(urllib2.HTTPCookieProcessor(cookie_jar))
+    #-- SSL context handler
+    if get_ca_certs:
+        context.get_ca_certs()
+    handler.append(urllib2.HTTPSHandler(context=context))
+    #-- redirect handler
+    if redirect:
+        handler.append(urllib2.HTTPRedirectHandler())
     #-- create "opener" (OpenerDirector instance)
-    opener = urllib2.build_opener(
-        urllib2.HTTPSHandler(context=ssl.SSLContext()),
-        urllib2.HTTPCookieProcessor(cookie_jar))
+    opener = urllib2.build_opener(*handler)
     #-- Encode username/password for request authorization headers
-    base64_string=base64.b64encode('{0}:{1}'.format(username,password).encode())
     #-- add Authorization header to opener
-    authorization_header = "Basic {0}".format(base64_string.decode())
-    opener.addheaders = [("Authorization", authorization_header)]
+    if authorization_header:
+        b64 = base64.b64encode('{0}:{1}'.format(username,password).encode())
+        opener.addheaders = [("Authorization","Basic {0}".format(b64.decode()))]
     #-- Now all calls to urllib2.urlopen use our opener.
     urllib2.install_opener(opener)
     #-- All calls to urllib2.urlopen will now use handler
@@ -330,6 +379,10 @@ def podaac_list(HOST,username=None,password=None,build=True,timeout=None,
     colnames: list of column names in a directory
     collastmod: list of last modification times for items in the directory
     """
+    #-- use netrc credentials
+    if build and not (username or password):
+        urs = 'podaac-tools.jpl.nasa.gov'
+        username,login,password = netrc.netrc().authenticators(urs)
     #-- build urllib2 opener and check credentials
     if build:
         #-- build urllib2 opener with credentials
@@ -389,6 +442,10 @@ def from_podaac(HOST,username=None,password=None,build=True,timeout=None,
     -------
     remote_buffer: BytesIO representation of file
     """
+    #-- use netrc credentials
+    if build and not (username or password):
+        urs = 'podaac-tools.jpl.nasa.gov'
+        username,login,password = netrc.netrc().authenticators(urs)
     #-- build urllib2 opener and check credentials
     if build:
         #-- build urllib2 opener with credentials
@@ -404,7 +461,8 @@ def from_podaac(HOST,username=None,password=None,build=True,timeout=None,
         raise Exception('Download error from {0}'.format(posixpath.join(*HOST)))
     else:
         #-- copy remote file contents to bytesIO object
-        remote_buffer = io.BytesIO(response.read())
+        remote_buffer = io.BytesIO()
+        shutil.copyfileobj(response, remote_buffer, chunk)
         remote_buffer.seek(0)
         #-- save file basename with bytesIO object
         remote_buffer.filename = HOST[-1]

@@ -9,7 +9,7 @@ grace_spatial_error.py
 ```bash
 python grace_spatial_error.py --mode=0o775 parameter_file
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/scripts/grace_spatial_error.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/grace_spatial_error.py)
 
 #### Inputs
    parameter file containing specific variables for the analysis

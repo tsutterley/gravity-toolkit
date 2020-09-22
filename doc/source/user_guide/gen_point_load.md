@@ -8,7 +8,7 @@ gen_point_load.py
 from gravity_toolkit.gen_point_load import gen_point_load
 Ylms = gen_point_load(data, lon, lat, UNITS=1, LMAX=LMAX, LOVE=(hl,kl,ll))
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/gen_point_load.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/gen_point_load.py)
 
 #### Inputs
  - `data`: data magnitude

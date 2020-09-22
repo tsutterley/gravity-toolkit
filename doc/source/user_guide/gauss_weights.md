@@ -9,7 +9,7 @@ gauss_weights.py
 from gravity_toolkit.gauss_weights import gauss_weights
 wl = 2.0*np.pi*gauss_weights(hw,LMAX)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/gauss_weights.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/gauss_weights.py)
 
 #### Inputs
  1. `hw`: Gaussian smoothing radius in km  

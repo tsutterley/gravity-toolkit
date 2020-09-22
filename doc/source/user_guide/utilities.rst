@@ -11,7 +11,7 @@ Download and management utilities for syncing time and auxiliary files
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/utilities.py
+.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/utilities.py
 
 
 General Methods
@@ -97,6 +97,15 @@ General Methods
         `mode`: permissions mode of output local file
 
 
+.. method:: gravity_toolkit.utilities.check_connection(HOST)
+
+    Check internet connection
+
+    Arguments:
+
+        `HOST`: remote http host
+
+
 .. method:: gravity_toolkit.utilities.from_http(HOST,timeout=None,local=None,hash='',chunk=16384,verbose=False,mode=0o775)
 
     Download a file from a http host
@@ -120,19 +129,29 @@ General Methods
         `mode`: permissions mode of output local file
 
 
-.. method:: gravity_toolkit.utilities.build_opener(username,password,urs=None)
+.. method:: gravity_toolkit.utilities.build_opener(username,password,context=ssl.SSLContext(),password_manager=False,get_ca_certs=False,redirect=False,authorization_header=True,urs=None)
 
-    build urllib opener for JPL PO.DAAC Drive with supplied credentials
+    build urllib opener for NASA Earthdata or JPL PO.DAAC Drive with supplied credentials
 
     Arguments:
 
         `username`: NASA Earthdata username
 
-        `password`: JPL PO.DAAC Drive WebDAV password
+        `password`: NASA Earthdata or JPL PO.DAAC WebDAV password
 
     Keyword arguments:
 
-        urs: Earthdata login URS 3 host
+        `context`: SSL context for opener object
+
+        `password_manager`: create password manager context using default realm
+
+        `get_ca_certs`: get list of loaded “certification authority” certificates
+
+        `redirect`: create redirect handler object
+
+        `authorization_header`: add base64 encoded authorization header to opener
+
+        `urs`: Earthdata login URS 3 host
 
 
 .. method:: gravity_toolkit.utilities.check_credentials()

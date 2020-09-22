@@ -7,4 +7,4 @@ matplotlib
 cartopy
 netCDF4
 h5py
-read_GRACE_geocenter @ https://github.com/tsutterley/read-GRACE-geocenter/tarball/master
+read_GRACE_geocenter @ https://github.com/tsutterley/read-GRACE-geocenter/tarball/main

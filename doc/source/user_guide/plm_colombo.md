@@ -9,7 +9,7 @@ plm_columbo.py
 from gravity_toolkit.plm_colombo import plm_colombo
 plm,dplm = plm_colombo(LMAX, x)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/plm_columbo.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/plm_columbo.py)
 
 #### Inputs
  - `LMAX`: Upper bound of Spherical Harmonic Degrees

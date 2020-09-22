@@ -8,7 +8,7 @@ ncdf_read_stokes.py
 from gravity_toolkit.ncdf_read_stokes import ncdf_read_stokes
 file_inp = ncdf_read_stokes(filename, DATE=True, VERBOSE=False)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/ncdf_read_stokes.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/ncdf_read_stokes.py)
 
 #### Inputs
  - `filename`: netCDF4 file to be opened and read

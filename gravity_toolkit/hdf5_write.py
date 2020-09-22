@@ -95,16 +95,13 @@ def hdf5_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     """
 
     #-- setting HDF5 clobber attribute
-    if CLOBBER in ('Y','y'):
-        clobber = 'w'
-    else:
-        clobber = 'w-'
-
-    #-- Dimensions of time parameters
-    n_time = 1 if (np.ndim(tim) == 0) else len(tim)
+    clobber = 'w' if CLOBBER else 'w-'
 
     #-- opening HDF5 file for writing
     fileID = h5py.File(FILENAME, clobber)
+
+    #-- Dimensions of time parameters
+    n_time = len(np.atleast_1d(tim))
     #-- Defining the HDF5 dataset variables
     h5 = {}
     h5[LONNAME] = fileID.create_dataset(LONNAME, lon.shape, data=lon,
@@ -148,7 +145,7 @@ def hdf5_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     fileID.attrs['date_created'] = time.strftime('%Y-%m-%d',time.localtime())
 
     #-- Output HDF5 structure information
-    if VERBOSE in ('Y','y'):
+    if VERBOSE:
         print(FILENAME)
         print(list(fileID.keys()))
 

@@ -10,7 +10,7 @@ grace_spatial_maps.py
 ```bash
 python grace_spatial_maps.py --mode=0o775 parameter_file
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/scripts/grace_spatial_maps.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/grace_spatial_maps.py)
 
 #### Inputs
    parameter file containing specific variables for the analysis

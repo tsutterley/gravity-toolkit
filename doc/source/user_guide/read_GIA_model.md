@@ -10,7 +10,7 @@ read_GIA_model.py
 from gravity_toolkit.read_GIA_model import read_GIA_model
 GIA_Ylms = read_GIA_model('Stokes.R2_65_.2_1.5_L120',GIA='IJ05-R2',LMAX=60)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/read_GIA_model.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_GIA_model.py)
 
 
 #### Inputs:

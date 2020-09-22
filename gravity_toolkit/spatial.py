@@ -119,12 +119,12 @@ class spatial(object):
         #-- for each line in the file
         for line in file_contents:
             #-- extract columns of interest and assign to dict
-            d = {c:r for c,r in zip(columns,rx.findall(line))}
+            #-- convert fortran exponentials if applicable
+            d = {c:r.replace('D','E') for c,r in zip(columns,rx.findall(line))}
             #-- convert line coordinates to integers
             ilon = np.int(np.float(d['lon'])/self.spacing[0])
             ilat = np.int((90.0-np.float(d['lat']))//self.spacing[1])
-            #-- convert fortran exponentials if applicable
-            self.data[ilat,ilon] = np.float(d['data'].replace('D','E'))
+            self.data[ilat,ilon] = np.float(d['data'])
             self.mask[ilat,ilon] = False
             self.lon[ilon] = np.float(d['lon'])
             self.lat[ilat] = np.float(d['lat'])
@@ -192,7 +192,7 @@ class spatial(object):
         self.fill_value = data['attributes']['_FillValue']
         self.mask = np.zeros_like(self.data, dtype=np.bool)
         self.lon = data['lon'].copy()
-        self.m = data['lat'].copy()
+        self.lat = data['lat'].copy()
         if date:
             self.time = data['time'].copy()
             self.month = np.array(12.0*(self.time-2002.0)+1,dtype='i')
@@ -347,7 +347,7 @@ class spatial(object):
         Options: spatial objects contain date information
         **kwargs: keyword arguments for hdf5_write
         """
-        self.filename = filename
+        self.filename = os.path.expanduser(filename)
         KWARGS = {}
         for key,val in kwargs.items():
             KWARGS[key.upper()] = val
@@ -442,9 +442,8 @@ class spatial(object):
         Add a singleton dimension to a spatial object if non-existent
         """
         #-- change time dimensions to be iterable
-        if (np.ndim(self.time) == 0):
-            self.time = np.array([self.time])
-            self.month = np.array([self.month])
+        self.time = np.atleast_1d(self.time)
+        self.month = np.atleast_1d(self.month)
         #-- output spatial with a third dimension
         if (np.ndim(self.data) == 2):
             self.data = self.data[:,:,None]
@@ -510,8 +509,7 @@ class spatial(object):
         Inputs: GRACE/GRACE-FO months
         """
         #-- check if months is an array or a single value
-        if (np.ndim(months) == 0):
-            months = np.array([months])
+        months = np.atleast_1d(months)
         #-- number of months
         n = len(months)
         #-- check that all months are available

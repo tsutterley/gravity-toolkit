@@ -8,7 +8,7 @@ read_SLR_C30.py
 from gravity_toolkit.read_SLR_C30 import read_SLR_C30
 SLR_C30 = read_SLR_C30(SLR_file)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/read_SLR_C30.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_SLR_C30.py)
 
 #### Inputs
  - `SLR_file`: low degree zonal file from satellite laser ranging

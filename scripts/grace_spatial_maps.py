@@ -331,14 +331,7 @@ def grace_spatial_maps(base_dir, parameters, VERBOSE, MODE):
     #-- Output spatial data object
     grid = spatial()
     #-- Output Degree Spacing
-    if (np.ndim(DDEG) == 0):
-        #-- dlon == dlat
-        dlon = DDEG
-        dlat = DDEG
-    else:
-        #-- dlon != dlat
-        dlon = DDEG[0]
-        dlat = DDEG[1]
+    dlon,dlat = (DDEG,DDEG) if (np.ndim(DDEG) == 0) else (DDEG[0],DDEG[1])
     #-- Output Degree Interval
     if (INTERVAL == 1):
         #-- (-180:180,90:-90)

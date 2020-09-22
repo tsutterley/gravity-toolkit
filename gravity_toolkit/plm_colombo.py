@@ -63,11 +63,8 @@ def plm_colombo(LMAX, x, ASTYPE=np.float):
     #-- Verify LMAX as integer
     LMAX = np.int(LMAX)
 
-    if (np.ndim(x) > 0):
-        #-- length of the x array
-        jm = np.shape(x)[0]
-    else:
-        jm = 1
+    #-- length of the x array
+    jm = len(np.atleast_1d(x))
 
     #-- allocating for the plm matrix and differentials
     plm = np.zeros((LMAX+1,LMAX+1,jm))

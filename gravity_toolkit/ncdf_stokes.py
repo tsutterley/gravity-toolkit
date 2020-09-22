@@ -100,12 +100,8 @@ def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
     DATE: harmonics have date information
     """
 
-    #-- setting netCDF clobber attribute
-    if CLOBBER:
-        clobber = 'w'
-    else:
-        clobber = 'a'
-
+    #-- setting NetCDF clobber attribute
+    clobber = 'w' if CLOBBER else 'a'
     #-- opening netCDF file for writing
     fileID = netCDF4.Dataset(FILENAME, clobber, format="NETCDF4")
 

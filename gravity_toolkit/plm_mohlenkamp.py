@@ -75,11 +75,7 @@ def plm_mohlenkamp(LMAX, x, MMAX=None):
         MMAX = np.copy(LMAX)
 
     #-- size of the x array
-    #-- x is an array
-    if (np.ndim(x) > 0):
-        sx = np.shape(x)[0]
-    else:#-- x is a single value
-        sx =1
+    sx = len(np.atleast_1d(x))
 
     #-- Initialize the output Legendre polynomials
     plm=np.zeros((LMAX+1,MMAX+1,sx))

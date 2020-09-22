@@ -10,7 +10,7 @@ grace_date.py
 from gravity_toolkit.grace_date import grace_date
 grace_files = grace_date(base_dir, PROC=PROC, DREL=DREL, DSET=DSET)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/grace_date.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/grace_date.py)
 
 #### Inputs
  1. Working data directory for GRACE/GRACE-FO data

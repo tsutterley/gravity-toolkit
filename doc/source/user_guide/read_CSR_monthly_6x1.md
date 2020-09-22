@@ -8,7 +8,7 @@ read_CSR_monthly_6x1.py
 from gravity_toolkit.read_CSR_monthly_6x1 import read_CSR_monthly_6x1
 Ylms = read_CSR_monthly_6x1(input_file)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/read_CSR_monthly_6x1.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_CSR_monthly_6x1.py)
 
 #### Inputs
  - `input_file`: input satellite laser ranging file

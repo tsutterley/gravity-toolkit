@@ -8,7 +8,7 @@ grace_mean_harmonics.py
 ```bash
 python grace_mean_harmonics.py --mode=0o775 parameter_file
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/scripts/grace_mean_harmonics.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/grace_mean_harmonics.py)
 
 #### Inputs
    parameter file containing specific variables for the analysis

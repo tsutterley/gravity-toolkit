@@ -120,13 +120,7 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None, UNITS=None,
     input_spatial = {}
 
     #-- Grid spacing
-    if (np.ndim(DDEG) == 0): #-- dlon=dlat
-        dlon = DDEG
-        dlat = DDEG
-    else: #-- dlon ne dlat
-        dlon = DDEG[0]
-        dlat = DDEG[1]
-
+    dlon,dlat = (DDEG,DDEG) if (np.ndim(DDEG) == 0) else (DDEG[0],DDEG[1])
     #-- Grid dimensions
     if (INTERVAL == 1):#-- (0:360, 90:-90)
         nlon = np.int((360.0/dlon)+1.0)

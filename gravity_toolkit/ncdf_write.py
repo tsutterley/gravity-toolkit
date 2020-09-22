@@ -95,17 +95,13 @@ def ncdf_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     """
 
     #-- setting NetCDF clobber attribute
-    if CLOBBER:
-        clobber = 'w'
-    else:
-        clobber = 'a'
-
+    clobber = 'w' if CLOBBER else 'a'
     #-- opening NetCDF file for writing
     #-- Create the NetCDF file
     fileID = netCDF4.Dataset(FILENAME, clobber, format="NETCDF4")
 
     #-- Defining the NetCDF dimensions
-    n_time = 1 if (np.ndim(tim) == 0) else len(tim)
+    n_time = len(np.atleast_1d(tim))
     fileID.createDimension(LONNAME, len(lon))
     fileID.createDimension(LATNAME, len(lat))
     fileID.createDimension(TIMENAME, n_time)

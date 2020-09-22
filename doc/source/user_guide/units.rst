@@ -29,7 +29,7 @@ Calculating the degree dependent factors for converting spatial units
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/units.py
+.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/units.py
 
 General Attributes and Methods
 ==============================

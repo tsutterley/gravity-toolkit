@@ -8,7 +8,7 @@ harmonic_summation.py
 from gravity_toolkit.harmonic_summation import harmonic_summation
 spatial = harmonic_summation(clm,slm,lon,lat,LMAX=60)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/harmonic_summation.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/harmonic_summation.py)
 
 #### Inputs:
  1. `clm`: cosine spherical harmonic coefficients

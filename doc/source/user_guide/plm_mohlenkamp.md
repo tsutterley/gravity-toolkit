@@ -10,7 +10,7 @@ plm_mohlenkamp.py
 from gravity_toolkit.plm_mohlenkamp import plm_mohlenkamp
 plm = plm_mohlenkamp(LMAX, x)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/plm_mohlenkamp.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/plm_mohlenkamp.py)
 
 #### Inputs
  - `LMAX`: Upper bound of Spherical Harmonic Degrees

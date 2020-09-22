@@ -8,7 +8,7 @@ ncdf_write.py
 from gravity_toolkit.ncdf_write import ncdf_write
 ncdf_write(data, lon, lat, tim, FILENAME=output_netcdf4_file)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/ncdf_write.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/ncdf_write.py)
 
 #### Inputs
  - `data`: z data

@@ -8,7 +8,7 @@ read_SLR_geocenter.py
 from gravity_toolkit.read_SLR_geocenter import read_SLR_geocenter
 deg1_input = read_SLR_geocenter(geocenter_file)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/read_SLR_geocenter.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_SLR_geocenter.py)
 
 #### Inputs
  - `geocenter_file`: degree 1 file

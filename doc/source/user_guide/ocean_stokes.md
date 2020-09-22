@@ -8,7 +8,7 @@ ocean_stokes.py
 from gravity_toolkit.ocean_stokes import ocean_stokes
 ocean_Ylms = ocean_stokes(LANDMASK, LMAX, MMAX=MMAX, LOVE=(hl,kl,ll))
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/ocean_stokes.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/ocean_stokes.py)
 
 #### Inputs
  - `LANDMASK`: mask file from [Sutterley et al. (2020)](https://doi.org/10.6084/m9.figshare.9702338)

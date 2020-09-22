@@ -13,7 +13,7 @@ aod1b_oblateness.py
 from gravity_toolkit.aod1b_oblateness import aod1b_oblateness
 aod1b_oblateness(base_dir, DREL='RL06', DSET='glo', CLOBBER=True)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/aod1b_oblateness.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/aod1b_oblateness.py)
 
 #### Inputs
  1. `base_dir`: working data directory  

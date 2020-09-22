@@ -100,11 +100,7 @@ def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
     """
 
     #-- setting HDF5 clobber attribute
-    if CLOBBER:
-        clobber = 'w'
-    else:
-        clobber = 'w-'
-
+    clobber = 'w' if CLOBBER else 'w-'
     #-- opening HDF5 file for writing
     fileID = h5py.File(FILENAME, clobber)
 

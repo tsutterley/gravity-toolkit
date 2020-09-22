@@ -8,7 +8,7 @@ hdf5_write.py
 from gravity_toolkit.hdf5_write import hdf5_write
 hdf5_write(data, lon, lat, tim, FILENAME=output_netcdf4_file)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/hdf5_write.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/hdf5_write.py)
 
 #### Inputs
  - `data`: z data

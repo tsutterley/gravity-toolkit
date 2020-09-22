@@ -8,7 +8,7 @@ ncdf_read.py
 from gravity_toolkit.ncdf_read import ncdf_read
 file_inp = ncdf_read(filename, DATE=True, VERBOSE=False)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/ncdf_read.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/ncdf_read.py)
 
 #### Inputs
  - `filename`: netCDF4 file to be opened and read

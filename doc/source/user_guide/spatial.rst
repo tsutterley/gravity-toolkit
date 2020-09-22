@@ -54,7 +54,7 @@ Converting a dictionary object to a spatial object and removing the mean field
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-spatial/blob/master/gravity_toolkit/spatial.py
+.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/spatial.py
 
 General Attributes and Methods
 ==============================

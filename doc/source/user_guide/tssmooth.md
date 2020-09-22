@@ -11,7 +11,7 @@ tssmooth.py
 from gravity_toolkit.tssmooth import tssmooth
 smth = tssmooth(t_in, d_in, HFWTH=6)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/tssmooth.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/tssmooth.py)
 
 #### Inputs
  - `t_in`: input time array

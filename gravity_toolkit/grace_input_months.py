@@ -477,8 +477,7 @@ def regress_model(t_in, d_in, t_out, ORDER=2, CYCLES=None, RELATIVE=None):
     d_in = np.squeeze(d_in)
     t_out = np.squeeze(t_out)
     #-- check dimensions of output
-    if (np.ndim(t_out) == 0):
-        t_out = np.array([t_out])
+    t_out = np.atleast_1d(t_out)
     #-- set relative to mean of input time
     if not RELATIVE:
         RELATIVE = np.mean(t_in)

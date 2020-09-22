@@ -8,7 +8,7 @@ hdf5_stokes.py
 from gravity_toolkit.hdf5_stokes import hdf5_stokes
 hdf5_stokes(clm, slm, linp, minp, tinp, month, FILENAME=output_HDF5_file)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/hdf5_stokes.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/hdf5_stokes.py)
 
 #### Inputs
  - `clm`: Cosine spherical harmonic coefficients

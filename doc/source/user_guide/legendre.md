@@ -9,7 +9,7 @@ legendre.py
 from gravity_toolkit.legendre import legendre
 Pl = legendre(l, x)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/legendre.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/legendre.py)
 
 #### Inputs
  - `l`: degree of Legrendre polynomials  

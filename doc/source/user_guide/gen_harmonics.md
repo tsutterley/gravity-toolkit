@@ -11,7 +11,7 @@ from gravity_toolkit.plm_holmes import plm_holmes
 PLM,dPLM = plm_holmes(LMAX, np.cos(th))
 Ylms = gen_harmonics(data, lon, lat, LMAX=LMAX, PLM=PLM)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/gen_harmonics.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/gen_harmonics.py)
 
 #### Inputs
  - `data`: data magnitude

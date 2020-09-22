@@ -508,9 +508,8 @@ class harmonics(object):
         Add a singleton dimension to a harmonics object if non-existent
         """
         #-- change time dimensions to be iterable
-        if (np.ndim(self.time) == 0):
-            self.time = np.array([self.time])
-            self.month = np.array([self.month])
+        self.time = np.atleast_1d(self.time)
+        self.month = np.atleast_1d(self.month)
         #-- output harmonics with a third dimension
         if (self.ndim == 2):
             self.clm = self.clm[:,:,None]
@@ -638,8 +637,7 @@ class harmonics(object):
         Inputs: GRACE/GRACE-FO months
         """
         #-- check if months is an array or a single value
-        if (np.ndim(months) == 0):
-            months = np.array([months])
+        months = np.atleast_1d(months)
         #-- number of months
         n = len(months)
         #-- check that all months are available

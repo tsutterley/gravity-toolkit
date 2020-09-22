@@ -72,11 +72,8 @@ def plm_holmes(LMAX, x, ASTYPE=np.float):
     dplms: first differentials of Legendre polynomials
     """
 
-    if (np.ndim(x) > 0):
-        #-- length of the x array
-        jm = np.shape(x)[0]
-    else:
-        jm = 1
+    #-- length of the x array
+    jm = len(np.atleast_1d(x))
 
     LMAX = np.int(LMAX)
     #-- removing singleton dimensions of x

@@ -7,7 +7,7 @@ regress_grace_maps.py
 ```bash
 python regress_grace_maps.py --order=1 --cycles=0.5,1.0 --mode=0o775 parameter_file
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/scripts/regress_grace_maps.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/regress_grace_maps.py)
 
 #### Inputs
    parameter file containing specific variables for the analysis

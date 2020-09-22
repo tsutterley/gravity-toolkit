@@ -8,7 +8,7 @@ tsamplitude.py
 from gravity_toolkit.tsamplitude import tsamplitude
 ampl,ph = tsamplitude(bsin,bcos)
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/master/gravity_toolkit/tsamplitude.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/tsamplitude.py)
 
 #### Inputs
  - `bsin`: amplitude of the calculated sine values
