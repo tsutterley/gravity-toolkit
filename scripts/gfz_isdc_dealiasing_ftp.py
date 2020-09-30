@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_dealiasing_ftp.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (09/2020)
 Syncs GRACE Level-1b dealiasing products from the GFZ Information
     System and Data Center (ISDC)
 Optionally outputs as monthly tar files
@@ -10,15 +10,16 @@ CALLING SEQUENCE:
     python gfz_isdc_dealiasing_ftp.py --year=2015 --release=RL06 --tar
 
 COMMAND LINE OPTIONS:
-    -D X, --directory=X: working data directory
-    -R X, --release=X: GRACE data releases to run (RL05,RL06)
-    -Y X, --year=X: Years to sync separated by commas
+    -D X, --directory X: working data directory
+    -r X, --release X: GRACE/GRACE-FO Data Releases to run (RL05,RL06)
+    -Y X, --year X: Years to sync separated by commas
     -T, --tar: Output data as monthly tar files (.tar.gz or .tgz)
-    -M X, --mode=X: permissions mode of files synced
-    --log: output log of files downloaded
-    --clobber: Overwrite existing data in transfers
+    -M X, --mode X: permissions mode of files synced
+    -l, --log: output log of files downloaded
+    -C, --clobber: Overwrite existing data in transfers
 
 UPDATE HISTORY:
+    Updated 09/2020: use argparse to set command line parameters
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 03/2020: new GFZ ISDC ftp server website
     Updated 06/2019: different suffix with GRACE/GRACE-FO release 6
@@ -30,9 +31,9 @@ from __future__ import print_function
 import sys
 import os
 import re
-import getopt
 import ftplib
 import tarfile
+import argparse
 import posixpath
 import calendar, time
 
@@ -163,60 +164,51 @@ def ftp_mirror_file(fid, ftp, remote_file, local_file, CLOBBER, MODE):
         os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
         os.chmod(local_file, MODE)
 
-#-- PURPOSE: help module to describe the optional input parameters
-def usage():
-    print('\nHelp: {0}'.format(os.path.basename(sys.argv[0])))
-    print(' -D X, --directory=X\tWorking local data directory')
-    print(' -R X, --release=X\tGRACE data releases to run (RL05,RL06)')
-    print(' -Y X, --year=X\t\tYears to sync separated by commas')
-    print(' -T, --tar\t\tOutput data as monthly tar files')
-    print(' -M X, --mode=X\t\tPermission mode of directories and files synced')
-    print(' -C, --clobber\t\tOverwrite existing data in transfer')
-    print(' -l, --log\t\tOutput log file')
-    today = time.strftime('%Y-%m-%d',time.localtime())
-    LOGFILE = 'GFZ_AOD1B_sync_{0}.log'.format(today)
-    print('    Log file format: {0}\n'.format(LOGFILE))
-
 #-- Main program that calls gfz_isdc_dealiasing_ftp()
 def main():
     #-- Read the system arguments listed after the program
-    short_options = 'hD:R:Y:TCM:l'
-    long_options = ['help','directory=','release=','year=','tar',
-        'log','mode=','clobber']
-    optlist,arglist = getopt.getopt(sys.argv[1:],short_options,long_options)
-
+    parser = argparse.ArgumentParser(
+        description="""Syncs GRACE Level-1b dealiasing products from
+            the GFZ Information System and Data Center (ISDC)
+            """
+    )
     #-- command line parameters
-    base_dir = os.getcwd()
-    DREL = 'RL06'
-    YEAR = None
-    TAR = False
-    LOG = False
-    #-- permissions mode of the local directories and files
-    MODE = 0o775
-    CLOBBER = False
-    for opt, arg in optlist:
-        if opt in ('-h','--help'):
-            usage()
-            sys.exit()
-        elif opt in ("--directory"):
-            base_dir = os.path.expanduser(arg)
-        elif opt in ("--release"):
-            DREL = arg
-        elif opt in ("-Y","--year"):
-            YEAR = [int(Y) for Y in arg.split(',')]
-        elif opt in ("-T","--tar"):
-            TAR = True
-        elif opt in ("-l","--log"):
-            LOG = True
-        elif opt in ("-M","--mode"):
-            MODE = int(arg, 8)
-        elif opt in ("-C","--clobber"):
-            CLOBBER = True
+    #-- working data directory
+    parser.add_argument('--directory','-D',
+        type=os.path.expanduser, default=os.getcwd(),
+        help='Working data directory')
+    #-- GRACE/GRACE-FO data release
+    parser.add_argument('--release','-r',
+        metavar='DREL', type=str, nargs='+',
+        default=['RL06'], choices=['RL04','RL05','RL06'],
+        help='GRACE/GRACE-FO data release')
+    #-- years to download
+    parser.add_argument('--year','-Y',
+        type=int, nargs='+', default=range(2000,2021),
+        help='Years of data to sync')
+    parser.add_argument('--tar','-T',
+        default=False, action='store_true',
+        help='Output data as monthly tar files')
+    #-- Output log file in form
+    #-- GFZ_AOD1B_sync_2002-04-01.log
+    parser.add_argument('--log','-l',
+        default=False, action='store_true',
+        help='Output log file')
+    #-- sync options
+    parser.add_argument('--clobber','-C',
+        default=False, action='store_true',
+        help='Overwrite existing data in transfer')
+    #-- permissions mode of the directories and files synced (number in octal)
+    parser.add_argument('--mode','-M',
+        type=lambda x: int(x,base=8), default=0o775,
+        help='Permission mode of directories and files synced')
+    args = parser.parse_args()
 
     #-- check internet connection before attempting to run program
     if check_connection():
-        gfz_isdc_dealiasing_ftp(base_dir, DREL=DREL, YEAR=YEAR,
-            TAR=TAR, LOG=LOG, MODE=MODE, CLOBBER=CLOBBER)
+        gfz_isdc_dealiasing_ftp(args.directory, DREL=args.release,
+            YEAR=args.year, TAR=args.tar, LOG=args.log,
+            CLOBBER=args.clobber, MODE=args.mode)
 
 #-- run main program
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (09/2020)
 
 Data class for reading, writing and processing spatial data
 
@@ -19,6 +19,7 @@ PROGRAM DEPENDENCIES:
     hdf5_read.py: reads spatial data from HDF5
 
 UPDATE HISTORY:
+    Updated 09/2020: added header option to skip rows in ascii files
     Updated 08/2020: added compression options for ascii, netCDF4 and HDF5 files
     Updated 07/2020: added class docstring and using kwargs for output to file
         added case_insensitive_filename function to search directories
@@ -72,7 +73,7 @@ class spatial(object):
         return self
 
     def from_ascii(self, filename, date=True, compression=None, verbose=False,
-        columns=['lon','lat','data','time']):
+        columns=['lon','lat','data','time'], header=0):
         """
         Read a spatial object from an ascii file
         Inputs: full path of input ascii file
@@ -81,6 +82,7 @@ class spatial(object):
             ascii file is compressed using gzip or zip
             verbose output of file information
             column names of ascii file
+            rows of header lines to skip
         """
         #-- set filename
         self.case_insensitive_filename(filename)
@@ -117,7 +119,7 @@ class spatial(object):
         columns = [c for c in columns if (c != 'time')]
         #-- extract spatial data array and convert to matrix
         #-- for each line in the file
-        for line in file_contents:
+        for line in file_contents[header:]:
             #-- extract columns of interest and assign to dict
             #-- convert fortran exponentials if applicable
             d = {c:r.replace('D','E') for c,r in zip(columns,rx.findall(line))}
@@ -595,8 +597,11 @@ class spatial(object):
         #-- create output mean spatial object
         temp.data = np.mean(self.data,axis=2)
         temp.mask = np.any(self.mask,axis=2)
-        if getattr(self, 'time'):
-            temp.time = np.mean(self.time)
+        #-- calculate the mean time
+        try:
+            temp.time = np.mean(getattr(self, 'time'))
+        except AttributeError:
+            pass
         #-- calculate the spatial anomalies by removing the mean field
         if apply:
             for i,t in enumerate(self.time):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_grace_sync.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (09/2020)
 
 Syncs GRACE/GRACE-FO and auxiliary data from the NASA JPL PO.DAAC Drive Server
 Syncs CSR/GFZ/JPL files for RL04/RL05/RL06 GAA/GAB/GAC/GAD/GSM
@@ -22,9 +22,7 @@ Add PO.DAAC Drive OPS to NASA Earthdata Applications and get WebDAV Password
 https://podaac-tools.jpl.nasa.gov/drive
 
 CALLING SEQUENCE:
-    podaac_grace_sync(<directory>, PROC, USER=<username>)
-        or
-    python podaac_grace_sync.py --user=<username>
+    python podaac_grace_sync.py --user <username>
     where <username> is your NASA Earthdata username
 
 OUTPUTS:
@@ -39,18 +37,18 @@ OUTPUTS:
 
 COMMAND LINE OPTIONS:
     --help: list the command line options
-    -U X, --user=X: username for NASA Earthdata Login
-    -N X, --netrc=X: path to .netrc file for authentication
-    -D X, --directory=X: working data directory
-    -C X, --center=X: GRACE Processing Center
-    -R X, --release=X: GRACE data releases to sync (RL05,RL06)
-    --aod1b: sync GRACE/GRACE-FO Level-1B dealiasing products
-    --newsletters: sync GRACE/GRACE-FO newsletters
+    -U X, --user X: username for NASA Earthdata Login
+    -N X, --netrc X: path to .netrc file for authentication
+    -D X, --directory X: working data directory
+    -c X, --center X: GRACE Processing Center
+    -r X, --release X: GRACE/GRACE-FO Data Releases to sync (RL05,RL06)
+    -a, --aod1b: sync GRACE/GRACE-FO Level-1B dealiasing products
+    -n, --newsletters: sync GRACE/GRACE-FO newsletters
     -L, --list: print files to be transferred, but do not execute transfer
     -l, --log: output log of files downloaded
-    --clobber: Overwrite existing data in transfer
+    -C, --clobber: Overwrite existing data in transfer
     --checksum: compare hashes to check if overwriting existing data
-    -M X, --mode=X: Local permissions mode of the directories and files synced
+    -M X, --mode X: Local permissions mode of the directories and files synced
 
 PYTHON DEPENDENCIES:
     lxml: Pythonic XML and HTML processing library using libxml2/libxslt
@@ -63,6 +61,7 @@ PROGRAM DEPENDENCIES:
     utilities: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 09/2020: use argparse to set command line parameters
     Updated 08/2020: flake8 compatible regular expression strings
         moved urllib opener to utilities. add credential check
         moved urllib directory listing to utilities
@@ -149,10 +148,10 @@ import re
 import io
 import time
 import netrc
-import getopt
 import shutil
 import hashlib
 import getpass
+import argparse
 import builtins
 import posixpath
 import lxml.etree
@@ -548,93 +547,81 @@ def http_pull_file(fid, remote_file, remote_mtime, local_file, LIST, CLOBBER,
             os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
             os.chmod(local_file, MODE)
 
-#-- PURPOSE: help module to describe the optional input parameters
-def usage():
-    print('\nHelp: {}'.format(os.path.basename(sys.argv[0])))
-    print(' -U X, --user=X\t\tUsername for NASA Earthdata Login')
-    print(' -N X, --netrc=X\t\tPath to .netrc file for authentication')
-    print(' -D X, --directory=X\tWorking Data Directory')
-    print(' -C X, --center=X\tGRACE Processing Center (CSR,GFZ,JPL)')
-    print(' -R X, --release=X\tGRACE data releases to sync (RL05,RL06)')
-    print(' --aod1b\t\tSync GRACE/GRACE-FO Level-1B dealiasing products')
-    print(' --newsletters\t\tSync GRACE/GRACE-FO Newsletters')
-    print(' -L, --list\t\tOnly print files that are to be transferred')
-    print(' --clobber\t\tOverwrite existing data in transfer')
-    print(' --checksum\t\tCompare hashes to check if overwriting existing data')
-    print(' -M X, --mode=X\t\tPermission mode of directories and files synced')
-    print(' -l, --log\t\tOutput log file')
-    today = time.strftime('%Y-%m-%d',time.localtime())
-    LOGFILE = 'PODAAC_sync_{0}.log'.format(today)
-    print('    Log file format: {}\n'.format(LOGFILE))
-
 #-- Main program that calls podaac_grace_sync()
 def main():
     #-- Read the system arguments listed after the program
-    long_options = ['help','user=','netrc=','directory=','list','log',
-        'center=','release=','aod1b','newsletters','clobber','checksum','mode=']
-    optlist,arglist = getopt.getopt(sys.argv[1:],'hU:N:D:lLC:R:M:',long_options)
-
+    parser = argparse.ArgumentParser(
+        description="""Syncs GRACE/GRACE-FO and auxiliary data from the
+            NASA JPL PO.DAAC Drive Server.
+            Syncs GRACE/GRACE-FO Level-1b dealiasing products (AOD1B).
+            Gets the latest technical note (TN) files.
+            Gets the monthly GRACE/GRACE-FO newsletters.
+            """
+    )
     #-- command line parameters
-    USER = ''
-    NETRC = None
+    #-- NASA Earthdata credentials
+    parser.add_argument('--user','-U',
+        type=str, default='',
+        help='Username for NASA Earthdata Login')
+    parser.add_argument('--netrc','-N',
+        type=os.path.expanduser, default='',
+        help='Path to .netrc file for authentication')
     #-- working data directory
-    DIRECTORY = os.getcwd()
-    LIST = False
-    LOG = False
-    CLOBBER = False
-    #-- GRACE Processing Centers to run
-    PROC = ['CSR', 'GFZ', 'JPL']
-    #-- Data release
-    DREL = ['RL06']
-    #-- GRACE/GRACE-FO level-1b dealiasing products
-    AOD1B = False
+    parser.add_argument('--directory','-D',
+        type=os.path.expanduser, default=os.getcwd(),
+        help='Working data directory')
+    #-- GRACE/GRACE-FO processing center
+    parser.add_argument('--center','-c',
+        metavar='PROC', type=str, nargs='+',
+        default=['CSR','GFZ','JPL'], choices=['CSR','GFZ','JPL'],
+        help='GRACE/GRACE-FO processing center')
+    #-- GRACE/GRACE-FO data release
+    parser.add_argument('--release','-r',
+        metavar='DREL', type=str, nargs='+',
+        default=['RL06'], choices=['RL04','RL05','RL06'],
+        help='GRACE/GRACE-FO data release')
+    #-- GRACE/GRACE-FO dealiasing products
+    parser.add_argument('--aod1b','-a',
+        default=False, action='store_true',
+        help='Sync GRACE/GRACE-FO Level-1B dealiasing products')
     #-- GRACE/GRACE-FO newsletters
-    NEWSLETTERS = False
-    #-- Use hash for determining whether or not to overwrite
-    CHECKSUM = False
-    #-- permissions mode of the local directories and files (number in octal)
-    MODE = 0o775
-    for opt, arg in optlist:
-        if opt in ('-h','--help'):
-            usage()
-            sys.exit()
-        elif opt in ("-U","--user"):
-            USER = arg
-        elif opt in ("-N","--netrc"):
-            NETRC = os.path.expanduser(arg)
-        elif opt in ("-D","--directory"):
-            DIRECTORY = os.path.expanduser(arg)
-        elif opt in ("-L","--list"):
-            LIST = True
-        elif opt in ("-l","--log"):
-            LOG = True
-        elif opt in ("--clobber",):
-            CLOBBER = True
-        elif opt in ("-C","--center"):
-            PROC = arg.upper().split(',')
-        elif opt in ("-R","--release"):
-            DREL = arg.upper().split(',')
-        elif opt in ("--aod1b",):
-            AOD1B = True
-        elif opt in ("--newsletters",):
-            NEWSLETTERS = True
-        elif opt in ("--checksum",):
-            CHECKSUM = True
-        elif opt in ("-M","--mode"):
-            MODE = int(arg, 8)
+    parser.add_argument('--newsletters','-n',
+        default=False, action='store_true',
+        help='Sync GRACE/GRACE-FO Newsletters')
+    #-- Output log file in form
+    #-- PODAAC_sync_2002-04-01.log
+    parser.add_argument('--log','-l',
+        default=False, action='store_true',
+        help='Output log file')
+    #-- sync options
+    parser.add_argument('--list','-L',
+        default=False, action='store_true',
+        help='Only print files that could be transferred')
+    parser.add_argument('--checksum',
+        default=False, action='store_true',
+        help='Compare hashes to check for overwriting existing data')
+    parser.add_argument('--clobber','-C',
+        default=False, action='store_true',
+        help='Overwrite existing data in transfer')
+    #-- permissions mode of the directories and files synced (number in octal)
+    parser.add_argument('--mode','-M',
+        type=lambda x: int(x,base=8), default=0o775,
+        help='Permission mode of directories and files synced')
+    args = parser.parse_args()
 
     #-- JPL PO.DAAC drive hostname
     HOST = 'podaac-tools.jpl.nasa.gov'
     #-- get NASA Earthdata and JPL PO.DAAC drive credentials
-    if not USER and not NETRC:
+    if not args.user and not args.netrc:
         #-- check that NASA Earthdata credentials were entered
         USER = builtins.input('Username for {0}: '.format(HOST))
         #-- enter password securely from command-line
         PASSWORD = getpass.getpass('Password for {0}@{1}: '.format(USER,HOST))
-    elif NETRC:
-        USER,LOGIN,PASSWORD = netrc.netrc(NETRC).authenticators(HOST)
+    elif args.netrc:
+        USER,LOGIN,PASSWORD = netrc.netrc(args.netrc).authenticators(HOST)
     else:
         #-- enter password securely from command-line
+        USER = args.user
         PASSWORD = getpass.getpass('Password for {0}@{1}: '.format(USER,HOST))
 
     #-- build a urllib opener for PO.DAAC Drive
@@ -644,9 +631,10 @@ def main():
     #-- check internet connection before attempting to run program
     #-- check JPL PO.DAAC Drive credentials before attempting to run program
     if gravity_toolkit.utilities.check_credentials():
-        podaac_grace_sync(DIRECTORY, PROC, DREL=DREL, NEWSLETTERS=NEWSLETTERS,
-            AOD1B=AOD1B, LIST=LIST, LOG=LOG, CLOBBER=CLOBBER, CHECKSUM=CHECKSUM,
-            MODE=MODE)
+        podaac_grace_sync(args.directory, args.center, DREL=args.release,
+            NEWSLETTERS=args.newsletters, AOD1B=args.aod1b, LIST=args.list,
+            LOG=args.log, CLOBBER=args.clobber, CHECKSUM=args.checksum,
+            MODE=args.mode)
 
 #-- run main program
 if __name__ == '__main__':

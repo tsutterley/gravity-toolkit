@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_grace_ftp.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (09/2020)
 Syncs GRACE/GRACE-FO data from the GFZ Information System and Data Center (ISDC)
 Syncs CSR/GFZ/JPL files for RL06 GAA/GAB/GAC/GAD/GSM
     GAA and GAB are GFZ/JPL only
 
 CALLING SEQUENCE:
-    gfz_isdc_grace_ftp(DIRECTORY, PROC)
+    python gfz_isdc_grace_ftp.py --mission grace grace-fo
 
 OUTPUTS:
     CSR RL06: GAC/GAD/GSM
@@ -16,21 +16,22 @@ OUTPUTS:
 
 COMMAND LINE OPTIONS:
     --help: list the command line options
-    -D X, --directory=X: working data directory
-    --mission: Sync GRACE (grace) or GRACE Follow-On (grace-fo) data
-    -C X, --center=X: GRACE/GRACE-FO Processing Center
-    -R X, --release=X: GRACE/GRACE-FO data releases to sync (RL05,RL06)
+    -D X, --directory X: working data directory
+    -m X, --mission X: Sync GRACE (grace) or GRACE Follow-On (grace-fo) data
+    -c X, --center X: GRACE/GRACE-FO Processing Center
+    -r X, --release X: GRACE/GRACE-FO data releases to sync (RL05,RL06)
     -L, --list: print files to be transferred, but do not execute transfer
     -l, --log: output log of files downloaded
-    --clobber: Overwrite existing data in transfer
+    -C, --clobber: Overwrite existing data in transfer
     --checksum: compare hashes to check if overwriting existing data
-    -M X, --mode=X: Local permissions mode of the directories and files synced
+    -M X, --mode X: Local permissions mode of the directories and files synced
 
 PYTHON DEPENDENCIES:
     future: Compatibility layer between Python 2 and Python 3
         (http://python-future.org/)
 
 UPDATE HISTORY:
+    Updated 09/2020: use argparse to set command line parameters
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 03/2020 for public release
     Updated 03/2020: new GFZ ISDC ftp server website
@@ -44,10 +45,10 @@ import sys
 import os
 import re
 import io
-import getopt
 import ftplib
 import shutil
 import hashlib
+import argparse
 import posixpath
 import calendar, time
 
@@ -250,71 +251,60 @@ def ftp_mirror_file(fid,ftp,remote_file,local_file,LIST,CLOBBER,CHECKSUM,MODE):
             os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
             os.chmod(local_file, MODE)
 
-#-- PURPOSE: help module to describe the optional input parameters
-def usage():
-    print('\nHelp: {}'.format(os.path.basename(sys.argv[0])))
-    print(' -D X, --directory=X\tWorking Data Directory')
-    print(' --mission\t\tSync GRACE (grace) or GRACE Follow-On (grace-fo) data')
-    print(' -C X, --center=X\tGRACE Processing Center (CSR,GFZ,JPL)')
-    print(' -R X, --release=X\tGRACE data releases to sync (RL04,RL05)')
-    print(' -L, --list\t\tOnly print files that are to be transferred')
-    print(' --clobber\t\tOverwrite existing data in transfer')
-    print(' --checksum\t\tCompare hashes to check if overwriting existing data')
-    print(' -M X, --mode=X\t\tPermission mode of directories and files synced')
-    print(' -l, --log\t\tOutput log file')
-    today = time.strftime('%Y-%m-%d',time.localtime())
-    LOGFILE = 'GFZ_ISDC_sync_{0}.log'.format(today)
-    print('    Log file format: {}\n'.format(LOGFILE))
-
 #-- Main program that calls gfz_isdc_grace_ftp()
 def main():
     #-- Read the system arguments listed after the program
-    long_options = ['help','directory=','list','log','mission=','center=',
-        'release=','clobber','checksum','mode=']
-    optlist,arglist = getopt.getopt(sys.argv[1:],'hD:lLC:R:M:',long_options)
-
+    parser = argparse.ArgumentParser(
+        description="""Syncs GRACE/GRACE-FO data from the GFZ
+            Information System and Data Center (ISDC)
+            """
+    )
     #-- command line parameters
-    DIRECTORY = os.getcwd()
-    LIST = False
-    LOG = False
-    CLOBBER = False
+    #-- working data directory
+    parser.add_argument('--directory','-D',
+        type=os.path.expanduser, default=os.getcwd(),
+        help='Working data directory')
     #-- mission (GRACE or GRACE Follow-On)
-    MISSION = ['grace','grace-fo']
-    #-- GRACE/GRACE-FO Processing Centers to run
-    PROC = ['CSR', 'GFZ', 'JPL']
-    #-- Data release
-    DREL = ['RL06']
-    #-- Use hash for determining whether or not to overwrite
-    CHECKSUM = False
-    #-- permissions mode of the local directories and files (number in octal)
-    MODE = 0o775
-    for opt, arg in optlist:
-        if opt in ('-h','--help'):
-            usage()
-            sys.exit()
-        elif opt in ("-D","--directory"):
-            DIRECTORY = os.path.expanduser(arg)
-        elif opt in ("-L","--list"):
-            LIST = True
-        elif opt in ("-l","--log"):
-            LOG = True
-        elif opt in ("--clobber"):
-            CLOBBER = True
-        elif opt in ("--mission"):
-            MISSION = arg.lower().split(',')
-        elif opt in ("-C","--center"):
-            PROC = arg.upper().split(',')
-        elif opt in ("-R","--release"):
-            DREL = arg.upper().split(',')
-        elif opt in ("--checksum"):
-            CHECKSUM = True
-        elif opt in ("-M","--mode"):
-            MODE = int(arg, 8)
+    parser.add_argument('--mission','-m',
+        type=str, nargs='+',
+        default=['grace','grace-fo'], choices=['grace','grace-fo'],
+        help='Mission to sync between GRACE and GRACE-FO')
+    #-- GRACE/GRACE-FO processing center
+    parser.add_argument('--center','-c',
+        metavar='PROC', type=str, nargs='+',
+        default=['CSR','GFZ','JPL'], choices=['CSR','GFZ','JPL'],
+        help='GRACE/GRACE-FO processing center')
+    #-- GRACE/GRACE-FO data release
+    parser.add_argument('--release','-r',
+        metavar='DREL', type=str, nargs='+',
+        default=['RL06'], choices=['RL04','RL05','RL06'],
+        help='GRACE/GRACE-FO data release')
+    #-- Output log file in form
+    #-- GFZ_ISDC_sync_2002-04-01.log
+    parser.add_argument('--log','-l',
+        default=False, action='store_true',
+        help='Output log file')
+    #-- sync options
+    parser.add_argument('--list','-L',
+        default=False, action='store_true',
+        help='Only print files that could be transferred')
+    parser.add_argument('--checksum',
+        default=False, action='store_true',
+        help='Compare hashes to check for overwriting existing data')
+    parser.add_argument('--clobber','-C',
+        default=False, action='store_true',
+        help='Overwrite existing data in transfer')
+    #-- permissions mode of the directories and files synced (number in octal)
+    parser.add_argument('--mode','-M',
+        type=lambda x: int(x,base=8), default=0o775,
+        help='Permission mode of directories and files synced')
+    args = parser.parse_args()
 
     #-- check internet connection before attempting to run program
     if check_connection():
-        gfz_isdc_grace_ftp(DIRECTORY, PROC, DREL=DREL, MISSION=MISSION,
-            LIST=LIST, LOG=LOG, CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
+        gfz_isdc_grace_ftp(args.directory, args.center, DREL=args.release,
+            MISSION=args.mission, LIST=args.list, LOG=args.log,
+            CLOBBER=args.clobber, CHECKSUM=args.checksum, MODE=args.mode)
     else:
         raise RuntimeError('Check internet connection')
 

@@ -43,6 +43,7 @@ REFERENCES:
     Geoid Cookbook: http://mitgcm.org/~mlosch/geoidcookbook.pdf
 
 UPDATE HISTORY:
+    Updated 09/2020: verify dimensions of input x variable
     Updated 08/2020: prevent zero divisions by changing u==0 to eps of data type
     Updated 07/2020: added function docstrings
     Updated 10/2018: using future division for python3 Compatibility
@@ -72,12 +73,12 @@ def plm_holmes(LMAX, x, ASTYPE=np.float):
     dplms: first differentials of Legendre polynomials
     """
 
-    #-- length of the x array
-    jm = len(np.atleast_1d(x))
-
-    LMAX = np.int(LMAX)
     #-- removing singleton dimensions of x
-    x = np.squeeze(x).astype(ASTYPE)
+    x = np.atleast_1d(x).flatten().astype(ASTYPE)
+    #-- length of the x array
+    jm = len(x)
+    #-- verify data type of spherical harmonic truncation
+    LMAX = np.int(LMAX)
     #-- scaling factor
     scalef = 1.0e-280
 

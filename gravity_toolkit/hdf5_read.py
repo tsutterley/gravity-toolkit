@@ -127,6 +127,7 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
         fileID = h5py.File(os.path.expanduser(filename), 'r')
     #-- allocate python dictionary for output variables
     dinput = {}
+    dinput['attributes'] = {}
 
     #-- Output HDF5 file information
     if VERBOSE:
@@ -134,6 +135,7 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
         print(list(fileID.keys()))
 
     #-- Getting the data from each HDF5 variable
+    #-- using mapping between output keys and HDF5 variable names
     dinput['lon'] = fileID[LONNAME][:]
     dinput['lat'] = fileID[LATNAME][:]
     dinput['data'] = fileID[VARNAME][:]
@@ -146,7 +148,6 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
         dinput['data'] = dinput['data'].T
 
     #-- Getting attributes of included variables
-    dinput['attributes'] = {}
     if ATTRIBUTES:
         dinput['attributes']['lon'] = [fileID[LONNAME].attrs['units'],
             fileID[LONNAME].attrs['long_name']]

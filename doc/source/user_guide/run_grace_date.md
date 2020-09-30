@@ -9,16 +9,16 @@ run_grace_date.py
 
 #### Calling Sequence
 ```bash
-python run_grace_date.py --release=RL06 --mode=0o775
+python run_grace_date.py --release RL06 --mode 0o775
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/run_grace_date.py)
 
 #### Command Line Options  
- - `-D X`, `--directory=X`: GRACE/GRACE-FO working data directory
- - `-C X`, `--center=X`: GRACE/GRACE-FO Processing Center (CSR,GFZ,JPL) 
+ - `-D X`, `--directory X`: GRACE/GRACE-FO working data directory
+ - `-c X`, `--center X`: GRACE/GRACE-FO Processing Center (CSR,GFZ,JPL) 
     * `'CSR'`: University of Texas Center for Space Research  
     * `'GFZ'`: German Research Centre for Geosciences (GeoForschungsZentrum)
     * `'JPL'`: Jet Propulsion Laboratory    
- - `-R X`, `--release=X`: GRACE/GRACE-FO data release (RL04,RL05,RL06)
+ - `-r X`, `--release X`: GRACE/GRACE-FO data release (RL04,RL05,RL06)
  - `-V`, `--verbose`: verbose output of program progress
- - `-M X`, `--mode=X`: permissions mode of output file
+ - `-M X`, `--mode X`: permissions mode of output file

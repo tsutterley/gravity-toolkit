@@ -1,40 +1,40 @@
 #!/usr/bin/env python
 u"""
 combine_harmonics.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (09/2020)
 Converts a file from the spherical harmonic domain into the spatial domain
 
 CALLING SEQUENCE:
-    python combine_harmonics.py -F 2 --lmax=60 -U 1 input_file output_file
+    python combine_harmonics.py -F 2 --lmax 60 -U 1 infile outfile
 
 COMMAND LINE OPTIONS:
     --help: list the command line options
-    --lmax=X: maximum spherical harmonic degree
-    --mmax=X: maximum spherical harmonic order
-    --reference=X: Reference frame for load love numbers
-    -R X, --radius=X: Gaussian smoothing radius (km)
-    -D, --destripe: use a decorrelation filter (destriping filter)
-    -U X, --units=X: output units
+    -l X, --lmax X: maximum spherical harmonic degree
+    -m X, --mmax X: maximum spherical harmonic order
+    -r X, --reference X: Reference frame for load love numbers
+    -R X, --radius X: Gaussian smoothing radius (km)
+    -d, --destripe: use a decorrelation filter (destriping filter)
+    -U X, --units X: output units
         1: cm of water thickness
         2: mm of geoid height
         3: mm of elastic crustal deformation [Davis 2004]
         4: microGal gravitational perturbation
         5: Pa, equivalent surface pressure in Pascals
-    -S X, --spacing=X: spatial resolution of output data (dlon,dlat)
-    -I X, --interval=X: output grid interval
+    -S X, --spacing X: spatial resolution of output data (dlon,dlat)
+    -I X, --interval X: output grid interval
         1: (0:360, 90:-90)
         2: (degree spacing/2)
         3: non-global grid (set bounds with --bounds)
-    -B X, --bounds=X: bounding box for interval 3 (minlon,maxlon,minlat,maxlat)
+    -B X, --bounds X: bounding box for interval 3 (minlon,maxlon,minlat,maxlat)
     -O, --ocean: redistribute total mass over the ocean
-    --mask=X: input land-sea function (netCDF4) with variable LSMASK as mask
-    --mean=X: mean file to remove from the harmonic data
-    -F X, --format=X: input and output data format
-        1: ascii format
-        2: netCDF4 format
-        3: HDF5 format
+    --mask X: input land-sea function (netCDF4) with variable LSMASK as mask
+    --mean X: mean file to remove from the harmonic data
+    -F X, --format X: input and output data format
+        ascii
+        netCDF4
+        HDF5
     -V, --verbose: verbose output of processing run
-    -M X, --mode=X: Permissions mode of the files created
+    -M X, --mode X: Permissions mode of the files created
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
@@ -69,6 +69,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 09/2020: use argparse to set command line parameters
     Updated 08/2020: use utilities to define path to load love numbers file
     Updated 06/2020: using spatial data class for input and output operations
     Updated 04/2020: using the harmonics class for spherical harmonic operations
@@ -84,7 +85,7 @@ from __future__ import print_function
 import sys
 import os
 import re
-import getopt
+import argparse
 import numpy as np
 
 from gravity_toolkit.read_love_numbers import read_love_numbers
@@ -136,17 +137,29 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None,
         os.makedirs(DIRECTORY,MODE,exist_ok=True)
 
     #-- read input spherical harmonic coefficients from file in DATAFORM
-    if (DATAFORM == 1):
+    if (DATAFORM == 'ascii'):
         input_Ylms = harmonics().from_ascii(INPUT_FILE)
-    elif (DATAFORM == 2):
+    elif (DATAFORM == 'netCDF4'):
         #-- read input netCDF4 file (.nc)
         input_Ylms = harmonics().from_netCDF4(INPUT_FILE)
-    elif (DATAFORM == 3):
+    elif (DATAFORM == 'HDF5'):
         #-- read input HDF5 file (.H5)
         input_Ylms = harmonics().from_HDF5(INPUT_FILE)
     #-- reform harmonic dimensions to be l,m,t
     #-- truncate to degree and order LMAX, MMAX
     input_Ylms = input_Ylms.truncate(lmax=LMAX, mmax=MMAX).expand_dims()
+    #-- remove mean file from input Ylms
+    if MEAN_FILE and (DATAFORM == 'ascii'):
+        mean_Ylms = harmonics().from_ascii(MEAN_FILE,date=False)
+        input_Ylms.subtract(mean_Ylms)
+    elif MEAN_FILE and (DATAFORM == 'netCDF4'):
+        #-- read input netCDF4 file (.nc)
+        mean_Ylms = harmonics().from_netCDF4(MEAN_FILE,date=False)
+        input_Ylms.subtract(mean_Ylms)
+    elif MEAN_FILE and (DATAFORM == 'HDF5'):
+        #-- read input HDF5 file (.H5)
+        mean_Ylms = harmonics().from_HDF5(MEAN_FILE,date=False)
+        input_Ylms.subtract(mean_Ylms)
 
     #-- read arrays of kl, hl, and ll Love Numbers
     hl,kl,ll = load_love_numbers(LMAX, REFERENCE=REFERENCE)
@@ -265,127 +278,100 @@ def output_data(data, FILENAME=None, DATAFORM=None, UNITS=None):
     unit_name = ['Equivalent Water Thickness', 'Geoid Height',
         'Elastic Crustal Uplift', 'Gravitational Undulation',
         'Equivalent Surface Pressure']
-    if (DATAFORM == 1):
+    if (DATAFORM == 'ascii'):
         #-- ascii (.txt)
         data.to_ascii(FILENAME)
-    elif (DATAFORM == 2):
+    elif (DATAFORM == 'netCDF4'):
         #-- netcdf (.nc)
         data.to_netCDF4(FILENAME, units=unit_short[UNITS-1],
             longname=unit_name[UNITS-1])
-    elif (DATAFORM == 3):
+    elif (DATAFORM == 'HDF5'):
         #-- HDF5 (.H5)
         data.to_HDF5(FILENAME, units=unit_short[UNITS-1],
             longname=unit_name[UNITS-1])
 
-#-- PURPOSE: help module to describe the optional input parameters
-def usage():
-    print('\nHelp: {0}'.format(os.path.basename(sys.argv[0])))
-    print(' --lmax=X\t\tMaximum spherical harmonic degree')
-    print(' --mmax=X\t\tMaximum spherical harmonic order')
-    print(' --reference=X\t\tReference frame for load Love numbers')
-    print(' -R X, --radius=X\tGaussian smoothing radius (km)')
-    print(' -D, --destripe\t\tUse a decorrelation filter')
-    print(' -U X, --units=X\tOutput units')
-    print('\t1: cm w.e.\n\t2: mm geoid\n\t3: mm uplift\n\t4: microGal\n\t5: Pa')
-    print(' -S X, --spacing=X\tSpatial resolution of output data (dlon,dlat)')
-    print(' -I X, --interval=X\tOutput grid interval')
-    print('\t1: (0:360, 90:-90)\n\t2: (degree spacing/2)\n\t3: non-global grid')
-    print(' -B X, --bounds=X\tBounding box for interval 3')
-    print(' -O, --ocean\t\tRedistribute total mass over the ocean')
-    print(' --mean=X\t\tMean file to remove from the harmonic data')
-    print(' -F X, --format=X\tInput and output data format')
-    print('\t1: ascii\n\t2: netcdf\n\t3: HDF5')
-    print('-V, --verbose\t\tVerbose output of processing run')
-    print(' -M X, --mode=X\t\tPermissions mode of the output files\n')
-
 #-- This is the main part of the program that calls the individual modules
 def main():
-    #-- Read the system arguments listed after the program and run the analyses
-    #-- with the specific parameters.
-    short_options = 'hR:DU:S:I:B:OF:VM:'
-    long_options = ['help','lmax=','mmax=','reference=','radius=','destripe',
-        'units=','spacing=','interval=','bounds=','ocean','mean=','format=',
-        'verbose','mode=']
-    optlist, arglist = getopt.getopt(sys.argv[1:], short_options, long_options)
-
+    #-- Read the system arguments listed after the program
+    parser = argparse.ArgumentParser(
+        description="""Converts a file from the spherical harmonic
+            domain into the spatial domain
+            """
+    )
     #-- command line parameters
+    #-- input and output file
+    parser.add_argument('infile',
+        type=os.path.expanduser, nargs='?',
+        help='Input harmonic file')
+    parser.add_argument('outfile',
+        type=os.path.expanduser, nargs='?',
+        help='Output spatial file')
     #-- maximum spherical harmonic degree and order
-    LMAX = 60
-    MMAX = None
+    parser.add_argument('--lmax','-l',
+        type=int, default=60,
+        help='Maximum spherical harmonic degree')
+    parser.add_argument('--mmax','-m',
+        type=int, default=None,
+        help='Maximum spherical harmonic order')
     #-- option for setting reference frame for gravitational load love number
     #-- reference frame options (CF, CM, CE)
-    REFERENCE = 'CF'
+    parser.add_argument('--reference','-r',
+        type=str.upper, default='CF', choices=['CF','CM','CE'],
+        help='Reference frame for load Love numbers')
     #-- Gaussian smoothing radius (km)
-    RAD = 0
+    parser.add_argument('--radius','-R',
+        type=float, default=0,
+        help='Gaussian smoothing radius (km)')
     #-- Use a decorrelation (destriping) filter
-    DESTRIPE = False
+    parser.add_argument('--destripe','-d',
+        default=False, action='store_true',
+        help='Verbose output of run')
     #-- output units
-    UNITS = 1
+    parser.add_argument('--units','-U',
+        type=int, default=1, choices=[1,2,3,4,5],
+        help='Output units')
     #-- output grid parameters
-    DDEG = [0.5,0.5]
-    INTERVAL = 1
-    BOUNDS = None
+    parser.add_argument('--spacing','-S',
+        type=float, nargs='+', default=[0.5,0.5], metavar=('dlon','dlat'),
+        help='Spatial resolution of output data')
+    parser.add_argument('--interval','-I',
+        type=int, default=2, choices=[1,2,3],
+        help='Output grid interval (1: global, 2: centered global, 3: non-global)')
+    parser.add_argument('--bounds','-B',
+        type=float, nargs=4, metavar=('lon_min','lon_max','lat_min','lat_max'),
+        help='Bounding box for non-global grid')
     #-- redistribute total mass over the ocean
-    REDISTRIBUTE = False
+    parser.add_argument('--ocean','-O',
+        default=False, action='store_true',
+        help='Redistribute total mass over the ocean')
     #-- land-sea mask for redistributing over the ocean
-    LSMASK = None
+    parser.add_argument('--mask',
+        type=os.path.expanduser, default='',
+        help='Land-sea mask for redistributing over the ocean')
     #-- mean file to remove
-    MEAN_FILE = None
-    #-- input and output data format (1: ascii, 2: netcdf, 3: HDF5)
-    DATAFORM = 2
-    #-- verbose output
-    VERBOSE = False
+    parser.add_argument('--mean',
+        type=os.path.expanduser, default='',
+        help='Mean file to remove from the harmonic data')
+    #-- input and output data format (ascii, netCDF4, HDF5)
+    parser.add_argument('--format','-F',
+        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
+        help='Input and output data format')
+    #-- print information about each input and output file
+    parser.add_argument('--verbose','-V',
+        default=False, action='store_true',
+        help='Verbose output of run')
     #-- permissions mode of the output files (octal)
-    MODE = 0o775
-    for opt, arg in optlist:
-        if opt in ('-h','--help'):
-            usage()
-            sys.exit()
-        elif opt in ("--lmax"):
-            LMAX = np.int(arg)
-        elif opt in ("--mmax"):
-            MMAX = np.int(arg)
-        elif opt in ("--reference"):
-            REFERENCE = arg.upper()
-        elif opt in ("-R","--radius"):
-            RAD = np.float(arg)
-        elif opt in ("-D","--destripe"):
-            DESTRIPE = True
-        elif opt in ("-U","--units"):
-            UNITS = np.int(arg)
-        elif opt in ("-S","--spacing"):
-            DDEG = np.array(arg.split(','),dtype=np.float)
-        elif opt in ("-I","--interval"):
-            INTERVAL = np.int(arg)
-        elif opt in ("-B","--bounds"):
-            BOUNDS = np.array(arg.split(','),dtype=np.float)
-        elif opt in ("-O","--ocean"):
-            REDISTRIBUTE = True
-        elif opt in ("--mask"):
-            LSMASK = os.path.expanduser(arg)
-        elif opt in ("--mean"):
-            MEAN_FILE = os.path.expanduser(arg)
-        elif opt in ("-F","--format"):
-            DATAFORM = np.int(arg)
-        elif opt in ("-V","--verbose"):
-            VERBOSE = True
-        elif opt in ("-M","--mode"):
-            MODE = int(arg, 8)
+    parser.add_argument('--mode','-M',
+        type=lambda x: int(x,base=8), default=0o775,
+        help='permissions mode of output files')
+    args = parser.parse_args()
 
-    #-- Input and Output Files
-    if not arglist:
-        raise Exception('No input and output files specified')
-
-    #-- input spherical harmonic data
-    INPUT_FILE = os.path.expanduser(arglist[0])
-    #-- output spatial field
-    OUTPUT_FILE = os.path.expanduser(arglist[1])
     #-- run program with parameters
-    combine_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=LMAX, MMAX=MMAX,
-        RAD=RAD, DESTRIPE=DESTRIPE, UNITS=UNITS, DDEG=DDEG,
-        INTERVAL=INTERVAL, BOUNDS=BOUNDS, REDISTRIBUTE=REDISTRIBUTE,
-        LSMASK=LSMASK, MEAN_FILE=MEAN_FILE, DATAFORM=DATAFORM,
-        VERBOSE=VERBOSE, MODE=MODE)
+    combine_harmonics(args.infile, args.outfile, LMAX=args.lmax, MMAX=args.mmax,
+        RAD=args.radius, DESTRIPE=args.destripe, UNITS=args.units,
+        DDEG=args.spacing, INTERVAL=args.interval, BOUNDS=args.bounds,
+        REDISTRIBUTE=args.ocean, LSMASK=args.mask, MEAN_FILE=args.mean,
+        DATAFORM=args.format, VERBOSE=args.verbose, MODE=args.mode)
 
 #-- run main program
 if __name__ == '__main__':

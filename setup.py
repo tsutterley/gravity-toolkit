@@ -20,7 +20,7 @@ scripts.append(os.path.join('gravity_toolkit','grace_months_index.py'))
 
 setup(
     name='read-GRACE-harmonics',
-    version='1.0.1.20',
+    version='1.0.1.21',
     description=description,
     long_description=long_description,
     long_description_content_type="text/markdown",

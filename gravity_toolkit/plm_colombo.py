@@ -24,6 +24,7 @@ OUTPUT:
     dplms: first differentials of Legendre polynomials of x
 
 OPTIONS:
+    ASTYPE: output variable type.  Default is np.float
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
@@ -32,6 +33,7 @@ REFERENCES:
     Geoid Cookbook: http://mitgcm.org/~mlosch/geoidcookbook.pdf
 
 UPDATE HISTORY:
+    Updated 09/2020: verify dimensions of input x variable
     Updated 08/2020: prevent zero divisions by changing u==0 to eps of data type
     Updated 07/2020: added function docstrings
     Updated 07/2017: output first differential of legendre polynomials
@@ -60,17 +62,16 @@ def plm_colombo(LMAX, x, ASTYPE=np.float):
     dplms: first differentials of Legendre polynomials
     """
 
-    #-- Verify LMAX as integer
-    LMAX = np.int(LMAX)
-
+    #-- removing singleton dimensions of x
+    x = np.atleast_1d(x).flatten().astype(ASTYPE)
     #-- length of the x array
-    jm = len(np.atleast_1d(x))
+    jm = len(x)
+    #-- verify data type of spherical harmonic truncation
+    LMAX = np.int(LMAX)
 
     #-- allocating for the plm matrix and differentials
     plm = np.zeros((LMAX+1,LMAX+1,jm))
     dplm = np.zeros((LMAX+1,LMAX+1,jm))
-    #-- removing singleton dimensions of x
-    x = np.squeeze(x)
 
     #-- u is sine of colatitude (cosine of latitude) so that 0 <= s <= 1
     #-- for x=cos(th): u=sin(th)

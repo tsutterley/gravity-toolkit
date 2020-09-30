@@ -7,7 +7,7 @@ grace_spatial_error.py
 
 #### Calling Sequence
 ```bash
-python grace_spatial_error.py --mode=0o775 parameter_file
+python grace_spatial_error.py --mode 0o775 parameter_file
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/grace_spatial_error.py)
 
@@ -15,7 +15,7 @@ python grace_spatial_error.py --mode=0o775 parameter_file
    parameter file containing specific variables for the analysis
 
 #### Command Line Options
- - `-P X`, `--np=X`: Run in parallel with X number of processes
+ - `-P X`, `--np X`: Run in parallel with X number of processes
  - `-V`, `--verbose`: verbose output of processing run
- - `-M X`, `--mode=X`: permissions mode of output files
+ - `-M X`, `--mode X`: permissions mode of output files
  - `-l`, `--log`: output log file for each job

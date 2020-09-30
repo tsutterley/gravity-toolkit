@@ -1,37 +1,23 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_error.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (09/2020)
 
 Calculates the GRACE/GRACE-FO errors following Wahr et al. (2006)
 
 Spatial output units: cm w.e., mm geoid height, mm elastic uplift,
     microgal gravity perturbation or surface pressure (Pa)
 
-CALLING SEQUENCE:
-    python grace_spatial_error.py input_parameters_file
-
-    Can also input several parameter files in series:
-    python grace_spatial_error.py parameter_file1 parameter_file2
-
-    Can be run in parallel with the python multiprocessing package:
-    python grace_spatial_error.py --np=2 parameter_file1 parameter_file2
-    python grace_spatial_error.py -P 2 parameter_file1 parameter_file2
-
-    Can output a log file listing the input parameters and output files:
-    python grace_spatial_error.py --log parameter_file
-    python grace_spatial_error.py -l parameter_file
-
 SYSTEM ARGUMENTS README:
     program is run as:
-    python run_grace_process_input.py inp1 inp2 inp3
+    python grace_spatial_error.py inp1 inp2 inp3
         where inp1, inp2 and inp3 are different inputs
 
         firstinput=sys.argv[1] (in this case inp1)
         secondinput=sys.argv[2] (in this case inp2)
         thirdinput=sys.argv[3] (in this case inp3)
 
-    As python is base 0, sys.argv[0] is equal to run_grace_process_input.py
+    As python is base 0, sys.argv[0] is equal to grace_spatial_error.py
         (which is useful in some applications, but not for this program)
 
     For this program, the system arguments are parameter files
@@ -43,15 +29,14 @@ SYSTEM ARGUMENTS README:
         the keys are the parameter name (for LMAX: parameters['LMAX'] == 60)
 
 INPUTS:
-    parameter file (entered after program)
-        parameter files contain specific variables for each analysis
+    parameter files containing specific variables for each analysis
 
 COMMAND LINE OPTIONS:
     --help: list the command line options
-    -P X, --np=X: Run in parallel with X number of processes
+    -P X, --np X: Run in parallel with X number of processes
     -l, --log: Output log of files created for each job
     -V, --verbose: Verbose output of processing run
-    -M X, --mode=X: Permissions mode of the files created
+    -M X, --mode X: Permissions mode of the files created
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
@@ -92,6 +77,7 @@ REFERENCES:
         http://dx.doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 09/2020: using argparse to set parameters
     Updated 08/2020: use utilities to define path to load love numbers file
     Updated 06/2020: using spatial data class for output operations
     Updated 04/2020: updates to reading load love numbers
@@ -117,7 +103,7 @@ import os
 import re
 import time
 import numpy as np
-import getopt
+import argparse
 import multiprocessing
 import traceback
 
@@ -169,7 +155,7 @@ def load_love_numbers(LMAX, REFERENCE='CF'):
 
 #-- PURPOSE: import GRACE files for a given months range
 #-- Estimates the GRACE/GRACE-FO errors applying the specified procedures
-def grace_spatial_error(base_dir, parameters, VERBOSE, MODE):
+def grace_spatial_error(base_dir, parameters, VERBOSE=False, MODE=0o775):
     #-- Data processing center
     PROC = parameters['PROC']
     #-- Data Release
@@ -209,8 +195,8 @@ def grace_spatial_error(base_dir, parameters, VERBOSE, MODE):
     DDEG = np.squeeze(np.array(parameters['DDEG'].split(','),dtype='f'))
     #-- output degree interval (0:360, 90:-90) or (degree spacing/2)
     INTERVAL = np.int(parameters['INTERVAL'])
-    #-- output data format (1: ascii, 2: netcdf, 3: HDF5)
-    DATAFORM = np.int(parameters['DATAFORM'])
+    #-- output data format (ascii, netCDF4, HDF5)
+    DATAFORM = parameters['DATAFORM']
     #-- output directory and base filename
     DIRECTORY = os.path.expanduser(parameters['DIRECTORY'])
     FILENAME = parameters['FILENAME']
@@ -223,8 +209,7 @@ def grace_spatial_error(base_dir, parameters, VERBOSE, MODE):
     output_files = []
 
     #-- file information
-    suffix = ['txt', 'nc', 'H5'][DATAFORM-1]
-    format_str = ['ascii','netCDF4','HDF5'][DATAFORM-1]
+    suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
 
     #-- read arrays of kl, hl, and ll Love Numbers
     hl,kl,ll = load_love_numbers(LMAX, REFERENCE='CF')
@@ -258,13 +243,13 @@ def grace_spatial_error(base_dir, parameters, VERBOSE, MODE):
     if (parameters['MEAN_FILE'].title() == 'None'):
         mean_Ylms = GRACE_Ylms.mean(apply=MEAN)
     else:
-        #-- data form for input mean file (1: ascii, 2: netcdf, 3: HDF5)
-        MEANFORM = np.int(parameters['MEANFORM'])
-        if (MEANFORM == 1):
+        #-- read data form for input mean file (ascii, netCDF4, HDF5)
+        MEANFORM = parameters['MEANFORM']
+        if (MEANFORM == 'ascii'):
             mean_Ylms=harmonics().from_ascii(parameters['MEAN_FILE'],date=False)
-        if (MEANFORM == 2):
+        if (MEANFORM == 'netCDF4'):
             mean_Ylms=harmonics().from_netCDF4(parameters['MEAN_FILE'],date=False)
-        if (MEANFORM == 3):
+        if (MEANFORM == 'HDF5'):
             mean_Ylms=harmonics().from_HDF5(parameters['MEAN_FILE'],date=False)
         #-- remove the input mean
         if MEAN:
@@ -284,7 +269,7 @@ def grace_spatial_error(base_dir, parameters, VERBOSE, MODE):
     #-- calculating GRACE error (Wahr et al 2006)
     #-- output GRACE error file (for both LMAX==MMAX and LMAX != MMAX cases)
     args = (PROC,DREL,DSET,LMAX,order_str,ds_str,atm_str,GRACE_Ylms.month[0],
-        GRACE_Ylms.month[-1],suffix)
+        GRACE_Ylms.month[-1],suffix[DATAFORM])
     delta_format = '{0}_{1}_{2}_DELTA_CLM_L{3:d}{4}{5}{6}_{7:03d}-{8:03d}.{9}'
     DELTA_FILE= delta_format.format(*args)
     #-- full path of the GRACE directory
@@ -326,13 +311,13 @@ def grace_spatial_error(base_dir, parameters, VERBOSE, MODE):
         #-- save GRACE DELTA to file
         delta_Ylms.time = np.copy(nsmth)
         delta_Ylms.month = np.copy(nsmth)
-        if (DATAFORM == 1):
+        if (DATAFORM == 'ascii'):
             #-- ascii (.txt)
             delta_Ylms.to_ascii(os.path.join(grace_dir,DELTA_FILE))
-        elif (DATAFORM == 2):
+        elif (DATAFORM == 'netCDF4'):
             #-- netcdf (.nc)
             delta_Ylms.to_netCDF4(os.path.join(grace_dir,DELTA_FILE))
-        elif (DATAFORM == 3):
+        elif (DATAFORM == 'HDF5'):
             #-- HDF5 (.H5)
             delta_Ylms.to_HDF5(os.path.join(grace_dir,DELTA_FILE))
         #-- set the permissions mode of the output harmonics file
@@ -341,13 +326,13 @@ def grace_spatial_error(base_dir, parameters, VERBOSE, MODE):
         output_files.append(os.path.join(grace_dir,DELTA_FILE))
     else:
         #-- read GRACE DELTA spherical harmonics datafile
-        if (DATAFORM == 1):
+        if (DATAFORM == 'ascii'):
             #-- ascii (.txt)
             delta_Ylms=harmonics().from_ascii(os.path.join(grace_dir,DELTA_FILE))
-        elif (DATAFORM == 2):
+        elif (DATAFORM == 'netCDF4'):
             #-- netcdf (.nc)
             delta_Ylms=harmonics().from_netCDF4(os.path.join(grace_dir,DELTA_FILE))
-        elif (DATAFORM == 3):
+        elif (DATAFORM == 'HDF5'):
             #-- HDF5 (.H5)
             delta_Ylms=harmonics().from_HDF5(os.path.join(grace_dir,DELTA_FILE))
         #-- truncate grace delta clm and slm to d/o LMAX/MMAX
@@ -430,18 +415,18 @@ def grace_spatial_error(base_dir, parameters, VERBOSE, MODE):
     #-- output file format
     file_format = '{0}{1}_L{2:d}{3}{4}{5}_ERR_{6:03d}-{7:03d}.{8}'
     #-- output error file to ascii, netCDF4 or HDF5
-    args = (FILENAME,unit_list[UNITS-1],LMAX,order_str,gw_str,
-        ds_str,GRACE_Ylms.month[0],GRACE_Ylms.month[-1],suffix)
+    args = (FILENAME,unit_list[UNITS-1],LMAX,order_str,gw_str,ds_str,
+        GRACE_Ylms.month[0],GRACE_Ylms.month[-1],suffix[DATAFORM])
     FILE = os.path.join(DIRECTORY,file_format.format(*args))
-    if (DATAFORM == 1):
+    if (DATAFORM == 'ascii'):
         #-- ascii (.txt)
         delta.to_ascii(FILE, date=False, verbose=VERBOSE)
-    elif (DATAFORM == 2):
+    elif (DATAFORM == 'netCDF4'):
         #-- netCDF4
         delta.to_netCDF4(FILE, date=False, verbose=VERBOSE,
             units=unit_list[UNITS-1], longname=unit_name[UNITS-1],
             title='GRACE/GRACE-FO Spatial Error')
-    elif (DATAFORM == 3):
+    elif (DATAFORM == 'HDF5'):
         #-- HDF5
         delta.to_HDF5(FILE, date=False, verbose=VERBOSE,
             units=unit_list[UNITS-1], longname=unit_name[UNITS-1],
@@ -457,9 +442,9 @@ def grace_spatial_error(base_dir, parameters, VERBOSE, MODE):
 #-- PURPOSE: print a file log for the GRACE analysis
 #-- lists: the parameter file, the parameters and the output files
 def output_log_file(parameters,output_files):
-    #-- format: GRACE_processing_run_2002-04-01_PID-70335.log
+    #-- format: GRACE_error_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
-    LOGFILE = 'GRACE_processing_run_{0}_PID-{1:d}.log'.format(*args)
+    LOGFILE = 'GRACE_error_run_{0}_PID-{1:d}.log'.format(*args)
     DIRECTORY = os.path.expanduser(parameters['DIRECTORY'])
     #-- create a unique log and open the log file
     fid = create_unique_logfile(os.path.join(DIRECTORY,LOGFILE))
@@ -483,9 +468,9 @@ def output_log_file(parameters,output_files):
 #-- PURPOSE: print a error file log for the GRACE analysis
 #-- lists: the parameter file, the parameters and the error
 def output_error_log_file(parameters):
-    #-- format: GRACE_processing_failed_run_2002-04-01_PID-70335.log
+    #-- format: GRACE_error_failed_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
-    LOGFILE = 'GRACE_processing_failed_run_{0}_PID-{1:d}.log'.format(*args)
+    LOGFILE = 'GRACE_error_failed_run_{0}_PID-{1:d}.log'.format(*args)
     DIRECTORY = os.path.expanduser(parameters['DIRECTORY'])
     #-- create a unique log and open the log file
     fid = create_unique_logfile(os.path.join(DIRECTORY,LOGFILE))
@@ -524,15 +509,15 @@ def create_unique_logfile(filename):
         counter += 1
 
 #-- PURPOSE: define the analysis for multiprocessing
-def define_analysis(parameter_file,base_dir,LOG,VERBOSE,MODE):
+def define_analysis(f,base_dir,LOG=False,VERBOSE=False,MODE=0o775):
     #-- keep track of multiprocessing threads
-    info(os.path.basename(parameter_file))
+    info(os.path.basename(f))
 
     #-- variable with parameter definitions
     parameters = {}
-    parameters['PARAMETER_FILE'] = parameter_file
+    parameters['PARAMETER_FILE'] = f
     #-- Opening parameter file and assigning file ID number (fid)
-    fid = open(os.path.expanduser(parameter_file), 'r')
+    fid = open(os.path.expanduser(f), 'r')
     #-- for each line in the file will extract the parameter (name and value)
     for fileline in fid:
         #-- Splitting the input line between parameter name and value
@@ -545,7 +530,8 @@ def define_analysis(parameter_file,base_dir,LOG,VERBOSE,MODE):
     #-- try to run the analysis with listed parameters
     try:
         #-- run GRACE/GRACE-FO spatial error algorithm with parameters
-        output_files = grace_spatial_error(base_dir,parameters,VERBOSE,MODE)
+        output_files = grace_spatial_error(base_dir, parameters,
+            VERBOSE=VERBOSE, MODE=MODE)
     except:
         #-- if there has been an error exception
         #-- print the type, value, and stack trace of the
@@ -558,66 +544,55 @@ def define_analysis(parameter_file,base_dir,LOG,VERBOSE,MODE):
         if LOG:#-- write successful job completion log file
             output_log_file(parameters,output_files)
 
-#-- PURPOSE: help module to describe the optional input parameters
-def usage():
-    print('\nHelp: {0}'.format(os.path.basename(sys.argv[0])))
-    print(' -D X, --directory=X\tWorking data directory')
-    print(' -P X, --np=X\t\tRun in parallel with X number of processes')
-    print(' -V, --verbose\t\tVerbose output of processing run')
-    print(' -M X, --mode=X\t\tPermissions mode of the files created')
-    print(' -l, --log\t\tOutput log file for each job')
-    args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
-    LOGFILE = 'GRACE_processing_run_{0}_PID-{1:d}.log'.format(*args)
-    print('    Successful log file format: {0}'.format(LOGFILE))
-    LOGFILE = 'GRACE_processing_failed_run_{0}_PID-{1:d}.log'.format(*args)
-    print('    Failed log file format: {0}\n'.format(LOGFILE))
-
 #-- This is the main part of the program that calls the individual modules
 def main():
-    #-- Read the system arguments listed after the program and run the analyses
-    #-- with the specific parameters.
-    long_options = ['help','directory=','np=','log','verbose','mode=']
-    optlist,arglist = getopt.getopt(sys.argv[1:],'hD:P:lVM:',long_options)
-
+    #-- Read the system arguments listed after the program
+    parser = argparse.ArgumentParser(
+        description="""Calculates the GRACE/GRACE-FO spatial errors
+            following Wahr et al. (2006)
+            """
+    )
     #-- command line parameters
-    base_dir = os.getcwd()
-    PROCESSES = 0
-    LOG = False
-    #-- verbose output of processing run
-    VERBOSE = False
-    #-- permissions mode of the files created (number in octal)
-    MODE = 0o775
-    for opt, arg in optlist:
-        if opt in ('-h','--help'):
-            usage()
-            sys.exit()
-        elif opt in ("-D","--directory"):
-            base_dir = os.path.expanduser(arg)
-        elif opt in ("-P","--np"):
-            PROCESSES = np.int(arg)
-        elif opt in ("-l","--log"):
-            LOG = True
-        elif opt in ("-V","--verbose"):
-            VERBOSE = True
-        elif opt in ("-M","--mode"):
-            MODE = int(arg, 8)
-
-    #-- raise exception if no parameter files entered
-    if not arglist:
-        raise IOError('No Parameter File Specified')
+    parser.add_argument('parameters',
+        type=os.path.expanduser, nargs='+',
+        help='Parameter files containing specific variables for each analysis')
+    #-- number of processes to run in parallel
+    parser.add_argument('--np','-P',
+        metavar='PROCESSES', type=int, default=0,
+        help='Number of processes to run in parallel')
+    #-- working data directory
+    parser.add_argument('--directory','-D',
+        type=os.path.expanduser, default=os.getcwd(),
+        help='Working data directory')
+    #-- Output log file for each job in forms
+    #-- GRACE_error_run_2002-04-01_PID-00000.log
+    #-- GRACE_error_failed_run_2002-04-01_PID-00000.log
+    parser.add_argument('--log','-l',
+        default=False, action='store_true',
+        help='Output log file for each job')
+    #-- print information about each input and output file
+    parser.add_argument('--verbose','-V',
+        default=False, action='store_true',
+        help='Verbose output of run')
+    #-- permissions mode of the local directories and files (number in octal)
+    parser.add_argument('--mode','-M',
+        type=lambda x: int(x,base=8), default=0o775,
+        help='permissions mode of output files')
+    args = parser.parse_args()
 
     #-- use parameter files from system arguments listed after the program.
-    if (PROCESSES == 0):
+    if (args.np == 0):
         #-- run directly as series if PROCESSES = 0
-        for f in arglist:
-            define_analysis(os.path.expanduser(f),base_dir,LOG,VERBOSE,MODE)
+        for f in args.parameters:
+            define_analysis(f, args.directory, LOG=args.log,
+                VERBOSE=args.verbose, MODE=args.mode)
     else:
         #-- run in parallel with multiprocessing Pool
-        pool = multiprocessing.Pool(processes=PROCESSES)
+        pool = multiprocessing.Pool(processes=args.np)
         #-- for each parameter file
-        for f in arglist:
-            pool.apply_async(define_analysis, args=(os.path.expanduser(f),
-                base_dir,LOG,VERBOSE,MODE))
+        for f in args.parameters:
+            kwds = dict(LOG=args.log, VERBOSE=args.verbose, MODE=args.mode)
+            pool.apply_async(define_analysis,args=(f,args.directory),kwds=kwds)
         #-- start multiprocessing jobs
         #-- close the pool
         #-- prevents more tasks from being submitted to the pool
