@@ -19,7 +19,7 @@ grace_months = grace_find_months(base_dir, PROC, DREL, DSET=DSET)
     * `'GFZ'`: German Research Centre for Geosciences (GeoForschungsZentrum)
     * `'JPL'`: Jet Propulsion Laboratory
     * `'CNES'`: French Centre National D'Etudes Spatiales
- 3. `DREL`: GRACE data release (RL04, RL05, RL06)
+ 3. `DREL`: GRACE/GRACE-FO Data Release (RL04, RL05, RL06)
 
 #### Options
  - `DSET`: GRACE dataset (GSM, GAC, GAD, GAB, GAA)

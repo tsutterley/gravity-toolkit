@@ -120,13 +120,14 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
         fileID = netCDF4.Dataset(os.path.expanduser(filename), 'r')
     #-- create python dictionary for output variables
     dinput = {}
+    dinput['attributes'] = {}
 
     #-- Output NetCDF file information
     if VERBOSE:
         print(fileID.filepath())
         print(list(fileID.variables.keys()))
 
-    #-- netcdf variable names
+    #-- mapping between output keys and netCDF4 variable names
     NAMES = {}
     NAMES['lon'] = LONNAME
     NAMES['lat'] = LATNAME
@@ -144,7 +145,6 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
         dinput['data'] = dinput['data'].T
 
     #-- getting attributes of included variables
-    dinput['attributes'] = {}
     if ATTRIBUTES:
         #-- for each variable
         #-- get attributes for the included variables

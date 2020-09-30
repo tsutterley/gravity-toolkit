@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_read_stokes.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (09/2020)
 
 Reads spherical harmonic data from HDF5 files
 
@@ -33,6 +33,7 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 09/2020: use try/except for reading attributes
     Updated 08/2020: add options to read from gzip or zip compressed files
     Updated 07/2020: added function docstrings
     Updated 03/2020: added ATTRIBUTES option to check if file has attributes
@@ -113,6 +114,7 @@ def hdf5_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
         fileID = h5py.File(os.path.expanduser(filename), 'r')
     #-- allocate python dictionary for output variables
     dinput = {}
+    dinput['attributes'] = {}
 
     #-- Output HDF5 file information
     if VERBOSE:
@@ -160,21 +162,13 @@ def hdf5_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
 
     #-- Getting attributes of clm/slm and included variables
     if ATTRIBUTES:
-        dinput['attributes'] = {}
-        dinput['attributes']['l'] = [fileID['l'].attrs['units'],
-            fileID['l'].attrs['long_name']]
-        dinput['attributes']['m'] = [fileID['m'].attrs['units'],
-            fileID['m'].attrs['long_name']]
-        dinput['attributes']['clm'] = [fileID['clm'].attrs['units'],
-            fileID['clm'].attrs['long_name']]
-        dinput['attributes']['slm'] = [fileID['slm'].attrs['units'],
-            fileID['slm'].attrs['long_name']]
-        #-- time attributes
-        if DATE:
-            dinput['attributes']['time'] = [fileID['time'].attrs['units'],
-                fileID['time'].attrs['long_name']]
-            dinput['attributes']['month'] = [fileID['month'].attrs['units'],
-                fileID['month'].attrs['long_name']]
+        #-- get attributes for the included variables
+        for key in dinput.keys():
+            try:
+                dinput['attributes'][key] = [fileID[key].attrs['units'],
+                    fileID[key].attrs['long_name']]
+            except (KeyError, AttributeError):
+                pass
         #-- Global attribute description
         dinput['attributes']['title'] = fileID.attrs['description']
 

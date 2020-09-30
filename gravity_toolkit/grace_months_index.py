@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_months_index.py
-Written by Tyler Sutterley (09/2020)
+Written by Tyler Sutterley (10/2020)
 
 Creates a file with the start and end days for each dataset
 Shows the range of each month for (CSR/GFZ/JPL) (RL04/RL05/RL06)
@@ -25,14 +25,15 @@ OUTPUTS:
 
 COMMAND LINE OPTIONS:
     --help: list the command line options
-    -D X, --directory=X: Working GRACE/GRACE-FO data directory
-    -R X, --release=X: GRACE data releases to run (RL06)
-    --mode=X: permissions mode of output GRACE month file
+    -D X, --directory X: Working GRACE/GRACE-FO data directory
+    -r X, --release X: GRACE/GRACE-FO Data Releases to run (RL06)
+    --mode X: permissions mode of output GRACE month file
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 10/2020: use argparse to set command line parameters
     Updated 09/2020: add column for GSFC v02.4 GRACE mascons
     Updated 07/2020: added function docstrings
     Updated 05/2020 for public release
@@ -51,7 +52,7 @@ from __future__ import print_function
 
 import sys
 import os
-import getopt
+import argparse
 import calendar
 import numpy as np
 
@@ -177,38 +178,33 @@ def grace_months_index(base_dir, DREL=['RL06','v02.4'], MODE=None):
     #-- set the permissions level of the output file
     os.chmod(os.path.join(base_dir,grace_months_file), MODE)
 
-#-- PURPOSE: help module to describe the optional input parameters
-def usage():
-    print('\nHelp: {0}'.format(os.path.basename(sys.argv[0])))
-    print(' -R X, --release=X\tGRACE data releases to run (RL04,RL05)')
-    print(' -M X, --mode=X\t\tPermission mode of output GRACE month file\n')
-
-#-- PURPOSE: functional call to grace_months() if running as program
+#-- This is the main part of the program that calls the individual modules
 def main():
     #-- Read the system arguments listed after the program
-    long_options = ['help','directory=','release=','mode=']
-    optlist, arglist = getopt.getopt(sys.argv[1:],'hD:R:M:',long_options)
-
+    parser = argparse.ArgumentParser(
+        description="""Creates a file with the start and end days for
+            each month of GRACE/GRACE-FO data
+            """
+    )
     #-- command line parameters
     #-- working data directory
-    base_dir = os.getcwd()
-    #-- data release for output file
-    DREL = ['RL06']
+    parser.add_argument('--directory','-D',
+        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        default=os.getcwd(),
+        help='Working data directory')
+    #-- GRACE/GRACE-FO data release
+    parser.add_argument('--release','-r',
+        metavar='DREL', type=str, nargs='+',
+        default=['RL06','v02.4'],
+        help='GRACE/GRACE-FO Data Release')
     #-- permissions mode of the local directories and files (number in octal)
-    MODE = 0o775
-    for opt, arg in optlist:
-        if opt in ('-h','--help'):
-            usage()
-            sys.exit()
-        elif opt in ("-D","--directory"):
-            base_dir = os.path.expanduser(arg)
-        elif opt in ("-R","--release"):
-            DREL = arg.split(',')
-        elif opt in ("-M","--mode"):
-            MODE = int(arg, 8)
+    parser.add_argument('--mode','-M',
+        type=lambda x: int(x,base=8), default=0o775,
+        help='permissions mode of output files')
+    args = parser.parse_args()
 
-    #-- run grace months program
-    grace_months_index(base_dir, DREL=DREL, MODE=MODE)
+    #-- run GRACE/GRACE-FO months program
+    grace_months_index(args.directory, DREL=args.release, MODE=args.mode)
 
 #-- run main program
 if __name__ == '__main__':

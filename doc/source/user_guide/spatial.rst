@@ -122,7 +122,7 @@ General Attributes and Methods
         Searches a directory for a filename without case dependence
 
 
-    .. method:: object.from_ascii(filename, date=True, compression=None, verbose=False, columns=['lon','lat','data','time'])
+    .. method:: object.from_ascii(filename, date=True, compression=None, verbose=False, columns=['lon','lat','data','time'], header=0)
 
         Read a spatial object from an ascii file
 
@@ -136,6 +136,8 @@ General Attributes and Methods
             `verbose` print ascii filename
 
             `columns` variable names for each column
+
+            `header` rows of header lines to skip
 
 
     .. method:: object.from_netCDF4(filename, date=True, compression=None, verbose=False, varname='z', lonname='lon', latname='lat')

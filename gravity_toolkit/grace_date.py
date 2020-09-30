@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_date.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (10/2020)
 
 Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
 Parses dates of each GRACE/GRACE-FO file and assigns the month number
@@ -12,7 +12,7 @@ INPUTS:
 
 OPTIONS:
     PROC: GRACE data processing center (CSR/CNES/JPL/GFZ)
-    DREL: GRACE data release (RL03 for CNES) (RL06 for CSR/GFZ/JPL)
+    DREL: GRACE/GRACE-FO Data Release (RL03 for CNES) (RL06 for CSR/GFZ/JPL)
     DSET: GRACE dataset (GAA/GAB/GAC/GAD/GSM)
         GAA is the non-tidal atmospheric correction
         GAB is the non-tidal oceanic correction
@@ -34,6 +34,7 @@ PROGRAM DEPENDENCIES:
     convert_julian.py: converts a Julian date into a calendar date
 
 UPDATE HISTORY:
+    Updated 10/2020: use argparse to set command line parameters
     Updated 07/2020: added function docstrings
     Updated 03/2020: for public release
     Updated 11/2018: updated regular expression pattern for RL06 GFZ
@@ -76,7 +77,7 @@ from __future__ import print_function
 import sys
 import os
 import re
-import getopt
+import argparse
 import numpy as np
 from gravity_toolkit.convert_julian import convert_julian
 
@@ -249,58 +250,54 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     #-- return the python dictionary that maps GRACE months with GRACE files
     return grace_files
 
-#-- PURPOSE: help module to describe the optional input parameters
-def usage():
-    print('\nHelp: {}'.format(os.path.basename(sys.argv[0])))
-    print(' --directory=X\t\tGRACE/GRACE-FO working directory')
-    print(' -C X, --center=X\tGRACE/GRACE-FO Processing Center (CSR,GFZ,JPL)')
-    print(' -R X, --release=X\tGRACE/GRACE-FO data releases (RL04,RL05,RL06)')
-    print(' -D X, --dataset=X\tGRACE/GRACE-FO dataset (GAC,GAD,GSM)')
-    print(' -O, --output\t\tOutput GRACE/GRACE-FO ascii date file')
-    print(' -M X, --mode=X\t\tPermissions mode of output files\n')
-
 #-- PURPOSE: program that calls grace_date() with set parameters
 def main():
+    #-- command line parameters
     #-- Read the system arguments listed after the program
-    long_options = ['help','directory=','center=','release=','dataset=',
-        'output','mode=']
-    optlist,arglist = getopt.getopt(sys.argv[1:],'hC:R:D:OM:',long_options)
-
-    #-- GRACE/GRACE-FO directory
-    base_dir = os.getcwd()
-    #-- GRACE/GRACE-FO Processing Centers to run
-    PROC = ['CSR','GFZ','JPL']
-    #-- Data release
-    DREL = ['RL06']
-    #-- Dataset
-    DSET = ['GAC','GAD','GSM']
+    parser = argparse.ArgumentParser(
+        description="""Parses dates of each GRACE/GRACE-FO file and
+            assigns the month number.
+            Creates an index of dates for GRACE/GRACE-FO files.
+            """
+    )
+    #-- working data directory
+    parser.add_argument('--directory','-D',
+        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        default=os.getcwd(),
+        help='Working data directory')
+    #-- GRACE/GRACE-FO data processing center
+    parser.add_argument('--center','-c',
+        metavar='PROC', type=str, nargs='+',
+        default=['CSR','GFZ','JPL'],
+        choices=['CSR','GFZ','JPL'],
+        help='GRACE/GRACE-FO Processing Center')
+    #-- GRACE/GRACE-FO data release
+    parser.add_argument('--release','-r',
+        metavar='DREL', type=str, nargs='+',
+        default=['RL06'],
+        help='GRACE/GRACE-FO Data Release')
+    #-- GRACE/GRACE-FO data product
+    parser.add_argument('--product','-p',
+        metavar='DSET', type=str.upper, nargs='+',
+        default=['GAC','GAD','GSM'],
+        choices=['GAA','GAB','GAC','GAD','GSM'],
+        help='GRACE/GRACE-FO dealiasing product')
     #-- output GRACE/GRACE-FO ascii date file
-    OUTPUT = False
-    #-- permissions mode of output files (e.g. 0o775)
-    MODE = 0o775
-    for opt, arg in optlist:
-        if opt in ('-h','--help'):
-            usage()
-            sys.exit()
-        elif opt in ("--directory"):
-            base_dir = os.path.expanduser(arg)
-        elif opt in ("-C","--center"):
-            PROC = arg.upper().split(',')
-        elif opt in ("-R","--release"):
-            DREL = arg.upper().split(',')
-        elif opt in ("-D","--dataset"):
-            DSET = arg.upper().split(',')
-        elif opt in ("-O","--output"):
-            OUTPUT = True
-        elif opt in ("-M","--mode"):
-            MODE = int(arg, 8)
+    parser.add_argument('--output','-O',
+        default=False, action='store_true',
+        help='Overwrite existing data')
+    #-- permissions mode of the local directories and files (number in octal)
+    parser.add_argument('--mode','-M',
+        type=lambda x: int(x,base=8), default=0o775,
+        help='permissions mode of output files')
+    args = parser.parse_args()
 
     #-- run GRACE/GRACE-FO date program
-    for pr in PROC:
-        for rl in DREL:
-            for ds in DSET:
-                grace_date(base_dir, PROC=pr, DREL=rl, DSET=ds,
-                    OUTPUT=OUTPUT, MODE=MODE)
+    for pr in args.center:
+        for rl in args.release:
+            for ds in args.product:
+                grace_date(args.directory, PROC=pr, DREL=rl, DSET=ds,
+                    OUTPUT=args.output, MODE=args.mode)
 
 #-- run main program
 if __name__ == '__main__':

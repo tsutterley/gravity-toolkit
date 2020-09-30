@@ -29,9 +29,11 @@ import lxml.etree
 import calendar,time
 if sys.version_info[0] == 2:
     from cookielib import CookieJar
+    from urllib import urlencode
     import urllib2
 else:
     from http.cookiejar import CookieJar
+    from urllib.parse import urlencode
     import urllib.request as urllib2
 
 def get_data_path(relpath):
@@ -286,7 +288,7 @@ def from_http(HOST,timeout=None,local=None,hash='',chunk=16384,
 #-- PURPOSE: "login" to JPL PO.DAAC Drive with supplied credentials
 def build_opener(username, password, context=ssl.SSLContext(),
     password_manager=False, get_ca_certs=False, redirect=False,
-    authorization_header=True, urs=None):
+    authorization_header=True, urs='https://urs.earthdata.nasa.gov'):
     """
     build urllib opener for NASA Earthdata or JPL PO.DAAC Drive with
     supplied credentials

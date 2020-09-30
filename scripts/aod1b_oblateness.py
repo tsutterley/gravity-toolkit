@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 aod1b_oblateness.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (10/2020)
 
 Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
     atm: atmospheric loading from ECMWF
@@ -15,29 +15,23 @@ NOTE: this reads the GFZ AOD1B files downloaded from PO.DAAC
 https://podaac-uat.jpl.nasa.gov/drive/files/allData/grace/L1B/GFZ/AOD1B/RL05/
 
 CALLING SEQUENCE:
-    aod1b_oblateness(base_dir, DREL='RL06', DSET='glo', CLOBBER=True)
+    python aod1b_oblateness.py --release RL06 atm ocn glo oba
 
 INPUTS:
-    base_dir: working data directory
-
-OPTIONS:
-    DREL: GRACE/GRACE-FO data release (RL05 or RL06)
-    DSET: GRACE/GRACE-FO dataset (atm, ocn, glo, oba)
-    CLOBBER: overwrite existing data
-    MODE: Permission mode of directories and files
-    VERBOSE: Output information for each output file
+    GRACE/GRACE-FO AOD1B dataset (atm, ocn, glo, oba)
 
 COMMAND LINE OPTIONS:
-    -D X, --directory=X: Working Data Directory
-    -R X, --release=X: GRACE Data Release (RL05 or RL06)
+    -D X, --directory X: Working Data Directory
+    -r X, --release X: GRACE/GRACE-FO Data Release (RL05 or RL06)
     -C, --clobber: Overwrite existing data
-    -M X, --mode=X: Permission mode of directories and files
+    -M X, --mode X: Permission mode of directories and files
     -V, --verbose: Output information for each output file
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATED HISTORY:
+    Updated 10/2020: use argparse to set command line parameters
     Updated 07/2020: added function docstrings
     Updated 06/2019: using python3 compatible regular expression patterns
     Updated 10/2018: using future division for python3 Compatibility
@@ -57,8 +51,8 @@ import sys
 import os
 import re
 import gzip
-import getopt
 import tarfile
+import argparse
 import numpy as np
 
 #-- aod1b data products
@@ -209,61 +203,48 @@ def aod1b_oblateness(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
             #-- set the permissions mode of the output file
             os.chmod(os.path.join(output_dir,FILE), MODE)
 
-#-- PURPOSE: help module to describe the optional input parameters
-def usage():
-    print('\nHelp: {}'.format(os.path.basename(sys.argv[0])))
-    print(' -D X, --directory=X\tWorking Data Directory')
-    print(' -R X, --release=X\tGRACE Data Release')
-    print(' -C, --clobber\t\tOverwrite existing data')
-    print(' -M X, --mode=X\t\tPermission mode of directories and files')
-    print(' -V, --verbose\t\tOutput information for each output file\n')
-
 #-- Main program that calls aod1b_oblateness()
 def main():
     #-- Read the system arguments listed after the program
-    long_options = ['help','directory=','release=','clobber','mode=','verbose']
-    optlist,arglist = getopt.getopt(sys.argv[1:],'hD:R:CM:V',long_options)
-
+    parser = argparse.ArgumentParser(
+        description="""Creates monthly files of oblateness (C20)
+            variations at 6-hour intervals
+            """
+    )
+    #-- command line parameters
     #-- working data directory
-    base_dir = os.getcwd()
-    #-- Data release
-    DREL = 'RL06'
+    parser.add_argument('--directory','-D',
+        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        default=os.getcwd(),
+        help='Working data directory')
+    #-- GRACE/GRACE-FO data release
+    parser.add_argument('--release','-r',
+        metavar='DREL', type=str, default='',
+        help='GRACE/GRACE-FO Data Release')
+    #-- GRACE/GRACE-FO level-1b dealiasing product
+    parser.add_argument('--product','-p',
+        metavar='DSET', type=str.lower, nargs='+',
+        choices=['atm','ocn','glo','oba'],
+        help='GRACE/GRACE-FO AOD1B dataset')
     #-- clobber will overwrite the existing data
-    CLOBBER = False
-    #-- permissions mode of the local directories and files (number in octal)
-    MODE = 0o775
+    parser.add_argument('--clobber','-C',
+        default=False, action='store_true',
+        help='Overwrite existing data')
     #-- verbose will output information about each output file
-    VERBOSE = False
-    for opt, arg in optlist:
-        if opt in ('-h','--help'):
-            usage()
-            sys.exit()
-        elif opt in ("-D","--directory"):
-            base_dir = os.path.expanduser(arg)
-        elif opt in ("-R","--release"):
-            DREL = arg
-        elif opt in ("-C","--clobber"):
-            CLOBBER = True
-        elif opt in ("-M","--mode"):
-            MODE = int(arg, 8)
-        elif opt in ("-V","--verbose"):
-            VERBOSE = True
+    parser.add_argument('--verbose','-V',
+        default=False, action='store_true',
+        help='Verbose output of run')
+    #-- permissions mode of the local directories and files (number in octal)
+    parser.add_argument('--mode','-M',
+        type=lambda x: int(x,base=8), default=0o775,
+        help='permissions mode of output files')
+    args = parser.parse_args()
 
-    #-- check that DSET was entered as system argument
-    if not arglist:
-        raise Exception('No System Arguments Listed')
-
-    for DSET in arglist:
-        #-- verify case
-        DSET = DSET.lower() if DSET.isupper() else DSET
-        #-- check that DSET was correctly entered
-        if DSET not in product.keys():
-            for key,val in product.items():
-                print('{0}: {1}'.format(key, val))
-            raise ValueError('Incorrect Data Product Entered (atm,glo,ocn,oba)')
+    #-- for each entered AOD1B dataset
+    for DSET in args.product:
         #-- run AOD1b oblateness program with parameters
-        aod1b_oblateness(base_dir,DREL=DREL,DSET=DSET,CLOBBER=CLOBBER,MODE=MODE,
-            VERBOSE=VERBOSE)
+        aod1b_oblateness(args.directory,DREL=args.release,DSET=DSET,
+            CLOBBER=args.clobber,VERBOSE=args.verbose,MODE=args.mode)
 
 #-- run main program
 if __name__ == '__main__':

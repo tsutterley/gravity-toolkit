@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 run_grace_date.py
-Written by Tyler Sutterley (05/2020)
+Written by Tyler Sutterley (10/2020)
 
 Wrapper program for running GRACE date and months programs
 
@@ -16,18 +16,18 @@ CALLING SEQUENCE:
 INPUTS:
     base_dir: working GRACE/GRACE-FO data directory
     PROC: GRACE processing centers to run
-    DREL: GRACE data releases to run
+    DREL: GRACE/GRACE-FO Data Releases to run
 
 OPTIONS:
     VERBOSE: Track program progress
     MODE: permissions mode of output date files
 
 COMMAND LINE OPTIONS:
-    -D X, --directory=X: GRACE/GRACE-FO working data directory
-    -C X, --center=X: GRACE/GRACE-FO Processing Center (CSR,GFZ,JPL)
-    -R X, --release=X: GRACE/GRACE-FO data releases (RL04,RL05,RL06)
+    -D X, --directory X: GRACE/GRACE-FO working data directory
+    -C X, --center X: GRACE/GRACE-FO Processing Center (CSR,GFZ,JPL)
+    -R X, --release X: GRACE/GRACE-FO data releases (RL04,RL05,RL06)
     -V, --verbose: Track program progress
-    -M X, --mode=X: Permissions mode of output date files
+    -M X, --mode X: Permissions mode of output date files
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
@@ -40,6 +40,7 @@ PROGRAM DEPENDENCIES:
     grace_months_index.py: creates a single file showing the GRACE dates
 
 UPDATE HISTORY:
+    Updated 10/2020: use argparse to set command line parameters
     Updated 05/2020: updated for public release
     Updated 10/2019: changing Y/N flags to True/False
     Updated 08/2018: added GFZ RL06 parameters for LMAX 60
@@ -57,7 +58,7 @@ from __future__ import print_function
 
 import sys
 import os
-import getopt
+import argparse
 from gravity_toolkit.grace_date import grace_date
 from gravity_toolkit.grace_months_index import grace_months_index
 
@@ -96,49 +97,45 @@ def run_grace_date(base_dir, PROC, DREL, VERBOSE=False, MODE=0o775):
     print('GRACE Months Program')
     grace_months_index(base_dir, DREL=DREL, MODE=MODE)
 
-#-- PURPOSE: help module to describe the optional input parameters
-def usage():
-    print('\nHelp: {}'.format(os.path.basename(sys.argv[0])))
-    print(' -D X, --directory=X\tGRACE working data directory')
-    print(' -C X, --center=X\tGRACE Processing Center (CSR,GFZ,JPL)')
-    print(' -R X, --release=X\tGRACE data releases (RL04,RL05,RL06)')
-    print(' -V, --verbose\t\t Track program progress')
-    print(' -M X, --mode=X\t\tPermissions mode of output files\n')
 
 #-- PURPOSE: program that calls run_grace_date() with set parameters
 def main():
+    #-- command line parameters
     #-- Read the system arguments listed after the program
-    long_options = ['help','directory=','center=','release=','verbose','mode=']
-    optlist,arglist = getopt.getopt(sys.argv[1:],'hC:R:VM:',long_options)
-
-    #-- command line options
+    parser = argparse.ArgumentParser(
+        description="""Wrapper program for running GRACE date and
+            months programs
+            """
+    )
     #-- working data directory
-    base_dir = os.getcwd()
-    #-- GRACE Processing Centers to run
-    PROC = ['CSR', 'GFZ', 'JPL']
-    #-- Data release
-    DREL = ['RL06', 'v02.4']
-    #-- output file information
-    VERBOSE = False
-    #-- permissions mode of output files (e.g. 0o775)
-    MODE = 0o775
-    for opt, arg in optlist:
-        if opt in ('-h','--help'):
-            usage()
-            sys.exit()
-        elif opt in ("-D","--directory"):
-            base_dir = os.path.expanduser(arg)
-        elif opt in ("-C","--center"):
-            PROC = arg.upper().split(',')
-        elif opt in ("-R","--release"):
-            DREL = arg.split(',')
-        elif opt in ("-V","--verbose"):
-            VERBOSE = True
-        elif opt in ("-M","--mode"):
-            MODE = int(arg, 8)
+    parser.add_argument('--directory','-D',
+        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        default=os.getcwd(),
+        help='Working data directory')
+    #-- GRACE/GRACE-FO data processing center
+    parser.add_argument('--center','-c',
+        metavar='PROC', type=str, nargs='+',
+        default=['CSR','GFZ','JPL'],
+        choices=['CSR','GFZ','JPL'],
+        help='GRACE/GRACE-FO Processing Center')
+    #-- GRACE/GRACE-FO data release
+    parser.add_argument('--release','-r',
+        metavar='DREL', type=str, nargs='+',
+        default=['RL06','v02.4'],
+        help='GRACE/GRACE-FO Data Release')
+    #-- print information about each input and output file
+    parser.add_argument('--verbose','-V',
+        default=False, action='store_true',
+        help='Verbose output of run')
+    #-- permissions mode of the local directories and files (number in octal)
+    parser.add_argument('--mode','-M',
+        type=lambda x: int(x,base=8), default=0o775,
+        help='permissions mode of output files')
+    args = parser.parse_args()
 
-    #-- run GRACE preliminary program
-    run_grace_date(base_dir, PROC, DREL, VERBOSE=VERBOSE, MODE=MODE)
+    #-- run GRACE preliminary date program
+    run_grace_date(args.directory, args.center, args.release,
+        VERBOSE=args.verbose, MODE=args.mode)
 
 #-- run main program
 if __name__ == '__main__':

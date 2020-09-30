@@ -43,6 +43,7 @@ REFERENCES:
     http://www.ohiouniversityfaculty.com/mohlenka/research/uguide.pdf
 
 UPDATE HISTORY:
+    Updated 09/2020: verify dimensions of input x variable
     Updated 07/2020: added function docstrings
     Updated 05/2015: added parameter MMAX for MMAX != LMAX
     Written 09/2013
@@ -74,8 +75,10 @@ def plm_mohlenkamp(LMAX, x, MMAX=None):
     if MMAX is None:
         MMAX = np.copy(LMAX)
 
-    #-- size of the x array
-    sx = len(np.atleast_1d(x))
+    #-- removing singleton dimensions of x
+    x = np.atleast_1d(x).flatten()
+    #-- length of the x array
+    sx = len(x)
 
     #-- Initialize the output Legendre polynomials
     plm=np.zeros((LMAX+1,MMAX+1,sx))

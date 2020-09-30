@@ -1,25 +1,10 @@
 #!/usr/bin/env python
 u"""
 grace_mean_harmonics.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (10/2020)
 
 Calculates the temporal mean of the GRACE/GRACE-FO spherical harmonics
     for a given date range from a set of parameters
-
-CALLING SEQUENCE:
-    Uses input parameter files:
-    python grace_mean_harmonics.py parameter_file
-
-    Can also input several parameter files in series:
-    python grace_mean_harmonics.py parameter_file1 parameter_file2
-
-    Can be run in parallel with the python multiprocessing package:
-    python grace_mean_harmonics.py --np=2 parameter_file1 parameter_file2
-    python grace_mean_harmonics.py -P 2 parameter_file1 parameter_file2
-
-    Can output a log file listing the input parameters and output files:
-    python grace_mean_harmonics.py --log parameter_file
-    python grace_mean_harmonics.py -l parameter_file
 
 SYSTEM ARGUMENTS README:
     program is run as:
@@ -42,14 +27,13 @@ SYSTEM ARGUMENTS README:
         the keys are the parameter name (for LMAX: parameters['LMAX'] == 60)
 
 INPUTS:
-    parameter file (entered after program)
-        parameter files contain specific variables for each analysis
-    or parameters entered from the command line
+    parameter files containing specific variables for each analysis
 
 COMMAND LINE OPTIONS:
-    -D X, --directory=X: GRACE/GRACE-FO working data directory
-    -P X, --np=X: Run in parallel with X number of processes
+    -D X, --directory X: GRACE/GRACE-FO working data directory
+    -P X, --np X: Run in parallel with X number of processes
     -l, --log: Output a log file listing output files
+    -M X, --mode X: Permissions mode of the files created
 
 PYTHON DEPENDENCIES:
     Python: a general-purpose, high-level programming language
@@ -72,6 +56,7 @@ PROGRAM DEPENDENCIES:
         hdf5_stokes.py: writes output spherical harmonic data to HDF5
 
 UPDATE HISTORY:
+    Updated 10/2020: use argparse to set command line parameters
     Updated 08/2020: use utilities to define path to load love numbers file
     Updated 04/2020: using the harmonics class for spherical harmonic operations
     Updated 10/2019: changing Y/N flags to True/False
@@ -86,7 +71,6 @@ UPDATE HISTORY:
     Updated 08/2015: changed sys.exit to a raise exception instance
         Added pole tide and GAE/GAF/GAG correction parameters
     Updated 05/2015: added MMAX parameter to study new 2015 60X30 fields
-        DATAFORM now split for INPUT_DATAFORM and OUTPUT_DATAFORM
     Updated 01/2015: added error handling for multiprocessing threads
     Updated 11/2014: added HDF5 dataform option
     Updated 10/2014: updated for distributed computing of tasks
@@ -98,7 +82,7 @@ from __future__ import print_function
 import sys
 import os
 import time
-import getopt
+import argparse
 import numpy as np
 import multiprocessing
 import traceback
@@ -116,7 +100,7 @@ def info(title):
 
 #-- PURPOSE: import GRACE/GRACE-FO files for a given months range
 #-- calculate the mean of the spherical harmonics and output to file
-def grace_mean_harmonics(base_dir, parameters):
+def grace_mean_harmonics(base_dir, parameters, MODE=0o775):
     #-- Data processing center
     PROC = parameters['PROC']
     #-- Data Release
@@ -149,9 +133,9 @@ def grace_mean_harmonics(base_dir, parameters):
     #-- Degree 1 correction
     DEG1 = parameters['DEG1']
 
-    #-- data formats for output: 1) ascii, 2) netcdf, 3) HDF5
-    DATAFORM = np.int(parameters['DATAFORM'])
-    suffix = ['txt', 'nc', 'H5'][DATAFORM-1]
+    #-- data formats for output: ascii, netCDF4, HDF5
+    DATAFORM = parameters['DATAFORM']
+    suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
 
     #-- reading GRACE months for input range with grace_input_months.py
     #-- replacing C20 and C30 with SLR values and updating Degree 1 if specified
@@ -177,20 +161,22 @@ def grace_mean_harmonics(base_dir, parameters):
     if (parameters['FILENAME'].title() == 'None'):
         file_format = '{0}_{1}_{2}_MEAN_CLM{3}_L{4:d}{5}_{6:03d}-{7:03d}.{8}'
         FILENAME = file_format.format(PROC, DREL, DSET, grace_str, LMAX,
-            order_str, START_MON, END_MON, suffix)
+            order_str, START_MON, END_MON, suffix[DATAFORM])
     else:
         FILENAME = parameters['FILENAME']
 
     #-- output spherical harmonics for the static field
-    if (DATAFORM == 1):
+    if (DATAFORM == 'ascii'):
         #-- output mean field to ascii
         mean_Ylms.to_ascii(os.path.join(DIRECTORY,FILENAME))
-    elif (DATAFORM == 2):
+    elif (DATAFORM == 'netCDF4'):
         #-- output mean field to netCDF4
         mean_Ylms.to_netCDF4(os.path.join(DIRECTORY,FILENAME))
-    elif (DATAFORM == 3):
+    elif (DATAFORM == 'HDF5'):
         #-- output mean field to HDF5
         mean_Ylms.to_HDF5(os.path.join(DIRECTORY,FILENAME))
+    #-- change the permissions mode
+    os.chmod(os.path.join(DIRECTORY,FILENAME), MODE)
 
     #-- return the output file
     return os.path.join(DIRECTORY,FILENAME)
@@ -256,7 +242,7 @@ def create_unique_logfile(filename):
         counter += 1
 
 #-- PURPOSE: define the analysis for multiprocessing
-def define_analysis(parameter_file,base_dir,LOG):
+def define_analysis(parameter_file,base_dir,LOG=False,MODE=0o775):
     #-- keep track of multiprocessing threads
     info(os.path.basename(parameter_file))
 
@@ -277,7 +263,7 @@ def define_analysis(parameter_file,base_dir,LOG):
     #-- try to run the analysis with listed parameters
     try:
         #-- run mean algorithm with parameters
-        output_file = grace_mean_harmonics(base_dir, parameters)
+        output = grace_mean_harmonics(base_dir, parameters, MODE=MODE)
     except:
         #-- if there has been an error exception
         #-- print the type, value, and stack trace of the
@@ -289,57 +275,54 @@ def define_analysis(parameter_file,base_dir,LOG):
     else:
         #-- write successful job completion log file
         if LOG:
-            output_log_file(parameters,output_file)
-
-#-- PURPOSE: help module to describe the optional input parameters
-def usage():
-    print('\nHelp: {0}'.format(os.path.basename(sys.argv[0])))
-    print(' -D X, --directory=X\tWorking GRACE/GRACE-FO data directory')
-    print(' -P X, --np=X\tRun in parallel with X number of processes')
-    print(' -l, --log\tOutput log file for each job')
-    args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
-    LOGFILE = 'GRACE_mean_run_{0}_PID-{1:d}.log'.format(*args)
-    print('    Successful log file format: {0}'.format(LOGFILE))
-    FAILED_LOGFILE = 'GRACE_mean_failed_run_{0}_PID-{1:d}.log'.format(*args)
-    print('    Failed log file format: {0}\n'.format(FAILED_LOGFILE))
+            output_log_file(parameters,output)
 
 #-- This is the main part of the program that calls the individual modules
-#-- If no parameter file is listed as an argument: will exit with an error
 def main():
-    #-- Read the system arguments listed after the program and run the analyses
-    #-- with the specific parameters
-    long_options = ['help','directory=','np=','log']
-    optlist,arglist = getopt.getopt(sys.argv[1:],'hD:P:l',long_options)
-
+    #-- Read the system arguments listed after the program
+    parser = argparse.ArgumentParser(
+        description="""Calculates the temporal mean of the GRACE/GRACE-FO
+            spherical harmonics
+            """
+    )
     #-- command line parameters
-    base_dir = os.getcwd()
-    PROCESSES = 0
-    LOG = False
-    for opt, arg in optlist:
-        if opt in ('-h','--help'):
-            usage()
-            sys.exit()
-        elif opt in ("-D","--directory"):
-            base_dir = os.path.expanduser(arg)
-        elif opt in ("-P","--np"):
-            PROCESSES = np.int(arg)
-        elif opt in ("-l","--log"):
-            LOG = True
+    parser.add_argument('parameters',
+        type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='+',
+        help='Parameter files containing specific variables for each analysis')
+    #-- number of processes to run in parallel
+    parser.add_argument('--np','-P',
+        metavar='PROCESSES', type=int, default=0,
+        help='Number of processes to run in parallel')
+    #-- working data directory
+    parser.add_argument('--directory','-D',
+        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        default=os.getcwd(),
+        help='Working data directory')
+    #-- Output log file for each job in forms
+    #-- GRACE_mean_run_2002-04-01_PID-00000.log
+    #-- GRACE_mean_failed_run_2002-04-01_PID-00000.log
+    parser.add_argument('--log','-l',
+        default=False, action='store_true',
+        help='Output log file for each job')
+    #-- permissions mode of the local directories and files (number in octal)
+    parser.add_argument('--mode','-M',
+        type=lambda x: int(x,base=8), default=0o775,
+        help='permissions mode of output files')
+    args = parser.parse_args()
 
-    #-- raise exception if no parameter files entered
-    if not arglist:
-        raise IOError('No Parameter File Specified')
-
-    if (PROCESSES == 0):
+    #-- use parameter files from system arguments listed after the program
+    if (args.np == 0):
         #-- run directly as series if PROCESSES = 0
-        for parameter_file in arglist:
-            define_analysis(parameter_file,base_dir,LOG)
+        #-- for each entered parameter file
+        for f in args.parameters:
+            define_analysis(f,args.directory,LOG=args.log,MODE=args.mode)
     else:
         #-- run in parallel with multiprocessing Pool
-        pool = multiprocessing.Pool(processes=PROCESSES)
-        #-- for each parameter file
-        for fi in arglist:
-            pool.apply_async(define_analysis, args=(fi,base_dir,LOG))
+        pool = multiprocessing.Pool(processes=args.np)
+        #-- for each entered parameter file
+        for f in args.parameters:
+            kwds=dict(LOG=args.log,MODE=args.mode)
+            pool.apply_async(define_analysis,args=(f,args.directory),kwds=kwds)
         #-- start multiprocessing jobs
         #-- close the pool
         #-- prevents more tasks from being submitted to the pool

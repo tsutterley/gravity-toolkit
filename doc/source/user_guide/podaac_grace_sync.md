@@ -9,19 +9,19 @@ podaac_grace_sync.py
 
 #### Calling Sequence
 ```bash
-python podaac_grace_sync.py --user=<username> --directory=<path_to_grace_directory> --release=RL06
+python podaac_grace_sync.py --user <username> --directory <path_to_grace_directory> --release RL06
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/podaac_grace_sync.py)
 
 #### Command Line Options
- - `-U X`, `--user=X`: Username for NASA Earthdata Login
- - `-N X`, `--netrc=X`: Path to .netrc file for authentication
- - `-D X`, `--directory=X`: Working Data Directory
- - `-C X`, `--center=X`: GRACE Processing Center (CSR,GFZ,JPL)
- - `-R X`, `--release=X`: GRACE data releases to sync (RL05,RL06)
+ - `-U X`, `--user X`: Username for NASA Earthdata Login
+ - `-N X`, `--netrc X`: Path to .netrc file for authentication
+ - `-D X`, `--directory X`: Working Data Directory
+ - `-c X`, `--center X`: GRACE Processing Center (CSR,GFZ,JPL)
+ - `-r X`, `--release X`: GRACE/GRACE-FO Data Releases to sync (RL05,RL06)
  - `--newsletters`: Sync GRACE Newsletters
  - `-L`, `--list`: Only print files that are to be transferred
- - `--clobber`: Overwrite existing data in transfer
+ - `-C`, `--clobber`: Overwrite existing data in transfer
  - `--checksum`: Compare hashes to check if overwriting existing data
- - `-M X`, `--mode=X`: Permission mode of directories and files synced
+ - `-M X`, `--mode X`: Permission mode of directories and files synced
  - `-l`, `--log`: Output log file

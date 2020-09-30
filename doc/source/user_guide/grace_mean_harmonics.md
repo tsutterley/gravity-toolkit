@@ -6,7 +6,7 @@ grace_mean_harmonics.py
 
 #### Calling Sequence
 ```bash
-python grace_mean_harmonics.py --mode=0o775 parameter_file
+python grace_mean_harmonics.py --mode 0o775 parameter_file
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/grace_mean_harmonics.py)
 
@@ -15,5 +15,5 @@ python grace_mean_harmonics.py --mode=0o775 parameter_file
 
 #### Command Line Options
  - `-V`, `--verbose`: verbose output of processing run
- - `-M X`, `--mode=X`: permissions mode of output files
+ - `-M X`, `--mode X`: permissions mode of output files
  - `-l`, `--log`: output log file for each job

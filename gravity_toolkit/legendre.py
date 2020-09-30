@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 legendre.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (09/2020)
 Computes associated Legendre functions of degree l evaluated for elements x
 l must be a scalar integer and x must contain real values ranging -1 <= x <= 1
 Parallels the MATLAB legendre function
@@ -30,6 +30,7 @@ REFERENCES:
     J. A. Jacobs, "Geomagnetism", Academic Press, 1987, Ch.4.
 
 UPDATE HISTORY:
+    Updated 09/2020: verify dimensions of x variable
     Updated 07/2020: added function docstrings
     Updated 05/2020: added normalization option for output polynomials
     Updated 03/2019: calculate twocot separately to avoid divide warning
@@ -55,8 +56,9 @@ def legendre(l,x,NORMALIZE=False):
     -------
     Pl: legendre polynomials of degree l for orders 0 to l
     """
-    #-- Convert x to a single row vector
-    x = np.squeeze(x).flatten()
+    #-- verify dimensions
+    x = np.atleast_1d(x).flatten()
+    #-- size of the x array
     nx = len(x)
 
     #-- for the l = 0 case

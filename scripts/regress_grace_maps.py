@@ -1,21 +1,21 @@
 #!/usr/bin/env python
 u"""
 regress_grace_maps.py
-Written by Tyler Sutterley (06/2020)
+Written by Tyler Sutterley (10/2020)
 
 Reads in GRACE/GRACE-FO spatial files from grace_spatial_maps.py and
     fits a regression model at each grid point
 
 CALLING SEQUENCE:
-    python regress_grace_maps.py --start=4 --end=175 --order=2 parameter_file
+    python regress_grace_maps.py --start 4 --end 175 --order 2 parameter_file
 
 COMMAND LINE OPTIONS:
-    -P X, --np=X: Run in parallel with X number of processes
-    -S X, --start=X: starting GRACE month for time series regression
-    -E X, --end=X: ending GRACE month for time series regression
-    --order=X: regression fit polynomial order
-    --cycles=X: regression fit cyclical terms
-    -M X, --mode=X: permissions mode of the output files
+    -P X, --np X: Run in parallel with X number of processes
+    -S X, --start X: starting GRACE month for time series regression
+    -E X, --end X: ending GRACE month for time series regression
+    --order X: regression fit polynomial order
+    --cycles X: regression fit cyclical terms
+    -M X, --mode X: permissions mode of the output files
     -V, --verbose: verbose output of processing run
     -l, --log: output log file for each job
 
@@ -41,7 +41,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
     scipy: Scientific Tools for Python (https://docs.scipy.org/doc/)
     netCDF4: netCDF4: Python interface to the netCDF C library
-    h5py:  Python interface for Hierarchal Data Format 5 (HDF5)
+    h5py: Python interface for Hierarchal Data Format 5 (HDF5)
         (https://h5py.org)
 
 PROGRAM DEPENDENCIES:
@@ -54,6 +54,7 @@ PROGRAM DEPENDENCIES:
         hdf5_write.py: writes output spatial data to HDF5
 
 UPDATE HISTORY:
+    Updated 10/2020: use argparse to set command line parameters
     Updated 06/2020: using spatial data class for input and output operations
     Updated 01/2020: output seasonal amplitude and phase
     Updated 10/2019: changing Y/N flags to True/False
@@ -76,8 +77,7 @@ from __future__ import print_function, division
 import sys
 import os
 import time
-import getopt
-import inspect
+import argparse
 import traceback
 import numpy as np
 import multiprocessing
@@ -96,7 +96,8 @@ def info(title):
     print('process id: {0:d}'.format(os.getpid()))
 
 #-- program module to run with specified parameters
-def regress_grace_maps(parameters,ORDER,CYCLES,VERBOSE,MODE):
+def regress_grace_maps(parameters, ORDER=None, CYCLES=None,
+    VERBOSE=False, MODE=0o775):
     #-- convert parameters into variables
     #-- Data processing center
     PROC = parameters['PROC']
@@ -132,13 +133,13 @@ def regress_grace_maps(parameters,ORDER,CYCLES,VERBOSE,MODE):
     DDEG = np.squeeze(np.array(parameters['DDEG'].split(','),dtype='f'))
     #-- output degree interval (0:360, 90:-90) or (degree spacing/2)
     INTERVAL = np.int(parameters['INTERVAL'])
-    #-- output data format (1: ascii, 2: netcdf, 3: HDF5)
-    DATAFORM = np.int(parameters['DATAFORM'])
+    #-- input/output data format (ascii, netCDF4, HDF5)
+    DATAFORM = parameters['DATAFORM']
     #-- output directory and base filename
     DIRECTORY = os.path.expanduser(parameters['DIRECTORY'])
     FILENAME = parameters['FILENAME']
     #-- output filename suffix
-    suffix = ['txt', 'nc', 'H5'][DATAFORM-1]
+    suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')[DATAFORM]
 
     #-- flag for spherical harmonic order
     order_str = 'M{0:d}'.format(MMAX) if (MMAX != LMAX) else ''
@@ -210,13 +211,13 @@ def regress_grace_maps(parameters,ORDER,CYCLES,VERBOSE,MODE):
         fi = input_format.format(FILENAME,unit_list[UNITS-1],LMAX,
             order_str,gw_str,ds_str,grace_month,suffix)
         #-- read GRACE/GRACE-FO spatial file
-        if (DATAFORM == 1):
+        if (DATAFORM == 'ascii'):
             dinput = spatial(spacing=[dlon,dlat],nlon=nlon,
                 nlat=nlat).from_ascii(os.path.join(DIRECTORY,fi))
-        elif (DATAFORM == 2):
+        elif (DATAFORM == 'netCDF4'):
             #-- netcdf (.nc)
             dinput = spatial().from_netCDF4(os.path.join(DIRECTORY,fi))
-        elif (DATAFORM == 3):
+        elif (DATAFORM == 'HDF5'):
             #-- HDF5 (.H5)
             dinput = spatial().from_HDF5(os.path.join(DIRECTORY,fi))
         #-- append to spatial list
@@ -385,14 +386,14 @@ def output_data(data, FILENAME=None, KEY='data', DATAFORM=None,
     UNITS=None, LONGNAME=None, TITLE=None, VERBOSE=False, MODE=0o775):
     output = data.copy()
     setattr(output,'data',getattr(data,KEY))
-    if (DATAFORM == 1):
+    if (DATAFORM == 'ascii'):
         #-- ascii (.txt)
         output.to_ascii(FILENAME,date=False,verbose=VERBOSE)
-    elif (DATAFORM == 2):
+    elif (DATAFORM == 'netCDF4'):
         #-- netcdf (.nc)
         output.to_netCDF4(FILENAME,date=False,verbose=VERBOSE,
             units=UNITS,longname=LONGNAME,title=TITLE)
-    elif (DATAFORM == 3):
+    elif (DATAFORM == 'HDF5'):
         #-- HDF5 (.H5)
         output.to_HDF5(FILENAME,date=False,verbose=VERBOSE,
             units=UNITS,longname=LONGNAME,title=TITLE)
@@ -469,7 +470,8 @@ def create_unique_logfile(filename):
         counter += 1
 
 #-- PURPOSE: define the analysis
-def define_analysis(parameter_file,START,END,ORDER,CYCLES,VERBOSE,MODE,LOG):
+def define_analysis(parameter_file,START,END,ORDER=None,CYCLES=None,
+    VERBOSE=False,LOG=False,MODE=0o775):
     #-- keep track of progress
     info(os.path.basename(parameter_file))
 
@@ -496,7 +498,8 @@ def define_analysis(parameter_file,START,END,ORDER,CYCLES,VERBOSE,MODE,LOG):
     #-- try to run the program with listed parameters
     try:
         #-- run GRACE/GRACE-FO spatial regression program with parameters
-        output_files = regress_grace_maps(parameters,ORDER,CYCLES,VERBOSE,MODE)
+        output_files = regress_grace_maps(parameters,ORDER=ORDER,
+            CYCLES=CYCLES,VERBOSE=VERBOSE,MODE=MODE)
     except:
         #-- if there has been an error exception
         #-- print the type, value, and stack trace of the
@@ -509,79 +512,73 @@ def define_analysis(parameter_file,START,END,ORDER,CYCLES,VERBOSE,MODE,LOG):
         if LOG:#-- write successful job completion log file
             output_log_file(parameters,output_files)
 
-#-- PURPOSE: help module to describe the optional input parameters
-def usage():
-    print('\nHelp: {0}'.format(os.path.basename(sys.argv[0])))
-    print(' -P X, --np=X\tRun in parallel with X number of processes')
-    print(' -S X, --start=X\tStarting GRACE month for time series regression')
-    print(' -E X, --end=X\t\tEnding GRACE month for time series regression')
-    print(' --order=X\t\tRegression fit polynomial order:')
-    print('\t0: Mean\n\t1: Trend\n\t2: Quadratic')
-    print(' --cycles=X\t\tRegression fit cyclical terms:')
-    print(' -M X, --mode=X\t\tPermission mode of directories and files')
-    print(' -V, --verbose\t\tVerbose output of processing run')
-    print(' -l, --log\t\tOutput log file for each job')
-    args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
-    LOGFILE='GRACE_processing_run_{0}_PID-{1:d}.log'.format(*args)
-    FAILED_LOGFILE='GRACE_processing_failed_run_{0}_PID-{1:d}.log'.format(*args)
-    print('    Successful log file format: {0}'.format(LOGFILE))
-    print('    Failed log file format: {0}\n'.format(FAILED_LOGFILE))
-
 #-- This is the main part of the program that calls the individual modules
 #-- If no parameter file is listed as an argument: will exit with an error
 def main():
-    #-- Read the system arguments listed after the program and run the analyses
-    #-- with the specific parameters.
-    lopt = ['help','np=','start=','end=','order=','cycles=','verbose','mode=','log']
-    optlist,arglist = getopt.getopt(sys.argv[1:],'hP:S:E:F:VM:l',lopt)
-
+    #-- Read the system arguments listed after the program
+    parser = argparse.ArgumentParser(
+        description="""Reads in GRACE/GRACE-FO spatial files and calculates the
+            trends at each grid point following an input regression model
+            """
+    )
     #-- command line parameters
-    PROCESSES = 0
-    START = None
-    END = None
-    ORDER = 2
-    CYCLES = np.array([0.5,1.0,161.0/365.25])
-    LOG = False
-    VERBOSE = False
-    MODE = 0o775
-    for opt, arg in optlist:
-        if opt in ('-h','--help'):
-            usage()
-            sys.exit()
-        elif opt in ("-P","--np"):
-            PROCESSES = np.int(arg)
-        elif opt in ("-S","--start"):
-            START = np.int(arg)
-        elif opt in ("-E","--end"):
-            END = np.int(arg)
-        elif opt in ("--order"):
-            ORDER = np.int(arg)
-        elif opt in ("--cycles"):
-            CYCLES = np.array([eval(i) for i in arg.split(',')],dtype=np.float)
-        elif opt in ("-V","--verbose"):
-            VERBOSE = True
-        elif opt in ("-M","--mode"):
-            MODE = int(arg,8)
-        elif opt in ("-l","--log"):
-            LOG = True
-
-    #-- raise exception if no parameter files entered
-    if not arglist:
-        raise IOError('No Parameter File Specified')
+    parser.add_argument('parameters',
+        type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='+',
+        help='Parameter files containing specific variables for each analysis')
+    #-- number of processes to run in parallel
+    parser.add_argument('--np','-P',
+        metavar='PROCESSES', type=int, default=0,
+        help='Number of processes to run in parallel')
+    #-- start and end years for regression
+    parser.add_argument('--start','-S',
+        type=int,
+        help='Starting GRACE/GRACE_FO month for time series regression')
+    parser.add_argument('--end','-E',
+        type=int,
+        help='Ending GRACE/GRACE_FO month for time series regression')
+    #-- regression parameters
+    #-- 0: mean
+    #-- 1: trend
+    #-- 2: acceleration
+    parser.add_argument('--order','-o',
+        type=int, default=2,
+        help='Regression fit polynomial order')
+    #-- regression fit cyclical terms
+    parser.add_argument('--cycle','-c',
+        type=float, default=[0.5,1.0,161.0/365.25], nargs='+',
+        help='Regression fit cyclical terms')
+    #-- verbose output
+    parser.add_argument('--verbose','-V',
+        default=False, action='store_true',
+        help='Verbose output of run')
+    #-- Output log file for each job in forms
+    #-- GRACE_processing_run_2002-04-01_PID-00000.log
+    #-- GRACE_processing_failed_run_2002-04-01_PID-00000.log
+    parser.add_argument('--log','-l',
+        default=False, action='store_true',
+        help='Output log file for each job')
+    #-- permissions mode of the local directories and files (number in octal)
+    parser.add_argument('--mode','-M',
+        type=lambda x: int(x,base=8), default=0o775,
+        help='permissions mode of output files')
+    args = parser.parse_args()
 
     #-- use parameter files from system arguments listed after the program.
-    if (PROCESSES == 0):
+    if (args.np == 0):
         #-- run directly as series if PROCESSES = 0
-        for f in arglist:
-            define_analysis(os.path.expanduser(f),START,END,ORDER,CYCLES,
-                VERBOSE,MODE,LOG)
+        for f in args.parameters:
+            define_analysis(f,args.start,args.end,
+                ORDER=args.order,CYCLES=args.cycle,VERBOSE=args.verbose,
+                LOG=args.log,MODE=args.mode)
     else:
         #-- run in parallel with multiprocessing Pool
-        pool = multiprocessing.Pool(processes=PROCESSES)
+        pool = multiprocessing.Pool(processes=args.np)
         #-- for each parameter file
-        for f in arglist:
-            pool.apply_async(define_analysis,args=(os.path.expanduser(f),
-                START,END,ORDER,CYCLES,VERBOSE,MODE,LOG))
+        for f in args.parameters:
+            kwds=dict(ORDER=args.order,CYCLES=args.cycle,
+                VERBOSE=args.verbose,LOG=args.log,MODE=args.mode)
+            pool.apply_async(define_analysis,args=(f,args.start,args.end),
+                kwds=kwds)
         #-- start multiprocessing jobs
         #-- close the pool
         #-- prevents more tasks from being submitted to the pool

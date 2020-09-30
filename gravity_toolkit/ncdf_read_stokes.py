@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_read_stokes.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (09/2020)
 
 Reads spherical harmonic data from netCDF4 files
 
@@ -33,6 +33,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 09/2020: use try/except for reading attributes
     Updated 08/2020: flake8 compatible regular expression strings
         add options to read from gzip or zip compressed files
     Updated 07/2020: added function docstrings
@@ -112,6 +113,7 @@ def ncdf_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
         fileID = netCDF4.Dataset(os.path.expanduser(filename), 'r')
     #-- create python dictionary for output variables
     dinput = {}
+    dinput['attributes'] = {}
 
     #-- Output NetCDF file information
     if VERBOSE:
@@ -159,11 +161,13 @@ def ncdf_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
 
     #-- Getting attributes of clm/slm and included variables
     if ATTRIBUTES:
-        #-- for each variable
         #-- get attributes for the included variables
         for key in dinput.keys():
-            dinput['attributes'][key] = [fileID.variables[key].units,
-                fileID.variables[key].long_name]
+            try:
+                dinput['attributes'][key] = [fileID.variables[key].units,
+                    fileID.variables[key].long_name]
+            except (KeyError, AttributeError):
+                pass
         #-- Global attribute (title of dataset)
         title, = [st for st in dir(fileID) if re.match(r'TITLE',st,re.I)]
         dinput['attributes']['title'] = getattr(fileID, title)
