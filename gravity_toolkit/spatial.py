@@ -585,10 +585,10 @@ class spatial(object):
         elif (np.ndim(var) == 2) and (self.ndim == 2):
             temp.data = self.data + var
         elif (np.ndim(var) == 2) and (self.ndim == 3):
-            for i,t in enumerate(time):
+            for i,t in enumerate(self.time):
                 temp.data[:,:,i] = self.data[:,:,i] + var
         elif (np.ndim(var) == 3) and (self.ndim == 3):
-            for i,t in enumerate(time):
+            for i,t in enumerate(self.time):
                 temp.data[:,:,i] = self.data[:,:,i] + var[:,:,i]
         #-- get spacing and dimensions
         temp.update_spacing()
@@ -620,10 +620,10 @@ class spatial(object):
         elif (np.ndim(var) == 2) and (self.ndim == 2):
             temp.data = var*self.data
         elif (np.ndim(var) == 2) and (self.ndim == 3):
-            for i,t in enumerate(time):
+            for i,t in enumerate(self.time):
                 temp.data[:,:,i] = var*self.data[:,:,i]
         elif (np.ndim(var) == 3) and (self.ndim == 3):
-            for i,t in enumerate(time):
+            for i,t in enumerate(self.time):
                 temp.data[:,:,i] = var[:,:,i]*self.data[:,:,i]
         #-- get spacing and dimensions
         temp.update_spacing()
