@@ -361,6 +361,13 @@ class spatial(object):
             FILENAME=self.filename, DATE=date,
             FILL_VALUE=self.fill_value, **KWARGS)
 
+    def to_masked_array(self):
+        """
+        Convert a spatial object to a masked numpy array
+        """
+        return np.ma.array(self.data, mask=self.mask,
+            fill_value=self.fill_value)
+
     def update_spacing(self):
         """
         Calculate the step size of spatial object
@@ -556,6 +563,41 @@ class spatial(object):
         #-- remove singleton dimensions if importing a single value
         return temp.squeeze()
 
+    def offset(self, var):
+        """
+        Offset a spatial object by a constant
+        Inputs: scalar value to which the spatial object will be offset
+        """
+        temp = self.copy()
+        #-- offset by a single constant or a time-variable scalar
+        if (np.ndim(var) == 0):
+            temp.data = self.data + var
+        elif (np.ndim(var) == 1) and (self.ndim == 2):
+            n = len(var)
+            temp.data = np.zeros((temp.shape[0],temp.shape[1],n))
+            temp.mask = np.zeros((temp.shape[0],temp.shape[1],n),dtype=np.bool)
+            for i,v in enumerate(var):
+                temp.data[:,:,i] = self.data[:,:] + v
+                temp.mask[:,:,i] = np.copy(self.mask[:,:])
+        elif (np.ndim(var) == 1) and (self.ndim == 3):
+            for i,v in enumerate(var):
+                temp.data[:,:,i] = self.data[:,:,i] + v
+        elif (np.ndim(var) == 2) and (self.ndim == 2):
+            temp.data = self.data + var
+        elif (np.ndim(var) == 2) and (self.ndim == 3):
+            for i,t in enumerate(self.time):
+                temp.data[:,:,i] = self.data[:,:,i] + var
+        elif (np.ndim(var) == 3) and (self.ndim == 3):
+            for i,t in enumerate(self.time):
+                temp.data[:,:,i] = self.data[:,:,i] + var[:,:,i]
+        #-- get spacing and dimensions
+        temp.update_spacing()
+        temp.update_extents()
+        temp.update_dimensions()
+        #-- update mask
+        temp.update_mask()
+        return temp
+
     def scale(self, var):
         """
         Multiply a spatial object by a constant
@@ -575,6 +617,14 @@ class spatial(object):
         elif (np.ndim(var) == 1) and (self.ndim == 3):
             for i,v in enumerate(var):
                 temp.data[:,:,i] = v*self.data[:,:,i]
+        elif (np.ndim(var) == 2) and (self.ndim == 2):
+            temp.data = var*self.data
+        elif (np.ndim(var) == 2) and (self.ndim == 3):
+            for i,t in enumerate(self.time):
+                temp.data[:,:,i] = var*self.data[:,:,i]
+        elif (np.ndim(var) == 3) and (self.ndim == 3):
+            for i,t in enumerate(self.time):
+                temp.data[:,:,i] = var[:,:,i]*self.data[:,:,i]
         #-- get spacing and dimensions
         temp.update_spacing()
         temp.update_extents()
@@ -612,6 +662,29 @@ class spatial(object):
         temp.update_dimensions()
         #-- update mask
         temp.update_mask()
+        return temp
+
+    def reverse(self, axis=0):
+        """
+        Reverse the order of data and dimensions along an axis
+        Option: axis to reorder
+        """
+        #-- output spatial object
+        temp = self.copy()
+        temp.expand_dims()
+        #-- copy dimensions and reverse order
+        if (axis == 0):
+            temp.lat = temp.lat[::-1].copy()
+            temp.data = temp.data[::-1,:,:].copy()
+            temp.mask = temp.mask[::-1,:,:].copy()
+        elif (axis == 1):
+            temp.lon = temp.lon[::-1].copy()
+            temp.data = temp.data[:,::-1,:].copy()
+            temp.mask = temp.mask[:,::-1,:].copy()
+        #-- squeeze output spatial object
+        #-- get spacing and dimensions
+        #-- update mask
+        temp.squeeze()
         return temp
 
     def sum(self, power=1):

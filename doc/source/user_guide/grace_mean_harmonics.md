@@ -14,6 +14,7 @@ python grace_mean_harmonics.py --mode 0o775 parameter_file
    parameter file containing specific variables for the analysis
 
 #### Command Line Options
+ - `-D X`, `--directory X`: Working Data Directory
  - `-V`, `--verbose`: verbose output of processing run
  - `-M X`, `--mode X`: permissions mode of output files
  - `-l`, `--log`: output log file for each job
