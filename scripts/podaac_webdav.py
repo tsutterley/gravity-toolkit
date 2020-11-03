@@ -116,32 +116,30 @@ def main():
     #-- get NASA Earthdata credentials
     if not args.user and not args.netrc:
         #-- check that NASA Earthdata credentials were entered
-        USER = builtins.input('Username for {0}: '.format(URS))
+        args.user=builtins.input('Username for {0}: '.format(URS))
         #-- enter password securely from command-line
-        PASSWORD = getpass.getpass('Password for {0}@{1}: '.format(USER,URS))
+        PASSWORD=getpass.getpass('Password for {0}@{1}: '.format(args.user,URS))
     elif args.netrc:
-        NETRC = args.netrc
-        USER,LOGIN,PASSWORD = netrc.netrc(NETRC).authenticators(URS)
+        args.user,LOGIN,PASSWORD=netrc.netrc(args.netrc).authenticators(URS)
     else:
         #-- enter password securely from command-line
-        USER = args.user
-        PASSWORD = getpass.getpass('Password for {0}@{1}: '.format(USER,URS))
+        PASSWORD=getpass.getpass('Password for {0}@{1}: '.format(args.user,URS))
     #-- if appending to netrc file and not entered: use default file
     if args.append and not args.netrc:
-        NETRC = os.path.join(os.path.expanduser('~'),'.netrc')
+        args.netrc = os.path.join(os.path.expanduser('~'),'.netrc')
 
     #-- check internet connection before attempting to run program
     DRIVE = posixpath.join('https://podaac-tools.jpl.nasa.gov','drive')
     if gravity_toolkit.utilities.check_connection(DRIVE):
         #-- compile HTML parser for lxml
-        WEBDAV = podaac_webdav(USER, PASSWORD, lxml.etree.HTMLParser())
+        WEBDAV = podaac_webdav(args.user, PASSWORD, lxml.etree.HTMLParser())
         #-- output to terminal or append to netrc file
-        a = (USER,HOST,WEBDAV)
+        a = (args.user,HOST,WEBDAV)
         if args.append:
             #-- append to netrc file and set permissions level
-            with open(NETRC,'a+') as f:
+            with open(args.netrc,'a+') as f:
                 f.write('machine {1} login {0} password {2}\n'.format(*a))
-                os.chmod(NETRC, 0o600)
+                os.chmod(args.netrc, 0o600)
         else:
             print('\nWebDAV Password for {0}@{1}:\n\t{2}'.format(*a))
 

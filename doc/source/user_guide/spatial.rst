@@ -265,6 +265,11 @@ General Attributes and Methods
             `verbose` print HDF5 file information
 
 
+    .. method:: object.to_masked_array()
+
+        Convert a spatial object to a masked numpy array
+
+
     .. method:: object.update_spacing()
 
         Calculate the step size of spatial object
@@ -321,6 +326,13 @@ General Attributes and Methods
         Inputs: GRACE/GRACE-FO months
 
 
+    .. method:: object.offset(var)
+
+        Offset a spatial object by a constant
+
+        Inputs: scalar value to which the spatial object will be offset
+
+
     .. method:: object.scale(var)
 
         Multiply a spatial object by a constant
@@ -333,6 +345,13 @@ General Attributes and Methods
         Compute mean spatial field and remove from data if specified
 
         Option: `apply` to remove the mean field from the input spatial
+
+
+    .. method:: object.reverse(axis=0)
+
+        Reverse the order of data and dimensions along an axis
+
+        Option: axis to reorder
 
 
     .. method:: object.sum(power=1)
