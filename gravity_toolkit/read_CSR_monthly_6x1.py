@@ -32,6 +32,7 @@ PROGRAM DEPENDENCIES:
     convert_calendar_decimal.py: converts from calendar dates to decimal years
 
 UPDATE HISTORY:
+    Updated 11/2020: following new format without geocenter coefficient
     Updated 07/2020: added function docstrings
     Updated 07/2019: following new format with mean field in header and no C6,0
     Updated 10/2018: using future division for python3 Compatibility
@@ -75,12 +76,13 @@ def read_CSR_monthly_6x1(input_file, HEADER=True):
     file_lines = len(file_contents)
 
     #-- spherical harmonic degree range (full 5x5 with 6,1)
-    LMIN = 1
+    LMIN = 2
     LMAX = 6
-    n_harm = (LMAX**2 + 3*LMAX - LMIN**2 - LMIN)//2 - 5
+    n_harm = (LMAX**2 + LMAX - LMIN**2 - LMIN)//2 + 1
 
     #-- counts the number of lines in the header
     count = 0
+    indice = 0
     #-- Reading over header text
     while HEADER:
         #-- file line at count
@@ -102,7 +104,7 @@ def read_CSR_monthly_6x1(input_file, HEADER=True):
     mean_Ylms['slm'] = np.zeros((LMAX+1,LMAX+1))
     mean_Ylm_error['clm'] = np.zeros((LMAX+1,LMAX+1))
     mean_Ylm_error['slm'] = np.zeros((LMAX+1,LMAX+1))
-    for i in range(n_harm+1):
+    for i in range(n_harm):
         #-- split the line into individual components
         line = file_contents[indice+i].split()
         #-- degree and order for the line
