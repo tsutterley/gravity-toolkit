@@ -639,7 +639,7 @@ class spatial(object):
         Option: apply to remove the mean field from the input data
         """
         #-- output spatial object
-        temp = spatial(nlon=self.shape[0],nlat=self.shape[1],
+        temp = spatial(nlon=self.data.shape[0],nlat=self.data.shape[1],
             fill_value=self.fill_value)
         #-- copy dimensions
         temp.lon = self.lon.copy()

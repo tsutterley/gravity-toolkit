@@ -173,6 +173,11 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
             drift_c[l1,m1] = np.float(line_contents[3])
             drift_s[l1,m1] = np.float(line_contents[4])
 
+    #-- Adding 0,0 coefficient for JPl
+    #-- to be able to compare it with CSR and GFZ
+    if (PRC == 'JPLEM') and (DSET == 'GSM'):
+        grace_L2_input['clm'][0, 0] = 1
+
     #-- Adding drift rates to clm and slm for RL04
     #-- if drift rates exist at any time, will add to harmonics
     #-- Will convert the secular rates into a stokes contribution
