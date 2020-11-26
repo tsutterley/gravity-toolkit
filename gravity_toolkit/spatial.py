@@ -17,6 +17,10 @@ PYTHON DEPENDENCIES:
         https://www.h5py.org/
 
 PROGRAM DEPENDENCIES:
+    ncdf_write.py: writes output spatial data to COARDS-compliant netCDF4
+    hdf5_write.py: writes output spatial data to HDF5
+    ncdf_read.py: reads spatial data from COARDS-compliant netCDF4
+    hdf5_read.py: reads spatial data from HDF5
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
@@ -1485,7 +1489,7 @@ class spatial(object):
             indices of input ``spatial`` object to compute mean
         """
         # output spatial object
-        temp = spatial(nlon=self.shape[0],nlat=self.shape[1],
+        temp = spatial(nlon=self.data.shape[0],nlat=self.data.shape[1],
             fill_value=self.fill_value)
         # copy dimensions
         temp.lon = self.lon.copy()
