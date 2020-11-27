@@ -31,6 +31,7 @@ PYTHON DEPENDENCIES:
     PyYAML: YAML parser and emitter for Python (https://github.com/yaml/pyyaml)
 
 UPDATE HISTORY:
+    Updated 10/2020: Change parse function to work with GRGS data
     Updated 08/2020: flake8 compatible regular expression strings
         input file can be "diskless" bytesIO object
     Updated 07/2020: added function docstrings
@@ -247,8 +248,9 @@ def parse_file(input_file):
     #-- GFZOP: GFZ German Research Center for Geosciences (RL06+GRACE-FO)
     #-- JPLEM: NASA Jet Propulsion Laboratory (harmonic solutions)
     #-- JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
+    # -- GRGS: CNES Groupe de Recherche de Géodésie Spatiale
     regex_pattern = (r'(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
-        r'(\.gz|\.gfc)?$').format('UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC')
+        r'(\.gz|\.gfc|\.txt)?$').format('UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC|GRGS')
     rx = re.compile(regex_pattern, re.VERBOSE)
     #-- extract parameters from input filename
     if isinstance(input_file, io.IOBase):

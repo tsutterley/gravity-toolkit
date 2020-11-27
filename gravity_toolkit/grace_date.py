@@ -34,6 +34,7 @@ PROGRAM DEPENDENCIES:
     convert_julian.py: converts a Julian date into a calendar date
 
 UPDATE HISTORY:
+    Updated 10/2020: updated for CNES RL04 & RL05 (monthly fields)
     Updated 10/2020: use argparse to set command line parameters
     Updated 07/2020: added function docstrings
     Updated 03/2020: for public release
@@ -140,8 +141,9 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     #-- GFZOP: GFZ German Research Center for Geosciences (RL06+GRACE-FO)
     #-- JPLEM: NASA Jet Propulsion Laboratory (harmonic solutions)
     #-- JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
+    #-- GRGS: CNES Groupe de Recherche de Géodésie Spatiale
     regex_pattern = (r'(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
-       r'(\.gz|\.gfc)?$').format(r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC')
+       r'(\.gz|\.gfc|\.txt)?$').format(r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC|GRGS')
     rx = re.compile(regex_pattern, re.VERBOSE)
 
     #-- Output GRACE date ascii file
@@ -269,7 +271,7 @@ def main():
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, nargs='+',
         default=['CSR','GFZ','JPL'],
-        choices=['CSR','GFZ','JPL'],
+        choices=['CSR','GFZ','JPL', 'CNES'],
         help='GRACE/GRACE-FO Processing Center')
     #-- GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
