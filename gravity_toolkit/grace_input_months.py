@@ -69,6 +69,7 @@ PROGRAM DEPENDENCIES:
     read_GRACE_harmonics.py: reads an input GRACE data file and calculates date
 
 UPDATE HISTORY:
+    Updated 11/2020: added C/S2,1 and C/S2,2 correction from John Ries
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 06/2020: set relative time to mean of input within regress_model
@@ -112,6 +113,7 @@ import numpy as np
 from gravity_toolkit.grace_date import grace_date
 from gravity_toolkit.read_SLR_C20 import read_SLR_C20
 from gravity_toolkit.read_SLR_C30 import read_SLR_C30
+from gravity_toolkit.read_SLR_CS2 import read_SLR_CS2
 from gravity_toolkit.read_tellus_geocenter import read_tellus_geocenter
 from gravity_toolkit.read_SLR_geocenter import aod_corrected_SLR_geocenter
 from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
@@ -119,7 +121,8 @@ from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 
 def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
     start_mon, end_mon, missing, SLR_C20, DEG1, MMAX=None, SLR_C30='',
-    MODEL_DEG1=False, DEG1_GIA='', ATM=False, POLE_TIDE=False):
+    SLR_21='', SLR_22='', MODEL_DEG1=False, DEG1_GIA='', ATM=False,
+    POLE_TIDE=False):
     """
     Reads GRACE/GRACE-FO files for a spherical harmonic degree and order
         and a date range
@@ -156,6 +159,12 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         None: use original values
         CSR: use values from CSR (5x5 with 6,1)
         GSFC: use values from GSFC (TN-14)
+    SLR_21: replaces C21 and S21 with SLR values
+        None: use original values
+        CSR: use values from CSR (5x5 with 6,1)
+    SLR_22: replaces C22 and S22 with SLR values
+        None: use original values
+        CSR: use values from CSR (5x5 with 6,1)
     POLE_TIDE: correct GSM data with pole tides following Wahr et al (2015)
     ATM: correct data with ECMWF "jump" corrections GAE, GAF and GAG
     MODEL_DEG1: least-squares model missing degree 1 coefficients (True/False)
@@ -215,11 +224,29 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
     else:
         C30_str = ''
 
+    # -- Replacing C2,1 with SLR C2,1
+    # -- Running function read_SLR_CS2.py
+    if (SLR_21 == 'CSR'):
+        SLR_file = os.path.join(base_dir, 'C21_S21_RL06.txt')
+        CS21_input = read_SLR_CS2(SLR_file)
+        CS21_str = '_wCSR_21'
+    else:
+        CS21_str = ''
+
+    # -- Replacing C2,2 with SLR C2,2
+    # -- Running function read_SLR_CS2.py
+    if (SLR_22 == 'CSR'):
+        SLR_file = os.path.join(base_dir, 'C22_S22_RL06.txt')
+        CS22_input = read_SLR_CS2(SLR_file)
+        CS22_str = '_wCSR_22'
+    else:
+        CS22_str = ''
+
     #-- Correcting for Degree 1 (geocenter variations)
     #-- reading degree 1 file for given release if specified
     if (DEG1 == 'Tellus'):
         #-- Tellus (PO.DAAC) degree 1
-        if DREL in ('RL04','RL05'):
+        if DREL in ('RL04','RL05') and PROC in ('JPL', 'CSR', 'GFZ'):
             DEG1_file = os.path.join(base_dir,'geocenter',
                 'deg1_coef_{0}.txt'.format(DREL))
             JPL = False
@@ -261,7 +288,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
     #-- pole tide flag if correcting for pole tide drift (Wahr et al. 2015)
     pt_str = '_wPT' if POLE_TIDE else ''
     #-- full output string (C20, C30, geocenter and atmospheric flags)
-    out_str = C20_str + C30_str + DEG1_str + atm_str + pt_str
+    out_str = C20_str + C30_str + CS21_str + CS22_str + DEG1_str + atm_str + pt_str
 
     #-- Range of months from start_mon to end_mon (end_mon+1 to include end_mon)
     #-- Removing the missing months and months not to consider
@@ -318,6 +345,36 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
             if (count != 0) and (grace_month > 176):
                 k, = np.nonzero(C30_input['month'] == grace_month)
                 grace_clm[3,0,i] = C30_input['data'][k]
+
+    # -- Replace CS21 with SLR coefficients for single-accelerometer months
+    if (SLR_21 == 'CSR'):
+        # -- verify that there are replacement CS21 months for specified range
+        months_test = sorted(set(mon[mon > 176]) - set(CS21_input['month']))
+        if months_test:
+            gm = ','.join('{0:03d}'.format(gm) for gm in months_test)
+            raise IOError('No Matching CS21 Months ({0})'.format(gm))
+        # -- replace CS21 with SLR coefficients
+        for i, grace_month in enumerate(months):
+            count = np.count_nonzero(CS21_input['month'] == grace_month)
+            if (count != 0) and (grace_month > 176):
+                k, = np.nonzero(CS21_input['month'] == grace_month)
+                grace_clm[2, 1, i] = CS21_input['datac'][k]
+                grace_slm[2, 1, i] = CS21_input['datas'][k]
+
+    # -- Replace CS22 with SLR coefficients for single-accelerometer months
+    if (SLR_22 == 'CSR'):
+        # -- verify that there are replacement CS22 months for specified range
+        months_test = sorted(set(mon[mon > 176]) - set(CS22_input['month']))
+        if months_test:
+            gm = ','.join('{0:03d}'.format(gm) for gm in months_test)
+            raise IOError('No Matching CS22 Months ({0})'.format(gm))
+        # -- replace CS22 with SLR coefficients
+        for i, grace_month in enumerate(months):
+            count = np.count_nonzero(CS22_input['month'] == grace_month)
+            if (count != 0) and (grace_month > 176):
+                k, = np.nonzero(CS22_input['month'] == grace_month)
+                grace_clm[2, 2, i] = CS22_input['datac'][k]
+                grace_slm[2, 2, i] = CS22_input['datas'][k]
 
     #-- Use Degree 1 coefficients
     #-- Tellus: Tellus Degree 1 (PO.DAAC following Sun et al., 2016)
