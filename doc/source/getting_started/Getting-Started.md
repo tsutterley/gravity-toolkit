@@ -5,7 +5,11 @@ Getting Started
 - Get PO.DAAC WebDAV credentials by running `podaac_webdav.py` or logging onto [PO.DAAC Drive](https://podaac-tools.jpl.nasa.gov/drive)  
 - Run `podaac_grace_sync.py` program with your WebDAV credentials to acquire GRACE/GRACE-FO and auxiliary data  
 ```bash
-python podaac_grace_sync.py --user=<username> --directory=<path_to_grace_directory>
+python podaac_grace_sync.py --user=<username> --directory=<path_to_grace_directory> --release RL06
+```
+- Run `cnes_grace_sync.py` program to acquire CNES/GRGS GRACE/GRACE-FO data  
+```bash
+python cnes_grace_sync.py --directory=<path_to_grace_directory> --release RL05
 ```
 - If correcting for Glacial Isostatic Adjustment: have full path to data file known  
     * These can be ascii files direct from many modeling groups or a reformatted ascii/netCDF4/HDF5 file  

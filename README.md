@@ -26,6 +26,7 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
 - [`convert_calendar_decimal`](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/doc/source/user_guide/convert_calendar_decimal.md) - Converts from calendar date into decimal years taking into account leap years
 - [`convert_harmonics`](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/doc/source/user_guide/convert_harmonics.md) - Converts a file from the spatial domain into the spherical harmonic domain
 - [`convert_julian`](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/doc/source/user_guide/convert_julian.md) - Return the calendar date and time given Julian date
+- [`cnes_grace_sync`](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/doc/source/user_guide/cnes_grace_sync.md) - Syncs GRACE/GRACE-FO data from the CNES/GRGS Server
 - [`degree_amplitude`](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/doc/source/user_guide/degree_amplitude.md) - Calculates the amplitude of each spherical harmonic degree
 - [`destripe_harmonics`](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/doc/source/user_guide/destripe_harmonics.md) - Filters spherical harmonic coefficients for correlated "striping" errors
 - [`gauss_weights`](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/doc/source/user_guide/gauss_weights.md) - Computes the Gaussian weights as a function of degree

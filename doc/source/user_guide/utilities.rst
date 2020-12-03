@@ -36,6 +36,15 @@ General Methods
         `local`: path to file
 
 
+.. method:: gravity_toolkit.utilities.url_split(s)
+
+    Recursively split a url path into a list
+
+    Arguments:
+
+        `s`: url string
+
+
 .. method:: gravity_toolkit.utilities.get_unix_time(time_string, format='%Y-%m-%d %H:%M:%S')
 
     Get the Unix timestamp value for a formatted date string
@@ -74,7 +83,7 @@ General Methods
         `mtimes`: list of last modification times for items in the directory
 
 
-.. method:: gravity_toolkit.utilities.from_ftp(HOST,timeout=None,local=None,hash='',chunk=16384,verbose=False,mode=0o775)
+.. method:: gravity_toolkit.utilities.from_ftp(HOST,timeout=None,local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
 
     Download a file from a ftp host
 
@@ -94,6 +103,8 @@ General Methods
 
         `verbose`: print file transfer information
 
+        `fid`: open file object to print if verbose
+
         `mode`: permissions mode of output local file
 
 
@@ -106,7 +117,7 @@ General Methods
         `HOST`: remote http host
 
 
-.. method:: gravity_toolkit.utilities.from_http(HOST,timeout=None,local=None,hash='',chunk=16384,verbose=False,mode=0o775)
+.. method:: gravity_toolkit.utilities.from_http(HOST,timeout=None,local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
 
     Download a file from a http host
 
@@ -125,6 +136,8 @@ General Methods
         `chunk`: chunk size for transfer encoding
 
         `verbose`: print file transfer information
+
+        `fid`: open file object to print if verbose
 
         `mode`: permissions mode of output local file
 
@@ -192,7 +205,7 @@ General Methods
 
 
 
-.. method:: gravity_toolkit.utilities.from_podaac(HOST,username=None,password=None,build=True,timeout=None,local=None,hash='',chunk=16384,verbose=False,mode=0o775)
+.. method:: gravity_toolkit.utilities.from_podaac(HOST,username=None,password=None,build=True,timeout=None,local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
 
     Download a file from a PO.DAAC Drive https server
 
@@ -218,4 +231,23 @@ General Methods
 
         `verbose`: print file transfer information
 
+        `fid`: open file object to print if verbose
+
         `mode`: permissions mode of output local file
+
+
+.. method:: gravity_toolkit.utilities.icgem_list(host='http://icgem.gfz-potsdam.de/tom_longtime',timeout=None,parser=lxml.etree.HTMLParser())
+
+    Parse the table of static gravity field models on the GFZ ICGEM server
+
+    Keyword arguments:
+
+        `host`: url for the GFZ ICGEM gravity field table
+
+        `timeout`: timeout in seconds for blocking operations
+
+        `parser`: HTML parser for lxml
+
+    Returns:
+
+        `colfiles`: dictionary of static file urls mapped by field name
