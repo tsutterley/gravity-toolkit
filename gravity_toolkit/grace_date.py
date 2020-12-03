@@ -11,7 +11,7 @@ INPUTS:
     base_dir: Working data directory for GRACE/GRACE-FO data
 
 OPTIONS:
-    PROC: GRACE data processing center (CSR/CNES/JPL/GFZ)
+    PROC: GRACE data processing center (CSR/CNES/JPL/GFZ/GRAZ)
     DREL: GRACE/GRACE-FO Data Release (RL03 for CNES) (RL06 for CSR/GFZ/JPL)
     DSET: GRACE dataset (GAA/GAB/GAC/GAD/GSM)
         GAA is the non-tidal atmospheric correction
@@ -34,7 +34,7 @@ PROGRAM DEPENDENCIES:
     convert_julian.py: converts a Julian date into a calendar date
 
 UPDATE HISTORY:
-    Updated 10/2020: updated for CNES RL04 & RL05 (monthly fields)
+    Updated 11/2020: updated for CNES RL04 & RL05 and GRAZ 2018 (monthly fields)
     Updated 10/2020: use argparse to set command line parameters
     Updated 07/2020: added function docstrings
     Updated 03/2020: for public release
@@ -98,7 +98,8 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
         CSR: University of Texas Center for Space Research
         GFZ: German Research Centre for Geosciences (GeoForschungsZentrum)
         JPL: Jet Propulsion Laboratory
-        CNES: French Centre National D'Etudes Spatiales
+        CNES: French Centre Natnp.int(month)ional D'Etudes Spatiales
+        GRAZ: Institute of Geodesy from GRAZ University of Technology
     DREL: GRACE/GRACE-FO data release
     DSET: GRACE/GRACE-FO dataset
         GAA: non-tidal atmospheric correction
@@ -134,16 +135,24 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     tdec = np.zeros((n_files))#-- tdec is the date in decimal form
     mon = np.zeros((n_files,),dtype=np.int)#-- GRACE/GRACE-FO month number
 
-    #-- compile numerical expression operator for parameters from files
-    #-- will work with previous releases and releases for GRACE-FO
-    #-- UTCSR: The University of Texas at Austin Center for Space Research
-    #-- EIGEN: GFZ German Research Center for Geosciences (RL01-RL05)
-    #-- GFZOP: GFZ German Research Center for Geosciences (RL06+GRACE-FO)
-    #-- JPLEM: NASA Jet Propulsion Laboratory (harmonic solutions)
-    #-- JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
-    #-- GRGS: CNES Groupe de Recherche de Géodésie Spatiale
-    regex_pattern = (r'(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
-       r'(\.gz|\.gfc|\.txt)?$').format(r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC|GRGS')
+    if PROC in ('CSR', 'GFZ', 'JPL', 'CNES'):
+        #-- compile numerical expression operator for parameters from files
+        #-- will work with previous releases and releases for GRACE-FO
+        #-- UTCSR: The University of Texas at Austin Center for Space Research
+        #-- EIGEN: GFZ German Research Center for Geosciences (RL01-RL05)
+        #-- GFZOP: GFZ German Research Center for Geosciences (RL06+GRACE-FO)
+        #-- JPLEM: NASA Jet Propulsion Laboratory (harmonic solutions)
+        #-- JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
+        #-- GRGS: CNES Groupe de Recherche de Géodésie Spatiale
+        regex_pattern = (r'(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
+           r'(\.gz|\.gfc|\.txt)?$').format(r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC|GRGS')
+    elif PROC == 'GRAZ':
+        # -- GRAZ: Institute of Geodesy from GRAZ University of Technology
+        regex_pattern = (r'(.*?)-({0})_(.*?)_(\d+)-(\d+)'
+                         r'(\.gz|\.gfc|\.txt)').format(r'Grace_operational|Grace2018')
+    else:
+        raise ValueError("Unknown PROC value:", PROC)
+
     rx = re.compile(regex_pattern, re.VERBOSE)
 
     #-- Output GRACE date ascii file
@@ -160,58 +169,64 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     #-- for each data file
     for t, infile in enumerate(input_files):
         #-- extract parameters from input filename
-        PFX,start_date,end_date,AUX,PRC,F1,DRL,F2,SFX = rx.findall(infile).pop()
-        #-- find start date, end date and number of days
-        start_yr[t] = np.float(start_date[:4])
-        end_yr[t] = np.float(end_date[:4])
-        start_day[t] = np.float(start_date[4:])
-        end_day[t] = np.float(end_date[4:])
-        #-- end_day (will be changed if the month crosses 2 years)
-        end_plus = np.copy(end_day[t])
+        if PROC in ('CSR', 'GFZ', 'JPL', 'CNES'):
+            PFX,start_date,end_date,AUX,PRC,F1,DRL,F2,SFX = rx.findall(infile).pop()
 
-        #-- calculate mid-month date taking into account if measurements are
-        #-- on different years
-        if ((start_yr[t] % 4) == 0):#-- Leap Year (% = modulus)
-            dpy = 366.0
-        else:#-- Standard Year
-            dpy = 365.0
-        #-- For data that crosses years
-        if (start_yr[t] != end_yr[t]):
-            #-- end_yr - start_yr should be 1
-            end_plus = (end_yr[t]-start_yr[t])*dpy + end_day[t]
-        #-- Calculation of Mid-month value
-        mid_day[t] = np.mean([start_day[t], end_plus])
+            #-- find start date, end date and number of days
+            start_yr[t] = np.float(start_date[:4])
+            end_yr[t] = np.float(end_date[:4])
+            start_day[t] = np.float(start_date[4:])
+            end_day[t] = np.float(end_date[4:])
+            #-- end_day (will be changed if the month crosses 2 years)
+            end_plus = np.copy(end_day[t])
 
-        #-- Calculation of the Julian date from start_yr and mid_day
-        JD[t] = np.float(367.0*start_yr[t] -
-            np.floor(7.0*(start_yr[t] + np.floor(10.0/12.0))/4.0) -
-            np.floor(3.0*(np.floor((start_yr[t] - 8.0/7.0)/100.0) + 1.0)/4.0) +
-            np.floor(275.0/9.0) + mid_day[t] + 1721028.5)
-        #-- convert the julian date into calendar dates (hour, day, month, year)
-        cal_date = convert_julian(JD[t])
+            #-- Calculation of total days since start of campaign
+            count, dpm, dpy = day_count(start_yr[t])
 
-        #-- Calculating the mid-month date in decimal form
-        tdec[t] = start_yr[t] + mid_day[t]/dpy
+            #-- For data that crosses years
+            if (start_yr[t] != end_yr[t]):
+                #-- end_yr - start_yr should be 1
+                end_plus = (end_yr[t] - start_yr[t]) * dpy + end_day[t]
+            #-- Calculation of Mid-month value
+            mid_day[t] = np.mean([start_day[t], end_plus])
 
-        #-- Calculation of total days since start of campaign
-        count = 0
-        n_yrs = np.int(start_yr[t]-2002)
-        #-- for each of the GRACE years up to the file year
-        for iyr in range(n_yrs):
-            #-- year i
-            year = 2002 + iyr
-            #-- number of days in year i (if leap year or standard year)
-            if ((year % 4) == 0):
-                #-- Leap Year
-                dpm=[31,29,31,30,31,30,31,31,30,31,30,31]
-            else:
-                #-- Standard Year
-                dpm=[31,28,31,30,31,30,31,31,30,31,30,31]
-            #-- add all days from prior years to count
-            count += np.sum(dpm)
+            #-- Calculation of the Julian date from start_yr and mid_day
+            JD[t] = np.float(367.0 * start_yr[t] -
+                             np.floor(7.0 * (start_yr[t] + np.floor(10.0 / 12.0)) / 4.0) -
+                             np.floor(3.0 * (np.floor((start_yr[t] - 8.0 / 7.0) / 100.0) + 1.0) / 4.0) +
+                             np.floor(275.0 / 9.0) + mid_day[t] + 1721028.5)
+            #-- convert the julian date into calendar dates (hour, day, month, year)
+            cal_date = convert_julian(JD[t])
+            month = cal_date['month']
 
-        #-- calculating the total number of days since 2002
-        tot_days[t] = np.mean([count+start_day[t], count+end_plus])
+            #-- Calculating the mid-month date in decimal form
+            tdec[t] = start_yr[t] + mid_day[t] / dpy
+
+            #-- calculating the total number of days since 2002
+            tot_days[t] = np.mean([count + start_day[t], count + end_plus])
+
+        elif PROC == 'GRAZ':
+            PFX,SAT,trunc,year,month,SFX = rx.findall(infile).pop()
+            #-- find start year, end year
+            start_yr[t] = np.float(year)
+            end_yr[t] = np.float(year)
+
+            #-- Calculation of total days since start of campaign
+            #-- Get information on the current year (day per month and day per year)
+            count, dpm, dpy = day_count(start_yr[t])
+
+            #-- find start day, end day
+            start_day[t] = np.sum(dpm[:np.int(month) - 1]) + 1
+            end_day[t] = np.sum(dpm[:np.int(month)])
+
+            #-- Calculation of Mid-month value
+            mid_day[t] = np.mean([start_day[t], end_day[t]])
+
+            #-- Calculating the mid-month date in decimal form
+            tdec[t] = start_yr[t] + mid_day[t] / dpy
+
+            #-- calculating the total number of days since 2002
+            tot_days[t] = np.mean([count + start_day[t], count + end_day[t]])
 
         #-- Calculates the month number (or 10-day number for CNES RL01,RL02)
         if ((PROC == 'CNES') and (DREL in ('RL01','RL02'))):
@@ -220,7 +235,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
             #-- calculate the GRACE/GRACE-FO month (Apr02 == 004)
             #-- https://grace.jpl.nasa.gov/data/grace-months/
             #-- Notes on special months (e.g. 119, 120) below
-            mon[t] = 12*(cal_date['year']-2002) + cal_date['month']
+            mon[t] = 12*(start_yr[t]-2002) + np.int(month)
 
             #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
             #-- Accelerometer shutoffs make this relation between month number
@@ -251,6 +266,48 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
 
     #-- return the python dictionary that maps GRACE months with GRACE files
     return grace_files
+
+def day_count(input_year):
+    """
+        Count the number of days since the begining of the campaign
+        Return useful information on the current year
+
+        Arguments
+        ---------
+        input_year: year of interest
+
+        Returns
+        -------
+        count: total days since start of campaign
+        dpm: list of the day per month
+        dpy: day per month this year
+        """
+    # -- Calculation of total days since start of campaign
+    count = 0
+    n_yrs = np.int(input_year - 2002)
+    # -- for each of the GRACE years up to the file year
+    for iyr in range(n_yrs):
+        # -- year i
+        year = 2002 + iyr
+        # -- number of days in year i (if leap year or standard year)
+        if ((year % 4) == 0):
+            # -- Leap Year
+            dpm = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+        else:
+            # -- Standard Year
+            dpm = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+        # -- add all days from prior years to count
+        count += np.sum(dpm)
+
+    if ((input_year % 4) == 0):
+        dpy = 366.0
+        dpm = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    else:
+        dpy = 365.0
+        dpm = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
+    return count, dpm, dpy
+
 
 #-- PURPOSE: program that calls grace_date() with set parameters
 def main():
