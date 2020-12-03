@@ -28,6 +28,7 @@ missions
     user_guide/convert_calendar_decimal.md
     user_guide/convert_harmonics.md
     user_guide/convert_julian.md
+    user_guide/cnes_grace_sync.md
     user_guide/degree_amplitude.md
     user_guide/destripe_harmonics.md
     user_guide/gauss_weights.md

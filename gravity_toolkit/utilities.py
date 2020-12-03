@@ -1,9 +1,11 @@
 """
 utilities.py
-Written by Tyler Sutterley (09/2020)
+Written by Tyler Sutterley (12/2020)
 Download and management utilities for syncing time and auxiliary files
 
 UPDATE HISTORY:
+    Updated 12/2020: added ICGEM list for static models
+        added file object keyword for downloads if verbose printing to file
     Updated 09/2020: copy from http and https to bytesIO object in chunks
         use netrc credentials if not entered from PO.DAAC functions
         generalize build opener function for different Earthdata instances
@@ -70,6 +72,20 @@ def get_hash(local):
             return hashlib.md5(local_buffer.read()).hexdigest()
     else:
         return ''
+
+#-- PURPOSE: recursively split a url path
+def url_split(s):
+    """
+    Recursively split a url path into a list
+
+    Arguments
+    ---------
+    s: url string
+    """
+    head, tail = posixpath.split(s)
+    if head in ('', posixpath.sep):
+        return tail,
+    return url_split(head) + (tail,)
 
 #-- PURPOSE: returns the Unix timestamp value for a formatted date string
 def get_unix_time(time_string, format='%Y-%m-%d %H:%M:%S'):
@@ -157,7 +173,7 @@ def ftp_list(HOST,timeout=None,basename=False,pattern=None,sort=False):
 
 #-- PURPOSE: download a file from a ftp host
 def from_ftp(HOST,timeout=None,local=None,hash='',chunk=16384,
-    verbose=False,mode=0o775):
+    verbose=False,fid=sys.stdout,mode=0o775):
     """
     Download a file from a ftp host
 
@@ -172,6 +188,7 @@ def from_ftp(HOST,timeout=None,local=None,hash='',chunk=16384,
     hash: MD5 hash of local file
     chunk: chunk size for transfer encoding
     verbose: print file transfer information
+    fid: open file object to print if verbose
     mode: permissions mode of output local file
 
     Returns
@@ -200,7 +217,8 @@ def from_ftp(HOST,timeout=None,local=None,hash='',chunk=16384,
         if local and (hash != remote_hash):
             #-- print file information
             if verbose:
-                print('{0} -->\n\t{1}'.format(posixpath.join(*HOST),local))
+                args = (posixpath.join(*HOST),local)
+                print('{0} -->\n\t{1}'.format(*args), file=fid)
             #-- store bytes to file using chunked transfer encoding
             remote_buffer.seek(0)
             with open(os.path.expanduser(local), 'wb') as f:
@@ -232,7 +250,7 @@ def check_connection(HOST):
 
 #-- PURPOSE: download a file from a http host
 def from_http(HOST,timeout=None,local=None,hash='',chunk=16384,
-    verbose=False,mode=0o775):
+    verbose=False,fid=sys.stdout,mode=0o775):
     """
     Download a file from a http host
 
@@ -247,6 +265,7 @@ def from_http(HOST,timeout=None,local=None,hash='',chunk=16384,
     hash: MD5 hash of local file
     chunk: chunk size for transfer encoding
     verbose: print file transfer information
+    fid: open file object to print if verbose
     mode: permissions mode of output local file
 
     Returns
@@ -273,7 +292,8 @@ def from_http(HOST,timeout=None,local=None,hash='',chunk=16384,
         if local and (hash != remote_hash):
             #-- print file information
             if verbose:
-                print('{0} -->\n\t{1}'.format(posixpath.join(*HOST),local))
+                args = (posixpath.join(*HOST),local)
+                print('{0} -->\n\t{1}'.format(*args), file=fid)
             #-- store bytes to file using chunked transfer encoding
             remote_buffer.seek(0)
             with open(os.path.expanduser(local), 'wb') as f:
@@ -283,7 +303,6 @@ def from_http(HOST,timeout=None,local=None,hash='',chunk=16384,
         #-- return the bytesIO object
         remote_buffer.seek(0)
         return remote_buffer
-
 
 #-- PURPOSE: "login" to JPL PO.DAAC Drive with supplied credentials
 def build_opener(username, password, context=ssl.SSLContext(),
@@ -420,7 +439,7 @@ def podaac_list(HOST,username=None,password=None,build=True,timeout=None,
 
 #-- PURPOSE: download a file from a PO.DAAC Drive https server
 def from_podaac(HOST,username=None,password=None,build=True,timeout=None,
-    local=None,hash='',chunk=16384,verbose=False,mode=0o775):
+    local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775):
     """
     Download a file from a PO.DAAC Drive https server
 
@@ -438,6 +457,7 @@ def from_podaac(HOST,username=None,password=None,build=True,timeout=None,
     hash: MD5 hash of local file
     chunk: chunk size for transfer encoding
     verbose: print file transfer information
+    fid: open file object to print if verbose
     mode: permissions mode of output local file
 
     Returns
@@ -474,7 +494,8 @@ def from_podaac(HOST,username=None,password=None,build=True,timeout=None,
         if local and (hash != remote_hash):
             #-- print file information
             if verbose:
-                print('{0} -->\n\t{1}'.format(posixpath.join(*HOST),local))
+                args = (posixpath.join(*HOST),local)
+                print('{0} -->\n\t{1}'.format(*args), file=fid)
             #-- store bytes to file using chunked transfer encoding
             remote_buffer.seek(0)
             with open(os.path.expanduser(local), 'wb') as f:
@@ -484,3 +505,34 @@ def from_podaac(HOST,username=None,password=None,build=True,timeout=None,
         #-- return the bytesIO object
         remote_buffer.seek(0)
         return remote_buffer
+
+#-- PURPOSE: list a directory on the GFZ ICGEM https server
+def icgem_list(host='http://icgem.gfz-potsdam.de/tom_longtime',timeout=None,
+    parser=lxml.etree.HTMLParser()):
+    """
+    Parse the table of static gravity field models on the GFZ ICGEM server
+
+    Keyword arguments
+    -----------------
+    host: url for the GFZ ICGEM gravity field table
+    timeout: timeout in seconds for blocking operations
+    parser: HTML parser for lxml
+
+    Returns
+    -------
+    colfiles: dictionary of static file urls mapped by field name
+    """
+    #-- try listing from https
+    try:
+        #-- Create and submit request.
+        request = urllib2.Request(host)
+        tree = lxml.etree.parse(urllib2.urlopen(request,timeout=timeout),parser)
+    except:
+        raise Exception('List error from {0}'.format(host))
+    else:
+        #-- read and parse request for files
+        colfiles = tree.xpath('//td[@class="tom-cell-modelfile"]//a/@href')
+        #-- reduce list of files to find gfc files
+        #-- return the dict of model files mapped by name
+        return {re.findall('(.*?).gfc',posixpath.basename(f)).pop():url_split(f)
+            for i,f in enumerate(colfiles) if re.search('gfc$',f)}
