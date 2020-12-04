@@ -118,6 +118,7 @@ from gravity_toolkit.read_tellus_geocenter import read_tellus_geocenter
 from gravity_toolkit.read_SLR_geocenter import aod_corrected_SLR_geocenter
 from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
+from gravity_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 
 def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
     start_mon, end_mon, missing, SLR_C20, DEG1, MMAX=None, SLR_C30='',
@@ -135,7 +136,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
     Arguments
     ---------
     base_dir: Working data directory for GRACE/GRACE-FO data
-    PROC: (CSR/CNES/JPL/GFZ) data processing center
+    PROC: (CSR/CNES/JPL/GFZ/GRAZ) data processing center
     DREL: (RL01,RL02,RL03,RL04,RL05,RL06) data release
     DSET: (GAA/GAB/GAC/GAD/GSM) data product
     LMAX: Upper bound of Spherical Harmonic Degrees
@@ -312,7 +313,10 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
     for i,grace_month in enumerate(months):
         #-- Effects of Pole tide drift will be compensated if soecified
         infile = grace_files[grace_month]
-        Ylms = read_GRACE_harmonics(infile,LMAX,MMAX=MMAX,POLE_TIDE=POLE_TIDE)
+        if PROC in ('CSR', 'GFZ', 'JPL', 'CNES', 'JPLMSC'):
+            Ylms = read_GRACE_harmonics(infile,LMAX,MMAX=MMAX,POLE_TIDE=POLE_TIDE)
+        elif PROC == 'GRAZ':
+            Ylms = read_ICGEM_harmonics(infile)
         grace_clm[:,:,i] = Ylms['clm'][0:LMAX+1,0:MMAX+1]
         grace_slm[:,:,i] = Ylms['slm'][0:LMAX+1,0:MMAX+1]
         tdec[i] = Ylms['time']
