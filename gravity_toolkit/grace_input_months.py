@@ -69,6 +69,7 @@ PROGRAM DEPENDENCIES:
     read_GRACE_harmonics.py: reads an input GRACE data file and calculates date
 
 UPDATE HISTORY:
+    Updated 12/2020: gestion of tide free and zero tide convention (IERS 2010)
     Updated 11/2020: added C/S2,1 and C/S2,2 correction from John Ries
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
@@ -119,6 +120,8 @@ from gravity_toolkit.read_SLR_geocenter import aod_corrected_SLR_geocenter
 from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 from gravity_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
+from gravity_toolkit.read_love_numbers import read_love_numbers
+from gravity_toolkit.utilities import get_data_path
 
 def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
     start_mon, end_mon, missing, SLR_C20, DEG1, MMAX=None, SLR_C30='',
@@ -145,6 +148,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
     missing: missing months to not consider in analysis
     SLR_C20: Replaces C20 with SLR values
         N: use original values
+        TideFree: add a bias for CSR, GFZ or GRAZ to convert C2,0 to tide free convention
+        ZeroTide: add a bias for CNES or JPL to convert C2,0 to zero tide convention
         CSR: use values from CSR (TN-07,TN-09,TN-11)
         GSFC: use values from GSFC (TN-14)
     DEG1: Use Degree 1 coefficients
@@ -335,6 +340,23 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
             if (count != 0):
                 k, = np.nonzero(C20_input['month'] == grace_month)
                 grace_clm[2,0,i] = C20_input['data'][k]
+
+    elif SLR_C20 == 'TideFree' and PROC in ('CSR', 'JPL', 'GRAZ'):
+        # -- k2,0 nominal from IERS 2010 convention
+        k2 = 0.3190
+
+        # -- apply conversion formula from IERS 2010 Notes
+        grace_clm[2, 0, :] += 4.4228e-8 * 0.31460 * k2
+
+    elif SLR_C20 == 'ZeroTide' and PROC in ('CNES', 'GFZ'):
+        #-- k2,0 nominal from IERS 2010 convention
+        if PROC == 'CNES':
+            k2 = 0.3
+        elif PROC == 'GFZ':
+            k2 = 0.3190
+
+        #-- apply conversion formula from IERS 2010 Notes
+        grace_clm[2, 0, :] -= 4.4228e-8 * 0.31460 * k2
 
     #-- Replace C30 with SLR coefficients for single-accelerometer months
     if SLR_C30 in ('CSR','GSFC','LARES'):
