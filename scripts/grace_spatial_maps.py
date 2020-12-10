@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_maps.py
-Written by Tyler Sutterley (10/2020)
+Written by Tyler Sutterley (12/2020)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly spatial fields
@@ -85,6 +85,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 12/2020: added more love number options and from gfc for mean files
     Updated 10/2020: use argparse to set command line parameters
     Updated 08/2020: use utilities to define path to load love numbers file
     Updated 06/2020: using spatial data class for output operations
@@ -123,28 +124,58 @@ def info(title):
     print('process id: {0:d}'.format(os.getpid()))
 
 #-- PURPOSE: read load love numbers for the range of spherical harmonic degrees
-def load_love_numbers(LMAX, REFERENCE='CF'):
+def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF'):
+    """
+    Reads PREM load Love numbers for the range of spherical harmonic degrees
+    and applies isomorphic parameters
+
+    Arguments
+    ---------
+    LMAX: maximum spherical harmonic degree
+
+    Keyword arguments
+    -----------------
+    LOVE_NUMBERS: Load Love numbers dataset
+        0: Han and Wahr (1995) values from PREM
+        1: Gegout (2005) values from PREM
+        2: Wang et al. (2012) values from PREM
+    REFERENCE: Reference frame for calculating degree 1 love numbers
+        CF: Center of Surface Figure (default)
+        CM: Center of Mass of Earth System
+        CE: Center of Mass of Solid Earth
+
+    Returns
+    -------
+    kl: Love number of Gravitational Potential
+    hl: Love number of Vertical Displacement
+    ll: Love number of Horizontal Displacement
+    """
     #-- load love numbers file
-    love_numbers_file = get_data_path(['data','love_numbers'])
+    if (LOVE_NUMBERS == 0):
+        #-- PREM outputs from Han and Wahr (1995)
+        #-- https://doi.org/10.1111/j.1365-246X.1995.tb01819.x
+        love_numbers_file = get_data_path(['data','love_numbers'])
+        header = 2
+        columns = ['l','hl','kl','ll']
+    elif (LOVE_NUMBERS == 1):
+        #-- PREM outputs from Gegout (2005)
+        #-- http://gemini.gsfc.nasa.gov/aplo/
+        love_numbers_file = get_data_path(['data','Load_Love2_CE.dat'])
+        header = 3
+        columns = ['l','hl','ll','kl']
+    elif (LOVE_NUMBERS == 2):
+        #-- PREM outputs from Wang et al. (2012)
+        #-- https://doi.org/10.1016/j.cageo.2012.06.022
+        love_numbers_file = get_data_path(['data','PREM-LLNs-truncated.dat'])
+        header = 1
+        columns = ['l','hl','ll','kl','nl','nk']    
     #-- LMAX of load love numbers from Han and Wahr (1995) is 696.
     #-- from Wahr (2007) linearly interpolating kl works
     #-- however, as we are linearly extrapolating out, do not make
     #-- LMAX too much larger than 696
-    if (LMAX > 696):
-        #-- Creates arrays of kl, hl, and ll Love Numbers
-        hl = np.zeros((LMAX+1))
-        kl = np.zeros((LMAX+1))
-        ll = np.zeros((LMAX+1))
-        hl[:697],kl[:697],ll[:697] = read_love_numbers(love_numbers_file,
-            FORMAT='tuple', REFERENCE=REFERENCE)
-        #-- for degrees greater than 696
-        for l in range(697,LMAX+1):
-            hl[l] = 2.0*hl[l-1] - hl[l-2]#-- linearly extrapolating hl
-            kl[l] = 2.0*kl[l-1] - kl[l-2]#-- linearly extrapolating kl
-            ll[l] = 2.0*ll[l-1] - ll[l-2]#-- linearly extrapolating ll
-    else:
-        #-- read arrays of kl, hl, and ll Love Numbers
-        hl,kl,ll=read_love_numbers(love_numbers_file, REFERENCE=REFERENCE)
+    #-- read arrays of kl, hl, and ll Love Numbers
+    hl,kl,ll = read_love_numbers(love_numbers_file, LMAX=LMAX, HEADER=header,
+        COLUMNS=columns, REFERENCE=REFERENCE, FORMAT='tuple')
     #-- return a tuple of load love numbers
     return (hl,kl,ll)
 
@@ -244,14 +275,15 @@ def grace_spatial_maps(base_dir, parameters, REFERENCE=None,
     if (parameters['MEAN_FILE'].title() == 'None'):
         mean_Ylms = GRACE_Ylms.mean(apply=MEAN)
     else:
-        #-- read data form for input mean file (ascii, netCDF4, HDF5)
-        MEANFORM = parameters['MEANFORM']
-        if (MEANFORM == 'ascii'):
+        #-- read data form for input mean file (ascii, netCDF4, HDF5, gfc)
+        if (parameters['MEANFORM'] == 'ascii'):
             mean_Ylms=harmonics().from_ascii(parameters['MEAN_FILE'],date=False)
-        if (MEANFORM == 'netCDF4'):
+        elif (parameters['MEANFORM'] == 'netCDF4'):
             mean_Ylms=harmonics().from_netCDF4(parameters['MEAN_FILE'],date=False)
-        if (MEANFORM == 'HDF5'):
+        elif (parameters['MEANFORM'] == 'HDF5'):
             mean_Ylms=harmonics().from_HDF5(parameters['MEAN_FILE'],date=False)
+        elif (parameters['MEANFORM'] == 'gfc'):
+            mean_Ylms=harmonics().from_gfc(parameters['MEAN_FILE'])
         #-- remove the input mean
         if MEAN:
             GRACE_Ylms.subtract(mean_Ylms)

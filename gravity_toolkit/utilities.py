@@ -107,6 +107,29 @@ def get_unix_time(time_string, format='%Y-%m-%d %H:%M:%S'):
     else:
         return calendar.timegm(parsed_time)
 
+#-- PURPOSE: make a copy of a file with all system information
+def copy(source, destination, verbose=False, move=False):
+    """
+    Copy or move a file with all system information
+
+    Arguments
+    ---------
+    source: source file
+    destination: copied destination file
+
+    Keyword arguments
+    -----------------
+    verbose: print file transfer information
+    move: remove the source file
+    """
+    source = os.path.abspath(os.path.expanduser(source))
+    destination = os.path.abspath(os.path.expanduser(destination))
+    print('{0} -->\n\t{1}'.format(source,destination)) if verbose else None
+    shutil.copyfile(source, destination)
+    shutil.copystat(source, destination)
+    if move:
+        os.remove(source)
+
 #-- PURPOSE: list a directory on a ftp host
 def ftp_list(HOST,timeout=None,basename=False,pattern=None,sort=False):
     """
@@ -248,8 +271,8 @@ def check_connection(HOST):
         return True
 
 #-- PURPOSE: download a file from a http host
-def from_http(HOST,timeout=None,local=None,hash='',chunk=16384,
-    verbose=False,fid=sys.stdout,mode=0o775):
+def from_http(HOST,timeout=None,context=ssl.SSLContext(),local=None,hash='',
+    chunk=16384,verbose=False,fid=sys.stdout,mode=0o775):
     """
     Download a file from a http host
 
@@ -260,6 +283,7 @@ def from_http(HOST,timeout=None,local=None,hash='',chunk=16384,
     Keyword arguments
     -----------------
     timeout: timeout in seconds for blocking operations
+    context: SSL context for url opener object
     local: path to local file
     hash: MD5 hash of local file
     chunk: chunk size for transfer encoding
@@ -275,7 +299,7 @@ def from_http(HOST,timeout=None,local=None,hash='',chunk=16384,
     try:
         #-- Create and submit request.
         request = urllib2.Request(posixpath.join(*HOST))
-        response = urllib2.urlopen(request,timeout=timeout,context=ssl.SSLContext())
+        response = urllib2.urlopen(request,timeout=timeout,context=context)
     except (urllib2.HTTPError, urllib2.URLError):
         raise Exception('Download error from {0}'.format(posixpath.join(*HOST)))
     else:

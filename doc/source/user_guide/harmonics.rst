@@ -155,11 +155,14 @@ General Attributes and Methods
             `verbose` print HDF5 file information
 
 
-    .. method:: object.from_gfc(filename)
+    .. method:: object.from_gfc(filename, verbose=False)
 
         Read a harmonics object from a gfc gravity model file from the `GFZ ICGEM`__.
 
         Inputs: full path of input gfc file
+
+        Options:
+            `verbose` print gfc file information
 
     .. __: http://icgem.gfz-potsdam.de/
 

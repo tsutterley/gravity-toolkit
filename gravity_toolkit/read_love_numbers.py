@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 u"""
 read_love_numbers.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (12/2020)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
+Can linearly extrapolate load love numbers beyond maximum degree of dataset
 
 INPUTS:
-    love_numbers_file: Elastic load Love numbers computed using Preliminary
-        Reference Earth Model (PREM) outputs as described by Han and Wahr (1995)
+    love_numbers_file: Elastic load Love numbers file
+        computed using Preliminary Reference Earth Model (PREM) outputs
 
 OUTPUTS:
     kl: Love number of Gravitational Potential
@@ -15,7 +16,13 @@ OUTPUTS:
     ll: Love number of Horizontal Displacement
 
 OPTIONS:
-    HEADER: file contains header text to be skipped (default: True)
+    LMAX: truncate or interpolate to maximum spherical harmonic degree
+    HEADER: number of header lines to be skipped
+    COLUMNS: column names of ascii file
+        l: spherical harmonic degree
+        hl: vertical displacement
+        kl: gravitational potential
+        ll: horizontal displacement
     REFERENCE: Reference frame for calculating degree 1 love numbers
         CF: Center of Surface Figure
         CL: Center of Surface Lateral Figure
@@ -31,6 +38,8 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 12/2020: generalized ascii read for outputs from Gegout and Wang
+        added linear interpolation of love numbers to a specified LMAX
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 03/2020: added reference frame transformations within function
@@ -41,8 +50,8 @@ import re
 import numpy as np
 
 #-- PURPOSE: read load love numbers from PREM
-def read_love_numbers(love_numbers_file, HEADER=True, REFERENCE='CE',
-    FORMAT='tuple'):
+def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2, 
+    COLUMNS=['l','hl','kl','ll'], REFERENCE='CE', FORMAT='tuple'):
     """
     Reads PREM load Love numbers file and applies isomorphic parameters
 
@@ -52,7 +61,13 @@ def read_love_numbers(love_numbers_file, HEADER=True, REFERENCE='CE',
 
     Keyword arguments
     -----------------
-    HEADER: file contains header text to be skipped
+    LMAX: truncate or interpolate to maximum spherical harmonic degree
+    HEADER: number of header lines to be skipped
+    COLUMNS: column names of ascii file
+        l: spherical harmonic degree
+        hl: vertical displacement
+        kl: gravitational potential
+        ll: horizontal displacement
     REFERENCE: Reference frame for calculating degree 1 love numbers
         CF: Center of Surface Figure
         CL: Center of Surface Lateral Figure
@@ -80,71 +95,79 @@ def read_love_numbers(love_numbers_file, HEADER=True, REFERENCE='CE',
     with open(os.path.expanduser(love_numbers_file),'r') as f:
         file_contents = f.read().splitlines()
 
-    #-- counts the number of lines in the header
-    count = 0
-    #-- Reading over header text
-    while HEADER:
-        #-- file line at count
-        line = file_contents[count]
-        #-- find the final line within the header text
-        #-- to set HEADER flag to False when found
-        HEADER = not bool(re.match(r'\*\*\*',line))
-        #-- add 1 to counter
-        count += 1
-
     #-- compile regular expression operator to find numerical instances
     regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
     rx = re.compile(regex_pattern, re.VERBOSE)
 
-    #-- maximum spherical harmonic degree in file
-    #-- from the final line
-    LMAX = np.int(rx.findall(file_contents[-1])[0])
+    #-- extract maximum spherical harmonic degree from final line in file
+    if LMAX is None:
+        LMAX = np.int(rx.findall(file_contents[-1])[COLUMNS.index('l')])
 
+    #-- output love numbers
+    love = {}
+    #-- spherical harmonic degree
+    love['l'] = np.arange(LMAX+1)
     #-- vertical displacement hl
-    hl = np.zeros((LMAX+1))
+    love['hl'] = np.zeros((LMAX+1))
     #-- gravitational potential kl
-    kl = np.zeros((LMAX+1))
+    love['kl'] = np.zeros((LMAX+1))
     #-- horizontal displacement ll
-    ll = np.zeros((LMAX+1))
+    love['ll'] = np.zeros((LMAX+1))
     #-- for each line in the file (skipping the 2 header lines)
-    for file_line in file_contents[count:]:
+    for file_line in file_contents[HEADER:]:
         #-- find numerical instances in line
-        #-- Replacing IDL double precision exponential with
-        #-- standard E exponential for kl and ll
-        love_numbers = rx.findall(file_line.replace('D','E'))
+        #-- replacing fortran double precision exponential
+        love_numbers = rx.findall(file_line.replace('D','E'))            
         #-- spherical harmonic degree
-        l = np.int(love_numbers[0])
-        #-- convert love numbers to float
-        hl[l] = np.float(love_numbers[1])
-        kl[l] = np.float(love_numbers[2])
-        ll[l] = np.float(love_numbers[3])
+        l = np.int(love_numbers[COLUMNS.index('l')])
+        #-- truncate to spherical harmonic degree LMAX
+        if (l <= LMAX):
+            #-- convert love numbers to float
+            #-- vertical displacement hl
+            love['hl'][l] = np.float(love_numbers[COLUMNS.index('hl')])
+            #-- gravitational potential kl
+            love['kl'][l] = np.float(love_numbers[COLUMNS.index('kl')])
+            #-- horizontal displacement ll
+            love['ll'][l] = np.float(love_numbers[COLUMNS.index('ll')])
+
+    #-- LMAX of load love numbers from Han and Wahr (1995) is 696
+    #-- From Wahr (2007), can linearly extrapolate the load numbers
+    #-- however, as we are linearly extrapolating out, do not make
+    #-- LMAX too much larger than 696 (or LMAX of dataset)
+    for lint in range(l,LMAX+1):
+        #-- linearly extrapolating load love numbers
+        love['hl'][lint] = 2.0*love['hl'][lint-1] - love['hl'][lint-2]
+        love['kl'][lint] = 2.0*love['kl'][lint-1] - love['kl'][lint-2]
+        love['ll'][lint] = 2.0*love['ll'][lint-1] - love['ll'][lint-2]
 
     #-- calculate isomorphic parameters for different reference frames
     #-- From Blewitt (2003), Wahr (1998), Trupin (1992) and Farrell (1972)
-    if (REFERENCE == 'CF'):
+    if (REFERENCE.upper() == 'CF'):
         #-- Center of Surface Figure
-        alpha = (hl[1] + 2.0*ll[1])/3.0
-    elif (REFERENCE == 'CL'):
+        alpha = (love['hl'][1] + 2.0*love['ll'][1])/3.0
+    elif (REFERENCE.upper() == 'CL'):
         #-- Center of Surface Lateral Figure
-        alpha = ll[1].copy()
-    elif (REFERENCE == 'CH'):
+        alpha = love['ll'][1].copy()
+    elif (REFERENCE.upper() == 'CH'):
         #-- Center of Surface Height Figure
-        alpha = hl[1].copy()
-    elif (REFERENCE == 'CM'):
+        alpha = love['hl'][1].copy()
+    elif (REFERENCE.upper() == 'CM'):
         #-- Center of Mass of Earth System
         alpha = 1.0
-    elif (REFERENCE == 'CE'):
+    elif (REFERENCE.upper() == 'CE'):
         #-- Center of Mass of Solid Earth
         alpha = 0.0
+    else:
+        raise Exception('Invalid Reference Frame {0}'.format(REFERENCE))
     #-- apply isomorphic parameters
-    hl[1] -= alpha
-    kl[1] -= alpha
-    ll[1] -= alpha
+    love['hl'][1] -= alpha
+    love['kl'][1] -= alpha
+    love['ll'][1] -= alpha
 
     #-- return love numbers in output format
     if (FORMAT == 'dict'):
-        return {'kl':kl, 'hl':hl, 'll':ll}
+        return love
     elif (FORMAT == 'tuple'):
-        return (hl, kl, ll)
+        return (love['hl'], love['kl'], love['ll'])
     elif (FORMAT == 'zip'):
-        return zip(hl, kl, ll)
+        return zip(love['hl'], love['kl'], love['ll'])

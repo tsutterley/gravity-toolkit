@@ -58,6 +58,23 @@ General Methods
         `format`: format for input time string
 
 
+.. method:: gravity_toolkit.utilities.copy(source, destination, verbose=False, move=False)
+
+    Copy or move a file with all system information
+
+    Arguments:
+
+        `source`: source file
+
+        `destination`: copied destination file
+
+    Keyword arguments:
+
+        `verbose`: print file transfer information
+
+        `move`: remove the source file
+
+
 .. method:: gravity_toolkit.utilities.ftp_list(HOST,timeout=None,basename=False,pattern=None,sort=False)
 
     List a directory on a ftp host
@@ -117,7 +134,7 @@ General Methods
         `HOST`: remote http host
 
 
-.. method:: gravity_toolkit.utilities.from_http(HOST,timeout=None,local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
+.. method:: gravity_toolkit.utilities.from_http(HOST,timeout=None,context=ssl.SSLContext(),local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
 
     Download a file from a http host
 
@@ -128,6 +145,8 @@ General Methods
     Keyword arguments:
 
         `timeout`: timeout in seconds for blocking operations
+
+        `context`: SSL context for url opener object
 
         `local`: path to local file
 
@@ -195,7 +214,6 @@ General Methods
         `pattern`: regular expression pattern for reducing list
 
         `sort`: sort output list
-
 
     Returns:
 

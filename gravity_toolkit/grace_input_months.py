@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (11/2020)
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
     and for a specified date range
@@ -69,6 +69,7 @@ PROGRAM DEPENDENCIES:
     read_GRACE_harmonics.py: reads an input GRACE data file and calculates date
 
 UPDATE HISTORY:
+    Updated 11/2020: set regress_model RELATIVE option to 2003.3 to match others
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 06/2020: set relative time to mean of input within regress_model
@@ -329,11 +330,11 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
             #-- least-squares modeling the degree 1 coefficients
             #-- fitting annual, semi-annual, linear and quadratic terms
             C10_model = regress_model(DEG1_input['time'], DEG1_input['C10'],
-                tdec, ORDER=2, CYCLES=[0.5,1.0])
+                tdec, ORDER=2, CYCLES=[0.5,1.0], RELATIVE=2003.3)
             C11_model = regress_model(DEG1_input['time'], DEG1_input['C11'],
-                tdec, ORDER=2, CYCLES=[0.5,1.0])
+                tdec, ORDER=2, CYCLES=[0.5,1.0], RELATIVE=2003.3)
             S11_model = regress_model(DEG1_input['time'], DEG1_input['S11'],
-                tdec, ORDER=2, CYCLES=[0.5,1.0])
+                tdec, ORDER=2, CYCLES=[0.5,1.0], RELATIVE=2003.3)
         else:
             #-- check that all months are available for a given geocenter
             months_test = sorted(set(months) - set(DEG1_input['month']))
@@ -451,7 +452,7 @@ def read_ecmwf_corrections(base_dir, LMAX, months, MMAX=None):
     return atm_corr
 
 #-- PURPOSE: calculate a regression model for extrapolating values
-def regress_model(t_in, d_in, t_out, ORDER=2, CYCLES=None, RELATIVE=None):
+def regress_model(t_in, d_in, t_out, ORDER=2, CYCLES=None, RELATIVE=0.0):
     """
     Calculates a regression model for extrapolating values
 
