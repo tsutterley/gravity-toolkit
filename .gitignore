@@ -46,7 +46,7 @@ wheels/
 ehthumbs.db
 Thumbs.db
 # LaTeX and Vim #
-######################
+#################
 *.aux
 *.bbl
 *.blg
@@ -81,3 +81,6 @@ None*.png
 #######################
 .ipynb_checkpoints
 Untitled.ipynb
+# Large data files #
+####################
+PREM-LLNs-complete.dat

@@ -58,6 +58,23 @@ General Methods
         `format`: format for input time string
 
 
+.. method:: gravity_toolkit.utilities.copy(source, destination, verbose=False, move=False)
+
+    Copy or move a file with all system information
+
+    Arguments:
+
+        `source`: source file
+
+        `destination`: copied destination file
+
+    Keyword arguments:
+
+        `verbose`: print file transfer information
+
+        `move`: remove the source file
+
+
 .. method:: gravity_toolkit.utilities.ftp_list(HOST,timeout=None,basename=False,pattern=None,sort=False)
 
     List a directory on a ftp host
@@ -117,7 +134,7 @@ General Methods
         `HOST`: remote http host
 
 
-.. method:: gravity_toolkit.utilities.from_http(HOST,timeout=None,local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
+.. method:: gravity_toolkit.utilities.from_http(HOST,timeout=None,context=ssl.SSLContext(),local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
 
     Download a file from a http host
 
@@ -128,6 +145,8 @@ General Methods
     Keyword arguments:
 
         `timeout`: timeout in seconds for blocking operations
+
+        `context`: SSL context for url opener object
 
         `local`: path to local file
 
@@ -169,12 +188,14 @@ General Methods
 
 .. method:: gravity_toolkit.utilities.check_credentials()
 
-    Check that entered JPL PO.DAAC Drive credentials are valid
+    Check that entered `JPL PO.DAAC Drive`__ credentials are valid
+
+    .. __: https://podaac-tools.jpl.nasa.gov/drive
 
 
 .. method:: gravity_toolkit.utilities.podaac_list(HOST,username=None,password=None,build=True,timeout=None,parser=None,pattern='',sort=False)
 
-    Download a file from a PO.DAAC Drive https server
+    Download a file from the `JPL PO.DAAC Drive`__ https server
 
     Arguments:
 
@@ -196,18 +217,19 @@ General Methods
 
         `sort`: sort output list
 
-
     Returns:
 
         `colnames`: list of column names in a directory
 
         `collastmod`: list of last modification times for items in the directory
 
+    .. __: https://podaac-tools.jpl.nasa.gov/drive
+
 
 
 .. method:: gravity_toolkit.utilities.from_podaac(HOST,username=None,password=None,build=True,timeout=None,local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
 
-    Download a file from a PO.DAAC Drive https server
+    Download a file from `JPL PO.DAAC Drive`__ https server
 
     Arguments:
 
@@ -235,10 +257,66 @@ General Methods
 
         `mode`: permissions mode of output local file
 
+    .. __: https://podaac-tools.jpl.nasa.gov/drive
+
+
+.. method:: gravity_toolkit.utilities.from_figshare(directory,article='7388540',timeout=None,context=ssl.SSLContext(),chunk=16384,verbose=False,fid=sys.stdout,pattern='',mode=0o775)
+
+    Download `Sutterley and Velicogna (2019)`__ geocenter files from `figshare`_
+
+    Arguments:
+
+        `directory`: download directory
+
+    Keyword arguments:
+    
+        `article`: figshare article number
+
+        `timeout`: timeout in seconds for blocking operations
+
+        `chunk`: chunk size for transfer encoding
+
+        `verbose`: print file transfer information
+
+        `fid`: open file object to print if verbose
+
+        `pattern`: regular expression pattern for reducing list
+
+        `mode`: permissions mode of output local file
+
+    .. __: https://doi.org/10.3390/rs11182108
+
+    .. _figshare: https://doi.org/10.6084/m9.figshare.7388540
+
+
+.. method:: gravity_toolkit.utilities.from_csr(directory,timeout=None,context=ssl.SSLContext(),chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
+    
+    Download `satellite laser ranging (SLR)`__ files from the University of Texas Center for Space Research (UTCSR)
+
+    Arguments:
+
+        `directory`: download directory
+
+    Keyword arguments
+
+        `timeout`: timeout in seconds for blocking operations
+
+        `context`: SSL context for url opener object
+        
+        `chunk`: chunk size for transfer encoding
+        
+        `verbose`: print file transfer information
+        
+        `fid`: open file object to print if verbose
+        
+        `mode`: permissions mode of output local file
+
+    .. __: http://download.csr.utexas.edu/pub/slr/
+
 
 .. method:: gravity_toolkit.utilities.icgem_list(host='http://icgem.gfz-potsdam.de/tom_longtime',timeout=None,parser=lxml.etree.HTMLParser())
 
-    Parse the table of static gravity field models on the GFZ ICGEM server
+    Parse table of gravity field models on the `GFZ International Centre for Global Earth Models (ICGEM)`__ server
 
     Keyword arguments:
 
@@ -251,3 +329,5 @@ General Methods
     Returns:
 
         `colfiles`: dictionary of static file urls mapped by field name
+
+    .. __: http://icgem.gfz-potsdam.de/

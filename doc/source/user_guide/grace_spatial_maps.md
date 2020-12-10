@@ -17,6 +17,14 @@ python grace_spatial_maps.py --mode 0o775 parameter_file
 
 #### Command Line Options
  - `-P X`, `--np X`: Run in parallel with X number of processes
+ - `-n X`, `--love X`: Load Love numbers dataset
+      * `0`: Han and Wahr (1995) values from PREM
+      * `1`: Gegout (2005) values from PREM
+      * `2`: Wang et al. (2012) values from PREM
+ - `-r X`, `--reference X`: Reference frame for load love numbers
+      * `'CF'`: Center of Surface Figure (default)
+      * `'CM'`: Center of Mass of Earth System
+      * `'CE'`: Center of Mass of Solid Earth
  - `-V`, `--verbose`: verbose output of processing run
  - `-M X`, `--mode X`: permissions mode of output files
  - `-l`, `--log`: output log file for each job

@@ -5,6 +5,8 @@ Download and management utilities for syncing time and auxiliary files
 
 UPDATE HISTORY:
     Updated 12/2020: added ICGEM list for static models
+        added figshare geocenter download for Sutterley and Velicogna files
+        added download for satellite laser ranging (SLR) files from UTCSR
         added file object keyword for downloads if verbose printing to file
     Updated 09/2020: copy from http and https to bytesIO object in chunks
         use netrc credentials if not entered from PO.DAAC functions
@@ -19,6 +21,7 @@ import os
 import re
 import io
 import ssl
+import json
 import netrc
 import ftplib
 import shutil
@@ -83,7 +86,9 @@ def url_split(s):
     s: url string
     """
     head, tail = posixpath.split(s)
-    if head in ('', posixpath.sep):
+    if head in ('http:','https:'):
+        return s,
+    elif head in ('', posixpath.sep):
         return tail,
     return url_split(head) + (tail,)
 
@@ -106,6 +111,29 @@ def get_unix_time(time_string, format='%Y-%m-%d %H:%M:%S'):
         return None
     else:
         return calendar.timegm(parsed_time)
+
+#-- PURPOSE: make a copy of a file with all system information
+def copy(source, destination, verbose=False, move=False):
+    """
+    Copy or move a file with all system information
+
+    Arguments
+    ---------
+    source: source file
+    destination: copied destination file
+
+    Keyword arguments
+    -----------------
+    verbose: print file transfer information
+    move: remove the source file
+    """
+    source = os.path.abspath(os.path.expanduser(source))
+    destination = os.path.abspath(os.path.expanduser(destination))
+    print('{0} -->\n\t{1}'.format(source,destination)) if verbose else None
+    shutil.copyfile(source, destination)
+    shutil.copystat(source, destination)
+    if move:
+        os.remove(source)
 
 #-- PURPOSE: list a directory on a ftp host
 def ftp_list(HOST,timeout=None,basename=False,pattern=None,sort=False):
@@ -214,6 +242,9 @@ def from_ftp(HOST,timeout=None,local=None,hash='',chunk=16384,
         remote_hash = hashlib.md5(remote_buffer.getvalue()).hexdigest()
         #-- compare checksums
         if local and (hash != remote_hash):
+            #-- create directory if non-existent
+            if not os.access(os.path.dirname(local), os.F_OK):
+                os.makedirs(os.path.dirname(local), mode)
             #-- print file information
             if verbose:
                 args = (posixpath.join(*HOST),local)
@@ -248,8 +279,8 @@ def check_connection(HOST):
         return True
 
 #-- PURPOSE: download a file from a http host
-def from_http(HOST,timeout=None,local=None,hash='',chunk=16384,
-    verbose=False,fid=sys.stdout,mode=0o775):
+def from_http(HOST,timeout=None,context=ssl.SSLContext(),local=None,hash='',
+    chunk=16384,verbose=False,fid=sys.stdout,mode=0o775):
     """
     Download a file from a http host
 
@@ -260,6 +291,7 @@ def from_http(HOST,timeout=None,local=None,hash='',chunk=16384,
     Keyword arguments
     -----------------
     timeout: timeout in seconds for blocking operations
+    context: SSL context for url opener object
     local: path to local file
     hash: MD5 hash of local file
     chunk: chunk size for transfer encoding
@@ -275,7 +307,7 @@ def from_http(HOST,timeout=None,local=None,hash='',chunk=16384,
     try:
         #-- Create and submit request.
         request = urllib2.Request(posixpath.join(*HOST))
-        response = urllib2.urlopen(request,timeout=timeout,context=ssl.SSLContext())
+        response = urllib2.urlopen(request,timeout=timeout,context=context)
     except (urllib2.HTTPError, urllib2.URLError):
         raise Exception('Download error from {0}'.format(posixpath.join(*HOST)))
     else:
@@ -289,6 +321,9 @@ def from_http(HOST,timeout=None,local=None,hash='',chunk=16384,
         remote_hash = hashlib.md5(remote_buffer.getvalue()).hexdigest()
         #-- compare checksums
         if local and (hash != remote_hash):
+            #-- create directory if non-existent
+            if not os.access(os.path.dirname(local), os.F_OK):
+                os.makedirs(os.path.dirname(local), mode)
             #-- print file information
             if verbose:
                 args = (posixpath.join(*HOST),local)
@@ -491,6 +526,9 @@ def from_podaac(HOST,username=None,password=None,build=True,timeout=None,
         remote_hash = hashlib.md5(remote_buffer.getvalue()).hexdigest()
         #-- compare checksums
         if local and (hash != remote_hash):
+            #-- create directory if non-existent
+            if not os.access(os.path.dirname(local), os.F_OK):
+                os.makedirs(os.path.dirname(local), mode)
             #-- print file information
             if verbose:
                 args = (posixpath.join(*HOST),local)
@@ -505,11 +543,107 @@ def from_podaac(HOST,username=None,password=None,build=True,timeout=None,
         remote_buffer.seek(0)
         return remote_buffer
 
+#-- PURPOSE: download geocenter files from Sutterley and Velicogna (2019)
+#-- https://doi.org/10.3390/rs11182108
+#-- https://doi.org/10.6084/m9.figshare.7388540
+def from_figshare(directory,article='7388540',timeout=None,
+    context=ssl.SSLContext(),chunk=16384,verbose=False,fid=sys.stdout,
+    pattern=r'(CSR|GFZ|JPL)_(RL\d+)_(.*?)_SLF_iter.txt$',mode=0o775):
+    """
+    Download Sutterley and Velicogna (2019) geocenter files from figshare
+
+    Arguments
+    ---------
+    directory: download directory
+
+    Keyword arguments
+    -----------------
+    article: figshare article number
+    timeout: timeout in seconds for blocking operations
+    chunk: chunk size for transfer encoding
+    verbose: print file transfer information
+    fid: open file object to print if verbose
+    pattern: regular expression pattern for reducing list
+    mode: permissions mode of output local file
+    """
+    #-- figshare host
+    HOST=['https://api.figshare.com','v2','articles',article]
+    #-- create directory if non-existent
+    directory = os.path.abspath(os.path.expanduser(directory))
+    if not os.access(directory, os.F_OK):
+        os.makedirs(directory, mode)
+    #-- Create and submit request.
+    request = urllib2.Request(posixpath.join(*HOST))
+    response = urllib2.urlopen(request,timeout=timeout,context=context)
+    resp = json.loads(response.read())
+    #-- reduce list of geocenter files
+    geocenter_files = [f for f in resp['files'] if re.match(pattern,f['name'])]
+    for f in geocenter_files:
+        #-- download geocenter file
+        original_md5 = get_hash(os.path.join(directory,f['name']))
+        from_http(url_split(f['download_url']),timeout=timeout,context=context,
+            local=os.path.join(directory,f['name']),hash=original_md5,
+            chunk=chunk,verbose=verbose,fid=fid,mode=mode)
+        #-- verify MD5 checksums
+        computed_md5 = get_hash(os.path.join(directory,f['name']))
+        if (computed_md5 != f['supplied_md5']):
+            raise Exception('Checksum mismatch: {0}'.format(f['download_url']))
+
+#-- PURPOSE: download satellite laser ranging files from CSR
+#-- http://download.csr.utexas.edu/pub/slr/geocenter/GCN_L1_L2_30d_CF-CM.txt
+#-- http://download.csr.utexas.edu/outgoing/cheng/gct2est.220_5s
+def from_csr(directory,timeout=None,context=ssl.SSLContext(),
+    chunk=16384,verbose=False,fid=sys.stdout,mode=0o775):
+    """
+    Download satellite laser ranging (SLR) files from the
+        University of Texas Center for Space Research (UTCSR)
+
+    Arguments
+    ---------
+    directory: download directory
+
+    Keyword arguments
+    -----------------
+    timeout: timeout in seconds for blocking operations
+    context: SSL context for url opener object
+    chunk: chunk size for transfer encoding
+    verbose: print file transfer information
+    fid: open file object to print if verbose
+    mode: permissions mode of output local file
+    """
+    #-- create directory if non-existent
+    directory = os.path.abspath(os.path.expanduser(directory))
+    if not os.access(os.path.join(directory,'geocenter'), os.F_OK):
+        os.makedirs(os.path.join(directory,'geocenter'), mode)
+    #-- download SLR 5x5 file
+    HOST = ['http://download.csr.utexas.edu','pub','slr','degree_5',
+        'CSR_Monthly_5x5_Gravity_Harmonics.txt']
+    original_md5 = get_hash(os.path.join(directory,HOST[-1]))
+    from_http(HOST,timeout=timeout,context=context,
+        local=os.path.join(directory,HOST[-1]),hash=original_md5,
+        chunk=chunk,verbose=verbose,fid=fid,mode=mode)
+    #-- download CF-CM SLR geocenter file
+    HOST = ['http://download.csr.utexas.edu','pub','slr','geocenter',
+        'GCN_L1_L2_30d_CF-CM.txt']
+    original_md5 = get_hash(os.path.join(directory,'geocenter',HOST[-1]))
+    from_http(HOST,timeout=timeout,context=context,
+        local=os.path.join(directory,'geocenter',HOST[-1]),hash=original_md5,
+        chunk=chunk,verbose=verbose,fid=fid,mode=mode)
+    #-- download updated SLR geocenter file from Minkang Cheng
+    HOST = ['http://download.csr.utexas.edu','outgoing','cheng',
+        'gct2est.220_5s']
+    original_md5 = get_hash(os.path.join(directory,'geocenter',HOST[-1]))
+    from_http(HOST,timeout=timeout,context=context,
+        local=os.path.join(directory,'geocenter',HOST[-1]),hash=original_md5,
+        chunk=chunk,verbose=verbose,fid=fid,mode=mode)
+
 #-- PURPOSE: list a directory on the GFZ ICGEM https server
+#-- http://icgem.gfz-potsdam.de
 def icgem_list(host='http://icgem.gfz-potsdam.de/tom_longtime',timeout=None,
     parser=lxml.etree.HTMLParser()):
     """
-    Parse the table of static gravity field models on the GFZ ICGEM server
+    Parse the table of static gravity field models on the GFZ
+    International Centre for Global Earth Models (ICGEM) server
 
     Keyword arguments
     -----------------

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (12/2020)
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 
@@ -21,13 +21,14 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 12/2020: added verbose option for gfc files
     Updated 08/2020: added compression options for ascii, netCDF4 and HDF5 files
     Updated 07/2020: added class docstring and using kwargs for output to file
         added case_insensitive_filename function to search directories
     Updated 06/2020: output list of filenames with from_list()
         zeros_like() creates a new harmonics object with dimensions of another
         add ndim and shape attributes of harmonics objects
-    Updated 04/2020: added from_gfc to read gravity model coefficients from GFZ
+    Updated 04/2020: added from_gfc to read static gravity model coefficients
         add to_ascii and iterate over temporal fields in convolve and destripe
         make date optional for harmonic read functions.  add more math functions
         add option to sort if reading from an index or merging a list
@@ -203,15 +204,22 @@ class harmonics(object):
         self.update_dimensions()
         return self
 
-    def from_gfc(self, filename):
+    def from_gfc(self, filename, verbose=False):
         """
         Read a harmonics object from a gfc gravity model file from the GFZ ICGEM
         Inputs: full path of input gfc file
+        Options:
+            verbose output of file information
         """
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- read data from gfc file
         Ylms = read_ICGEM_harmonics(self.filename)
+        #-- Output file information
+        if verbose:
+            print(self.filename)
+            print(list(Ylms.keys()))
+        #-- copy variables for static gravity model
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
         self.lmax = np.int(Ylms['max_degree'])

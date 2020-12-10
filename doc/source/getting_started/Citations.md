@@ -20,6 +20,17 @@ T. C. Sutterley and I. Velicogna, "Improved estimates of geocenter variability
 from time-variable gravity and ocean model outputs", *Remote Sensing*, 11(18),
 2108, (2019). [doi:10.3390/rs11182108](https://doi.org/10.3390/rs11182108)
 
+#### Contributors
+- [Yara Mohajerani (University of Washington)](https://www.yaramohajerani.com/)
+- [Tyler Sutterley (University of Washington)](http://psc.apl.uw.edu/people/investigators/tyler-sutterley/)
+- [Isabella Velicogna (University of California, Irvine)](https://www.ess.uci.edu/~velicogna/pi.html)
+
+#### Development
+This is an open source project.  We welcome any help in maintaining and developing the software and documentation.  Anyone at any career stage and with any level of coding experience can contribute.
+
+#### Problem Reports
+If you have found a problem in these programs, or you would like to suggest an improvement or modification, please submit a [GitHub issue](https://github.com/tsutterley/read-GRACE-harmonics/issues) and we will get back to you.
+
 #### Dependencies
 This software is also dependent on other commonly used Python packages:
 - [numpy: Scientific Computing Tools For Python](https://numpy.org)

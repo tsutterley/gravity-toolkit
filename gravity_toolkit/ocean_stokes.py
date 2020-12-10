@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ocean_stokes.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (12/2020)
 
 Reads a land-sea mask and converts to a series of spherical harmonics
 
@@ -16,6 +16,7 @@ INPUTS:
 OPTIONS:
     MMAX: maximum spherical harmonic order of the output harmonics
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
+    SIMPLIFY: simplify land mask by removing isolated points
 
 OUTPUTS:
     clm: Cosine spherical harmonic coefficients (geodesy normalization)
@@ -41,10 +42,11 @@ PROGRAM DEPENDENCIES
 
 REFERENCE:
     T. C. Sutterley, I. Velicogna, and C.-W. Hsu, "Self‐Consistent Ice Mass
-    Balance and Regional Sea Level From Time‐Variable Gravity",
+        Balance and Regional Sea Level From Time‐Variable Gravity",
     Earth and Space Science, 7, 2020. https://doi.org/10.1029/2019EA000860
 
 UPDATE HISTORY:
+    Updated 12/2020: added simplify function to remove isolated points
     Updated 07/2020: added function docstrings
     Updated 06/2020: using spatial data class for input and output operations
     Updated 04/2020 for public release
@@ -58,7 +60,7 @@ import numpy as np
 from gravity_toolkit.spatial import spatial
 from gravity_toolkit.gen_stokes import gen_stokes
 
-def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None):
+def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, SIMPLIFY=False):
     """
     Converts data from spherical harmonic coefficients to a spatial field
 
@@ -71,6 +73,7 @@ def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None):
     -----------------
     MMAX: maximum spherical harmonic order of the output harmonics
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
+    SIMPLIFY: simplify land mask by removing isolated points
 
     Returns
     -------
@@ -92,6 +95,9 @@ def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None):
     #-- combine land and island levels for land function
     indx,indy = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))
     land_function[indx,indy] = 1.0
+    #-- remove isolated points if specified
+    if SIMPLIFY:
+        land_function -= find_isolated_points(land_function)
     #-- ocean function reciprocal of land function
     ocean_function = 1.0 - land_function
     #-- convert to spherical harmonics (1 cm w.e.)
@@ -99,3 +105,21 @@ def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None):
         UNITS=1,LMIN=0,LMAX=LMAX,MMAX=MMAX,LOVE=LOVE)
     #-- return the spherical harmonic coefficients
     return ocean_Ylms
+
+def find_isolated_points(mask):
+    """
+    Simplify mask by removing isolated points
+    """
+    nth,_ = mask.shape
+    laplacian = -4.0*np.copy(mask)
+    laplacian += mask*np.roll(mask,1,axis=1)
+    laplacian += mask*np.roll(mask,-1,axis=1)
+    temp = np.roll(mask,1,axis=0)
+    temp[0,:] = mask[1,:]
+    laplacian += mask*temp
+    temp = np.roll(mask,-1,axis=0)
+    temp[nth-1,:] = mask[nth-2,:]
+    laplacian += mask*temp
+    #-- create mask of isolated points
+    isolated = np.where(np.abs(laplacian) >= 3,1,0)
+    return isolated

@@ -3,10 +3,13 @@ u"""
 test_download_and_read.py (08/2020)
 Tests the read program to verify that coefficients are being extracted
 """
-import warnings
+import os
 import pytest
+import inspect
+import warnings
 import gravity_toolkit.utilities
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
+from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
 
 #-- PURPOSE: Download a GRACE file from PO.DAAC and check that read program runs
 def test_podaac_download_and_read(username,webdav):
@@ -34,3 +37,20 @@ def test_gfz_ftp_download_and_read(username,webdav):
     assert all((key in Ylms.keys()) for key in keys)
     assert all((Ylms[key] == val) for key,val in test.items())
     assert (Ylms['clm'][2,0] == -0.484169355584e-03)
+
+#-- parameterize processing center and data release
+@pytest.mark.parametrize("PROC", ['CSR','GFZ','JPL'])
+@pytest.mark.parametrize("DREL", ['RL06'])
+def test_geocenter_download_and_read(PROC, DREL):
+    filename = inspect.getframeinfo(inspect.currentframe()).filename
+    filepath = os.path.dirname(os.path.abspath(filename))
+    gravity_toolkit.utilities.from_figshare(filepath,verbose=True)
+    MODEL = dict(RL04='OMCT', RL05='OMCT', RL06='MPIOM')
+    args = (PROC,DREL,MODEL[DREL],'SLF_iter')
+    geocenter_file = '{0}_{1}_{2}_{3}.txt'.format(*args)
+    #-- assert that file exists
+    assert os.access(os.path.join(filepath,geocenter_file),os.F_OK)
+    #-- test geocenter read program
+    DEG1 = read_GRACE_geocenter(os.path.join(filepath,geocenter_file))
+    keys = ['time', 'JD', 'month', 'C10', 'C11', 'S11','header']
+    assert all((key in DEG1.keys()) for key in keys)

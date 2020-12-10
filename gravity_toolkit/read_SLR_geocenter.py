@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 u"""
 read_SLR_geocenter.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (12/2020)
 
 Reads monthly geocenter files from satellite laser ranging provided by CSR
-    ftp://ftp.csr.utexas.edu/pub/slr/geocenter/
+    http://download.csr.utexas.edu/pub/slr/geocenter/
     RL04: GCN_RL04.txt
     RL05: GCN_RL05.txt
 New CF-CM geocenter dataset to reflect the true degree-1 mass variations
-    ftp://ftp.csr.utexas.edu/pub/slr/geocenter/README_L1_L2
-    ftp://ftp.csr.utexas.edu/pub/slr/geocenter/GCN_L1_L2_30d_CF-CM.txt
+    http://download.csr.utexas.edu/pub/slr/geocenter/geocenter/README_L1_L2
+    http://download.csr.utexas.edu/pub/slr/geocenter/GCN_L1_L2_30d_CF-CM.txt
+New geocenter solutions from Minkang Cheng
+    http://download.csr.utexas.edu/outgoing/cheng/gct2est.220_5s
 
 CALLING SEQUENCE:
     geocenter = read_SLR_geocenter(geocenter_file)
@@ -19,7 +21,15 @@ INPUTS:
 
 OPTIONS:
     RADIUS: Earth's radius for calculating spherical harmonics from SLR data
-    skiprows: rows of data to skip when importing data
+    HEADER: rows of data to skip when importing data
+    COLUMNS: column names of ascii file
+        time: date in decimal-years
+        X: X-component of geocenter variation
+        Y: Y-component of geocenter variation
+        Z: Z-component of geocenter variation
+        X_sigma: X-component uncertainty
+        Y_sigma: Y-component uncertainty
+        Z_sigma: Z-component uncertainty
 
 OUTPUTS:
     C10: cosine d1/o0 spherical harmonic coefficients
@@ -35,13 +45,15 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 12/2020: added option COLUMNS to generalize the ascii data format
+        replaced numpy loadtxt with generic read using regular expressions 
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 08/2019: add catch to verify input geocenter file exists
     Updated 06/2019: added option RADIUS for setting the Earth's radius
     Updated 08/2018: using full release string (RL05 instead of 5)
     Updated 04/2017: parallels updates to geocenter function INVERSE option
-        use enumerate to iterate over dates.  added option skiprows for headers
+        use enumerate to iterate over dates.  added option HEADER for headers
     Updated 06/2016: using __future__ print function
     Updated 05/2016: use geocenter files from 6-hour AOD1b glo Ylms calculated
         in aod1b_geocenter.py
@@ -59,7 +71,8 @@ from gravity_toolkit.geocenter import geocenter
 from gravity_toolkit.convert_julian import convert_julian
 
 #-- PURPOSE: read geocenter data from Satellite Laser Ranging (SLR)
-def read_SLR_geocenter(geocenter_file, RADIUS=None, skiprows=0):
+def read_SLR_geocenter(geocenter_file, RADIUS=None, HEADER=0,
+    COLUMNS=['time','X','Y','Z','X_sigma','Y_sigma','Z_sigma']):
     """
     Reads monthly geocenter files from satellite laser ranging
 
@@ -70,7 +83,15 @@ def read_SLR_geocenter(geocenter_file, RADIUS=None, skiprows=0):
     Keyword arguments
     -----------------
     RADIUS: Earth's radius for calculating spherical harmonics from SLR data
-    skiprows: rows of data to skip when importing data
+    HEADER: rows of data to skip when importing data
+    COLUMNS: column names of ascii file
+        time: date in decimal-years
+        X: X-component of geocenter variation
+        Y: Y-component of geocenter variation
+        Z: Z-component of geocenter variation
+        X_sigma: X-component uncertainty
+        Y_sigma: Y-component uncertainty
+        Z_sigma: Z-component uncertainty
 
     Returns
     -------
@@ -88,13 +109,15 @@ def read_SLR_geocenter(geocenter_file, RADIUS=None, skiprows=0):
     if not os.access(os.path.expanduser(geocenter_file), os.F_OK):
         raise IOError('Geocenter file not found in file system')
 
-    #-- Input degree 1 file and skip header text (if skiprows)
-    file_contents = np.loadtxt(os.path.expanduser(geocenter_file),
-        skiprows=skiprows)
-    ndate = np.shape(file_contents)[0]
+    #-- Input geocenter file and split lines
+    with open(os.path.expanduser(geocenter_file),'r') as f:
+        file_contents = f.read().splitlines()
+    ndate = len(file_contents)-HEADER
 
-    #-- first column of data = date
-    date = file_contents[:,0]
+    #-- compile regular expression operator to find numerical instances
+    regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
+    rx = re.compile(regex_pattern, re.VERBOSE)
+
     #-- initializing output data
     #-- Degree 1 Stokes Coefficients
     C10 = np.zeros((ndate))
@@ -105,31 +128,38 @@ def read_SLR_geocenter(geocenter_file, RADIUS=None, skiprows=0):
     eC11 = np.zeros((ndate))
     eS11 = np.zeros((ndate))
     #-- Date information
+    date = np.zeros((ndate))
     JD = np.zeros((ndate))
     mon = np.zeros((ndate), dtype=np.int32)
 
     #-- for each date
-    for t,tdec in enumerate(date):
+    for t,file_line in enumerate(file_contents[HEADER:]):
+        #-- find numerical instances in line
+        #-- replacing fortran double precision exponential
+        line_contents = rx.findall(file_line.replace('D','E'))
+        #-- extract date
+        date[t] = np.float(line_contents[COLUMNS.index('time')])
+        #-- extract geocenter variations
+        X = np.float(line_contents[COLUMNS.index('X')])
+        Y = np.float(line_contents[COLUMNS.index('Y')])
+        Z = np.float(line_contents[COLUMNS.index('Z')])
+        X_sigma = np.float(line_contents[COLUMNS.index('X_sigma')])
+        Y_sigma = np.float(line_contents[COLUMNS.index('Y_sigma')])
+        Z_sigma = np.float(line_contents[COLUMNS.index('Z_sigma')])
         #-- converting from geocenter into spherical harmonics
-        CS1 = geocenter(X=file_contents[t,1], Y=file_contents[t,2],
-            Z=file_contents[t,3], RADIUS=RADIUS, INVERSE=True)
-        dCS1 = geocenter(X=file_contents[t,4], Y=file_contents[t,5],
-            Z=file_contents[t,6], RADIUS=RADIUS, INVERSE=True)
+        CS1 = geocenter(X=X,Y=Y,Z=Z,RADIUS=RADIUS,INVERSE=True)
+        dCS1 = geocenter(X=X_sigma,Y=Y_sigma,Z=Z_sigma,
+            RADIUS=RADIUS, INVERSE=True)
         #-- output harmonics
         C10[t],C11[t],S11[t] = (CS1['C10'], CS1['C11'], CS1['S11'])
         eC10[t],eC11[t],eS11[t] = (dCS1['C10'], dCS1['C11'], dCS1['S11'])
 
         #-- calendar year of date
-        year = np.floor(tdec)
+        year = np.floor(date[t])
         #-- check if year is a leap year
-        if ((year % 4) == 0):
-            #-- Leap Year
-            dpy = 366.0
-        else:
-            #-- Standard Year
-            dpy = 365.0
+        dpy = 366.0 if ((year % 4) == 0) else 365.0
         #-- calculation of day of the year (with decimals for fraction of day)
-        DofY = dpy*(tdec % 1)
+        DofY = dpy*(date[t] % 1)
         #-- Calculation of the Julian date from year and DofY
         JD[t] = np.float(367.0*year -
             np.floor(7.0*(year + np.floor(10.0/12.0))/4.0) -
@@ -146,19 +176,55 @@ def read_SLR_geocenter(geocenter_file, RADIUS=None, skiprows=0):
 
 #-- special function for outputting AOD corrected SLR geocenter values
 #-- need to run aod1b_geocenter.py to calculate the monthly geocenter dealiasing
-def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, skiprows=0):
+def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, HEADER=0,
+    COLUMNS=[]):
+    """
+    Reads monthly geocenter files from satellite laser ranging corrected
+    for non-tidal ocean and atmospheric variation
+
+    Arguments
+    ---------
+    geocenter_file: Satellite Laser Ranging file
+    DREL: GRACE/GRACE-FO data release
+
+    Keyword arguments
+    -----------------
+    RADIUS: Earth's radius for calculating spherical harmonics from SLR data
+    HEADER: rows of data to skip when importing data
+    COLUMNS: column names of ascii file
+        time: date in decimal-years
+        X: X-component of geocenter variation
+        Y: Y-component of geocenter variation
+        Z: Z-component of geocenter variation
+        X_sigma: X-component uncertainty
+        Y_sigma: Y-component uncertainty
+        Z_sigma: Z-component uncertainty
+
+    Returns
+    -------
+    C10: cosine d1/o0 spherical harmonic coefficients
+    C11: cosine d1/o1 spherical harmonic coefficients
+    S11: sine d1/o1 spherical harmonic coefficients
+    eC10: cosine d1/o0 spherical harmonic coefficient error
+    eC11: cosine d1/o1 spherical harmonic coefficient error
+    eS11: sine d1/o1 spherical harmonic coefficient error
+    month: GRACE/GRACE-FO month
+    time: date of each month in year-decimal
+    """
     #-- directory setup for AOD1b data starting with input degree 1 file
     #-- this will verify that the input paths work
     AOD1B_dir = os.path.abspath(os.path.join(geocenter_file,os.path.pardir,
         os.path.pardir,'AOD1B',DREL,'geocenter'))
 
-    #-- Input degree 1 file and skip header text (if skiprows)
-    file_contents = np.loadtxt(os.path.expanduser(geocenter_file),
-        skiprows=skiprows)
-    ndate = np.shape(file_contents)[0]
+    #-- Input geocenter file and split lines
+    with open(os.path.expanduser(geocenter_file),'r') as f:
+        file_contents = f.read().splitlines()
+    ndate = len(file_contents)-HEADER
 
-    #-- first column of data = date
-    date = file_contents[:,0]
+    #-- compile regular expression operator to find numerical instances
+    regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
+    rx = re.compile(regex_pattern, re.VERBOSE)
+
     #-- initializing output data
     #-- Degree 1 Stokes Coefficients
     C10 = np.zeros((ndate))
@@ -169,28 +235,35 @@ def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, skiprows=0):
     eC11 = np.zeros((ndate))
     eS11 = np.zeros((ndate))
     #-- Date information
+    date = np.zeros((ndate))
     JD = np.zeros((ndate))
     mon = np.zeros((ndate), dtype=np.int32)
 
     #-- for each date
-    for t,tdec in enumerate(date):
+    for t,file_line in enumerate(file_contents[HEADER:]):
+        #-- find numerical instances in line
+        #-- replacing fortran double precision exponential
+        line_contents = rx.findall(file_line.replace('D','E'))
+        #-- extract date
+        date[t] = np.float(line_contents[COLUMNS.index('time')])
+        #-- extract geocenter variations
+        X = np.float(line_contents[COLUMNS.index('X')])
+        Y = np.float(line_contents[COLUMNS.index('Y')])
+        Z = np.float(line_contents[COLUMNS.index('Z')])
+        X_sigma = np.float(line_contents[COLUMNS.index('X_sigma')])
+        Y_sigma = np.float(line_contents[COLUMNS.index('Y_sigma')])
+        Z_sigma = np.float(line_contents[COLUMNS.index('Z_sigma')])
         #-- converting from geocenter into spherical harmonics
-        CS1 = geocenter(X=file_contents[t,1], Y=file_contents[t,2],
-            Z=file_contents[t,3], RADIUS=RADIUS, INVERSE=True)
-        dCS1 = geocenter(X=file_contents[t,4], Y=file_contents[t,5],
-            Z=file_contents[t,6], RADIUS=RADIUS, INVERSE=True)
+        CS1 = geocenter(X=X,Y=Y,Z=Z,RADIUS=RADIUS,INVERSE=True)
+        dCS1 = geocenter(X=X_sigma,Y=Y_sigma,Z=Z_sigma,
+            RADIUS=RADIUS, INVERSE=True)
 
         #-- calendar year of date
-        year = np.floor(tdec)
+        year = np.floor(date[t])
         #-- check if year is a leap year
-        if ((year % 4) == 0):
-            #-- Leap Year
-            dpy = 366.0
-        else:
-            #-- Standard Year
-            dpy = 365.0
+        dpy = 366.0 if ((year % 4) == 0) else 365.0
         #-- calculation of day of the year (with decimals for fraction of day)
-        DofY = dpy*(tdec % 1)
+        DofY = dpy*(date[t] % 1)
         #-- Calculation of the Julian date from year and DofY
         JD[t] =np.float(367.*year - np.floor(7.*(year + np.floor(10./12.))/4.) -
             np.floor(3.0*(np.floor((year - 8.0/7.0)/100.0) + 1.0)/4.0) +
@@ -217,6 +290,14 @@ def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, skiprows=0):
 #-- PURPOSE: read AOD1b geocenter for month and calculate the mean harmonics
 #-- need to run aod1b_geocenter.py to write these monthly geocenter files
 def read_AOD1b_geocenter(AOD1B_file, calendar_month):
+    """
+    Reads monthly non-tidal ocean and atmospheric variation geocenter files
+
+    Arguments
+    ---------
+    AOD1B_file: de-aliasing data file
+    calendar_month: calendar month of data
+    """
     #-- check that file exists
     if not os.access(AOD1B_file, os.F_OK):
         raise IOError('AOD1b File {0} not in File System'.format(AOD1B_file))

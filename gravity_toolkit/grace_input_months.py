@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (12/2020)
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
     and for a specified date range
@@ -29,7 +29,7 @@ INPUTS:
         Tellus: GRACE/GRACE-FO TN-13 coefficients from PO.DAAC
             https://grace.jpl.nasa.gov/data/get-data/geocenter/
         SLR: satellite laser ranging coefficients from CSR
-            ftp://ftp.csr.utexas.edu/pub/slr/geocenter/
+            http://download.csr.utexas.edu/pub/slr/geocenter/
         SLF: Sutterley and Velicogna coefficients, Remote Sensing (2019)
             https://doi.org/10.6084/m9.figshare.7388540
 
@@ -69,6 +69,8 @@ PROGRAM DEPENDENCIES:
     read_GRACE_harmonics.py: reads an input GRACE data file and calculates date
 
 UPDATE HISTORY:
+    Updated 12/2020: updated SLR geocenter for new solutions from Minkang Cheng
+    Updated 11/2020: set regress_model RELATIVE option to 2003.3 to match others
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 06/2020: set relative time to mean of input within regress_model
@@ -235,13 +237,22 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         # #-- SLR-derived degree-1 mass variations
         # #-- ftp://ftp.csr.utexas.edu/pub/slr/geocenter/
         # DEG1_file=os.path.join(base_dir,'geocenter','GCN_{0}.txt'.format(DREL))
-        # DEG1_input=aod_corrected_SLR_geocenter(DEG1_file,DREL,skiprows=16)
+        # DEG1_input=aod_corrected_SLR_geocenter(DEG1_file,DREL,HEADER=16,
+        #     COLUMNS=['time','X','Y','Z','X_sigma','Y_sigma','Z_sigma'])
 
-        #-- new CF-CM file of degree-1 mass variations
-        #-- https://cddis.nasa.gov/lw20/docs/2016/papers/14-Ries_paper.pdf
-        #-- ftp://ftp.csr.utexas.edu/pub/slr/geocenter/GCN_L1_L2_30d_CF-CM.txt
-        DEG1_file = os.path.join(base_dir,'geocenter','GCN_L1_L2_30d_CF-CM.txt')
-        DEG1_input = aod_corrected_SLR_geocenter(DEG1_file,DREL,skiprows=111)
+        # #-- new CF-CM file of degree-1 mass variations
+        # #-- https://cddis.nasa.gov/lw20/docs/2016/papers/14-Ries_paper.pdf
+        # #-- http://download.csr.utexas.edu/pub/slr/geocenter/GCN_L1_L2_30d_CF-CM.txt
+        # DEG1_file = os.path.join(base_dir,'geocenter','GCN_L1_L2_30d_CF-CM.txt')
+        # DEG1_input = aod_corrected_SLR_geocenter(DEG1_file,DREL,HEADER=111,
+        #     COLUMNS=['time','X','Y','Z','X_sigma','Y_sigma','Z_sigma'])
+
+        #-- new file of degree-1 mass variations from Minkang Cheng
+        #-- http://download.csr.utexas.edu/outgoing/cheng/gct2est.220_5s
+        DEG1_file = os.path.join(base_dir,'geocenter','gct2est.220_5s')
+        DEG1_input = aod_corrected_SLR_geocenter(DEG1_file,HEADER=15,
+            RADIUS=6.378136e9,COLUMNS=['MJD','time','X','Y','Z','XM','YM','ZM',
+            'X_sigma','Y_sigma','Z_sigma','XM_sigma','YM_sigma','ZM_sigma'])
         DEG1_str = '_w{0}_DEG1'.format(DEG1)
     elif (DEG1 == 'SLF'):
         #-- read iterated degree one files from Sutterley and Velicogna (2019)
@@ -329,11 +340,11 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
             #-- least-squares modeling the degree 1 coefficients
             #-- fitting annual, semi-annual, linear and quadratic terms
             C10_model = regress_model(DEG1_input['time'], DEG1_input['C10'],
-                tdec, ORDER=2, CYCLES=[0.5,1.0])
+                tdec, ORDER=2, CYCLES=[0.5,1.0], RELATIVE=2003.3)
             C11_model = regress_model(DEG1_input['time'], DEG1_input['C11'],
-                tdec, ORDER=2, CYCLES=[0.5,1.0])
+                tdec, ORDER=2, CYCLES=[0.5,1.0], RELATIVE=2003.3)
             S11_model = regress_model(DEG1_input['time'], DEG1_input['S11'],
-                tdec, ORDER=2, CYCLES=[0.5,1.0])
+                tdec, ORDER=2, CYCLES=[0.5,1.0], RELATIVE=2003.3)
         else:
             #-- check that all months are available for a given geocenter
             months_test = sorted(set(months) - set(DEG1_input['month']))
@@ -451,7 +462,7 @@ def read_ecmwf_corrections(base_dir, LMAX, months, MMAX=None):
     return atm_corr
 
 #-- PURPOSE: calculate a regression model for extrapolating values
-def regress_model(t_in, d_in, t_out, ORDER=2, CYCLES=None, RELATIVE=None):
+def regress_model(t_in, d_in, t_out, ORDER=2, CYCLES=None, RELATIVE=0.0):
     """
     Calculates a regression model for extrapolating values
 

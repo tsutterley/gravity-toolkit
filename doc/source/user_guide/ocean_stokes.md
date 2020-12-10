@@ -18,6 +18,7 @@ ocean_Ylms = ocean_stokes(LANDMASK, LMAX, MMAX=MMAX, LOVE=(hl,kl,ll))
 #### Options
  - `MMAX`: maximum spherical harmonic order of the output harmonics
  - `LOVE`: input load Love numbers up to degree LMAX (hl,kl,ll)
+ - `SIMPLIFY`: simplify land mask by removing isolated points
 
 #### Outputs
  - `clm`: Cosine spherical harmonic coefficients (geodesy normalization)

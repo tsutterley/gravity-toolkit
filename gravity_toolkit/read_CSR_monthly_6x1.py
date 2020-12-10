@@ -8,6 +8,8 @@ Reads in monthly 5x5 spherical harmonic coefficients with 1
 
 Dataset distributed by UTCSR
     ftp://ftp.csr.utexas.edu/outgoing/cheng/slrgeo.5d561_187_naod
+    http://download.csr.utexas.edu/pub/slr/degree_5/
+        CSR_Monthly_5x5_Gravity_Harmonics.txt
 
 OPTIONS:
     HEADER: file contains header text to be skipped (default: True)

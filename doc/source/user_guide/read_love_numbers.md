@@ -6,7 +6,9 @@ read_love_numbers.py
 
 #### Calling Sequence
 ```python
+from gravity_toolkit.utilities import get_data_path
 from gravity_toolkit.read_love_numbers import read_love_numbers
+love_numbers_file = get_data_path(['data','love_numbers'])
 hl,kl,ll = read_love_numbers(love_numbers_file, FORMAT='tuple', REFERENCE='CF')
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_love_numbers.py)
@@ -15,7 +17,13 @@ hl,kl,ll = read_love_numbers(love_numbers_file, FORMAT='tuple', REFERENCE='CF')
  - `love_numbers_file`: Elastic load Love numbers file
 
 #### Options
- - `HEADER`: file contains header text to be skipped (default: True)
+ - `LMAX`: truncate or interpolate to maximum spherical harmonic degree
+ - `HEADER`: number of header lines to be skipped
+ - `COLUMNS`: column names of ascii file
+     * `'l'`: spherical harmonic degree
+     * `'hl'`: vertical displacement
+     * `'kl'`: gravitational potential
+     * `'ll'`: horizontal displacement
  - `REFERENCE`: Reference frame for calculating degree 1 love numbers
      * `'CF'`: Center of Surface Figure
      * `'CL'`: Center of Surface Lateral Figure
@@ -28,6 +36,6 @@ hl,kl,ll = read_love_numbers(love_numbers_file, FORMAT='tuple', REFERENCE='CF')
      * `'zip'`: aggregated variable sets
 
 #### Outputs
- - `kl`: Love number of Gravitational Potential
  - `hl`: Love number of Vertical Displacement
+ - `kl`: Love number of Gravitational Potential
  - `ll`: Love number of Horizontal Displacement
