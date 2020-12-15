@@ -22,7 +22,7 @@ copyright = '2020, Tyler C. Sutterley'
 author = 'Tyler C. Sutterley'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0.1.21'
+release = '1.0.1.22'
 
 
 # -- General configuration ---------------------------------------------------
@@ -30,7 +30,7 @@ release = '1.0.1.21'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['recommonmark','sphinx_markdown_tables']
+extensions = ['sphinx.ext.graphviz','recommonmark','sphinx_markdown_tables']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

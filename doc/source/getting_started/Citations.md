@@ -2,8 +2,7 @@ Citation Information
 ====================
 
 #### References
-This software is developed with the goal of supporting science applications for
-time-variable gravity.  The programs included in this software have contributed
+The programs included in this software have contributed
 most recently to the following work:
 
 I. Velicogna, Y. Mohajerani, G. A, F. Landerer, J. Mouginot, B. No&euml;l,

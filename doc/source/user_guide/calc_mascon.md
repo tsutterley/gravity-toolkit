@@ -1,16 +1,16 @@
-grace_spatial_maps.py
-=====================
+calc_mascon.py
+==============
 
- - Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports monthly spatial fields
+ - Reads in GRACE/GRACE-FO spherical harmonic coefficients
  - Correct spherical harmonics with the specified GIA model group
  - Filters and smooths data with specified processing algorithms
- - Converts data to specified units and performs a spherical harmonic summation to convert to the spatial domain
+ - Calculates a time-series of regional mass anomalies through a least-squares mascon procedure
 
 #### Calling Sequence
 ```bash
-python grace_spatial_maps.py --mode 0o775 parameter_file
+python calc_mascon.py --mode 0o775 parameter_file
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/grace_spatial_maps.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/calc_mascon.py)
 
 #### Inputs
    parameter file containing specific variables for the analysis
@@ -26,6 +26,5 @@ python grace_spatial_maps.py --mode 0o775 parameter_file
       * `'CF'`: Center of Surface Figure (default)
       * `'CM'`: Center of Mass of Earth System
       * `'CE'`: Center of Mass of Solid Earth
- - `-V`, `--verbose`: verbose output of processing run
- - `-M X`, `--mode X`: permissions mode of output files
  - `-l`, `--log`: output log file for each job
+ - `-M X`, `--mode X`: permissions mode of output files

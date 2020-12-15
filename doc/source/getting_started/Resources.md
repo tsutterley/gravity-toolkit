@@ -11,9 +11,10 @@ Resources
 - [NASA GSFC GRACE site](https://earth.gsfc.nasa.gov/geo/missions/grace)  
 - [CNES/GRGS GRACE and LAGEOS site](http://grgs.obs-mip.fr/grace)  
 
-#### Data Archival
+#### Data Archives
 - [GRACE at the NASA Physical Oceanography Distributed Active Archive Center (PO.DAAC)](https://podaac.jpl.nasa.gov/grace)  
-- [GRACE at the GFZ Information System and Data Center](http://isdc.gfz-potsdam.de/grace-isdc/)  
+- [GRACE at the GFZ Information System and Data Center](http://isdc.gfz-potsdam.de/grace-isdc/) 
+- [Combined GRACE/SLR solutions at CNES/GRGS](https://grace.obs-mip.fr/) 
 - [GFZ International Centre for Global Earth Models (ICGEM)](http://icgem.gfz-potsdam.de/home)  
 
 #### Product Information
