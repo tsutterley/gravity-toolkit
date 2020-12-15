@@ -1,8 +1,12 @@
 read_love_numbers.py
 ====================
 
- - Reads sets of load Love numbers computed using outputs from the Preliminary Reference Earth Model (PREM) as described by [Han and Wahr (1995)](https://doi.org/10.1111/j.1365-246X.1995.tb01819.x)
+ - Reads sets of load Love numbers computed using outputs from the Preliminary Reference Earth Model (PREM) ([Dziewonski and Anderson, 1981](https://doi.org/10.1016/0031-9201(81)90046-7))
  - Applies isomorphic parameters for different reference frames following [Blewitt (2003)](https://doi.org/10.1029/2002JB002082)
+ - Can read load Love numbers from:
+    * [Han and Wahr (1995)](https://doi.org/10.1111/j.1365-246X.1995.tb01819.x)
+    * [Gegout (2005)](http://gemini.gsfc.nasa.gov/aplo/)
+    * [Wang et al. (2012)](https://doi.org/10.1016/j.cageo.2012.06.022)
 
 #### Calling Sequence
 ```python

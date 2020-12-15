@@ -11,9 +11,12 @@ missions
     :caption: Getting Started:
 
     getting_started/Install.md
+    getting_started/Background.md
     getting_started/Getting-Started.md
     getting_started/NASA-Earthdata.md
     getting_started/GRACE-Data-File-Formats.md
+    getting_started/Spatial-Maps.md
+    getting_started/Time-Series-Analysis.md
     getting_started/Resources.md
     getting_started/Citations.md
 
@@ -23,6 +26,8 @@ missions
 
     user_guide/aod1b_geocenter.md
     user_guide/aod1b_oblateness.md
+    user_guide/calc_mascon.md
+    user_guide/calc_sensitivity_kernel.md
     user_guide/clenshaw_summation.md
     user_guide/combine_harmonics.md
     user_guide/convert_calendar_decimal.md
@@ -53,8 +58,11 @@ missions
     user_guide/hdf5_read_stokes.md
     user_guide/hdf5_stokes.md
     user_guide/hdf5_write.md
+    user_guide/least_squares_mascons.md
+    user_guide/least_squares_mascon_timeseries.md
     user_guide/legendre.md
     user_guide/legendre_polynomials.md
+    user_guide/mascon_reconstruct.md
     user_guide/ncdf_read.md
     user_guide/ncdf_read_stokes.md
     user_guide/ncdf_stokes.md
