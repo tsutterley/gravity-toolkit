@@ -70,6 +70,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 12/2020: gestion of tide free and zero tide convention (IERS 2010)
+                     added SWARM gestion
     Updated 11/2020: added C/S2,1 and C/S2,2 correction from John Ries
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
@@ -139,7 +140,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
     Arguments
     ---------
     base_dir: Working data directory for GRACE/GRACE-FO data
-    PROC: (CSR/CNES/JPL/GFZ/GRAZ) data processing center
+    PROC: (CSR/CNES/JPL/GFZ/GRAZ/SWARM) data processing center
     DREL: (RL01,RL02,RL03,RL04,RL05,RL06) data release
     DSET: (GAA/GAB/GAC/GAD/GSM) data product
     LMAX: Upper bound of Spherical Harmonic Degrees
@@ -148,7 +149,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
     missing: missing months to not consider in analysis
     SLR_C20: Replaces C20 with SLR values
         N: use original values
-        TideFree: add a bias for CSR, GFZ or GRAZ to convert C2,0 to tide free convention
+        TideFree: add a bias for CSR, GFZ, GRAZ or SWARM to convert C2,0 to tide free convention
         ZeroTide: add a bias for CNES or JPL to convert C2,0 to zero tide convention
         CSR: use values from CSR (TN-07,TN-09,TN-11)
         GSFC: use values from GSFC (TN-14)
@@ -320,7 +321,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         infile = grace_files[grace_month]
         if PROC in ('CSR', 'GFZ', 'JPL', 'CNES', 'JPLMSC'):
             Ylms = read_GRACE_harmonics(infile,LMAX,MMAX=MMAX,POLE_TIDE=POLE_TIDE)
-        elif PROC == 'GRAZ':
+        elif PROC in ('GRAZ', 'SWARM'):
             Ylms = read_ICGEM_harmonics(infile)
         grace_clm[:,:,i] = Ylms['clm'][0:LMAX+1,0:MMAX+1]
         grace_slm[:,:,i] = Ylms['slm'][0:LMAX+1,0:MMAX+1]
@@ -348,9 +349,9 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         # -- apply conversion formula from IERS 2010 Notes
         grace_clm[2, 0, :] += 4.4228e-8 * 0.31460 * k2
 
-    elif SLR_C20 == 'ZeroTide' and PROC in ('CNES', 'GFZ'):
+    elif SLR_C20 == 'ZeroTide' and PROC in ('CNES', 'GFZ', 'SWARM'):
         #-- k2,0 nominal from IERS 2010 convention
-        if PROC == 'CNES':
+        if PROC in ('CNES', 'SWARM'):
             k2 = 0.3
         elif PROC == 'GFZ':
             k2 = 0.3190

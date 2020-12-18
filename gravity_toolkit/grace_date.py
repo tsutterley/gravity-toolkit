@@ -11,7 +11,7 @@ INPUTS:
     base_dir: Working data directory for GRACE/GRACE-FO data
 
 OPTIONS:
-    PROC: GRACE data processing center (CSR/CNES/JPL/GFZ/GRAZ)
+    PROC: GRACE data processing center (CSR/CNES/JPL/GFZ/GRAZ) or SWARM for SWARM data
     DREL: GRACE/GRACE-FO Data Release (RL03 for CNES) (RL06 for CSR/GFZ/JPL)
     DSET: GRACE dataset (GAA/GAB/GAC/GAD/GSM)
         GAA is the non-tidal atmospheric correction
@@ -34,6 +34,7 @@ PROGRAM DEPENDENCIES:
     convert_julian.py: converts a Julian date into a calendar date
 
 UPDATE HISTORY:
+    Updated 12/2020: Add SWARM data compilance
     Updated 11/2020: updated for CNES RL04 & RL05 and GRAZ 2018 (monthly fields)
     Updated 10/2020: use argparse to set command line parameters
     Updated 07/2020: added function docstrings
@@ -75,7 +76,6 @@ UPDATE HISTORY:
 """
 from __future__ import print_function
 
-import sys
 import os
 import re
 import argparse
@@ -100,6 +100,8 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
         JPL: Jet Propulsion Laboratory
         CNES: French Centre Natnp.int(month)ional D'Etudes Spatiales
         GRAZ: Institute of Geodesy from GRAZ University of Technology
+
+        SWARM: gravity data from SWARM satellite
     DREL: GRACE/GRACE-FO data release
     DSET: GRACE/GRACE-FO dataset
         GAA: non-tidal atmospheric correction
@@ -150,6 +152,10 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
         # -- GRAZ: Institute of Geodesy from GRAZ University of Technology
         regex_pattern = (r'(.*?)-({0})_(.*?)_(\d+)-(\d+)'
                          r'(\.gz|\.gfc|\.txt)').format(r'Grace_operational|Grace2018')
+    elif PROC == 'SWARM':
+        # -- SWARM: data from SWARM satellite
+        regex_pattern = (r'({0})_(.*?)_(EGF_SHA_2)__(.*?)_(.*?)_(.*?)'
+                         r'(\.gz|\.gfc|\.txt)').format(r'SW')
     else:
         raise ValueError("Unknown PROC value:", PROC)
 
@@ -205,11 +211,18 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
             #-- calculating the total number of days since 2002
             tot_days[t] = np.mean([count + start_day[t], count + end_plus])
 
-        elif PROC == 'GRAZ':
-            PFX,SAT,trunc,year,month,SFX = rx.findall(infile).pop()
-            #-- find start year, end year
-            start_yr[t] = np.float(year)
-            end_yr[t] = np.float(year)
+        elif PROC == 'GRAZ' or PROC == 'SWARM':
+            if PROC == 'GRAZ':
+                PFX,SAT,trunc,year,month,SFX = rx.findall(infile).pop()
+                #-- find start year, end year
+                start_yr[t] = np.float(year)
+                end_yr[t] = np.float(year)
+            elif PROC == 'SWARM':
+                SAT, tmp, PROD, start_date, end_date, RL, SFX = rx.findall(os.path.basename(infile)).pop()
+
+                start_yr[t] = int(start_date[:4])
+                end_yr[t] = int(end_date[:4])
+                month = int(start_date[4:6])
 
             #-- Calculation of total days since start of campaign
             #-- Get information on the current year (day per month and day per year)
@@ -252,6 +265,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
 
         #-- add file to python dictionary mapped to GRACE/GRACE-FO month
         grace_files[mon[t]] = os.path.join(grace_dir,infile)
+
         #-- print to GRACE DATES ascii file (NOTE: tot_days will be rounded up)
         if OUTPUT:
             print(('{0:13.8f} {1:03d} {2:8.0f} {3:03.0f} {4:8.0f} {5:03.0f} '

@@ -3,13 +3,21 @@ u"""
 read_ICGEM_harmonics.py
 Written by Tyler Sutterley (07/2020)
 
-Read gfc files and extract gravity model spherical harmonics from the GFZ ICGEM
+Read gfc files and extract gravity model spherical harmonics from the GFZ/GRAZ/SWARM ICGEM
 
 GFZ International Centre for Global Earth Models (ICGEM)
     http://icgem.gfz-potsdam.de/
 
+GRAZ: https://www.tugraz.at/institute/ifg/downloads/gravity-field-models
+data can be downloaded from this ftp server:
+    ftp://ftp.tugraz.at/outgoing/ITSG/GRACE/
+
+SWARM: https://earth.esa.int/eogateway/missions/swarm
+data can be downloaded from this ftp server:
+    ftp://swarm-diss.eo.esa.int/Level2longterm/EGF/
+
 INPUTS:
-    model_file: GFZ ICGEM gfc spherical harmonic data file
+    model_file: GFZ/GRAZ/SWARM ICGEM gfc spherical harmonic data file
 
 OPTIONS:
     FLAG: string denoting data lines (default gfc)
@@ -71,11 +79,37 @@ def read_ICGEM_harmonics(model_file, FLAG='gfc'):
     #-- python dictionary with model input and headers
     model_input = {}
     if 'ITSG' in model_file:
-        #-- parse filename
-        PFX, SAT, trunc, year, month, SFX = parse_file(model_file)
+        # -- compile numerical expression operator for parameters from files
+        # -- GRAZ: Institute of Geodesy from GRAZ University of Technology
+        regex_pattern = (r'(.*?)-({0})_(.*?)_(\d+)-(\d+)'
+                         r'(\.gz|\.gfc|\.txt)').format(r'Grace_operational|Grace2018')
+        rx = re.compile(regex_pattern, re.VERBOSE)
+        # -- extract parameters from input filename
+        if isinstance(model_file, io.IOBase):
+            PFX, SAT, trunc, year, month, SFX = rx.findall(model_file.filename).pop()
+        else:
+            PFX, SAT, trunc, year, month, SFX = rx.findall(os.path.basename(model_file)).pop()
+
         #-- convert string to integer
         year, month = int(year), int(month)
 
+    elif 'SW_' in model_file:
+        # -- compile numerical expression operator for parameters from files
+        # -- SWARM: data from SWARM satellite
+        regex_pattern = (r'({0})_(.*?)_(EGF_SHA_2)__(.*?)_(.*?)_(.*?)'
+                         r'(\.gz|\.gfc|\.txt)').format(r'SW')
+        rx = re.compile(regex_pattern, re.VERBOSE)
+        # -- extract parameters from input filename
+        if isinstance(model_file, io.IOBase):
+            SAT, tmp, PROD, start_date, end_date, RL, SFX = rx.findall(model_file.filename).pop()
+        else:
+            SAT, tmp, PROD, start_date, end_date, RL, SFX = rx.findall(os.path.basename(model_file)).pop()
+            # -- convert string to integer
+
+        year = int(start_date[:4])
+        month = int(start_date[4:6])
+
+    if 'ITSG' in model_file or 'SW_' in model_file:
         #-- calculate mid-month date taking into account if measurements are
         #-- on different years
         if (year % 4) == 0:  #-- Leap Year
@@ -118,8 +152,9 @@ def read_ICGEM_harmonics(model_file, FLAG='gfc'):
     #-- allocate for each Coefficient
     model_input['clm'] = np.zeros((LMAX+1,LMAX+1))
     model_input['slm'] = np.zeros((LMAX+1,LMAX+1))
-    model_input['eclm'] = np.zeros((LMAX+1,LMAX+1))
-    model_input['eslm'] = np.zeros((LMAX+1,LMAX+1))
+    if model_input['errors'] != 'no':
+        model_input['eclm'] = np.zeros((LMAX+1,LMAX+1))
+        model_input['eslm'] = np.zeros((LMAX+1,LMAX+1))
     #-- reduce file_contents to input data using data marker flag
     input_data = [l for l in file_contents if re.match(FLAG,l)]
     #-- for each line of data in the gravity file
@@ -132,27 +167,8 @@ def read_ICGEM_harmonics(model_file, FLAG='gfc'):
         #-- read spherical harmonic coefficients
         model_input['clm'][l1,m1] = np.float(line_contents[3])
         model_input['slm'][l1,m1] = np.float(line_contents[4])
-        model_input['eclm'][l1,m1] = np.float(line_contents[5])
-        model_input['eslm'][l1,m1] = np.float(line_contents[6])
+        if model_input['errors'] != 'no':
+            model_input['eclm'][l1,m1] = np.float(line_contents[5])
+            model_input['eslm'][l1,m1] = np.float(line_contents[6])
     #-- return the spherical harmonics and parameters
     return model_input
-
-#-- PURPOSE: extract parameters from filename
-def parse_file(input_file):
-    """
-    Extract parameters from filename
-
-    Arguments
-    ---------
-    input_file: GRACE/GRACE-FO Level-2 spherical harmonic data file
-    """
-    #-- compile numerical expression operator for parameters from files
-    # -- GRAZ: Institute of Geodesy from GRAZ University of Technology
-    regex_pattern = (r'(.*?)-({0})_(.*?)_(\d+)-(\d+)'
-                     r'(\.gz|\.gfc|\.txt)').format(r'Grace_operational|Grace2018')
-    rx = re.compile(regex_pattern, re.VERBOSE)
-    #-- extract parameters from input filename
-    if isinstance(input_file, io.IOBase):
-        return rx.findall(input_file.filename).pop()
-    else:
-        return rx.findall(os.path.basename(input_file)).pop()
