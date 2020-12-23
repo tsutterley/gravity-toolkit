@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (09/2020)
+Written by Tyler Sutterley (12/2020)
 
 Data class for reading, writing and processing spatial data
 
@@ -19,6 +19,7 @@ PROGRAM DEPENDENCIES:
     hdf5_read.py: reads spatial data from HDF5
 
 UPDATE HISTORY:
+    Updated 12/2020: added transpose function, can calculate mean over indices
     Updated 09/2020: added header option to skip rows in ascii files
     Updated 08/2020: added compression options for ascii, netCDF4 and HDF5 files
     Updated 07/2020: added class docstring and using kwargs for output to file
@@ -159,8 +160,9 @@ class spatial(object):
             DATE=date, VARNAME=varname, LONNAME=lonname, LATNAME=latname,
             TIMENAME='time', COMPRESSION=compression)
         self.data = data['data'].copy()
-        self.fill_value = data['attributes']['_FillValue']
-        self.mask = np.zeros_like(self.data, dtype=np.bool)
+        if data['attributes']['_FillValue']:
+            self.fill_value = data['attributes']['_FillValue']
+        self.mask = np.zeros(self.data.shape, dtype=np.bool)
         self.lon = data['lon'].copy()
         self.lat = data['lat'].copy()
         if date:
@@ -191,8 +193,9 @@ class spatial(object):
             DATE=date, VARNAME=varname, LONNAME=lonname, LATNAME=latname,
             TIMENAME='time', COMPRESSION=compression)
         self.data = data['data'].copy()
-        self.fill_value = data['attributes']['_FillValue']
-        self.mask = np.zeros_like(self.data, dtype=np.bool)
+        if data['attributes']['_FillValue']:
+            self.fill_value = data['attributes']['_FillValue']
+        self.mask = np.zeros(self.data.shape, dtype=np.bool)
         self.lon = data['lon'].copy()
         self.lat = data['lat'].copy()
         if date:
@@ -633,10 +636,12 @@ class spatial(object):
         temp.update_mask()
         return temp
 
-    def mean(self, apply=False):
+    def mean(self, apply=False, indices=Ellipsis):
         """
         Compute mean spatial field and remove from data if specified
-        Option: apply to remove the mean field from the input data
+        Option:
+            apply to remove the mean field from the input data
+            indices of spatial object to compute mean
         """
         #-- output spatial object
         temp = spatial(nlon=self.shape[0],nlat=self.shape[1],
@@ -645,11 +650,12 @@ class spatial(object):
         temp.lon = self.lon.copy()
         temp.lat = self.lat.copy()
         #-- create output mean spatial object
-        temp.data = np.mean(self.data,axis=2)
-        temp.mask = np.any(self.mask,axis=2)
+        temp.data = np.mean(self.data[:,:,indices],axis=2)
+        temp.mask = np.any(self.mask[:,:,indices],axis=2)
         #-- calculate the mean time
         try:
-            temp.time = np.mean(getattr(self, 'time'))
+            val = getattr(self, 'time')
+            temp.time = np.mean(val[indices])
         except (AttributeError,TypeError):
             pass
         #-- calculate the spatial anomalies by removing the mean field
@@ -685,6 +691,24 @@ class spatial(object):
         #-- get spacing and dimensions
         #-- update mask
         temp.squeeze()
+        return temp
+
+    def transpose(self, axes=None):
+        """
+        Reverse or permute the axes of a spatial object
+        Option: order of the output axes
+        """
+        #-- output spatial object
+        temp = self.copy()
+        #-- copy dimensions and reverse order
+        temp.data = np.transpose(temp.data, axes=axes)
+        temp.mask = np.transpose(temp.mask, axes=axes)
+        #-- get spacing and dimensions
+        temp.update_spacing()
+        temp.update_extents()
+        temp.update_dimensions()
+        #-- update mask
+        temp.update_mask()
         return temp
 
     def sum(self, power=1):

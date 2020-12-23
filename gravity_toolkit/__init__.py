@@ -24,6 +24,7 @@ from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.gen_disc_load import gen_disc_load
 from gravity_toolkit.gen_harmonics import gen_harmonics
 from gravity_toolkit.gen_point_load import gen_point_load
+from gravity_toolkit.gen_pressure_stokes import gen_pressure_stokes
 from gravity_toolkit.gen_spherical_cap import gen_spherical_cap
 from gravity_toolkit.gen_stokes import gen_stokes
 from gravity_toolkit.geocenter import geocenter

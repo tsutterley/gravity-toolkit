@@ -16,7 +16,7 @@ def test_podaac_download_and_read(username,webdav):
     HOST=['https://podaac-tools.jpl.nasa.gov','drive','files','allData','grace',
         'L2','CSR','RL06','GSM-2_2002095-2002120_GRAC_UTCSR_BA01_0600.gz']
     #-- download and read as virtual file object
-    FILE = gravity_toolkit.utilities.from_podaac(HOST,username=username,
+    FILE = gravity_toolkit.utilities.from_drive(HOST,username=username,
         password=webdav,verbose=True)
     Ylms = read_GRACE_harmonics(FILE, 60)
     keys = ['time', 'start', 'end', 'clm', 'slm', 'eclm', 'eslm', 'header']
@@ -47,10 +47,10 @@ def test_geocenter_download_and_read(PROC, DREL):
     gravity_toolkit.utilities.from_figshare(filepath,verbose=True)
     MODEL = dict(RL04='OMCT', RL05='OMCT', RL06='MPIOM')
     args = (PROC,DREL,MODEL[DREL],'SLF_iter')
-    geocenter_file = '{0}_{1}_{2}_{3}.txt'.format(*args)
+    FILE = '{0}_{1}_{2}_{3}.txt'.format(*args)
     #-- assert that file exists
-    assert os.access(os.path.join(filepath,geocenter_file),os.F_OK)
+    assert os.access(os.path.join(filepath,'geocenter',FILE),os.F_OK)
     #-- test geocenter read program
-    DEG1 = read_GRACE_geocenter(os.path.join(filepath,geocenter_file))
+    DEG1 = read_GRACE_geocenter(os.path.join(filepath,'geocenter',FILE))
     keys = ['time', 'JD', 'month', 'C10', 'C11', 'S11','header']
     assert all((key in DEG1.keys()) for key in keys)

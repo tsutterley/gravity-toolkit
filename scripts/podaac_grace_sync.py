@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_grace_sync.py
-Written by Tyler Sutterley (10/2020)
+Written by Tyler Sutterley (12/2020)
 
 Syncs GRACE/GRACE-FO and auxiliary data from the NASA JPL PO.DAAC Drive Server
 Syncs CSR/GFZ/JPL files for RL04/RL05/RL06 GAA/GAB/GAC/GAD/GSM
@@ -61,6 +61,7 @@ PROGRAM DEPENDENCIES:
     utilities: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 12/2020: generalized podaac_list() by renaming to drive_list()
     Updated 10/2020: use argparse to set command line parameters
     Updated 08/2020: flake8 compatible regular expression strings
         moved urllib opener to utilities. add credential check
@@ -149,7 +150,6 @@ import io
 import time
 import netrc
 import shutil
-import hashlib
 import getpass
 import argparse
 import builtins
@@ -250,7 +250,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
     #-- compile regular expression operator for remote files
     R1 = re.compile(r'TN-13_GEOC_(CSR|GFZ|JPL)_(.*?).txt', re.VERBOSE)
     #-- open connection with PO.DAAC drive server at remote directory
-    files,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
+    files,mtimes = gravity_toolkit.utilities.drive_list(PATH,
         timeout=120,build=False,parser=parser,pattern=R1,sort=True)
     #-- for each file on the remote server
     for colname,remote_mtime in zip(files,mtimes):
@@ -268,7 +268,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
     #-- compile regular expression operator for remote files
     R1 = re.compile(r'TN-(05|07|11)_C20_SLR.txt', re.VERBOSE)
     #-- open connection with PO.DAAC drive server at remote directory
-    files,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
+    files,mtimes = gravity_toolkit.utilities.drive_list(PATH,
         timeout=120,build=False,parser=parser,pattern=R1,sort=True)
     #-- for each file on the remote server
     for colname,remote_mtime in zip(files,mtimes):
@@ -286,7 +286,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
     #-- compile regular expression operator for remote files
     R1 = re.compile(r'TN-(14)_C30_C20_GSFC_SLR.txt', re.VERBOSE)
     #-- open connection with PO.DAAC drive server at remote directory
-    files,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
+    files,mtimes = gravity_toolkit.utilities.drive_list(PATH,
         timeout=120,build=False,parser=parser,pattern=R1,sort=True)
     #-- for each file on the remote server
     for colname,remote_mtime in zip(files,mtimes):
@@ -308,7 +308,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
     #-- compile regular expression operator for remote files
     R1 = re.compile(r'({0}|{1}|{2})'.format(*ECMWF_files), re.VERBOSE)
     #-- open connection with PO.DAAC drive server at remote directory
-    files,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
+    files,mtimes = gravity_toolkit.utilities.drive_list(PATH,
         timeout=120,build=False,parser=parser,pattern=R1,sort=True)
     #-- for each file on the remote server
     for colname,remote_mtime in zip(files,mtimes):
@@ -332,7 +332,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
             #-- compile regular expression operator for remote files
             R1 = re.compile(r'{0}_SDS_NL_(\d+).pdf'.format(NAME), re.VERBOSE)
             #-- open connection with PO.DAAC drive server at remote directory
-            files,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
+            files,mtimes = gravity_toolkit.utilities.drive_list(PATH,
                 timeout=120,build=False,parser=parser,pattern=R1,sort=True)
             #-- for each file on the remote server
             for colname,remote_mtime in zip(files,mtimes):
@@ -360,7 +360,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
             #-- compile regular expression operator for remote files
             R1 = re.compile(r'AOD1B_(20\d+)-(\d+)_\d+\.(tar\.gz|tgz)$', re.VERBOSE)
             #-- open connection with PO.DAAC drive server at remote directory
-            files,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
+            files,mtimes = gravity_toolkit.utilities.drive_list(PATH,
                 timeout=120,build=False,parser=parser,pattern=R1,sort=True)
             #-- for each file on the remote server
             for colname,remote_mtime in zip(files,mtimes):
@@ -388,7 +388,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
             PATH.extend([retired[rl],'L2',pr,drel_str])
             remote_dir = posixpath.join(*PATH)
             #-- open connection with PO.DAAC drive server at remote directory
-            colnames,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
+            colnames,mtimes = gravity_toolkit.utilities.drive_list(PATH,
                 timeout=120,build=False,parser=parser,sort=True)
             #-- DATA PRODUCTS (GAC, GAD, GSM, GAA, GAB)
             for ds in DSET[pr]:
@@ -423,14 +423,14 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False, NEWSLETTERS=False,
             PATH.extend([retired[rl],'L2',pr,rl])
             #-- open connection with PO.DAAC drive server at remote directory
             R2 = re.compile(r'\d{4}',re.VERBOSE)
-            years,mtimes = gravity_toolkit.utilities.podaac_list(PATH,
+            years,mtimes = gravity_toolkit.utilities.drive_list(PATH,
                 timeout=120,build=False,parser=parser,pattern=R2,sort=True)
             for yr in years:
                 #-- add the year directory to the path
                 PATH.append(yr)
                 remote_dir = posixpath.join(*PATH)
                 #-- open connection with PO.DAAC drive server at remote directory
-                colnames,mtimes=gravity_toolkit.utilities.podaac_list(PATH,
+                colnames,mtimes=gravity_toolkit.utilities.drive_list(PATH,
                     timeout=120,build=False,parser=parser,sort=True)
                 #-- DATA PRODUCTS (GAC, GAD, GSM, GAA, GAB)
                 for ds in DSET[pr]:
@@ -492,8 +492,7 @@ def http_pull_file(fid, remote_file, remote_mtime, local_file, LIST, CLOBBER,
     if CHECKSUM and os.access(local_file, os.F_OK):
         #-- generate checksum hash for local file
         #-- open the local_file in binary read mode
-        with open(local_file, 'rb') as local_buffer:
-            local_hash = hashlib.md5(local_buffer.read()).hexdigest()
+        local_hash = gravity_toolkit.utilities.get_hash(local_file)
         #-- Create and submit request.
         #-- There are a wide range of exceptions that can be thrown here
         #-- including HTTPError and URLError.
@@ -503,7 +502,7 @@ def http_pull_file(fid, remote_file, remote_mtime, local_file, LIST, CLOBBER,
         remote_buffer = io.BytesIO(resp.read())
         remote_buffer.seek(0)
         #-- generate checksum hash for remote file
-        remote_hash = hashlib.md5(remote_buffer.getvalue()).hexdigest()
+        remote_hash = gravity_toolkit.utilities.get_hash(remote_buffer)
         #-- compare checksums
         if (local_hash != remote_hash):
             TEST = True

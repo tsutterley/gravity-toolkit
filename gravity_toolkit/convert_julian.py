@@ -3,7 +3,7 @@ u"""
 convert_julian.py
 Written by Tyler Sutterley (07/2020)
 
-Return the calendar date and time given Julian date.
+Returns the calendar date and time given a Julian date
 
 CALLING SEQUENCE:
     YEAR,MONTH,DAY,HOUR,MINUTE,SECOND = convert_julian(JD, FORMAT='tuple')

@@ -322,12 +322,14 @@ General Attributes and Methods
             `mmax` maximum order of spherical harmonics
 
 
-    .. method:: object.mean(apply=False)
+    .. method:: object.mean(apply=False, indices=Ellipsis)
 
         Compute mean gravitational field from the harmonics object
 
-        Option: `apply` to remove the mean field from the input harmonics
+        Option:
+            `apply` to remove the mean field from the input harmonics
 
+            `indices` of input harmonics object to compute mean
 
     .. method:: object.scale(var)
 

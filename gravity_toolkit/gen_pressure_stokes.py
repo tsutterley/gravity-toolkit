@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 u"""
-gen_stokes.py
+gen_pressure_stokes.py
 Written by Tyler Sutterley (07/2020)
-
-Converts data from the spatial domain to spherical harmonic coefficients
+Calculates spherical harmonic fields from spatial pressure fields
 
 CALLING SEQUENCE:
-    Ylms = gen_stokes(data, lon, lat, UNITS=1, LMIN=0, LMAX=60, LOVE=(hl,kl,ll))
+    Ylms = gen_pressure_stokes(PG, R, lon, lat, LMAX=60,
+        PLM=PLM, LOVE=(hl,kl,ll))
 
 INPUTS:
-    data: data matrix
+    PG: pressure/gravity ratio
+    R: radius
     lon: longitude array
     lat: latitude array
 
@@ -20,13 +21,8 @@ OUTPUTS:
     m: spherical harmonic order to MMAX
 
 OPTIONS:
-    LMIN: Lower bound of Spherical Harmonic Degrees (default = 0)
     LMAX: Upper bound of Spherical Harmonic Degrees (default = 60)
     MMAX: Upper bound of Spherical Harmonic Orders (default = LMAX)
-    UNITS: input data units
-        1: cm of water thickness (default)
-        2: Gtons of mass
-        3: kg/m^2
     PLM: input Legendre polynomials (for improving computational time)
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
@@ -34,53 +30,55 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 PROGRAM DEPENDENCIES:
-    plm_holmes.py: computes fully-normalized associated Legendre polynomials
+    plm_holmes.py: Computes fully normalized associated Legendre polynomials
     units.py: class for converting spherical harmonic data to specific units
+
+REFERENCE:
+    JP Boy and B Chao, Precise evaluation of atmospheric loading effects on
+    Earth's time-variable gravity field, Journal of Geophysical Research:
+    Solid Earth, 110(B8), 2005. https://doi.org/10.1029/2002JB002333
+
+    S Swenson and J Wahr, Estimated effects of the vertical structure of
+    atmospheric mass on the time-variable geoid, Journal of Geophysical
+    Research: Solid Earth, 107(B9), 2002. https://doi.org/10.1029/2000JB000024
+
+    S. A. Holmes and W. E. Featherstone, "A unified approach to the Clenshaw
+    summation and the recursive computation of very high degree and order
+    normalised associated Legendre functions" Journal of Geodesy,
+    76: 279-299, 2002. https://doi.org/10.1007/s00190-002-0216-2
 
 UPDATE HISTORY:
     Updated 07/2020: added function docstrings
-    Updated 04/2020: reading load love numbers outside of this function
+    Updated 04/2020: made Legendre polynomials and Love numbers options
         using the units class for converting to normalized spherical harmonics
-        include degrees and orders in output dictionary for harmonics class
-    Updated 10/2019: changing Y/N flags to True/False
-    Updated 08/2018: use copies of longitude and latitude to not modify inputs
+    Updated 10/2018: separated into a single function for use with the
+        ocean bottom pressure/atmospheric reanalysis/geocenter programs
     Updated 03/2018: simplified love number extrapolation if LMAX > 696
-    Updated 08/2015: changed sys.exit to raise ValueError
-    Updated 05/2015: added parameter MMAX for LMAX != MMAX
-    Updated 06/2014: changed message to sys.exit
-    Updated 02/2014: minor update to if statements
-    Updated 05/2013: added option to precompute plms
-    Updated 05/2013: added linear interpolation of love numbers for LMAX > 696
-    Updated 05/2013: transpose data to (LON,LAT) if originally (LAT,LON)
-    Updated 04/2012: added lmin/lmax options
-    Updated 02/2012: added DLON and DLAT options for different degree spacing
-        revised structure of mathematics to improve computational efficiency
-    Written 09/2011
+    Written 03/2018
 """
+
 import numpy as np
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.units import units
 
-def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
+#-- PURPOSE: calculates spherical harmonic fields from pressure fields
+def gen_pressure_stokes(PG, R, lon, lat, LMAX=60, MMAX=None,
     PLM=None, LOVE=None):
     """
-    Converts data from the spatial domain to spherical harmonic coefficients
+    Converts pressure fields from the spatial domain to spherical
+    harmonic coefficients
 
     Arguments
     ---------
-    data: data matrix
+    PG: pressure/gravity ratio
+    R: radius
     lon: longitude array
     lat: latitude array
 
     Keyword arguments
     -----------------
-    LMIN: Lower bound of Spherical Harmonic Degrees
     LMAX: Upper bound of Spherical Harmonic Degrees
     MMAX: Upper bound of Spherical Harmonic Orders
-    UNITS: input data units
-        1: cm of water thickness
-        2: Gtons of mass
-        3: kg/m^2
     PLM: input Legendre polynomials
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
@@ -92,11 +90,10 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     m: spherical harmonic order to MMAX
     """
 
-    #-- converting LMIN and LMAX to integer
-    LMIN = np.int(LMIN)
+    #-- converting LMAX to integer
     LMAX = np.int(LMAX)
     #-- upper bound of spherical harmonic orders (default = LMAX)
-    MMAX = np.copy(LMAX) if (MMAX is None) else MMAX
+    MMAX = np.copy(LMAX) if not MMAX else MMAX
 
     #-- grid dimensions
     nlat = np.int(len(lat))
@@ -118,36 +115,20 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     #-- Colatitude in radians
     th = (90.0 - np.squeeze(lat.copy()))*np.pi/180.0
 
+    #-- For gridded data: dmat = original data matrix
+    sz = np.shape(PG)
     #-- reforming data to lonXlat if input latXlon
-    sz = np.shape(data)
-    data = data.T if (sz[0] == nlat) else np.copy(data)
+    PG = np.transpose(PG) if (sz[0] == nlat) else PG
+    R = np.transpose(R) if (sz[0] == nlat) else R
 
-    #-- SH Degree dependent factors to convert into geodesy normalized SH's
-    #-- use splat operator to extract arrays of kl, hl, and ll Love Numbers
+    #-- Coefficient for calculating Stokes coefficients from pressure field
+    #-- extract arrays of kl, hl, and ll Love Numbers
     factors = units(lmax=LMAX).spatial(*LOVE)
-
-    #-- extract degree dependent factor for specific units
-    #-- calculate integration factors for theta and phi
-    #-- Multiplying sin(th) with differentials of theta and phi
-    #-- to calculate the integration factor at each latitude
-    int_fact = np.zeros((nlat))
-    if (UNITS == 1):
-        #-- Default Parameter: Input in cm w.e. (g/cm^2)
-        dfactor = factors.cmwe
-        int_fact[:] = np.sin(th)*dphi*dth
-    elif (UNITS == 2):
-        #-- Input in gigatonnes (Gt)
-        dfactor = factors.cmwe
-        #-- rad_e: Average Radius of the Earth [cm]
-        int_fact[:] = 1e15/(factors.rad_e**2)
-    elif (UNITS == 3):
-        #-- Input in kg/m^2 (mm w.e.)
-        dfactor = factors.mmwe
-        int_fact[:] = np.sin(th)*dphi*dth
-    else:
-        #-- default is cm w.e. (g/cm^2)
-        dfactor = factors.cmwe
-        int_fact[:] = np.sin(th)*dphi*dth
+    #-- Earth Parameters
+    #-- Average Radius of the Earth [m]
+    rad_e = factors.rad_e/100.0
+    #-- SH Degree dependent factors with indirect loading components
+    dfactor = factors.mmwe
 
     #-- Calculating cos/sin of phi arrays
     #-- output [m,phi]
@@ -165,8 +146,9 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
 
     #-- Multiplying by integration factors [sin(theta)*dtheta*dphi]
     #-- truncate legendre polynomials to spherical harmonic order MMAX
+    m = np.arange(MMAX+1)
     for j in range(0,nlat):
-        plm[:,m,j] = PLM[:,m,j]*int_fact[j]
+        plm[:,m,j] = PLM[:,m,j]*np.sin(th[j])*dphi*dth
 
     #-- Initializing preliminary spherical harmonic matrices
     yclm = np.zeros((LMAX+1,MMAX+1))
@@ -174,20 +156,23 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     #-- Initializing output spherical harmonic matrices
     clm = np.zeros((LMAX+1,MMAX+1))
     slm = np.zeros((LMAX+1,MMAX+1))
-    #-- Multiplying gridded data with sin/cos of m#phis
-    #-- This will sum through all phis in the dot product
-    #-- output [m,theta]
-    dcos = np.dot(ccos,data)
-    dsin = np.dot(ssin,data)
-    for l in range(LMIN,LMAX+1):#-- equivalent to LMIN:LMAX
+    for l in range(0,LMAX+1):#-- equivalent to 0:LMAX
         mm = np.min([MMAX,l])#-- truncate to MMAX if specified (if l > MMAX)
         m = np.arange(0,mm+1)#-- mm+1 elements between 0 and mm
+        #-- Multiplying gridded data with sin/cos of m#phis
+        #-- This will sum through all phis in the dot product
+        #-- output [m,theta]
+        pfactor = PG*(R/rad_e)**(l+2)
+        dcos = np.dot(ccos,pfactor)
+        dsin = np.dot(ssin,pfactor)
         #-- Summing product of plms and data over all latitudes
-        #-- axis=1 signifies the direction of the summation
+        #-- axis=1 signifies the direction of the summation (colatitude (th))
+        #-- ycos and ysin are the SH coefficients before normalizing
         yclm[l,m] = np.sum(plm[l,m,:]*dcos[m,:], axis=1)
         yslm[l,m] = np.sum(plm[l,m,:]*dsin[m,:], axis=1)
-        #-- Multiplying by factors to convert to geodesy normalized coefficients
+        #-- Multiplying by factors to normalize
         clm[l,m] = dfactor[l]*yclm[l,m]
         slm[l,m] = dfactor[l]*yslm[l,m]
 
+    #-- return the harmonics
     return {'clm':clm, 'slm':slm, 'l':np.arange(LMAX+1), 'm':np.arange(MMAX+1)}

@@ -31,7 +31,7 @@ PYTHON DEPENDENCIES:
         (https://python-future.org/)
 
 PROGRAM DEPENDENCIES:
-    convert_julian.py: converts a Julian date into a calendar date
+    convert_julian.py: returns the calendar date and time given a Julian date
 
 UPDATE HISTORY:
     Updated 10/2020: use argparse to set command line parameters

@@ -137,7 +137,7 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     #-- for each variable
     for key,nckey in NAMES.items():
         #-- Getting the data from each NetCDF variable
-        dinput[key] = fileID.variables[nckey][:]
+        dinput[key] = fileID.variables[nckey][:].data
 
     #-- switching data array to lat/lon if lon/lat
     sz = dinput['data'].shape

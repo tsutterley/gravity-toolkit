@@ -29,11 +29,11 @@ General Methods
 
 .. method:: gravity_toolkit.utilities.get_hash(local)
 
-    Get the MD5 hash value from a local file
+    Get the MD5 hash value from a local file or BytesIO object
 
     Arguments:
 
-        `local`: path to file
+        `local`: BytesIO object or path to file
 
 
 .. method:: gravity_toolkit.utilities.url_split(s)
@@ -186,14 +186,18 @@ General Methods
         `urs`: Earthdata login URS 3 host
 
 
-.. method:: gravity_toolkit.utilities.check_credentials()
+.. method:: gravity_toolkit.utilities.check_credentials(HOST='https://podaac-tools.jpl.nasa.gov')
 
     Check that entered `JPL PO.DAAC Drive`__ credentials are valid
+
+    Keyword arguments:
+
+        `HOST`: PO.DAAC or ECCO Drive host
 
     .. __: https://podaac-tools.jpl.nasa.gov/drive
 
 
-.. method:: gravity_toolkit.utilities.podaac_list(HOST,username=None,password=None,build=True,timeout=None,parser=None,pattern='',sort=False)
+.. method:: gravity_toolkit.utilities.drive_list(HOST,username=None,password=None,build=True,timeout=None,parser=None,pattern='',sort=False)
 
     Download a file from the `JPL PO.DAAC Drive`__ https server
 
@@ -227,7 +231,7 @@ General Methods
 
 
 
-.. method:: gravity_toolkit.utilities.from_podaac(HOST,username=None,password=None,build=True,timeout=None,local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
+.. method:: gravity_toolkit.utilities.from_drive(HOST,username=None,password=None,build=True,timeout=None,local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
 
     Download a file from `JPL PO.DAAC Drive`__ https server
 
