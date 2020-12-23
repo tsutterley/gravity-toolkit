@@ -22,6 +22,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 12/2020: added verbose option for gfc files
+        can calculate spherical harmonic mean over a range of time indices
     Updated 08/2020: added compression options for ascii, netCDF4 and HDF5 files
     Updated 07/2020: added class docstring and using kwargs for output to file
         added case_insensitive_filename function to search directories
@@ -711,10 +712,12 @@ class harmonics(object):
         #-- return the truncated or expanded harmonics object
         return self
 
-    def mean(self, apply=False):
+    def mean(self, apply=False, indices=Ellipsis):
         """
         Compute mean gravitational field and remove from data if specified
-        Options: apply to remove the mean field from the input harmonics
+        Options:
+            apply to remove the mean field from the input harmonics
+            indices of input harmonics object to compute mean
         """
         temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
         #-- allocate for mean field
@@ -724,8 +727,8 @@ class harmonics(object):
         for m in range(0,temp.mmax+1):#-- MMAX+1 to include l
             for l in range(m,temp.lmax+1):#-- LMAX+1 to include LMAX
                 #-- calculate mean static field
-                temp.clm[l,m] = np.mean(self.clm[l,m,:])
-                temp.slm[l,m] = np.mean(self.slm[l,m,:])
+                temp.clm[l,m] = np.mean(self.clm[l,m,indices])
+                temp.slm[l,m] = np.mean(self.slm[l,m,indices])
                 #-- calculating the time-variable gravity field by removing
                 #-- the static component of the gravitational field
                 if apply:

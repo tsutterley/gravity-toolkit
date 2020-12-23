@@ -8,3 +8,4 @@ cartopy
 netCDF4
 h5py
 read_GRACE_geocenter @ https://github.com/tsutterley/read-GRACE-geocenter/tarball/main
+geoid_toolkit @ https://github.com/tsutterley/geoid-toolkit/tarball/main

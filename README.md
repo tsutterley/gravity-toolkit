@@ -29,6 +29,7 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
 - [netCDF4: Python interface to the netCDF C library](https://unidata.github.io/netcdf4-python/)
 - [h5py: Python interface for Hierarchal Data Format 5 (HDF5)](https://www.h5py.org/)
 - [read-GRACE-geocenter: Python reader for GRACE/GRACE-FO geocenter data](https://github.com/tsutterley/read-GRACE-geocenter/)
+- [geoid-toolkit: Python utilities for calculating geoid heights from static gravity field coefficients](https://github.com/tsutterley/geoid-toolkit/)
 
 #### References
 T. C. Sutterley, I. Velicogna, and C.-W. Hsu, "Self‐Consistent Ice Mass Balance

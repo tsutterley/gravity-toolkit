@@ -14,8 +14,7 @@ python cnes_grace_sync.py --directory=<path_to_grace_directory> --release RL05
 - Get geocenter results from [Sutterley and Velicogna (2019)](https://doi.org/10.3390/rs11182108) if wanting to use that dataset
 ```python
 >>> import gravity_toolkit.utilities
->>> geocenter_directory = os.path.join(grace_dir,'geocenter')
->>> gravity_toolkit.utilities.from_figshare(geocenter_directory,verbose=True)
+>>> gravity_toolkit.utilities.from_figshare(path_to_grace_directory,verbose=True)
 ```
 - If correcting for Glacial Isostatic Adjustment: have full path to data file known  
     * These can be ascii files direct from many modeling groups or a reformatted ascii/netCDF4/HDF5 file  

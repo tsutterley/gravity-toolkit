@@ -62,7 +62,7 @@ PROGRAM DEPENDENCIES:
     grace_date.py: reads GRACE index file and calculates dates for each month
     read_SLR_C20.py: reads C20 files from satellite laser ranging (CSR or GSFC)
     read_SLR_C30.py: reads C30 files from satellite laser ranging (CSR or GSFC)
-    convert_julian.py: Return the calendar date and time given Julian date
+    convert_julian.py: returns the calendar date and time given a Julian date
     read_tellus_geocenter.py: reads PO.DAAC degree 1 files
     read_SLR_geocenter.py: reads degree 1 files from Satellite Laser Ranging
     read_GRACE_geocenter.py: reads degree 1 files from Sutterley et al. (2019)

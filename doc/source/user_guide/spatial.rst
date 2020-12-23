@@ -340,12 +340,14 @@ General Attributes and Methods
         Inputs: scalar value to which the spatial object will be multiplied
 
 
-    .. method:: object.mean(apply=False)
+    .. method:: object.mean(apply=False, indices=Ellipsis)
 
         Compute mean spatial field and remove from data if specified
 
-        Option: `apply` to remove the mean field from the input spatial
+        Option:
+            `apply` to remove the mean field from the input spatial
 
+            `indices` of spatial object to compute mean
 
     .. method:: object.reverse(axis=0)
 
@@ -353,6 +355,11 @@ General Attributes and Methods
 
         Option: axis to reorder
 
+    .. method:: object.transpose(axes=None)
+
+        Reverse or permute the axes of a spatial object
+
+        Option: order of the output axes
 
     .. method:: object.sum(power=1)
 

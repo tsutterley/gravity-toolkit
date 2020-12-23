@@ -40,6 +40,7 @@ missions
     user_guide/gen_disc_load.md
     user_guide/gen_harmonics.md
     user_guide/gen_point_load.md
+    user_guide/gen_pressure_stokes.md
     user_guide/gen_spherical_cap.md
     user_guide/gen_stokes.md
     user_guide/geocenter.md

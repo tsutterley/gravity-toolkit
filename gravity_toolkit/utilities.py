@@ -8,6 +8,7 @@ UPDATE HISTORY:
         added figshare geocenter download for Sutterley and Velicogna files
         added download for satellite laser ranging (SLR) files from UTCSR
         added file object keyword for downloads if verbose printing to file
+        renamed podaac_list() and from_podaac() to drive_list() and from_drive()
     Updated 09/2020: copy from http and https to bytesIO object in chunks
         use netrc credentials if not entered from PO.DAAC functions
         generalize build opener function for different Earthdata instances
@@ -61,14 +62,16 @@ def get_data_path(relpath):
 #-- PURPOSE: get the MD5 hash value of a file
 def get_hash(local):
     """
-    Get the MD5 hash value from a local file
+    Get the MD5 hash value from a local file or BytesIO object
 
     Arguments
     ---------
-    local: path to file
+    local: BytesIO object or path to file
     """
-    #-- check if local file exists
-    if os.access(os.path.expanduser(local),os.F_OK):
+    #-- check if open file object or if local file exists
+    if isinstance(local, io.IOBase):
+        return hashlib.md5(local.getvalue()).hexdigest()
+    elif os.access(os.path.expanduser(local),os.F_OK):
         #-- generate checksum hash for local file
         #-- open the local_file in binary read mode
         with open(os.path.expanduser(local), 'rb') as local_buffer:
@@ -393,14 +396,17 @@ def build_opener(username, password, context=ssl.SSLContext(),
     #-- Make sure not to include the protocol in with the URL, or
     #-- HTTPPasswordMgrWithDefaultRealm will be confused.
 
-#-- PURPOSE: check that entered JPL PO.DAAC Drive credentials are valid
-def check_credentials():
+#-- PURPOSE: check that entered JPL PO.DAAC/ECCO Drive credentials are valid
+def check_credentials(HOST='https://podaac-tools.jpl.nasa.gov'):
     """
-    Check that entered JPL PO.DAAC Drive credentials are valid
+    Check that entered JPL PO.DAAC or ECCO Drive credentials are valid
+
+    Keyword arguments
+    -----------------
+    HOST: PO.DAAC or ECCO Drive host
     """
     try:
-        url=posixpath.join('https://podaac-tools.jpl.nasa.gov','drive','files')
-        request = urllib2.Request(url=url)
+        request = urllib2.Request(url=posixpath.join(HOST,'drive','files'))
         response = urllib2.urlopen(request, timeout=20)
     except urllib2.HTTPError:
         raise RuntimeError('Check your JPL PO.DAAC Drive credentials')
@@ -409,11 +415,12 @@ def check_credentials():
     else:
         return True
 
-#-- PURPOSE: list a directory on PO.DAAC Drive https server
-def podaac_list(HOST,username=None,password=None,build=True,timeout=None,
-    parser=lxml.etree.HTMLParser(),pattern='',sort=False):
+#-- PURPOSE: list a directory on JPL PO.DAAC/ECCO Drive https server
+def drive_list(HOST,username=None,password=None,build=True,timeout=None,
+    urs='podaac-tools.jpl.nasa.gov',parser=lxml.etree.HTMLParser(),
+    pattern='',sort=False):
     """
-    List a directory on PO.DAAC Drive
+    List a directory on JPL PO.DAAC or ECCO Drive
 
     Arguments
     ---------
@@ -425,6 +432,7 @@ def podaac_list(HOST,username=None,password=None,build=True,timeout=None,
     password: JPL PO.DAAC Drive WebDAV password
     build: Build opener and check WebDAV credentials
     timeout: timeout in seconds for blocking operations
+    urs: JPL PO.DAAC or ECCO login URS 3 host
     parser: HTML parser for lxml
     pattern: regular expression pattern for reducing list
     sort: sort output list
@@ -436,7 +444,6 @@ def podaac_list(HOST,username=None,password=None,build=True,timeout=None,
     """
     #-- use netrc credentials
     if build and not (username or password):
-        urs = 'podaac-tools.jpl.nasa.gov'
         username,login,password = netrc.netrc().authenticators(urs)
     #-- build urllib2 opener and check credentials
     if build:
@@ -471,11 +478,12 @@ def podaac_list(HOST,username=None,password=None,build=True,timeout=None,
         #-- return the list of column names and last modified times
         return (colnames,collastmod)
 
-#-- PURPOSE: download a file from a PO.DAAC Drive https server
-def from_podaac(HOST,username=None,password=None,build=True,timeout=None,
-    local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775):
+#-- PURPOSE: download a file from a PO.DAAC/Ecco Drive https server
+def from_drive(HOST,username=None,password=None,build=True,timeout=None,
+    urs='podaac-tools.jpl.nasa.gov',local=None,hash='',chunk=16384,
+    verbose=False,fid=sys.stdout,mode=0o775):
     """
-    Download a file from a PO.DAAC Drive https server
+    Download a file from a JPL PO.DAAC or ECCO Drive https server
 
     Arguments
     ---------
@@ -487,6 +495,7 @@ def from_podaac(HOST,username=None,password=None,build=True,timeout=None,
     password: JPL PO.DAAC Drive WebDAV password
     build: Build opener and check WebDAV credentials
     timeout: timeout in seconds for blocking operations
+    urs: JPL PO.DAAC or ECCO login URS 3 host
     local: path to local file
     hash: MD5 hash of local file
     chunk: chunk size for transfer encoding
@@ -500,7 +509,6 @@ def from_podaac(HOST,username=None,password=None,build=True,timeout=None,
     """
     #-- use netrc credentials
     if build and not (username or password):
-        urs = 'podaac-tools.jpl.nasa.gov'
         username,login,password = netrc.netrc().authenticators(urs)
     #-- build urllib2 opener and check credentials
     if build:
@@ -568,10 +576,10 @@ def from_figshare(directory,article='7388540',timeout=None,
     """
     #-- figshare host
     HOST=['https://api.figshare.com','v2','articles',article]
-    #-- create directory if non-existent
+    #-- recursively create directory if non-existent
     directory = os.path.abspath(os.path.expanduser(directory))
-    if not os.access(directory, os.F_OK):
-        os.makedirs(directory, mode)
+    if not os.access(os.path.join(directory,'geocenter'), os.F_OK):
+        os.makedirs(os.path.join(directory,'geocenter'), mode)
     #-- Create and submit request.
     request = urllib2.Request(posixpath.join(*HOST))
     response = urllib2.urlopen(request,timeout=timeout,context=context)
@@ -580,12 +588,12 @@ def from_figshare(directory,article='7388540',timeout=None,
     geocenter_files = [f for f in resp['files'] if re.match(pattern,f['name'])]
     for f in geocenter_files:
         #-- download geocenter file
-        original_md5 = get_hash(os.path.join(directory,f['name']))
+        original_md5 = get_hash(os.path.join(directory,'geocenter',f['name']))
         from_http(url_split(f['download_url']),timeout=timeout,context=context,
-            local=os.path.join(directory,f['name']),hash=original_md5,
-            chunk=chunk,verbose=verbose,fid=fid,mode=mode)
+            local=os.path.join(directory,'geocenter',f['name']),
+            hash=original_md5,chunk=chunk,verbose=verbose,fid=fid,mode=mode)
         #-- verify MD5 checksums
-        computed_md5 = get_hash(os.path.join(directory,f['name']))
+        computed_md5 = get_hash(os.path.join(directory,'geocenter',f['name']))
         if (computed_md5 != f['supplied_md5']):
             raise Exception('Checksum mismatch: {0}'.format(f['download_url']))
 
