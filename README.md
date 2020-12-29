@@ -21,6 +21,7 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
 #### Dependencies
 - [numpy: Scientific Computing Tools For Python](https://www.numpy.org)
 - [scipy: Scientific Tools for Python](https://docs.scipy.org/doc/)
+- [dateutil: powerful extensions to datetime](https://dateutil.readthedocs.io/en/stable/)
 - [PyYAML: YAML parser and emitter for Python](https://github.com/yaml/pyyaml)
 - [lxml: processing XML and HTML in Python](https://pypi.python.org/pypi/lxml)
 - [future: Compatibility layer between Python 2 and Python 3](https://python-future.org/)

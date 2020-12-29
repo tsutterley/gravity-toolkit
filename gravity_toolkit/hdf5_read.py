@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_read.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (12/2020)
 
 Reads spatial data from HDF5 files
 
@@ -25,8 +25,6 @@ OPTIONS:
     LONNAME: longitude variable name in HDF5 file
     LATNAME: latitude variable name in HDF5 file
     TIMENAME: time variable name in HDF5 file
-    ATTRIBUTES: HDF5 variables contain attribute parameters
-    TITLE: HDF5 file contains description attribute parameter
     COMPRESSION: HDF5 file is compressed using gzip or zip
 
 PYTHON DEPENDENCIES:
@@ -35,6 +33,8 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 12/2020: try/except for getting variable unit attributes
+        add fallback for finding HDF5 file within from zip files
     Updated 08/2020: add options to read from gzip or zip compressed files
     Updated 07/2020: added function docstrings
     Updated 06/2020: output data as lat/lon following spatial module
@@ -61,16 +61,15 @@ UPDATE HISTORY:
 from __future__ import print_function
 
 import os
-import re
 import io
+import re
 import gzip
 import h5py
 import zipfile
 import numpy as np
 
 def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
-    LATNAME='lat', TIMENAME='time', ATTRIBUTES=True, TITLE=True,
-    COMPRESSION=None):
+    LATNAME='lat', TIMENAME='time', COMPRESSION=None):
     """
     Reads spatial data from HDF5 files
 
@@ -86,8 +85,6 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     LONNAME: longitude variable name in HDF5 file
     LATNAME: latitude variable name in HDF5 file
     TIMENAME: time variable name in HDF5 file
-    ATTRIBUTES: HDF5 variables contain attribute parameters
-    TITLE: HDF5 file contains a description attribute
     COMPRESSION: HDF5 file is compressed using gzip or zip
 
     Returns
@@ -112,10 +109,16 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
         fileID = h5py.File(fid, 'r')
     elif (COMPRESSION == 'zip'):
         #-- read zipped file and extract file into in-memory file object
-        fileBasename,fileExtension = os.path.splitext(filename)
+        fileBasename,_ = os.path.splitext(os.path.basename(filename))
         with zipfile.ZipFile(os.path.expanduser(filename)) as z:
+            #-- first try finding a HDF5 file with same base filename
+            #-- if none found simply try searching for a HDF5 file
+            try:
+                zname,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
+            except:
+                zname,=[f for f in z.namelist() if re.search('\.H(DF)?5$',f,re.I)]
             #-- read bytes from zipfile into in-memory BytesIO object
-            fid = io.BytesIO(z.read(fileBasename))
+            fid = io.BytesIO(z.read(zname))
         #-- set filename of BytesIO object
         fid.filename = os.path.basename(filename)
         #-- rewind to start of file
@@ -134,39 +137,38 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
         print(fileID.filename)
         print(list(fileID.keys()))
 
-    #-- Getting the data from each HDF5 variable
-    #-- using mapping between output keys and HDF5 variable names
-    dinput['lon'] = fileID[LONNAME][:]
-    dinput['lat'] = fileID[LATNAME][:]
-    dinput['data'] = fileID[VARNAME][:]
+    #-- mapping between output keys and HDF5 variable names
+    keys = ['lon','lat','data']
+    h5keys = [LONNAME,LATNAME,VARNAME]
     if DATE:
-        dinput['time'] = fileID[TIMENAME][:]
+        keys.append('time')
+        h5keys.append(TIMENAME)
+
+    #-- list of variable attributes
+    attributes_list = ['description','units','long_name','calendar',
+        'standard_name','_FillValue']
+    #-- for each variable
+    for key,h5key in zip(keys,h5keys):
+        #-- Getting the data from each HDF5 variable
+        dinput[key] = fileID[h5key][:].copy()
+        #-- Getting attributes of included variables
+        dinput['attributes'][key] = {}
+        for attr in attributes_list:
+            try:
+                dinput['attributes'][key][attr] = fileID[h5key].attrs[attr]
+            except (KeyError, AttributeError):
+                pass
 
     #-- switching data array to lat/lon if lon/lat
     sz = dinput['data'].shape
     if (dinput['data'].ndim == 2) and (len(dinput['lon']) == sz[0]):
         dinput['data'] = dinput['data'].T
 
-    #-- Getting attributes of included variables
-    if ATTRIBUTES:
-        dinput['attributes']['lon'] = [fileID[LONNAME].attrs['units'],
-            fileID[LONNAME].attrs['long_name']]
-        dinput['attributes']['lat'] = [fileID[LATNAME].attrs['units'],
-            fileID[LATNAME].attrs['long_name']]
-        dinput['attributes']['data'] = [fileID[VARNAME].attrs['units'],
-            fileID[VARNAME].attrs['long_name']]
-        #-- time attributes
-        if DATE:
-            dinput['attributes']['time'] = [fileID['time'].attrs['units'],
-                fileID['time'].attrs['long_name']]
-    #-- missing data fill value
-    try:
-        dinput['attributes']['_FillValue'] = fileID[VARNAME].attrs['_FillValue']
-    except AttributeError:
-        dinput['attributes']['_FillValue'] = None
     #-- Global attribute description
-    if TITLE:
+    try:
         dinput['attributes']['title'] = fileID.attrs['description']
+    except (KeyError, AttributeError):
+        pass
 
     #-- Closing the HDF5 file
     fileID.close()

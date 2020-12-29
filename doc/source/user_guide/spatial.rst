@@ -140,7 +140,7 @@ General Attributes and Methods
             `header` rows of header lines to skip
 
 
-    .. method:: object.from_netCDF4(filename, date=True, compression=None, verbose=False, varname='z', lonname='lon', latname='lat')
+    .. method:: object.from_netCDF4(filename, date=True, compression=None, verbose=False, varname='z', lonname='lon', latname='lat', timename='time')
 
         Read a spatial object from a netCDF4 file
 
@@ -157,10 +157,12 @@ General Attributes and Methods
 
             `lonname` input longitude variable name in netCDF4 file
 
-            `latname` input latitude variable units in netCDF4 file
+            `latname` input latitude variable name in netCDF4 file
+
+            `timename` input time variable name in netCDF4 file
 
 
-    .. method:: object.from_HDF5(filename, date=True, compression=None, verbose=False, varname='z', lonname='lon', latname='lat')
+    .. method:: object.from_HDF5(filename, date=True, compression=None, verbose=False, varname='z', lonname='lon', latname='lat', timename='time')
 
         Read a spatial object from a HDF5 file
 
@@ -177,7 +179,9 @@ General Attributes and Methods
 
             `lonname` input longitude variable name in HDF5 file
 
-            `latname` input latitude variable units in HDF5 file
+            `latname` input latitude variable name in HDF5 file
+
+            `timename` input time variable name in HDF5 file
 
 
     .. method:: object.from_index(filename, format=None, date=True, sort=True)

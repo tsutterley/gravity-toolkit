@@ -15,7 +15,6 @@ file_inp = hdf5_read_stokes(filename, DATE=True, VERBOSE=False)
 
 #### Options
  - `DATE`: HDF5 file has date information
- - `ATTRIBUTES`: HDF5 variables contain attribute parameters
  - `VERBOSE`: will print to screen the HDF5 structure parameters
 
 #### Outputs

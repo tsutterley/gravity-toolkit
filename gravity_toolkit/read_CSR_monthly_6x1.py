@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_CSR_monthly_6x1.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (12/2020)
 
 Reads in monthly 5x5 spherical harmonic coefficients with 1
     coefficient from degree 6 all calculated from SLR measurements
@@ -28,12 +28,17 @@ REFERENCE:
     2011, DOI:10.1029/2010JB000850.
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (https://numpy.org)
+    numpy: Scientific Computing Tools For Python
+        https://numpy.org
+        https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
 
 PROGRAM DEPENDENCIES:
-    convert_calendar_decimal.py: converts from calendar dates to decimal years
+    time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 12/2020: using utilities from time module
     Updated 07/2020: added function docstrings
     Updated 07/2019: following new format with mean field in header and no C6,0
     Updated 10/2018: using future division for python3 Compatibility
@@ -45,7 +50,7 @@ from __future__ import print_function, division
 import os
 import re
 import numpy as np
-from gravity_toolkit.convert_calendar_decimal import convert_calendar_decimal
+import gravity_toolkit.time
 
 #-- PURPOSE: read low degree harmonic data from Satellite Laser Ranging (SLR)
 def read_CSR_monthly_6x1(input_file, HEADER=True):
@@ -140,7 +145,7 @@ def read_CSR_monthly_6x1(input_file, HEADER=True):
         Ylms['MJD'][d] = np.mean(np.array(line_contents[5:7],dtype=np.float))
         #-- date of the mid-point of the arc given in years
         YY,MM = np.array(line_contents[3:5])
-        Ylms['time'][d] = convert_calendar_decimal(YY,MM)
+        Ylms['time'][d] = gravity_toolkit.time.convert_calendar_decimal(YY,MM)
         #-- add 1 to counter
         count += 1
 

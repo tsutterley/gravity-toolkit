@@ -32,11 +32,15 @@ COMMAND LINE OPTIONS:
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
         https://numpy.org
+        https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
     future: Compatibility layer between Python 2 and Python 3
         https://python-future.org/
 
 PROGRAM DEPENDENCIES:
-    grace_date.py: computes the dates of the GRACE datasets
+    grace_date.py: computes the dates of the GRACE/GRACE-FO datasets
+    time.py: utilities for calculating time operations
     grace_months_index.py: creates a single file showing the GRACE dates
 
 UPDATE HISTORY:

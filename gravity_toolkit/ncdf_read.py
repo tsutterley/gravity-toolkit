@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_read.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (12/2020)
 
 Reads spatial data from COARDS-compliant netCDF4 files
 
@@ -25,8 +25,6 @@ OPTIONS:
     LONNAME: longitude variable name in netCDF4 file
     LATNAME: latitude variable name in netCDF4 file
     TIMENAME: time variable name in netCDF4 file
-    ATTRIBUTES: netCDF4 variables contain attribute parameters
-    TITLE: netCDF4 file contains title attribute parameter
     COMPRESSION: netCDF4 file is compressed using gzip or zip
 
 PYTHON DEPENDENCIES:
@@ -35,6 +33,8 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 12/2020: try/except for getting variable unit attributes
+        add fallback for finding netCDF4 file within from zip files
     Updated 08/2020: flake8 compatible regular expression strings
         add options to read from gzip or zip compressed files
     Updated 07/2020: added function docstrings
@@ -67,14 +67,14 @@ from __future__ import print_function
 
 import os
 import re
+import uuid
 import gzip
 import netCDF4
 import zipfile
 import numpy as np
 
 def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
-    LATNAME='lat', TIMENAME='time', ATTRIBUTES=True, TITLE=True,
-    COMPRESSION=None):
+    LATNAME='lat', TIMENAME='time', COMPRESSION=None):
     """
     Reads spatial data from COARDS-compliant netCDF4 files
 
@@ -90,8 +90,6 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     LONNAME: longitude variable name in netCDF4 file
     LATNAME: latitude variable name in netCDF4 file
     TIMENAME: time variable name in netCDF4 file
-    ATTRIBUTES: netCDF4 variables contain attribute parameters
-    TITLE: netCDF4 file contains a description attribute
     COMPRESSION: netCDF4 file is compressed using gzip or zip
 
     Returns
@@ -110,11 +108,16 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
             fileID = netCDF4.Dataset(os.path.basename(filename),memory=f.read())
     elif (COMPRESSION == 'zip'):
         #-- read zipped file and extract file into in-memory file object
-        fileBasename,fileExtension = os.path.splitext(filename)
+        fileBasename,_ = os.path.splitext(os.path.basename(filename))
         with zipfile.ZipFile(os.path.expanduser(filename)) as z:
+            #-- first try finding a netCDF4 file with same base filename
+            #-- if none found simply try searching for a netCDF4 file
+            try:
+                zname,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
+            except:
+                zname,=[f for f in z.namelist() if re.search('\.nc(4)?$',f)]
             #-- read bytes from zipfile as in-memory (diskless) netCDF4 dataset
-            fileID = netCDF4.Dataset(os.path.basename(filename),
-                memory=z.read(fileBasename))
+            fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=z.read(zname))
     else:
         #-- read netCDF4 dataset
         fileID = netCDF4.Dataset(os.path.expanduser(filename), 'r')
@@ -128,39 +131,39 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
         print(list(fileID.variables.keys()))
 
     #-- mapping between output keys and netCDF4 variable names
-    NAMES = {}
-    NAMES['lon'] = LONNAME
-    NAMES['lat'] = LATNAME
-    NAMES['data'] = VARNAME
+    keys = ['lon','lat','data']
+    nckeys = [LONNAME,LATNAME,VARNAME]
     if DATE:
-        NAMES['time'] = TIMENAME
+        keys.append('time')
+        nckeys.append(TIMENAME)
+    #-- list of variable attributes
+    attributes_list = ['description','units','long_name','calendar',
+        'standard_name','_FillValue']
     #-- for each variable
-    for key,nckey in NAMES.items():
+    for key,nckey in zip(keys,nckeys):
         #-- Getting the data from each NetCDF variable
         dinput[key] = fileID.variables[nckey][:].data
+        #-- Getting attributes of included variables
+        dinput['attributes'][key] = {}
+        for attr in attributes_list:
+            #-- try getting the attribute
+            try:
+                dinput['attributes'][key][attr] = \
+                    getattr(fileID.variables[nckey],attr)
+            except (KeyError,ValueError,AttributeError):
+                pass
 
     #-- switching data array to lat/lon if lon/lat
     sz = dinput['data'].shape
     if (dinput['data'].ndim == 2) and (len(dinput['lon']) == sz[0]):
         dinput['data'] = dinput['data'].T
 
-    #-- getting attributes of included variables
-    if ATTRIBUTES:
-        #-- for each variable
-        #-- get attributes for the included variables
-        for key in NAMES.keys():
-            dinput['attributes'][key] = [fileID.variables[NAMES[key]].units,
-                fileID.variables[NAMES[key]].long_name]
-    #-- missing data fill value
-    try:
-        dinput['attributes']['_FillValue'] = fileID.variables[VARNAME]._FillValue
-    except AttributeError:
-        dinput['attributes']['_FillValue'] = None
     #-- Global attribute (title of dataset)
-    if TITLE:
+    try:
         title, = [st for st in dir(fileID) if re.match(r'TITLE',st,re.I)]
         dinput['attributes']['title'] = getattr(fileID, title)
-
+    except (ValueError, KeyError, AttributeError):
+        pass
     #-- Closing the NetCDF file
     fileID.close()
     #-- return the output variable

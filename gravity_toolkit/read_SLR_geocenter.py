@@ -42,11 +42,20 @@ OUTPUTS:
     time: date of each month in year-decimal
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (https://numpy.org)
+    numpy: Scientific Computing Tools For Python
+        https://numpy.org
+        https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
+
+PROGRAM DEPENDENCIES:
+    geocenter.py: converts between spherical harmonics and geocenter variations
+    time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
     Updated 12/2020: added option COLUMNS to generalize the ascii data format
-        replaced numpy loadtxt with generic read using regular expressions 
+        replaced numpy loadtxt with generic read using regular expressions
+        using utilities from time module for operations
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 08/2019: add catch to verify input geocenter file exists
@@ -68,7 +77,7 @@ import re
 import time
 import numpy as np
 from gravity_toolkit.geocenter import geocenter
-from gravity_toolkit.convert_julian import convert_julian
+from gravity_toolkit.time import convert_julian
 
 #-- PURPOSE: read geocenter data from Satellite Laser Ranging (SLR)
 def read_SLR_geocenter(geocenter_file, RADIUS=None, HEADER=0,

@@ -20,6 +20,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 12/2020: added transpose function, can calculate mean over indices
+        output attributes dictionary from netCDF4 and HDF5 files
     Updated 09/2020: added header option to skip rows in ascii files
     Updated 08/2020: added compression options for ascii, netCDF4 and HDF5 files
     Updated 07/2020: added class docstring and using kwargs for output to file
@@ -51,6 +52,7 @@ class spatial(object):
         self.time=None
         self.month=None
         self.fill_value=fill_value
+        self.attributes=dict()
         self.extent=extent
         self.spacing=spacing
         self.shape=[nlat,nlon,None]
@@ -143,7 +145,7 @@ class spatial(object):
         return self
 
     def from_netCDF4(self, filename, date=True, compression=None, verbose=False,
-        varname='z', lonname='lon', latname='lat'):
+        varname='z', lonname='lon', latname='lat', timename='time'):
         """
         Read a spatial object from a netCDF4 file
         Inputs: full path of input netCDF4 file
@@ -151,23 +153,25 @@ class spatial(object):
             netCDF4 file contains date information
             netCDF4 file is compressed using gzip or zip
             verbose output of file information
-            netCDF4 variable names of data, longitude and latitude
+            netCDF4 variable names of data, longitude, latitude and time
         """
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- read data from netCDF4 file
-        data = ncdf_read(self.filename, VERBOSE=verbose, ATTRIBUTES=False,
-            DATE=date, VARNAME=varname, LONNAME=lonname, LATNAME=latname,
-            TIMENAME='time', COMPRESSION=compression)
+        data = ncdf_read(self.filename, COMPRESSION=compression,
+            VERBOSE=verbose, DATE=date, VARNAME=varname,
+            LONNAME=lonname, LATNAME=latname, TIMENAME=timename)
         self.data = data['data'].copy()
-        if data['attributes']['_FillValue']:
-            self.fill_value = data['attributes']['_FillValue']
+        if '_FillValue' in data['attributes']['data'].keys():
+            self.fill_value = data['attributes']['data']['_FillValue']
         self.mask = np.zeros(self.data.shape, dtype=np.bool)
         self.lon = data['lon'].copy()
         self.lat = data['lat'].copy()
         if date:
             self.time = data['time'].copy()
             self.month = np.array(12.0*(self.time-2002.0)+1,dtype='i')
+        #-- update attributes
+        self.attributes.update(data['attributes'])
         #-- get spacing and dimensions
         self.update_spacing()
         self.update_extents()
@@ -176,7 +180,7 @@ class spatial(object):
         return self
 
     def from_HDF5(self, filename, date=True, compression=None, verbose=False,
-        varname='z', lonname='lon', latname='lat'):
+        varname='z', lonname='lon', latname='lat', timename='time'):
         """
         Read a spatial object from a HDF5 file
         Inputs: full path of input HDF5 file
@@ -184,16 +188,16 @@ class spatial(object):
             HDF5 file contains date information
             HDF5 file is compressed using gzip or zip
             verbose output of file information
-            HDF5 variable names of data, longitude and latitude
+            HDF5 variable names of data, longitude, latitude and time
         """
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- read data from HDF5 file
-        data = hdf5_read(self.filename, VERBOSE=verbose, ATTRIBUTES=False,
-            DATE=date, VARNAME=varname, LONNAME=lonname, LATNAME=latname,
-            TIMENAME='time', COMPRESSION=compression)
+        data = hdf5_read(self.filename, COMPRESSION=compression,
+            VERBOSE=verbose, DATE=date, VARNAME=varname,
+            LONNAME=lonname, LATNAME=latname, TIMENAME=timename)
         self.data = data['data'].copy()
-        if data['attributes']['_FillValue']:
+        if '_FillValue' in data['attributes']['data'].keys():
             self.fill_value = data['attributes']['_FillValue']
         self.mask = np.zeros(self.data.shape, dtype=np.bool)
         self.lon = data['lon'].copy()
@@ -201,6 +205,8 @@ class spatial(object):
         if date:
             self.time = data['time'].copy()
             self.month = np.array(12.0*(self.time-2002.0)+1,dtype='i')
+        #-- update attributes
+        self.attributes.update(data['attributes'])
         #-- get spacing and dimensions
         self.update_spacing()
         self.update_extents()
@@ -263,8 +269,9 @@ class spatial(object):
         self.fill_value = object_list[0].fill_value
         self.lon = object_list[0].lon.copy()
         self.lat = object_list[0].lat.copy()
-        #-- create list of files
+        #-- create list of files and attributes
         self.filename = []
+        self.attributes = []
         #-- output dates
         if date:
             self.time = np.zeros((n))
@@ -279,6 +286,9 @@ class spatial(object):
             #-- append filename to list
             if getattr(object_list[i], 'filename'):
                 self.filename.append(object_list[i].filename)
+            #-- append attributes to list
+            if getattr(object_list[i], 'attributes'):
+                self.attributes.append(object_list[i].attributes)
         #-- update the dimensions
         self.update_dimensions()
         self.update_mask()
@@ -404,6 +414,7 @@ class spatial(object):
         """
         if self.fill_value is not None:
             self.mask |= (self.data == self.fill_value)
+            self.mask |= np.isnan(self.data)
             self.data[self.mask] = self.fill_value
         return self
 
@@ -412,6 +423,7 @@ class spatial(object):
         Copy a spatial object to a new spatial object
         """
         temp = spatial(fill_value=self.fill_value)
+        temp.attributes.update(self.attributes)
         #-- assign variables to self
         var = ['lon','lat','data','mask','error','time','month']
         for key in var:

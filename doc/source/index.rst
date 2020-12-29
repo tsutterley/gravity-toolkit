@@ -30,9 +30,7 @@ missions
     user_guide/calc_sensitivity_kernel.md
     user_guide/clenshaw_summation.md
     user_guide/combine_harmonics.md
-    user_guide/convert_calendar_decimal.md
     user_guide/convert_harmonics.md
-    user_guide/convert_julian.md
     user_guide/cnes_grace_sync.md
     user_guide/degree_amplitude.md
     user_guide/destripe_harmonics.md
@@ -86,6 +84,7 @@ missions
     user_guide/regress_grace_maps.md
     user_guide/run_grace_date.md
     user_guide/spatial.rst
+    user_guide/time.rst
     user_guide/tsamplitude.md
     user_guide/tsregress.md
     user_guide/tssmooth.md

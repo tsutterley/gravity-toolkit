@@ -20,8 +20,6 @@ file_inp = hdf5_read(filename, DATE=True, VERBOSE=False)
  - `LONNAME`: longitude variable name in HDF5 file
  - `LATNAME`: latitude variable name in HDF5 file
  - `TIMENAME`: time variable name in HDF5 file
- - `ATTRIBUTES`: HDF5 variables contain attribute parameters
- - `TITLE`: HDF5 file contains description attribute parameter
 
 #### Outputs
  - `data`: z value of dataset

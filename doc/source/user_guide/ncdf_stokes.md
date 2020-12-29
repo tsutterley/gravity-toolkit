@@ -27,6 +27,7 @@ ncdf_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=output_netcdf4_file)
  - `MONTHS_UNITS`: months variable units
  - `MONTHS_LONGNAME`: months variable description
  - `TITLE`: title attribute of dataset
+ - `REFERENCE`: reference attribute of dataset
  - `CLOBBER`: will overwrite an existing netCDF4 file
  - `VERBOSE`: will print to screen the netCDF4 structure parameters
  - `DATE`: harmonics have date information

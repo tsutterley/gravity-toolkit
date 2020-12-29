@@ -34,6 +34,7 @@ If you have found a problem in these programs, or you would like to suggest an i
 This software is also dependent on other commonly used Python packages:
 - [numpy: Scientific Computing Tools For Python](https://numpy.org)
 - [scipy: Scientific Tools for Python](https://docs.scipy.org/doc/)
+- [dateutil: powerful extensions to datetime](https://dateutil.readthedocs.io/en/stable/)
 - [PyYAML: YAML parser and emitter for Python](https://github.com/yaml/pyyaml)
 - [lxml: processing XML and HTML in Python](https://pypi.python.org/pypi/lxml)
 - [future: Compatibility layer between Python 2 and Python 3](https://python-future.org/)

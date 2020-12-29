@@ -55,14 +55,18 @@ OPTIONS:
     DEG1_GIA: GIA-correction used when calculating degree 1 coefficients
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (https://numpy.org)
-    PyYAML: YAML parser and emitter for Python (https://github.com/yaml/pyyaml)
+    numpy: Scientific Computing Tools For Python
+        https://numpy.org
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
+    PyYAML: YAML parser and emitter for Python
+        https://github.com/yaml/pyyaml
 
 PROGRAM DEPENDENCIES:
+    time.py: utilities for calculating time operations
     grace_date.py: reads GRACE index file and calculates dates for each month
     read_SLR_C20.py: reads C20 files from satellite laser ranging (CSR or GSFC)
     read_SLR_C30.py: reads C30 files from satellite laser ranging (CSR or GSFC)
-    convert_julian.py: returns the calendar date and time given a Julian date
     read_tellus_geocenter.py: reads PO.DAAC degree 1 files
     read_SLR_geocenter.py: reads degree 1 files from Satellite Laser Ranging
     read_GRACE_geocenter.py: reads degree 1 files from Sutterley et al. (2019)

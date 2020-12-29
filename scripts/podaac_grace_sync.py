@@ -51,6 +51,11 @@ COMMAND LINE OPTIONS:
     -M X, --mode X: Local permissions mode of the directories and files synced
 
 PYTHON DEPENDENCIES:
+    numpy: Scientific Computing Tools For Python
+        https://numpy.org
+        https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
     lxml: Pythonic XML and HTML processing library using libxml2/libxslt
         https://lxml.de/
         https://github.com/lxml/lxml
