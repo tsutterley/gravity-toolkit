@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_write.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (12/2020)
 
 Writes spatial data to COARDS-compliant netCDF4 files
 
@@ -25,6 +25,7 @@ OPTIONS:
     TIME_UNITS: time variable units
     TIME_LONGNAME: time variable description
     TITLE: title attribute of dataset
+    REFERENCE: reference attribute of dataset
     CLOBBER: will overwrite an existing netCDF4 file
     VERBOSE: will print to screen the netCDF4 structure parameters
     DATE: data has date information
@@ -35,6 +36,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 12/2020: added REFERENCE option to set file attribute
     Updated 07/2020: added function docstrings
     Updated 04/2020: added option DATE if including time data
     Updated 03/2020: only include title if not None
@@ -65,8 +67,8 @@ import numpy as np
 
 def ncdf_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     LATNAME='lat', TIMENAME='time', UNITS=None, LONGNAME=None, FILL_VALUE=None,
-    TIME_UNITS=None, TIME_LONGNAME=None, TITLE=None, DATE=True, CLOBBER=True,
-    VERBOSE=False):
+    TIME_UNITS=None, TIME_LONGNAME=None, TITLE=None, REFERENCE=None,
+    DATE=True, CLOBBER=True, VERBOSE=False):
     """
     Writes spatial data to COARDS-compliant netCDF4 files
 
@@ -89,6 +91,7 @@ def ncdf_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     TIME_UNITS: time variable units
     TIME_LONGNAME: time variable description
     TITLE: title attribute of dataset
+    REFERENCE: reference attribute of dataset
     CLOBBER: will overwrite an existing netCDF4 file
     VERBOSE: will print to screen the netCDF4 structure parameters
     DATE: data has date information
@@ -141,9 +144,11 @@ def ncdf_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     if DATE:
         nc[TIMENAME].long_name = TIME_LONGNAME
         nc[TIMENAME].units = TIME_UNITS
-    #-- global variable of NetCDF file
+    #-- global variables of NetCDF file
     if TITLE:
-        fileID.TITLE = TITLE
+        fileID.title = TITLE
+    if REFERENCE:
+        fileID.reference = REFERENCE
     #-- date created
     fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
 

@@ -129,7 +129,7 @@ def cnes_grace_sync(DIRECTORY, DREL=[], LOG=False, CLOBBER=False, MODE=None):
     REMOTE['RL03']['GAB'] = ['RL03','variable','archives']
     #-- RL04: GSM
     REMOTE['RL04']['GSM'] = ['RL04-v1','archives']
-    #-- RL05: GSM, GAA, GAB for GRACE/GRACE-FO 
+    #-- RL05: GSM, GAA, GAB for GRACE/GRACE-FO
     REMOTE['RL05']['GSM'] = ['RL05','archives']
     REMOTE['RL05']['GAA'] = ['RL05','archives']
     REMOTE['RL05']['GAB'] = ['RL05','archives']

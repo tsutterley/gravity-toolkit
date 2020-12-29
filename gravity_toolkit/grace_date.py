@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_date.py
-Written by Tyler Sutterley (10/2020)
+Written by Tyler Sutterley (12/2020)
 
 Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
 Parses dates of each GRACE/GRACE-FO file and assigns the month number
@@ -26,14 +26,19 @@ OUTPUTS:
     dictionary of GRACE/GRACE-FO files indexed by month
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (https://numpy.org)
+    numpy: Scientific Computing Tools For Python
+        https://numpy.org
+        https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
     future: Compatibility layer between Python 2 and Python 3
-        (https://python-future.org/)
+        https://python-future.org/
 
 PROGRAM DEPENDENCIES:
-    convert_julian.py: returns the calendar date and time given a Julian date
+    time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 12/2020: using utilities from time module
     Updated 10/2020: use argparse to set command line parameters
     Updated 07/2020: added function docstrings
     Updated 03/2020: for public release
@@ -79,7 +84,7 @@ import os
 import re
 import argparse
 import numpy as np
-from gravity_toolkit.convert_julian import convert_julian
+import gravity_toolkit.time
 
 def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     """
@@ -128,7 +133,6 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     start_day = np.zeros((n_files))#-- day number start date
     end_day = np.zeros((n_files))#-- day number end date
     mid_day = np.zeros((n_files))#-- mid-month day
-    JD = np.zeros((n_files))#-- Julian date of mid-month
     tot_days = np.zeros((n_files))#-- number of days since Jan 2002
     tdec = np.zeros((n_files))#-- tdec is the date in decimal form
     mon = np.zeros((n_files,),dtype=np.int)#-- GRACE/GRACE-FO month number
@@ -164,29 +168,19 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
         end_yr[t] = np.float(end_date[:4])
         start_day[t] = np.float(start_date[4:])
         end_day[t] = np.float(end_date[4:])
-        #-- end_day (will be changed if the month crosses 2 years)
-        end_plus = np.copy(end_day[t])
 
-        #-- calculate mid-month date taking into account if measurements are
-        #-- on different years
-        if ((start_yr[t] % 4) == 0):#-- Leap Year (% = modulus)
-            dpy = 366.0
-        else:#-- Standard Year
-            dpy = 365.0
-        #-- For data that crosses years
-        if (start_yr[t] != end_yr[t]):
-            #-- end_yr - start_yr should be 1
-            end_plus = (end_yr[t]-start_yr[t])*dpy + end_day[t]
-        #-- Calculation of Mid-month value
-        mid_day[t] = np.mean([start_day[t], end_plus])
+        #-- number of days in the starting year for leap and standard years
+        dpy = gravity_toolkit.time.calendar_days(start_yr[t]).sum()
+        #-- end date taking into account measurements taken on different years
+        end_cyclic = (end_yr[t]-start_yr[t])*dpy + end_day[t]
+        #-- calculate mid-month value
+        mid_day[t] = np.mean([start_day[t], end_cyclic])
 
-        #-- Calculation of the Julian date from start_yr and mid_day
-        JD[t] = np.float(367.0*start_yr[t] -
-            np.floor(7.0*(start_yr[t] + np.floor(10.0/12.0))/4.0) -
-            np.floor(3.0*(np.floor((start_yr[t] - 8.0/7.0)/100.0) + 1.0)/4.0) +
-            np.floor(275.0/9.0) + mid_day[t] + 1721028.5)
-        #-- convert the julian date into calendar dates (hour, day, month, year)
-        cal_date = convert_julian(JD[t])
+        #-- calculate Modified Julian Day from start_yr and mid_day
+        MJD = gravity_toolkit.time.convert_calendar_dates(start_yr[t],
+            1.0,mid_day[t],epoch=(1858,11,17,0,0,0))
+        #-- convert from Modified Julian Days to calendar dates
+        cal_date = gravity_toolkit.time.convert_julian(MJD+2400000.5)
 
         #-- Calculating the mid-month date in decimal form
         tdec[t] = start_yr[t] + mid_day[t]/dpy
@@ -196,20 +190,14 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
         n_yrs = np.int(start_yr[t]-2002)
         #-- for each of the GRACE years up to the file year
         for iyr in range(n_yrs):
-            #-- year i
+            #-- year
             year = 2002 + iyr
-            #-- number of days in year i (if leap year or standard year)
-            if ((year % 4) == 0):
-                #-- Leap Year
-                dpm=[31,29,31,30,31,30,31,31,30,31,30,31]
-            else:
-                #-- Standard Year
-                dpm=[31,28,31,30,31,30,31,31,30,31,30,31]
             #-- add all days from prior years to count
-            count += np.sum(dpm)
+            #-- number of days in year i (if leap year or standard year)
+            count += gravity_toolkit.time.calendar_days(year).sum()
 
         #-- calculating the total number of days since 2002
-        tot_days[t] = np.mean([count+start_day[t], count+end_plus])
+        tot_days[t] = np.mean([count+start_day[t], count+end_cyclic])
 
         #-- Calculates the month number (or 10-day number for CNES RL01,RL02)
         if ((PROC == 'CNES') and (DREL in ('RL01','RL02'))):

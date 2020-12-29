@@ -55,6 +55,8 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
         https://numpy.org
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
     netCDF4: Python interface to the netCDF C library
         https://unidata.github.io/netcdf4-python/netCDF4/index.html
     h5py: Pythonic interface to the HDF5 binary data format.
@@ -172,7 +174,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF'):
         #-- https://doi.org/10.1016/j.cageo.2012.06.022
         love_numbers_file = get_data_path(['data','PREM-LLNs-truncated.dat'])
         header = 1
-        columns = ['l','hl','ll','kl','nl','nk']    
+        columns = ['l','hl','ll','kl','nl','nk']
     #-- LMAX of load love numbers from Han and Wahr (1995) is 696.
     #-- from Wahr (2007) linearly interpolating kl works
     #-- however, as we are linearly extrapolating out, do not make

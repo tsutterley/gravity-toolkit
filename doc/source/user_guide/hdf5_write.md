@@ -1,7 +1,7 @@
 hdf5_write.py
 =============
 
- - Writes spatial data to HDF5 files    
+ - Writes spatial data to HDF5 files
 
 #### Calling Sequence
 ```python
@@ -26,7 +26,8 @@ hdf5_write(data, lon, lat, tim, FILENAME=output_netcdf4_file)
  - `FILL_VALUE`: missing value for z variable
  - `TIME_UNITS`: time variable units
  - `TIME_LONGNAME`: time variable description
- - `TITLE`: title attribute of dataset
+ - `TITLE`: description attribute of dataset
+ - `REFERENCE`: reference attribute of dataset
  - `DATE`: data has date information
  - `CLOBBER`: will overwrite an existing HDF5 file
  - `VERBOSE`: will print to screen the HDF5 structure parameters

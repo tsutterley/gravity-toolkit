@@ -20,8 +20,6 @@ file_inp = ncdf_read(filename, DATE=True, VERBOSE=False)
  - `LONNAME`: longitude variable name in netCDF4 file
  - `LATNAME`: latitude variable name in netCDF4 file
  - `TIMENAME`: time variable name in netCDF4 file
- - `ATTRIBUTES`: netCDF4 variables contain attribute parameters
- - `TITLE`: netCDF4 file contains description attribute parameter
 
 #### Outputs
  - `data`: z value of dataset

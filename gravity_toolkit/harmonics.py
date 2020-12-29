@@ -163,8 +163,8 @@ class harmonics(object):
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- read data from netCDF4 file
-        Ylms = ncdf_read_stokes(self.filename, ATTRIBUTES=False,
-            DATE=date, COMPRESSION=compression, VERBOSE=verbose)
+        Ylms = ncdf_read_stokes(self.filename, COMPRESSION=compression,
+            DATE=date, VERBOSE=verbose)
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
         self.l = Ylms['l'].copy()
@@ -190,8 +190,8 @@ class harmonics(object):
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- read data from HDF5 file
-        Ylms = hdf5_read_stokes(self.filename, ATTRIBUTES=False,
-            DATE=date, COMPRESSION=compression, VERBOSE=verbose)
+        Ylms = hdf5_read_stokes(self.filename, COMPRESSION=compression,
+            DATE=date, VERBOSE=verbose)
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
         self.l = Ylms['l'].copy()
