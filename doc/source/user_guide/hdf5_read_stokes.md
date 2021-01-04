@@ -16,6 +16,10 @@ file_inp = hdf5_read_stokes(filename, DATE=True, VERBOSE=False)
 #### Options
  - `DATE`: HDF5 file has date information
  - `VERBOSE`: will print to screen the HDF5 structure parameters
+ - `COMPRESSION`: netCDF4 file is compressed or streaming as bytes
+    * `'gzip'`
+    * `'zip'`
+    * `'bytes'`
 
 #### Outputs
  - `clm`: Cosine spherical harmonic coefficients

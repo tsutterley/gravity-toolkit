@@ -21,8 +21,6 @@ python convert_harmonics.py --format netCDF4 --lmax 60 --units 1 input_file outp
       * `'CF'`: Center of Surface Figure (default)
       * `'CM'`: Center of Mass of Earth System
       * `'CE'`: Center of Mass of Solid Earth
- - `-R X`, `--radius X`: Gaussian smoothing radius (km)
- - `-D`, `--destripe`: use a decorrelation filter (destriping filter)
  - `-U X`, `--units X`: output units
       * `1`: cm of water thickness (cm.w.e.)
       * `2`: Gigatonnes (Gt)

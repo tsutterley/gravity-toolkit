@@ -25,7 +25,10 @@ OPTIONS:
     LONNAME: longitude variable name in HDF5 file
     LATNAME: latitude variable name in HDF5 file
     TIMENAME: time variable name in HDF5 file
-    COMPRESSION: HDF5 file is compressed using gzip or zip
+    COMPRESSION: HDF5 file is compressed or streaming as bytes
+        gzip
+        zip
+        bytes
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
@@ -34,7 +37,9 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 12/2020: try/except for getting variable unit attributes
+        attempt to get a standard set of attributes from each variable
         add fallback for finding HDF5 file within from zip files
+        added bytes option for COMPRESSION if streaming from memory
     Updated 08/2020: add options to read from gzip or zip compressed files
     Updated 07/2020: added function docstrings
     Updated 06/2020: output data as lat/lon following spatial module
@@ -85,7 +90,10 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     LONNAME: longitude variable name in HDF5 file
     LATNAME: latitude variable name in HDF5 file
     TIMENAME: time variable name in HDF5 file
-    COMPRESSION: HDF5 file is compressed using gzip or zip
+    COMPRESSION: HDF5 file is compressed or streaming as bytes
+        gzip
+        zip
+        bytes
 
     Returns
     -------
@@ -125,6 +133,9 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
         fid.seek(0)
         #-- read as in-memory (diskless) HDF5 dataset from BytesIO object
         fileID = h5py.File(fid, 'r')
+    elif (COMPRESSION == 'bytes'):
+        #-- read as in-memory (diskless) HDF5 dataset
+        fileID = h5py.File(filename, 'r')
     else:
         #-- read HDF5 dataset
         fileID = h5py.File(os.path.expanduser(filename), 'r')
@@ -146,7 +157,7 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
 
     #-- list of variable attributes
     attributes_list = ['description','units','long_name','calendar',
-        'standard_name','_FillValue']
+        'standard_name','_FillValue','missing_value']
     #-- for each variable
     for key,h5key in zip(keys,h5keys):
         #-- Getting the data from each HDF5 variable

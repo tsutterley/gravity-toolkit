@@ -25,7 +25,10 @@ OPTIONS:
     LONNAME: longitude variable name in netCDF4 file
     LATNAME: latitude variable name in netCDF4 file
     TIMENAME: time variable name in netCDF4 file
-    COMPRESSION: netCDF4 file is compressed using gzip or zip
+    COMPRESSION: netCDF4 file is compressed or streaming as bytes
+        gzip
+        zip
+        bytes
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
@@ -34,7 +37,9 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 12/2020: try/except for getting variable unit attributes
+        attempt to get a standard set of attributes from each variable
         add fallback for finding netCDF4 file within from zip files
+        added bytes option for COMPRESSION if streaming from memory
     Updated 08/2020: flake8 compatible regular expression strings
         add options to read from gzip or zip compressed files
     Updated 07/2020: added function docstrings
@@ -90,7 +95,10 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     LONNAME: longitude variable name in netCDF4 file
     LATNAME: latitude variable name in netCDF4 file
     TIMENAME: time variable name in netCDF4 file
-    COMPRESSION: netCDF4 file is compressed using gzip or zip
+    COMPRESSION: netCDF4 file is compressed or streaming as bytes
+        gzip
+        zip
+        bytes
 
     Returns
     -------
@@ -118,6 +126,9 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
                 zname,=[f for f in z.namelist() if re.search('\.nc(4)?$',f)]
             #-- read bytes from zipfile as in-memory (diskless) netCDF4 dataset
             fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=z.read(zname))
+    elif (COMPRESSION == 'bytes'):
+        #-- read as in-memory (diskless) netCDF4 dataset
+        fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=filename.read())
     else:
         #-- read netCDF4 dataset
         fileID = netCDF4.Dataset(os.path.expanduser(filename), 'r')
@@ -138,7 +149,7 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
         nckeys.append(TIMENAME)
     #-- list of variable attributes
     attributes_list = ['description','units','long_name','calendar',
-        'standard_name','_FillValue']
+        'standard_name','_FillValue','missing_value']
     #-- for each variable
     for key,nckey in zip(keys,nckeys):
         #-- Getting the data from each NetCDF variable

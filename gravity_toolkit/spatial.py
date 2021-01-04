@@ -21,6 +21,7 @@ PROGRAM DEPENDENCIES:
 UPDATE HISTORY:
     Updated 12/2020: added transpose function, can calculate mean over indices
         output attributes dictionary from netCDF4 and HDF5 files
+        can create a spatial object from an open file-like object
     Updated 09/2020: added header option to skip rows in ascii files
     Updated 08/2020: added compression options for ascii, netCDF4 and HDF5 files
     Updated 07/2020: added class docstring and using kwargs for output to file
@@ -30,6 +31,8 @@ UPDATE HISTORY:
 """
 import os
 import re
+import io
+import copy
 import gzip
 import zipfile
 import numpy as np
@@ -63,16 +66,21 @@ class spatial(object):
         """
         Searches a directory for a filename without case dependence
         """
-        self.filename = os.path.expanduser(filename)
-        #-- check if file presently exists with input case
-        if not os.access(self.filename,os.F_OK):
-            #-- search for filename without case dependence
-            basename = os.path.basename(filename)
-            directory = os.path.dirname(os.path.expanduser(filename))
-            f = [f for f in os.listdir(directory) if re.match(basename,f,re.I)]
-            if not f:
-                raise IOError('{0} not found in file system'.format(filename))
-            self.filename = os.path.join(directory,f.pop())
+        #-- check if filename is open file object
+        if isinstance(filename, io.IOBase):
+            self.filename = copy.copy(filename)
+        else:
+            #-- tilde-expand input filename
+            self.filename = os.path.expanduser(filename)
+            #-- check if file presently exists with input case
+            if not os.access(self.filename,os.F_OK):
+                #-- search for filename without case dependence
+                basename = os.path.basename(filename)
+                directory = os.path.dirname(os.path.expanduser(filename))
+                f = [f for f in os.listdir(directory) if re.match(basename,f,re.I)]
+                if not f:
+                    raise IOError('{0} not found in file system'.format(filename))
+                self.filename = os.path.join(directory,f.pop())
         return self
 
     def from_ascii(self, filename, date=True, compression=None, verbose=False,
@@ -82,7 +90,7 @@ class spatial(object):
         Inputs: full path of input ascii file
         Options:
             ascii file contains date information
-            ascii file is compressed using gzip or zip
+            ascii file is compressed or streamed from memory
             verbose output of file information
             column names of ascii file
             rows of header lines to skip
@@ -100,6 +108,9 @@ class spatial(object):
             base,extension = os.path.splitext(self.filename)
             with zipfile.ZipFile(self.filename) as z:
                 file_contents = z.read(base).decode('ISO-8859-1').splitlines()
+        elif (compression == 'bytes'):
+            #-- read input file object and split lines
+            file_contents = self.filename.read().splitlines()
         else:
             #-- read input ascii file (.txt, .asc) and split lines
             with open(self.filename,'r') as f:
@@ -151,7 +162,7 @@ class spatial(object):
         Inputs: full path of input netCDF4 file
         Options:
             netCDF4 file contains date information
-            netCDF4 file is compressed using gzip or zip
+            netCDF4 file is compressed or streamed from memory
             verbose output of file information
             netCDF4 variable names of data, longitude, latitude and time
         """
@@ -186,7 +197,7 @@ class spatial(object):
         Inputs: full path of input HDF5 file
         Options:
             HDF5 file contains date information
-            HDF5 file is compressed using gzip or zip
+            HDF5 file is compressed or streamed from memory
             verbose output of file information
             HDF5 variable names of data, longitude, latitude and time
         """
@@ -281,8 +292,8 @@ class spatial(object):
             self.data[:,:,t] = object_list[i].data[:,:].copy()
             self.mask[:,:,t] |= object_list[i].mask[:,:]
             if date:
-                self.time[t] = object_list[i].time[:].copy()
-                self.month[t] = object_list[i].month[:].copy()
+                self.time[t] = np.atleast_1d(object_list[i].time)
+                self.month[t] = np.atleast_1d(object_list[i].month)
             #-- append filename to list
             if getattr(object_list[i], 'filename'):
                 self.filename.append(object_list[i].filename)

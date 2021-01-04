@@ -1,12 +1,12 @@
 podaac_webdav.py
 ====================
 
- - Retrieves and prints a user's PO.DAAC WebDAV credentials  
- - WebDAV credentials can be used in the [PO.DAAC sync program](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/podaac_grace_sync.py)  
+ - Retrieves and prints a user's PO.DAAC Drive WebDAV credentials
+ - WebDAV credentials can be used in the [PO.DAAC sync program](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/podaac_grace_sync.py)
 
 #### Calling Sequence
 ```bash
-python podaac_webdav.py --user=<username> 
+python podaac_webdav.py --user=<username>
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/podaac_webdav.py)
 

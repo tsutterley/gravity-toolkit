@@ -20,6 +20,10 @@ file_inp = ncdf_read(filename, DATE=True, VERBOSE=False)
  - `LONNAME`: longitude variable name in netCDF4 file
  - `LATNAME`: latitude variable name in netCDF4 file
  - `TIMENAME`: time variable name in netCDF4 file
+ - `COMPRESSION`: netCDF4 file is compressed or streaming as bytes
+    * `'gzip'`
+    * `'zip'`
+    * `'bytes'`
 
 #### Outputs
  - `data`: z value of dataset

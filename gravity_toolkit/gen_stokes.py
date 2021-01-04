@@ -155,7 +155,7 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     ccos = np.cos(np.dot(m[:,np.newaxis],phi))
     ssin = np.sin(np.dot(m[:,np.newaxis],phi))
 
-    #-- Calculates fully-normalized Legendre Polynomials with plm_holmes.py
+    #-- Calculating fully-normalized Legendre Polynomials
     #-- Output is plm[l,m,th]
     plm = np.zeros((LMAX+1,MMAX+1,nlat))
     #-- added option to precompute plms to improve computational speed

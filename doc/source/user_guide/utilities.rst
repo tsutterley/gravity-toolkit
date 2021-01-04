@@ -75,7 +75,21 @@ General Methods
         `move`: remove the source file
 
 
-.. method:: gravity_toolkit.utilities.ftp_list(HOST,timeout=None,basename=False,pattern=None,sort=False)
+.. method:: gravity_toolkit.utilities.check_ftp_connection(HOST,username=None,password=None)
+
+    Check internet connection with ftp host
+
+    Arguments{
+
+        `HOST`: remote ftp host
+
+    Keyword arguments:
+
+        `username`: ftp username
+
+        `password`: ftp password
+
+.. method:: gravity_toolkit.utilities.ftp_list(HOST,username=None,password=None,timeout=None,basename=False,pattern=None,sort=False)
 
     List a directory on a ftp host
 
@@ -84,6 +98,10 @@ General Methods
         `HOST`: remote ftp host path split as list
 
     Keyword arguments:
+
+        `username`: ftp username
+
+        `password`: ftp password
 
         `timeout`: timeout in seconds for blocking operations
 
@@ -100,7 +118,7 @@ General Methods
         `mtimes`: list of last modification times for items in the directory
 
 
-.. method:: gravity_toolkit.utilities.from_ftp(HOST,timeout=None,local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
+.. method:: gravity_toolkit.utilities.from_ftp(HOST,username=None,password=None,timeout=None,local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
 
     Download a file from a ftp host
 
@@ -109,6 +127,10 @@ General Methods
         `HOST`: remote ftp host path split as list
 
     Keyword arguments:
+
+        `username`: ftp username
+
+        `password`: ftp password
 
         `timeout`: timeout in seconds for blocking operations
 
@@ -273,7 +295,7 @@ General Methods
         `directory`: download directory
 
     Keyword arguments:
-    
+
         `article`: figshare article number
 
         `timeout`: timeout in seconds for blocking operations
@@ -294,7 +316,7 @@ General Methods
 
 
 .. method:: gravity_toolkit.utilities.from_csr(directory,timeout=None,context=ssl.SSLContext(),chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
-    
+
     Download `satellite laser ranging (SLR)`__ files from the University of Texas Center for Space Research (UTCSR)
 
     Arguments:
@@ -306,13 +328,13 @@ General Methods
         `timeout`: timeout in seconds for blocking operations
 
         `context`: SSL context for url opener object
-        
+
         `chunk`: chunk size for transfer encoding
-        
+
         `verbose`: print file transfer information
-        
+
         `fid`: open file object to print if verbose
-        
+
         `mode`: permissions mode of output local file
 
     .. __: http://download.csr.utexas.edu/pub/slr/

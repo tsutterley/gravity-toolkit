@@ -16,6 +16,10 @@ file_inp = ncdf_read_stokes(filename, DATE=True, VERBOSE=False)
 #### Options
  - `DATE`: netCDF4 file has date information
  - `VERBOSE`: will print to screen the netCDF4 structure parameters
+ - `COMPRESSION`: netCDF4 file is compressed or streaming as bytes
+    * `'gzip'`
+    * `'zip'`
+    * `'bytes'`
 
 #### Outputs
  - `clm`: Cosine spherical harmonic coefficients
