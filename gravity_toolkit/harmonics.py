@@ -23,6 +23,8 @@ PROGRAM DEPENDENCIES:
 UPDATE HISTORY:
     Updated 12/2020: added verbose option for gfc files
         can calculate spherical harmonic mean over a range of time indices
+        will also calculate the mean time and month of a harmonics object
+        can create a harmonics object from an open file-like object
     Updated 08/2020: added compression options for ascii, netCDF4 and HDF5 files
     Updated 07/2020: added class docstring and using kwargs for output to file
         added case_insensitive_filename function to search directories
@@ -38,6 +40,8 @@ UPDATE HISTORY:
 """
 import os
 import re
+import io
+import copy
 import gzip
 import zipfile
 import numpy as np
@@ -70,16 +74,21 @@ class harmonics(object):
         """
         Searches a directory for a filename without case dependence
         """
-        self.filename = os.path.expanduser(filename)
-        #-- check if file presently exists with input case
-        if not os.access(self.filename,os.F_OK):
-            #-- search for filename without case dependence
-            basename = os.path.basename(filename)
-            directory = os.path.dirname(os.path.expanduser(filename))
-            f = [f for f in os.listdir(directory) if re.match(basename,f,re.I)]
-            if not f:
-                raise IOError('{0} not found in file system'.format(filename))
-            self.filename = os.path.join(directory,f.pop())
+        #-- check if filename is open file object
+        if isinstance(filename, io.IOBase):
+            self.filename = copy.copy(filename)
+        else:
+            #-- tilde-expand input filename
+            self.filename = os.path.expanduser(filename)
+            #-- check if file presently exists with input case
+            if not os.access(self.filename,os.F_OK):
+                #-- search for filename without case dependence
+                basename = os.path.basename(filename)
+                directory = os.path.dirname(os.path.expanduser(filename))
+                f = [f for f in os.listdir(directory) if re.match(basename,f,re.I)]
+                if not f:
+                    raise IOError('{0} not found in file system'.format(filename))
+                self.filename = os.path.join(directory,f.pop())
         return self
 
     def from_ascii(self, filename, date=True, compression=None, verbose=False):
@@ -88,7 +97,7 @@ class harmonics(object):
         Inputs: full path of input ascii file
         Options:
             ascii file contains date information
-            ascii file is compressed using gzip
+            ascii file is compressed or streaming as bytes
             verbose output of file information
         """
         #-- set filename
@@ -104,6 +113,9 @@ class harmonics(object):
             base,extension = os.path.splitext(self.filename)
             with zipfile.ZipFile(self.filename) as z:
                 file_contents = z.read(base).decode('ISO-8859-1').splitlines()
+        elif (compression == 'bytes'):
+            #-- read input file object and split lines
+            file_contents = self.filename.read().splitlines()
         else:
             #-- read input ascii file (.txt, .asc) and split lines
             with open(self.filename,'r') as f:
@@ -157,7 +169,7 @@ class harmonics(object):
         Inputs: full path of input netCDF4 file
         Options:
             netCDF4 file contains date information
-            netCDF4 file is compressed using gzip or zip
+            netCDF4 file is compressed or streamed from memory
             verbose output of file information
         """
         #-- set filename
@@ -184,7 +196,7 @@ class harmonics(object):
         Inputs: full path of input HDF5 file
         Options:
             HDF5 file contains date information
-            HDF5 file is compressed using gzip or zip
+            HDF5 file is compressed or streamed from memory
             verbose output of file information
         """
         #-- set filename
@@ -300,8 +312,8 @@ class harmonics(object):
             self.clm[:,:,t] = object_list[i].clm[:self.lmax+1,:self.mmax+1]
             self.slm[:,:,t] = object_list[i].slm[:self.lmax+1,:self.mmax+1]
             if date:
-                self.time[t] = object_list[i].time[:].copy()
-                self.month[t] = object_list[i].month[:].copy()
+                self.time[t] = np.atleast_1d(object_list[i].time)
+                self.month[t] = np.atleast_1d(object_list[i].month)
             #-- append filename to list
             if getattr(object_list[i], 'filename'):
                 self.filename.append(object_list[i].filename)
@@ -734,6 +746,13 @@ class harmonics(object):
                 if apply:
                     self.clm[l,m,:] -= temp.clm[l,m]
                     self.slm[l,m,:] -= temp.slm[l,m]
+        #-- calculate mean of temporal variables
+        for key in ['time','month']:
+            try:
+                val = getattr(self, key)
+                setattr(temp, key, np.mean(val[indices]))
+            except:
+                continue
         #-- assign ndim and shape attributes
         temp.update_dimensions()
         #-- return the mean field

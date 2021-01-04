@@ -124,7 +124,7 @@ General Attributes and Methods
         Options:
             `date` ascii file contains date information
 
-            `compression` ascii file is compressed using gzip or zip
+            `compression` ascii file is compressed or streamed from memory
 
             `verbose` print ascii file information
 
@@ -137,7 +137,7 @@ General Attributes and Methods
         Options:
             `date` netCDF4 file contains date information
 
-            `compression` netCDF4 file is compressed using gzip or zip
+            `compression` netCDF4 file is compressed or streamed from memory
 
             `verbose` print netCDF4 file information
 
@@ -150,7 +150,7 @@ General Attributes and Methods
         Options:
             `date` HDF5 file contains date information
 
-            `compression` HDF5 file is compressed using gzip or zip
+            `compression` HDF5 file is compressed or streamed from memory
 
             `verbose` print HDF5 file information
 

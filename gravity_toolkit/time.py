@@ -151,7 +151,7 @@ def convert_calendar_dates(year, month, day, hour=0.0, minute=0.0, second=0.0,
     minute: minute of the hour
     second: second of the minute
     epoch: epoch for output delta_time
-    scale: scaling factor for converting time to output units
+    scale: scaling factor for converting days to output units
 
     Returns
     -------
@@ -166,7 +166,7 @@ def convert_calendar_dates(year, month, day, hour=0.0, minute=0.0, second=0.0,
     epoch1 = datetime.datetime(1858,11,17,0,0,0)
     epoch2 = datetime.datetime(*epoch)
     delta_time_epochs = (epoch2 - epoch1).total_seconds()
-    #-- return the date in days since epoch
+    #-- return the date in days since epoch (or scaled to units)
     return scale*np.array(MJD - delta_time_epochs/86400.0,dtype=np.float)
 
 #-- PURPOSE: Converts from calendar dates into decimal years

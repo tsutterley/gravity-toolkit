@@ -26,7 +26,10 @@ OUTPUTS:
 OPTIONS:
     DATE: netCDF4 file has date information
     VERBOSE: will print to screen the netCDF4 structure parameters
-    COMPRESSION: netCDF4 file is compressed using gzip or zip
+    COMPRESSION: netCDF4 file is compressed or streaming as bytes
+        gzip
+        zip
+        bytes
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
@@ -36,6 +39,7 @@ PYTHON DEPENDENCIES:
 UPDATE HISTORY:
     Updated 12/2020: try/except for getting variable unit attributes
         add fallback for finding netCDF4 file within from zip files
+        added bytes option for COMPRESSION if streaming from memory
     Updated 09/2020: use try/except for reading attributes
     Updated 08/2020: flake8 compatible regular expression strings
         add options to read from gzip or zip compressed files
@@ -85,7 +89,10 @@ def ncdf_read_stokes(filename, DATE=True, VERBOSE=False, COMPRESSION=None):
     -----------------
     DATE: netCDF4 file has date information
     VERBOSE: will print to screen the netCDF4 structure parameters
-    COMPRESSION: netCDF4 file is compressed using gzip or zip
+    COMPRESSION: netCDF4 file is compressed or streaming as bytes
+        gzip
+        zip
+        bytes
 
     Returns
     -------
@@ -115,6 +122,9 @@ def ncdf_read_stokes(filename, DATE=True, VERBOSE=False, COMPRESSION=None):
                 zname,=[f for f in z.namelist() if re.search('\.nc(4)?$',f)]
             #-- read bytes from zipfile as in-memory (diskless) netCDF4 dataset
             fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=z.read(zname))
+    elif (COMPRESSION == 'bytes'):
+        #-- read as in-memory (diskless) netCDF4 dataset
+        fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=filename.read())
     else:
         #-- read netCDF4 dataset
         fileID = netCDF4.Dataset(os.path.expanduser(filename), 'r')
