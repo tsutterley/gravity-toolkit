@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_dealiasing_ftp.py
-Written by Tyler Sutterley (10/2020)
+Written by Tyler Sutterley (01/2021)
 Syncs GRACE Level-1b dealiasing products from the GFZ Information
     System and Data Center (ISDC)
 Optionally outputs as monthly tar files
@@ -18,7 +18,17 @@ COMMAND LINE OPTIONS:
     -l, --log: output log of files downloaded
     -C, --clobber: Overwrite existing data in transfers
 
+PYTHON DEPENDENCIES:
+    future: Compatibility layer between Python 2 and Python 3
+        http://python-future.org/
+    lxml: processing XML and HTML in Python
+        https://pypi.python.org/pypi/lxml
+
+PROGRAM DEPENDENCIES:
+    utilities: download and management utilities for syncing files
+
 UPDATE HISTORY:
+    Updated 01/2021: using utilities module to list files from ftp
     Updated 10/2020: use argparse to set command line parameters
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 03/2020: new GFZ ISDC ftp server website
@@ -31,23 +41,13 @@ from __future__ import print_function
 import sys
 import os
 import re
+import io
+import time
 import ftplib
 import tarfile
 import argparse
 import posixpath
-import calendar, time
-
-#-- PURPOSE: check internet connection
-def check_connection():
-    #-- attempt to connect to the GFZ ftp host
-    try:
-        f = ftplib.FTP('isdcftp.gfz-potsdam.de')
-        f.login()
-        f.voidcmd("NOOP")
-    except IOError:
-        raise RuntimeError('Check internet connection')
-    else:
-        return True
+import gravity_toolkit.utilities
 
 #-- PURPOSE: syncs GRACE Level-1b dealiasing products from the GFZ data server
 #-- and optionally outputs as monthly tar files
@@ -68,6 +68,7 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False, LOG=False,
         #-- standard output (terminal output)
         fid1 = sys.stdout
 
+    #-- remote HOST for DREL on GFZ data server
     #-- connect and login to GFZ ftp server
     ftp = ftplib.FTP('isdcftp.gfz-potsdam.de')
     ftp.login()
@@ -79,17 +80,15 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False, LOG=False,
         regex_years = r'|'.join(r'{0:d}'.format(y) for y in YEAR)
     #-- compile regular expression operator for years to sync
     R1 = re.compile(r'({0})'.format(regex_years), re.VERBOSE)
-    #-- remote subdirectory for DREL on GFZ data server
-    remote_sub=posixpath.join(posixpath.sep,'grace','Level-1B','GFZ','AOD',DREL)
     #-- suffix for each data release
     SUFFIX = dict(RL04='tar.gz',RL05='tar.gz',RL06='tgz')
 
     #-- find remote yearly directories for DREL
-    YRS = [R1.search(Y).group(0) for Y in ftp.nlst(remote_sub) if R1.search(Y)]
-    for Y in sorted(YRS):
-        #-- full path to remote directory
-        remote_dir = posixpath.join(remote_sub,Y)
-        #-- run for each month
+    YRS,_ = gravity_toolkit.utilities.ftp_list([ftp.host,'grace','Level-1B',
+        'GFZ','AOD',DREL],basename=True, pattern=R1, sort=True)
+    #-- for each year
+    for Y in YRS:
+        #-- for each month
         for M in range(1,13):
             #-- output tar file for year and month
             args = (Y, M, DREL.replace('RL',''), SUFFIX[DREL])
@@ -100,31 +99,37 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False, LOG=False,
             #-- will extract year and month and calendar day from the ascii file
             regex_pattern = r'AOD1B_({0})-({1:02d})-(\d+)_X_\d+.asc.gz$'
             R2 = re.compile(regex_pattern.format(Y,M), re.VERBOSE)
-            remote_files = [R2.search(fi).group(0) for fi in
-                ftp.nlst(remote_dir) if R2.search(fi)]
+            remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
+                [ftp.host,'grace','Level-1B','GFZ','AOD',DREL,Y],
+                basename=True, pattern=R2, sort=True)
             file_count = len(remote_files)
+            #-- if compressing into monthly tar files
             if TAR and (file_count > 0) and (TEST or CLOBBER):
                 #-- copy each gzip file and store within monthly tar files
                 tar = tarfile.open(name=os.path.join(grace_dir,FILE),mode='w:gz')
-                for fi in sorted(remote_files):
-                    #-- remote and local version of each input file
-                    remote_file = posixpath.join(remote_dir,fi)
-                    local_file = os.path.join(grace_dir,fi)
-                    ftp_mirror_file(fid1,ftp,remote_file,local_file,CLOBBER,MODE)
-                    #-- add file to tar and then remove local gzip file
-                    tar.add(local_file, arcname=fi)
-                    os.remove(local_file)
+                for fi,mt in zip(remote_files,remote_mtimes):
+                    #-- remote version of each input file
+                    remote = [ftp.host,'grace','Level-1B','GFZ','AOD',DREL,Y,fi]
+                    print(posixpath.join('ftp://',*remote), file=fid1)
+                    #-- retrieve bytes from remote file
+                    remote_buffer = gravity_toolkit.utilities.from_ftp(remote)
+                    #-- add file to tar
+                    tar_info = tarfile.TarInfo(name=fi)
+                    tar_info.mtime = mt
+                    tar_info.size = remote_buffer.getbuffer().nbytes
+                    tar.addfile(tarinfo=tar_info, fileobj=remote_buffer)
                 #-- close tar file and set permissions level to MODE
                 tar.close()
                 print(' --> {0}\n'.format(os.path.join(grace_dir,FILE)),file=fid1)
                 os.chmod(os.path.join(grace_dir,FILE), MODE)
             elif (file_count > 0) and not TAR:
                 #-- copy each gzip file and keep as individual daily files
-                for fi in sorted(remote_files):
+                for fi,mt in zip(remote_files,remote_mtimes):
                     #-- remote and local version of each input file
-                    remote_file = posixpath.join(remote_dir,fi)
-                    local_file = os.path.join(grace_dir,fi)
-                    ftp_mirror_file(fid1,ftp,remote_file,local_file,CLOBBER,MODE)
+                    remote = [ftp.host,'grace','Level-1B','GFZ','AOD',DREL,Y,fi]
+                    local = os.path.join(grace_dir,fi)
+                    ftp_mirror_file(fid1,ftp,remote,mt,local,CLOBBER,MODE)
+
     #-- close the ftp connection
     ftp.quit()
     #-- close log file and set permissions level to MODE
@@ -134,19 +139,19 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False, LOG=False,
 
 #-- PURPOSE: pull file from a remote host checking if file exists locally
 #-- and if the remote file is newer than the local file
-def ftp_mirror_file(fid, ftp, remote_file, local_file, CLOBBER, MODE):
+def ftp_mirror_file(fid,ftp,remote_path,remote_mtime,local_file,CLOBBER,MODE):
+    #-- path to remote file
+    remote_file = posixpath.join(*remote_path[1:])
     #-- if file exists in file system: check if remote file is newer
     TEST = False
     OVERWRITE = ' (clobber)'
-    #-- get last modified date of remote file and convert into unix time
-    mdtm = ftp.sendcmd('MDTM {0}'.format(remote_file))
-    remote_mtime = calendar.timegm(time.strptime(mdtm[4:],"%Y%m%d%H%M%S"))
     #-- check if local version of file exists
     if os.access(local_file, os.F_OK):
         #-- check last modification time of local file
         local_mtime = os.stat(local_file).st_mtime
         #-- if remote file is newer: overwrite the local file
-        if (remote_mtime > local_mtime):
+        if (gravity_toolkit.utilities.even(remote_mtime) >
+            gravity_toolkit.utilities.even(local_mtime)):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
@@ -155,8 +160,8 @@ def ftp_mirror_file(fid, ftp, remote_file, local_file, CLOBBER, MODE):
     #-- if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         #-- Printing files transferred
-        print('{0}{1}/{2} --> '.format('ftp://',ftp.host,remote_file),file=fid)
-        print('\t{0}{1}\n'.format(local_file,OVERWRITE),file=fid)
+        arg = (posixpath.join('ftp://',*remote_path),local_file,OVERWRITE)
+        fid.write('{0} -->\n\t{1}{2}\n\n'.format(*arg))
         #-- copy remote file contents to local file
         with open(local_file, 'wb') as f:
             ftp.retrbinary('RETR {0}'.format(remote_file), f.write)
@@ -206,10 +211,12 @@ def main():
     args = parser.parse_args()
 
     #-- check internet connection before attempting to run program
-    if check_connection():
-        gfz_isdc_dealiasing_ftp(args.directory, DREL=args.release,
-            YEAR=args.year, TAR=args.tar, LOG=args.log,
-            CLOBBER=args.clobber, MODE=args.mode)
+    HOST = 'isdcftp.gfz-potsdam.de'
+    if gravity_toolkit.utilities.check_ftp_connection(HOST):
+        for DREL in args.release:
+            gfz_isdc_dealiasing_ftp(args.directory, DREL=DREL,
+                YEAR=args.year, TAR=args.tar, LOG=args.log,
+                CLOBBER=args.clobber, MODE=args.mode)
 
 #-- run main program
 if __name__ == '__main__':

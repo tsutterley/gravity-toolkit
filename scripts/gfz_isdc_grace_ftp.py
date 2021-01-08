@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_grace_ftp.py
-Written by Tyler Sutterley (10/2020)
+Written by Tyler Sutterley (01/2021)
 Syncs GRACE/GRACE-FO data from the GFZ Information System and Data Center (ISDC)
 Syncs CSR/GFZ/JPL files for RL06 GAA/GAB/GAC/GAD/GSM
     GAA and GAB are GFZ/JPL only
@@ -28,9 +28,15 @@ COMMAND LINE OPTIONS:
 
 PYTHON DEPENDENCIES:
     future: Compatibility layer between Python 2 and Python 3
-        (http://python-future.org/)
+        http://python-future.org/
+    lxml: processing XML and HTML in Python
+        https://pypi.python.org/pypi/lxml
+
+PROGRAM DEPENDENCIES:
+    utilities: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 01/2021: using utilities module to list files from ftp
     Updated 10/2020: use argparse to set command line parameters
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 03/2020 for public release
@@ -44,25 +50,13 @@ from __future__ import print_function
 import sys
 import os
 import re
-import io
+import time
 import ftplib
 import shutil
 import hashlib
 import argparse
 import posixpath
-import calendar, time
-
-#-- PURPOSE: check internet connection
-def check_connection():
-    #-- attempt to connect to ftp host for GFZ ISDC
-    try:
-        f = ftplib.FTP('isdcftp.gfz-potsdam.de')
-        f.login()
-        f.voidcmd("NOOP")
-    except IOError:
-        raise RuntimeError('Check internet connection')
-    else:
-        return True
+import gravity_toolkit.utilities
 
 #-- PURPOSE: create and compile regular expression operator to find GRACE files
 def compile_regex_pattern(PROC, DREL, DSET):
@@ -153,8 +147,6 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC, DREL=[], MISSION=['grace','grace-fo'],
                     drel_str = '{0}.1'.format(rl)
                 else:
                     drel_str = rl
-                #-- remote directory for data release
-                remote_dir = posixpath.join(mi, 'Level-2', pr, drel_str)
                 #-- DATA PRODUCTS (GAC GAD GSM GAA GAB)
                 for ds in DSET[pr]:
                     #-- print string of exact data product
@@ -167,14 +159,15 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC, DREL=[], MISSION=['grace','grace-fo'],
                     #-- compile the regular expression operator to find files
                     R1 = re.compile(r'({0}-(.*?)(gz|txt|dif))'.format(ds))
                     #-- get filenames from remote directory
-                    lines = [fi for fi in ftp.nlst(remote_dir) if R1.search(fi)]
-                    for line in sorted(lines):
+                    remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
+                        [ftp.host,mi,'Level-2',pr,drel_str],
+                        basename=True, pattern=R1, sort=True)
+                    for fi,remote_mtime in zip(remote_files,remote_mtimes):
                         #-- extract filename from regex object
-                        fi = R1.search(line).group(0)
-                        remote_file = posixpath.join(remote_dir,fi)
+                        remote_path = [ftp.host,mi,'Level-2',pr,drel_str,fi]
                         local_file = os.path.join(local_dir,fi)
-                        ftp_mirror_file(fid1, ftp, remote_file, local_file,
-                            LIST, CLOBBER, CHECKSUM, MODE)
+                        ftp_mirror_file(fid1, ftp, remote_path, remote_mtime,
+                            local_file, LIST, CLOBBER, CHECKSUM, MODE)
 
                     #-- Create an index file for each GRACE/GRACE-FO product
                     #-- finding all dataset files *.gz in directory
@@ -197,13 +190,11 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC, DREL=[], MISSION=['grace','grace-fo'],
 
 #-- PURPOSE: pull file from a remote host checking if file exists locally
 #-- and if the remote file is newer than the local file
-def ftp_mirror_file(fid,ftp,remote_file,local_file,LIST,CLOBBER,CHECKSUM,MODE):
+def ftp_mirror_file(fid,ftp,remote_path,remote_mtime,local_file,
+    LIST,CLOBBER,CHECKSUM,MODE):
     #-- if file exists in file system: check if remote file is newer
     TEST = False
     OVERWRITE = ' (clobber)'
-    #-- get last modified date of remote file and convert into unix time
-    mdtm = ftp.sendcmd('MDTM {0}'.format(remote_file))
-    remote_mtime = calendar.timegm(time.strptime(mdtm[4:],"%Y%m%d%H%M%S"))
     #-- check if local version of file exists
     if CHECKSUM and os.access(local_file, os.F_OK):
         #-- generate checksum hash for local file
@@ -211,9 +202,7 @@ def ftp_mirror_file(fid,ftp,remote_file,local_file,LIST,CLOBBER,CHECKSUM,MODE):
         with open(local_file, 'rb') as local_buffer:
             local_hash = hashlib.md5(local_buffer.read()).hexdigest()
         #-- copy remote file contents to bytesIO object
-        remote_buffer = io.BytesIO()
-        ftp.retrbinary('RETR {0}'.format(remote_file), remote_buffer.write)
-        remote_buffer.seek(0)
+        remote_buffer = gravity_toolkit.utilities.from_ftp(remote_path)
         #-- generate checksum hash for remote file
         remote_hash = hashlib.md5(remote_buffer.getvalue()).hexdigest()
         #-- compare checksums
@@ -224,7 +213,8 @@ def ftp_mirror_file(fid,ftp,remote_file,local_file,LIST,CLOBBER,CHECKSUM,MODE):
         #-- check last modification time of local file
         local_mtime = os.stat(local_file).st_mtime
         #-- if remote file is newer: overwrite the local file
-        if (remote_mtime > local_mtime):
+        if (gravity_toolkit.utilities.even(remote_mtime) >
+            gravity_toolkit.utilities.even(local_mtime)):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
@@ -233,7 +223,7 @@ def ftp_mirror_file(fid,ftp,remote_file,local_file,LIST,CLOBBER,CHECKSUM,MODE):
     #-- if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         #-- Printing files transferred
-        arg=(posixpath.join('ftp://',ftp.host,remote_file),local_file,OVERWRITE)
+        arg=(posixpath.join('ftp://',*remote_path),local_file,OVERWRITE)
         fid.write('{0} -->\n\t{1}{2}\n\n'.format(*arg))
         #-- if executing copy command (not only printing the files)
         if not LIST:
@@ -244,6 +234,8 @@ def ftp_mirror_file(fid,ftp,remote_file,local_file,LIST,CLOBBER,CHECKSUM,MODE):
                 with open(local_file, 'wb') as f:
                     shutil.copyfileobj(remote_buffer, f, 16 * 1024)
             else:
+                #-- path to remote file
+                remote_file = posixpath.join(*remote_path[1:])
                 #-- copy remote file contents to local file
                 with open(local_file, 'wb') as f:
                     ftp.retrbinary('RETR {0}'.format(remote_file), f.write)
@@ -302,7 +294,8 @@ def main():
     args = parser.parse_args()
 
     #-- check internet connection before attempting to run program
-    if check_connection():
+    HOST = 'isdcftp.gfz-potsdam.de'
+    if gravity_toolkit.utilities.check_ftp_connection(HOST):
         gfz_isdc_grace_ftp(args.directory, args.center, DREL=args.release,
             MISSION=args.mission, LIST=args.list, LOG=args.log,
             CLOBBER=args.clobber, CHECKSUM=args.checksum, MODE=args.mode)

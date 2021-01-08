@@ -516,7 +516,8 @@ def http_pull_file(fid, remote_file, remote_mtime, local_file, LIST, CLOBBER,
         #-- check last modification time of local file
         local_mtime = os.stat(local_file).st_mtime
         #-- if remote file is newer: overwrite the local file
-        if (remote_mtime > local_mtime):
+        if (gravity_toolkit.utilities.even(remote_mtime) >
+            gravity_toolkit.utilities.even(local_mtime)):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
