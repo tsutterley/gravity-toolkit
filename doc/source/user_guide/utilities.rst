@@ -58,6 +58,15 @@ General Methods
         `format`: format for input time string
 
 
+.. method:: gravity_toolkit.utilities.even(value)
+
+    Rounds a number to an even number less than or equal to original
+
+    Arguments:
+
+        `value`: number to be rounded
+
+
 .. method:: gravity_toolkit.utilities.copy(source, destination, verbose=False, move=False)
 
     Copy or move a file with all system information
@@ -118,7 +127,7 @@ General Methods
         `mtimes`: list of last modification times for items in the directory
 
 
-.. method:: gravity_toolkit.utilities.from_ftp(HOST,username=None,password=None,timeout=None,local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
+.. method:: gravity_toolkit.utilities.from_ftp(HOST,username=None,password=None,timeout=None,local=None,hash='',chunk=8192,verbose=False,fid=sys.stdout,mode=0o775)
 
     Download a file from a ftp host
 
@@ -219,9 +228,9 @@ General Methods
     .. __: https://podaac-tools.jpl.nasa.gov/drive
 
 
-.. method:: gravity_toolkit.utilities.drive_list(HOST,username=None,password=None,build=True,timeout=None,parser=None,pattern='',sort=False)
+.. method:: gravity_toolkit.utilities.drive_list(HOST,username=None,password=None,build=True,timeout=None,urs=None,parser=None,pattern='',sort=False)
 
-    Download a file from the `JPL PO.DAAC Drive`__ https server
+    List a directory on `JPL PO.DAAC <https://podaac-tools.jpl.nasa.gov/drive>`_  or `ECCO Drive <https://ecco.jpl.nasa.gov/drive/>`_
 
     Arguments:
 
@@ -236,6 +245,8 @@ General Methods
         `build`: Build opener and check WebDAV credentials
 
         `timeout`: timeout in seconds for blocking operations
+
+        `urs`: JPL PO.DAAC or ECCO login URS 3 host
 
         `parser`: HTML parser for lxml
 
@@ -249,13 +260,11 @@ General Methods
 
         `collastmod`: list of last modification times for items in the directory
 
-    .. __: https://podaac-tools.jpl.nasa.gov/drive
 
 
+.. method:: gravity_toolkit.utilities.from_drive(HOST,username=None,password=None,build=True,timeout=None,urs=None,local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
 
-.. method:: gravity_toolkit.utilities.from_drive(HOST,username=None,password=None,build=True,timeout=None,local=None,hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
-
-    Download a file from `JPL PO.DAAC Drive`__ https server
+    Download a file from `JPL PO.DAAC <https://podaac-tools.jpl.nasa.gov/drive>`_  or `ECCO Drive <https://ecco.jpl.nasa.gov/drive/>`_ https servers
 
     Arguments:
 
@@ -271,6 +280,8 @@ General Methods
 
         `timeout`: timeout in seconds for blocking operations
 
+        `urs`: JPL PO.DAAC or ECCO login URS 3 host
+
         `local`: path to local file
 
         `hash`: MD5 hash of local file
@@ -282,8 +293,6 @@ General Methods
         `fid`: open file object to print if verbose
 
         `mode`: permissions mode of output local file
-
-    .. __: https://podaac-tools.jpl.nasa.gov/drive
 
 
 .. method:: gravity_toolkit.utilities.from_figshare(directory,article='7388540',timeout=None,context=ssl.SSLContext(),chunk=16384,verbose=False,fid=sys.stdout,pattern='',mode=0o775)

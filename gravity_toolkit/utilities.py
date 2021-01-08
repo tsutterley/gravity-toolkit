@@ -3,6 +3,9 @@ utilities.py
 Written by Tyler Sutterley (12/2020)
 Download and management utilities for syncing time and auxiliary files
 
+PYTHON DEPENDENCIES:
+    lxml: processing XML and HTML in Python (https://pypi.python.org/pypi/lxml)
+
 UPDATE HISTORY:
     Updated 12/2020: added ICGEM list for static models
         added figshare geocenter download for Sutterley and Velicogna files
@@ -16,7 +19,7 @@ UPDATE HISTORY:
     Updated 08/2020: add PO.DAAC Drive opener, login and download functions
     Written 08/2020
 """
-from __future__ import print_function
+from __future__ import print_function, division
 
 import sys
 import os
@@ -115,6 +118,17 @@ def get_unix_time(time_string, format='%Y-%m-%d %H:%M:%S'):
         return None
     else:
         return calendar.timegm(parsed_time)
+
+#-- PURPOSE: rounds a number to an even number less than or equal to original
+def even(value):
+    """
+    Rounds a number to an even number less than or equal to original
+
+    Arguments
+    ---------
+    value: number to be rounded
+    """
+    return 2*int(value//2)
 
 #-- PURPOSE: make a copy of a file with all system information
 def copy(source, destination, verbose=False, move=False):
@@ -233,7 +247,7 @@ def ftp_list(HOST,username=None,password=None,timeout=None,
 
 #-- PURPOSE: download a file from a ftp host
 def from_ftp(HOST,username=None,password=None,timeout=None,local=None,
-    hash='',chunk=16384,verbose=False,fid=sys.stdout,mode=0o775):
+    hash='',chunk=8192,verbose=False,fid=sys.stdout,mode=0o775):
     """
     Download a file from a ftp host
 
@@ -269,7 +283,8 @@ def from_ftp(HOST,username=None,password=None,timeout=None,local=None,
         ftp_remote_path = posixpath.join(*HOST[1:])
         #-- copy remote file contents to bytesIO object
         remote_buffer = io.BytesIO()
-        ftp.retrbinary('RETR {0}'.format(ftp_remote_path), remote_buffer.write)
+        ftp.retrbinary('RETR {0}'.format(ftp_remote_path),
+            remote_buffer.write, blocksize=chunk)
         remote_buffer.seek(0)
         #-- save file basename with bytesIO object
         remote_buffer.filename = HOST[-1]
