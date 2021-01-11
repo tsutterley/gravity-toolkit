@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 u"""
-gen_disc_load.py (07/2020)
+gen_disc_load.py (01/2021)
 Calculates gravitational spherical harmonic coefficients for a uniform disc load
 
 CALLING SEQUENCE:
@@ -31,6 +31,13 @@ PROGRAM DEPENDENCIES:
     plm_holmes.py: Computes fully normalized associated Legendre polynomials
     legendre_polynomials.py: Computes fully normalized Legendre polynomials
     units.py: class for converting spherical harmonic data to specific units
+    harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
+        destripe_harmonics.py: calculates the decorrelation (destriping) filter
+            and filters the GRACE/GRACE-FO coefficients for striping errors
+        ncdf_read_stokes.py: reads spherical harmonic netcdf files
+        ncdf_stokes.py: writes output spherical harmonic data to netcdf
+        hdf5_read_stokes.py: reads spherical harmonic HDF5 files
+        hdf5_stokes.py: writes output spherical harmonic data to HDF5
 
 REFERENCE:
     Holmes and Featherstone, "A Unified Approach to the Clenshaw Summation and
@@ -38,6 +45,7 @@ REFERENCE:
         Associated Legendre Functions", Journal of Geodesy (2002)
 
 UPDATE HISTORY:
+    Updated 01/2021: use harmonics class for spherical harmonic operations
     Updated 07/2020: added function docstrings
     Updated 05/2020: vectorize calculation over degrees to improve compute time
         added option to precompute plms for disc load centers
@@ -49,9 +57,10 @@ UPDATE HISTORY:
     Written 09/2016
 """
 import numpy as np
+import gravity_toolkit.units
+import gravity_toolkit.harmonics
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.legendre_polynomials import legendre_polynomials
-from gravity_toolkit.units import units
 
 def gen_disc_load(data,lon,lat,area,LMAX=60,MMAX=None,PLM=None,LOVE=None):
     """
@@ -84,7 +93,7 @@ def gen_disc_load(data,lon,lat,area,LMAX=60,MMAX=None,PLM=None,LOVE=None):
         MMAX = np.copy(LMAX)
 
     #-- Earth Parameters
-    factors = units(lmax=LMAX)
+    factors = gravity_toolkit.units(lmax=LMAX)
     rho_e = factors.rho_e#-- Average Density of the Earth [g/cm^3]
     rad_e = factors.rad_e#-- Average Radius of the Earth [cm]
 
@@ -124,7 +133,7 @@ def gen_disc_load(data,lon,lat,area,LMAX=60,MMAX=None,PLM=None,LOVE=None):
     #-- l=0 is a special case (P(-1) = 1, P(1) = cos(alpha))
     pl_alpha[0] = (1.0 - alpha)/2.0
     #-- for all other degrees: calculate the legendre polynomials up to LMAX+1
-    pl_matrix, dpl_matrix = legendre_polynomials(LMAX+1,alpha)
+    pl_matrix,_ = legendre_polynomials(LMAX+1,alpha)
     for l in range(1, LMAX+1):#-- LMAX+1 to include LMAX
         #-- from Longman (1962) and Jacob et al (2012)
         #-- unnormalizing Legendre polynomials
@@ -163,11 +172,9 @@ def gen_disc_load(data,lon,lat,area,LMAX=60,MMAX=None,PLM=None,LOVE=None):
     yclm = np.zeros((LMAX+1,MMAX+1))
     yslm = np.zeros((LMAX+1,MMAX+1))
     #-- Initializing output spherical harmonic matrices
-    Ylms = {}
-    Ylms['l'] = np.arange(LMAX+1)
-    Ylms['m'] = np.arange(MMAX+1)
-    Ylms['clm'] = np.zeros((LMAX+1,MMAX+1))
-    Ylms['slm'] = np.zeros((LMAX+1,MMAX+1))
+    Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
+    Ylms.clm = np.zeros((LMAX+1,MMAX+1))
+    Ylms.slm = np.zeros((LMAX+1,MMAX+1))
     for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
         l = np.arange(m,LMAX+1)#-- LMAX+1 to include LMAX
         #-- rotate disc load to be centered at lat/lon
@@ -177,8 +184,8 @@ def gen_disc_load(data,lon,lat,area,LMAX=60,MMAX=None,PLM=None,LOVE=None):
         yclm[l,m] = plm[l,m]*dcos[m]
         yslm[l,m] = plm[l,m]*dsin[m]
         #-- multiplying by coefficients to convert to geoid coefficients
-        Ylms['clm'][l,m] = coeff*dfactor[l]*yclm[l,m]
-        Ylms['slm'][l,m] = coeff*dfactor[l]*yslm[l,m]
+        Ylms.clm[l,m] = coeff*dfactor[l]*yclm[l,m]
+        Ylms.slm[l,m] = coeff*dfactor[l]*yslm[l,m]
 
-    #-- return the output spherical harmonics
+    #-- return the output spherical harmonics object
     return Ylms

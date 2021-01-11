@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_sensitivity_kernel.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (01/2021)
 
 Calculates spatial sensitivity kernels through a least-squares mascon procedure
 
@@ -105,6 +105,7 @@ REFERENCES:
         https://doi.org/10.1029/2009GL039401
 
 UPDATE HISTORY:
+    Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
     Updated 12/2020: added more love number options
     Updated 10/2020: use argparse to set command line parameters
     Updated 08/2020: use utilities to define path to load love numbers file
@@ -214,7 +215,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF'):
         #-- https://doi.org/10.1016/j.cageo.2012.06.022
         love_numbers_file = get_data_path(['data','PREM-LLNs-truncated.dat'])
         header = 1
-        columns = ['l','hl','ll','kl','nl','nk']    
+        columns = ['l','hl','ll','kl','nl','nk']
     #-- LMAX of load love numbers from Han and Wahr (1995) is 696.
     #-- from Wahr (2007) linearly interpolating kl works
     #-- however, as we are linearly extrapolating out, do not make
@@ -327,14 +328,14 @@ def calc_sensitivity_kernel(parameters, LOVE_NUMBERS=0, REFERENCE=None,
         if MASCON_OCEAN:
             #-- calculate ratio between total mascon mass and
             #-- a uniformly distributed cm of water over the ocean
-            ratio = Ylms.clm[0,0]/ocean_Ylms['clm'][0,0]
+            ratio = Ylms.clm[0,0]/ocean_Ylms.clm[0,0]
             #-- for each spherical harmonic
             for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
                 for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
                     #-- remove ratio*ocean Ylms from mascon Ylms
                     #-- note: x -= y is equivalent to x = x - y
-                    Ylms.clm[l,m] -= ratio*ocean_Ylms['clm'][l,m]
-                    Ylms.slm[l,m] -= ratio*ocean_Ylms['slm'][l,m]
+                    Ylms.clm[l,m] -= ratio*ocean_Ylms.clm[l,m]
+                    Ylms.slm[l,m] -= ratio*ocean_Ylms.slm[l,m]
         #-- truncate mascon spherical harmonics to d/o LMAX/MMAX and add to list
         mascon_list.append(Ylms.truncate(lmax=LMAX, mmax=MMAX))
         #-- mascon base is the file without directory or suffix

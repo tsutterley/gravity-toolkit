@@ -3,7 +3,7 @@ read_GIA_model.py
 
  - Reads Glacial Isostatic Adjustment (GIA) files that can come in various formats depending on the group
  - Outputs spherical harmonics for the GIA rates and the GIA model parameters
- - Can also output geodesy normalized harmonics to netCDF4 or HDF5 formats
+ - Can also output fully normalized harmonics to netCDF4 or HDF5 formats
 
 #### Calling Sequence
 ```python

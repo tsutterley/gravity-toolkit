@@ -48,11 +48,9 @@ def test_harmonics():
     # calculate Legendre polynomials with Martin Mohlenkamp's relation
     PLM = gravity_toolkit.plm_mohlenkamp(LMAX, np.cos(theta))
     # convert to spherical harmonics
-    Ylms = gravity_toolkit.gen_stokes(input_distribution.data,
+    test_Ylms = gravity_toolkit.gen_stokes(input_distribution.data,
         input_distribution.lon, input_distribution.lat, UNITS=1, LMAX=LMAX,
         PLM=PLM, LOVE=(hl,kl,ll))
-    # convert to harmonics object
-    test_Ylms = gravity_toolkit.harmonics().from_dict(Ylms)
 
     # read harmonics from file
     harmonics_file = 'out.geoid.green_ice.0.5.2008.60.gz'

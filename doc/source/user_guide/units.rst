@@ -36,7 +36,7 @@ General Attributes and Methods
 
 .. attribute:: object.norm
 
-    geodesy normalized spherical harmonics
+    fully normalized spherical harmonics
 
 .. attribute:: object.cmwe
 

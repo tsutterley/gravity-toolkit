@@ -45,6 +45,13 @@ PROGRAM DEPENDENCIES:
     plm_holmes.py: Computes fully-normalized associated Legendre polynomials
     legendre_polynomials.py: Computes fully normalized Legendre polynomials
     units.py: class for converting spherical harmonic data to specific units
+    harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
+        destripe_harmonics.py: calculates the decorrelation (destriping) filter
+            and filters the GRACE/GRACE-FO coefficients for striping errors
+        ncdf_read_stokes.py: reads spherical harmonic netcdf files
+        ncdf_stokes.py: writes output spherical harmonic data to netcdf
+        hdf5_read_stokes.py: reads spherical harmonic HDF5 files
+        hdf5_stokes.py: writes output spherical harmonic data to HDF5
 
 REFERENCES:
     I.M. Longman, Journal of Geophysical Research, Vol. 67, No. 2, (Feb. 1962)
@@ -77,9 +84,10 @@ UPDATE HISTORY:
     Written 04/2012
 """
 import numpy as np
+import gravity_toolkit.units
+import gravity_toolkit.harmonics
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.legendre_polynomials import legendre_polynomials
-from gravity_toolkit.units import units
 
 def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     AREA=0, RAD_CAP=0, RAD_KM=0, UNITS=1, PLM=None, LOVE=None):
@@ -117,7 +125,7 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
         MMAX = np.copy(LMAX)
 
     #-- Earth Parameters
-    factors = units(lmax=LMAX)
+    factors = gravity_toolkit.units(lmax=LMAX)
     rho_e = factors.rho_e#-- Average Density of the Earth [g/cm^3]
     rad_e = factors.rad_e#-- Average Radius of the Earth [cm]
 
@@ -193,7 +201,7 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     #-- l=0 is a special case (P(-1) = 1, P(1) = cos(alpha))
     pl_alpha[0] = (1.0 - np.cos(alpha))/2.0
     #-- for all other degrees: calculate the legendre polynomials up to LMAX+1
-    pl_matrix, dpl_matrix = legendre_polynomials(LMAX+1,np.cos(alpha))
+    pl_matrix,_ = legendre_polynomials(LMAX+1,np.cos(alpha))
     for l in range(1, LMAX+1):#-- LMAX+1 to include LMAX
         #-- from Longman (1962) and Jacob et al (2012)
         #-- unnormalizing Legendre polynomials
@@ -233,11 +241,9 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     yclm = np.zeros((LMAX+1,MMAX+1))
     yslm = np.zeros((LMAX+1,MMAX+1))
     #-- Initializing output spherical harmonic matrices
-    Ylms = {}
-    Ylms['l'] = np.arange(LMAX+1)
-    Ylms['m'] = np.arange(MMAX+1)
-    Ylms['clm'] = np.zeros((LMAX+1,MMAX+1))
-    Ylms['slm'] = np.zeros((LMAX+1,MMAX+1))
+    Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
+    Ylms.clm = np.zeros((LMAX+1,MMAX+1))
+    Ylms.slm = np.zeros((LMAX+1,MMAX+1))
     for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
         l = np.arange(m,LMAX+1)#-- LMAX+1 to include LMAX
         #-- rotate spherical cap to be centered at lat/lon
@@ -247,8 +253,8 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
         yclm[l,m] = plm[l,m]*dcos[m]
         yslm[l,m] = plm[l,m]*dsin[m]
         #-- multiplying by coefficients to convert to geoid coefficients
-        Ylms['clm'][l,m] = coeff*dfactor[l]*yclm[l,m]
-        Ylms['slm'][l,m] = coeff*dfactor[l]*yslm[l,m]
+        Ylms.clm[l,m] = coeff*dfactor[l]*yclm[l,m]
+        Ylms.slm[l,m] = coeff*dfactor[l]*yslm[l,m]
 
-    #-- return the output spherical harmonics
+    #-- return the output spherical harmonics object
     return Ylms

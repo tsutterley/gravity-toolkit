@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ocean_stokes.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (01/2021)
 
 Reads a land-sea mask and converts to a series of spherical harmonics
 
@@ -16,6 +16,7 @@ INPUTS:
 OPTIONS:
     MMAX: maximum spherical harmonic order of the output harmonics
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
+    VARNAME: variable name for mask in netCDF4 file
     SIMPLIFY: simplify land mask by removing isolated points
 
 OUTPUTS:
@@ -46,6 +47,7 @@ REFERENCE:
     Earth and Space Science, 7, 2020. https://doi.org/10.1029/2019EA000860
 
 UPDATE HISTORY:
+    Updated 01/2021: added option VARNAME to generalize input masks
     Updated 12/2020: added simplify function to remove isolated points
     Updated 07/2020: added function docstrings
     Updated 06/2020: using spatial data class for input and output operations
@@ -55,24 +57,25 @@ UPDATE HISTORY:
     Updated 05/2015: added parameter MMAX for MMAX != LMAX
     Written 03/2015
 """
-import os
 import numpy as np
 from gravity_toolkit.spatial import spatial
 from gravity_toolkit.gen_stokes import gen_stokes
 
-def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, SIMPLIFY=False):
+def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
+    SIMPLIFY=False):
     """
     Converts data from spherical harmonic coefficients to a spatial field
 
     Arguments
     ---------
-    LANDMASK: netCDF4 land mask file with variable name LSMASK
+    LANDMASK: netCDF4 land mask file
     LMAX: maximum spherical harmonic degree
 
     Keyword arguments
     -----------------
     MMAX: maximum spherical harmonic order of the output harmonics
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
+    VARNAME: variable name for mask in netCDF4 file
     SIMPLIFY: simplify land mask by removing isolated points
 
     Returns
@@ -88,7 +91,7 @@ def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, SIMPLIFY=False):
     #-- 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
     #-- Open the land-sea NetCDF file for reading
     landsea = spatial().from_netCDF4(LANDMASK,
-        date=False, varname='LSMASK')
+        date=False, varname=VARNAME)
     #-- create land function
     nth,nphi = landsea.shape
     land_function = np.zeros((nth,nphi),dtype=np.float)
