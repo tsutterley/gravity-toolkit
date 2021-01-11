@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_stokes.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (01/2021)
 
 Converts data from the spatial domain to spherical harmonic coefficients
 
@@ -14,10 +14,11 @@ INPUTS:
     lat: latitude array
 
 OUTPUTS:
-    clm: Cosine spherical harmonic coefficients (geodesy normalization)
-    slm: Sine spherical harmonic coefficients (geodesy normalization)
-    l: spherical harmonic degree to LMAX
-    m: spherical harmonic order to MMAX
+    Ylms: harmonics object
+        clm: fully-normalized cosine spherical harmonic coefficients
+        slm: fully-normalied sine spherical harmonic coefficients
+        l: spherical harmonic degree to LMAX
+        m: spherical harmonic order to MMAX
 
 OPTIONS:
     LMIN: Lower bound of Spherical Harmonic Degrees (default = 0)
@@ -36,8 +37,16 @@ PYTHON DEPENDENCIES:
 PROGRAM DEPENDENCIES:
     plm_holmes.py: computes fully-normalized associated Legendre polynomials
     units.py: class for converting spherical harmonic data to specific units
+    harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
+        destripe_harmonics.py: calculates the decorrelation (destriping) filter
+            and filters the GRACE/GRACE-FO coefficients for striping errors
+        ncdf_read_stokes.py: reads spherical harmonic netcdf files
+        ncdf_stokes.py: writes output spherical harmonic data to netcdf
+        hdf5_read_stokes.py: reads spherical harmonic HDF5 files
+        hdf5_stokes.py: writes output spherical harmonic data to HDF5
 
 UPDATE HISTORY:
+    Updated 01/2021: use harmonics class for spherical harmonic operations
     Updated 07/2020: added function docstrings
     Updated 04/2020: reading load love numbers outside of this function
         using the units class for converting to normalized spherical harmonics
@@ -58,8 +67,9 @@ UPDATE HISTORY:
     Written 09/2011
 """
 import numpy as np
+import gravity_toolkit.units
+import gravity_toolkit.harmonics
 from gravity_toolkit.plm_holmes import plm_holmes
-from gravity_toolkit.units import units
 
 def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     PLM=None, LOVE=None):
@@ -122,9 +132,9 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     sz = np.shape(data)
     data = data.T if (sz[0] == nlat) else np.copy(data)
 
-    #-- SH Degree dependent factors to convert into geodesy normalized SH's
+    #-- SH Degree dependent factors to convert into fully normalized SH's
     #-- use splat operator to extract arrays of kl, hl, and ll Love Numbers
-    factors = units(lmax=LMAX).spatial(*LOVE)
+    factors = gravity_toolkit.units(lmax=LMAX).spatial(*LOVE)
 
     #-- extract degree dependent factor for specific units
     #-- calculate integration factors for theta and phi
@@ -172,8 +182,9 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     yclm = np.zeros((LMAX+1,MMAX+1))
     yslm = np.zeros((LMAX+1,MMAX+1))
     #-- Initializing output spherical harmonic matrices
-    clm = np.zeros((LMAX+1,MMAX+1))
-    slm = np.zeros((LMAX+1,MMAX+1))
+    Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
+    Ylms.clm = np.zeros((LMAX+1,MMAX+1))
+    Ylms.slm = np.zeros((LMAX+1,MMAX+1))
     #-- Multiplying gridded data with sin/cos of m#phis
     #-- This will sum through all phis in the dot product
     #-- output [m,theta]
@@ -186,8 +197,9 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
         #-- axis=1 signifies the direction of the summation
         yclm[l,m] = np.sum(plm[l,m,:]*dcos[m,:], axis=1)
         yslm[l,m] = np.sum(plm[l,m,:]*dsin[m,:], axis=1)
-        #-- Multiplying by factors to convert to geodesy normalized coefficients
-        clm[l,m] = dfactor[l]*yclm[l,m]
-        slm[l,m] = dfactor[l]*yslm[l,m]
+        #-- Multiplying by factors to convert to fully normalized coefficients
+        Ylms.clm[l,m] = dfactor[l]*yclm[l,m]
+        Ylms.slm[l,m] = dfactor[l]*yslm[l,m]
 
-    return {'clm':clm, 'slm':slm, 'l':np.arange(LMAX+1), 'm':np.arange(MMAX+1)}
+    #-- return the output spherical harmonics object
+    return Ylms

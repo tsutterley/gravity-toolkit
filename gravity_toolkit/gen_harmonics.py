@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_harmonics.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (01/2021)
 Converts data from the spatial domain to spherical harmonic coefficients
 
 Differs from the gen_stokes() function as it does not
@@ -9,8 +9,6 @@ Differs from the gen_stokes() function as it does not
 
 CALLING SEQUENCE:
     Ylms = gen_harmonics(data, lon, lat, LMIN=0, LMAX=60, DDEG=0.5)
-    clm = Ylms['clm']
-    slm = Ylms['slm']
 
 INPUTS:
     data: data magnitude
@@ -18,10 +16,11 @@ INPUTS:
     lat: latitude array
 
 OUTPUTS:
-    clm: cosine spherical harmonic coefficients (4-pi normalized)
-    slm: sine spherical harmonic coefficients (4-pi normalized)
-    l: spherical harmonic degree to LMAX
-    m: spherical harmonic order to MMAX
+    Ylms: harmonics object
+        clm: 4-pi normalized cosine spherical harmonic coefficients
+        slm: 4-pi normalized sine spherical harmonic coefficients
+        l: spherical harmonic degree to LMAX
+        m: spherical harmonic order to MMAX
 
 OPTIONS:
     LMAX: Upper bound of Spherical Harmonic Degrees
@@ -33,6 +32,13 @@ PYTHON DEPENDENCIES:
 
 PROGRAM DEPENDENCIES:
     plm_holmes.py: Computes fully normalized associated Legendre polynomials
+    harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
+        destripe_harmonics.py: calculates the decorrelation (destriping) filter
+            and filters the GRACE/GRACE-FO coefficients for striping errors
+        ncdf_read_stokes.py: reads spherical harmonic netcdf files
+        ncdf_stokes.py: writes output spherical harmonic data to netcdf
+        hdf5_read_stokes.py: reads spherical harmonic HDF5 files
+        hdf5_stokes.py: writes output spherical harmonic data to HDF5
 
 REFERENCE:
     Holmes and Featherstone, "A Unified Approach to the Clenshaw Summation and
@@ -40,6 +46,7 @@ REFERENCE:
         Associated Legendre Functions", Journal of Geodesy (2002)
 
 UPDATE HISTORY:
+    Updated 01/2021: use harmonics class for spherical harmonic operations
     Updated 07/2020: added function docstrings
     Updated 04/2020: include degrees and orders in output dictionary
     Updated 10/2017: updated comments and cleaned up code
@@ -47,6 +54,7 @@ UPDATE HISTORY:
     Written 09/2016
 """
 import numpy as np
+import gravity_toolkit.harmonics
 from gravity_toolkit.plm_holmes import plm_holmes
 
 def gen_harmonics(data, lon, lat, LMAX=60, MMAX=None, PLM=0):
@@ -132,11 +140,9 @@ def gen_harmonics(data, lon, lat, LMAX=60, MMAX=None, PLM=0):
     yclm = np.zeros((LMAX+1,MMAX+1))
     yslm = np.zeros((LMAX+1,MMAX+1))
     #-- Initializing output spherical harmonic matrices
-    Ylms = {}
-    Ylms['l'] = np.arange(LMAX+1)
-    Ylms['m'] = np.arange(MMAX+1)
-    Ylms['clm'] = np.zeros((LMAX+1,MMAX+1))
-    Ylms['slm'] = np.zeros((LMAX+1,MMAX+1))
+    Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
+    Ylms.clm = np.zeros((LMAX+1,MMAX+1))
+    Ylms.slm = np.zeros((LMAX+1,MMAX+1))
     #-- Multiplying gridded data with sin/cos of m#phis (output [m,theta])
     #-- This will sum through all phis in the dot product
     dcos = np.dot(ccos,dinput)
@@ -148,8 +154,8 @@ def gen_harmonics(data, lon, lat, LMAX=60, MMAX=None, PLM=0):
         yclm[l,m] = np.sum(plm[l,m,:]*dcos[m,:], axis=1)
         yslm[l,m] = np.sum(plm[l,m,:]*dsin[m,:], axis=1)
         #-- convert to output normalization (4-pi normalized harmonics)
-        Ylms['clm'][l,m] = coeff*yclm[l,m]
-        Ylms['slm'][l,m] = coeff*yslm[l,m]
+        Ylms.clm[l,m] = coeff*yclm[l,m]
+        Ylms.slm[l,m] = coeff*yslm[l,m]
 
-    #-- return the output spherical harmonics
+    #-- return the output spherical harmonics object
     return Ylms

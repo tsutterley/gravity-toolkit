@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_maps.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (01/2021)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly spatial fields
@@ -91,6 +91,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
     Updated 12/2020: added more love number options and from gfc for mean files
     Updated 10/2020: use argparse to set command line parameters
     Updated 08/2020: use utilities to define path to load love numbers file
@@ -342,14 +343,14 @@ def grace_spatial_maps(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
             if REDISTRIBUTE_REMOVED:
                 #-- calculate ratio between total removed mass and
                 #-- a uniformly distributed cm of water over the ocean
-                ratio = Ylms.clm[0,0,:]/ocean_Ylms['clm'][0,0]
+                ratio = Ylms.clm[0,0,:]/ocean_Ylms.clm[0,0]
                 #-- for each spherical harmonic
                 for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
                     for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
                         #-- remove the ratio*ocean Ylms from Ylms
                         #-- note: x -= y is equivalent to x = x - y
-                        Ylms.clm[l,m,:] -= ratio*ocean_Ylms['clm'][l,m]
-                        Ylms.slm[l,m,:] -= ratio*ocean_Ylms['slm'][l,m]
+                        Ylms.clm[l,m,:] -= ratio*ocean_Ylms.clm[l,m]
+                        Ylms.slm[l,m,:] -= ratio*ocean_Ylms.slm[l,m]
             #-- filter removed coefficients
             if DESTRIPE:
                 Ylms = Ylms.destripe()

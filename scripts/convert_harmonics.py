@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 convert_harmonics.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (01/2021)
 Converts a file from the spatial domain into the spherical harmonic domain
 
 CALLING SEQUENCE:
@@ -68,6 +68,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 01/2021: harmonics object output from gen_stokes.py
     Updated 12/2020: added more love number options
     Updated 10/2020: use argparse to set command line parameters
     Updated 08/2020: use utilities to define path to load love numbers file
@@ -134,7 +135,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF'):
         #-- https://doi.org/10.1016/j.cageo.2012.06.022
         love_numbers_file = get_data_path(['data','PREM-LLNs-truncated.dat'])
         header = 1
-        columns = ['l','hl','ll','kl','nl','nk']    
+        columns = ['l','hl','ll','kl','nl','nk']
     #-- LMAX of load love numbers from Han and Wahr (1995) is 696.
     #-- from Wahr (2007) linearly interpolating kl works
     #-- however, as we are linearly extrapolating out, do not make
@@ -189,22 +190,21 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None, UNITS=None,
     #-- calculate associated Legendre polynomials
     th = (90.0 - input_spatial.lat)*np.pi/180.0
     PLM,dPLM = plm_holmes(LMAX,np.cos(th))
-    #-- date count array
-    counter = np.arange(nt)
 
-    #-- allocate for output spherical harmonics
-    Ylms = harmonics(lmax=LMAX, mmax=MMAX)
-    Ylms.time = input_spatial.time.copy()
-    Ylms.month = np.array(12.0*(Ylms.time - 2002.0),dtype='i') + 1
-    Ylms.clm = np.zeros((LMAX+1,LMAX+1,nt))
-    Ylms.slm = np.zeros((LMAX+1,LMAX+1,nt))
-    for t in range(nt):
+    #-- create list of harmonics objects
+    Ylms_list = []
+    for i,t in enumerate(input_spatial.time):
         #-- convert spatial field to spherical harmonics
-        output_Ylms = gen_stokes(input_spatial.data[:,:,t].T,
+        output_Ylms = gen_stokes(input_spatial.data[:,:,i].T,
             input_spatial.lon, input_spatial.lat, UNITS=UNITS,
             LMIN=0, LMAX=LMAX, MMAX=MMAX, PLM=PLM, LOVE=LOVE)
-        Ylms.clm[:,:,t] = output_Ylms['clm'][:,:].copy()
-        Ylms.slm[:,:,t] = output_Ylms['slm'][:,:].copy()
+        output_Ylms.time = np.copy(t)
+        output_Ylms.month = np.int(12.0*(t - 2002.0)) + 1
+        #-- append to list
+        Ylms_list.append(output_Ylms)
+    #-- convert Ylms list for output spherical harmonics
+    Ylms = harmonics().from_list(Ylms_list)
+    Ylms_list = None
 
     #-- if verbose output: print input and output file names
     if VERBOSE:

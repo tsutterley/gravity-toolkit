@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 combine_harmonics.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (01/2021)
 Converts a file from the spherical harmonic domain into the spatial domain
 
 CALLING SEQUENCE:
@@ -76,6 +76,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
     Updated 12/2020: added more love number options
     Updated 10/2020: use argparse to set command line parameters
     Updated 08/2020: use utilities to define path to load love numbers file
@@ -151,7 +152,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF'):
         #-- https://doi.org/10.1016/j.cageo.2012.06.022
         love_numbers_file = get_data_path(['data','PREM-LLNs-truncated.dat'])
         header = 1
-        columns = ['l','hl','ll','kl','nl','nk']    
+        columns = ['l','hl','ll','kl','nl','nk']
     #-- LMAX of load love numbers from Han and Wahr (1995) is 696.
     #-- from Wahr (2007) linearly interpolating kl works
     #-- however, as we are linearly extrapolating out, do not make
@@ -208,14 +209,14 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None,
         ocean_Ylms = ocean_stokes(LSMASK, LMAX, MMAX=MMAX, LOVE=(hl,kl,ll))
         #-- calculate ratio between total mass and a uniformly distributed
         #-- layer of water over the ocean
-        ratio = input_Ylms.clm[0,0,:]/ocean_Ylms['clm'][0,0]
+        ratio = input_Ylms.clm[0,0,:]/ocean_Ylms.clm[0,0]
         #-- for each spherical harmonic
         for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
             for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
                 #-- remove the ratio*ocean Ylms from Ylms
                 #-- note: x -= y is equivalent to x = x - y
-                input_Ylms.clm[l,m,:] -= ratio*ocean_Ylms['clm'][l,m]
-                input_Ylms.slm[l,m,:] -= ratio*ocean_Ylms['slm'][l,m]
+                input_Ylms.clm[l,m,:] -= ratio*ocean_Ylms.clm[l,m]
+                input_Ylms.slm[l,m,:] -= ratio*ocean_Ylms.slm[l,m]
 
     #-- if using a decorrelation filter (Isabella's destriping Routine)
     if DESTRIPE:

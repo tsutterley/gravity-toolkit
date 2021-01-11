@@ -5,7 +5,7 @@ Written by Tyler Sutterley (08/2020)
 
 Reads GIA data files that can come in various formats depending on the group
 Outputs spherical harmonics for the GIA rates and the GIA model parameters
-Can also output geodesy normalized harmonics to netCDF4 or HDF5 formatted files
+Can also output fully normalized harmonics to netCDF4 or HDF5 formatted files
 
 INPUTS:
     input_file: GIA file to read
@@ -298,7 +298,7 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
 
     elif (GIA == 'Wu10'):
         #-- Wu (2010) notes:
-        #-- Need to convert from mm geoid to geodesy normalized
+        #-- Need to convert from mm geoid to fully normalized
         rad_e = 6.371e9#-- Average Radius of the Earth [mm]
         #-- The file starts with a header.
         #-- converting to numerical array (note 64 bit floating point)

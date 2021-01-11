@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 least_squares_mascons.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (01/2021)
 
 Calculates regional mass anomalies through a least-squares mascon procedure
     from an index of spherical harmonic coefficient files
@@ -104,6 +104,7 @@ REFERENCES:
         https://doi.org/10.1029/2009GL039401
 
 UPDATE HISTORY:
+    Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
     Updated 12/2020: added more love number options
     Updated 10/2020: use argparse to set command line parameters
     Updated 08/2020: use utilities to define path to load love numbers file
@@ -322,14 +323,14 @@ def least_squares_mascons(parameters, LOVE_NUMBERS=0, REFERENCE=None,
     if REDISTRIBUTE:
         #-- calculate ratio between total removed mass and
         #-- a uniformly distributed cm of water over the ocean
-        ratio = data_Ylms.clm[0,0,:]/ocean_Ylms['clm'][0,0]
+        ratio = data_Ylms.clm[0,0,:]/ocean_Ylms.clm[0,0]
         #-- for each spherical harmonic
         for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
             for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
                 #-- remove the ratio*ocean Ylms from Ylms
                 #-- note: x -= y is equivalent to x = x - y
-                data_Ylms.clm[l,m,:] -= ratio*ocean_Ylms['clm'][l,m]
-                data_Ylms.slm[l,m,:] -= ratio*ocean_Ylms['slm'][l,m]
+                data_Ylms.clm[l,m,:] -= ratio*ocean_Ylms.clm[l,m]
+                data_Ylms.slm[l,m,:] -= ratio*ocean_Ylms.slm[l,m]
     #-- filter data coefficients
     if DESTRIPE:
         data_Ylms = data_Ylms.destripe()
@@ -362,14 +363,14 @@ def least_squares_mascons(parameters, LOVE_NUMBERS=0, REFERENCE=None,
         if MASCON_OCEAN:
             #-- calculate ratio between total mascon mass and
             #-- a uniformly distributed cm of water over the ocean
-            ratio = Ylms.clm[0,0]/ocean_Ylms['clm'][0,0]
+            ratio = Ylms.clm[0,0]/ocean_Ylms.clm[0,0]
             #-- for each spherical harmonic
             for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
                 for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
                     #-- remove ratio*ocean Ylms from mascon Ylms
                     #-- note: x -= y is equivalent to x = x - y
-                    Ylms.clm[l,m] -= ratio*ocean_Ylms['clm'][l,m]
-                    Ylms.slm[l,m] -= ratio*ocean_Ylms['slm'][l,m]
+                    Ylms.clm[l,m] -= ratio*ocean_Ylms.clm[l,m]
+                    Ylms.slm[l,m] -= ratio*ocean_Ylms.slm[l,m]
         #-- truncate mascon spherical harmonics to d/o LMAX/MMAX and add to list
         mascon_list.append(Ylms.truncate(lmax=LMAX, mmax=MMAX))
         #-- mascon base is the file without directory or suffix
