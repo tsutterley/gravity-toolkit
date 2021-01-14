@@ -98,6 +98,7 @@ General Methods
 
         `password`: ftp password
 
+
 .. method:: gravity_toolkit.utilities.ftp_list(HOST,username=None,password=None,timeout=None,basename=False,pattern=None,sort=False)
 
     List a directory on a ftp host
@@ -155,10 +156,14 @@ General Methods
 
         `mode`: permissions mode of output local file
 
+    Returns:
+
+        `remote_buffer`: BytesIO representation of file
+
 
 .. method:: gravity_toolkit.utilities.check_connection(HOST)
 
-    Check internet connection
+    Check internet connection with an http host
 
     Arguments:
 
@@ -190,6 +195,10 @@ General Methods
         `fid`: open file object to print if verbose
 
         `mode`: permissions mode of output local file
+
+    Returns:
+
+        `remote_buffer`: BytesIO representation of file
 
 
 .. method:: gravity_toolkit.utilities.build_opener(username,password,context=ssl.SSLContext(),password_manager=False,get_ca_certs=False,redirect=False,authorization_header=True,urs=None)
@@ -293,6 +302,10 @@ General Methods
         `fid`: open file object to print if verbose
 
         `mode`: permissions mode of output local file
+
+    Returns:
+
+        `remote_buffer`: BytesIO representation of file
 
 
 .. method:: gravity_toolkit.utilities.from_figshare(directory,article='7388540',timeout=None,context=ssl.SSLContext(),chunk=16384,verbose=False,fid=sys.stdout,pattern='',mode=0o775)

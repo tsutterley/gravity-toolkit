@@ -1,16 +1,21 @@
 #!/usr/bin/env python
 u"""
-tsregress.py
-Written by Tyler Sutterley (07/2020)
+piecewise_regress.py
+Written by Tyler Sutterley (01/2021)
 
 Fits a synthetic signal to data over a time period by ordinary or weighted
-    least-squares
+    least-squares for breakpoint analysis
+
+Derivation of Sharp Breakpoint Piecewise Regression:
+    https://esajournals.onlinelibrary.wiley.com/doi/abs/10.1890/02-0472
+        y = beta_0 + beta_1*t + e (for x <= alpha)
+        y = beta_0 + beta_1*t + beta_2*(t-alpha) + e (for x > alpha)
 
 Fit significance derivations are based on Burnham and Anderson (2002)
     Model Selection and Multimodel Inference
 
 CALLING SEQUENCE:
-    tsbeta = tsregress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], CONF=0.95)
+    pcwbeta = piecewise_regress(tdec,data,CYCLES=[0.5,1.0],BREAKPOINT=ind)
 
 INPUTS:
     t_in: input time array
@@ -38,12 +43,12 @@ OUTPUTS:
     cov_mat: covariance matrix
 
 OPTIONS:
+    BREAK_TIME: breakpoint time for piecewise regression
+    BREAKPOINT: breakpoint indice of piecewise regression
     DATA_ERR: data precision
         single value if equal
         array if unequal for weighted least squares
     WEIGHT: Set if measurement errors for use in weighted least squares
-    RELATIVE: relative period
-    ORDER: maximum polynomial order in fit (0=constant, 1=linear, 2=quadratic)
     CYCLES: list of cyclical terms (0.5=semi-annual, 1=annual)
     STDEV: standard deviation of output error
     CONF: confidence interval of output error
@@ -54,39 +59,26 @@ PYTHON DEPENDENCIES:
     scipy: Scientific Tools for Python (https://docs.scipy.org/doc/)
 
 UPDATE HISTORY:
-    Updated 07/2020: added function docstrings
+    Updated 01/2021: added function docstrings
     Updated 10/2019: changing Y/N flags to True/False
+    Updated 01/2019: added option S2 to include 161-day tidal aliasing terms
     Updated 12/2018: put transpose of design matrix within FIT_TYPE if statement
     Updated 08/2018: import packages before function definition
-    Updated 10/2017: output a seasonal model (will be 0 if no oscillating terms)
-    Updated 09/2017: using rcond=-1 in numpy least-squares algorithms
-    Updated 03/2017: added a catch for zero error in weighted least-squares
+    Updated 09/2017: use rcond=-1 in numpy least-squares algorithms
     Updated 08/2015: changed sys.exit to raise ValueError
-    Updated 09/2014: made AICc option for second order AIC
-        previously was default with no option for standard AIC
-    Updated 07/2014: output the covariance matrix Hinv
-        import scipy.stats and scipy.special
+    Updated 11/2014: added simple output for model without climate oscillations
+    Updated 07/2014: import scipy.stats and scipy.special
     Updated 06/2014: changed message to sys.exit
-        new output for number of terms
-    Updated 04/2014: added parameter RELATIVE for the relative time
-    Updated 02/2014: minor update to if statements.  output simple regression
-    Updated 10/2013:
-        Added calculation for AICc (corrected for small sample size)
-        Added output DOF (degrees of freedom, nu)
-    Updated 09/2013: updated weighted least-squares and added AIC, BIC and
-        LOGLIK options for parameter evaluation
-        Fixed case with known standard deviations
-        Changed Weight flag to Y/N
-        Minor change: P_cons, P_lin and P_quad changed to P_x0, P_x1 and P_x2
-    Updated 07/2013: added output for the modelled time-series
-    Updated 05/2013: converted to Python
-    Updated 02/2013: added in case for equal data error
-        and made associated edits.. added option WEIGHT
-    Updated 10/2012: added in additional FIT_TYPES that do not have a trend
-        added option for the Schwarz Criterion for model selection
-    Updated 08/2012: added option for changing the confidence interval or
-        adding a standard deviation of the error
-        changed 'std' to data_err for measurement errors
+    Updated 02/2014: minor update to if statements
+    Updated 10/2013: updated Log-likelihood (converted from Least-Squares (LS)
+        log-likelihood to maximum likelihood (ML) log-likelihood)
+        Added calculation for AICc (corrected for small sample size
+    Updated 09/2013: updated weighted least-squares and added AIC, BIC and LOGLIK
+        options for parameter evaluation
+        Added cases with known standard deviations and weighted least-squares
+        Minor change: P_cons, P_lin1 and P_lin2 changed to P_x0, P_x1a and P_x1b
+    Updated 07/2013: updated errors for beta2
+    Updated 05/2013: converted to python
     Updated 06/2012: added options for MSE and NRMSE.  adjusted rsq_adj
     Updated 06/2012: changed design matrix creation to 'FIT_TYPE'
         added r_square to calcuating goodness of fit compared to others
@@ -98,11 +90,11 @@ import numpy as np
 import scipy.stats
 import scipy.special
 
-def tsregress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], DATA_ERR=0,
-    WEIGHT=False, RELATIVE=-1, STDEV=0, CONF=0, AICc=True):
+def piecewise_regress(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
+    CYCLES=[0.5,1.0], DATA_ERR=0, WEIGHT=False, STDEV=0, CONF=0, AICc=False):
     """
-    Fits a synthetic signal to data over a time period by
-        ordinary or weighted least-squares
+    Fits a synthetic signal to data over a time period by ordinary or
+        weighted least-squares for breakpoint analysis
 
     Arguments
     ---------
@@ -111,13 +103,13 @@ def tsregress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], DATA_ERR=0,
 
     Keyword arguments
     -----------------
+    BREAK_TIME: breakpoint time for piecewise regression
+    BREAKPOINT: breakpoint indice of piecewise regression
     DATA_ERR: data precision
         single value if equal
         array if unequal for weighted least squares
     WEIGHT: Set if measurement errors for use in weighted least squares
-    RELATIVE: relative period
-    ORDER: maximum polynomial order in fit
-    CYCLES: list of cyclical terms
+    CYCLES: list of cyclical terms (0.5=semi-annual, 1=annual)
     STDEV: standard deviation of output error
     CONF: confidence interval of output error
     AICc: use second order AIC
@@ -144,17 +136,30 @@ def tsregress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], DATA_ERR=0,
     cov_mat: covariance matrix
     """
 
-    #-- remove singleton dimensions
     t_in = np.squeeze(t_in)
     d_in = np.squeeze(d_in)
     nmax = len(t_in)
-    t_rel = t_in[0:nmax].mean() if (RELATIVE == -1) else RELATIVE
 
-    #-- create design matrix based on polynomial order and harmonics
+    #-- If indice of cutoff time entered: will calculate cutoff time
+    #-- If cutoff time entered: will find the cutoff indice
+    if BREAKPOINT is not None:
+        tco = t_in[BREAKPOINT]
+        nco = np.squeeze(BREAKPOINT)
+    elif BREAK_TIME is not None:
+        nco = np.argmin(np.abs(t_in - BREAK_TIME))
+        tco = np.copy(BREAK_TIME)
+
+    #-- create design matrix for sharp breakpoint piecewise regression
+    #-- y = beta_0 + beta_1*t + e (for x <= alpha)
+    #-- y = beta_0 + beta_1*t + beta_2*(t-alpha) + e (for x > alpha)
     DMAT = []
-    #-- add polynomial orders (0=constant, 1=linear, 2=quadratic)
-    for o in range(ORDER+1):
-        DMAT.append((t_in-t_rel)**o)
+    #-- add polynomial orders (0=constant, 1=linear)
+    for o in range(2):
+        DMAT.append(t_in**o)
+    #-- Linear Term 2 (change from linear term1: trend2 = beta1+beta2)
+    P_x1 = np.zeros((nmax))
+    P_x1[nco:] = t_in[nco:] - tco
+    DMAT.append(P_x1)
     #-- add cyclical terms (0.5=semi-annual, 1=annual)
     for c in CYCLES:
         DMAT.append(np.sin(2.0*np.pi*t_in/np.float(c)))
@@ -187,17 +192,22 @@ def tsregress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], DATA_ERR=0,
         #-- Weights are equal
         wi = 1.0
 
+    #-- Calculating trend2 = beta1 + beta2
+    #-- beta2 = change in linear term from beta1
+    beta_out = np.copy(beta_mat)#-- output beta
+    beta_out[2] = beta_mat[1] + beta_mat[2]
+
     #-- number of terms in least-squares solution
     n_terms = len(beta_mat)
     #-- modelled time-series
     mod = np.dot(DMAT,beta_mat)
-    #-- residual
+    #-- time-series residuals
     res = d_in[0:nmax] - np.dot(DMAT,beta_mat)
-    #-- Fitted Values without (and with) climate oscillations
-    simple = np.dot(DMAT[:,0:(ORDER+1)],beta_mat[0:(ORDER+1)])
-    season = mod - simple
+    #-- Fitted Values without climate oscillations
+    simple = np.dot(DMAT[:,0:3],beta_mat[0:3])
 
-    #-- nu = Degrees of Freedom
+    #-- Error Analysis
+    #-- nu = Degrees of Freedom = number of measurements-number of parameters
     nu = nmax - n_terms
 
     #-- calculating R^2 values
@@ -239,18 +249,22 @@ def tsregress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], DATA_ERR=0,
         Hinv = np.linalg.inv(np.dot(np.transpose(DMAT),np.dot(W,DMAT)))
         #-- Normal Equations
         NORMEQ = np.dot(Hinv,np.transpose(np.dot(W,DMAT)))
-        beta_err = np.zeros((n_terms))
+        temp_err = np.zeros((n_terms))
         #-- Propagating RMS errors
         for i in range(0,n_terms):
-            beta_err[i] = np.sqrt(np.sum((NORMEQ[i,:]*DATA_ERR)**2))
+            temp_err[i] = np.sqrt(np.sum((NORMEQ[i,:]*DATA_ERR)**2))
+
+        #-- Recalculating beta2 error
+        beta_err = np.copy(temp_err)
+        beta_err[2] = np.sqrt(temp_err[1]**2 + temp_err[2]**2)
         #-- Weighted sum of squares Error
         WSSE = np.dot(np.transpose(wi*(d_in[0:nmax] - np.dot(DMAT,beta_mat))),
             wi*(d_in[0:nmax] - np.dot(DMAT,beta_mat)))/np.float(nu)
 
-        return {'beta':beta_mat, 'error':beta_err, 'R2':rsquare,
+        return {'beta':beta_out, 'error':beta_err, 'R2':rsquare,
             'R2Adj':rsq_adj, 'WSSE':WSSE, 'AIC':AIC, 'BIC':BIC,
-            'LOGLIK':log_lik, 'model':mod, 'residual':res, 'simple':simple,
-            'season':season, 'N':n_terms, 'DOF':nu, 'cov_mat':Hinv}
+            'LOGLIK':log_lik, 'model':mod, 'residual':res,
+            'N':n_terms, 'DOF':nu, 'cov_mat':Hinv}
 
     elif ((not WEIGHT) and (DATA_ERR != 0)):
         #-- LEAST-SQUARES CASE WITH KNOWN AND EQUAL ERROR
@@ -258,17 +272,20 @@ def tsregress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], DATA_ERR=0,
         Hinv = np.linalg.inv(np.dot(np.transpose(DMAT),DMAT))
         #-- Normal Equations
         NORMEQ = np.dot(Hinv,np.transpose(DMAT))
-        beta_err = np.zeros((n_terms))
+        temp_err = np.zeros((n_terms))
         for i in range(0,n_terms):
-            beta_err[i] = np.sqrt(np.sum((NORMEQ[i,:]*P_err)**2))
+            temp_err[i] = np.sum((NORMEQ[i,:]*P_err)**2)
+        #-- Recalculating beta2 error
+        beta_err = np.copy(temp_err)
+        beta_err[2] = np.sqrt(temp_err[1]**2 + temp_err[2]**2)
         #-- Mean square error
         MSE = np.dot(np.transpose(d_in[0:nmax] - np.dot(DMAT,beta_mat)),
             (d_in[0:nmax] - np.dot(DMAT,beta_mat)))/np.float(nu)
 
-        return {'beta':beta_mat, 'error':beta_err, 'R2':rsquare,
+        return {'beta':beta_out, 'error':beta_err, 'R2':rsquare,
             'R2Adj':rsq_adj, 'MSE':MSE, 'AIC':AIC, 'BIC':BIC,
-            'LOGLIK':log_lik, 'model':mod, 'residual':res, 'simple':simple,
-            'season':season,'N':n_terms, 'DOF':nu, 'cov_mat':Hinv}
+            'LOGLIK':log_lik, 'model':mod, 'residual':res,
+            'N':n_terms, 'DOF':nu, 'cov_mat':Hinv}
     else:
         #-- STANDARD LEAST-SQUARES CASE
         #-- Regression with Errors with Unknown Standard Deviations
@@ -300,10 +317,17 @@ def tsregress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], DATA_ERR=0,
         tstar = scipy.stats.t.ppf(1.0-(alpha/2.0),nu)
         #-- beta_err is the error for each coefficient
         #-- beta_err = t(nu,1-alpha/2)*standard error
-        st_err = np.sqrt(MSE*hdiag)
-        beta_err = tstar*st_err
+        temp_std = np.sqrt(MSE*hdiag)
+        temp_err = tstar*temp_std
 
-        return {'beta':beta_mat, 'error':beta_err, 'std_err':st_err, 'R2':rsquare,
+        #-- Recalculating standard error for beta2
+        st_err = np.copy(temp_std)
+        st_err[2] = np.sqrt(temp_std[1]**2 + temp_std[2]**2)
+        #-- Recalculating beta2 error
+        beta_err = np.copy(temp_err)
+        beta_err[2] = np.sqrt(temp_err[1]**2 + temp_err[2]**2)
+
+        return {'beta':beta_out, 'error':beta_err, 'std_err':st_err, 'R2':rsquare,
             'R2Adj':rsq_adj, 'MSE':MSE, 'NRMSE':NRMSE, 'AIC':AIC, 'BIC':BIC,
-            'LOGLIK':log_lik, 'model':mod, 'residual':res, 'simple':simple,
-            'season':season, 'N':n_terms, 'DOF':nu, 'cov_mat':Hinv}
+            'LOGLIK':log_lik, 'model':mod, 'simple': simple, 'residual':res,
+            'N':n_terms, 'DOF': nu, 'cov_mat':Hinv}

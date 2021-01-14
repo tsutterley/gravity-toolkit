@@ -1,28 +1,25 @@
-tsregress.py
-============
+piecewise_regress.py
+====================
 
- - Fits a synthetic signal to data over a time period by ordinary or weighted least-squares
+ - Fits a synthetic signal to data over a time period by ordinary or weighted least-squares for [breakpoint analysis](https://esajournals.onlinelibrary.wiley.com/doi/abs/10.1890/02-0472)
  - Fit significance derivations are based on [Burnham and Anderson (2002) Model Selection and Multimodel Inference](https://doi.org/10.1007/b97636)
 
 #### Calling Sequence
 ```python
-from gravity_toolkit.tsregress import tsregress
-tsbeta = tsregress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], CONF=0.95)
+from gravity_toolkit.piecewise_regress import piecewise_regress
+tsbeta = piecewise_regress(t_in, d_in, BREAKPOINT=len(t_in)//2, CYCLES=[0.5,1.0])
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/tsregress.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/piecewise_regress.py)
 
 #### Inputs
  - `t_in`: input time array
  - `d_in`: input data array
 
 #### Options
+ - `BREAK_TIME`: breakpoint time for piecewise regression
+ - `BREAKPOINT`: breakpoint indice of piecewise regression
  - `DATA_ERR`: data precision (single value or array)
  - `WEIGHT`: use weighted least squares
- - `RELATIVE`: relative time period
- - `ORDER`: maximum polynomial order in fit
-    0) constant
-    1) linear
-    2) quadratic
  - `CYCLES`: list of cyclical terms to include in fit
  - `STDEV`: standard deviation of output error
  - `CONF`: confidence interval of output error (default is for 95%)
