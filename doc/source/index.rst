@@ -66,6 +66,7 @@ missions
     user_guide/ncdf_stokes.md
     user_guide/ncdf_write.md
     user_guide/ocean_stokes.md
+    user_guide/piecewise_regress.md
     user_guide/plm_colombo.md
     user_guide/plm_holmes.md
     user_guide/plm_mohlenkamp.md

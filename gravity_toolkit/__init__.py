@@ -44,6 +44,7 @@ from gravity_toolkit.ncdf_read_stokes import ncdf_read_stokes
 from gravity_toolkit.ncdf_stokes import ncdf_stokes
 from gravity_toolkit.ncdf_write import ncdf_write
 from gravity_toolkit.ocean_stokes import ocean_stokes
+from gravity_toolkit.piecewise_regress import piecewise_regress
 from gravity_toolkit.plm_colombo import plm_colombo
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.plm_mohlenkamp import plm_mohlenkamp
