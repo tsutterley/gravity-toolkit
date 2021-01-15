@@ -227,6 +227,11 @@ General Attributes and Methods
         Options: harmonics objects contain date information
 
 
+    .. method:: object.to_masked_array()
+
+        Convert a harmonics object to a masked numpy array
+
+
     .. method:: object.update_dimensions()
 
         Update the dimensions of the harmonics object

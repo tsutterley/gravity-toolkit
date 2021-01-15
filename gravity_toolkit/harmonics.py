@@ -391,6 +391,34 @@ class harmonics(object):
         hdf5_stokes(self.clm, self.slm, self.l, self.m, self.time, self.month,
             FILENAME=self.filename, DATE=date, **kwargs)
 
+    def to_masked_array(self):
+        """
+        Convert a harmonics object to a masked numpy array
+        """
+        #-- reassign shape and ndim attributes
+        self.update_dimensions()
+        #-- verify dimensions and get shape
+        ndim_prev = self.ndim
+        self.expand_dims()
+        l1,m1,nt = self.shape
+        #-- create single triangular matrices with harmonics
+        Ylms = np.ma.zeros((self.lmax+1,2*self.lmax+1,nt))
+        Ylms.mask = np.ones((self.lmax+1,2*self.lmax+1,nt),dtype=np.bool)
+        for m in range(-self.mmax,self.mmax+1):
+            mm = np.abs(m)
+            for l in range(mm,self.lmax+1):
+                if (m < 0):
+                    Ylms.data[l,self.lmax+m,:] = self.slm[l,mm,:]
+                    Ylms.mask[l,self.lmax+m,:] = False
+                else:
+                    Ylms.data[l,self.lmax+m,:] = self.clm[l,mm,:]
+                    Ylms.mask[l,self.lmax+m,:] = False
+        #-- reshape to previous
+        if (self.ndim != ndim_prev):
+            self.squeeze()
+        #-- return the triangular matrix
+        return Ylms
+
     def update_dimensions(self):
         """
         Update the dimensions of the spatial object
