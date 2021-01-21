@@ -8,21 +8,23 @@ missions
 
 .. toctree::
     :maxdepth: 2
-    :caption: Getting Started:
+    :caption: Getting Started
 
-    getting_started/Install.md
+    getting_started/Install.rst
     getting_started/Background.rst
     getting_started/Getting-Started.md
-    getting_started/NASA-Earthdata.md
+    getting_started/Examples.rst
+    getting_started/NASA-Earthdata.rst
     getting_started/GRACE-Data-File-Formats.md
     getting_started/Spatial-Maps.md
     getting_started/Time-Series-Analysis.md
-    getting_started/Resources.md
+    getting_started/Resources.rst
     getting_started/Citations.md
 
 .. toctree::
     :maxdepth: 1
-    :caption: User Guide:
+    :hidden:
+    :caption: User Guide
 
     user_guide/aod1b_geocenter.md
     user_guide/aod1b_oblateness.md
