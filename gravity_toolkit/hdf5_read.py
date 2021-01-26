@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_read.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (02/2021)
 
 Reads spatial data from HDF5 files
 
@@ -36,6 +36,7 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 02/2021: prevent warnings with python3 compatible regex strings
     Updated 12/2020: try/except for getting variable unit attributes
         attempt to get a standard set of attributes from each variable
         add fallback for finding HDF5 file within from zip files
@@ -122,11 +123,11 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
             #-- first try finding a HDF5 file with same base filename
             #-- if none found simply try searching for a HDF5 file
             try:
-                zname,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
+                f,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
             except:
-                zname,=[f for f in z.namelist() if re.search('\.H(DF)?5$',f,re.I)]
+                f,=[f for f in z.namelist() if re.search(r'\.H(DF)?5$',f,re.I)]
             #-- read bytes from zipfile into in-memory BytesIO object
-            fid = io.BytesIO(z.read(zname))
+            fid = io.BytesIO(z.read(f))
         #-- set filename of BytesIO object
         fid.filename = os.path.basename(filename)
         #-- rewind to start of file

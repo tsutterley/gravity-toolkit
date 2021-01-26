@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (02/2021)
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 
@@ -21,6 +21,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 02/2021: added degree amplitude function
     Updated 12/2020: added verbose option for gfc files
         can calculate spherical harmonic mean over a range of time indices
         will also calculate the mean time and month of a harmonics object
@@ -277,13 +278,14 @@ class harmonics(object):
         #-- create a single harmonic object from the list
         return self.from_list(h,date=date,sort=sort)
 
-    def from_list(self, object_list, date=True, sort=True):
+    def from_list(self, object_list, date=True, sort=True, clear=False):
         """
         Build a sorted harmonics object from a list of other harmonics objects
         Inputs: list of harmonics object to be merged
         Options:
             harmonics objects contain date information
             sort harmonics objects by date information
+            clear the harmonics list from memory
         """
         #-- number of harmonic objects in list
         n = len(object_list)
@@ -319,6 +321,9 @@ class harmonics(object):
                 self.filename.append(object_list[i].filename)
         #-- assign shape and ndim attributes
         self.update_dimensions()
+        #-- clear the input list to free memory
+        if clear:
+            object_list = None
         #-- return the single harmonic object
         return self
 
@@ -880,3 +885,36 @@ class harmonics(object):
         temp.update_dimensions()
         #-- return the destriped field
         return temp
+
+    def amplitude(self, mmax=None):
+        """
+        Calculates the degree amplitude of a harmonics object
+        Options: mmax maximum order of spherical harmonics
+        """
+        #-- temporary matrix for squared harmonics
+        temp = self.power(2)
+        #-- truncate to order mmax
+        if mmax is not None:
+            temp.truncate(self.lmax, mmax=mmax)
+        #-- check if a single field or a temporal field
+        if (self.ndim == 2):
+            #-- allocate for degree amplitudes
+            self.amp = np.zeros((self.lmax+1))
+            for l in range(self.lmax+1):
+                #-- truncate at mmax
+                m = np.arange(l,temp.mmax+1)
+                #-- degree amplitude of spherical harmonic degree
+                self.amp[l] = np.sqrt(np.sum(temp.clm[l,m] + temp.slm[l,m]))
+
+        else:
+            #-- allocate for degree amplitudes
+            n = self.shape[-1]
+            self.amp = np.zeros((self.lmax+1,n))
+            for l in range(self.lmax+1):
+                #-- truncate at mmax
+                m = np.arange(l,temp.mmax+1)
+                #-- degree amplitude of spherical harmonic degree
+                var = temp.clm[l,m,:] + temp.slm[l,m,:]
+                self.amp[l,:] = np.sqrt(np.sum(var,axis=0))
+        #-- return the harmonics object with degree amplitudes
+        return self

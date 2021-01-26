@@ -181,7 +181,7 @@ General Attributes and Methods
             sort harmonics objects by date information
 
 
-    .. method:: object.from_list(object_list, date=True, sort=True)
+    .. method:: object.from_list(object_list, date=True, sort=True, clear=False)
 
         Build a sorted harmonics object from a list of other harmonics objects
 
@@ -191,6 +191,8 @@ General Attributes and Methods
             harmonics objects contain date information
 
             sort harmonics objects by date information
+
+            clear the list of objects from memory
 
 
     .. method:: object.from_dict(dict_object)
@@ -362,3 +364,10 @@ General Attributes and Methods
         Filters spherical harmonic coefficients for correlated "striping" errors following `Swenson and Wahr (2006)`__.
 
     .. __: https://doi.org/10.1029/2005GL025285
+
+
+    .. method:: object.amplitude(mmax=None)
+
+        Calculates the degree amplitude of a harmonics object
+
+        Options: mmax maximum order of spherical harmonics

@@ -22,9 +22,9 @@ python convert_harmonics.py --format netCDF4 --lmax 60 --units 1 input_file outp
       * `'CM'`: Center of Mass of Earth System
       * `'CE'`: Center of Mass of Solid Earth
  - `-U X`, `--units X`: output units
-      * `1`: cm of water thickness (cm.w.e.)
+      * `1`: cm of water thickness (cm.w.e., g/cm<sup>2</sup>)
       * `2`: Gigatonnes (Gt)
-      * `3`: mm of water thickness (kg/m^2)
+      * `3`: mm of water thickness (kg/m<sup>2</sup>)
  - `-S X`, `--spacing X`: spatial resolution of output data (dlon,dlat)
  - `-I X`, `--interval X`: output grid interval
       * `1`: (0:360, 90:-90)

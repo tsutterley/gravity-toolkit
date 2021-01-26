@@ -16,13 +16,13 @@ Ylms = gen_disc_load(data, lon, lat, area, LMAX=LMAX, PLM=PLM, LOVE=(hl,kl,ll))
  - `data`: data magnitude (Gt)
  - `lon`: longitude of disc center
  - `lat`: latitude of disc center
- - `area`: area of disc (km^2)
+ - `area`: area of disc (km<sup>2</sup>)
 
 #### Options
- - `LMAX`:  maximum spherical harmonic degree of the output harmonics  
- - `MMAX`: maximum spherical harmonic order of the output harmonics  
- - `PLM`: input Legendre polynomials for cos(theta) (disc center)  
- - `LOVE`: input load Love numbers up to degree `LMAX` (hl,kl,ll)  
+ - `LMAX`:  maximum spherical harmonic degree of the output harmonics
+ - `MMAX`: maximum spherical harmonic order of the output harmonics
+ - `PLM`: input Legendre polynomials for cos(theta) (disc center)
+ - `LOVE`: input load Love numbers up to degree of truncation
 
 #### Outputs
  - `clm`: Cosine spherical harmonic coefficients (geodesy normalization)

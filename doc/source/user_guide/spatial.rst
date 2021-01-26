@@ -198,7 +198,7 @@ General Attributes and Methods
             sort spatial objects by date information
 
 
-    .. method:: object.from_list(object_list, date=True, sort=True)
+    .. method:: object.from_list(object_list, date=True, sort=True, clear=False)
 
         Build a sorted spatial object from a list of other spatial objects
 
@@ -209,6 +209,7 @@ General Attributes and Methods
 
             sort spatial objects by date information
 
+            clear the list of objects from memory
 
     .. method:: object.from_dict(dict_object)
 
@@ -342,6 +343,15 @@ General Attributes and Methods
         Multiply a spatial object by a constant
 
         Inputs: scalar value to which the spatial object will be multiplied
+
+
+    .. method:: object.kfactor(var)
+
+        Calculate the scaling factor and scaling factor errors from two spatial objects following `Landerer and Swenson (2012) <https://doi.org/10.1029/2011WR011453>`_
+
+        Inputs: spatial object to used for scaling
+
+        Returns: scaling factor and scaling factor error
 
 
     .. method:: object.mean(apply=False, indices=Ellipsis)

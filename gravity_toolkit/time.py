@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 time.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (01/2021)
 Utilities for calculating time operations
 
 PYTHON DEPENDENCIES:
@@ -11,6 +11,7 @@ PYTHON DEPENDENCIES:
         https://dateutil.readthedocs.io/en/stable/
 
 UPDATE HISTORY:
+    Updated 01/2021: add date parser for cases when only a date and no units
     Updated 12/2020: merged with convert_julian and convert_calendar_decimal
         added calendar_days routine to get number of days per month
     Updated 09/2020: parse date strings "time-units since yyyy-mm-dd hh:mm:ss"
@@ -35,6 +36,15 @@ def parse_date_string(date_string):
     epoch of delta time
     multiplication factor to convert to seconds
     """
+    #-- try parsing the original date string as a date
+    try:
+        epoch = dateutil.parser.parse(date_string)
+    except ValueError:
+        pass
+    else:
+        #-- return the epoch (as list)
+        return (datetime_to_list(epoch),0.0)
+    #-- split the date string into units and epoch
     units,epoch = split_date_string(date_string)
     conversion_factors = {'microseconds': 1e-6,'microsecond': 1e-6,
         'microsec': 1e-6,'microsecs': 1e-6,
@@ -48,7 +58,7 @@ def parse_date_string(date_string):
     if units not in conversion_factors.keys():
         raise ValueError('Invalid units: {0}'.format(units))
     #-- return the epoch (as list) and the time unit conversion factors
-    return datetime_to_list(epoch),conversion_factors[units]
+    return (datetime_to_list(epoch),conversion_factors[units])
 
 #-- PURPOSE: split a date string into units and epoch
 def split_date_string(date_string):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (01/2021)
 
 Data class for reading, writing and processing spatial data
 
@@ -19,6 +19,8 @@ PROGRAM DEPENDENCIES:
     hdf5_read.py: reads spatial data from HDF5
 
 UPDATE HISTORY:
+    Updated 01/2021: added scaling factor and scaling factor error function
+        from Lander and Swenson (2012) https://doi.org/10.1029/2011WR011453
     Updated 12/2020: added transpose function, can calculate mean over indices
         output attributes dictionary from netCDF4 and HDF5 files
         can create a spatial object from an open file-like object
@@ -255,13 +257,14 @@ class spatial(object):
         #-- create a single spatial object from the list
         return self.from_list(h,date=date,sort=sort)
 
-    def from_list(self, object_list, date=True, sort=True):
+    def from_list(self, object_list, date=True, sort=True, clear=False):
         """
         Build a sorted spatial object from a list of other spatial objects
         Inputs: list of spatial object to be merged
         Options:
             spatial objects contain date information
             sort spatial objects by date information
+            clear the spatial list from memory
         """
         #-- number of spatial objects in list
         n = len(object_list)
@@ -303,6 +306,9 @@ class spatial(object):
         #-- update the dimensions
         self.update_dimensions()
         self.update_mask()
+        #-- clear the input list to free memory
+        if clear:
+            object_list = None
         #-- return the single spatial object
         return self
 
@@ -434,7 +440,11 @@ class spatial(object):
         Copy a spatial object to a new spatial object
         """
         temp = spatial(fill_value=self.fill_value)
-        temp.attributes.update(self.attributes)
+        #-- copy attributes or update attributes dictionary
+        if isinstance(self.attributes,list):
+            setattr(temp,'attributes',self.attributes)
+        elif isinstance(self.attributes,dict):
+            temp.attributes.update(self.attributes)
         #-- assign variables to self
         var = ['lon','lat','data','mask','error','time','month']
         for key in var:
@@ -657,6 +667,49 @@ class spatial(object):
         temp.update_dimensions()
         #-- update mask
         temp.update_mask()
+        return temp
+
+    def kfactor(self, var):
+        """
+        Calculate the scaling factor and scaling factor errors
+            from two spatial objects following
+            Landerer and Swenson (2012)
+        Inputs: spatial object to used for scaling
+        Returns: scaling factor and scaling factor error
+        """
+        #-- copy to not modify original inputs
+        temp1 = self.copy()
+        temp2 = var.copy()
+        #-- expand dimensions and replace invalid values with 0
+        temp1.expand_dims().replace_invalid(0.0)
+        temp2.expand_dims().replace_invalid(0.0)
+        #-- dimensions of input spatial object
+        nlat,nlon,nt = temp1.shape
+        #-- allocate for scaling factor and scaling factor error
+        temp = spatial(nlat=nlat, nlon=nlon, fill_value=0.0)
+        temp.data = np.zeros((nlat, nlon))
+        temp.error = np.zeros((nlat, nlon))
+        #-- copy latitude and longitude variables
+        temp.lon = np.copy(temp1.lon)
+        temp.lat = np.copy(temp1.lat)
+        #-- find valid data points and set mask
+        temp.mask = np.any(temp1.mask | temp2.mask, axis=2)
+        indy,indx = np.nonzero(np.logical_not(temp.mask))
+        #-- calculate point-based scaling factors as centroids
+        val1 = np.sum(temp1.data[indy,indx,:]*temp2.data[indy,indx,:],axis=1)
+        val2 = np.sum(temp1.data[indy,indx,:]**2,axis=1)
+        temp.data[indy,indx] = val1/val2
+        #-- calculate difference between scaled and original
+        variance = temp1.scale(temp.data).offset(-temp2.data)
+        #-- calculate scaling factor errors as RMS of variance
+        temp.error = np.sqrt((variance.sum(power=2).data)/nt)
+        #-- get spacing and dimensions
+        temp.update_spacing()
+        temp.update_extents()
+        temp.update_dimensions()
+        #-- update mask
+        temp.update_mask()
+        #-- return the scaling factors and scaling factor errors
         return temp
 
     def mean(self, apply=False, indices=Ellipsis):

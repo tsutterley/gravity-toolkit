@@ -3,7 +3,6 @@ u"""
 test_time.py (09/2020)
 Verify time conversion functions
 """
-import os
 import pytest
 import warnings
 import numpy as np
@@ -105,4 +104,9 @@ def test_parse_date_string():
     #-- check the epoch and the time unit conversion factors
     assert np.all(epoch == [2018,1,1,0,0,0])
     assert (to_secs == 1.0)
-
+    #-- time string for unitless case
+    time_string = '2000-01-01T12:00:00'
+    epoch,to_secs = gravity_toolkit.time.parse_date_string(time_string)
+    #-- check the epoch and the time unit conversion factors
+    assert np.all(epoch == [2000,1,1,12,0,0])
+    assert (to_secs == 0.0)

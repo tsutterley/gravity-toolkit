@@ -40,9 +40,16 @@ PROGRAM DEPENDENCIES:
         hdf5_stokes.py: writes output spherical harmonic data to HDF5
 
 REFERENCE:
-    Holmes and Featherstone, "A Unified Approach to the Clenshaw Summation and
-        the Recursive Computation of Very High Degree and Order Normalised
-        Associated Legendre Functions", Journal of Geodesy (2002)
+    Holmes and Featherstone, Journal of Geodesy, 76, 279-299, 2002
+        https://doi.org/10.1007/s00190-002-0216-2
+    I. M. Longman, Journal of Geophysical Research, 67(2), 1962
+        https://doi.org/10.1029/JZ067i002p00845
+    W. E. Farrell, Reviews of Geophysics and Space Physics, 10(3), 1972
+        https://doi.org/10.1029/RG010i003p00761
+    H. N. Pollack, Journal of Geophysical Research, 78(11), 1973
+        https://doi.org/10.1029/JB078i011p01760
+    T. Jacob et al., Journal of Geodesy, 86, 337-358, 2012
+        https://doi.org/10.1007/s00190-011-0522-7
 
 UPDATE HISTORY:
     Updated 01/2021: use harmonics class for spherical harmonic operations

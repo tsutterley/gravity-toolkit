@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_read.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (02/2021)
 
 Reads spatial data from COARDS-compliant netCDF4 files
 
@@ -36,6 +36,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 02/2021: prevent warnings with python3 compatible regex strings
     Updated 12/2020: try/except for getting variable unit attributes
         attempt to get a standard set of attributes from each variable
         add fallback for finding netCDF4 file within from zip files
@@ -121,11 +122,11 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
             #-- first try finding a netCDF4 file with same base filename
             #-- if none found simply try searching for a netCDF4 file
             try:
-                zname,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
+                f,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
             except:
-                zname,=[f for f in z.namelist() if re.search('\.nc(4)?$',f)]
+                f,=[f for f in z.namelist() if re.search(r'\.nc(4)?$',f)]
             #-- read bytes from zipfile as in-memory (diskless) netCDF4 dataset
-            fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=z.read(zname))
+            fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=z.read(f))
     elif (COMPRESSION == 'bytes'):
         #-- read as in-memory (diskless) netCDF4 dataset
         fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=filename.read())

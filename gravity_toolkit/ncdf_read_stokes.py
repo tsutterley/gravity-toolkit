@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_read_stokes.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (02/2021)
 
 Reads spherical harmonic data from netCDF4 files
 
@@ -37,6 +37,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 02/2021: prevent warnings with python3 compatible regex strings
     Updated 12/2020: try/except for getting variable unit attributes
         add fallback for finding netCDF4 file within from zip files
         added bytes option for COMPRESSION if streaming from memory
@@ -117,11 +118,11 @@ def ncdf_read_stokes(filename, DATE=True, VERBOSE=False, COMPRESSION=None):
             #-- first try finding a netCDF4 file with same base filename
             #-- if none found simply try searching for a netCDF4 file
             try:
-                zname,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
+                f,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
             except:
-                zname,=[f for f in z.namelist() if re.search('\.nc(4)?$',f)]
+                f,=[f for f in z.namelist() if re.search(r'\.nc(4)?$',f)]
             #-- read bytes from zipfile as in-memory (diskless) netCDF4 dataset
-            fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=z.read(zname))
+            fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=z.read(f))
     elif (COMPRESSION == 'bytes'):
         #-- read as in-memory (diskless) netCDF4 dataset
         fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=filename.read())
