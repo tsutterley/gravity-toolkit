@@ -7,6 +7,10 @@ Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
+    scipy: Scientific Numerical Routines For Python
+        (https://www.scipy.org/)
+    matplotlib.pyplot: Visualizations Tools For Python
+        (https://matplotlib.org/)
     netCDF4: Python interface to the netCDF C library
         (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
     h5py: Pythonic interface to the HDF5 binary data format.
@@ -21,6 +25,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 11/2020: added plotting functions for visualization
     Updated 08/2020: added compression options for ascii, netCDF4 and HDF5 files
     Updated 07/2020: added class docstring and using kwargs for output to file
         added case_insensitive_filename function to search directories
@@ -38,7 +43,11 @@ import os
 import re
 import gzip
 import zipfile
+import matplotlib
 import numpy as np
+import scipy as sc
+import matplotlib.pyplot as plt
+import gravity_toolkit.wavelets as wv
 from gravity_toolkit.ncdf_stokes import ncdf_stokes
 from gravity_toolkit.hdf5_stokes import hdf5_stokes
 from gravity_toolkit.ncdf_read_stokes import ncdf_read_stokes
@@ -822,3 +831,375 @@ class harmonics(object):
         temp.update_dimensions()
         #-- return the destriped field
         return temp
+
+    def gap_fill(self, apply=False):
+        """
+        Fill the missing months with a linear interpolation, the interpolation is made on month number, it's imprecise
+        Options: apply to the object if True, else return a new instance
+        """
+        temp = self.copy()
+        missing_month = self.month[-1] - self.month[0] - len(self.month) + 1
+
+        temp.clm = np.zeros((self.lmax + 1, self.mmax + 1, len(self.time) + missing_month))
+        temp.slm = np.zeros((self.lmax + 1, self.mmax + 1, len(self.time) + missing_month))
+        temp.time = np.zeros(len(self.time) + missing_month)
+        temp.month = np.arange(self.month[0], self.month[-1] + 1)
+
+        # initialize index and count variables
+        index = 0
+        cmp = 0
+        for i in range(int(self.month[0]), int(self.month[-1]) + 1):
+            if i in self.month: # if month in original object, copy time and data
+                cmp_miss_mon = 0 # variable for following missing months
+                temp.time[index] = self.time[index - cmp]
+                temp.clm[:, :, index] = self.clm[:, :, index - cmp]
+                temp.slm[:, :, index] = self.slm[:, :, index - cmp]
+            else: # fill values with a linear interpolation
+                cmp += 1
+                cmp_miss_mon += 1
+                # y(t) = (y2 - y1)/(x2 - x1)*t + y1
+                temp.time[index] = (self.time[index - cmp + 1] - self.time[index - cmp]) / (
+                            self.month[index - cmp + 1] - self.month[index - cmp]) * cmp_miss_mon + self.time[index - cmp]
+                temp.clm[:, :, index] = (self.clm[:, :, index - cmp + 1] - self.clm[:, :, index - cmp]) / \
+                                        (self.month[index - cmp + 1] - self.month[index - cmp]) * cmp_miss_mon \
+                                        + self.clm[:, :, index - cmp]
+                temp.slm[:, :, index] = (self.slm[:, :, index - cmp + 1] - self.slm[:, :, index - cmp]) / \
+                                        (self.month[index - cmp + 1] - self.month[index - cmp]) * cmp_miss_mon \
+                                        + self.slm[:, :, index - cmp]
+
+            index += 1
+
+        # -- assign ndim and shape attributes
+        temp.update_dimensions()
+
+        if apply:
+            self.clm = temp.clm
+            self.slm = temp.slm
+            self.time = temp.time
+            self.month = temp.month
+
+            self.update_dimensions()
+
+        return temp
+
+    def plot_correlation(self, l, m, save_path=False):
+        """
+        Plot correlation between spherical harmonic coefficients of the object
+        Inputs:
+            l first degree of spherical harmonics
+            m second degree of spherical harmonics
+
+        Options:
+            save_path : if not False, give a path to save the figure
+        """
+        mat_c = np.zeros((self.lmax, self.lmax))
+        if m:
+            mat_s = np.zeros((self.lmax, self.lmax))
+        for i in range(self.lmax):
+            for j in range(i+1):
+                mat_c[i, i - j] = abs(np.mean((self.clm[l, m]-np.mean(self.clm[l, m]))*(self.clm[i, j]-np.mean(self.clm[i, j])))/\
+                                   np.sqrt(np.mean((self.clm[l, m]-np.mean(self.clm[l, m]))**2))/\
+                                   np.sqrt(np.mean((self.clm[i, j]-np.mean(self.clm[i, j]))**2)))
+
+                if j:
+                    mat_c[i - j, i] = abs(np.mean((self.clm[l, m]-np.mean(self.clm[l, m]))*(self.slm[i, j]-np.mean(self.slm[i, j])))/\
+                                       np.sqrt(np.mean((self.clm[l, m]-np.mean(self.clm[l, m]))**2))/\
+                                       np.sqrt(np.mean((self.slm[i, j]-np.mean(self.slm[i, j]))**2)))
+
+                if m:
+                    mat_s[i, i - j] = abs(np.mean(
+                        (self.slm[l, m] - np.mean(self.slm[l, m])) * (self.clm[i, j] - np.mean(self.clm[i, j]))) / \
+                                       np.sqrt(np.mean((self.slm[l, m] - np.mean(self.slm[l, m]))**2)) / \
+                                       np.sqrt(np.mean((self.clm[i, j] - np.mean(self.clm[i, j]))**2)))
+
+                    if j:
+                        mat_s[i - j, i] = abs(np.mean(
+                            (self.slm[l, m] - np.mean(self.slm[l, m])) * (self.slm[i, j] - np.mean(self.slm[i, j]))) / \
+                                           np.sqrt(np.mean((self.slm[l, m] - np.mean(self.slm[l, m]))**2)) / \
+                                           np.sqrt(np.mean((self.slm[i, j] - np.mean(self.slm[i, j]))**2)))
+
+        plt.figure()
+        plt.matshow(mat_c)
+        plt.colorbar()
+        plt.title('Correlation of each spherical harmonics with $C_{' + str(l) + ',' + str(m)+ '}$')
+
+        if save_path:
+            if os.path.isdir(save_path):
+                plt.savefig(os.path.join(save_path, 'C' + str(l) + str(m) + '_correlation.png'))
+            else:
+                plt.savefig(save_path[:-3] + 'c' + save_path[-3:])
+
+        if m:
+            plt.figure()
+            plt.matshow(mat_s)
+            plt.colorbar()
+            plt.title('Correlation of each spherical harmonics with $S_{' + str(l) + ',' + str(m) + '}$')
+
+            if save_path:
+                if os.path.isdir(save_path):
+                    plt.savefig(os.path.join(save_path, 'S' + str(l) + str(m) + '_correlation.png'))
+                else:
+                    plt.savefig(save_path[:-3] + 's' + save_path[-3:])
+        plt.show()
+
+
+    def plot_coefficient(self, l, m, dates=[], ylms=[], label=[''], save_path=False):
+        """
+        Plot Cl,m and Sl,m harmonic coefficients
+        Inputs:
+            l first degree of spherical harmonics
+            m second degree of spherical harmonics
+        Options:
+            dates: list with limits of the xaxis in year
+            ylms: list of Harmonics objects to plot with the instance
+            label: list of label for each Harmonics objects with element 0 representing the current Harmonics object
+            save_path : if not False, give a path to save the figure
+        """
+        #-- figure for Cl,m
+        plt.figure()
+        plt.title("Normalized spherical harmonics coefficient $C_{" + str(l) + "," + str(m) + "}$")
+        if len(ylms):
+            plt.plot(self.time, self.clm[l, m, :], 'r', label=label[0])
+        else:
+            plt.plot(self.time, self.clm[l, m, :], 'r', label="$C_{" + str(l) + "," + str(m) + "}$")
+
+        try:
+            for i in range(len(ylms)):
+                plt.plot(ylms[i].time, ylms[i].clm[l, m, :], label=label[i+1])
+        except IndexError:
+            raise IndexError("The list of labels is incomplete for correct plotting")
+
+        plt.xlabel("Time (year)")
+        plt.legend()
+        if dates:
+            plt.xlim(dates)
+        plt.grid()
+
+        if save_path:
+            if os.path.isdir(save_path):
+                plt.savefig(os.path.join(save_path, 'C' + str(l) + str(m) + '_coefficient.png'))
+            else:
+                plt.savefig(save_path[:-3] + 'c' + save_path[-3:])
+
+        if m:
+            #-- figure for Sl,m
+            plt.figure()
+            plt.title("Normalized spherical harmonics coefficient $S_{" + str(l) + "," + str(m) + "}$")
+            if len(ylms):
+                plt.plot(self.time, self.slm[l, m, :], 'r', label=label[0])
+            else:
+                plt.plot(self.time, self.slm[l, m, :], 'r', label="$S_{" + str(l) + "," + str(m) + "}$")
+
+            try:
+                for i in range(len(ylms)):
+                    plt.plot(ylms[i].time, ylms[i].slm[l, m, :], label=label[i + 1])
+            except IndexError:
+                raise IndexError("The list of labels is incomplete for correct plotting")
+
+            plt.xlabel("Time (year)")
+            plt.legend()
+            if dates:
+                plt.xlim(dates)
+            plt.grid()
+
+            if save_path:
+                if os.path.isdir(save_path):
+                    plt.savefig(os.path.join(save_path, 'S' + str(l) + str(m) + '_coefficient.png'))
+                else:
+                    plt.savefig(save_path[:-3] + 's' + save_path[-3:])
+
+        plt.show()
+
+    def plot_fft(self, l, m, save_path=False):
+        """
+        Plot Cl,m and Sl,m harmonic coefficients fast fourrier transform
+        Inputs:
+            l first degree of spherical harmonics
+            m second degree of spherical harmonics
+
+        Options:
+            save_path : if not False, give a path to save the figure
+        """
+        #-- compute fft and create x monthly frequency
+        N = len(self.time)
+        cf = sc.fft.fft(self.clm[l, m, :])
+        sf = sc.fft.fft(self.slm[l, m, :])
+        xf = np.linspace(0.0, 12/2, N // 2)
+
+        # -- figure for Cl,m and Sl,m
+        plt.figure()
+        plt.title("Fourier transform of the normalized spherical harmonics coefficients $C_{" + str(l) + "," + str(
+            m) + "}$ et $S_{" + str(
+            l) + "," + str(m) + "}$")
+        plt.plot(xf, 2.0 / N * np.abs(cf[0:N // 2]), label="$C_{" + str(l) + "," + str(m) + "}$")
+        if m:
+            plt.plot(xf, 2.0 / N * np.abs(sf[0:N // 2]), label="$S_{" + str(l) + "," + str(m) + "}$")
+
+
+        plt.xlabel("Frequency ($year^{-1}$)")
+        plt.ylabel("Power")
+        plt.grid()
+        plt.legend()
+
+        if save_path:
+            if os.path.isdir(save_path):
+                plt.savefig(os.path.join(save_path, 'CS' + str(l) + str(m) + '_fft.png'))
+            else:
+                plt.savefig(save_path)
+
+        plt.show()
+
+    def plot_wavelets(self, l, m, s0=0, pad=1, lag1=0, plot_coi=True, mother='MORLET', param=-1, func_plot=np.abs, save_path=False):
+        """
+        Plot Cl,m and Sl,m wavelet analysis based on (Torrence and Compo, 1998)
+
+        Inputs:
+            l first degree of spherical harmonics
+            m second degree of spherical harmonics
+
+        Options:
+            s0 : minimal period of the wavelets, should be higher than 2*dt
+            pad : boolean for the zero padding of the series
+            lag1 : caracteristic of the noise: 0 for a white noise (default), 0.72 for a red noise
+            plot_coi : boolean to display the cone of interest in the figure
+            mother : name of the wavelet, can be MORLET, DOG or PAUL
+            param : param of the wavelet, -1 is the default value for each wavelet
+            func_plot : funtion for reducing the wave, can be np.abs, np.angle, np.real or np.imag
+            save_path : if not False, give a path to save the figure
+        """
+        # len of the data
+        ndata = self.time.shape[0]
+        # compute the mean time delta of the object
+        dt = np.mean((self.time[1:] - self.time[:-1]))
+
+        # resolution of the wavelet
+        dj = 0.005
+
+        if not s0:
+            s0 = 4 * dt  # min scale of the wavelets
+        # max resolution of the wavelet, fixed for GRACE
+        j1 = 4.5 / dj
+
+        siglvl = 0.95
+
+        # compute wavelets analysis of Cl,m and Sl,m
+        wavec = wv.wavelet(self.clm[l,m], dt, pad, dj, s0, j1, mother, param)[0]
+        waves, period, scale, coi = wv.wavelet(self.slm[l,m], dt, pad, dj, s0, j1, mother, param)
+
+        # compute significativity of the wavelets
+        signifc = wv.wave_signif(self.clm[l,m], dt, scale, lag1=lag1, siglvl=siglvl, mother=mother, param=param)
+        signifs = wv.wave_signif(self.slm[l,m], dt, scale, lag1=lag1, siglvl=siglvl, mother=mother, param=param)
+
+        # compute wavelet significance test at a level of confidence siglvl%
+        sig95c = np.abs(wavec**2) / [s * np.ones(ndata) for s in signifc]
+        sig95s = np.abs(waves**2) / [s * np.ones(ndata) for s in signifs]
+
+        # Wavelet spectrum for fft plot
+        global_wsc = (np.sum(np.abs(wavec ** 2).conj().transpose(), axis=0) / ndata)
+        global_wss = (np.sum(np.abs(waves ** 2).conj().transpose(), axis=0) / ndata)
+
+        # compute fft of the signal
+        fft_sigc = np.fft.fft(self.clm[l,m])
+        sxxc = np.abs((fft_sigc * np.conj(fft_sigc)) / ndata)[int(np.ceil(ndata / 2)):]
+        fft_sigs = np.fft.fft(self.slm[l, m])
+        sxxs = np.abs((fft_sigs * np.conj(fft_sigs)) / ndata)[int(np.ceil(ndata / 2)):]
+
+        # compute frequency
+        f = -np.fft.fftfreq(ndata)[int(np.ceil(ndata / 2)):]
+
+        # prepare yticks
+        yticks = []
+        for i in [0.5, 1, 2, 4, 6, 10, 15]:
+            if np.min(period) <= i <= np.max(period):
+                yticks.append(i)
+
+        # create figure Cl,m
+        fig = plt.figure(constrained_layout=True, figsize=(12, 6), dpi=200)
+        spec = matplotlib.gridspec.GridSpec(ncols=2, nrows=1, wspace=0.02, width_ratios=[3, 1])
+        ax0 = fig.add_subplot(spec[0])
+        ax1 = fig.add_subplot(spec[1], sharey=ax0)
+        axs = [ax0, ax1]
+        plt.setp(axs[1].get_yticklabels(), visible=False)
+
+        # plot wavelet
+        im = axs[0].contourf(self.time, period, func_plot(wavec), 100)
+        axs[0].contour(self.time, period, sig95c, levels=[1], linewidths=2)
+
+        # plot cone of interest of the wavelet
+        if plot_coi:
+            axs[0].fill(np.concatenate((self.time[:1] - 0.0001, self.time, self.time[-1:] + 0.0001,
+                                        self.time[-1:] + 0.0001, self.time[:1] - 0.0001, self.time[:1] - 0.0001)),
+                        np.concatenate(([np.min(period)], coi, [np.min(period)], period[-1:], period[-1:],
+                                        [np.min(period)])), 'r', alpha=0.2, hatch='/')
+            axs[0].plot(self.time, coi, 'r--', lw=1.4)
+
+        fig.colorbar(im, ax=axs[0], location='left')
+        axs[0].invert_yaxis()
+        axs[0].set_yscale('log', base=2)
+        axs[0].set_ylabel('Period (year)')
+        axs[0].set_yticks(yticks)
+        axs[0].set_ylim(np.max(period), np.min(period))
+        axs[0].set_xlabel('Time (year)')
+        axs[0].get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+        axs[0].set_title('Wavelet Power Spectrum')
+
+        # plot fft analysis at the right of the figure
+        axs[1].plot(sxxc, 1 / f * dt, 'gray', label='Fourier spectrum')
+        axs[1].plot(global_wsc, period, 'b', label='Wavelet spectrum')
+        axs[1].plot(np.array(signifc), period, 'g--', label='95% confidence spectrum')
+        axs[1].set_xlabel('Power')
+        axs[1].set_title('Global Wavelet Spectrum')
+
+        plt.legend()
+
+        if save_path:
+            if os.path.isdir(save_path):
+                plt.savefig(os.path.join(save_path, 'C' + str(l) + str(m) + '_wavelet.png'))
+            else:
+                plt.savefig(save_path[:-3] + 'c' + save_path[-3:])
+
+        # create figure Sl,m
+        fig = plt.figure(constrained_layout=True, figsize=(12, 6), dpi=200)
+        spec = matplotlib.gridspec.GridSpec(ncols=2, nrows=1, wspace=0.02, width_ratios=[3, 1])
+        ax0 = fig.add_subplot(spec[0])
+        ax1 = fig.add_subplot(spec[1], sharey=ax0)
+        axs = [ax0, ax1]
+        plt.setp(axs[1].get_yticklabels(), visible=False)
+
+        # plot wavelet
+        im = axs[0].contourf(self.time, period, np.abs(waves), 100)
+        axs[0].contour(self.time, period, sig95s, levels=[1], linewidths=2)
+
+        # plot cone of interest of the wavelet
+        if plot_coi:
+            axs[0].fill(np.concatenate((self.time[:1] - 0.0001, self.time, self.time[-1:] + 0.0001,
+                                        self.time[-1:] + 0.0001, self.time[:1] - 0.0001, self.time[:1] - 0.0001)),
+                    np.concatenate(([s0], coi, [s0], period[-1:], period[-1:], [s0])), 'r', alpha=0.2, hatch='/')
+            axs[0].plot(self.time, coi, 'r--', lw=1.4)
+
+        fig.colorbar(im, ax=axs[0], location='left')
+        axs[0].invert_yaxis()
+        axs[0].set_yscale('log', base=2)
+        axs[0].set_ylabel('Period (year)')
+        axs[0].set_ylim(np.max(period), np.min(period))
+        axs[0].set_yticks(yticks)
+        axs[0].set_xlabel('Time (year)')
+        axs[0].get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+        axs[0].set_title('Wavelet Power Spectrum')
+
+        # plot fft analysis at the right of the figure
+        axs[1].plot(sxxs, 1 / f * dt, 'gray', label='Fourier spectrum')
+        axs[1].plot(global_wss, period, 'b', label='Wavelet spectrum')
+        axs[1].plot(np.array(signifs) * np.var(self.clm[l, m]), period, 'g--', label='95% confidence spectrum')
+        axs[1].set_xlabel('Power')
+        axs[1].set_title('Global Wavelet Spectrum')
+
+        plt.legend()
+
+        if save_path:
+            if os.path.isdir(save_path):
+                plt.savefig(os.path.join(save_path, 'C' + str(l) + str(m) + '_wavelet.png'))
+            else:
+                plt.savefig(save_path[:-3] + 's' + save_path[-3:])
+
+        plt.show()
