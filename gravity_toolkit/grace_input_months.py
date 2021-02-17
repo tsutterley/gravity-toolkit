@@ -289,7 +289,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         #-- new file of degree-1 mass variations from Minkang Cheng
         #-- http://download.csr.utexas.edu/outgoing/cheng/gct2est.220_5s
         DEG1_file = os.path.join(base_dir,'geocenter','gct2est.220_5s')
-        DEG1_input = aod_corrected_SLR_geocenter(DEG1_file,HEADER=15,
+        DEG1_input = aod_corrected_SLR_geocenter(DEG1_file, DREL=DREL, HEADER=15,
             RADIUS=6.378136e9,COLUMNS=['MJD','time','X','Y','Z','XM','YM','ZM',
             'X_sigma','Y_sigma','Z_sigma','XM_sigma','YM_sigma','ZM_sigma'])
         DEG1_str = '_w{0}_DEG1'.format(DEG1)
