@@ -404,3 +404,8 @@ General Attributes and Methods
         Replace the masked values with a new fill_value
 
         Option: `mask` to update the current mask
+
+
+    .. method:: object.replace_masked()
+
+        Replace the masked values with fill_value
