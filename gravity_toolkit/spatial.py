@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (01/2021)
+Written by Tyler Sutterley (02/2021)
 
 Data class for reading, writing and processing spatial data
 
@@ -19,6 +19,7 @@ PROGRAM DEPENDENCIES:
     hdf5_read.py: reads spatial data from HDF5
 
 UPDATE HISTORY:
+    Updated 02/2021: added replace_masked to replace masked values in data
     Updated 01/2021: added scaling factor and scaling factor error function
         from Lander and Swenson (2012) https://doi.org/10.1029/2011WR011453
     Updated 12/2020: added transpose function, can calculate mean over indices
@@ -457,7 +458,7 @@ class spatial(object):
         temp.update_spacing()
         temp.update_extents()
         temp.update_dimensions()
-        temp.update_mask()
+        temp.replace_masked()
         return temp
 
     def zeros_like(self):
@@ -479,7 +480,7 @@ class spatial(object):
         temp.update_spacing()
         temp.update_extents()
         temp.update_dimensions()
-        temp.update_mask()
+        temp.replace_masked()
         return temp
 
     def expand_dims(self):
@@ -873,10 +874,19 @@ class spatial(object):
             if (np.shape(mask) == self.shape):
                 self.mask |= mask
             elif (np.ndim(mask) == 2) & (self.ndim == 3):
-                temp = np.broadcast_to(mask, self.shape)
+                #-- broadcast mask over third dimension
+                temp = np.repeat(mask[:,:,np.newaxis],self.shape[2],axis=2)
                 self.mask |= temp
         #-- update the fill value
         self.fill_value = fill_value
         #-- replace invalid values with new fill value
         self.data[self.mask] = self.fill_value
+        return self
+
+    def replace_masked(self):
+        """
+        Replace the masked values with fill_value
+        """
+        if self.fill_value is not None:
+            self.data[self.mask] = self.fill_value
         return self

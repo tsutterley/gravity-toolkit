@@ -186,7 +186,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF'):
     #-- return a tuple of load love numbers
     return (hl,kl,ll)
 
-#-- PURPOSE: import GRACE files for a given months range
+#-- PURPOSE: import GRACE/GRACE-FO files for a given months range
 #-- Converts the GRACE/GRACE-FO harmonics applying the specified procedures
 def grace_spatial_maps(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
     VERBOSE=False, MODE=0o775):
@@ -562,8 +562,8 @@ def define_analysis(parameter_file, base_dir, LOVE_NUMBERS=0, REFERENCE=None,
 def main():
     #-- Read the system arguments listed after the program
     parser = argparse.ArgumentParser(
-        description="""Calculates the GRACE/GRACE-FO spatial errors
-            following Wahr et al. (2006)
+        description="""Calculates monthly spatial maps from GRACE/GRACE-FO
+            spherical harmonic coefficients
             """
     )
     #-- command line parameters
