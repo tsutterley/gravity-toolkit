@@ -186,7 +186,7 @@ def read_SLR_geocenter(geocenter_file, RADIUS=None, HEADER=0,
 #-- special function for outputting AOD corrected SLR geocenter values
 #-- need to run aod1b_geocenter.py to calculate the monthly geocenter dealiasing
 def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, HEADER=0,
-    COLUMNS=[]):
+    COLUMNS=['time','X','Y','Z','X_sigma','Y_sigma','Z_sigma']):
     """
     Reads monthly geocenter files from satellite laser ranging corrected
     for non-tidal ocean and atmospheric variation
