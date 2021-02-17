@@ -89,12 +89,10 @@ def read_grid_to_harmonics(input_file, VARNAME, LMAX, MMAX=None, LONNAME='lon',
     #-- read file content
     if input_file[-3:] == '.nc':
         file_contents = ncdf_read(input_file, DATE=True, VARNAME=VARNAME, LONNAME=LONNAME,
-                                  LATNAME=LATNAME, TIMENAME=TIMENAME, ATTRIBUTES=True,
-                                  TITLE=True, COMPRESSION=sfx)
+                                  LATNAME=LATNAME, TIMENAME=TIMENAME, COMPRESSION=sfx)
     elif input_file[-4:] == '.hdf' or input_file[-3:] == '.h5' or input_file[-5:] == '.hdf5':
         file_contents = hdf5_read(input_file, DATE=True, VARNAME=VARNAME, LONNAME=LONNAME,
-                                  LATNAME=LATNAME, TIMENAME=TIMENAME, ATTRIBUTES=True,
-                                  TITLE=True, COMPRESSION=sfx)
+                                  LATNAME=LATNAME, TIMENAME=TIMENAME, COMPRESSION=sfx)
 
     #-- load love numbers
     hl, kl, ll = read_love_numbers(get_data_path(['data', 'love_numbers']), REFERENCE='CF')
@@ -108,8 +106,8 @@ def read_grid_to_harmonics(input_file, VARNAME, LMAX, MMAX=None, LONNAME='lon',
     grace_clm = np.zeros((LMAX + 1, MMAX + 1, n_time))
     grace_slm = np.zeros((LMAX + 1, MMAX + 1, n_time))
     #-- Time matrix to fill
-    tdec = np.zeros((n_time))
-    month = np.zeros((n_time))
+    tdec = np.zeros(n_time)
+    month = np.zeros(n_time)
     #-- output dimensions
     lout = np.arange(LMAX + 1)
     mout = np.arange(MMAX + 1)
@@ -120,8 +118,8 @@ def read_grid_to_harmonics(input_file, VARNAME, LMAX, MMAX=None, LONNAME='lon',
                    file_contents['lon'][:], file_contents['lat'][:],
                            LMAX=LMAX, MMAX=MMAX, UNITS=UNITS, LOVE=(hl, kl, ll))
 
-        grace_clm[:, :, i] = harmo['clm']
-        grace_slm[:, :, i] = harmo['slm']
+        grace_clm[:, :, i] = harmo.clm
+        grace_slm[:, :, i] = harmo.slm
 
     #-- extract GRACE date information from input file name
     start_yr = np.float(time[:4])
