@@ -36,11 +36,11 @@ COMMAND LINE OPTIONS:
     -M X, --mode X: Permissions mode of the files created
 
 PYTHON DEPENDENCIES:
-    Python: a general-purpose, high-level programming language
-        http://www.python.org/
     numpy: Scientific Computing Tools For Python
         https://numpy.org
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
 
 PROGRAM DEPENDENCIES:
     grace_input_months.py: Reads GRACE/GRACE-FO files for a specified spherical

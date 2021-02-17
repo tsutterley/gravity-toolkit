@@ -1,5 +1,5 @@
-GRACE Data File Formats
-=======================
+Data File Formats
+=================
 
 #### Product Identifier  
 GRACE Level-2 products consist of spherical harmonic coefficients of the Earth's gravitational field.  The data files are typically gzipped ascii files with names formatted as the following: `PID-2_YYYYDOY-yyyydoy_ndays_center_flag_rrrr` or `PID-2_YYYYDOY-yyyydoy_mssn_center_flag_rrrr`     

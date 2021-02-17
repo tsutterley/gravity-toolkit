@@ -3,9 +3,9 @@ u"""
 tsregress.py
 Written by Tyler Sutterley (07/2020)
 
-Fits a synthetic signal to the data over the time period by least-squares
-    or weighted least-squares
-Default fits constant, trend, annual sin and cos, semi-annual sin and cos
+Fits a synthetic signal to data over a time period by ordinary or weighted
+    least-squares
+
 Fit significance derivations are based on Burnham and Anderson (2002)
     Model Selection and Multimodel Inference
 
@@ -84,24 +84,13 @@ UPDATE HISTORY:
         and made associated edits.. added option WEIGHT
     Updated 10/2012: added in additional FIT_TYPES that do not have a trend
         added option for the Schwarz Criterion for model selection
-    Updated 08/2012: NUMBER OF CHANGES
-        added option for changing the confidence interval or adding a standard
-            deviation of the error
-        added option for GRACE errors in spatial domain
-        changed 'std' to data_err for measurement errors as I added the std_dev
-            out of the error
-    Updated 06/2012: added options for MSE and NRMSE.  Fixed rsq_adj
+    Updated 08/2012: added option for changing the confidence interval or
+        adding a standard deviation of the error
+        changed 'std' to data_err for measurement errors
+    Updated 06/2012: added options for MSE and NRMSE.  adjusted rsq_adj
     Updated 06/2012: changed design matrix creation to 'FIT_TYPE'
-        wrote in r_square capability to calcuating goodness of fit compared to others
-        fixed error analysis for weighted least-squares case
-    Updated 05/2012: added option to change half-width of smoothing
-    Updated 03/2012:
-        combined polynomial and harmonic regression functions (renamed tsregress.pro)
-         smoothing procedure now 13-month ad-hoc filter as described in Velicogna (2009)
-            fits annual/semi-annual and trend to a 13-month time series
-            takes constant and trend terms, and uses as the smoothed time series
-        measurement for the central month (month 7 of the 13 month window)
-             original 13-month moving average program option in program tssmooth.pro
+        added r_square to calcuating goodness of fit compared to others
+    Updated 03/2012: combined polynomial and harmonic regression functions
     Updated 01/2012: added std weighting for a error weighted least-squares
     Written 10/2011
 """
@@ -112,7 +101,8 @@ import scipy.special
 def tsregress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], DATA_ERR=0,
     WEIGHT=False, RELATIVE=-1, STDEV=0, CONF=0, AICc=True):
     """
-    Solves sea level equation with option to include polar motion feedback
+    Fits a synthetic signal to data over a time period by
+        ordinary or weighted least-squares
 
     Arguments
     ---------

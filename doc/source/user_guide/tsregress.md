@@ -1,8 +1,8 @@
 tsregress.py
 ============
 
- - Fits a synthetic signal to the data over the time period by least-squares or weighted least-squares
- - Fit significance derivations are based on Burnham and Anderson (2002) Model Selection and Multimodel Inference
+ - Fits a synthetic signal to data over a time period by ordinary or weighted least-squares
+ - Fit significance derivations are based on [Burnham and Anderson (2002) Model Selection and Multimodel Inference](https://doi.org/10.1007/b97636)
 
 #### Calling Sequence
 ```python

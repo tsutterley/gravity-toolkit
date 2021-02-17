@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_maps.py
-Written by Tyler Sutterley (10/2020)
+Written by Tyler Sutterley (01/2021)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly spatial fields
@@ -39,6 +39,10 @@ COMMAND LINE OPTIONS:
     --help: list the command line options
     -P X, --np X: Run in parallel with X number of processes
     -D X, --directory X: Working data directory
+    -n X, --love X: Load Love numbers dataset
+        0: Han and Wahr (1995) values from PREM
+        1: Gegout (2005) values from PREM
+        2: Wang et al. (2012) values from PREM
     -r X, --reference X: Reference frame for load love numbers
         CF: Center of Surface Figure (default)
         CM: Center of Mass of Earth System
@@ -51,6 +55,8 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
         https://numpy.org
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
     netCDF4: Python interface to the netCDF C library
         https://unidata.github.io/netcdf4-python/netCDF4/index.html
     h5py: Pythonic interface to the HDF5 binary data format.
@@ -85,6 +91,8 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
+    Updated 12/2020: added more love number options and from gfc for mean files
     Updated 10/2020: use argparse to set command line parameters
     Updated 08/2020: use utilities to define path to load love numbers file
     Updated 06/2020: using spatial data class for output operations
@@ -123,34 +131,64 @@ def info(title):
     print('process id: {0:d}'.format(os.getpid()))
 
 #-- PURPOSE: read load love numbers for the range of spherical harmonic degrees
-def load_love_numbers(LMAX, REFERENCE='CF'):
+def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF'):
+    """
+    Reads PREM load Love numbers for the range of spherical harmonic degrees
+    and applies isomorphic parameters
+
+    Arguments
+    ---------
+    LMAX: maximum spherical harmonic degree
+
+    Keyword arguments
+    -----------------
+    LOVE_NUMBERS: Load Love numbers dataset
+        0: Han and Wahr (1995) values from PREM
+        1: Gegout (2005) values from PREM
+        2: Wang et al. (2012) values from PREM
+    REFERENCE: Reference frame for calculating degree 1 love numbers
+        CF: Center of Surface Figure (default)
+        CM: Center of Mass of Earth System
+        CE: Center of Mass of Solid Earth
+
+    Returns
+    -------
+    kl: Love number of Gravitational Potential
+    hl: Love number of Vertical Displacement
+    ll: Love number of Horizontal Displacement
+    """
     #-- load love numbers file
-    love_numbers_file = get_data_path(['data','love_numbers'])
+    if (LOVE_NUMBERS == 0):
+        #-- PREM outputs from Han and Wahr (1995)
+        #-- https://doi.org/10.1111/j.1365-246X.1995.tb01819.x
+        love_numbers_file = get_data_path(['data','love_numbers'])
+        header = 2
+        columns = ['l','hl','kl','ll']
+    elif (LOVE_NUMBERS == 1):
+        #-- PREM outputs from Gegout (2005)
+        #-- http://gemini.gsfc.nasa.gov/aplo/
+        love_numbers_file = get_data_path(['data','Load_Love2_CE.dat'])
+        header = 3
+        columns = ['l','hl','ll','kl']
+    elif (LOVE_NUMBERS == 2):
+        #-- PREM outputs from Wang et al. (2012)
+        #-- https://doi.org/10.1016/j.cageo.2012.06.022
+        love_numbers_file = get_data_path(['data','PREM-LLNs-truncated.dat'])
+        header = 1
+        columns = ['l','hl','ll','kl','nl','nk']
     #-- LMAX of load love numbers from Han and Wahr (1995) is 696.
     #-- from Wahr (2007) linearly interpolating kl works
     #-- however, as we are linearly extrapolating out, do not make
     #-- LMAX too much larger than 696
-    if (LMAX > 696):
-        #-- Creates arrays of kl, hl, and ll Love Numbers
-        hl = np.zeros((LMAX+1))
-        kl = np.zeros((LMAX+1))
-        ll = np.zeros((LMAX+1))
-        hl[:697],kl[:697],ll[:697] = read_love_numbers(love_numbers_file,
-            FORMAT='tuple', REFERENCE=REFERENCE)
-        #-- for degrees greater than 696
-        for l in range(697,LMAX+1):
-            hl[l] = 2.0*hl[l-1] - hl[l-2]#-- linearly extrapolating hl
-            kl[l] = 2.0*kl[l-1] - kl[l-2]#-- linearly extrapolating kl
-            ll[l] = 2.0*ll[l-1] - ll[l-2]#-- linearly extrapolating ll
-    else:
-        #-- read arrays of kl, hl, and ll Love Numbers
-        hl,kl,ll=read_love_numbers(love_numbers_file, REFERENCE=REFERENCE)
+    #-- read arrays of kl, hl, and ll Love Numbers
+    hl,kl,ll = read_love_numbers(love_numbers_file, LMAX=LMAX, HEADER=header,
+        COLUMNS=columns, REFERENCE=REFERENCE, FORMAT='tuple')
     #-- return a tuple of load love numbers
     return (hl,kl,ll)
 
 #-- PURPOSE: import GRACE files for a given months range
 #-- Converts the GRACE/GRACE-FO harmonics applying the specified procedures
-def grace_spatial_maps(base_dir, parameters, REFERENCE=None,
+def grace_spatial_maps(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
     VERBOSE=False, MODE=0o775):
     #-- Data processing center
     PROC = parameters['PROC']
@@ -214,7 +252,8 @@ def grace_spatial_maps(base_dir, parameters, REFERENCE=None,
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
 
     #-- read arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = load_love_numbers(LMAX, REFERENCE=REFERENCE)
+    hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+        REFERENCE=REFERENCE)
 
     #-- Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):
@@ -244,14 +283,15 @@ def grace_spatial_maps(base_dir, parameters, REFERENCE=None,
     if (parameters['MEAN_FILE'].title() == 'None'):
         mean_Ylms = GRACE_Ylms.mean(apply=MEAN)
     else:
-        #-- read data form for input mean file (ascii, netCDF4, HDF5)
-        MEANFORM = parameters['MEANFORM']
-        if (MEANFORM == 'ascii'):
+        #-- read data form for input mean file (ascii, netCDF4, HDF5, gfc)
+        if (parameters['MEANFORM'] == 'ascii'):
             mean_Ylms=harmonics().from_ascii(parameters['MEAN_FILE'],date=False)
-        if (MEANFORM == 'netCDF4'):
+        elif (parameters['MEANFORM'] == 'netCDF4'):
             mean_Ylms=harmonics().from_netCDF4(parameters['MEAN_FILE'],date=False)
-        if (MEANFORM == 'HDF5'):
+        elif (parameters['MEANFORM'] == 'HDF5'):
             mean_Ylms=harmonics().from_HDF5(parameters['MEAN_FILE'],date=False)
+        elif (parameters['MEANFORM'] == 'gfc'):
+            mean_Ylms=harmonics().from_gfc(parameters['MEAN_FILE'])
         #-- remove the input mean
         if MEAN:
             GRACE_Ylms.subtract(mean_Ylms)
@@ -303,14 +343,14 @@ def grace_spatial_maps(base_dir, parameters, REFERENCE=None,
             if REDISTRIBUTE_REMOVED:
                 #-- calculate ratio between total removed mass and
                 #-- a uniformly distributed cm of water over the ocean
-                ratio = Ylms.clm[0,0,:]/ocean_Ylms['clm'][0,0]
+                ratio = Ylms.clm[0,0,:]/ocean_Ylms.clm[0,0]
                 #-- for each spherical harmonic
                 for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
                     for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
                         #-- remove the ratio*ocean Ylms from Ylms
                         #-- note: x -= y is equivalent to x = x - y
-                        Ylms.clm[l,m,:] -= ratio*ocean_Ylms['clm'][l,m]
-                        Ylms.slm[l,m,:] -= ratio*ocean_Ylms['slm'][l,m]
+                        Ylms.clm[l,m,:] -= ratio*ocean_Ylms.clm[l,m]
+                        Ylms.slm[l,m,:] -= ratio*ocean_Ylms.slm[l,m]
             #-- filter removed coefficients
             if DESTRIPE:
                 Ylms = Ylms.destripe()
@@ -481,8 +521,8 @@ def create_unique_logfile(filename):
         counter += 1
 
 #-- PURPOSE: define the analysis for multiprocessing
-def define_analysis(parameter_file, base_dir, REFERENCE=None, LOG=False,
-    VERBOSE=False, MODE=0o775):
+def define_analysis(parameter_file, base_dir, LOVE_NUMBERS=0, REFERENCE=None,
+    LOG=False, VERBOSE=False, MODE=0o775):
     #-- keep track of multiprocessing threads
     info(os.path.basename(parameter_file))
 
@@ -504,7 +544,8 @@ def define_analysis(parameter_file, base_dir, REFERENCE=None, LOG=False,
     try:
         #-- run GRACE/GRACE-FO spatial algorithm with parameters
         output_files = grace_spatial_maps(base_dir, parameters,
-            REFERENCE=REFERENCE, VERBOSE=VERBOSE, MODE=MODE)
+            LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE=REFERENCE,
+            VERBOSE=VERBOSE, MODE=MODE)
     except:
         #-- if there has been an error exception
         #-- print the type, value, and stack trace of the
@@ -538,6 +579,13 @@ def main():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
+    #-- different treatments of the load Love numbers
+    #-- 0: Han and Wahr (1995) values from PREM
+    #-- 1: Gegout (2005) values from PREM
+    #-- 2: Wang et al. (2012) values from PREM
+    parser.add_argument('--love','-n',
+        type=int, default=0, choices=[0,1,2],
+        help='Treatment of the Load Love numbers')
     #-- option for setting reference frame for gravitational load love number
     #-- reference frame options (CF, CM, CE)
     parser.add_argument('--reference','-r',
@@ -563,15 +611,16 @@ def main():
     if (args.np == 0):
         #-- run directly as series if PROCESSES = 0
         for f in args.parameters:
-            define_analysis(f, args.directory, REFERENCE=args.reference,
-                LOG=args.log, VERBOSE=args.verbose, MODE=args.mode)
+            define_analysis(f, args.directory, LOVE_NUMBERS=args.love,
+                REFERENCE=args.reference, LOG=args.log, VERBOSE=args.verbose,
+                MODE=args.mode)
     else:
         #-- run in parallel with multiprocessing Pool
         pool = multiprocessing.Pool(processes=args.np)
         #-- for each parameter file
         for f in args.parameters:
-            kwds = dict(REFERENCE=args.reference, LOG=args.log,
-                VERBOSE=args.verbose, MODE=args.mode)
+            kwds = dict(LOVE_NUMBERS=args.love, REFERENCE=args.reference,
+                LOG=args.log, VERBOSE=args.verbose, MODE=args.mode)
             pool.apply_async(define_analysis,args=(f,args.directory),kwds=kwds)
         #-- start multiprocessing jobs
         #-- close the pool

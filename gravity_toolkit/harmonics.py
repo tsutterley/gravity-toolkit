@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (02/2021)
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
-    scipy: Scientific Numerical Routines For Python
-        (https://www.scipy.org/)
-    matplotlib.pyplot: Visualizations Tools For Python
-        (https://matplotlib.org/)
     netCDF4: Python interface to the netCDF C library
         (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
     h5py: Pythonic interface to the HDF5 binary data format.
@@ -25,6 +21,11 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 02/2021: added degree amplitude function
+    Updated 12/2020: added verbose option for gfc files
+        can calculate spherical harmonic mean over a range of time indices
+        will also calculate the mean time and month of a harmonics object
+        can create a harmonics object from an open file-like object
     Updated 11/2020: added plotting functions for visualization
     Updated 08/2020: added compression options for ascii, netCDF4 and HDF5 files
     Updated 07/2020: added class docstring and using kwargs for output to file
@@ -32,7 +33,7 @@ UPDATE HISTORY:
     Updated 06/2020: output list of filenames with from_list()
         zeros_like() creates a new harmonics object with dimensions of another
         add ndim and shape attributes of harmonics objects
-    Updated 04/2020: added from_gfc to read gravity model coefficients from GFZ
+    Updated 04/2020: added from_gfc to read static gravity model coefficients
         add to_ascii and iterate over temporal fields in convolve and destripe
         make date optional for harmonic read functions.  add more math functions
         add option to sort if reading from an index or merging a list
@@ -41,6 +42,8 @@ UPDATE HISTORY:
 """
 import os
 import re
+import io
+import copy
 import gzip
 import zipfile
 import matplotlib
@@ -77,16 +80,21 @@ class harmonics(object):
         """
         Searches a directory for a filename without case dependence
         """
-        self.filename = os.path.expanduser(filename)
-        #-- check if file presently exists with input case
-        if not os.access(self.filename,os.F_OK):
-            #-- search for filename without case dependence
-            basename = os.path.basename(filename)
-            directory = os.path.dirname(os.path.expanduser(filename))
-            f = [f for f in os.listdir(directory) if re.match(basename,f,re.I)]
-            if not f:
-                raise IOError('{0} not found in file system'.format(filename))
-            self.filename = os.path.join(directory,f.pop())
+        #-- check if filename is open file object
+        if isinstance(filename, io.IOBase):
+            self.filename = copy.copy(filename)
+        else:
+            #-- tilde-expand input filename
+            self.filename = os.path.expanduser(filename)
+            #-- check if file presently exists with input case
+            if not os.access(self.filename,os.F_OK):
+                #-- search for filename without case dependence
+                basename = os.path.basename(filename)
+                directory = os.path.dirname(os.path.expanduser(filename))
+                f = [f for f in os.listdir(directory) if re.match(basename,f,re.I)]
+                if not f:
+                    raise IOError('{0} not found in file system'.format(filename))
+                self.filename = os.path.join(directory,f.pop())
         return self
 
     def from_ascii(self, filename, date=True, compression=None, verbose=False):
@@ -95,7 +103,7 @@ class harmonics(object):
         Inputs: full path of input ascii file
         Options:
             ascii file contains date information
-            ascii file is compressed using gzip
+            ascii file is compressed or streaming as bytes
             verbose output of file information
         """
         #-- set filename
@@ -111,6 +119,9 @@ class harmonics(object):
             base,extension = os.path.splitext(self.filename)
             with zipfile.ZipFile(self.filename) as z:
                 file_contents = z.read(base).decode('ISO-8859-1').splitlines()
+        elif (compression == 'bytes'):
+            #-- read input file object and split lines
+            file_contents = self.filename.read().splitlines()
         else:
             #-- read input ascii file (.txt, .asc) and split lines
             with open(self.filename,'r') as f:
@@ -164,14 +175,14 @@ class harmonics(object):
         Inputs: full path of input netCDF4 file
         Options:
             netCDF4 file contains date information
-            netCDF4 file is compressed using gzip or zip
+            netCDF4 file is compressed or streamed from memory
             verbose output of file information
         """
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- read data from netCDF4 file
-        Ylms = ncdf_read_stokes(self.filename, ATTRIBUTES=False,
-            DATE=date, COMPRESSION=compression, VERBOSE=verbose)
+        Ylms = ncdf_read_stokes(self.filename, COMPRESSION=compression,
+            DATE=date, VERBOSE=verbose)
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
         self.l = Ylms['l'].copy()
@@ -191,14 +202,14 @@ class harmonics(object):
         Inputs: full path of input HDF5 file
         Options:
             HDF5 file contains date information
-            HDF5 file is compressed using gzip or zip
+            HDF5 file is compressed or streamed from memory
             verbose output of file information
         """
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- read data from HDF5 file
-        Ylms = hdf5_read_stokes(self.filename, ATTRIBUTES=False,
-            DATE=date, COMPRESSION=compression, VERBOSE=verbose)
+        Ylms = hdf5_read_stokes(self.filename, COMPRESSION=compression,
+            DATE=date, VERBOSE=verbose)
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
         self.l = Ylms['l'].copy()
@@ -212,15 +223,22 @@ class harmonics(object):
         self.update_dimensions()
         return self
 
-    def from_gfc(self, filename):
+    def from_gfc(self, filename, verbose=False):
         """
         Read a harmonics object from a gfc gravity model file from the GFZ ICGEM
         Inputs: full path of input gfc file
+        Options:
+            verbose output of file information
         """
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- read data from gfc file
         Ylms = read_ICGEM_harmonics(self.filename)
+        #-- Output file information
+        if verbose:
+            print(self.filename)
+            print(list(Ylms.keys()))
+        #-- copy variables for static gravity model
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
         self.lmax = np.int(Ylms['max_degree'])
@@ -265,13 +283,14 @@ class harmonics(object):
         #-- create a single harmonic object from the list
         return self.from_list(h,date=date,sort=sort)
 
-    def from_list(self, object_list, date=True, sort=True):
+    def from_list(self, object_list, date=True, sort=True, clear=False):
         """
         Build a sorted harmonics object from a list of other harmonics objects
         Inputs: list of harmonics object to be merged
         Options:
             harmonics objects contain date information
             sort harmonics objects by date information
+            clear the harmonics list from memory
         """
         #-- number of harmonic objects in list
         n = len(object_list)
@@ -300,13 +319,16 @@ class harmonics(object):
             self.clm[:,:,t] = object_list[i].clm[:self.lmax+1,:self.mmax+1]
             self.slm[:,:,t] = object_list[i].slm[:self.lmax+1,:self.mmax+1]
             if date:
-                self.time[t] = object_list[i].time[:].copy()
-                self.month[t] = object_list[i].month[:].copy()
+                self.time[t] = np.atleast_1d(object_list[i].time)
+                self.month[t] = np.atleast_1d(object_list[i].month)
             #-- append filename to list
             if getattr(object_list[i], 'filename'):
                 self.filename.append(object_list[i].filename)
         #-- assign shape and ndim attributes
         self.update_dimensions()
+        #-- clear the input list to free memory
+        if clear:
+            object_list = None
         #-- return the single harmonic object
         return self
 
@@ -378,6 +400,34 @@ class harmonics(object):
             kwargs['TIME_LONGNAME'] = 'Date_in_Decimal_Years'
         hdf5_stokes(self.clm, self.slm, self.l, self.m, self.time, self.month,
             FILENAME=self.filename, DATE=date, **kwargs)
+
+    def to_masked_array(self):
+        """
+        Convert a harmonics object to a masked numpy array
+        """
+        #-- reassign shape and ndim attributes
+        self.update_dimensions()
+        #-- verify dimensions and get shape
+        ndim_prev = self.ndim
+        self.expand_dims()
+        l1,m1,nt = self.shape
+        #-- create single triangular matrices with harmonics
+        Ylms = np.ma.zeros((self.lmax+1,2*self.lmax+1,nt))
+        Ylms.mask = np.ones((self.lmax+1,2*self.lmax+1,nt),dtype=np.bool)
+        for m in range(-self.mmax,self.mmax+1):
+            mm = np.abs(m)
+            for l in range(mm,self.lmax+1):
+                if (m < 0):
+                    Ylms.data[l,self.lmax+m,:] = self.slm[l,mm,:]
+                    Ylms.mask[l,self.lmax+m,:] = False
+                else:
+                    Ylms.data[l,self.lmax+m,:] = self.clm[l,mm,:]
+                    Ylms.mask[l,self.lmax+m,:] = False
+        #-- reshape to previous
+        if (self.ndim != ndim_prev):
+            self.squeeze()
+        #-- return the triangular matrix
+        return Ylms
 
     def update_dimensions(self):
         """
@@ -712,10 +762,12 @@ class harmonics(object):
         #-- return the truncated or expanded harmonics object
         return self
 
-    def mean(self, apply=False):
+    def mean(self, apply=False, indices=Ellipsis):
         """
         Compute mean gravitational field and remove from data if specified
-        Options: apply to remove the mean field from the input harmonics
+        Options:
+            apply to remove the mean field from the input harmonics
+            indices of input harmonics object to compute mean
         """
         temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
         #-- allocate for mean field
@@ -725,13 +777,20 @@ class harmonics(object):
         for m in range(0,temp.mmax+1):#-- MMAX+1 to include l
             for l in range(m,temp.lmax+1):#-- LMAX+1 to include LMAX
                 #-- calculate mean static field
-                temp.clm[l,m] = np.mean(self.clm[l,m,:])
-                temp.slm[l,m] = np.mean(self.slm[l,m,:])
+                temp.clm[l,m] = np.mean(self.clm[l,m,indices])
+                temp.slm[l,m] = np.mean(self.slm[l,m,indices])
                 #-- calculating the time-variable gravity field by removing
                 #-- the static component of the gravitational field
                 if apply:
                     self.clm[l,m,:] -= temp.clm[l,m]
                     self.slm[l,m,:] -= temp.slm[l,m]
+        #-- calculate mean of temporal variables
+        for key in ['time','month']:
+            try:
+                val = getattr(self, key)
+                setattr(temp, key, np.mean(val[indices]))
+            except:
+                continue
         #-- assign ndim and shape attributes
         temp.update_dimensions()
         #-- return the mean field
@@ -831,6 +890,39 @@ class harmonics(object):
         temp.update_dimensions()
         #-- return the destriped field
         return temp
+
+    def amplitude(self, mmax=None):
+        """
+        Calculates the degree amplitude of a harmonics object
+        Options: mmax maximum order of spherical harmonics
+        """
+        #-- temporary matrix for squared harmonics
+        temp = self.power(2)
+        #-- truncate to order mmax
+        if mmax is not None:
+            temp.truncate(self.lmax, mmax=mmax)
+        #-- check if a single field or a temporal field
+        if (self.ndim == 2):
+            #-- allocate for degree amplitudes
+            self.amp = np.zeros((self.lmax+1))
+            for l in range(self.lmax+1):
+                #-- truncate at mmax
+                m = np.arange(l,temp.mmax+1)
+                #-- degree amplitude of spherical harmonic degree
+                self.amp[l] = np.sqrt(np.sum(temp.clm[l,m] + temp.slm[l,m]))
+
+        else:
+            #-- allocate for degree amplitudes
+            n = self.shape[-1]
+            self.amp = np.zeros((self.lmax+1,n))
+            for l in range(self.lmax+1):
+                #-- truncate at mmax
+                m = np.arange(l,temp.mmax+1)
+                #-- degree amplitude of spherical harmonic degree
+                var = temp.clm[l,m,:] + temp.slm[l,m,:]
+                self.amp[l,:] = np.sqrt(np.sum(var,axis=0))
+        #-- return the harmonics object with degree amplitudes
+        return self
 
     def gap_fill(self, apply=False):
         """

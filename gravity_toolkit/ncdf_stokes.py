@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_stokes.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (12/2020)
 
 Writes spherical harmonic coefficients to netCDF4 files
 
@@ -25,6 +25,7 @@ OPTIONS:
     MONTHS_UNITS: months variable units
     MONTHS_LONGNAME: months variable description
     TITLE: title attribute of dataset
+    REFERENCE: reference attribute of dataset
     CLOBBER: will overwrite an existing netCDF4 file
     VERBOSE: will print to screen the netCDF4 structure parameters
     DATE: harmonics have date information
@@ -35,6 +36,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 12/2020: added REFERENCE option to set file attribute
     Updated 07/2020: added function docstrings
     Updated 03/2020: only include title if not None
     Updated 10/2019: changing Y/N flags to True/False
@@ -72,7 +74,7 @@ import numpy as np
 def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
     UNITS='Geodesy_Normalization', TIME_UNITS=None, TIME_LONGNAME=None,
     MONTHS_NAME='month', MONTHS_UNITS='number', MONTHS_LONGNAME='GRACE_month',
-    TITLE=None, DATE=True, CLOBBER=True, VERBOSE=False):
+    TITLE=None, REFERENCE=None, DATE=True, CLOBBER=True, VERBOSE=False):
     """
     Writes spherical harmonic coefficients to netCDF4 files
 
@@ -95,6 +97,7 @@ def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
     MONTHS_UNITS: months variable units
     MONTHS_LONGNAME: months variable description
     TITLE: title attribute of dataset
+    REFERENCE: reference attribute of dataset
     CLOBBER: will overwrite an existing netCDF4 file
     VERBOSE: will print to screen the netCDF4 structure parameters
     DATE: harmonics have date information
@@ -194,9 +197,11 @@ def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
         nc['time'].units = TIME_UNITS
         nc['month'].long_name = MONTHS_LONGNAME
         nc['month'].units = MONTHS_UNITS
-    #-- global variable of netCDF file
+    #-- global variables of NetCDF file
     if TITLE:
-        fileID.TITLE = TITLE
+        fileID.title = TITLE
+    if REFERENCE:
+        fileID.reference = REFERENCE
     #-- date created
     fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
 

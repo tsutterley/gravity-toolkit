@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_read_stokes.py
-Written by Tyler Sutterley (09/2020)
+Written by Tyler Sutterley (02/2021)
 
 Reads spherical harmonic data from HDF5 files
 
@@ -19,13 +19,17 @@ OUTPUTS:
     time: time of measurement (if specified by DATE)
     month: GRACE/GRACE-FO month (if specified by DATE)
     attributes: HDF5 attributes for:
-        spherical harmonics (clm,slm), variables (l,m,time,month), and title
+        spherical harmonics (clm,slm)
+        variables (l,m,time,month)
+        file description
 
 OPTIONS:
     DATE: HDF5 file has date information
     VERBOSE: will print to screen the HDF5 structure parameters
-    ATTRIBUTES: HDF5 variables contain attribute parameters
-    COMPRESSION: HDF5 file is compressed using gzip or zip
+    COMPRESSION: HDF5 file is compressed or streaming as bytes
+        gzip
+        zip
+        bytes
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
@@ -33,6 +37,10 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 02/2021: prevent warnings with python3 compatible regex strings
+    Updated 12/2020: try/except for getting variable unit attributes
+        add fallback for finding HDF5 file within from zip files
+        added bytes option for COMPRESSION if streaming from memory
     Updated 09/2020: use try/except for reading attributes
     Updated 08/2020: add options to read from gzip or zip compressed files
     Updated 07/2020: added function docstrings
@@ -52,15 +60,14 @@ UPDATE HISTORY:
 from __future__ import print_function
 
 import os
-import re
 import io
+import re
 import gzip
 import h5py
 import zipfile
 import numpy as np
 
-def hdf5_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
-    COMPRESSION=None):
+def hdf5_read_stokes(filename, DATE=True, VERBOSE=False, COMPRESSION=None):
     """
     Reads spherical harmonic data from HDF5 files
 
@@ -72,8 +79,10 @@ def hdf5_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
     -----------------
     DATE: HDF5 file has date information
     VERBOSE: will print to screen the HDF5 structure parameters
-    ATTRIBUTES: HDF5 variables contain attribute parameters
-    COMPRESSION: HDF5 file is compressed using gzip or zip
+    COMPRESSION: HDF5 file is compressed or streaming as bytes
+        gzip
+        zip
+        bytes
 
     Returns
     -------
@@ -99,16 +108,25 @@ def hdf5_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
         fileID = h5py.File(fid, 'r')
     elif (COMPRESSION == 'zip'):
         #-- read zipped file and extract file into in-memory file object
-        fileBasename,fileExtension = os.path.splitext(filename)
+        fileBasename,_ = os.path.splitext(os.path.basename(filename))
         with zipfile.ZipFile(os.path.expanduser(filename)) as z:
+            #-- first try finding a HDF5 file with same base filename
+            #-- if none found simply try searching for a HDF5 file
+            try:
+                f,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
+            except:
+                f,=[f for f in z.namelist() if re.search(r'\.H(DF)?5$',f,re.I)]
             #-- read bytes from zipfile into in-memory BytesIO object
-            fid = io.BytesIO(z.read(fileBasename))
+            fid = io.BytesIO(z.read(f))
         #-- set filename of BytesIO object
         fid.filename = os.path.basename(filename)
         #-- rewind to start of file
         fid.seek(0)
         #-- read as in-memory (diskless) HDF5 dataset from BytesIO object
         fileID = h5py.File(fid, 'r')
+    elif (COMPRESSION == 'bytes'):
+        #-- read as in-memory (diskless) HDF5 dataset
+        fileID = h5py.File(filename, 'r')
     else:
         #-- read HDF5 dataset
         fileID = h5py.File(os.path.expanduser(filename), 'r')
@@ -121,12 +139,15 @@ def hdf5_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
         print(fileID.filename)
         print(list(fileID.keys()))
 
+    #-- output variable keys
+    h5keys = ['l','m','clm','slm']
     #-- Getting the data from each HDF5 variable
     #-- converting HDF5 objects into numpy arrays
     ll = np.array(fileID['l'][:])
     mm = np.array(fileID['m'][:])
     #-- Spherical harmonic files have date information
     if DATE:
+        h5keys.extend(['time','month'])
         dinput['time'] = fileID['time'][:].copy()
         dinput['month'] = fileID['month'][:].copy()
         n_time = len(dinput['time'])
@@ -136,6 +157,7 @@ def hdf5_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
     #-- Restructuring input array back into matrix format
     LMAX = np.max(ll)
     MMAX = np.max(mm)
+
     #-- LMAX+1 to include LMAX (LMAX+1 elements)
     dinput['l'] = np.arange(0,LMAX+1)
     dinput['m'] = np.arange(0,MMAX+1)
@@ -161,16 +183,20 @@ def hdf5_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
             dinput['slm'][ll[lm],mm[lm]] = SLM[lm]
 
     #-- Getting attributes of clm/slm and included variables
-    if ATTRIBUTES:
-        #-- get attributes for the included variables
-        for key in dinput.keys():
-            try:
-                dinput['attributes'][key] = [fileID[key].attrs['units'],
-                    fileID[key].attrs['long_name']]
-            except (KeyError, AttributeError):
-                pass
-        #-- Global attribute description
+    #-- get attributes for the included variables
+    for key in h5keys:
+        try:
+            dinput['attributes'][key] = [
+                fileID[key].attrs['units'],
+                fileID[key].attrs['long_name']
+                ]
+        except (KeyError, AttributeError):
+            pass
+    #-- Global attribute description
+    try:
         dinput['attributes']['title'] = fileID.attrs['description']
+    except (KeyError, AttributeError):
+        pass
 
     #-- Closing the HDF5 file
     fileID.close()

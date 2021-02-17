@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_tellus_geocenter.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (12/2020)
 
 Reads monthly geocenter spherical harmonic data files from GRACE Tellus
     Technical Notes (TN-13) calculated using GRACE/GRACE-FO measurements and
@@ -39,9 +39,17 @@ OPTIONS:
     JPL: use JPL TN-13 geocenter files with self-attraction and loading
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (https://numpy.org)
+    numpy: Scientific Computing Tools For Python
+        https://numpy.org
+        https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
+
+PROGRAM DEPENDENCIES:
+    time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 12/2020: using utilities from time module
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 08/2019: add catch to verify input geocenter file exists
@@ -61,7 +69,7 @@ from __future__ import print_function, division
 import os
 import re
 import numpy as np
-from gravity_toolkit.convert_calendar_decimal import convert_calendar_decimal
+from gravity_toolkit.time import convert_calendar_decimal
 
 #-- PURPOSE: read geocenter data from PO.DAAC
 def read_tellus_geocenter(geocenter_file, HEADER=True, JPL=False):
@@ -147,8 +155,8 @@ def read_tellus_geocenter(geocenter_file, HEADER=True, JPL=False):
             end_mon = np.float(line_contents[8][4:6])
             end_day = np.float(line_contents[8][6:8])
             #-- convert date to year decimal
-            t_start = convert_calendar_decimal(start_yr,start_mon,DAY=start_day)
-            t_end = convert_calendar_decimal(end_yr,end_mon,DAY=end_day)
+            t_start = convert_calendar_decimal(start_yr,start_mon,day=start_day)
+            t_end = convert_calendar_decimal(end_yr,end_mon,day=end_day)
             #-- calculate mean time
             tdec[t] = np.mean([t_start,t_end])
             year[t] = np.floor(tdec[t])

@@ -27,10 +27,19 @@ OUTPUTS:
     eslm: sine spherical harmonic uncalibrated standard deviations (LMAX,MMAX)
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (https://numpy.org)
-    PyYAML: YAML parser and emitter for Python (https://github.com/yaml/pyyaml)
+    numpy: Scientific Computing Tools For Python
+        https://numpy.org
+        https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
+    PyYAML: YAML parser and emitter for Python
+        https://github.com/yaml/pyyaml
+
+PROGRAM DEPENDENCIES:
+    time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 12/2020: using utilities from time module
     Updated 10/2020: Change parse function to work with GRGS data
     Updated 08/2020: flake8 compatible regular expression strings
         input file can be "diskless" bytesIO object
@@ -48,6 +57,7 @@ import io
 import gzip
 import yaml
 import numpy as np
+import gravity_toolkit.time
 
 #-- PURPOSE: read Level-2 GRACE and GRACE-FO spherical harmonic files
 def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
@@ -107,23 +117,21 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
     end_day = np.float(ED[4:])
     #-- calculate mid-month date taking into account if measurements are
     #-- on different years
-    if ((start_yr % 4) == 0):#-- Leap Year (% = modulus)
-        dpy = 366.0
-    else:#-- Standard Year
-        dpy = 365.0
+    dpy = gravity_toolkit.time.calendar_days(start_yr).sum()
+
     #-- For data that crosses years (end_yr - start_yr should be at most 1)
-    end_day = ((end_yr-start_yr)*dpy+end_day) if (start_yr!=end_yr) else end_day
-    #-- Calculation of Mid-month value
-    mid_day = np.mean([start_day, end_day])
+    end_cyclic = ((end_yr - start_yr)*dpy+end_day)
+    #-- Calculate mid-month value
+    mid_day = np.mean([start_day, end_cyclic])
     #-- Calculating the mid-month date in decimal form
     grace_L2_input['time'] = start_yr + mid_day/dpy
     #-- Calculating the Julian dates of the start and end date
-    grace_L2_input['start'] = np.float(367.0*start_yr - np.floor(7.0*start_yr/4.0) -
-        np.floor(3.0*(np.floor((start_yr - 8.0/7.0)/100.0) + 1.0)/4.0) +
-        np.floor(275.0/9.0) + start_day + 1721028.5)
-    grace_L2_input['end'] = np.float(367.0*end_yr - np.floor(7.0*end_yr/4.0) -
-        np.floor(3.0*(np.floor((end_yr - 8.0/7.0)/100.0) + 1.0)/4.0) +
-        np.floor(275.0/9.0) + end_day + 1721028.5)
+    grace_L2_input['start'] = 2400000.5 + \
+        gravity_toolkit.time.convert_calendar_dates(start_yr,1.0,start_day,
+        epoch=(1858,11,17,0,0,0))
+    grace_L2_input['end'] = 2400000.5 + \
+        gravity_toolkit.time.convert_calendar_dates(end_yr,1.0,end_day,
+        epoch=(1858,11,17,0,0,0))
 
     #-- set maximum spherical harmonic order
     MMAX = np.copy(LMAX) if (MMAX is None) else MMAX

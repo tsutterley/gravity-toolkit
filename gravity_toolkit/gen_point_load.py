@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_point_load.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (01/2021)
 Calculates gravitational spherical harmonic coefficients for point masses
 
 CALLING SEQUENCE:
@@ -33,14 +33,31 @@ PYTHON DEPENDENCIES:
 PROGRAM DEPENDENCIES:
     legendre.py: Computes associated Legendre polynomials for degree l
     units.py: class for converting spherical harmonic data to specific units
+    harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
+        destripe_harmonics.py: calculates the decorrelation (destriping) filter
+            and filters the GRACE/GRACE-FO coefficients for striping errors
+        ncdf_read_stokes.py: reads spherical harmonic netcdf files
+        ncdf_stokes.py: writes output spherical harmonic data to netcdf
+        hdf5_read_stokes.py: reads spherical harmonic HDF5 files
+        hdf5_stokes.py: writes output spherical harmonic data to HDF5
+
+REFERENCES:
+    I. M. Longman, Journal of Geophysical Research, 67(2), 1962
+        https://doi.org/10.1029/JZ067i002p00845
+    W. E. Farrell, Reviews of Geophysics and Space Physics, 10(3), 1972
+        https://doi.org/10.1029/RG010i003p00761
+    H. N. Pollack, Journal of Geophysical Research, 78(11), 1973
+        https://doi.org/10.1029/JB078i011p01760
 
 UPDATE HISTORY:
+    Updated 01/2021: use harmonics class for spherical harmonic operations
     Updated 07/2020: added function docstrings
     Written 05/2020
 """
 import numpy as np
+import gravity_toolkit.units
+import gravity_toolkit.harmonics
 from gravity_toolkit.legendre import legendre
-from gravity_toolkit.units import units
 
 def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
     """
@@ -79,13 +96,13 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
     phi = np.pi*lon.flatten()/180.0
     theta = np.pi*(90.0 - lat.flatten())/180.0
 
-    #-- SH Degree dependent factors to convert into geodesy normalized SH's
+    #-- SH Degree dependent factors to convert into fully normalized SH's
     #-- use splat operator to extract arrays of kl, hl, and ll Love Numbers
-    factors = units(lmax=LMAX).spatial(*LOVE)
+    factors = gravity_toolkit.units(lmax=LMAX).spatial(*LOVE)
     #-- extract degree dependent factor for specific units
     int_fact = np.zeros((npts))
     if (UNITS == 1):
-        #-- Default Parameter: Input in g
+        #-- Default Parameter: Input in grams (g)
         dfactor = factors.cmwe/(factors.rad_e**2)
         int_fact[:] = 1.0
     elif (UNITS == 2):
@@ -95,20 +112,18 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
     #-- flattened form of data converted to units
     D = int_fact*data.flatten()
 
-    #-- output harmonics
-    Ylms = {}
-    Ylms['clm'] = np.zeros((LMAX+1,MMAX+1))
-    Ylms['slm'] = np.zeros((LMAX+1,MMAX+1))
-    Ylms['l'] = np.arange(LMAX+1)
-    Ylms['m'] = np.arange(MMAX+1)
+    #-- Initializing output spherical harmonic matrices
+    Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
+    Ylms.clm = np.zeros((LMAX+1,MMAX+1))
+    Ylms.slm = np.zeros((LMAX+1,MMAX+1))
     #-- for each degree l
     for l in range(LMAX+1):
         m1 = np.min([l,MMAX]) + 1
         SPH = spherical_harmonic_matrix(l,D,phi,theta,dfactor[l])
         #-- truncate to spherical harmonic order and save to output
-        Ylms['clm'][l,:m1] = SPH.real[:m1]
-        Ylms['slm'][l,:m1] = SPH.imag[:m1]
-    #-- output harmonics
+        Ylms.clm[l,:m1] = SPH.real[:m1]
+        Ylms.slm[l,:m1] = SPH.imag[:m1]
+    #-- return the output spherical harmonics object
     return Ylms
 
 #-- calculate spherical harmonics of degree l evaluated at (theta,phi)

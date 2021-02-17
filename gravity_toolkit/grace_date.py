@@ -11,7 +11,7 @@ INPUTS:
     base_dir: Working data directory for GRACE/GRACE-FO data
 
 OPTIONS:
-    PROC: GRACE data processing center (CSR/CNES/JPL/GFZ/GRAZ) or SWARM for SWARM data
+    PROC: GRACE data processing center (CSR/CNES/JPL/GFZ)
     DREL: GRACE/GRACE-FO Data Release (RL03 for CNES) (RL06 for CSR/GFZ/JPL)
     DSET: GRACE dataset (GAA/GAB/GAC/GAD/GSM)
         GAA is the non-tidal atmospheric correction
@@ -26,15 +26,20 @@ OUTPUTS:
     dictionary of GRACE/GRACE-FO files indexed by month
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (https://numpy.org)
+    numpy: Scientific Computing Tools For Python
+        https://numpy.org
+        https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
     future: Compatibility layer between Python 2 and Python 3
-        (https://python-future.org/)
+        https://python-future.org/
 
 PROGRAM DEPENDENCIES:
-    convert_julian.py: converts a Julian date into a calendar date
+    time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
     Updated 12/2020: Add SWARM data compilance
+    Updated 12/2020: using utilities from time module
     Updated 11/2020: updated for CNES RL04 & RL05 and GRAZ 2018 (monthly fields)
     Updated 10/2020: use argparse to set command line parameters
     Updated 07/2020: added function docstrings
@@ -76,11 +81,12 @@ UPDATE HISTORY:
 """
 from __future__ import print_function
 
+import sys
 import os
 import re
 import argparse
 import numpy as np
-from gravity_toolkit.convert_julian import convert_julian
+import gravity_toolkit.time
 
 def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     """
@@ -98,7 +104,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
         CSR: University of Texas Center for Space Research
         GFZ: German Research Centre for Geosciences (GeoForschungsZentrum)
         JPL: Jet Propulsion Laboratory
-        CNES: French Centre Natnp.int(month)ional D'Etudes Spatiales
+        CNES: French Centre National D'Etudes Spatiales
         GRAZ: Institute of Geodesy from GRAZ University of Technology
 
         SWARM: gravity data from SWARM satellite
@@ -183,33 +189,19 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
             end_yr[t] = np.float(end_date[:4])
             start_day[t] = np.float(start_date[4:])
             end_day[t] = np.float(end_date[4:])
-            #-- end_day (will be changed if the month crosses 2 years)
-            end_plus = np.copy(end_day[t])
 
-            #-- Calculation of total days since start of campaign
-            count, dpm, dpy = day_count(start_yr[t])
+            #-- number of days in the starting year for leap and standard years
+            dpy = gravity_toolkit.time.calendar_days(start_yr[t]).sum()
+            #-- end date taking into account measurements taken on different years
+            end_cyclic = (end_yr[t]-start_yr[t])*dpy + end_day[t]
+            #-- calculate mid-month value
+            mid_day[t] = np.mean([start_day[t], end_cyclic])
 
-            #-- For data that crosses years
-            if (start_yr[t] != end_yr[t]):
-                #-- end_yr - start_yr should be 1
-                end_plus = (end_yr[t] - start_yr[t]) * dpy + end_day[t]
-            #-- Calculation of Mid-month value
-            mid_day[t] = np.mean([start_day[t], end_plus])
-
-            #-- Calculation of the Julian date from start_yr and mid_day
-            JD[t] = np.float(367.0 * start_yr[t] -
-                             np.floor(7.0 * (start_yr[t] + np.floor(10.0 / 12.0)) / 4.0) -
-                             np.floor(3.0 * (np.floor((start_yr[t] - 8.0 / 7.0) / 100.0) + 1.0) / 4.0) +
-                             np.floor(275.0 / 9.0) + mid_day[t] + 1721028.5)
-            #-- convert the julian date into calendar dates (hour, day, month, year)
-            cal_date = convert_julian(JD[t])
-            month = cal_date['month']
-
-            #-- Calculating the mid-month date in decimal form
-            tdec[t] = start_yr[t] + mid_day[t] / dpy
-
-            #-- calculating the total number of days since 2002
-            tot_days[t] = np.mean([count + start_day[t], count + end_plus])
+            #-- calculate Modified Julian Day from start_yr and mid_day
+            MJD = gravity_toolkit.time.convert_calendar_dates(start_yr[t],
+                1.0,mid_day[t],epoch=(1858,11,17,0,0,0))
+            #-- convert from Modified Julian Days to calendar dates
+            cal_date = gravity_toolkit.time.convert_julian(MJD+2400000.5)
 
         elif PROC == 'GRAZ' or PROC == 'SWARM':
             if PROC == 'GRAZ':
@@ -226,7 +218,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
 
             #-- Calculation of total days since start of campaign
             #-- Get information on the current year (day per month and day per year)
-            count, dpm, dpy = day_count(start_yr[t])
+            dpm = gravity_toolkit.time.dpm_count(start_yr[t])
 
             #-- find start day, end day
             start_day[t] = np.sum(dpm[:np.int(month) - 1]) + 1
@@ -235,11 +227,22 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
             #-- Calculation of Mid-month value
             mid_day[t] = np.mean([start_day[t], end_day[t]])
 
-            #-- Calculating the mid-month date in decimal form
-            tdec[t] = start_yr[t] + mid_day[t] / dpy
+        #-- Calculating the mid-month date in decimal form
+        tdec[t] = start_yr[t] + mid_day[t] / dpy
 
-            #-- calculating the total number of days since 2002
-            tot_days[t] = np.mean([count + start_day[t], count + end_day[t]])
+        # -- Calculation of total days since start of campaign
+        count = 0
+        n_yrs = np.int(start_yr[t] - 2002)
+        # -- for each of the GRACE years up to the file year
+        for iyr in range(n_yrs):
+            # -- year
+            year = 2002 + iyr
+            # -- add all days from prior years to count
+            # -- number of days in year i (if leap year or standard year)
+            count += gravity_toolkit.time.calendar_days(year).sum()
+
+        # -- calculating the total number of days since 2002
+        tot_days[t] = np.mean([count + start_day[t], count + end_cyclic])
 
         #-- Calculates the month number (or 10-day number for CNES RL01,RL02)
         if ((PROC == 'CNES') and (DREL in ('RL01','RL02'))):
@@ -248,7 +251,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
             #-- calculate the GRACE/GRACE-FO month (Apr02 == 004)
             #-- https://grace.jpl.nasa.gov/data/grace-months/
             #-- Notes on special months (e.g. 119, 120) below
-            mon[t] = 12*(start_yr[t]-2002) + np.int(month)
+            mon[t] = 12*(cal_date['year']-2002) + cal_date['month']
 
             #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
             #-- Accelerometer shutoffs make this relation between month number
@@ -280,48 +283,6 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
 
     #-- return the python dictionary that maps GRACE months with GRACE files
     return grace_files
-
-def day_count(input_year):
-    """
-        Count the number of days since the begining of the campaign
-        Return useful information on the current year
-
-        Arguments
-        ---------
-        input_year: year of interest
-
-        Returns
-        -------
-        count: total days since start of campaign
-        dpm: list of the day per month
-        dpy: day per month this year
-        """
-    # -- Calculation of total days since start of campaign
-    count = 0
-    n_yrs = np.int(input_year - 2002)
-    # -- for each of the GRACE years up to the file year
-    for iyr in range(n_yrs):
-        # -- year i
-        year = 2002 + iyr
-        # -- number of days in year i (if leap year or standard year)
-        if ((year % 4) == 0):
-            # -- Leap Year
-            dpm = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-        else:
-            # -- Standard Year
-            dpm = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-        # -- add all days from prior years to count
-        count += np.sum(dpm)
-
-    if ((input_year % 4) == 0):
-        dpy = 366.0
-        dpm = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    else:
-        dpy = 365.0
-        dpm = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-
-    return count, dpm, dpy
-
 
 #-- PURPOSE: program that calls grace_date() with set parameters
 def main():

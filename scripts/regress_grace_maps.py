@@ -247,7 +247,6 @@ def regress_grace_maps(parameters, ORDER=None, CYCLES=None,
     for key in ['SSE','AIC','BIC','R2Adj']:
         FS[key] = dinput.zeros_like()
 
-    #-- valid values for ocean function
     #-- calculate the regression coefficients and fit significance
     for i in range(nlat):
         for j in range(nlon):

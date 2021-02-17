@@ -3,7 +3,7 @@ u"""
 podaac_webdav.py
 Written by Tyler Sutterley (10/2020)
 
-Retrieves and prints a user's PO.DAAC WebDAV credentials
+Retrieves and prints a user's PO.DAAC Drive WebDAV credentials
 
 https://wiki.earthdata.nasa.gov/display/EL/How+To+Access+Data+With+Python
 https://nsidc.org/support/faq/what-options-are-available-bulk-downloading-data-
@@ -17,10 +17,8 @@ Add PO.DAAC Drive OPS to NASA Earthdata Applications and get WebDAV Password
 https://podaac-tools.jpl.nasa.gov/drive
 
 CALLING SEQUENCE:
-    podaac_webdav(<USER=<username>, PASSWORD=<password>)
-        or
     python podaac_webdav.py --user=<username>
-    where <username> and <password> are your NASA Earthdata credentials
+    where <username> is your NASA Earthdata credentials
 
 OUTPUTS:
     PODAAC WebDAV credentials
@@ -32,6 +30,11 @@ COMMAND LINE OPTIONS:
     -A, --append: append .netrc file instead of printing
 
 PYTHON DEPENDENCIES:
+    numpy: Scientific Computing Tools For Python
+        https://numpy.org
+        https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
     lxml: Pythonic XML and HTML processing library using libxml2/libxslt
         https://lxml.de/
         https://github.com/lxml/lxml

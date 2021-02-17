@@ -15,9 +15,9 @@ the GRACE/GRACE-FO missions and to support their science applications
 
 Documentation is available at https://read-grace-harmonics.readthedocs.io
 """
+import gravity_toolkit.time
+import gravity_toolkit.utilities
 from gravity_toolkit.clenshaw_summation import clenshaw_summation
-from gravity_toolkit.convert_calendar_decimal import convert_calendar_decimal
-from gravity_toolkit.convert_julian import convert_julian
 from gravity_toolkit.degree_amplitude import degree_amplitude
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
 from gravity_toolkit.gauss_weights import gauss_weights
@@ -44,6 +44,7 @@ from gravity_toolkit.ncdf_read_stokes import ncdf_read_stokes
 from gravity_toolkit.ncdf_stokes import ncdf_stokes
 from gravity_toolkit.ncdf_write import ncdf_write
 from gravity_toolkit.ocean_stokes import ocean_stokes
+from gravity_toolkit.piecewise_regress import piecewise_regress
 from gravity_toolkit.plm_colombo import plm_colombo
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.plm_mohlenkamp import plm_mohlenkamp

@@ -19,7 +19,8 @@ deg1_input = read_SLR_geocenter(geocenter_file)
 
 #### Options
  - `RADIUS`: Earth's radius for calculating spherical harmonics from SLR data
- - `skiprows`: Rows of data to skip when importing data
+ - `HEADER`: Rows of data to skip when importing data
+ - `COLUMNS`: column names of ascii file
 
 #### Outputs
  - `C10`: Cosine degree 1, order 0 spherical harmonic coefficients

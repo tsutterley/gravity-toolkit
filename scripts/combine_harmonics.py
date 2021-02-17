@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 combine_harmonics.py
-Written by Tyler Sutterley (10/2020)
+Written by Tyler Sutterley (01/2021)
 Converts a file from the spherical harmonic domain into the spatial domain
 
 CALLING SEQUENCE:
@@ -11,7 +11,14 @@ COMMAND LINE OPTIONS:
     --help: list the command line options
     -l X, --lmax X: maximum spherical harmonic degree
     -m X, --mmax X: maximum spherical harmonic order
+    -n X, --love X: Load Love numbers dataset
+        0: Han and Wahr (1995) values from PREM
+        1: Gegout (2005) values from PREM
+        2: Wang et al. (2012) values from PREM
     -r X, --reference X: Reference frame for load love numbers
+        CF: Center of Surface Figure (default)
+        CM: Center of Mass of Earth System
+        CE: Center of Mass of Solid Earth
     -R X, --radius X: Gaussian smoothing radius (km)
     -d, --destripe: use a decorrelation filter (destriping filter)
     -U X, --units X: output units
@@ -69,6 +76,8 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
+    Updated 12/2020: added more love number options
     Updated 10/2020: use argparse to set command line parameters
     Updated 08/2020: use utilities to define path to load love numbers file
     Updated 06/2020: using spatial data class for input and output operations
@@ -99,36 +108,65 @@ from gravity_toolkit.units import units
 from gravity_toolkit.utilities import get_data_path
 
 #-- PURPOSE: read load love numbers for the range of spherical harmonic degrees
-def load_love_numbers(LMAX, REFERENCE='CF'):
+def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF'):
+    """
+    Reads PREM load Love numbers for the range of spherical harmonic degrees
+    and applies isomorphic parameters
+
+    Arguments
+    ---------
+    LMAX: maximum spherical harmonic degree
+
+    Keyword arguments
+    -----------------
+    LOVE_NUMBERS: Load Love numbers dataset
+        0: Han and Wahr (1995) values from PREM
+        1: Gegout (2005) values from PREM
+        2: Wang et al. (2012) values from PREM
+    REFERENCE: Reference frame for calculating degree 1 love numbers
+        CF: Center of Surface Figure (default)
+        CM: Center of Mass of Earth System
+        CE: Center of Mass of Solid Earth
+
+    Returns
+    -------
+    kl: Love number of Gravitational Potential
+    hl: Love number of Vertical Displacement
+    ll: Love number of Horizontal Displacement
+    """
     #-- load love numbers file
-    love_numbers_file = get_data_path(['data','love_numbers'])
+    if (LOVE_NUMBERS == 0):
+        #-- PREM outputs from Han and Wahr (1995)
+        #-- https://doi.org/10.1111/j.1365-246X.1995.tb01819.x
+        love_numbers_file = get_data_path(['data','love_numbers'])
+        header = 2
+        columns = ['l','hl','kl','ll']
+    elif (LOVE_NUMBERS == 1):
+        #-- PREM outputs from Gegout (2005)
+        #-- http://gemini.gsfc.nasa.gov/aplo/
+        love_numbers_file = get_data_path(['data','Load_Love2_CE.dat'])
+        header = 3
+        columns = ['l','hl','ll','kl']
+    elif (LOVE_NUMBERS == 2):
+        #-- PREM outputs from Wang et al. (2012)
+        #-- https://doi.org/10.1016/j.cageo.2012.06.022
+        love_numbers_file = get_data_path(['data','PREM-LLNs-truncated.dat'])
+        header = 1
+        columns = ['l','hl','ll','kl','nl','nk']
     #-- LMAX of load love numbers from Han and Wahr (1995) is 696.
     #-- from Wahr (2007) linearly interpolating kl works
     #-- however, as we are linearly extrapolating out, do not make
     #-- LMAX too much larger than 696
-    if (LMAX > 696):
-        #-- Creates arrays of kl, hl, and ll Love Numbers
-        hl = np.zeros((LMAX+1))
-        kl = np.zeros((LMAX+1))
-        ll = np.zeros((LMAX+1))
-        hl[:697],kl[:697],ll[:697] = read_love_numbers(love_numbers_file,
-            FORMAT='tuple', REFERENCE=REFERENCE)
-        #-- for degrees greater than 696
-        for l in range(697,LMAX+1):
-            hl[l] = 2.0*hl[l-1] - hl[l-2]#-- linearly extrapolating hl
-            kl[l] = 2.0*kl[l-1] - kl[l-2]#-- linearly extrapolating kl
-            ll[l] = 2.0*ll[l-1] - ll[l-2]#-- linearly extrapolating ll
-    else:
-        #-- read arrays of kl, hl, and ll Love Numbers
-        hl,kl,ll = read_love_numbers(read_love_numbers, FORMAT='tuple',
-            REFERENCE=REFERENCE)
+    #-- read arrays of kl, hl, and ll Love Numbers
+    hl,kl,ll = read_love_numbers(love_numbers_file, LMAX=LMAX, HEADER=header,
+        COLUMNS=columns, REFERENCE=REFERENCE, FORMAT='tuple')
     #-- return a tuple of load love numbers
     return (hl,kl,ll)
 
 #-- PURPOSE: converts from the spherical harmonic domain into the spatial domain
 def combine_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None,
-    REFERENCE=None, RAD=None, DESTRIPE=False, UNITS=None, DDEG=None,
-    INTERVAL=None, BOUNDS=None, REDISTRIBUTE=False, LSMASK=None,
+    LOVE_NUMBERS=0, REFERENCE=None, RAD=None, DESTRIPE=False, UNITS=None,
+    DDEG=None, INTERVAL=None, BOUNDS=None, REDISTRIBUTE=False, LSMASK=None,
     MEAN_FILE=None, DATAFORM=None, VERBOSE=False, MODE=0o775):
 
     #-- verify that output directory exists
@@ -162,7 +200,8 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None,
         input_Ylms.subtract(mean_Ylms)
 
     #-- read arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = load_love_numbers(LMAX, REFERENCE=REFERENCE)
+    hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+        REFERENCE=REFERENCE)
 
     #-- distribute total mass uniformly over the ocean
     if REDISTRIBUTE:
@@ -170,14 +209,14 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None,
         ocean_Ylms = ocean_stokes(LSMASK, LMAX, MMAX=MMAX, LOVE=(hl,kl,ll))
         #-- calculate ratio between total mass and a uniformly distributed
         #-- layer of water over the ocean
-        ratio = input_Ylms.clm[0,0,:]/ocean_Ylms['clm'][0,0]
+        ratio = input_Ylms.clm[0,0,:]/ocean_Ylms.clm[0,0]
         #-- for each spherical harmonic
         for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
             for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
                 #-- remove the ratio*ocean Ylms from Ylms
                 #-- note: x -= y is equivalent to x = x - y
-                input_Ylms.clm[l,m,:] -= ratio*ocean_Ylms['clm'][l,m]
-                input_Ylms.slm[l,m,:] -= ratio*ocean_Ylms['slm'][l,m]
+                input_Ylms.clm[l,m,:] -= ratio*ocean_Ylms.clm[l,m]
+                input_Ylms.slm[l,m,:] -= ratio*ocean_Ylms.slm[l,m]
 
     #-- if using a decorrelation filter (Isabella's destriping Routine)
     if DESTRIPE:
@@ -313,6 +352,13 @@ def main():
     parser.add_argument('--mmax','-m',
         type=int, default=None,
         help='Maximum spherical harmonic order')
+    #-- different treatments of the load Love numbers
+    #-- 0: Han and Wahr (1995) values from PREM
+    #-- 1: Gegout (2005) values from PREM
+    #-- 2: Wang et al. (2012) values from PREM
+    parser.add_argument('--love','-n',
+        type=int, default=0, choices=[0,1,2],
+        help='Treatment of the Load Love numbers')
     #-- option for setting reference frame for gravitational load love number
     #-- reference frame options (CF, CM, CE)
     parser.add_argument('--reference','-r',
@@ -369,6 +415,7 @@ def main():
 
     #-- run program with parameters
     combine_harmonics(args.infile, args.outfile, LMAX=args.lmax, MMAX=args.mmax,
+        LOVE_NUMBERS=args.love, REFERENCE=args.reference,
         RAD=args.radius, DESTRIPE=args.destripe, UNITS=args.units,
         DDEG=args.spacing, INTERVAL=args.interval, BOUNDS=args.bounds,
         REDISTRIBUTE=args.ocean, LSMASK=args.mask, MEAN_FILE=args.mean,

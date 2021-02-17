@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_write.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (12/2020)
 
 Writes spatial data to HDF5 files
 
@@ -24,7 +24,8 @@ OPTIONS:
     FILL_VALUE: missing value for z variable
     TIME_UNITS: time variable units
     TIME_LONGNAME: time variable description
-    TITLE: title attribute of dataset
+    TITLE: description attribute of dataset
+    REFERENCE: reference attribute of dataset
     CLOBBER: will overwrite an existing HDF5 file
     VERBOSE: will print to screen the HDF5 structure parameters
     DATE: data has date information
@@ -35,6 +36,7 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 12/2020: added REFERENCE option to set file attribute
     Updated 07/2020: added function docstrings
     Updated 04/2020: added option DATE if including time data
     Updated 03/2020: only include title if not None
@@ -65,8 +67,8 @@ import numpy as np
 
 def hdf5_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     LATNAME='lat', TIMENAME='time', UNITS=None, LONGNAME=None, FILL_VALUE=None,
-    TIME_UNITS=None, TIME_LONGNAME=None, TITLE=None, DATE=True, CLOBBER=True,
-    VERBOSE=False):
+    TIME_UNITS=None, TIME_LONGNAME=None, TITLE=None, REFERENCE=None, DATE=True,
+    CLOBBER=True, VERBOSE=False):
     """
     Writes spatial data to HDF5 files
 
@@ -88,7 +90,8 @@ def hdf5_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     FILL_VALUE: missing value for z variable
     TIME_UNITS: time variable units
     TIME_LONGNAME: time variable description
-    TITLE: title attribute of dataset
+    TITLE: description attribute of dataset
+    REFERENCE: reference attribute of dataset
     CLOBBER: will overwrite an existing HDF5 file
     VERBOSE: will print to screen the HDF5 structure parameters
     DATE: data has date information
@@ -141,6 +144,9 @@ def hdf5_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     #-- description of file
     if TITLE:
         fileID.attrs['description'] = TITLE
+    #-- reference of file
+    if REFERENCE:
+        fileID.attrs['reference'] = REFERENCE
     #-- date created
     fileID.attrs['date_created'] = time.strftime('%Y-%m-%d',time.localtime())
 

@@ -16,12 +16,12 @@ Ylms = gen_point_load(data, lon, lat, UNITS=1, LMAX=LMAX, LOVE=(hl,kl,ll))
  - `lat`: latitude of points
 
 #### Options
- - `UNITS`: input data units  
-    1) grams of mass (default)  
-    2) gigatonnes of mass (Gt)  
- - `LMAX`:  maximum spherical harmonic degree of the output harmonics  
- - `MMAX`: maximum spherical harmonic order of the output harmonics  
- - `LOVE`: input load Love numbers up to degree `LMAX` (hl,kl,ll)  
+ - `UNITS`: input data units
+    1) grams of mass (default)
+    2) gigatonnes of mass (Gt)
+ - `LMAX`:  maximum spherical harmonic degree of the output harmonics
+ - `MMAX`: maximum spherical harmonic order of the output harmonics
+ - `LOVE`: input load Love numbers up to degree of truncation
 
 #### Outputs
  - `clm`: Cosine spherical harmonic coefficients (geodesy normalization)

@@ -124,7 +124,7 @@ General Attributes and Methods
         Options:
             `date` ascii file contains date information
 
-            `compression` ascii file is compressed using gzip or zip
+            `compression` ascii file is compressed or streamed from memory
 
             `verbose` print ascii file information
 
@@ -137,7 +137,7 @@ General Attributes and Methods
         Options:
             `date` netCDF4 file contains date information
 
-            `compression` netCDF4 file is compressed using gzip or zip
+            `compression` netCDF4 file is compressed or streamed from memory
 
             `verbose` print netCDF4 file information
 
@@ -150,16 +150,19 @@ General Attributes and Methods
         Options:
             `date` HDF5 file contains date information
 
-            `compression` HDF5 file is compressed using gzip or zip
+            `compression` HDF5 file is compressed or streamed from memory
 
             `verbose` print HDF5 file information
 
 
-    .. method:: object.from_gfc(filename)
+    .. method:: object.from_gfc(filename, verbose=False)
 
         Read a harmonics object from a gfc gravity model file from the `GFZ ICGEM`__.
 
         Inputs: full path of input gfc file
+
+        Options:
+            `verbose` print gfc file information
 
     .. __: http://icgem.gfz-potsdam.de/
 
@@ -178,7 +181,7 @@ General Attributes and Methods
             sort harmonics objects by date information
 
 
-    .. method:: object.from_list(object_list, date=True, sort=True)
+    .. method:: object.from_list(object_list, date=True, sort=True, clear=False)
 
         Build a sorted harmonics object from a list of other harmonics objects
 
@@ -188,6 +191,8 @@ General Attributes and Methods
             harmonics objects contain date information
 
             sort harmonics objects by date information
+
+            clear the list of objects from memory
 
 
     .. method:: object.from_dict(dict_object)
@@ -222,6 +227,11 @@ General Attributes and Methods
         Inputs: full path of output HDF5 file
 
         Options: harmonics objects contain date information
+
+
+    .. method:: object.to_masked_array()
+
+        Convert a harmonics object to a masked numpy array
 
 
     .. method:: object.update_dimensions()
@@ -319,12 +329,14 @@ General Attributes and Methods
             `mmax` maximum order of spherical harmonics
 
 
-    .. method:: object.mean(apply=False)
+    .. method:: object.mean(apply=False, indices=Ellipsis)
 
         Compute mean gravitational field from the harmonics object
 
-        Option: `apply` to remove the mean field from the input harmonics
+        Option:
+            `apply` to remove the mean field from the input harmonics
 
+            `indices` of input harmonics object to compute mean
 
     .. method:: object.scale(var)
 
@@ -352,3 +364,10 @@ General Attributes and Methods
         Filters spherical harmonic coefficients for correlated "striping" errors following `Swenson and Wahr (2006)`__.
 
     .. __: https://doi.org/10.1029/2005GL025285
+
+
+    .. method:: object.amplitude(mmax=None)
+
+        Calculates the degree amplitude of a harmonics object
+
+        Options: mmax maximum order of spherical harmonics

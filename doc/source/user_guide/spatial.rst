@@ -131,7 +131,7 @@ General Attributes and Methods
         Options:
             `date` ascii file contains date information
 
-            `compression` ascii file is compressed using gzip or zip
+            `compression` ascii file is compressed or streamed from memory
 
             `verbose` print ascii filename
 
@@ -140,7 +140,7 @@ General Attributes and Methods
             `header` rows of header lines to skip
 
 
-    .. method:: object.from_netCDF4(filename, date=True, compression=None, verbose=False, varname='z', lonname='lon', latname='lat')
+    .. method:: object.from_netCDF4(filename, date=True, compression=None, verbose=False, varname='z', lonname='lon', latname='lat', timename='time')
 
         Read a spatial object from a netCDF4 file
 
@@ -149,7 +149,7 @@ General Attributes and Methods
         Options:
             `date` netCDF4 file contains date information
 
-            `compression` netCDF4 file is compressed using gzip or zip
+            `compression` netCDF4 file is compressed or streamed from memory
 
             `verbose` print netCDF4 file information
 
@@ -157,10 +157,12 @@ General Attributes and Methods
 
             `lonname` input longitude variable name in netCDF4 file
 
-            `latname` input latitude variable units in netCDF4 file
+            `latname` input latitude variable name in netCDF4 file
+
+            `timename` input time variable name in netCDF4 file
 
 
-    .. method:: object.from_HDF5(filename, date=True, compression=None, verbose=False, varname='z', lonname='lon', latname='lat')
+    .. method:: object.from_HDF5(filename, date=True, compression=None, verbose=False, varname='z', lonname='lon', latname='lat', timename='time')
 
         Read a spatial object from a HDF5 file
 
@@ -169,7 +171,7 @@ General Attributes and Methods
         Options:
             `date` HDF5 file contains date information
 
-            `compression` HDF5 file is compressed using gzip or zip
+            `compression` HDF5 file is compressed or streamed from memory
 
             `verbose` print HDF5 file information
 
@@ -177,7 +179,9 @@ General Attributes and Methods
 
             `lonname` input longitude variable name in HDF5 file
 
-            `latname` input latitude variable units in HDF5 file
+            `latname` input latitude variable name in HDF5 file
+
+            `timename` input time variable name in HDF5 file
 
 
     .. method:: object.from_index(filename, format=None, date=True, sort=True)
@@ -194,7 +198,7 @@ General Attributes and Methods
             sort spatial objects by date information
 
 
-    .. method:: object.from_list(object_list, date=True, sort=True)
+    .. method:: object.from_list(object_list, date=True, sort=True, clear=False)
 
         Build a sorted spatial object from a list of other spatial objects
 
@@ -205,6 +209,7 @@ General Attributes and Methods
 
             sort spatial objects by date information
 
+            clear the list of objects from memory
 
     .. method:: object.from_dict(dict_object)
 
@@ -340,12 +345,23 @@ General Attributes and Methods
         Inputs: scalar value to which the spatial object will be multiplied
 
 
-    .. method:: object.mean(apply=False)
+    .. method:: object.kfactor(var)
+
+        Calculate the scaling factor and scaling factor errors from two spatial objects following `Landerer and Swenson (2012) <https://doi.org/10.1029/2011WR011453>`_
+
+        Inputs: spatial object to used for scaling
+
+        Returns: scaling factor and scaling factor error
+
+
+    .. method:: object.mean(apply=False, indices=Ellipsis)
 
         Compute mean spatial field and remove from data if specified
 
-        Option: `apply` to remove the mean field from the input spatial
+        Option:
+            `apply` to remove the mean field from the input spatial
 
+            `indices` of spatial object to compute mean
 
     .. method:: object.reverse(axis=0)
 
@@ -353,6 +369,11 @@ General Attributes and Methods
 
         Option: axis to reorder
 
+    .. method:: object.transpose(axes=None)
+
+        Reverse or permute the axes of a spatial object
+
+        Option: order of the output axes
 
     .. method:: object.sum(power=1)
 
@@ -383,3 +404,8 @@ General Attributes and Methods
         Replace the masked values with a new fill_value
 
         Option: `mask` to update the current mask
+
+
+    .. method:: object.replace_masked()
+
+        Replace the masked values with fill_value

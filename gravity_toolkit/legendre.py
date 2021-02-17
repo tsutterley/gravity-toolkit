@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 legendre.py
-Written by Tyler Sutterley (09/2020)
+Written by Tyler Sutterley (02/2021)
 Computes associated Legendre functions of degree l evaluated for elements x
 l must be a scalar integer and x must contain real values ranging -1 <= x <= 1
 Parallels the MATLAB legendre function
@@ -30,6 +30,7 @@ REFERENCES:
     J. A. Jacobs, "Geomagnetism", Academic Press, 1987, Ch.4.
 
 UPDATE HISTORY:
+    Updated 02/2021: modify case with underflow
     Updated 09/2020: verify dimensions of x variable
     Updated 07/2020: added function docstrings
     Updated 05/2020: added normalization option for output polynomials
@@ -82,7 +83,7 @@ def legendre(l,x,NORMALIZE=False):
         v = 9.2 - np.log(tol)/(l*s[ind])
         w = 1.0/np.log(v)
         m1 = 1+l*s[ind]*v*w*(1.0058+ w*(3.819 - w*12.173))
-        m1 = np.min([l, np.floor(m1)]).astype(np.int)
+        m1 = np.where(l < np.floor(m1), l, np.floor(m1)).astype(np.int)
         #-- Column-by-column recursion
         for k,mm1 in enumerate(m1):
             col = ind[k]

@@ -8,26 +8,32 @@ missions
 
 .. toctree::
     :maxdepth: 2
-    :caption: Getting Started:
+    :caption: Getting Started
 
-    getting_started/Install.md
+    getting_started/Install.rst
+    getting_started/Background.rst
     getting_started/Getting-Started.md
-    getting_started/NASA-Earthdata.md
+    getting_started/Examples.rst
+    getting_started/NASA-Earthdata.rst
     getting_started/GRACE-Data-File-Formats.md
-    getting_started/Resources.md
+    getting_started/Spatial-Maps.md
+    getting_started/Time-Series-Analysis.md
+    getting_started/Resources.rst
     getting_started/Citations.md
 
 .. toctree::
     :maxdepth: 1
-    :caption: User Guide:
+    :hidden:
+    :caption: User Guide
 
     user_guide/aod1b_geocenter.md
     user_guide/aod1b_oblateness.md
+    user_guide/calc_mascon.md
+    user_guide/calc_sensitivity_kernel.md
     user_guide/clenshaw_summation.md
     user_guide/combine_harmonics.md
-    user_guide/convert_calendar_decimal.md
     user_guide/convert_harmonics.md
-    user_guide/convert_julian.md
+    user_guide/cnes_grace_sync.md
     user_guide/degree_amplitude.md
     user_guide/destripe_harmonics.md
     user_guide/gauss_weights.md
@@ -52,13 +58,17 @@ missions
     user_guide/hdf5_read_stokes.md
     user_guide/hdf5_stokes.md
     user_guide/hdf5_write.md
+    user_guide/least_squares_mascons.md
+    user_guide/least_squares_mascon_timeseries.md
     user_guide/legendre.md
     user_guide/legendre_polynomials.md
+    user_guide/mascon_reconstruct.md
     user_guide/ncdf_read.md
     user_guide/ncdf_read_stokes.md
     user_guide/ncdf_stokes.md
     user_guide/ncdf_write.md
     user_guide/ocean_stokes.md
+    user_guide/piecewise_regress.md
     user_guide/plm_colombo.md
     user_guide/plm_holmes.md
     user_guide/plm_mohlenkamp.md
@@ -76,6 +86,7 @@ missions
     user_guide/regress_grace_maps.md
     user_guide/run_grace_date.md
     user_guide/spatial.rst
+    user_guide/time.rst
     user_guide/tsamplitude.md
     user_guide/tsregress.md
     user_guide/tssmooth.md

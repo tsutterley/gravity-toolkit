@@ -18,17 +18,17 @@ Ylms = gen_spherical_cap(data, lon, lat, UNITS=1, LMAX=LMAX, PLM=PLM, LOVE=(hl,k
  - `lat`: latitude of spherical cap center
 
 #### Options
- - `LMAX`:  maximum spherical harmonic degree of the output harmonics  
- - `MMAX`: maximum spherical harmonic order of the output harmonics  
+ - `LMAX`:  maximum spherical harmonic degree of the output harmonics
+ - `MMAX`: maximum spherical harmonic order of the output harmonics
  - `RAD_CAP`: spherical cap radius in degrees
  - `RAD_KM`: spherical cap radius in kilometers
- - `AREA`: spherical cap area in cm^2 
- - `UNITS`: input data units  
-    1) cm water equivalent thickness (cm w.e., g/cm^2)  
-    2) gigatonnes of mass (Gt)  
-    3) mm water equivalent thickness (mm w.e., kg/m^2)  
+ - `AREA`: spherical cap area (cm<sup>2</sup>)
+ - `UNITS`: input data units
+    1) cm water equivalent thickness (cm w.e., g/cm<sup>2</sup>)
+    2) gigatonnes of mass (Gt)
+    3) mm water equivalent thickness (mm w.e., kg/m<sup>2</sup>)
  - `PLM`: input Legendre polynomials for cos(theta) (spherical cap center)
- - `LOVE`: input load Love numbers up to degree `LMAX` (hl,kl,ll)  
+ - `LOVE`: input load Love numbers up to degree of truncation
 
 #### Outputs
  - `clm`: Cosine spherical harmonic coefficients (geodesy normalization)

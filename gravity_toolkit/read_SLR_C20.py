@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C20.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (12/2020)
 
 Reads in C20 spherical harmonic coefficients derived from SLR measurements
 
@@ -40,13 +40,17 @@ OPTIONS:
     HEADER: file contains header text to be skipped (default: True)
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (https://numpy.org)
+    numpy: Scientific Computing Tools For Python
+        https://numpy.org
+        https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
 
 PROGRAM DEPENDENCIES:
-    convert_julian.py: returns the calendar date and time given a Julian date
-    convert_calendar_decimal.py: Return the decimal year for a calendar date
+    time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 12/2020: using utilities from time module
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 08/2019: add catch to verify input SLR file exists
@@ -85,8 +89,7 @@ UPDATE HISTORY:
 import os
 import re
 import numpy as np
-from gravity_toolkit.convert_julian import convert_julian
-from gravity_toolkit.convert_calendar_decimal import convert_calendar_decimal
+from gravity_toolkit.time import convert_julian,convert_calendar_decimal
 
 #-- PURPOSE: read oblateness data from Satellite Laser Ranging (SLR)
 def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
@@ -183,7 +186,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
                 #-- converting from MJD into month, day and year
                 YY,MM,DD,hh,mm,ss = convert_julian(MJD+2400000.5,FORMAT='tuple')
                 #-- converting from month, day, year into decimal year
-                date_conv[t] = convert_calendar_decimal(YY, MM, DAY=DD, HOUR=hh)
+                date_conv[t] = convert_calendar_decimal(YY, MM, day=DD, hour=hh)
                 #-- Spherical Harmonic data for line
                 C20_input[t] = np.float(line_contents[2])
                 eC20_input[t] = np.float(line_contents[4])*1e-10
@@ -253,7 +256,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
                 #-- converting from MJD into month, day and year
                 YY,MM,DD,hh,mm,ss = convert_julian(MJD+2400000.5,FORMAT='tuple')
                 #-- converting from month, day, year into decimal year
-                date_conv[t] = convert_calendar_decimal(YY, MM, DAY=DD, HOUR=hh)
+                date_conv[t] = convert_calendar_decimal(YY, MM, day=DD, hour=hh)
                 #-- Spherical Harmonic data for line
                 C20_input[t] = np.float(line_contents[2])
                 eC20_input[t] = np.float(line_contents[4])*1e-10

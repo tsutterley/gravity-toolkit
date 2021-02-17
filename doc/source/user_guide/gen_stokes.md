@@ -19,14 +19,14 @@ Ylms = gen_stokes(data, lon, lat, UNITS=1, LMAX=LMAX, PLM=PLM, LOVE=(hl,kl,ll))
 
 #### Options
  - `UNITS`: input data units
-    1) cm water equivalent thickness (cm w.e., g/cm^2)
+    1) cm water equivalent thickness (cm w.e., g/cm<sup>2</sup>)
     2) gigatonnes of mass (Gt)
-    3) mm water equivalent thickness (mm w.e., kg/m^2)
+    3) mm water equivalent thickness (mm w.e., kg/m<sup>2</sup>)
  - `LMIN`: minimum spherical harmonic degree of the output harmonics
  - `LMAX`:  maximum spherical harmonic degree of the output harmonics
  - `MMAX`: maximum spherical harmonic order of the output harmonics
  - `PLM`: input Legendre polynomials (for improving computational time)
- - `LOVE`: input load Love numbers up to degree `LMAX` (hl,kl,ll)
+ - `LOVE`: input load Love numbers up to degree of truncation
 
 #### Outputs
  - `clm`: Cosine spherical harmonic coefficients (geodesy normalization)

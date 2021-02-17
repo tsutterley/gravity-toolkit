@@ -26,7 +26,8 @@ hdf5_stokes(clm, slm, linp, minp, tinp, month, FILENAME=output_HDF5_file)
  - `MONTHS_NAME`: name of months variable within HDF5 file
  - `MONTHS_UNITS`: months variable units
  - `MONTHS_LONGNAME`: months variable description
- - `TITLE`: title attribute of dataset
+ - `TITLE`: description attribute of dataset
+ - `REFERENCE`: reference attribute of dataset
  - `CLOBBER`: will overwrite an existing HDF5 file
  - `VERBOSE`: will print to screen the HDF5 structure parameters
  - `DATE`: harmonics have date information

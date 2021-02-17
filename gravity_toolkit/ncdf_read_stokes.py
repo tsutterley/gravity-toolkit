@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_read_stokes.py
-Written by Tyler Sutterley (09/2020)
+Written by Tyler Sutterley (02/2021)
 
 Reads spherical harmonic data from netCDF4 files
 
@@ -19,13 +19,17 @@ OUTPUTS:
     time: time of measurement (if specified by DATE)
     month: GRACE/GRACE-FO month (if specified by DATE)
     attributes: netCDF4 attributes for:
-        spherical harmonics (clm,slm), variables (l,m,time,month), and title
+        spherical harmonics (clm,slm)
+        variables (l,m,time,month)
+        file title
 
 OPTIONS:
     DATE: netCDF4 file has date information
     VERBOSE: will print to screen the netCDF4 structure parameters
-    ATTRIBUTES: netCDF4 variables contain attribute parameters
-    COMPRESSION: netCDF4 file is compressed using gzip or zip
+    COMPRESSION: netCDF4 file is compressed or streaming as bytes
+        gzip
+        zip
+        bytes
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
@@ -33,6 +37,10 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 02/2021: prevent warnings with python3 compatible regex strings
+    Updated 12/2020: try/except for getting variable unit attributes
+        add fallback for finding netCDF4 file within from zip files
+        added bytes option for COMPRESSION if streaming from memory
     Updated 09/2020: use try/except for reading attributes
     Updated 08/2020: flake8 compatible regular expression strings
         add options to read from gzip or zip compressed files
@@ -64,13 +72,13 @@ from __future__ import print_function
 
 import os
 import re
+import uuid
 import gzip
 import netCDF4
 import zipfile
 import numpy as np
 
-def ncdf_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
-    COMPRESSION=None):
+def ncdf_read_stokes(filename, DATE=True, VERBOSE=False, COMPRESSION=None):
     """
     Reads spherical harmonic data from netCDF4 files
 
@@ -82,8 +90,10 @@ def ncdf_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
     -----------------
     DATE: netCDF4 file has date information
     VERBOSE: will print to screen the netCDF4 structure parameters
-    ATTRIBUTES: netCDF4 variables contain attribute parameters
-    COMPRESSION: netCDF4 file is compressed using gzip or zip
+    COMPRESSION: netCDF4 file is compressed or streaming as bytes
+        gzip
+        zip
+        bytes
 
     Returns
     -------
@@ -103,11 +113,19 @@ def ncdf_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
             fileID = netCDF4.Dataset(os.path.basename(filename),memory=f.read())
     elif (COMPRESSION == 'zip'):
         #-- read zipped file and extract file into in-memory file object
-        fileBasename,fileExtension = os.path.splitext(filename)
+        fileBasename,_ = os.path.splitext(os.path.basename(filename))
         with zipfile.ZipFile(os.path.expanduser(filename)) as z:
+            #-- first try finding a netCDF4 file with same base filename
+            #-- if none found simply try searching for a netCDF4 file
+            try:
+                f,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
+            except:
+                f,=[f for f in z.namelist() if re.search(r'\.nc(4)?$',f)]
             #-- read bytes from zipfile as in-memory (diskless) netCDF4 dataset
-            fileID = netCDF4.Dataset(os.path.basename(filename),
-                memory=z.read(fileBasename))
+            fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=z.read(f))
+    elif (COMPRESSION == 'bytes'):
+        #-- read as in-memory (diskless) netCDF4 dataset
+        fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=filename.read())
     else:
         #-- read netCDF4 dataset
         fileID = netCDF4.Dataset(os.path.expanduser(filename), 'r')
@@ -122,12 +140,14 @@ def ncdf_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
 
     #-- Getting the data from each NetCDF variable
     #-- converting NetCDF objects into numpy arrays
+    nckeys = ['l','m','clm','slm']
     ll = fileID.variables['l'][:].copy()
     mm = fileID.variables['m'][:].copy()
     clm = fileID.variables['clm'][:].copy()
     slm = fileID.variables['slm'][:].copy()
-    #-- save date variables if specified
+    #-- read date variables if specified
     if DATE:
+        nckeys.extend(['time','month'])
         dinput['time'] = fileID.variables['time'][:].copy()
         dinput['month'] = fileID.variables['month'][:].copy()
         n_time = len(dinput['time'])
@@ -160,17 +180,21 @@ def ncdf_read_stokes(filename, DATE=True, VERBOSE=False, ATTRIBUTES=True,
             dinput['slm'][ll[lm],mm[lm]] = slm[lm]
 
     #-- Getting attributes of clm/slm and included variables
-    if ATTRIBUTES:
-        #-- get attributes for the included variables
-        for key in dinput.keys():
-            try:
-                dinput['attributes'][key] = [fileID.variables[key].units,
-                    fileID.variables[key].long_name]
-            except (KeyError, AttributeError):
-                pass
-        #-- Global attribute (title of dataset)
+    #-- get attributes for the included variables
+    for key in nckeys:
+        try:
+            dinput['attributes'][key] = [
+                fileID.variables[key].units,
+                fileID.variables[key].long_name
+                ]
+        except (KeyError,ValueError,AttributeError):
+            pass
+    #-- Global attribute (title of dataset)
+    try:
         title, = [st for st in dir(fileID) if re.match(r'TITLE',st,re.I)]
         dinput['attributes']['title'] = getattr(fileID, title)
+    except:
+        pass
 
     #-- Closing the NetCDF file
     fileID.close()
