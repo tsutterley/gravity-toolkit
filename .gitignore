@@ -81,3 +81,6 @@ None*.png
 #######################
 .ipynb_checkpoints
 Untitled.ipynb
+# Personal notebooks #
+########################
+/notebooks/
