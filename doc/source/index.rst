@@ -12,14 +12,14 @@ missions
 
     getting_started/Install.rst
     getting_started/Background.rst
-    getting_started/Getting-Started.md
+    getting_started/Getting-Started.rst
     getting_started/Examples.rst
     getting_started/NASA-Earthdata.rst
-    getting_started/GRACE-Data-File-Formats.md
-    getting_started/Spatial-Maps.md
-    getting_started/Time-Series-Analysis.md
+    getting_started/GRACE-Data-File-Formats.rst
+    getting_started/Spatial-Maps.rst
+    getting_started/Time-Series-Analysis.rst
     getting_started/Resources.rst
-    getting_started/Citations.md
+    getting_started/Citations.rst
 
 .. toctree::
     :maxdepth: 1
@@ -82,9 +82,11 @@ missions
     user_guide/read_SLR_C20.md
     user_guide/read_SLR_C30.md
     user_guide/read_SLR_geocenter.md
+    user_guide/read_swenson_geocenter.md
     user_guide/read_tellus_geocenter.md
     user_guide/regress_grace_maps.md
     user_guide/run_grace_date.md
+    user_guide/scale_grace_maps.md
     user_guide/spatial.rst
     user_guide/time.rst
     user_guide/tsamplitude.md

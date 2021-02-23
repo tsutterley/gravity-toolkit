@@ -1,10 +1,10 @@
 read_GRACE_harmonics.py
 =======================
 
- - Reads GRACE/GRACE-FO files and extracts spherical harmonic data and drift rates (RL04)
- - Adds drift rates to clm and slm for release 4 harmonics
- - Correct GSM data for drift in pole tide following Wahr et al. (2015)
- - Extracts start and end date of GRACE/GRACE-FO files and calculates mean of range
+- Reads GRACE/GRACE-FO files and extracts spherical harmonic data and drift rates (RL04)
+- Adds drift rates to clm and slm for release 4 harmonics
+- Correct GSM data for drift in pole tide following Wahr et al. (2015)
+- Extracts start and end date of GRACE/GRACE-FO files and calculates mean of range
 
 #### Calling Sequence
 ```python
@@ -17,19 +17,19 @@ JPLMSC_input = read_GRACE_harmonics('GSM-2_2003001-2003031_0029_JPLMSC_0719_0005
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_GRACE_harmonics.py)
 
 #### Inputs
- 1. full path to input GRACE file
- 2. spherical harmonic degree of truncation (`LMAX`)
+1. full path to input GRACE file
+2. spherical harmonic degree of truncation (`LMAX`)
 
 #### Options
- - `MMAX`: spherical harmonic order of truncation (default is `LMAX`)
- - `POLE_TIDE`: correct GSM data for pole tide drift following [Wahr et al. (2015)](https://doi.org/10.1002/2015JB011986)
+- `MMAX`: spherical harmonic order of truncation (default is `LMAX`)
+- `POLE_TIDE`: correct GSM data for pole tide drift following [Wahr et al. (2015)](https://doi.org/10.1002/2015JB011986)
 
 #### Outputs
- - `time`: mid-month date of GRACE file in year-decimal
- - `start`: start date of range as Julian day
- - `end`: end date of range as Julian day
- - `clm`: cosine spherical harmonics of input data
- - `slm`: sine spherical harmonics of input data
- - `eclm`: cosine spherical harmonic uncalibrated standard deviations
- - `eslm`: sine spherical harmonic uncalibrated standard deviations
- - `header`: text header of the GRACE file (will parse new YAML headers)
+- `time`: mid-month date of GRACE file in year-decimal
+- `start`: start date of range as Julian day
+- `end`: end date of range as Julian day
+- `clm`: cosine spherical harmonics of input data
+- `slm`: sine spherical harmonics of input data
+- `eclm`: cosine spherical harmonic uncalibrated standard deviations
+- `eslm`: sine spherical harmonic uncalibrated standard deviations
+- `header`: text header of the GRACE file (will parse new YAML headers)

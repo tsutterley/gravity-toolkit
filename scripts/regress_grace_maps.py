@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 regress_grace_maps.py
-Written by Tyler Sutterley (10/2020)
+Written by Tyler Sutterley (02/2021)
 
 Reads in GRACE/GRACE-FO spatial files from grace_spatial_maps.py and
     fits a regression model at each grid point
@@ -54,6 +54,7 @@ PROGRAM DEPENDENCIES:
         hdf5_write.py: writes output spatial data to HDF5
 
 UPDATE HISTORY:
+    Updated 02/2021: replaced numpy bool to prevent deprecation warning
     Updated 10/2020: use argparse to set command line parameters
     Updated 06/2020: using spatial data class for input and output operations
     Updated 01/2020: output seasonal amplitude and phase
@@ -237,7 +238,7 @@ def regress_grace_maps(parameters, ORDER=None, CYCLES=None,
     out = dinput.zeros_like()
     out.data = np.zeros((nlat,nlon,ncomp))
     out.error = np.zeros((nlat,nlon,ncomp))
-    out.mask = np.ones((nlat,nlon,ncomp),dtype=np.bool)
+    out.mask = np.ones((nlat,nlon,ncomp),dtype=bool)
     #-- Fit Significance
     FS = {}
     #-- SSE: Sum of Squares Error

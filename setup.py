@@ -13,6 +13,10 @@ with open("README.md", "r") as fh:
 with open('requirements.txt') as fh:
     install_requires = fh.read().splitlines()
 
+# get version
+with open('version.txt') as fh:
+    version = fh.read()
+
 # list of all scripts to be included with package
 scripts=[os.path.join('scripts',f) for f in os.listdir('scripts') if f.endswith('.py')]
 scripts.append(os.path.join('gravity_toolkit','grace_date.py'))
@@ -20,7 +24,7 @@ scripts.append(os.path.join('gravity_toolkit','grace_months_index.py'))
 
 setup(
     name='read-GRACE-harmonics',
-    version='1.0.1.22',
+    version=version,
     description=description,
     long_description=long_description,
     long_description_content_type="text/markdown",

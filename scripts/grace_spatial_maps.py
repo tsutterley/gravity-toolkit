@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_maps.py
-Written by Tyler Sutterley (01/2021)
+Written by Tyler Sutterley (02/2021)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly spatial fields
@@ -91,6 +91,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 02/2021: changed remove index to files with specified formats
     Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
     Updated 12/2020: added more love number options and from gfc for mean files
     Updated 10/2020: use argparse to set command line parameters
@@ -222,7 +223,6 @@ def grace_spatial_maps(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
     GIA = parameters['GIA'] if (parameters['GIA'].title() != 'None') else None
     GIA_FILE = os.path.expanduser(parameters['GIA_FILE'])
     #-- remove a set of spherical harmonics from the GRACE data
-    REMOVE_INDEX = parameters['REMOVE_INDEX']
     REDISTRIBUTE_REMOVED = parameters['REDISTRIBUTE_REMOVED'] in ('Y','y')
     #-- smoothing radius
     RAD = np.int(parameters['RAD'])
@@ -333,10 +333,27 @@ def grace_spatial_maps(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
     remove_Ylms = GRACE_Ylms.zeros_like()
     remove_Ylms.time[:] = np.copy(GRACE_Ylms.time)
     remove_Ylms.month[:] = np.copy(GRACE_Ylms.month)
-    if (parameters['REMOVE_INDEX'].title() != 'None'):
-        #-- for each file index separated by commas
-        for REMOVE_INDEX in parameters['REMOVE_INDEX'].split(','):
-            Ylms = harmonics().from_index(REMOVE_INDEX, DATAFORM)
+    if (parameters['REMOVE_FILE'].title() != 'None'):
+        #-- files to be removed and their respective formats
+        REMOVE_FILES = parameters['REMOVE_FILE'].split(',')
+        FORMATS = parameters['REMOVEFORM'].split(',')
+        #-- extend list if a single format was entered for all files
+        if len(FORMATS) < len(REMOVE_FILES):
+            FORMATS = FORMATS*len(REMOVE_FILES)
+        #-- for each file to be removed
+        for REMOVE_FILE,REMOVEFORM in zip(REMOVE_FILES,FORMATS):
+            if (REMOVEFORM == 'ascii'):
+                #-- ascii (.txt)
+                Ylms = harmonics().from_ascii(REMOVE_FILE)
+            elif (REMOVEFORM == 'netCDF4'):
+                #-- netCDF4 (.nc)
+                Ylms = harmonics().from_netCDF4(REMOVE_FILE)
+            elif (REMOVEFORM == 'HDF5'):
+                #-- HDF5 (.h5)
+                Ylms = harmonics().from_HDF5(REMOVE_FILE)
+            elif (REMOVEFORM == 'index'):
+                #-- index containing files in data format
+                Ylms = harmonics().from_index(REMOVE_FILE, DATAFORM)
             #-- reduce to GRACE/GRACE-FO months and truncate to degree and order
             Ylms = Ylms.subset(GRACE_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
             #-- distribute removed Ylms uniformly over the ocean
