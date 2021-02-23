@@ -85,6 +85,15 @@ General Methods
         `date`: datetime object
 
 
+.. method:: gravity_toolkit.time.adjust_months(months)
+
+    Adjust estimated GRACE/GRACE-FO months to fix "Special Cases"
+
+    Arguments:
+
+        `months`: GRACE/GRACE-FO months
+
+
 .. method:: gravity_toolkit.time.calendar_days(year)
 
     Calculates the number of days per month for a given year

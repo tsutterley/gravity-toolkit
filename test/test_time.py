@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 test_time.py (09/2020)
-Verify time conversion functions
+Verify time conversion and utility functions
 """
 import pytest
 import warnings
@@ -110,3 +110,71 @@ def test_parse_date_string():
     #-- check the epoch and the time unit conversion factors
     assert np.all(epoch == [2000,1,1,12,0,0])
     assert (to_secs == 0.0)
+
+#-- PURPOSE: test months adjustment for special cases
+#-- parameterize calendar dates
+@pytest.mark.parametrize("PROC", ['CSR','GFZ','JPL'])
+def test_adjust_months(PROC):
+    #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
+    #-- Accelerometer shutoffs make the relation between month number
+    #-- and date more complicated as days from other months are used
+    #-- For CSR and GFZ: Nov 2011 (119) is centered in Oct 2011 (118)
+    #-- For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
+    #-- For all: May 2015 (161) is centered in Apr 2015 (160)
+
+    #-- dates with special months for each processing center
+    center_dates = dict(CSR=[],GFZ=[],JPL=[])
+    #-- CSR dates to test (year-decimal, GRACE month)
+    center_dates['CSR'].append([2011.62465753, 116])
+    center_dates['CSR'].append([2011.70821918, 117])
+    center_dates['CSR'].append([2011.79178082, 118])
+    center_dates['CSR'].append([2011.83287671, 119])
+    center_dates['CSR'].append([2011.99041096, 120])
+    center_dates['CSR'].append([2012.04371585, 121])
+    center_dates['CSR'].append([2012.12568306, 122])
+    center_dates['CSR'].append([2015.06027397, 157])
+    center_dates['CSR'].append([2015.12465753, 158])
+    center_dates['CSR'].append([2015.20547945, 159])
+    center_dates['CSR'].append([2015.28904110, 160])
+    center_dates['CSR'].append([2015.31917808, 161])
+    center_dates['CSR'].append([2015.53698630, 163])
+    center_dates['CSR'].append([2015.62465753, 164])
+    #-- GFZ dates to test (year-decimal, GRACE month)
+    center_dates['GFZ'].append([2011.62465753, 116])
+    center_dates['GFZ'].append([2011.70821918, 117])
+    center_dates['GFZ'].append([2011.79178082, 118])
+    center_dates['GFZ'].append([2011.83287671, 119])
+    center_dates['GFZ'].append([2011.99041096, 120])
+    center_dates['GFZ'].append([2012.04371585, 121])
+    center_dates['GFZ'].append([2012.12568306, 122])
+    center_dates['GFZ'].append([2015.06027397, 157])
+    center_dates['GFZ'].append([2015.12465753, 158])
+    center_dates['GFZ'].append([2015.20547945, 159])
+    center_dates['GFZ'].append([2015.28904110, 160])
+    center_dates['GFZ'].append([2015.31917808, 161])
+    center_dates['GFZ'].append([2015.53698630, 163])
+    center_dates['GFZ'].append([2015.62465753, 164])
+    #-- JPL dates to test (year-decimal, GRACE month)
+    center_dates['JPL'].append([2011.62465753, 116])
+    center_dates['JPL'].append([2011.70821918, 117])
+    center_dates['JPL'].append([2011.79178082, 118])
+    center_dates['JPL'].append([2011.83561644, 119])
+    center_dates['JPL'].append([2012.00136986, 120])
+    center_dates['JPL'].append([2012.04371585, 121])
+    center_dates['JPL'].append([2012.12568306, 122])
+    center_dates['JPL'].append([2015.06027397, 157])
+    center_dates['JPL'].append([2015.12465753, 158])
+    center_dates['JPL'].append([2015.20547945, 159])
+    center_dates['JPL'].append([2015.28904110, 160])
+    center_dates['JPL'].append([2015.31917808, 161])
+    center_dates['JPL'].append([2015.53698630, 163])
+    center_dates['JPL'].append([2015.62465753, 164])
+
+    #-- get dates and months for center
+    tdec,months = np.transpose(center_dates[PROC])
+    #-- GRACE/GRACE-FO months with duplicates
+    temp = np.array(12.0*(tdec-2002.0)+1,dtype='i')
+    assert np.any(temp != months.astype('i'))
+    #-- run months adjustment to fix special cases
+    temp = gravity_toolkit.time.adjust_months(temp)
+    assert np.all(temp == months.astype('i'))

@@ -1,7 +1,7 @@
 gen_stokes.py
 =============
 
- - Converts data from the spatial domain to spherical harmonic coefficients
+- Converts data from the spatial domain to spherical harmonic coefficients
 
 #### Calling Sequence
 ```python
@@ -13,23 +13,23 @@ Ylms = gen_stokes(data, lon, lat, UNITS=1, LMAX=LMAX, PLM=PLM, LOVE=(hl,kl,ll))
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/gen_stokes.py)
 
 #### Inputs
- - `data`: data matrix
- - `lon`: longitude array
- - `lat`: latitude array
+- `data`: data matrix
+- `lon`: longitude array
+- `lat`: latitude array
 
 #### Options
- - `UNITS`: input data units
-    1) cm water equivalent thickness (cm w.e., g/cm<sup>2</sup>)
-    2) gigatonnes of mass (Gt)
-    3) mm water equivalent thickness (mm w.e., kg/m<sup>2</sup>)
- - `LMIN`: minimum spherical harmonic degree of the output harmonics
- - `LMAX`:  maximum spherical harmonic degree of the output harmonics
- - `MMAX`: maximum spherical harmonic order of the output harmonics
- - `PLM`: input Legendre polynomials (for improving computational time)
- - `LOVE`: input load Love numbers up to degree of truncation
+- `UNITS`: input data units
+   * `1` cm water equivalent thickness (cm w.e., g/cm<sup>2</sup>)
+   * `2` gigatonnes of mass (Gt)
+   * `3` mm water equivalent thickness (mm w.e., kg/m<sup>2</sup>)
+- `LMIN`: minimum spherical harmonic degree of the output harmonics
+- `LMAX`:  maximum spherical harmonic degree of the output harmonics
+- `MMAX`: maximum spherical harmonic order of the output harmonics
+- `PLM`: input Legendre polynomials (for improving computational time)
+- `LOVE`: input load Love numbers up to degree of truncation
 
 #### Outputs
- - `clm`: Cosine spherical harmonic coefficients (geodesy normalization)
- - `slm`: Sine spherical harmonic coefficients (geodesy normalization)
- - `l`: spherical harmonic degree to LMAX
- - `m`: spherical harmonic order to MMAX
+- `clm`: Cosine spherical harmonic coefficients (geodesy normalization)
+- `slm`: Sine spherical harmonic coefficients (geodesy normalization)
+- `l`: spherical harmonic degree to LMAX
+- `m`: spherical harmonic order to MMAX

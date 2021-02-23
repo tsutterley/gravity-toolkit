@@ -128,6 +128,7 @@ General Attributes and Methods
 
             `verbose` print ascii file information
 
+
     .. method:: object.from_netCDF4(filename, date=True, compression=None, verbose=False)
 
         Read a harmonics object from a netCDF4 file
@@ -140,6 +141,7 @@ General Attributes and Methods
             `compression` netCDF4 file is compressed or streamed from memory
 
             `verbose` print netCDF4 file information
+
 
     .. method:: object.from_HDF5(filename, date=True, compression=None, verbose=False)
 
@@ -174,9 +176,9 @@ General Attributes and Methods
         Inputs: full path of index file to be read into a harmonics object
 
         Options:
-            format of files in index (ascii, netCDF4 or HDF5)
+            format of files in index (``'ascii'``, ``'netCDF4'`` or ``'HDF5'``)
 
-            ascii, netCDF4, or HDF5 contains date information
+            ascii, netCDF4, or HDF5 files contain date information
 
             sort harmonics objects by date information
 
@@ -193,6 +195,20 @@ General Attributes and Methods
             sort harmonics objects by date information
 
             clear the list of objects from memory
+
+
+    .. method:: object.from_file(filename, format=None, date=True, **kwargs)
+
+        Read a harmonics object from a specified format
+
+        Inputs: full path of input file
+
+        Options:
+            file format (``'ascii'``, ``'netCDF4'``, ``'HDF5'`` or ``'gfc'``)
+
+            file contains date information
+
+            keyword arguments for input readers
 
 
     .. method:: object.from_dict(dict_object)
@@ -227,6 +243,39 @@ General Attributes and Methods
         Inputs: full path of output HDF5 file
 
         Options: harmonics objects contain date information
+
+
+    .. method:: object.to_index(filename, file_list, format=None, date=True, **kwargs)
+
+        Write a harmonics object to index of ascii, netCDF4 or HDF5 files
+
+        Inputs:
+            full path of output file
+
+            list of filenames for each output file
+
+        Options:
+
+            format of files in index (``'ascii'``, ``'netCDF4'`` or ``'HDF5'``)
+
+            harmonics object contains date information
+
+            keyword arguments for output writers
+
+
+    .. method:: object.to_file(filename, format=None, date=True, **kwargs)
+
+        Write a harmonics object to a specified format
+
+        Inputs: full path of output file
+
+        Options:
+
+            file format (``'ascii'``, ``'netCDF4'`` or ``'HDF5'``)
+
+            harmonics object contains date information
+
+            keyword arguments for output writers
 
 
     .. method:: object.to_masked_array()

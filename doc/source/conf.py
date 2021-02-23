@@ -10,7 +10,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
+import os
 # import sys
 import datetime
 # sys.path.insert(0, os.path.abspath('.'))
@@ -24,8 +24,8 @@ copyright = f"2019\u2013{year}, Tyler C. Sutterley"
 author = 'Tyler C. Sutterley'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0.1.22'
-
+with open(os.path.abspath('../../version.txt')) as fh:
+    release = fh.read()
 
 # -- General configuration ---------------------------------------------------
 
@@ -88,4 +88,4 @@ html_context = {
 
 # Load the custom CSS files (needs sphinx >= 1.6 for this to work)
 def setup(app):
-    app.add_stylesheet("style.css")
+    app.add_css_file("style.css")

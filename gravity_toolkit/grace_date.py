@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_date.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (02/2021)
 
 Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
 Parses dates of each GRACE/GRACE-FO file and assigns the month number
@@ -38,6 +38,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 02/2021: use adjust_months function to fix special months cases
     Updated 12/2020: using utilities from time module
     Updated 10/2020: use argparse to set command line parameters
     Updated 07/2020: added function docstrings
@@ -59,7 +60,7 @@ UPDATE HISTORY:
         further generalization, calculates the Julian date of the GRACE date
     Updated 11/2014: output more decimal points for date
     Updated 09/2014: using regular expressions, general code updates
-    Updated 03/2014: printing grace month in form %003i
+    Updated 03/2014: printing GRACE month with zero-padding
     Updated 02/2014: minor update to if statements
     Updated 01/2014: updated for CNES RL03 (monthly fields)
     Updated 10/2013: created a directory with both RL04 and RL05 (combining)
@@ -79,7 +80,6 @@ UPDATE HISTORY:
 """
 from __future__ import print_function
 
-import sys
 import os
 import re
 import argparse
@@ -148,17 +148,6 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
        r'(\.gz|\.gfc)?$').format(r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC')
     rx = re.compile(regex_pattern, re.VERBOSE)
 
-    #-- Output GRACE date ascii file
-    if OUTPUT:
-        date_file = '{0}_{1}_DATES.txt'.format(PROC, DREL)
-        fid = open(os.path.join(grace_dir,date_file), 'w')
-        #-- date file header information
-        args = ('Mid-date','Month','Start_Day','End_Day','Total_Days')
-        print('{0} {1:>10} {2:>11} {3:>10} {4:>13}'.format(*args),file=fid)
-
-    #-- create python dictionary mapping input file names with GRACE months
-    grace_files = {}
-
     #-- for each data file
     for t, infile in enumerate(input_files):
         #-- extract parameters from input filename
@@ -208,22 +197,29 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
             #-- Notes on special months (e.g. 119, 120) below
             mon[t] = 12*(cal_date['year']-2002) + cal_date['month']
 
-            #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
-            #-- Accelerometer shutoffs make this relation between month number
-            #-- and date more complicated as days from other months are used
-            #-- For CSR and GFZ: Nov11 (month 119) is centered in Oct11 (118)
-            #-- For JPL: Dec 2011 (month 120) is centered in Jan12 (121)
-            #-- For all: May15 (month 161) is centered in Apr15 (160)
-            if PROC in ('CSR','GFZ') and (mon[t] == mon[t-1]) and (mon[t-1] == 118):
-                mon[t] = mon[t-1] + 1
-            elif (mon[t] == mon[t-1]) and (mon[t-1] == 160):
-                mon[t] = mon[t-1] + 1
-            elif PROC in ('JPL') and (mon[t-1] == 119):
-                mon[t] = mon[t-1] + 1
+    #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
+    #-- Accelerometer shutoffs make the relation between month number
+    #-- and date more complicated as days from other months are used
+    #-- For CSR and GFZ: Nov 2011 (119) is centered in Oct 2011 (118)
+    #-- For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
+    #-- For all: May 2015 (161) is centered in Apr 2015 (160)
+    mon = gravity_toolkit.time.adjust_months(mon)
 
+    #-- Output GRACE/GRACE-FO date ascii file
+    if OUTPUT:
+        date_file = '{0}_{1}_DATES.txt'.format(PROC, DREL)
+        fid = open(os.path.join(grace_dir,date_file), 'w')
+        #-- date file header information
+        args = ('Mid-date','Month','Start_Day','End_Day','Total_Days')
+        print('{0} {1:>10} {2:>11} {3:>10} {4:>13}'.format(*args),file=fid)
+
+    #-- create python dictionary mapping input file names with GRACE months
+    grace_files = {}
+    #-- for each data file
+    for t, infile in enumerate(input_files):
         #-- add file to python dictionary mapped to GRACE/GRACE-FO month
         grace_files[mon[t]] = os.path.join(grace_dir,infile)
-        #-- print to GRACE DATES ascii file (NOTE: tot_days will be rounded up)
+        #-- print to GRACE dates ascii file (NOTE: tot_days will be rounded)
         if OUTPUT:
             print(('{0:13.8f} {1:03d} {2:8.0f} {3:03.0f} {4:8.0f} {5:03.0f} '
                 '{6:8.0f}').format(tdec[t],mon[t],start_yr[t],start_day[t],
