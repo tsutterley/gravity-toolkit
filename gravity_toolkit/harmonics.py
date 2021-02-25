@@ -97,7 +97,7 @@ class harmonics(object):
                 self.filename = os.path.join(directory,f.pop())
         return self
 
-    def from_ascii(self, filename, date=True, compression=None, verbose=False):
+    def from_ascii(self, filename, date=True, compression=None, verbose=False, skip_comment=''):
         """
         Read a harmonics object from an ascii file
         Inputs: full path of input ascii file
@@ -105,6 +105,7 @@ class harmonics(object):
             ascii file contains date information
             ascii file is compressed or streaming as bytes
             verbose output of file information
+            skip_comment skip lines that contains a particular string
         """
         #-- set filename
         self.case_insensitive_filename(filename)
@@ -126,6 +127,10 @@ class harmonics(object):
             #-- read input ascii file (.txt, .asc) and split lines
             with open(self.filename,'r') as f:
                 file_contents = f.read().splitlines()
+
+        if skip_comment:
+            file_contents = [line for line in file_contents if not(skip_comment in line)]
+
         #-- compile regular expression operator for extracting numerical values
         #-- from input ascii files of spherical harmonics
         regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[EeD][+-]?\d+)?'
