@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_tellus_geocenter.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (02/2021)
 
 Reads monthly geocenter spherical harmonic data files from GRACE Tellus
     Technical Notes (TN-13) calculated using GRACE/GRACE-FO measurements and
@@ -12,14 +12,19 @@ https://podaac-tools.jpl.nasa.gov/drive/files/allData/tellus/L2/degree_1
 
 Swenson, S., D. Chambers, and J. Wahr, "Estimating geocenter variations
     from a combination of GRACE and ocean model output", J. Geophys. Res.,
-    113(B08410), 2008.  doi:10.1029/2007JB005338
+    113(B08410), 2008. doi:10.1029/2007JB005338
 
 Sun, Y., R. Riva, and P. Ditmar, "Observed changes in the Earth's dynamic
     oblateness from GRACE data and geophysical models", J. Geodesy.,
     90(1), 81-89, 2016. doi:10.1007/s00190-015-0852-y
 
+Sun, Y., R. Riva, and P. Ditmar, "Optimizing estimates of annual
+    variations and trends in geocenter motion and J2 from a combination
+    of GRACE data and geophysical models", J. Geophys. Res. Solid Earth,
+    121, 2016. doi:10.1002/2016JB013073
+
 CALLING SEQUENCE:
-    geocenter = read_tellus_geocenter(file)
+    geocenter = read_tellus_geocenter(geocenter_file)
 
 INPUTS:
     geocenter_file: degree 1 file
@@ -49,6 +54,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 02/2021: use adjust_months function to fix special months cases
     Updated 12/2020: using utilities from time module
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
@@ -69,7 +75,7 @@ from __future__ import print_function, division
 import os
 import re
 import numpy as np
-from gravity_toolkit.time import convert_calendar_decimal
+import gravity_toolkit.time
 
 #-- PURPOSE: read geocenter data from PO.DAAC
 def read_tellus_geocenter(geocenter_file, HEADER=True, JPL=False):
@@ -122,11 +128,9 @@ def read_tellus_geocenter(geocenter_file, HEADER=True, JPL=False):
 
     #-- number of months within the file
     n_mon = (file_lines - count)//2
-    #-- calendar dates
-    year = np.zeros((n_mon))
-    month = np.zeros((n_mon))
-    #-- grace month of data line
-    mon = np.zeros((n_mon), dtype=np.int)
+    #-- GRACE/GRACE-FO months
+    mon = np.zeros((n_mon),dtype=np.int)
+    #-- calendar dates in year-decimal
     tdec = np.zeros((n_mon))
     #-- spherical harmonic data
     C1 = np.zeros((n_mon,2))
@@ -140,37 +144,37 @@ def read_tellus_geocenter(geocenter_file, HEADER=True, JPL=False):
 
     #-- time count
     t = 0
-    #-- for every other line:
+    #-- for every line of data
     for line in file_contents[count:]:
         #-- find numerical instances in line including integers, exponents,
         #-- decimal points and negatives
         line_contents = rx.findall(line)
         #-- calendar year and month
         if JPL:
-            #-- start and end dates of month
-            start_yr = np.float(line_contents[7][0:4])
-            start_mon = np.float(line_contents[7][4:6])
-            start_day = np.float(line_contents[7][6:8])
-            end_yr = np.float(line_contents[8][0:4])
-            end_mon = np.float(line_contents[8][4:6])
-            end_day = np.float(line_contents[8][6:8])
+            #-- start date of month
+            SY = np.float(line_contents[7][0:4])
+            SM = np.float(line_contents[7][4:6])
+            SD = np.float(line_contents[7][6:8])
+            #-- end date of month
+            EY = np.float(line_contents[8][0:4])
+            EM = np.float(line_contents[8][4:6])
+            ED = np.float(line_contents[8][6:8])
             #-- convert date to year decimal
-            t_start = convert_calendar_decimal(start_yr,start_mon,day=start_day)
-            t_end = convert_calendar_decimal(end_yr,end_mon,day=end_day)
+            ts = gravity_toolkit.time.convert_calendar_decimal(SY,SM,day=SD)
+            te = gravity_toolkit.time.convert_calendar_decimal(EY,EM,day=ED)
             #-- calculate mean time
-            tdec[t] = np.mean([t_start,t_end])
-            year[t] = np.floor(tdec[t])
-            month[t] = np.int(12*(tdec[t] % 1) + 1)
+            tdec[t] = np.mean([ts,te])
+            year = np.floor(tdec[t])
+            month = np.int(12*(tdec[t] % 1) + 1)
         else:
-            year[t] = np.float(line_contents[0][0:4])
-            month[t] = np.float(line_contents[0][4:6])
+            #-- dates of month
+            year = np.float(line_contents[0][0:4])
+            month = np.float(line_contents[0][4:6])
             #-- convert date to year decimal
-            tdec[t], = convert_calendar_decimal(year[t],month[t])
-        #-- grace month
-        mon[t] = np.int(12.0*(year[t] - 2002.) + month[t])
-        #-- Accelerometer shutoffs complicate the relations between month number
-        if (mon[t] == mon[t-1]) and (mon[t-1] in (118,123,160,169,185,205)):
-            mon[t] = mon[t-1] + 1
+            tdec[t], = gravity_toolkit.time.convert_calendar_decimal(year,month)
+        #-- estimated GRACE/GRACE-FO month
+        #-- Accelerometer shutoffs complicate the month number calculation
+        mon[t] = np.int(12.0*(year - 2002.) + month)
         #-- spherical harmonic order
         m = np.int(line_contents[2])
         #-- extract spherical harmonic data
@@ -181,6 +185,11 @@ def read_tellus_geocenter(geocenter_file, HEADER=True, JPL=False):
         #-- will only advance in time after reading the
         #-- order 1 coefficients (t+0=t)
         t += m
+
+    #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
+    #-- Accelerometer shutoffs make the relation between month number
+    #-- and date more complicated as days from other months are used
+    mon = gravity_toolkit.time.adjust_months(mon)
 
     #-- reforming outputs to be individual variables
     C10 = np.squeeze(C1[:,0])

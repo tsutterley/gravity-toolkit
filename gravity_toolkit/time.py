@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 time.py
-Written by Tyler Sutterley (01/2021)
+Written by Tyler Sutterley (02/2021)
 Utilities for calculating time operations
 
 PYTHON DEPENDENCIES:
@@ -11,6 +11,7 @@ PYTHON DEPENDENCIES:
         https://dateutil.readthedocs.io/en/stable/
 
 UPDATE HISTORY:
+    Updated 02/2021: added adjust_months function to fix special months cases
     Updated 01/2021: add date parser for cases when only a date and no units
     Updated 12/2020: merged with convert_julian and convert_calendar_decimal
         added calendar_days routine to get number of days per month
@@ -86,6 +87,52 @@ def datetime_to_list(date):
     date: datetime object
     """
     return [date.year,date.month,date.day,date.hour,date.minute,date.second]
+
+def adjust_months(months):
+    """
+    Adjust estimated GRACE/GRACE-FO months to fix "Special Cases"
+
+    The "Special Months" (Nov 2011, Dec 2011 and April 2012) with
+    Accelerometer shutoffs make the relation between month number
+    and date more complicated as days from other months are used
+    For CSR and GFZ: Nov 2011 (119) is centered in Oct 2011 (118)
+    For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
+    For all: May 2015 (161) is centered in Apr 2015 (160)
+    For GSFC: Oct 2018 (202) is centered in Nov 2018 (203)
+    """
+    #-- verify dimensions
+    months = np.atleast_1d(months)
+    #-- create temporary months object
+    m = np.zeros_like(months)
+    #-- find unique months
+    _,i,c = np.unique(months,return_inverse=True,return_counts=True)
+    #-- simple unique months case
+    case1, = np.nonzero(c[i] == 1)
+    m[case1] = months[case1]
+    #-- Special Months cases
+    case2, = np.nonzero(c[i] == 2)
+    #-- for each special case month
+    for j in case2:
+        #-- determine the months which meet the criteria need to be adjusted
+        if months[j] == (months[j-1] + 1):
+            #-- case where month is correct
+            #-- but subsequent month needs to be +1
+            m[j] = np.copy(months[j])
+        elif (months[j] == months[j-1]) and (months[j] != m[j-1]):
+            #-- case where prior month needed to be -1
+            #-- but current month is correct
+            m[j] = np.copy(months[j])
+        elif months[j] == months[j-1]:
+            #-- case where month should be +1
+            m[j] = months[j] + 1
+        elif (months[j] == months[j+1]) and (months[j] == (months[j-1] + 2)):
+            #-- case where month should be -1
+            m[j] = months[j] - 1
+        elif (months[j] == months[j+1]) and (months[j+2] == (months[j+1] + 1)):
+            #-- case where month should be -1
+            m[j] = months[j] - 1
+    #-- update months and remove singleton dimensions if necessary
+    return np.squeeze(m)
 
 #-- PURPOSE: gets the number of days per month for a given year
 def calendar_days(year):

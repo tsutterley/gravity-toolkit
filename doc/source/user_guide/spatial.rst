@@ -191,9 +191,9 @@ General Attributes and Methods
         Inputs: full path of index file to be read into a spatial object
 
         Options:
-            format of files in index (ascii, netCDF4 or HDF5)
+            format of files in index (``'ascii'``, ``'netCDF4'`` or ``'HDF5'``)
 
-            ascii, netCDF4, or HDF5 contains date information
+            ascii, netCDF4, or HDF5 files contain date information
 
             sort spatial objects by date information
 
@@ -210,6 +210,21 @@ General Attributes and Methods
             sort spatial objects by date information
 
             clear the list of objects from memory
+
+
+    .. method:: object.from_file(filename, format=None, date=True, **kwargs)
+
+        Read a spatial object from a specified format
+
+        Inputs: full path of input file
+
+        Options:
+            file format (``'ascii'``, ``'netCDF4'``, ``'HDF5'``)
+
+            file contains date information
+
+            keyword arguments for input readers
+
 
     .. method:: object.from_dict(dict_object)
 
@@ -268,6 +283,39 @@ General Attributes and Methods
             `title` output HDF5 file title
 
             `verbose` print HDF5 file information
+
+
+    .. method:: object.to_index(filename, file_list, format=None, date=True, **kwargs)
+
+        Write a spatial object to index of ascii, netCDF4 or HDF5 files
+
+        Inputs:
+            full path of output HDF5 file
+
+            list of filenames for each output file
+
+        Options:
+
+            format of files in index (``'ascii'``, ``'netCDF4'`` or ``'HDF5'``)
+
+            spatial object contains date information
+
+            keyword arguments for output writers
+
+
+    .. method:: object.to_file(filename, format=None, date=True, **kwargs)
+
+        Write a spatial object to a specified format
+
+        Inputs: full path of output file
+
+        Options:
+
+            file format (``'ascii'``, ``'netCDF4'`` or ``'HDF5'``)
+
+            spatial object contains date information
+
+            keyword arguments for output writers
 
 
     .. method:: object.to_masked_array()

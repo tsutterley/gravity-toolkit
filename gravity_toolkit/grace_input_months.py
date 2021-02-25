@@ -32,6 +32,8 @@ INPUTS:
             http://download.csr.utexas.edu/pub/slr/geocenter/
         SLF: Sutterley and Velicogna coefficients, Remote Sensing (2019)
             https://doi.org/10.6084/m9.figshare.7388540
+        Swenson: GRACE-derived coefficients from Sean Swenson
+            https://doi.org/10.1029/2007JB005338
 
 OUTPUTS:
     clm: GRACE/GRACE-FO cosine spherical harmonic to degree/order LMAX and MMAX
@@ -67,8 +69,8 @@ PROGRAM DEPENDENCIES:
     grace_date.py: reads GRACE index file and calculates dates for each month
     read_SLR_C20.py: reads C20 files from satellite laser ranging (CSR or GSFC)
     read_SLR_C30.py: reads C30 files from satellite laser ranging (CSR or GSFC)
-    convert_julian.py: Return the calendar date and time given Julian date
-    read_tellus_geocenter.py: reads PO.DAAC degree 1 files
+    read_tellus_geocenter.py: reads degree 1 files from JPL Tellus
+    read_swenson_geocenter.py: reads degree 1 files from Sean Swenson
     read_SLR_geocenter.py: reads degree 1 files from Satellite Laser Ranging
     read_GRACE_geocenter.py: reads degree 1 files from Sutterley et al. (2019)
     read_GRACE_harmonics.py: reads an input GRACE data file and calculates date
@@ -123,6 +125,7 @@ from gravity_toolkit.grace_date import grace_date
 from gravity_toolkit.read_SLR_C20 import read_SLR_C20
 from gravity_toolkit.read_SLR_C30 import read_SLR_C30
 from gravity_toolkit.read_SLR_CS2 import read_SLR_CS2
+from gravity_toolkit.read_swenson_geocenter import read_swenson_geocenter
 from gravity_toolkit.read_tellus_geocenter import read_tellus_geocenter
 from gravity_toolkit.read_SLR_geocenter import aod_corrected_SLR_geocenter
 from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
@@ -165,6 +168,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         Tellus: GRACE/GRACE-FO TN-13 coefficients from PO.DAAC
         SLR: satellite laser ranging coefficients from CSR
         SLF: Sutterley and Velicogna coefficients, Remote Sensing (2019)
+        Swenson: GRACE-derived coefficients from Sean Swenson
 
     Keyword arguments
     -----------------
@@ -302,6 +306,13 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         DEG1_file = os.path.join(base_dir,'geocenter',
             '{0}_{1}_{2}_{3}{4}.txt'.format(*args))
         DEG1_input = read_GRACE_geocenter(DEG1_file)
+        DEG1_str = '_w{0}_DEG1'.format(DEG1)
+    elif (DEG1 == 'Swenson'):
+        #-- degree 1 coefficients provided by Sean Swenson in mm w.e.
+        DEG1_file = os.path.join(base_dir,'geocenter',
+            'gad_gsm.{0}.txt'.format(DREL))
+        #-- Running function read_swenson_geocenter.py
+        DEG1_input = read_swenson_geocenter(DEG1_file)
         DEG1_str = '_w{0}_DEG1'.format(DEG1)
     else:#-- not using a degree 1 file (non-GSM or only using degree 2+)
         DEG1_str = ''

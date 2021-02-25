@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 least_squares_mascon_timeseries.py
-Written by Tyler Sutterley (01/2021)
+Written by Tyler Sutterley (02/2021)
 
 Calculates a time-series of regional mass anomalies through a
     least-squares mascon procedure procedure from an index of
@@ -110,6 +110,7 @@ REFERENCES:
         https://doi.org/10.1029/2009GL039401
 
 UPDATE HISTORY:
+    Updated 02/2021: changed remove index to files with specified formats
     Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
     Updated 12/2020: added more love number options
     Updated 10/2020: use argparse to set command line parameters
@@ -118,7 +119,7 @@ UPDATE HISTORY:
         updated load love numbers read function
     Updated 03/2020: switched to destripe_harmonics for filtering harmonics
     Updated 10/2019: changing Y/N flags to True/False
-    Updated 11/2018: can remove sets of spherical harmonics with REMOVE_INDEX
+    Updated 11/2018: can remove sets of spherical harmonics
     Updated 10/2018: verify integers for python3 compatibility
     Updated 06/2018: using python3 compatible octal and input
     Updated 03/2018: include order_str denoting if MMAX != LMAX
@@ -352,10 +353,27 @@ def least_squares_mascons(parameters, LOVE_NUMBERS=0, REFERENCE=None,
     remove_Ylms = data_Ylms.zeros_like()
     remove_Ylms.time[:] = np.copy(data_Ylms.time)
     remove_Ylms.month[:] = np.copy(data_Ylms.month)
-    if (parameters['REMOVE_INDEX'].title() != 'None'):
-        #-- for each file index separated by commas
-        for REMOVE_INDEX in parameters['REMOVE_INDEX'].split(','):
-            Ylms = harmonics().from_index(REMOVE_INDEX, DATAFORM)
+    if (parameters['REMOVE_FILE'].title() != 'None'):
+        #-- files to be removed and their respective formats
+        REMOVE_FILES = parameters['REMOVE_FILE'].split(',')
+        FORMATS = parameters['REMOVEFORM'].split(',')
+        #-- extend list if a single format was entered for all files
+        if len(FORMATS) < len(REMOVE_FILES):
+            FORMATS = FORMATS*len(REMOVE_FILES)
+        #-- for each file to be removed
+        for REMOVE_FILE,REMOVEFORM in zip(REMOVE_FILES,FORMATS):
+            if (REMOVEFORM == 'ascii'):
+                #-- ascii (.txt)
+                Ylms = harmonics().from_ascii(REMOVE_FILE)
+            elif (REMOVEFORM == 'netCDF4'):
+                #-- netCDF4 (.nc)
+                Ylms = harmonics().from_netCDF4(REMOVE_FILE)
+            elif (REMOVEFORM == 'HDF5'):
+                #-- HDF5 (.h5)
+                Ylms = harmonics().from_HDF5(REMOVE_FILE)
+            elif (REMOVEFORM == 'index'):
+                #-- index containing files in data format
+                Ylms = harmonics().from_index(REMOVE_FILE, DATAFORM)
             #-- reduce to GRACE/GRACE-FO months and truncate to degree and order
             Ylms = Ylms.subset(data_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
             #-- distribute removed Ylms uniformly over the ocean

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C20.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (02/2021)
 
 Reads in C20 spherical harmonic coefficients derived from SLR measurements
 
@@ -50,6 +50,8 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 02/2021: use adjust_months function to fix special months cases
+        replaced numpy bool to prevent deprecation warning
     Updated 12/2020: using utilities from time module
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
@@ -89,7 +91,7 @@ UPDATE HISTORY:
 import os
 import re
 import numpy as np
-from gravity_toolkit.time import convert_julian,convert_calendar_decimal
+import gravity_toolkit.time
 
 #-- PURPOSE: read oblateness data from Satellite Laser Ranging (SLR)
 def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
@@ -184,29 +186,16 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
                 #-- modified julian date for line
                 MJD = np.float(line_contents[0])
                 #-- converting from MJD into month, day and year
-                YY,MM,DD,hh,mm,ss = convert_julian(MJD+2400000.5,FORMAT='tuple')
+                YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
+                    MJD+2400000.5, FORMAT='tuple')
                 #-- converting from month, day, year into decimal year
-                date_conv[t] = convert_calendar_decimal(YY, MM, day=DD, hour=hh)
+                date_conv[t] = gravity_toolkit.time.convert_calendar_decimal(
+                    YY, MM, day=DD, hour=hh)
                 #-- Spherical Harmonic data for line
                 C20_input[t] = np.float(line_contents[2])
                 eC20_input[t] = np.float(line_contents[4])*1e-10
                 #-- GRACE/GRACE-FO month of SLR solutions
                 mon[t] = 1 + np.round((date_conv[t]-2002.)*12.)
-                #-- The GRACE/GRACE-FO 'Special Months'
-                #-- (November 2011, December 2012, April 2012, October 2019)
-                #-- Accelerometer shutoffs make the relation between month number
-                #-- and date more complicated as days from other months are used
-                #-- Nov11 (month 119) is centered in Oct11 (118)
-                #-- May15 (month 161) is centered in Apr15 (160)
-                #-- Oct18 (month 202) is centered in Nov18 (203)
-                if (mon[t] == mon[t-1]) and (mon[t-1] == 118):
-                    mon[t] = mon[t-1] + 1
-                elif (mon[t] == mon[t-1]) and (mon[t-1] == 121):
-                    mon[t-1] = mon[t] - 1
-                elif (mon[t] == mon[t-1]) and (mon[t-1] == 160):
-                    mon[t] = mon[t-1] + 1
-                elif (mon[t] == mon[t-1]) and (mon[t-1] == 203):
-                    mon[t-1] = mon[t] - 1
                 #-- add to t count
                 t += 1
         #-- convert to output variables and truncate if necessary
@@ -237,7 +226,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
         date_conv = np.zeros((n_mon))
         C20_input = np.zeros((n_mon))
         eC20_input = np.zeros((n_mon))
-        slr_flag = np.zeros((n_mon),dtype=np.bool)
+        slr_flag = np.zeros((n_mon),dtype=bool)
         #-- time count
         t = 0
         #-- for every other line:
@@ -254,9 +243,11 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
                 #-- modified julian date for line
                 MJD = np.float(line_contents[0])
                 #-- converting from MJD into month, day and year
-                YY,MM,DD,hh,mm,ss = convert_julian(MJD+2400000.5,FORMAT='tuple')
+                YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
+                    MJD+2400000.5, FORMAT='tuple')
                 #-- converting from month, day, year into decimal year
-                date_conv[t] = convert_calendar_decimal(YY, MM, day=DD, hour=hh)
+                date_conv[t] = gravity_toolkit.time.convert_calendar_decimal(
+                    YY, MM, day=DD, hour=hh)
                 #-- Spherical Harmonic data for line
                 C20_input[t] = np.float(line_contents[2])
                 eC20_input[t] = np.float(line_contents[4])*1e-10
@@ -300,5 +291,14 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
                 tdec[t] = date_conv[i]
                 C20[t] = C20_input[i]
                 eC20[t] = eC20_input[i]
+
+    #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
+    #-- Accelerometer shutoffs make the relation between month number
+    #-- and date more complicated as days from other months are used
+    #-- For CSR and GFZ: Nov 2011 (119) is centered in Oct 2011 (118)
+    #-- For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
+    #-- For all: May 2015 (161) is centered in Apr 2015 (160)
+    #-- For GSFC: Oct 2018 (202) is centered in Nov 2018 (203)
+    grace_month = gravity_toolkit.time.adjust_months(grace_month)
 
     return {'data':C20, 'error':eC20, 'month':grace_month, 'time':tdec}

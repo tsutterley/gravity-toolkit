@@ -6,19 +6,28 @@ Written by Tyler Sutterley (02/2021)
 Data class for reading, writing and processing spatial data
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (https://numpy.org)
+    numpy: Scientific Computing Tools For Python
+        https://numpy.org
+        https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
     netCDF4: Python interface to the netCDF C library
-        (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
+        https://unidata.github.io/netcdf4-python/netCDF4/index.html
     h5py: Pythonic interface to the HDF5 binary data format.
-        (https://www.h5py.org/)
+        https://www.h5py.org/
 
 PROGRAM DEPENDENCIES:
+    time.py: utilities for calculating time operations
     ncdf_write.py: writes output spatial data to COARDS-compliant netCDF4
     hdf5_write.py: writes output spatial data to HDF5
     ncdf_read.py: reads spatial data from COARDS-compliant netCDF4
     hdf5_read.py: reads spatial data from HDF5
 
 UPDATE HISTORY:
+    Updated 02/2021: added replace_masked to replace masked values in data
+        use adjust_months function to fix special cases of GRACE/GRACE-FO months
+        added generic reader, generic writer and write to list functions
+        replaced numpy bool to prevent deprecation warning
     Updated 02/2021: added replace_masked to replace masked values in data
     Updated 01/2021: added scaling factor and scaling factor error function
         from Lander and Swenson (2012) https://doi.org/10.1029/2011WR011453
@@ -39,6 +48,7 @@ import copy
 import gzip
 import zipfile
 import numpy as np
+from gravity_toolkit.time import adjust_months
 from gravity_toolkit.ncdf_write import ncdf_write
 from gravity_toolkit.hdf5_write import hdf5_write
 from gravity_toolkit.ncdf_read import ncdf_read
@@ -131,7 +141,7 @@ class spatial(object):
             self.lon = np.zeros((self.shape[1]))
         #-- output spatial data
         self.data = np.zeros((self.shape[0],self.shape[1]))
-        self.mask = np.zeros((self.shape[0],self.shape[1]),dtype=np.bool)
+        self.mask = np.zeros((self.shape[0],self.shape[1]),dtype=bool)
         #-- remove time from list of column names if not date
         columns = [c for c in columns if (c != 'time')]
         #-- extract spatial data array and convert to matrix
@@ -151,6 +161,10 @@ class spatial(object):
             if date:
                 self.time = np.array(d['time'],dtype='f')
                 self.month = np.array(12.0*(self.time-2002.0)+1,dtype='i')
+        #-- if the ascii file contains date variables
+        if date:
+            #-- adjust months to fix special cases if necessary
+            self.month = adjust_months(self.month)
         #-- get spacing and dimensions
         self.update_spacing()
         self.update_extents()
@@ -178,12 +192,15 @@ class spatial(object):
         self.data = data['data'].copy()
         if '_FillValue' in data['attributes']['data'].keys():
             self.fill_value = data['attributes']['data']['_FillValue']
-        self.mask = np.zeros(self.data.shape, dtype=np.bool)
+        self.mask = np.zeros(self.data.shape, dtype=bool)
         self.lon = data['lon'].copy()
         self.lat = data['lat'].copy()
+        #-- if the netCDF4 file contains date variables
         if date:
             self.time = data['time'].copy()
             self.month = np.array(12.0*(self.time-2002.0)+1,dtype='i')
+            #-- adjust months to fix special cases if necessary
+            self.month = adjust_months(self.month)
         #-- update attributes
         self.attributes.update(data['attributes'])
         #-- get spacing and dimensions
@@ -213,12 +230,15 @@ class spatial(object):
         self.data = data['data'].copy()
         if '_FillValue' in data['attributes']['data'].keys():
             self.fill_value = data['attributes']['_FillValue']
-        self.mask = np.zeros(self.data.shape, dtype=np.bool)
+        self.mask = np.zeros(self.data.shape, dtype=bool)
         self.lon = data['lon'].copy()
         self.lat = data['lat'].copy()
+        #-- if the HDF5 file contains date variables
         if date:
             self.time = data['time'].copy()
             self.month = np.array(12.0*(self.time-2002.0)+1,dtype='i')
+            #-- adjust months to fix special cases if necessary
+            self.month = adjust_months(self.month)
         #-- update attributes
         self.attributes.update(data['attributes'])
         #-- get spacing and dimensions
@@ -227,6 +247,30 @@ class spatial(object):
         self.update_dimensions()
         self.update_mask()
         return self
+
+    def from_file(self, filename, format=None, date=True, **kwargs):
+        """
+        Read a spatial object from a specified format
+        Inputs: full path of input file
+        Options:
+        file format (ascii, netCDF4, HDF5)
+        file contains date information
+        **kwargs: keyword arguments for input readers
+        """
+        #-- set filename
+        self.case_insensitive_filename(filename)
+        #-- set default verbosity
+        kwargs.setdefault('verbose',False)
+        #-- read from file
+        if (format == 'ascii'):
+            #-- ascii (.txt)
+            return spatial().from_ascii(filename, date=date, **kwargs)
+        elif (format == 'netCDF4'):
+            #-- netcdf (.nc)
+            return spatial().from_netCDF4(filename, date=date, **kwargs)
+        elif (format == 'HDF5'):
+            #-- HDF5 (.H5)
+            return spatial().from_HDF5(filename, date=date, **kwargs)
 
     def from_index(self, filename, format=None, date=True, sort=True):
         """
@@ -243,20 +287,20 @@ class spatial(object):
         with open(self.filename,'r') as f:
             file_list = f.read().splitlines()
         #-- create a list of spatial objects
-        h = []
+        s = []
         #-- for each file in the index
         for i,f in enumerate(file_list):
             if (format == 'ascii'):
                 #-- netcdf (.nc)
-                h.append(spatial().from_ascii(os.path.expanduser(f),date=date))
+                s.append(spatial().from_ascii(os.path.expanduser(f),date=date))
             elif (format == 'netCDF4'):
                 #-- netcdf (.nc)
-                h.append(spatial().from_netCDF4(os.path.expanduser(f),date=date))
+                s.append(spatial().from_netCDF4(os.path.expanduser(f),date=date))
             elif (format == 'HDF5'):
                 #-- HDF5 (.H5)
-                h.append(spatial().from_HDF5(os.path.expanduser(f),date=date))
+                s.append(spatial().from_HDF5(os.path.expanduser(f),date=date))
         #-- create a single spatial object from the list
-        return self.from_list(h,date=date,sort=sort)
+        return self.from_list(s,date=date,sort=sort)
 
     def from_list(self, object_list, date=True, sort=True, clear=False):
         """
@@ -280,7 +324,7 @@ class spatial(object):
         self.shape = object_list[0].shape
         #-- create output spatial grid and mask
         self.data = np.zeros((self.shape[0],self.shape[1],n))
-        self.mask = np.zeros((self.shape[0],self.shape[1],n),dtype=np.bool)
+        self.mask = np.zeros((self.shape[0],self.shape[1],n),dtype=bool)
         self.fill_value = object_list[0].fill_value
         self.lon = object_list[0].lon.copy()
         self.lat = object_list[0].lat.copy()
@@ -304,6 +348,9 @@ class spatial(object):
             #-- append attributes to list
             if getattr(object_list[i], 'attributes'):
                 self.attributes.append(object_list[i].attributes)
+        #-- adjust months to fix special cases if necessary
+        if date:
+            self.month = adjust_months(self.month)
         #-- update the dimensions
         self.update_dimensions()
         self.update_mask()
@@ -325,7 +372,7 @@ class spatial(object):
             except (AttributeError, KeyError):
                 pass
         #-- create output mask for data
-        self.mask = np.zeros_like(self.data,dtype=np.bool)
+        self.mask = np.zeros_like(self.data,dtype=bool)
         #-- get spacing and dimensions
         self.update_spacing()
         self.update_extents()
@@ -362,13 +409,14 @@ class spatial(object):
         **kwargs: keyword arguments for ncdf_write
         """
         self.filename = os.path.expanduser(filename)
+        #-- set default verbosity and time units
         KWARGS = {}
+        KWARGS.setdefault('VERBOSE',False)
+        KWARGS.setdefault('TIME_UNITS','years')
+        KWARGS.setdefault('TIME_LONGNAME','Date_in_Decimal_Years')
+        #-- copy keyword arguments
         for key,val in kwargs.items():
             KWARGS[key.upper()] = val
-        if 'TIME_UNITS' not in KWARGS.keys():
-            KWARGS['TIME_UNITS'] = 'years'
-        if 'TIME_LONGNAME' not in KWARGS.keys():
-            KWARGS['TIME_LONGNAME'] = 'Date_in_Decimal_Years'
         ncdf_write(self.data, self.lon, self.lat, self.time,
             FILENAME=self.filename, DATE=date,
             FILL_VALUE=self.fill_value, **KWARGS)
@@ -381,16 +429,74 @@ class spatial(object):
         **kwargs: keyword arguments for hdf5_write
         """
         self.filename = os.path.expanduser(filename)
+        #-- set default verbosity and time units
         KWARGS = {}
+        KWARGS.setdefault('VERBOSE',False)
+        KWARGS.setdefault('TIME_UNITS','years')
+        KWARGS.setdefault('TIME_LONGNAME','Date_in_Decimal_Years')
+        #-- copy keyword arguments
         for key,val in kwargs.items():
             KWARGS[key.upper()] = val
-        if 'TIME_UNITS' not in KWARGS.keys():
-            KWARGS['TIME_UNITS'] = 'years'
-        if 'TIME_LONGNAME' not in KWARGS.keys():
-            KWARGS['TIME_LONGNAME'] = 'Date_in_Decimal_Years'
         hdf5_write(self.data, self.lon, self.lat, self.time,
             FILENAME=self.filename, DATE=date,
             FILL_VALUE=self.fill_value, **KWARGS)
+
+    def to_index(self, filename, file_list, format=None, date=True, **kwargs):
+        """
+        Write a spatial object to index of ascii, netCDF4 or HDF5 files
+        Inputs:
+            full path of index file to be written
+            list of filenames for each output file
+        Options:
+            format of files in index (ascii, netCDF4 or HDF5)
+            spatial object contains date information
+            **kwargs: keyword arguments for output writers
+        """
+        #-- Write index file of output spherical harmonics
+        self.filename = os.path.expanduser(filename)
+        fid = open(self.filename,'w')
+        #-- set default verbosity
+        kwargs.setdefault('verbose',False)
+        #-- for each file to be in the index
+        for i,f in enumerate(file_list):
+            #-- print filename to index
+            print(f.replace(os.path.expanduser('~'),'~'), file=fid)
+            #-- index spatial object at i
+            s = self.index(i, date=date)
+            #-- write to file
+            if (format == 'ascii'):
+                #-- ascii (.txt)
+                s.to_ascii(f, date=date, **kwargs)
+            elif (format == 'netCDF4'):
+                #-- netcdf (.nc)
+                s.to_netCDF4(f, date=date, **kwargs)
+            elif (format == 'HDF5'):
+                #-- HDF5 (.H5)
+                s.to_HDF5(f, date=date, **kwargs)
+        #-- close the index file
+        fid.close()
+
+    def to_file(self, filename, format=None, date=True, **kwargs):
+        """
+        Write a spatial object to a specified format
+        Inputs: full path of output file
+        Options:
+            file format (ascii, netCDF4 or HDF5)
+            spatial object contains date information
+            **kwargs: keyword arguments for output writers
+        """
+        #-- set default verbosity
+        kwargs.setdefault('verbose',False)
+        #-- write to file
+        if (format == 'ascii'):
+            #-- ascii (.txt)
+            self.to_ascii(filename, date=date, **kwargs)
+        elif (format == 'netCDF4'):
+            #-- netcdf (.nc)
+            self.to_netCDF4(filename, date=date, **kwargs)
+        elif (format == 'HDF5'):
+            #-- HDF5 (.H5)
+            self.to_HDF5(filename, date=date, **kwargs)
 
     def to_masked_array(self):
         """
@@ -612,7 +718,7 @@ class spatial(object):
         elif (np.ndim(var) == 1) and (self.ndim == 2):
             n = len(var)
             temp.data = np.zeros((temp.shape[0],temp.shape[1],n))
-            temp.mask = np.zeros((temp.shape[0],temp.shape[1],n),dtype=np.bool)
+            temp.mask = np.zeros((temp.shape[0],temp.shape[1],n),dtype=bool)
             for i,v in enumerate(var):
                 temp.data[:,:,i] = self.data[:,:] + v
                 temp.mask[:,:,i] = np.copy(self.mask[:,:])
@@ -647,7 +753,7 @@ class spatial(object):
         elif (np.ndim(var) == 1) and (self.ndim == 2):
             n = len(var)
             temp.data = np.zeros((temp.shape[0],temp.shape[1],n))
-            temp.mask = np.zeros((temp.shape[0],temp.shape[1],n),dtype=np.bool)
+            temp.mask = np.zeros((temp.shape[0],temp.shape[1],n),dtype=bool)
             for i,v in enumerate(var):
                 temp.data[:,:,i] = v*self.data[:,:]
                 temp.mask[:,:,i] = np.copy(self.mask[:,:])
@@ -874,7 +980,8 @@ class spatial(object):
             if (np.shape(mask) == self.shape):
                 self.mask |= mask
             elif (np.ndim(mask) == 2) & (self.ndim == 3):
-                temp = np.broadcast_to(mask, self.shape)
+                #-- broadcast mask over third dimension
+                temp = np.repeat(mask[:,:,np.newaxis],self.shape[2],axis=2)
                 self.mask |= temp
         #-- update the fill value
         self.fill_value = fill_value

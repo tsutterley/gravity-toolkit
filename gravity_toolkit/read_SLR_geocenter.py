@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_geocenter.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (02/2021)
 
 Reads monthly geocenter files from satellite laser ranging provided by CSR
     http://download.csr.utexas.edu/pub/slr/geocenter/
@@ -53,6 +53,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 02/2021: use adjust_months function to fix special months cases
     Updated 12/2020: added option COLUMNS to generalize the ascii data format
         replaced numpy loadtxt with generic read using regular expressions
         using utilities from time module for operations
@@ -76,8 +77,8 @@ import os
 import re
 import time
 import numpy as np
+import gravity_toolkit.time
 from gravity_toolkit.geocenter import geocenter
-from gravity_toolkit.time import convert_julian
 
 #-- PURPOSE: read geocenter data from Satellite Laser Ranging (SLR)
 def read_SLR_geocenter(geocenter_file, RADIUS=None, HEADER=0,
@@ -175,10 +176,19 @@ def read_SLR_geocenter(geocenter_file, RADIUS=None, HEADER=0,
             np.floor(3.0*(np.floor((year - 8.0/7.0)/100.0) + 1.0)/4.0) +
             np.floor(275.0/9.0) + DofY + 1721028.5)
         #-- convert the julian date into calendar dates (hour, day, month, year)
-        cal_date = convert_julian(JD[t])
+        cal_date = gravity_toolkit.time.convert_julian(JD[t])
         #-- calculate the GRACE/GRACE-FO month (Apr02 == 004)
         #-- https://grace.jpl.nasa.gov/data/grace-months/
         mon[t] = 12*(cal_date['year']-2002) + cal_date['month']
+
+    #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
+    #-- Accelerometer shutoffs make the relation between month number
+    #-- and date more complicated as days from other months are used
+    #-- For CSR and GFZ: Nov 2011 (119) is centered in Oct 2011 (118)
+    #-- For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
+    #-- For all: May 2015 (161) is centered in Apr 2015 (160)
+    #-- For GSFC: Oct 2018 (202) is centered in Nov 2018 (203)
+    mon = gravity_toolkit.time.adjust_months(mon)
 
     return {'C10':C10, 'C11':C11, 'S11':S11, 'eC10':eC10, 'eC11':eC11,
         'eS11':eS11, 'month':mon, 'time':date}
@@ -278,7 +288,7 @@ def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, HEADER=0,
             np.floor(3.0*(np.floor((year - 8.0/7.0)/100.0) + 1.0)/4.0) +
             np.floor(275.0/9.0) + DofY + 1721028.5)
         #-- convert the julian date into calendar dates (hour, day, month, year)
-        cal_date = convert_julian(JD[t], ASTYPE=np.int)
+        cal_date = gravity_toolkit.time.convert_julian(JD[t], ASTYPE=np.int)
         #-- full path to AOD geocenter for month (using glo coefficients)
         args = (DREL, 'glo', cal_date['year'], cal_date['month'])
         AOD1B_file = 'AOD1B_{0}_{1}_{2:4d}_{3:02d}.txt'.format(*args)
@@ -292,6 +302,15 @@ def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, HEADER=0,
         #-- calculate the GRACE/GRACE-FO month (Apr02 == 004)
         #-- https://grace.jpl.nasa.gov/data/grace-months/
         mon[t] = 12*(cal_date['year']-2002) + cal_date['month']
+
+    #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
+    #-- Accelerometer shutoffs make the relation between month number
+    #-- and date more complicated as days from other months are used
+    #-- For CSR and GFZ: Nov 2011 (119) is centered in Oct 2011 (118)
+    #-- For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
+    #-- For all: May 2015 (161) is centered in Apr 2015 (160)
+    #-- For GSFC: Oct 2018 (202) is centered in Nov 2018 (203)
+    mon = gravity_toolkit.time.adjust_months(mon)
 
     return {'C10':C10, 'C11':C11, 'S11':S11, 'eC10':eC10, 'eC11':eC11,
         'eS11':eS11, 'month':mon, 'time':date}

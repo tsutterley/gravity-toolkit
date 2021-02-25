@@ -52,8 +52,18 @@ This software is also dependent on other commonly used Python packages:
 
 Disclaimer
 ##########
-This program is not sponsored or maintained by the Universities Space Research Association (USRA), the Center for Space Research at the University of Texas (UTCSR), the Jet Propulsion Laboratory (JPL), the German Research Centre for Geosciences (GeoForschungsZentrum, GFZ) or NASA.
+This program is not sponsored or maintained by the Universities Space Research Association (USRA),
+the Center for Space Research at the University of Texas (UTCSR),
+the Jet Propulsion Laboratory (JPL),
+the German Research Centre for Geosciences (GeoForschungsZentrum, GFZ) or NASA.
 It is provided here for your convenience but `with no guarantees whatsoever`.
+
+This product includes software developed at:
+
+- University of California, Irvine, Department of Earth System Science
+- Jet Propulsion Laboratory, California Institute of Technology
+- National Aeronautics and Space Administration, Goddard Space Flight Center
+- University of Washington, Applied Physics Laboratory, Polar Science Center
 
 Acknowledgements
 ################
