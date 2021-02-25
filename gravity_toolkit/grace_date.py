@@ -178,19 +178,6 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
             start_day[t] = np.float(start_date[4:])
             end_day[t] = np.float(end_date[4:])
 
-            #-- number of days in the starting year for leap and standard years
-            dpy = gravity_toolkit.time.calendar_days(start_yr[t]).sum()
-            #-- end date taking into account measurements taken on different years
-            end_cyclic = (end_yr[t]-start_yr[t])*dpy + end_day[t]
-            #-- calculate mid-month value
-            mid_day[t] = np.mean([start_day[t], end_cyclic])
-
-            #-- calculate Modified Julian Day from start_yr and mid_day
-            MJD = gravity_toolkit.time.convert_calendar_dates(start_yr[t],
-                1.0,mid_day[t],epoch=(1858,11,17,0,0,0))
-            #-- convert from Modified Julian Days to calendar dates
-            cal_date = gravity_toolkit.time.convert_julian(MJD+2400000.5)
-
         elif PROC == 'GRAZ' or PROC == 'SWARM':
             if PROC == 'GRAZ':
                 PFX,SAT,trunc,year,month,SFX = rx.findall(infile).pop()
@@ -212,8 +199,20 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
             start_day[t] = np.sum(dpm[:np.int(month) - 1]) + 1
             end_day[t] = np.sum(dpm[:np.int(month)])
 
-            #-- Calculation of Mid-month value
-            mid_day[t] = np.mean([start_day[t], end_day[t]])
+        # -- number of days in the starting year for leap and standard years
+        dpy = gravity_toolkit.time.calendar_days(start_yr[t]).sum()
+
+        # -- end date taking into account measurements taken on different years
+        end_cyclic = (end_yr[t] - start_yr[t]) * dpy + end_day[t]
+
+        #-- Calculation of Mid-month value
+        mid_day[t] = np.mean([start_day[t], end_cyclic])
+
+        # -- calculate Modified Julian Day from start_yr and mid_day
+        MJD = gravity_toolkit.time.convert_calendar_dates(start_yr[t],
+                                                          1.0, mid_day[t], epoch=(1858, 11, 17, 0, 0, 0))
+        # -- convert from Modified Julian Days to calendar dates
+        cal_date = gravity_toolkit.time.convert_julian(MJD + 2400000.5)
 
         #-- Calculating the mid-month date in decimal form
         tdec[t] = start_yr[t] + mid_day[t] / dpy
@@ -248,6 +247,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     #-- For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
     #-- For all: May 2015 (161) is centered in Apr 2015 (160)
     mon = gravity_toolkit.time.adjust_months(mon)
+    print(PROC, DREL, DSET)
 
     #-- Output GRACE/GRACE-FO date ascii file
     if OUTPUT:
