@@ -29,6 +29,7 @@ UPDATE HISTORY:
     Updated 02/2021: added degree amplitude function
         use adjust_months function to fix special cases of GRACE/GRACE-FO months
         added generic reader, generic writer and write to list functions
+        generalize ascii, netCDF4 and HDF5 readers and writers
         replaced numpy bool to prevent deprecation warning
     Updated 12/2020: added verbose option for gfc files
         can calculate spherical harmonic mean over a range of time indices
@@ -101,29 +102,31 @@ class harmonics(object):
                 self.filename = os.path.join(directory,f.pop())
         return self
 
-    def from_ascii(self, filename, date=True, compression=None, verbose=False):
+    def from_ascii(self, filename, date=True, **kwargs):
         """
         Read a harmonics object from an ascii file
         Inputs: full path of input ascii file
         Options:
             ascii file contains date information
-            ascii file is compressed or streaming as bytes
-            verbose output of file information
+            keyword arguments for ascii input
         """
         #-- set filename
         self.case_insensitive_filename(filename)
-        print(self.filename) if verbose else None
+        #-- set default parameters
+        kwargs.setdefault('verbose',False)
+        kwargs.setdefault('compression',None)
         #-- open the ascii file and extract contents
-        if (compression == 'gzip'):
+        print(self.filename) if kwargs['verbose'] else None
+        if (kwargs['compression'] == 'gzip'):
             #-- read input ascii data from gzip compressed file and split lines
             with gzip.open(self.filename,'r') as f:
                 file_contents = f.read().decode('ISO-8859-1').splitlines()
-        elif (compression == 'zip'):
+        elif (kwargs['compression'] == 'zip'):
             #-- read input ascii data from zipped file and split lines
-            base,extension = os.path.splitext(self.filename)
+            base,_ = os.path.splitext(self.filename)
             with zipfile.ZipFile(self.filename) as z:
                 file_contents = z.read(base).decode('ISO-8859-1').splitlines()
-        elif (compression == 'bytes'):
+        elif (kwargs['compression'] == 'bytes'):
             #-- read input file object and split lines
             file_contents = self.filename.read().splitlines()
         else:
@@ -175,20 +178,24 @@ class harmonics(object):
         self.update_dimensions()
         return self
 
-    def from_netCDF4(self, filename, date=True, compression=None, verbose=False):
+    def from_netCDF4(self, filename, date=True, **kwargs):
         """
         Read a harmonics object from a netCDF4 file
         Inputs: full path of input netCDF4 file
         Options:
             netCDF4 file contains date information
-            netCDF4 file is compressed or streamed from memory
-            verbose output of file information
+            keyword arguments for netCDF4 reader
         """
         #-- set filename
         self.case_insensitive_filename(filename)
+        #-- set default parameters
+        kwargs.setdefault('verbose',False)
+        kwargs.setdefault('compression',None)
         #-- read data from netCDF4 file
-        Ylms = ncdf_read_stokes(self.filename, COMPRESSION=compression,
-            DATE=date, VERBOSE=verbose)
+        Ylms = ncdf_read_stokes(self.filename, DATE=date,
+            COMPRESSION=kwargs['compression'],
+            VERBOSE=kwargs['verbose'])
+        #-- copy variables to harmonics object
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
         self.l = Ylms['l'].copy()
@@ -203,20 +210,24 @@ class harmonics(object):
         self.update_dimensions()
         return self
 
-    def from_HDF5(self, filename, date=True, compression=None, verbose=False):
+    def from_HDF5(self, filename, date=True, **kwargs):
         """
         Read a harmonics object from a HDF5 file
         Inputs: full path of input HDF5 file
         Options:
             HDF5 file contains date information
-            HDF5 file is compressed or streamed from memory
-            verbose output of file information
+            keyword arguments for HDF5 reader
         """
         #-- set filename
         self.case_insensitive_filename(filename)
+        #-- set default parameters
+        kwargs.setdefault('verbose',False)
+        kwargs.setdefault('compression',None)
         #-- read data from HDF5 file
-        Ylms = hdf5_read_stokes(self.filename, COMPRESSION=compression,
-            DATE=date, VERBOSE=verbose)
+        Ylms = hdf5_read_stokes(self.filename, DATE=date,
+            COMPRESSION=kwargs['compression'],
+            VERBOSE=kwargs['verbose'])
+        #-- copy variables to harmonics object
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
         self.l = Ylms['l'].copy()
@@ -231,19 +242,21 @@ class harmonics(object):
         self.update_dimensions()
         return self
 
-    def from_gfc(self, filename, verbose=False):
+    def from_gfc(self, filename, **kwargs):
         """
         Read a harmonics object from a gfc gravity model file from the GFZ ICGEM
         Inputs: full path of input gfc file
         Options:
-            verbose output of file information
+            keyword arguments for gfc input
         """
         #-- set filename
         self.case_insensitive_filename(filename)
+        #-- set default verbosity
+        kwargs.setdefault('verbose',False)
         #-- read data from gfc file
         Ylms = read_ICGEM_harmonics(self.filename)
         #-- Output file information
-        if verbose:
+        if kwargs['verbose']:
             print(self.filename)
             print(list(Ylms.keys()))
         #-- copy variables for static gravity model
@@ -388,14 +401,18 @@ class harmonics(object):
         self.update_dimensions()
         return self
 
-    def to_ascii(self, filename, date=True, verbose=False):
+    def to_ascii(self, filename, date=True, **kwargs):
         """
         Write a harmonics object to ascii file
         Inputs: full path of output ascii file
-        Options: harmonics objects contain date information
+        Options:
+            harmonics objects contain date information
+            keyword arguments for ascii output
         """
         self.filename = os.path.expanduser(filename)
-        print(self.filename) if verbose else None
+        #-- set default verbosity
+        kwargs.setdefault('verbose',False)
+        print(self.filename) if kwargs['verbose'] else None
         #-- open the output file
         fid = open(self.filename, 'w')
         if date:
@@ -414,31 +431,45 @@ class harmonics(object):
         """
         Write a harmonics object to netCDF4 file
         Inputs: full path of output netCDF4 file
-        Options: harmonics objects contain date information
-        **kwargs: keyword arguments for ncdf_stokes
+        Options:
+            harmonics objects contain date information
+            keyword arguments for netCDF4 writer
         """
         self.filename = os.path.expanduser(filename)
-        #-- set default verbosity and time units
-        kwargs.setdefault('VERBOSE',False)
-        kwargs.setdefault('TIME_UNITS','years')
-        kwargs.setdefault('TIME_LONGNAME','Date_in_Decimal_Years')
-        ncdf_stokes(self.clm, self.slm, self.l, self.m, self.time, self.month,
-            FILENAME=self.filename, DATE=date, **kwargs)
+        #-- set default verbosity and parameters
+        kwargs.setdefault('verbose',False)
+        kwargs.setdefault('units','Geodesy_Normalization')
+        kwargs.setdefault('time_units','years')
+        kwargs.setdefault('time_longname','Date_in_Decimal_Years')
+        #-- copy keyword arguments to uppercase
+        KWARGS = {}
+        for key,val in kwargs.items():
+            KWARGS[key.upper()] = val
+        #-- write to netCDF4
+        ncdf_stokes(self.clm, self.slm, self.l, self.m, self.time,
+            self.month, FILENAME=self.filename, DATE=date, **KWARGS)
 
     def to_HDF5(self, filename, date=True, **kwargs):
         """
         Write a harmonics object to HDF5 file
         Inputs: full path of output HDF5 file
-        Options: harmonics objects contain date information
-        **kwargs: keyword arguments for hdf5_stokes
+        Options:
+            harmonics objects contain date information
+            keyword arguments for HDF5 writer
         """
         self.filename = os.path.expanduser(filename)
-        #-- set default verbosity and time units
-        kwargs.setdefault('VERBOSE',False)
-        kwargs.setdefault('TIME_UNITS','years')
-        kwargs.setdefault('TIME_LONGNAME','Date_in_Decimal_Years')
-        hdf5_stokes(self.clm, self.slm, self.l, self.m, self.time, self.month,
-            FILENAME=self.filename, DATE=date, **kwargs)
+        #-- set default verbosity and parameters
+        kwargs.setdefault('verbose',False)
+        kwargs.setdefault('units','Geodesy_Normalization')
+        kwargs.setdefault('time_units','years')
+        kwargs.setdefault('time_longname','Date_in_Decimal_Years')
+        #-- copy keyword arguments to uppercase
+        KWARGS = {}
+        for key,val in kwargs.items():
+            KWARGS[key.upper()] = val
+        #-- write to HDF5
+        hdf5_stokes(self.clm, self.slm, self.l, self.m, self.time,
+            self.month, FILENAME=self.filename, DATE=date, **kwargs)
 
     def to_index(self, filename, file_list, format=None, date=True, **kwargs):
         """
@@ -449,7 +480,7 @@ class harmonics(object):
         Options:
             format of files in index (ascii, netCDF4 or HDF5)
             harmonics object contains date information
-            **kwargs: keyword arguments for output writers
+            keyword arguments for output writers
         """
         #-- Write index file of output spherical harmonics
         self.filename = os.path.expanduser(filename)
@@ -482,7 +513,7 @@ class harmonics(object):
         Options:
             file format (ascii, netCDF4 or HDF5)
             harmonics object contains date information
-            **kwargs: keyword arguments for output writers
+            keyword arguments for output writers
         """
         #-- set default verbosity
         kwargs.setdefault('verbose',False)
