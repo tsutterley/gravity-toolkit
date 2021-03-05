@@ -247,7 +247,6 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     #-- For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
     #-- For all: May 2015 (161) is centered in Apr 2015 (160)
     mon = gravity_toolkit.time.adjust_months(mon)
-    print(PROC, DREL, DSET)
 
     #-- Output GRACE/GRACE-FO date ascii file
     if OUTPUT:
