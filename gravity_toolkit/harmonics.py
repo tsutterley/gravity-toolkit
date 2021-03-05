@@ -60,8 +60,8 @@ from gravity_toolkit.ncdf_stokes import ncdf_stokes
 from gravity_toolkit.hdf5_stokes import hdf5_stokes
 from gravity_toolkit.ncdf_read_stokes import ncdf_read_stokes
 from gravity_toolkit.hdf5_read_stokes import hdf5_read_stokes
-from gravity_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
+from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 
 class harmonics(object):
     """

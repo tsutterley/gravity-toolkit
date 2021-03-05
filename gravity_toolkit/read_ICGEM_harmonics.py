@@ -30,77 +30,23 @@ OUTPUTS:
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
+PROGRAM DEPENDENCIES:
+    read_ICGEM_harmonics.py Reads the coefficients for a given gravity model file
+    calculate_tidal_offset.py: calculates the C20 offset for a tidal system
+
 UPDATE HISTORY:
+    Updated 03/2021: convert to a simple wrapper function to geoid toolkit
     Updated 07/2020: added function docstrings
     Updated 07/2017: include parameters to change the tide system
     Written 12/2015
 """
-import os
-import re
-import numpy as np
+import warnings
+import geoid_toolkit.read_ICGEM_harmonics
 
 #-- PURPOSE: read spherical harmonic coefficients of a gravity model
-def read_ICGEM_harmonics(model_file, FLAG='gfc'):
-    """
-    Extract gravity model spherical harmonics from GFZ ICGEM gfc files
-
-    Arguments
-    ---------
-    model_file: GFZ ICGEM gfc spherical harmonic data file
-
-    Keyword arguments
-    -----------------
-    FLAG: string denoting data lines
-
-    Returns
-    -------
-    clm: cosine spherical harmonics of input data
-    slm: sine spherical harmonics of input data
-    eclm: cosine spherical harmonic standard deviations of type errors
-    eslm: sine spherical harmonic standard deviations of type errors
-    modelname: name of the gravity model
-    earth_gravity_constant: GM constant of the Earth for gravity model
-    radius: semi-major axis of the Earth for gravity model
-    max_degree: maximum degree and order for gravity model
-    errors: error type of the gravity model
-    norm: normalization of the spherical harmonics
-    tide_system: tide system of gravity model
-    """
-
-    #-- read input data
-    with open(os.path.expanduser(model_file),'r') as f:
-        file_contents = f.read().splitlines()
-    #-- python dictionary with model input and headers
-    model_input = {}
-    #-- extract parameters from header
-    header_parameters = ['modelname','earth_gravity_constant','radius',
-        'max_degree','errors','norm','tide_system']
-    parameters_regex = '(' + '|'.join(header_parameters) + ')'
-    header = [l for l in file_contents if re.match(parameters_regex,l)]
-    for line in header:
-        #-- split the line into individual components
-        line_contents = line.split()
-        model_input[line_contents[0]] = line_contents[1]
-    #-- set maximum spherical harmonic order
-    LMAX = np.int(model_input['max_degree'])
-    #-- allocate for each Coefficient
-    model_input['clm'] = np.zeros((LMAX+1,LMAX+1))
-    model_input['slm'] = np.zeros((LMAX+1,LMAX+1))
-    model_input['eclm'] = np.zeros((LMAX+1,LMAX+1))
-    model_input['eslm'] = np.zeros((LMAX+1,LMAX+1))
-    #-- reduce file_contents to input data using data marker flag
-    input_data = [l for l in file_contents if re.match(FLAG,l)]
-    #-- for each line of data in the gravity file
-    for line in input_data:
-        #-- split the line into individual components replacing fortran d
-        line_contents = re.sub('d','e',line,flags=re.IGNORECASE).split()
-        #-- degree and order for the line
-        l1 = np.int(line_contents[1])
-        m1 = np.int(line_contents[2])
-        #-- read spherical harmonic coefficients
-        model_input['clm'][l1,m1] = np.float(line_contents[3])
-        model_input['slm'][l1,m1] = np.float(line_contents[4])
-        model_input['eclm'][l1,m1] = np.float(line_contents[5])
-        model_input['eslm'][l1,m1] = np.float(line_contents[6])
-    #-- return the spherical harmonics and parameters
-    return model_input
+def read_ICGEM_harmonics(*args,**kwargs):
+    warnings.filterwarnings("always")
+    warnings.warn("Deprecated. Please use geoid toolkit instead",
+        DeprecationWarning)
+    # call renamed version to not break workflows
+    return geoid_toolkit.read_ICGEM_harmonics(*args,**kwargs)
