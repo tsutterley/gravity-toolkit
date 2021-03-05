@@ -27,6 +27,7 @@ UPDATE HISTORY:
     Updated 02/2021: added replace_masked to replace masked values in data
         use adjust_months function to fix special cases of GRACE/GRACE-FO months
         added generic reader, generic writer and write to list functions
+        generalize ascii, netCDF4 and HDF5 readers and writers
         replaced numpy bool to prevent deprecation warning
     Updated 02/2021: added replace_masked to replace masked values in data
     Updated 01/2021: added scaling factor and scaling factor error function
@@ -96,32 +97,33 @@ class spatial(object):
                 self.filename = os.path.join(directory,f.pop())
         return self
 
-    def from_ascii(self, filename, date=True, compression=None, verbose=False,
-        columns=['lon','lat','data','time'], header=0):
+    def from_ascii(self, filename, date=True, **kwargs):
         """
         Read a spatial object from an ascii file
         Inputs: full path of input ascii file
         Options:
             ascii file contains date information
-            ascii file is compressed or streamed from memory
-            verbose output of file information
-            column names of ascii file
-            rows of header lines to skip
+            keyword arguments for ascii input
         """
         #-- set filename
         self.case_insensitive_filename(filename)
-        print(self.filename) if verbose else None
+        #-- set default parameters
+        kwargs.setdefault('verbose',False)
+        kwargs.setdefault('compression',None)
+        kwargs.setdefault('columns',['lon','lat','data','time'])
+        kwargs.setdefault('header',0)
         #-- open the ascii file and extract contents
-        if (compression == 'gzip'):
+        print(self.filename) if kwargs['verbose'] else None
+        if (kwargs['compression'] == 'gzip'):
             #-- read input ascii data from gzip compressed file and split lines
             with gzip.open(self.filename,'r') as f:
                 file_contents = f.read().decode('ISO-8859-1').splitlines()
-        elif (compression == 'zip'):
+        elif (kwargs['compression'] == 'zip'):
             #-- read input ascii data from zipped file and split lines
-            base,extension = os.path.splitext(self.filename)
+            base,_ = os.path.splitext(self.filename)
             with zipfile.ZipFile(self.filename) as z:
                 file_contents = z.read(base).decode('ISO-8859-1').splitlines()
-        elif (compression == 'bytes'):
+        elif (kwargs['compression'] == 'bytes'):
             #-- read input file object and split lines
             file_contents = self.filename.read().splitlines()
         else:
@@ -143,9 +145,10 @@ class spatial(object):
         self.data = np.zeros((self.shape[0],self.shape[1]))
         self.mask = np.zeros((self.shape[0],self.shape[1]),dtype=bool)
         #-- remove time from list of column names if not date
-        columns = [c for c in columns if (c != 'time')]
+        columns = [c for c in kwargs['columns'] if (c != 'time')]
         #-- extract spatial data array and convert to matrix
         #-- for each line in the file
+        header = kwargs['header']
         for line in file_contents[header:]:
             #-- extract columns of interest and assign to dict
             #-- convert fortran exponentials if applicable
@@ -172,23 +175,29 @@ class spatial(object):
         self.update_mask()
         return self
 
-    def from_netCDF4(self, filename, date=True, compression=None, verbose=False,
-        varname='z', lonname='lon', latname='lat', timename='time'):
+    def from_netCDF4(self, filename, date=True, **kwargs):
         """
         Read a spatial object from a netCDF4 file
         Inputs: full path of input netCDF4 file
         Options:
             netCDF4 file contains date information
-            netCDF4 file is compressed or streamed from memory
-            verbose output of file information
-            netCDF4 variable names of data, longitude, latitude and time
+            keyword arguments for netCDF4 reader
         """
         #-- set filename
         self.case_insensitive_filename(filename)
-        #-- read data from netCDF4 file
-        data = ncdf_read(self.filename, COMPRESSION=compression,
-            VERBOSE=verbose, DATE=date, VARNAME=varname,
-            LONNAME=lonname, LATNAME=latname, TIMENAME=timename)
+        #-- set default parameters
+        kwargs.setdefault('verbose',False)
+        kwargs.setdefault('compression',None)
+        kwargs.setdefault('varname','z')
+        kwargs.setdefault('lonname','lon')
+        kwargs.setdefault('latname','lat')
+        kwargs.setdefault('timename','time')
+        #-- read data from netCDF5 file
+        data = ncdf_read(self.filename, DATE=date,
+            COMPRESSION=kwargs['compression'], VERBOSE=kwargs['verbose'],
+            VARNAME=kwargs['varname'], LONNAME=kwargs['lonname'],
+            LATNAME=kwargs['latname'], TIMENAME=kwargs['timename'])
+        #-- copy variables to spatial object
         self.data = data['data'].copy()
         if '_FillValue' in data['attributes']['data'].keys():
             self.fill_value = data['attributes']['data']['_FillValue']
@@ -210,23 +219,29 @@ class spatial(object):
         self.update_mask()
         return self
 
-    def from_HDF5(self, filename, date=True, compression=None, verbose=False,
-        varname='z', lonname='lon', latname='lat', timename='time'):
+    def from_HDF5(self, filename, date=True, **kwargs):
         """
         Read a spatial object from a HDF5 file
         Inputs: full path of input HDF5 file
         Options:
             HDF5 file contains date information
-            HDF5 file is compressed or streamed from memory
-            verbose output of file information
-            HDF5 variable names of data, longitude, latitude and time
+            keyword arguments for HDF5 reader
         """
         #-- set filename
         self.case_insensitive_filename(filename)
+        #-- set default parameters
+        kwargs.setdefault('verbose',False)
+        kwargs.setdefault('compression',None)
+        kwargs.setdefault('varname','z')
+        kwargs.setdefault('lonname','lon')
+        kwargs.setdefault('latname','lat')
+        kwargs.setdefault('timename','time')
         #-- read data from HDF5 file
-        data = hdf5_read(self.filename, COMPRESSION=compression,
-            VERBOSE=verbose, DATE=date, VARNAME=varname,
-            LONNAME=lonname, LATNAME=latname, TIMENAME=timename)
+        data = hdf5_read(self.filename, DATE=date,
+            COMPRESSION=kwargs['compression'], VERBOSE=kwargs['verbose'],
+            VARNAME=kwargs['varname'], LONNAME=kwargs['lonname'],
+            LATNAME=kwargs['latname'], TIMENAME=kwargs['timename'])
+        #-- copy variables to spatial object
         self.data = data['data'].copy()
         if '_FillValue' in data['attributes']['data'].keys():
             self.fill_value = data['attributes']['_FillValue']
@@ -380,14 +395,18 @@ class spatial(object):
         self.update_mask()
         return self
 
-    def to_ascii(self, filename, date=True, verbose=False):
+    def to_ascii(self, filename, date=True, **kwargs):
         """
         Write a spatial object to ascii file
         Inputs: full path of output ascii file
-        Options: spatial objects contain date information
+        Options:
+            spatial objects contain date information
+            keyword arguments for ascii output
         """
         self.filename = os.path.expanduser(filename)
-        print(self.filename) if verbose else None
+        #-- set default verbosity
+        kwargs.setdefault('verbose',False)
+        print(self.filename) if kwargs['verbose'] else None
         #-- open the output file
         fid = open(self.filename, 'w')
         if date:
@@ -406,17 +425,22 @@ class spatial(object):
         Write a spatial object to netCDF4 file
         Inputs: full path of output netCDF4 file
         Options: spatial objects contain date information
-        **kwargs: keyword arguments for ncdf_write
+        **kwargs: keyword arguments for netCDF4 writer
         """
         self.filename = os.path.expanduser(filename)
-        #-- set default verbosity and time units
+        #-- set default verbosity and parameters
+        kwargs.setdefault('verbose',False)
+        kwargs.setdefault('varname','z')
+        kwargs.setdefault('lonname','lon')
+        kwargs.setdefault('latname','lat')
+        kwargs.setdefault('timename','time')
+        kwargs.setdefault('time_units','years')
+        kwargs.setdefault('time_longname','Date_in_Decimal_Years')
+        #-- copy keyword arguments to uppercase
         KWARGS = {}
-        KWARGS.setdefault('VERBOSE',False)
-        KWARGS.setdefault('TIME_UNITS','years')
-        KWARGS.setdefault('TIME_LONGNAME','Date_in_Decimal_Years')
-        #-- copy keyword arguments
         for key,val in kwargs.items():
             KWARGS[key.upper()] = val
+        #-- write to netCDF4
         ncdf_write(self.data, self.lon, self.lat, self.time,
             FILENAME=self.filename, DATE=date,
             FILL_VALUE=self.fill_value, **KWARGS)
@@ -426,17 +450,22 @@ class spatial(object):
         Write a spatial object to HDF5 file
         Inputs: full path of output HDF5 file
         Options: spatial objects contain date information
-        **kwargs: keyword arguments for hdf5_write
+        **kwargs: keyword arguments for HDF5 writer
         """
         self.filename = os.path.expanduser(filename)
-        #-- set default verbosity and time units
+        #-- set default verbosity and parameters
+        kwargs.setdefault('verbose',False)
+        kwargs.setdefault('varname','z')
+        kwargs.setdefault('lonname','lon')
+        kwargs.setdefault('latname','lat')
+        kwargs.setdefault('timename','time')
+        kwargs.setdefault('time_units','years')
+        kwargs.setdefault('time_longname','Date_in_Decimal_Years')
+        #-- copy keyword arguments to uppercase
         KWARGS = {}
-        KWARGS.setdefault('VERBOSE',False)
-        KWARGS.setdefault('TIME_UNITS','years')
-        KWARGS.setdefault('TIME_LONGNAME','Date_in_Decimal_Years')
-        #-- copy keyword arguments
         for key,val in kwargs.items():
             KWARGS[key.upper()] = val
+        #-- write to HDF5
         hdf5_write(self.data, self.lon, self.lat, self.time,
             FILENAME=self.filename, DATE=date,
             FILL_VALUE=self.fill_value, **KWARGS)
@@ -450,7 +479,7 @@ class spatial(object):
         Options:
             format of files in index (ascii, netCDF4 or HDF5)
             spatial object contains date information
-            **kwargs: keyword arguments for output writers
+            keyword arguments for output writers
         """
         #-- Write index file of output spherical harmonics
         self.filename = os.path.expanduser(filename)
@@ -483,7 +512,7 @@ class spatial(object):
         Options:
             file format (ascii, netCDF4 or HDF5)
             spatial object contains date information
-            **kwargs: keyword arguments for output writers
+            keyword arguments for output writers
         """
         #-- set default verbosity
         kwargs.setdefault('verbose',False)
