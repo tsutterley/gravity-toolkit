@@ -4,6 +4,7 @@ pyyaml
 lxml
 future
 matplotlib
+python-dateutil
 cartopy
 netCDF4
 h5py

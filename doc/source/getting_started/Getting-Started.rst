@@ -31,7 +31,7 @@ Getting Started
 
     * These can be a single netCDF4 or HDF5 file or an index of ascii/netCDF4/HDF5 files
 
-- Run Jupyter notebook ``GRACE-Spatial-Maps.ipynb`` to create monthly maps
+- Run Jupyter notebook `GRACE-Spatial-Maps.ipynb <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/notebooks/GRACE-Spatial-Maps.ipynb>`_ to create monthly maps
 
     * This program uses `Jupyter widgets <https://ipywidgets.readthedocs.io/en/latest/>`_ to select `datasets <./GRACE-Data-File-Formats.html>`_ and processing parameters
     * Can also sync the data from within the Jupyter Notebook using `magics <https://ipython.readthedocs.io/en/stable/interactive/magics.html>`_

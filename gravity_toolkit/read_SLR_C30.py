@@ -30,7 +30,7 @@ INPUTS:
 OUTPUTS:
     data: SLR degree 3 order 0 cosine stokes coefficients (C30)
     error: SLR degree 3 order 0 cosine stokes coefficient error (eC30)
-    month: GRACE/GRACE-FO month of measurement (Apr. 2002 = 004)
+    month: GRACE/GRACE-FO month of measurement (April 2002 = 004)
     time: date of SLR measurement
 
 OPTIONS:

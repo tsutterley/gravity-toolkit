@@ -20,7 +20,7 @@ SLR_C20 = read_SLR_C20(SLR_file)
 
 #### Options
 - `HEADER`: file contains header text to be skipped (default: True)
-- `AOD`: remove background De-aliasing product from the SLR solution (for CSR)
+- `AOD`: remove background de-aliasing product from the SLR solution (for CSR)
 
 #### Outputs
 - `data`: cosine degree 2 order 0 spherical harmonic coefficients (C20)

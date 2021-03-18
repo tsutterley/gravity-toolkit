@@ -4,12 +4,12 @@ Background
 
 
 This documentation is intended to explain how to compute spatial and time series estimates using GRACE/GRACE-FO time-variable gravity measurements.
-read-GRACE-harmonics is a Python-based geophysical software that reads
+``read-GRACE-harmonics`` is a Python-based geophysical software that reads
 GRACE/GRACE-FO time-variable gravity solutions for estimating regional mass change.
 This software was developed with the goal of supporting science applications for
 time-variable gravity.
-read-GRACE-harmonics provides data access utilities for ascii, netCDF4, HDF5 and gfc file formats.
-read-GRACE-harmonics also provides some very high-level plotting programs through the
+``read-GRACE-harmonics`` provides data access utilities for ascii, netCDF4, HDF5 and gfc file formats.
+``read-GRACE-harmonics`` also provides some very high-level plotting programs through the
 use of `Jupyter Notebooks <./Examples.html>`_.
 
 .. graphviz::

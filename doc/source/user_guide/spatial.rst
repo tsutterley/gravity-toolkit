@@ -99,12 +99,12 @@ General Attributes and Methods
 
     .. attribute:: object.extent
 
-        spatial grid bounds `[minimum longitude, maximum longitude, minimum latitude, maximum latitude]`
+        spatial grid bounds ``[minimum longitude, maximum longitude, minimum latitude, maximum latitude]``
 
 
     .. attribute:: object.spacing
 
-        grid step size `[longitude,latitude]`
+        grid step size ``[longitude,latitude]``
 
 
     .. attribute:: object.shape
@@ -126,71 +126,83 @@ General Attributes and Methods
 
         Read a spatial object from an ascii file
 
-        Inputs: full path of input ascii file
+        Arguments:
 
-        Options:
-            `date` ascii file contains date information
+            full path of input ascii file
 
-            `compression` ascii file is compressed or streamed from memory
+        Keyword arguments:
 
-            `verbose` print ascii filename
+            ``date`` ascii file contains date information
 
-            `columns` variable names for each column
+            ``compression`` ascii file is compressed or streamed from memory
 
-            `header` rows of header lines to skip
+            ``verbose`` print ascii filename
+
+            ``columns`` variable names for each column
+
+            ``header`` rows of header lines to skip
 
 
     .. method:: object.from_netCDF4(filename, date=True, compression=None, verbose=False, varname='z', lonname='lon', latname='lat', timename='time')
 
         Read a spatial object from a netCDF4 file
 
-        Inputs: full path of input netCDF4 file
+        Arguments:
 
-        Options:
-            `date` netCDF4 file contains date information
+            full path of input netCDF4 file
 
-            `compression` netCDF4 file is compressed or streamed from memory
+        Keyword arguments:
 
-            `verbose` print netCDF4 file information
+            ``date`` netCDF4 file contains date information
 
-            `varname` input variable name in netCDF4 file
+            ``compression`` netCDF4 file is compressed or streamed from memory
 
-            `lonname` input longitude variable name in netCDF4 file
+            ``verbose`` print netCDF4 file information
 
-            `latname` input latitude variable name in netCDF4 file
+            ``varname`` input variable name in netCDF4 file
 
-            `timename` input time variable name in netCDF4 file
+            ``lonname`` input longitude variable name in netCDF4 file
+
+            ``latname`` input latitude variable name in netCDF4 file
+
+            ``timename`` input time variable name in netCDF4 file
 
 
     .. method:: object.from_HDF5(filename, date=True, compression=None, verbose=False, varname='z', lonname='lon', latname='lat', timename='time')
 
         Read a spatial object from a HDF5 file
 
-        Inputs: full path of input HDF5 file
+        Arguments:
 
-        Options:
-            `date` HDF5 file contains date information
+            full path of input HDF5 file
 
-            `compression` HDF5 file is compressed or streamed from memory
+        Keyword arguments:
 
-            `verbose` print HDF5 file information
+            ``date`` HDF5 file contains date information
 
-            `varname` input variable name in HDF5 file
+            ``compression`` HDF5 file is compressed or streamed from memory
 
-            `lonname` input longitude variable name in HDF5 file
+            ``verbose`` print HDF5 file information
 
-            `latname` input latitude variable name in HDF5 file
+            ``varname`` input variable name in HDF5 file
 
-            `timename` input time variable name in HDF5 file
+            ``lonname`` input longitude variable name in HDF5 file
+
+            ``latname`` input latitude variable name in HDF5 file
+
+            ``timename`` input time variable name in HDF5 file
 
 
     .. method:: object.from_index(filename, format=None, date=True, sort=True)
 
         Read a spatial object from an index of ascii, netCDF4 or HDF5 files
 
-        Inputs: full path of index file to be read into a spatial object
+        Arguments:
 
-        Options:
+            full path of index file to be read into a spatial object
+
+        Keyword arguments:
+
             format of files in index (``'ascii'``, ``'netCDF4'`` or ``'HDF5'``)
 
             ascii, netCDF4, or HDF5 files contain date information
@@ -202,9 +214,12 @@ General Attributes and Methods
 
         Build a sorted spatial object from a list of other spatial objects
 
-        Inputs: list of spatial object to be merged
+        Arguments:
 
-        Options:
+            list of spatial object to be merged
+
+        Keyword arguments:
+
             spatial objects contain date information
 
             sort spatial objects by date information
@@ -216,9 +231,12 @@ General Attributes and Methods
 
         Read a spatial object from a specified format
 
-        Inputs: full path of input file
+        Arguments:
 
-        Options:
+            full path of input file
+
+        Keyword arguments:
+
             file format (``'ascii'``, ``'netCDF4'``, ``'HDF5'``)
 
             file contains date information
@@ -230,71 +248,81 @@ General Attributes and Methods
 
         Convert a dict object to a spatial object
 
-        Inputs: dictionary object to be converted
+        Arguments: dictionary object to be converted
 
 
     .. method:: object.to_ascii(filename, date=True, verbose=False)
 
         Write a spatial object to ascii file
 
-        Inputs: full path of output ascii file
+        Arguments:
 
-        Options:
-            `date` spatial objects contain date information
+            full path of output ascii file
 
-            `verbose` print ascii file name
+        Keyword arguments:
+
+            ``date`` spatial objects contain date information
+
+            ``verbose`` print ascii file name
 
 
     .. method:: object.to_netCDF4(filename, date=True, varname='z', units=None, longname=None, title=None, verbose=False)
 
         Write a spatial object to netCDF4 file
 
-        Inputs: full path of output netCDF4 file
+        Arguments:
 
-        Options:
-            `date` spatial objects contain date information
+            full path of output netCDF4 file
 
-            `varname` output variable name in netCDF4 file
+        Keyword arguments:
 
-            `units` output variable units in netCDF4 file
+            ``date`` spatial objects contain date information
 
-            `longname` output variable unit longname in netCDF4 file
+            ``varname`` output variable name in netCDF4 file
 
-            `title` output netCDF4 file title
+            ``units`` output variable units in netCDF4 file
 
-            `verbose` print netCDF4 file information
+            ``longname`` output variable unit longname in netCDF4 file
+
+            ``title`` output netCDF4 file title
+
+            ``verbose`` print netCDF4 file information
 
 
     .. method:: object.to_HDF5(filename, date=True, varname='z', units=None, longname=None, title=None, verbose=False)
 
         Write a spatial object to HDF5 file
 
-        Inputs: full path of output HDF5 file
+        Arguments:
 
-        Options:
-            `date` spatial objects contain date information
+            full path of output HDF5 file
 
-            `varname` output variable name in HDF5 file
+        Keyword arguments:
 
-            `units` output variable units in HDF5 file
+            ``date`` spatial objects contain date information
 
-            `longname` output variable unit longname in HDF5 file
+            ``varname`` output variable name in HDF5 file
 
-            `title` output HDF5 file title
+            ``units`` output variable units in HDF5 file
 
-            `verbose` print HDF5 file information
+            ``longname`` output variable unit longname in HDF5 file
+
+            ``title`` output HDF5 file title
+
+            ``verbose`` print HDF5 file information
 
 
     .. method:: object.to_index(filename, file_list, format=None, date=True, **kwargs)
 
         Write a spatial object to index of ascii, netCDF4 or HDF5 files
 
-        Inputs:
+        Arguments:
+
             full path of output HDF5 file
 
             list of filenames for each output file
 
-        Options:
+        Keyword arguments:
 
             format of files in index (``'ascii'``, ``'netCDF4'`` or ``'HDF5'``)
 
@@ -307,9 +335,11 @@ General Attributes and Methods
 
         Write a spatial object to a specified format
 
-        Inputs: full path of output file
+        Arguments:
 
-        Options:
+            full path of output file
+
+        Keyword arguments:
 
             file format (``'ascii'``, ``'netCDF4'`` or ``'HDF5'``)
 
@@ -367,74 +397,94 @@ General Attributes and Methods
 
         Subset a spatial object to specific index
 
-        Inputs: `indice` in matrix to subset
+        Arguments:
 
-        Options: spatial objects contain date information
+            ``indice`` in matrix to subset
+
+        Keyword arguments:
+
+            spatial objects contain date information
 
 
     .. method:: object.subset(months)
 
         Subset a spatial object to specific GRACE/GRACE-FO months
 
-        Inputs: GRACE/GRACE-FO months
+        Arguments: GRACE/GRACE-FO months
 
 
     .. method:: object.offset(var)
 
         Offset a spatial object by a constant
 
-        Inputs: scalar value to which the spatial object will be offset
+        Arguments: scalar value to which the spatial object will be offset
 
 
     .. method:: object.scale(var)
 
         Multiply a spatial object by a constant
 
-        Inputs: scalar value to which the spatial object will be multiplied
+        Arguments: scalar value to which the spatial object will be multiplied
 
 
     .. method:: object.kfactor(var)
 
         Calculate the scaling factor and scaling factor errors from two spatial objects following `Landerer and Swenson (2012) <https://doi.org/10.1029/2011WR011453>`_
 
-        Inputs: spatial object to used for scaling
+        Arguments:
 
-        Returns: scaling factor and scaling factor error
+            spatial object to used for scaling
+
+        Returns:
+
+            scaling factor and scaling factor error
 
 
     .. method:: object.mean(apply=False, indices=Ellipsis)
 
         Compute mean spatial field and remove from data if specified
 
-        Option:
-            `apply` to remove the mean field from the input spatial
+        Keyword arguments:
 
-            `indices` of spatial object to compute mean
+            ``apply`` to remove the mean field from the input spatial
+
+            ``indices`` of spatial object to compute mean
+
 
     .. method:: object.reverse(axis=0)
 
         Reverse the order of data and dimensions along an axis
 
-        Option: axis to reorder
+        Keyword arguments:
+
+            ``axis`` to reorder
+
 
     .. method:: object.transpose(axes=None)
 
         Reverse or permute the axes of a spatial object
 
-        Option: order of the output axes
+        Keyword arguments:
+
+            order of the output axes
+
 
     .. method:: object.sum(power=1)
 
         Compute summation of spatial field
 
-        Option: apply a power before calculating summation
+        Keyword arguments:
+
+            apply a power before calculating summation
 
 
     .. method:: object.power(pow)
 
         Raise a spatial object to a power
 
-        Inputs: power to which the spatial object will be raised
+        Arguments:
+
+            power to which the spatial object will be raised
 
 
     .. method:: object.max()
@@ -451,7 +501,9 @@ General Attributes and Methods
 
         Replace the masked values with a new fill_value
 
-        Option: `mask` to update the current mask
+        Keyword arguments:
+
+            ``mask`` to update the current mask
 
 
     .. method:: object.replace_masked()

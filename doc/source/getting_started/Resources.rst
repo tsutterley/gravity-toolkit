@@ -42,5 +42,6 @@ Software
 - `NASA PO.DAAC Tools and Services <https://github.com/nasa/podaac_tools_and_services>`_
 - `GRACE_Tiles: GRACE gravity field inversion package <https://github.com/swensosc/GRACE_Tiles>`_
 - `frommle: python/C++ software suite for geodesy and Earth Sciences <https://github.com/strawpants/frommle>`_
+- `geoid-toolkit: python utilities for calculating geoid heights from static gravity field coefficients <https://github.com/tsutterley/geoid-toolkit/>`_
 - `model-harmonics: python tools for working with model synthetic spherical harmonic coefficients <https://github.com/tsutterley/model-harmonics>`_
 - `dynamic_mascons: 3D global variable-size mascon development <https://github.com/yaramohajerani/dynamic_mascons>`_

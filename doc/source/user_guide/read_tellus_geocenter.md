@@ -27,5 +27,5 @@ deg1_input = read_tellus_geocenter(geocenter_file, JPL=True)
 - `eC10`: Cosine degree 1, order 0 spherical harmonic coefficients Error
 - `eC11`: Cosine degree 1, order 1 spherical harmonic coefficients Error
 - `eS11`: Sine degree 1, order 1 spherical harmonic coefficients Error
-- `month`: GRACE/GRACE-FO month (Apr 2002 = 004)
+- `month`: GRACE/GRACE-FO month (April 2002 = 004)
 - `time`: date of GRACE/GRACE-FO month in decimal format

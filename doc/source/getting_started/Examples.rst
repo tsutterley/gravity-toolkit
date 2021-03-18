@@ -4,7 +4,7 @@
 Examples
 ========
 
-Jupyter Notebooks providing demonstrations of the functionality within `read-GRACE-harmonics`:
+Jupyter Notebooks providing demonstrations of the functionality within ``read-GRACE-harmonics``:
 
 - Creating Spatial Maps |github spatial| |nbviewer spatial|
     Creates an animation of spatial maps on a global Equirectangular projection using data derived from the monthly GRACE/GRACE-FO Level-2 spherical harmonic product

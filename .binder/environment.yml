@@ -9,6 +9,7 @@ dependencies:
   - pyyaml
   - lxml
   - future
+  - python-dateutil
   - matplotlib
   - cartopy
   - netCDF4
