@@ -29,7 +29,10 @@ Contributors
 
 Development
 ###########
-This is an open source project.  We welcome any help in maintaining and developing the software and documentation.  Anyone at any career stage and with any level of coding experience can contribute.
+This is an open source project.
+We welcome any help in maintaining and developing the software and documentation.
+Anyone at any career stage and with any level of coding experience can contribute.
+Please see the `Contribution Guidelines <./Contributing.html>`_ for more information.
 
 Problem Reports
 ###############

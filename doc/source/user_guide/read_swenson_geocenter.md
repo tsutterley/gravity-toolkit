@@ -21,5 +21,5 @@ deg1_input = read_swenson_geocenter(geocenter_file)
 - `C10`: Cosine degree 1, order 0 spherical harmonic coefficients
 - `C11`: Cosine degree 1, order 1 spherical harmonic coefficients
 - `S11`: Sine degree 1, order 1 spherical harmonic coefficients
-- `month`: GRACE/GRACE-FO month (Apr 2002 = 004)
+- `month`: GRACE/GRACE-FO month (April 2002 = 004)
 - `time`: date of GRACE/GRACE-FO month in decimal format

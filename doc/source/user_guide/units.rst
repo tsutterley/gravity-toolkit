@@ -110,7 +110,9 @@ General Attributes and Methods
 
     Calculates degree dependent factors for converting harmonic units from `Wahr et al. (1998)`__
 
-    Inputs: `hl`, `kl`, `ll` load Love numbers to degree `lmax`
+    Arguments:
+
+        ``hl``, ``kl``, ``ll`` load Love numbers to degree ``lmax``
 
 .. __: https://doi.org/10.1029/98JB02844
 
@@ -118,6 +120,8 @@ General Attributes and Methods
 
     Calculates degree dependent factors for converting spatial units from `Wahr et al. (1998)`__
 
-    Inputs: `hl`, `kl`, `ll` load Love numbers to degree `lmax`
+    Arguments:
+
+        ``hl``, ``kl``, ``ll`` load Love numbers to degree ``lmax``
 
 .. __: https://doi.org/10.1029/98JB02844
