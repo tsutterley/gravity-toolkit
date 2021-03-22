@@ -11,13 +11,13 @@ pl,dpl = legendre_polynomials(LMAX, x)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/legendre_polynomials.py)
 
-#### Inputs
+#### Arguments
 - `LMAX`: Upper bound of Spherical Harmonic Degrees
 - `x`: elements ranging from -1 to 1. Typically cos(theta), where theta is the colatitude in radians
 
-#### Options
+#### Keyword arguments
 - `ASTYPE`: output variable type. Default is 64-bit floating point
 
-#### Outputs
+#### Returns
 - `pl`: Legendre polynomials of x (geodesy normalization)
 - `dpl`: first differentials of Legendre polynomials of x

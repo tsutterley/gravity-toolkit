@@ -10,13 +10,13 @@ hdf5_write(data, lon, lat, tim, FILENAME=output_netcdf4_file)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/hdf5_write.py)
 
-#### Inputs
+#### Arguments
 - `data`: z data
 - `lon`: longitude array
 - `lat`: latitude array
 - `tim`: time array
 
-#### Options
+#### Keyword arguments
 - `FILENAME`: output HDF5 filename
 - `VARNAME`: z variable name in HDF5 file
 - `LONNAME`: longitude variable name in HDF5 file

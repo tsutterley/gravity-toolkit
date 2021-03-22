@@ -13,17 +13,17 @@ Ylms = gen_harmonics(data, lon, lat, LMAX=LMAX, PLM=PLM)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/gen_harmonics.py)
 
-#### Inputs
+#### Arguments
 - `data`: data magnitude
 - `lon`: longitude array
 - `lat`: latitude array
 
-#### Options
+#### Keyword arguments
 - `LMAX`:  maximum spherical harmonic degree of the output harmonics
 - `MMAX`: maximum spherical harmonic order of the output harmonics
 - `PLM`: input Legendre polynomials (for improving computational time)
 
-#### Outputs
+#### Returns
 - `clm`: Cosine spherical harmonic coefficients (4-pi normalized)
 - `slm`: Sine spherical harmonic coefficients (4-pi normalized)
 - `l`: spherical harmonic degree to LMAX

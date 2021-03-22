@@ -12,12 +12,12 @@ Ylms = gen_stokes(data, lon, lat, UNITS=1, LMAX=LMAX, PLM=PLM, LOVE=(hl,kl,ll))
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/gen_stokes.py)
 
-#### Inputs
+#### Arguments
 - `data`: data matrix
 - `lon`: longitude array
 - `lat`: latitude array
 
-#### Options
+#### Keyword arguments
 - `UNITS`: input data units
    * `1` cm water equivalent thickness (cm w.e., g/cm<sup>2</sup>)
    * `2` gigatonnes of mass (Gt)
@@ -28,7 +28,7 @@ Ylms = gen_stokes(data, lon, lat, UNITS=1, LMAX=LMAX, PLM=PLM, LOVE=(hl,kl,ll))
 - `PLM`: input Legendre polynomials (for improving computational time)
 - `LOVE`: input load Love numbers up to degree of truncation
 
-#### Outputs
+#### Returns
 - `clm`: Cosine spherical harmonic coefficients (geodesy normalization)
 - `slm`: Sine spherical harmonic coefficients (geodesy normalization)
 - `l`: spherical harmonic degree to LMAX

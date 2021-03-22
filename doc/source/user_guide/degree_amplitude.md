@@ -10,13 +10,13 @@ amp = degree_amplitude(clm,slm,LMAX=60)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/degree_amplitude.py)
 
-#### Inputs:
+#### Arguments
 1. `clm`: cosine spherical harmonic coefficients
 2. `slm`: sine spherical harmonic coefficients
 
-#### Options:
+#### Keyword arguments
 - `LMAX`: Upper bound of Spherical Harmonic Degrees
 - `MMAX`: Upper bound of Spherical Harmonic Orders
 
-#### Outputs:
+#### Returns
 - `amp`: degree amplitude

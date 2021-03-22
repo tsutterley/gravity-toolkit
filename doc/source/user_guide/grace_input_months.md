@@ -16,7 +16,7 @@ GRACE_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/grace_input_months.py)
 
-#### Inputs
+#### Arguments
 1. `base_dir`: Working data directory for GRACE/GRACE-FO data
 2. `PROC`: GRACE/GRACE-FO data processing center (CSR, CNES, JPL, GFZ)
       * `'CSR'`: University of Texas Center for Space Research
@@ -46,7 +46,7 @@ GRACE_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
       * `'Swenson'`: [GRACE-derived coefficients from Sean Swenson](https://doi.org/10.1029/2007JB005338)
 
 
-#### Options
+#### Keyword arguments
 - `MMAX`: Upper bound of Spherical Harmonic Orders
 - `SLR_C30`: Replaces C30 with values from Satellite Laser Ranging (SLR)
     * `None`: use original values
@@ -57,7 +57,7 @@ GRACE_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
 - `MODEL_DEG1`: least-squares model missing degree 1 coefficients
 - `DEG1_GIA`: GIA-correction used when calculating degree 1 coefficients
 
-#### Outputs
+#### Returns
 - `clm`: GRACE/GRACE-FO cosine spherical harmonics to degree/order LMAX and MMAX
 - `slm`: GRACE/GRACE-FO sine spherical harmonics to degree/order LMAX and MMAX
 - `time`: time of each GRACE/GRACE-FO measurement (mid-month)

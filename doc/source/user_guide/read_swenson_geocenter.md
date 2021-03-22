@@ -11,13 +11,13 @@ deg1_input = read_swenson_geocenter(geocenter_file)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_swenson_geocenter.py)
 
-#### Inputs
+#### Arguments
 - `geocenter_file`: degree 1 file
 
-#### Options
+#### Keyword arguments
 - `HEADER`: file contains header text to be skipped (default: True)
 
-#### Outputs
+#### Returns
 - `C10`: Cosine degree 1, order 0 spherical harmonic coefficients
 - `C11`: Cosine degree 1, order 1 spherical harmonic coefficients
 - `S11`: Sine degree 1, order 1 spherical harmonic coefficients

@@ -12,10 +12,10 @@ grace_files = grace_date(base_dir, PROC=PROC, DREL=DREL, DSET=DSET)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/grace_date.py)
 
-#### Inputs
+#### Arguments
 1. Working data directory for GRACE/GRACE-FO data
 
-#### Options
+#### Keyword arguments
 - `PROC`: GRACE/GRACE-FO data processing center (CSR/CNES/JPL/GFZ)
    * `'CSR'`: University of Texas Center for Space Research
    * `'GFZ'`: German Research Centre for Geosciences (GeoForschungsZentrum)
@@ -31,5 +31,5 @@ grace_files = grace_date(base_dir, PROC=PROC, DREL=DREL, DSET=DSET)
 - `OUTPUT`: create index file of dates for GRACE/GRACE-FO data
 - `MODE`: permissions mode of output file
 
-#### Outputs
+#### Returns
 - dictionary of files mapped by GRACE/GRACE-FO month

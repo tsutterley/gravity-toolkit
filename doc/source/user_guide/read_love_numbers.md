@@ -17,10 +17,10 @@ hl,kl,ll = read_love_numbers(love_numbers_file, FORMAT='tuple', REFERENCE='CF')
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_love_numbers.py)
 
-#### Inputs
+#### Arguments
 - `love_numbers_file`: Elastic load Love numbers file
 
-#### Options
+#### Keyword arguments
 - `LMAX`: truncate or interpolate to maximum spherical harmonic degree
 - `HEADER`: number of header lines to be skipped
 - `COLUMNS`: column names of ascii file
@@ -39,7 +39,7 @@ hl,kl,ll = read_love_numbers(love_numbers_file, FORMAT='tuple', REFERENCE='CF')
     * `'tuple'`: tuple with variable order hl,kl,ll
     * `'zip'`: aggregated variable sets
 
-#### Outputs
+#### Returns
 - `hl`: Love number of Vertical Displacement
 - `kl`: Love number of Gravitational Potential
 - `ll`: Love number of Horizontal Displacement

@@ -10,10 +10,10 @@ file_inp = ncdf_read(filename, DATE=True, VERBOSE=False)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/ncdf_read.py)
 
-#### Inputs
+#### Arguments
 - `filename`: netCDF4 file to be opened and read
 
-#### Options
+#### Keyword arguments
 - `DATE`: netCDF4 file has date information
 - `VERBOSE`: will print to screen the netCDF4 structure parameters
 - `VARNAME`: z variable name in netCDF4 file
@@ -25,7 +25,7 @@ file_inp = ncdf_read(filename, DATE=True, VERBOSE=False)
     * `'zip'`
     * `'bytes'`
 
-#### Outputs
+#### Returns
 - `data`: z value of dataset
 - `lon`: longitudinal array
 - `lat`: latitudinal array

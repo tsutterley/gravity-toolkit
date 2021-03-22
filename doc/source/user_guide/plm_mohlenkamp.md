@@ -12,12 +12,12 @@ plm = plm_mohlenkamp(LMAX, x)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/plm_mohlenkamp.py)
 
-#### Inputs
+#### Arguments
 - `LMAX`: Upper bound of Spherical Harmonic Degrees
 - `x`: elements ranging from -1 to 1. Typically cos(theta), where theta is the colatitude in radians
 
-#### Options
+#### Keyword arguments
 - `MMAX`: Upper bound of Spherical Harmonic Orders (default = LMAX)
 
-#### Outputs
+#### Returns
 - `plms`: Legendre polynomials of x (geodesy normalization)

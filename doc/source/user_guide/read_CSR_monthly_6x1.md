@@ -10,13 +10,13 @@ Ylms = read_CSR_monthly_6x1(input_file)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_CSR_monthly_6x1.py)
 
-#### Inputs
+#### Arguments
 - `input_file`: input satellite laser ranging file
 
-#### Options
+#### Keyword arguments
 - `HEADER`: file contains header text to be skipped (default: True)
 
-#### Outputs
+#### Returns
 - `clm`: Cosine spherical harmonic coefficients
 - `slm`: Sine spherical harmonic coefficients
 - `error/clm`: Cosine spherical harmonic coefficient uncertainty

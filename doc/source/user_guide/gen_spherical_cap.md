@@ -12,12 +12,12 @@ Ylms = gen_spherical_cap(data, lon, lat, UNITS=1, LMAX=LMAX, PLM=PLM, LOVE=(hl,k
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/gen_spherical_cap.py)
 
-#### Inputs
+#### Arguments
 - `data`: data magnitude
 - `lon`: longitude of spherical cap center
 - `lat`: latitude of spherical cap center
 
-#### Options
+#### Keyword arguments
 - `LMAX`:  maximum spherical harmonic degree of the output harmonics
 - `MMAX`: maximum spherical harmonic order of the output harmonics
 - `RAD_CAP`: spherical cap radius in degrees
@@ -30,7 +30,7 @@ Ylms = gen_spherical_cap(data, lon, lat, UNITS=1, LMAX=LMAX, PLM=PLM, LOVE=(hl,k
 - `PLM`: input Legendre polynomials for spherical cap centers
 - `LOVE`: input load Love numbers up to degree of truncation
 
-#### Outputs
+#### Returns
 - `clm`: Cosine spherical harmonic coefficients (geodesy normalization)
 - `slm`: Sine spherical harmonic coefficients (geodesy normalization)
 - `l`: spherical harmonic degree to LMAX

@@ -11,9 +11,9 @@ grace_months_index(base_dir, DREL=DREL, MODE=)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/grace_months_index.py)
 
-#### Inputs
+#### Arguments
 1. Working data directory for GRACE/GRACE-FO data
 
-#### Options
+#### Keyword arguments
 - `DREL`: GRACE/GRACE-FO data release (RL04/RL05/RL06)
 - `MODE`: Permissions mode of output file

@@ -10,7 +10,7 @@ SLR_C20 = read_SLR_C20(SLR_file)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_SLR_C20.py)
 
-#### Inputs
+#### Arguments
 - `SLR_file`: oblateness file from satellite laser ranging
     * RL04: `TN-05_C20_SLR.txt`
     * RL05: `TN-07_C20_SLR.txt`
@@ -18,11 +18,11 @@ SLR_C20 = read_SLR_C20(SLR_file)
     * CSR: `C20_RL05.txt`
     * GSFC: `TN-14_C30_C30_GSFC_SLR.txt`
 
-#### Options
+#### Keyword arguments
 - `HEADER`: file contains header text to be skipped (default: True)
 - `AOD`: remove background de-aliasing product from the SLR solution (for CSR)
 
-#### Outputs
+#### Returns
 - `data`: cosine degree 2 order 0 spherical harmonic coefficients (C20)
 - `error`: cosine degree 2 order 0 spherical harmonic coefficient errors (eC20)
 - `month`: GRACE/GRACE-FO month of measurement

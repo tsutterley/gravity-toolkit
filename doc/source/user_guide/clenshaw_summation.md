@@ -10,13 +10,13 @@ spatial = clenshaw_summation(clm,slm,lon,lat,UNITS=1,LMAX=60,LOVE=LOVE)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/clenshaw_summation.py)
 
-#### Inputs:
+#### Arguments
 1. `clm`: cosine spherical harmonic coefficients
 2. `slm`: sine spherical harmonic coefficients
 3. `lon`: longitude of points
 4. `lat`: latitude of points
 
-#### Options:
+#### Keyword arguments
 - `RAD`: Gaussian smoothing radius (km)
 - `UNITS`: output data units
    * `1` cm of water thickness
@@ -30,7 +30,7 @@ spatial = clenshaw_summation(clm,slm,lon,lat,UNITS=1,LMAX=60,LOVE=LOVE)
 - `ASTYPE`: floating point precision for calculating Clenshaw summation
 - `SCALE`: scaling factor to prevent underflow in Clenshaw summation
 
-#### Outputs:
+#### Returns
 - `spatial`: spatial field
 
 #### Dependencies

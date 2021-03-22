@@ -10,17 +10,17 @@ Ylms = destripe_harmonics(clm,slm,LMAX=60)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/destripe_harmonics.py)
 
-#### Inputs
+#### Arguments
 1. `clm`: cosine spherical harmonic coefficients
 2. `slm`: sine spherical harmonic coefficients
 
-#### Options
+#### Keyword arguments
 - `LMIN`: Lower bound of Spherical Harmonic Degrees
 - `LMAX`: Upper bound of Spherical Harmonic Degrees
 - `MMAX`: Upper bound of Spherical Harmonic Orders
 - `ROUND`: use round to find nearest even (True) or use floor (False)
 - `NARROW`: Clm=Slm=0 if number of points is less than window size (False)
 
-#### Outputs
+#### Returns
 - `Wclm`: filtered cosine spherical harmonic coefficients
 - `Wslm`: filtered sine spherical harmonic coefficients

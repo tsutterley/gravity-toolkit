@@ -10,17 +10,17 @@ deg1_input = read_tellus_geocenter(geocenter_file, JPL=True)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_tellus_geocenter.py)
 
-#### Inputs
+#### Arguments
 - `geocenter_file`: degree 1 file
     * CSR: `TN-13_GEOC_CSR_RL06.txt`
     * GFZ: `TN-13_GEOC_GFZ_RL06.txt`
     * JPL: `TN-13_GEOC_JPL_RL06.txt`
 
-#### Options
+#### Keyword arguments
 - `HEADER`: file contains header text to be skipped (default: True)
 - `JPL`: use JPL TN-13 geocenter files calculated following [Sun et al., (2016)](https://doi.org/10.1007/s00190-015-0852-y)
 
-#### Outputs
+#### Returns
 - `C10`: Cosine degree 1, order 0 spherical harmonic coefficients
 - `C11`: Cosine degree 1, order 1 spherical harmonic coefficients
 - `S11`: Sine degree 1, order 1 spherical harmonic coefficients

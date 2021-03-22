@@ -12,7 +12,7 @@ grace_months = grace_find_months(base_dir, PROC, DREL, DSET=DSET)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/grace_find_months.py)
 
-#### Inputs
+#### Arguments
 1. `base_dir`: Working data directory for GRACE/GRACE-FO data
 2. `PROC`: GRACE/GRACE-FO data processing center (CSR, CNES, JPL, GFZ)
     * `'CSR'`: University of Texas Center for Space Research
@@ -21,7 +21,7 @@ grace_months = grace_find_months(base_dir, PROC, DREL, DSET=DSET)
     * `'CNES'`: French Centre National D'Etudes Spatiales
 3. `DREL`: GRACE/GRACE-FO Data Release (RL04, RL05, RL06)
 
-#### Options
+#### Keyword arguments
 - `DSET`: GRACE dataset (GSM, GAC, GAD, GAB, GAA)
     * `'GAA'`: non-tidal atmospheric correction
     * `'GAB'`: non-tidal oceanic correction
@@ -29,7 +29,7 @@ grace_months = grace_find_months(base_dir, PROC, DREL, DSET=DSET)
     * `'GAD'`: GRACE/GRACE-FO ocean bottom pressure product
     * `'GSM'`: corrected monthly GRACE/GRACE-FO static field product
 
-#### Outputs
+#### Returns
 - `start`: First month in a GRACE/GRACE-FO dataset
 - `end`: Last month in a GRACE/GRACE-FO dataset
 - `missing`: missing months in a GRACE/GRACE-FO dataset

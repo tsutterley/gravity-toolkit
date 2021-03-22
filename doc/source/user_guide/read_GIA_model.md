@@ -13,10 +13,10 @@ GIA_Ylms = read_GIA_model('Stokes.R2_65_.2_1.5_L120',GIA='IJ05-R2',LMAX=60)
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_GIA_model.py)
 
 
-#### Inputs:
+#### Arguments
 1. `input_file`: GIA file to read (ascii, netCDF4 or HDF5)
 
-#### Outputs:
+#### Keyword arguments
 - `GIA`: GIA model type to read and output
    * `'IJ05-R2'`: [Ivins R2 GIA Models](https://doi.org/10.1002/jgrb.50208)
    * `'W12a'`: [Whitehouse GIA Models](https://doi.org/10.1111/j.1365-246X.2012.05557.x)
@@ -35,7 +35,7 @@ GIA_Ylms = read_GIA_model('Stokes.R2_65_.2_1.5_L120',GIA='IJ05-R2',LMAX=60)
    * `'HDF5'`: output to HDF5 format (.H5)
 - `MODE`: permissions mode of output spherical harmonic files
 
-#### Outputs:
+#### Returns
 - `clm`: cosine spherical harmonic of GIA rate
 - `slm`: sine spherical harmonic of GIA rate
 - `l`: spherical harmonic degree

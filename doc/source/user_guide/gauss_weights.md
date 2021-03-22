@@ -11,9 +11,9 @@ wl = 2.0*np.pi*gauss_weights(hw,LMAX)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/gauss_weights.py)
 
-#### Inputs
+#### Arguments
 1. `hw`: Gaussian smoothing radius in km
 2. `LMAX`: Upper bound of Spherical Harmonic Degrees
 
-#### Outputs
+#### Returns
 - `wl`: Gaussian weights for each degree `l`

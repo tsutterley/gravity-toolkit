@@ -16,15 +16,15 @@ JPLMSC_input = read_GRACE_harmonics('GSM-2_2003001-2003031_0029_JPLMSC_0719_0005
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_GRACE_harmonics.py)
 
-#### Inputs
+#### Arguments
 1. full path to input GRACE file
 2. spherical harmonic degree of truncation (`LMAX`)
 
-#### Options
+#### Keyword arguments
 - `MMAX`: spherical harmonic order of truncation (default is `LMAX`)
 - `POLE_TIDE`: correct GSM data for pole tide drift following [Wahr et al. (2015)](https://doi.org/10.1002/2015JB011986)
 
-#### Outputs
+#### Returns
 - `time`: mid-month date of GRACE file in year-decimal
 - `start`: start date of range as Julian day
 - `end`: end date of range as Julian day

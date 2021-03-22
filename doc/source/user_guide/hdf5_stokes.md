@@ -10,7 +10,7 @@ hdf5_stokes(clm, slm, linp, minp, tinp, month, FILENAME=output_HDF5_file)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/hdf5_stokes.py)
 
-#### Inputs
+#### Arguments
 - `clm`: Cosine spherical harmonic coefficients
 - `slm`: Sine spherical harmonic coefficients
 - `linp`: spherical harmonic degree (l)
@@ -18,7 +18,7 @@ hdf5_stokes(clm, slm, linp, minp, tinp, month, FILENAME=output_HDF5_file)
 - `tinp`: date of measurement
 - `month`: GRACE/GRACE-FO month
 
-#### Options
+#### Keyword arguments
 - `FILENAME`: output filename HDF5
 - `UNITS`: spherical harmonic units
 - `TIME_UNITS`: time variable units

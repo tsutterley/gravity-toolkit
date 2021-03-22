@@ -10,7 +10,7 @@ ncdf_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=output_netcdf4_file)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/ncdf_stokes.py)
 
-#### Inputs
+#### Arguments
 - `clm1`: cosine spherical harmonic coefficients
 - `slm1`: sine spherical harmonic coefficients
 - `linp`: spherical harmonic degree (l)
@@ -18,7 +18,7 @@ ncdf_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=output_netcdf4_file)
 - `tinp`: date of measurement
 - `month`: GRACE/GRACE-FO month
 
-#### Options
+#### Keyword arguments
 - `FILENAME`: output filename netCDF4
 - `UNITS`: spherical harmonic units
 - `TIME_UNITS`: time variable units

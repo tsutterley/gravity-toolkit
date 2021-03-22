@@ -10,10 +10,10 @@ file_inp = hdf5_read_stokes(filename, DATE=True, VERBOSE=False)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/hdf5_read_stokes.py)
 
-#### Inputs
+#### Arguments
 - `filename`: HDF5 file to be opened and read
 
-#### Options
+#### Keyword arguments
 - `DATE`: HDF5 file has date information
 - `VERBOSE`: will print to screen the HDF5 structure parameters
 - `COMPRESSION`: netCDF4 file is compressed or streaming as bytes
@@ -21,7 +21,7 @@ file_inp = hdf5_read_stokes(filename, DATE=True, VERBOSE=False)
     * `'zip'`
     * `'bytes'`
 
-#### Outputs
+#### Returns
 - `clm`: Cosine spherical harmonic coefficients
 - `slm`: Sine spherical harmonic coefficients
 - `l`: spherical harmonic degree

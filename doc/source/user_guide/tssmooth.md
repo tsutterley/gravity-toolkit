@@ -13,11 +13,11 @@ smth = tssmooth(t_in, d_in, HFWTH=6)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/tssmooth.py)
 
-#### Inputs
+#### Arguments
 - `t_in`: input time array
 - `d_in`: input data array
 
-#### Options
+#### Keyword arguments
 - `MOVING`: calculates centered moving average using mean of window
 - `WEIGHT`: use smoothing algorithm that backward models dates before half-width and forward models dates after half-width
     * `0` use unweighted Loess filter
@@ -28,7 +28,7 @@ smth = tssmooth(t_in, d_in, HFWTH=6)
 - `STDEV`: standard deviation of output error
 - `CONF`: confidence interval of output error
 
-#### Outputs
+#### Returns
 - `time`: time after removing start and end half-windows
 - `data`: smoothed time-series
 - `season`: seasonal component calculated by the Loess filter

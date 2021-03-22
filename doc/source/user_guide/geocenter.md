@@ -12,7 +12,7 @@ Ylms = geocenter(X=x, Y=y, Z=z, INVERSE=True)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/geocenter.py)
 
-#### Options
+#### Keyword arguments
 - `C10`: Cosine spherical harmonic of degree 1 and order 0
 - `C11`: Cosine spherical harmonic of degree 1 and order 1
 - `S11`: Sine spherical harmonic of degree 1 and order 1

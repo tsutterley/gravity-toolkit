@@ -11,11 +11,11 @@ tsbeta = piecewise_regress(t_in, d_in, BREAKPOINT=len(t_in)//2, CYCLES=[0.5,1.0]
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/piecewise_regress.py)
 
-#### Inputs
+#### Arguments
 - `t_in`: input time array
 - `d_in`: input data array
 
-#### Options
+#### Keyword arguments
 - `BREAK_TIME`: breakpoint time for piecewise regression
 - `BREAKPOINT`: breakpoint indice of piecewise regression
 - `DATA_ERR`: data precision (single value or array)
@@ -25,7 +25,7 @@ tsbeta = piecewise_regress(t_in, d_in, BREAKPOINT=len(t_in)//2, CYCLES=[0.5,1.0]
 - `CONF`: confidence interval of output error (default is for 95%)
 - `AICc`: use second order AIC for small sample sizes
 
-#### Outputs
+#### Returns
 - `beta`: regressed coefficients array
 - `error`: regression fit error for each coefficient for an input deviation
 - `std_err`: standard error for each coefficient

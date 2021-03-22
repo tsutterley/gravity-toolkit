@@ -10,19 +10,19 @@ spatial = harmonic_summation(clm,slm,lon,lat,LMAX=60)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/harmonic_summation.py)
 
-#### Inputs:
+#### Arguments
 1. `clm`: cosine spherical harmonic coefficients
 2. `slm`: sine spherical harmonic coefficients
 3. `lon`: longitude
 4. `lat`: latitude
 
-#### Options:
+#### Keyword arguments
 - `LMIN`: Lower bound of Spherical Harmonic Degrees
 - `LMAX`: Upper bound of Spherical Harmonic Degrees
 - `MMAX`: Upper bound of Spherical Harmonic Orders
 - `PLM`: Fully-normalized associated Legendre polynomials
 
-#### Outputs:
+#### Returns
 - `spatial`: spatial field [lon,lat]
 
 #### Dependencies

@@ -12,19 +12,19 @@ Ylms = gen_disc_load(data, lon, lat, area, LMAX=LMAX, PLM=PLM, LOVE=(hl,kl,ll))
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/gen_disc_load.py)
 
-#### Inputs
+#### Arguments
 - `data`: data magnitude (Gt)
 - `lon`: longitude of disc center
 - `lat`: latitude of disc center
 - `area`: area of disc (km<sup>2</sup>)
 
-#### Options
+#### Keyword arguments
 - `LMAX`:  maximum spherical harmonic degree of the output harmonics
 - `MMAX`: maximum spherical harmonic order of the output harmonics
 - `PLM`: input Legendre polynomials for cos(theta) (disc center)
 - `LOVE`: input load Love numbers up to degree of truncation
 
-#### Outputs
+#### Returns
 - `clm`: Cosine spherical harmonic coefficients (geodesy normalization)
 - `slm`: Sine spherical harmonic coefficients (geodesy normalization)
 - `l`: spherical harmonic degree to LMAX

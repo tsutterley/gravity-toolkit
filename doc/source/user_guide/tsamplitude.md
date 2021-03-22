@@ -10,10 +10,10 @@ ampl,ph = tsamplitude(bsin,bcos)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/tsamplitude.py)
 
-#### Inputs
+#### Arguments
 - `bsin`: amplitude of the calculated sine values
 - `bcos`: amplitude of the calculated cosine values
 
-#### Outputs
+#### Returns
 - `ampl`: amplitude from the harmonic functionss
 - `ph`: phase from the harmonic functions in degrees

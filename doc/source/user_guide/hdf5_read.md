@@ -10,10 +10,10 @@ file_inp = hdf5_read(filename, DATE=True, VERBOSE=False)
 ```
 [Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/hdf5_read.py)
 
-#### Inputs
+#### Arguments
 - `filename`: HDF5 file to be opened and read
 
-#### Options
+#### Keyword arguments
 - `DATE`: HDF5 file has date information
 - `VERBOSE`: will print to screen the HDF5 structure parameters
 - `VARNAME`: z variable name in HDF5 file
@@ -25,7 +25,7 @@ file_inp = hdf5_read(filename, DATE=True, VERBOSE=False)
     * `'zip'`
     * `'bytes'`
 
-#### Outputs
+#### Returns
 - `data`: z value of dataset
 - `lon`: longitudinal array
 - `lat`: latitudinal array
