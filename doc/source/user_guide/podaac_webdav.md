@@ -12,5 +12,6 @@ python podaac_webdav.py --user=<username>
 
 #### Command Line Options
 - `-U X`, `--user X`: Username for NASA Earthdata Login
+- `-P X`, `--password X`: Password for NASA Earthdata Login
 - `-N X`, `--netrc X`: Path to .netrc file for authentication
 - `-A`, `--append`: Append .netrc file instead of printing

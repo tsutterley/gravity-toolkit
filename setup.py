@@ -5,8 +5,8 @@ from setuptools import setup, find_packages
 description = ('Python tools for obtaining and working with spherical harmonic'
     'coefficients from the NASA/DLR GRACE and NASA/GFZ GRACE Follow-on missions')
 
-# get long_description from README.md
-with open("README.md", "r") as fh:
+# get long_description from README.rst
+with open("README.rst", "r") as fh:
     long_description = fh.read()
 
 # get install requirements
@@ -27,7 +27,7 @@ setup(
     version=version,
     description=description,
     long_description=long_description,
-    long_description_content_type="text/markdown",
+    long_description_content_type="text/x-rst",
     url='https://github.com/tsutterley/read-GRACE-harmonics',
     author='Tyler Sutterley',
     author_email='tsutterl@uw.edu',

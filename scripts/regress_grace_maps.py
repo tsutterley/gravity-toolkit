@@ -222,7 +222,7 @@ def regress_grace_maps(parameters, ORDER=None, CYCLES=None,
             #-- HDF5 (.H5)
             dinput = spatial().from_HDF5(os.path.join(DIRECTORY,fi))
         #-- append to spatial list
-        dinput.month[:] = grace_month
+        dinput.month = grace_month
         nlat,nlon = dinput.shape
         spatial_list.append(dinput)
 

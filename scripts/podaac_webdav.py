@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_webdav.py
-Written by Tyler Sutterley (10/2020)
+Written by Tyler Sutterley (04/2021)
 
 Retrieves and prints a user's PO.DAAC Drive WebDAV credentials
 
@@ -26,6 +26,7 @@ OUTPUTS:
 COMMAND LINE OPTIONS:
     --help: list the command line options
     -U X, --user X: username for NASA Earthdata Login
+    -P X, --password X: password for NASA Earthdata Login
     -N X, --netrc X: path to .netrc file for authentication
     -A, --append: append .netrc file instead of printing
 
@@ -45,6 +46,8 @@ PROGRAM DEPENDENCIES:
     utilities: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 04/2021: set a default netrc file and check access
+        efault credentials from environmental variables
     Updated 10/2020: use argparse to set command line parameters
     Written 05/2020 for public release
 """
@@ -101,10 +104,14 @@ def main():
     #-- command line parameters
     #-- NASA Earthdata credentials
     parser.add_argument('--user','-U',
-        type=str, default='',
+        type=str, default=os.environ.get('EARTHDATA_USERNAME'),
         help='Username for NASA Earthdata Login')
+    parser.add_argument('--password','-W',
+        type=str, default=os.environ.get('EARTHDATA_PASSWORD'),
+        help='Password for NASA Earthdata Login')
     parser.add_argument('--netrc','-N',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        default=os.path.join(os.path.expanduser('~'),'.netrc'),
         help='Path to .netrc file for authentication')
     #-- append to netrc
     parser.add_argument('--append','-A',
@@ -117,25 +124,22 @@ def main():
     #-- JPL PO.DAAC drive hostname
     HOST = 'podaac-tools.jpl.nasa.gov'
     #-- get NASA Earthdata credentials
-    if not args.user and not args.netrc:
+    if not args.user and not os.access(args.netrc,os.F_OK):
         #-- check that NASA Earthdata credentials were entered
         args.user=builtins.input('Username for {0}: '.format(URS))
         #-- enter password securely from command-line
-        PASSWORD=getpass.getpass('Password for {0}@{1}: '.format(args.user,URS))
-    elif args.netrc:
-        args.user,LOGIN,PASSWORD=netrc.netrc(args.netrc).authenticators(URS)
-    else:
+        args.password=getpass.getpass('Password for {0}@{1}: '.format(args.user,URS))
+    elif not args.user and os.access(args.netrc,os.F_OK):
+        args.user,_,args.password=netrc.netrc(args.netrc).authenticators(URS)
+    elif args.user and not args.password:
         #-- enter password securely from command-line
-        PASSWORD=getpass.getpass('Password for {0}@{1}: '.format(args.user,URS))
-    #-- if appending to netrc file and not entered: use default file
-    if args.append and not args.netrc:
-        args.netrc = os.path.join(os.path.expanduser('~'),'.netrc')
+        args.password=getpass.getpass('Password for {0}@{1}: '.format(args.user,URS))
 
     #-- check internet connection before attempting to run program
     DRIVE = posixpath.join('https://podaac-tools.jpl.nasa.gov','drive')
     if gravity_toolkit.utilities.check_connection(DRIVE):
         #-- compile HTML parser for lxml
-        WEBDAV = podaac_webdav(args.user, PASSWORD, lxml.etree.HTMLParser())
+        WEBDAV = podaac_webdav(args.user, args.password, lxml.etree.HTMLParser())
         #-- output to terminal or append to netrc file
         a = (args.user,HOST,WEBDAV)
         if args.append:
