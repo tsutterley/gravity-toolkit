@@ -1,4 +1,5 @@
-"""
+#!/usr/bin/env python
+u"""
 utilities.py
 Written by Tyler Sutterley (12/2020)
 Download and management utilities for syncing time and auxiliary files

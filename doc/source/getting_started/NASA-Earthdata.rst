@@ -35,12 +35,21 @@ Steps to Sync from PO.DAAC
 4. Retrieve your `JPL WebDAV password <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/podaac_webdav.py>`_ to access PO.DAAC servers
 5. `Sync time-variable gravity data <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/podaac_grace_sync.py>`_
 
-Can also create a ``.netrc`` file for permanently storing JPL WebDAV credentials:
+Can also create a ``.netrc`` file for permanently storing NASA Earthdata and JPL WebDAV credentials:
 
 .. code-block:: bash
 
+    echo "machine urs.earthdata.nasa.gov login <uid> password <password>" >> ~/.netrc
     echo "machine podaac-tools.jpl.nasa.gov login <uid> password <webdav>" >> ~/.netrc
     chmod 0600 ~/.netrc
+
+Or set environmental variables for your NASA Earthdata and JPL WebDAV credentials:
+
+.. code-block:: bash
+
+    export EARTHDATA_USERNAME=<uid>
+    export EARTHDATA_PASSWORD=<password>
+    export PODAAC_PASSWORD=<webdav>
 
 Other Data Access Examples
 ##########################

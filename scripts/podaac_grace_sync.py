@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_grace_sync.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (04/2021)
 
 Syncs GRACE/GRACE-FO and auxiliary data from the NASA JPL PO.DAAC Drive Server
 Syncs CSR/GFZ/JPL files for RL04/RL05/RL06 GAA/GAB/GAC/GAD/GSM
@@ -38,6 +38,7 @@ OUTPUTS:
 COMMAND LINE OPTIONS:
     --help: list the command line options
     -U X, --user X: username for NASA Earthdata Login
+    -W X, --webdav X: WebDAV password for JPL PO.DAAC Drive Login
     -N X, --netrc X: path to .netrc file for authentication
     -D X, --directory X: working data directory
     -c X, --center X: GRACE Processing Center
@@ -66,6 +67,8 @@ PROGRAM DEPENDENCIES:
     utilities: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 04/2021: set a default netrc file and check access
+        default credentials from environmental variables
     Updated 12/2020: generalized podaac_list() by renaming to drive_list()
     Updated 10/2020: use argparse to set command line parameters
     Updated 08/2020: flake8 compatible regular expression strings
@@ -566,10 +569,14 @@ def main():
     #-- command line parameters
     #-- NASA Earthdata credentials
     parser.add_argument('--user','-U',
-        type=str, default='',
+        type=str, default=os.environ.get('EARTHDATA_USERNAME'),
         help='Username for NASA Earthdata Login')
+    parser.add_argument('--webdav','-W',
+        type=str, default=os.environ.get('PODAAC_PASSWORD'),
+        help='WebDAV Password for JPL PO.DAAC Drive Login')
     parser.add_argument('--netrc','-N',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        default=os.path.join(os.path.expanduser('~'),'.netrc'),
         help='Path to .netrc file for authentication')
     #-- working data directory
     parser.add_argument('--directory','-D',
@@ -618,20 +625,20 @@ def main():
     #-- JPL PO.DAAC drive hostname
     HOST = 'podaac-tools.jpl.nasa.gov'
     #-- get NASA Earthdata and JPL PO.DAAC drive credentials
-    if not args.user and not args.netrc:
+    if not args.user and not os.access(args.netrc,os.F_OK):
         #-- check that NASA Earthdata credentials were entered
         args.user=builtins.input('Username for {0}: '.format(HOST))
+        #-- enter WebDAV password securely from command-line
+        args.webdav=getpass.getpass('Password for {0}@{1}: '.format(args.user,HOST))
+    elif not args.user and os.access(args.netrc,os.F_OK):
+        args.user,_,args.webdav=netrc.netrc(args.netrc).authenticators(HOST)
+    elif not args.webdav:
         #-- enter password securely from command-line
-        PASSWORD=getpass.getpass('Password for {0}@{1}: '.format(args.user,HOST))
-    elif args.netrc:
-        args.user,LOGIN,PASSWORD=netrc.netrc(args.netrc).authenticators(HOST)
-    else:
-        #-- enter password securely from command-line
-        PASSWORD=getpass.getpass('Password for {0}@{1}: '.format(args.user,HOST))
+        args.webdav=getpass.getpass('Password for {0}@{1}: '.format(args.user,HOST))
 
     #-- build a urllib opener for PO.DAAC Drive
     #-- Add the username and password for NASA Earthdata Login system
-    gravity_toolkit.utilities.build_opener(args.user,PASSWORD)
+    gravity_toolkit.utilities.build_opener(args.user,args.webdav)
 
     #-- check internet connection before attempting to run program
     #-- check JPL PO.DAAC Drive credentials before attempting to run program
