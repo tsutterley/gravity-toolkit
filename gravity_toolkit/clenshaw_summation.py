@@ -23,7 +23,7 @@ OPTIONS:
         3: mm of elastic crustal deformation [Davis 2004]
         4: microGal gravitational perturbation
         5: Pa, equivalent surface pressure in Pascals
-        6: cm of viscoelastic rustal uplift (GIA) [See Wahr 1995 or Wahr 2000]
+        6: cm of viscoelastic crustal uplift (GIA) [See Wahr 1995 or Wahr 2000]
     LMAX: Upper bound of Spherical Harmonic Degrees
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
     ASTYPE: floating point precision for calculating Clenshaw summation
@@ -82,7 +82,7 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
         3: mm of elastic crustal deformation
         4: microGal gravitational perturbation
         5: Pa, equivalent surface pressure in Pascals
-        6: cm of viscoelastic rustal uplift (GIA)
+        6: cm of viscoelastic crustal uplift (GIA)
     LMAX: Upper bound of Spherical Harmonic Degrees
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 

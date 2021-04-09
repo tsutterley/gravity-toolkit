@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C30.py
-Written by Yara Mohajerani and Tyler Sutterley (12/2020)
+Written by Yara Mohajerani and Tyler Sutterley (04/2021)
 
 Reads monthly degree 3 zonal spherical harmonic data files from SLR
     https://neptune.gsfc.nasa.gov/gngphys/index.php?section=519
@@ -46,9 +46,10 @@ PYTHON DEPENDENCIES:
 
 PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
-    read_CSR_monthly_6x1.py: reads monthly 5x5 spherical harmonic coefficients
+    read_SLR_monthly_6x1.py: reads monthly 5x5 spherical harmonic coefficients
 
 UPDATE HISTORY:
+    Updated 04/2021: renamed SLR monthly 5x5 function from CSR
     Updated 02/2021: use adjust_months function to fix special months cases
     Updated 12/2020: using utilities from time module
     Updated 08/2020: flake8 compatible regular expression strings
@@ -65,7 +66,7 @@ import os
 import re
 import numpy as np
 import gravity_toolkit.time
-from gravity_toolkit.read_CSR_monthly_6x1 import read_CSR_monthly_6x1
+from gravity_toolkit.read_SLR_monthly_6x1 import read_SLR_monthly_6x1
 
 #-- PURPOSE: read Degree 3 zonal data from Satellite Laser Ranging (SLR)
 def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
@@ -166,7 +167,7 @@ def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
         dinput['month'] = 1 + np.array(12.0*(LARES_input[:,0]-2002.0),dtype='i')
     else:
         #-- CSR 5x5 + 6,1 file from CSR and extract C3,0 coefficients
-        Ylms = read_CSR_monthly_6x1(SLR_file, HEADER=True)
+        Ylms = read_SLR_monthly_6x1(SLR_file, HEADER=True)
         #-- extract dates, C30 harmonics and errors
         dinput['time'] = Ylms['time'].copy()
         dinput['data'] = Ylms['clm'][3,0,:].copy()

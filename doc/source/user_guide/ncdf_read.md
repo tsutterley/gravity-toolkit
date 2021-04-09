@@ -29,5 +29,5 @@ file_inp = ncdf_read(filename, DATE=True, VERBOSE=False)
 - `data`: z value of dataset
 - `lon`: longitudinal array
 - `lat`: latitudinal array
-- `time`: time value of dataset (if specified by DATE)
+- `time`: time value of dataset (if specified by `DATE`)
 - `attributes`: netCDF4 attributes (for variables and title)

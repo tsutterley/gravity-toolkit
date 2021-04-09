@@ -4,29 +4,26 @@ Spatial Maps
 
 The GRACE/GRACE-FO spherical harmonic products can be converted into sets of spatial maps
 if we assume that the mass redistributions are concentrated within a thin layer
-(thickness |mlt| horizontal resolution) (`Wahr et al., 1998 <https://doi.org/10.1029/98JB02844>`_).
+(thickness |mlt| horizontal resolution) [Wahr1998]_.
 To calculate accurate maps of spatial variability, several processing steps need to be accounted for
 to convert the data into the proper reference frame, reduce the impact of noisy data,
 remove unwanted sources of gravitational variability, and convert to appropriate units.
 
-The `grace_spatial_maps.py <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/grace_spatial_maps.py>`_
-program will output individual files for each GRACE/GRACE-FO month.
-The monthly spatial files can be in ascii, netCDF4 or HDF5 formats.
+The ``grace_spatial_maps.py`` program will output spatial files in ascii, netCDF4 or HDF5 format
+for each GRACE/GRACE-FO month.
 
 Load Love Numbers
 #################
 
 A variation in mass at the Earth's surface will load and deform the solid Earth,
-which will induce density anomalies at depth (`Wahr et al., 1998 <https://doi.org/10.1029/98JB02844>`_).
+which will induce density anomalies at depth [Wahr1998]_.
 To accurately assess the surface load from time-variable gravity,
-we need to compensate for the Earth's elastic yielding (`Wahr et al., 1998 <https://doi.org/10.1029/98JB02844>`_).
+we need to compensate for the Earth's elastic yielding [Wahr1998]_.
 This program accounts for the elastic deformation of the solid Earth using load Love numbers
-with parameters from the Preliminary reference Earth model (PREM)
-(`Farrell, 1972 <http://dx.doi.org/10.1029/RG010i003p00761>`_;
-`Dziewonski and Anderson, 1981 <https://doi.org/10.1016/0031-9201(81)90046-7>`_).
+with parameters from the Preliminary reference Earth model (PREM) [Farrell1972]_ [Dziewonski1981]_.
 In order to help estimate the uncertainty in elastic deformation,
-`grace_spatial_maps.py <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/grace_spatial_maps.py>`_
-can use different sets of load Love numbers by adjusting the ``--love`` command line option.
+``grace_spatial_maps.py`` can use different sets of load Love numbers by adjusting the
+``--love`` command line option.
 
 Reference Frames
 ################
@@ -35,24 +32,17 @@ Measurements of time-variable gravity from the Gravity Recovery and Climate Expe
 and the GRACE Follow-On (GRACE-FO) missions are set in a center of mass (CM) reference frame,
 in which the total degree one variations are inherently zero.
 The individual contributions to degree one variations in the CM reference frame,
-such as from oceanic processes or terrestrial water storage change, are not necessarily zero
-(`Wahr et al., 1998 <https://doi.org/10.1029/98JB02844>`_).
+such as from oceanic processes or terrestrial water storage change, are not necessarily zero [Wahr1998]_.
 Applications set in a center of figure (CF) reference frame,
 such as the recovery of mass variations of the oceans, hydrosphere and cryosphere,
-require the inclusion of degree one terms to be fully accurate
-(`Swenson et al., 2008 <https://doi.org/10.1029/2007JB005338>`_).
-`grace_spatial_maps.py <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/grace_spatial_maps.py>`_
-has geocenter options to select the degree one product to include with the GRACE/GRACE-FO derived harmonics.
-There are options for using measurements from
-satellite laser ranging (`Cheng, 2013 <https://doi.org/10.1007/978-3-642-32998-2_4>`_) and
-calculations from time-variable gravity and ocean model outputs
-(`Swenson et al., 2008 <https://doi.org/10.1029/2007JB005338>`_;
-`Sutterley and Velicogna, 2019 <https://doi.org/10.3390/rs11182108>`_).
+require the inclusion of degree one terms to be fully accurate [Swenson2008]_.
+``grace_spatial_maps.py`` has geocenter options to select the degree one product to
+include with the GRACE/GRACE-FO derived harmonics.
+There are options for using measurements from satellite laser ranging [Cheng2013]_ and
+calculations from time-variable gravity and ocean model outputs [Swenson2008]_ [Sutterley2019]_.
 If including degree one harmonics and changing the reference frame,
-the reference frame for the load Love numbers needs to be updated accordingly
-(`Blewett, 2003 <https://doi.org/10.1029/2002JB002082>`_).
-In `grace_spatial_maps.py <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/grace_spatial_maps.py>`_
-and other GRACE/GRACE-FO programs, the reference frame for the load Love numbers
+the reference frame for the load Love numbers needs to be updated accordingly [Blewett2003]_.
+In ``grace_spatial_maps.py`` and other GRACE/GRACE-FO programs, the reference frame for the load Love numbers
 is adjusted by setting the ``--reference`` command line option to ``'CF'``.
 
 Low-Degree Zonals
@@ -72,29 +62,24 @@ malfunction and the accelerometer onboard GRACE-FO 2 (GF2) has been operating in
 less optimal Large-Range-Mode.
 For both of these cases, the GRACE/GRACE-FO processing centers have developed
 independent methods to spatiotemporally transplant the accelerometer data retrieved
-from GRACE-A to GRACE-B and from GF1 to GF2 (`Bandikova et al., 2019 <https://doi.org/10.1016/j.asr.2019.05.021>`_).
+from GRACE-A to GRACE-B and from GF1 to GF2 [Bandikova2019]_.
 These single-accelerometer months for both GRACE and GRACE-FO contain significantly
 more noise, particularly the low-degree zonal harmonics
 (particularly *C*\ :sub:`20` and *C*\ :sub:`30` but possibly *C*\ :sub:`40` and *C*\ :sub:`50`).
 *C*\ :sub:`20` has also been difficult for GRACE and GRACE-FO to independently measure throughout both missions.
 Measurements from satellite laser ranging (SLR) can provide an independent assessment
-for some low degree and order spherical harmonics
-(`Cheng and Ries, 2018 <https://doi.org/10.1093/gji/ggx483>`_;
-`Loomis et al., 2019 <https://doi.org/10.1029/2019GL082929>`_;
-`Loomis et al., 2020 <https://doi.org/10.1029/2019GL085488>`_).
-`grace_spatial_maps.py <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/grace_spatial_maps.py>`_
-has options for replacing both *C*\ :sub:`20` and *C*\ :sub:`30` with SLR low degree zonal products.
+for some low degree and order spherical harmonics [Cheng2018]_ [Loomis2019]_ [Loomis2020]_.
+``grace_spatial_maps.py`` has options for replacing both *C*\ :sub:`20` and *C*\ :sub:`30` with
+SLR low degree zonal products.
 
 Corrections
 ###########
 
 Prior to GRACE/GRACE-FO Release-6, corrections needed to be applied to compensate
 for long-period signals in the pole tide that were contaminating the
-*C*\ :sub:`21` and *S*\ :sub:`21` harmonics
-(`Wahr et al., 2015 <https://doi.org/10.1002/2015JB011986>`_),
+*C*\ :sub:`21` and *S*\ :sub:`21` harmonics [Wahr2015]_,
 as well as for discontinuities in the atmospheric de-aliasing product that were
-introduced with upgrades in the ECMWF weather prediction model
-(`Fagiolini et al., 2015 <https://doi.org/10.1093/gji/ggv276>`_).
+introduced with upgrades in the ECMWF weather prediction model [Fagiolini2015]_.
 The Pole Tide and Atmospheric corrections do not need to be applied to the Release-6 data.
 
 Geophysical Leakage
@@ -104,8 +89,7 @@ Gravity measurements from GRACE and GRACE-FO are global, near-monthly and
 are directly related to changes in mass.
 Several mass transport processes can occur concurrently for a given region,
 which means that the total time-dependent geopotential from GRACE/GRACE-FO
-can relate to multiple time-varying components
-(`Wahr et al., 1998 <https://doi.org/10.1029/98JB02844>`_).
+can relate to multiple time-varying components [Wahr1998]_.
 These mass transport processes include but are not limited to terrestrial water storage,
 glacier and ice sheet mass, atmospheric and oceanic circulation and geodynamic processes.
 In order to isolate the mass change of a single process, each of the other processes
@@ -117,18 +101,17 @@ Filtering
 #########
 
 The GRACE/GRACE-FO coefficients are impacted by random spherical harmonic errors
-that increase as a function of spherical harmonic degree
-(`Wahr et al., 1998 <https://doi.org/10.1029/98JB02844>`_).
-The impact of these errors can be reduced using Gaussian averaging functions as described in
-`Jekeli, (1981) <http://www.geology.osu.edu/~jekeli.1/OSUReports/reports/report_327.pdf>`_.
+that increase as a function of spherical harmonic degree [Wahr1998]_.
+The impact of these errors can be reduced using Gaussian averaging functions
+as described in [Jekeli1981]_.
 GRACE/GRACE-FO coefficients are also impacted by correlated north/south "striping" errors,
-which can be spectrally filtered following `Swenson and Wahr (2006) <https://doi.org/10.1029/2005GL025285>`_.
+which can be spectrally filtered following [Swenson2006]_.
 
 Parameter Files
 ###############
 
-The `grace_spatial_maps.py <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/grace_spatial_maps.py>`_
-program works by accepting parameter file system arguments (``sys.argv``) listed after the program.
+The ``grace_spatial_maps.py`` program works by accepting parameter file system arguments
+(``sys.argv``) listed after the program.
 These parameter files can be ran individually or in a series.
 
 .. code-block:: bash
@@ -160,12 +143,12 @@ Dataset Parameters
 - ``DSET``: GRACE data product (see `GRACE Data File Formats <./GRACE-Data-File-Formats.html>`_)
 - ``LMIN``: minimum spherical harmonic degree (lower bound of truncation)
 - ``LMAX``: maximum spherical harmonic degree (upper bound of truncation)
-- ``MMAX``: maximum spherical harmonic order (None if LMAX)
+- ``MMAX``: maximum spherical harmonic order (None if ``LMAX``)
 - ``START``: first month to be analyzed
 - ``END``: last month to be analyzed
 - ``MISSING``: GRACE/GRACE-FO months that are not be analyzed (see available GRACE/GRACE-FO months)
-- ``RAD``: Gaussian smoothing radius in km (`Jekeli, 1981 <http://www.geology.osu.edu/~jekeli.1/OSUReports/reports/report_327.pdf>`_)
-- ``DESTRIPE``: filter coefficients using destriping procedure (`Swenson et al., 2006 <https://doi.org/10.1029/2005GL025285>`_)
+- ``RAD``: Gaussian smoothing radius in km [Jekeli1981]_
+- ``DESTRIPE``: filter coefficients using destriping procedure [Swenson2006]_
 - ``SLR_C20``: replace *C*\ :sub:`20` coefficients with values from Satellite Laser Ranging (SLR)
 
      * `None`: use original values
@@ -228,8 +211,8 @@ Dataset Parameters
      * ``'index'``: index file containing monthly files in ``DATAFORM``
 
 - ``REDISTRIBUTE_REMOVED``: Redistribute total mass of removed harmonics over the ocean
-- ``POLE_TIDE``: correct GSM *C*\ :sub:`21` and *S*\ :sub:`21` for pole tide (`Wahr et al., 2015 <https://doi.org/10.1002/2015JB011986>`_)
-- ``ATM``: correct Atmosphere with `ECMWF "jump" corrections <https://doi.org/10.1093/gji/ggv276>`_
+- ``POLE_TIDE``: correct GSM *C*\ :sub:`21` and *S*\ :sub:`21` for pole tide [Wahr2015]_
+- ``ATM``: correct Atmosphere with ECMWF "jump" corrections [Fagiolini2015]_
 - ``UNITS``: Output units of the spatial fields
 
      * ``1``: Equivalent Water Thickness (cm)
@@ -245,6 +228,40 @@ Dataset Parameters
      * ``2``: (degree interval/2)
 
 - ``FILENAME``: Start of the output filename
+
+References
+##########
+
+.. [Bandikova2019] T. Bandikova, C. McCullough, G. L. Kruizinga, H. Save, and B. Christophe, "GRACE accelerometer data transplant", *Advances in Space Research*, 64(3), 623--644, (2019). `doi: 10.1016/j.asr.2019.05.021 <10.1016/j.asr.2019.05.021>`_
+
+.. [Blewett2003] G. Blewitt, "Self‐consistency in reference frames, geocenter definition, and surface loading of the solid Earth", *Journal of Geophysical Research: Solid Earth*, 108(B2), 2103, (2003). `doi: 10.1029/2002JB002082 <https://doi.org/10.1029/2002JB002082>`_
+
+.. [Cheng2013] M. Cheng, "Geocenter Variations from Analysis of SLR Data", *Reference Frames for Applications in Geosciences*, 19--25, (2013). `doi: 10.1007/978-3-642-32998-2_4 <https://doi.org/10.1007/978-3-642-32998-2_4>`_
+
+.. [Cheng2018] M. Cheng and J. C. Ries, "Decadal variation in Earth's oblateness (J2) from satellite laser ranging data", *Geophysical Journal International*, 212(2), 1218--1224 (2018). `doi: 10.1093/gji/ggx483 <https://doi.org/10.1093/gji/ggx483>`_
+
+.. [Dziewonski1981] A. M. Dziewonski and D. L. Anderson, "Preliminary reference Earth model", *Physics of the Earth and Planetary Interiors*, 25(4), 297--356, (1981). `doi: 10.1016/0031-9201(81)90046-7 <https://doi.org/10.1016/0031-9201(81)90046-7>`_
+
+.. [Fagiolini2015] E. Fagiolini, F. Flechtner, M. Horwath, and H. Dobslaw, "Correction of inconsistencies in ECMWF's operational analysis data during de-aliasing of GRACE gravity models", *Geophysical Journal International*, 202(3), 2150--2158, (2015). `doi: 10.1093/gji/ggv276 <https://doi.org/10.1093/gji/ggv276>`_
+
+.. [Farrell1972] W. E. Farrell, "Deformation of the Earth by surface loads", *Reviews of Geophysics*, 10(3), 761--797, (1972). `doi: 10.1029/RG010i003p00761 <https://doi.org/10.1029/RG010i003p00761>`_
+
+.. [Jekeli1981] C. Jekeli, "Alternative Methods to Smooth the Earth's Gravity Field", NASA Grant No. NGR 36-008-161, OSURF Proj. No. 783210, 48 pp., (1981).
+
+.. [Loomis2019] B. D. Loomis, K. E. Rachlin, and S. B. Luthcke, "Improved Earth oblateness rate reveals increased ice sheet losses and mass‐driven sea level rise". *Geophysical Research Letters*, 46, 6910--6917, (2019). `doi: 10.1029/2019GL082929 <https://doi.org/10.1029/2019GL082929>`_
+
+.. [Loomis2020] B. D. Loomis, K. E. Rachlin, D. N. Wiese, F. W. Landerer, and S. B. Luthcke, "Replacing GRACE/GRACE‐FO *C*\ :sub:`30` with satellite laser ranging: Impacts on Antarctic Ice Sheet mass change". *Geophysical Research Letters*, 47, (2020). `doi: 10.1029/2019GL085488 <https://doi.org/10.1029/2019GL085488>`_
+
+.. [Sutterley2019] T. C. Sutterley and I. Velicogna, "Improved Estimates of Geocenter Variability from Time-Variable Gravity and Ocean Model Outputs", *Remote Sensing*, 11(18), 2108, (2019). `doi: 10.3390/rs11182108 <https://doi.org/10.3390/rs11182108>`_
+
+.. [Swenson2006] S. Swenson and J. Wahr, "Post‐processing removal of correlated errors in GRACE data", *Geophysical Research Letters*, 33(L08402), (2006). `doi: 10.1029/2005GL025285 <https://doi.org/10.1029/2005GL025285>`_
+
+.. [Swenson2008] S. Swenson, D. Chambers, and J. Wahr, "Estimating geocenter variations from a combination of GRACE and ocean model output", *Journal of Geophysical Research: Solid Earth*, 113(B08410), (2008). `doi: 10.1029/2007JB005338 <https://doi.org/10.1029/2007JB005338>`_
+
+.. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan, "Time variability of the Earth's gravity field: Hydrological and oceanic effects and their possible detection using GRACE", *Journal of Geophysical Research*, 103(B12), 30205--30229, (1998). `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_
+
+.. [Wahr2015] J. Wahr, R. S. Nerem, and S. V. Bettadpur, "The pole tide and its effect on GRACE time‐variable gravity measurements: Implications for estimates of surface mass variations". *Journal of Geophysical Research: Solid Earth*, 120, 4597--4615. `doi: 10.1002/2015JB011986 <https://doi.org/10.1002/2015JB011986>`_
+
 
 .. |beta|    unicode:: U+03B2 .. GREEK SMALL LETTER BETA
 .. |mu|      unicode:: U+03BC .. GREEK SMALL LETTER MU

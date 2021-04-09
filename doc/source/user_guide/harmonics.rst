@@ -476,10 +476,7 @@ General Attributes and Methods
 
     .. method:: object.destripe()
 
-        Filters spherical harmonic coefficients for correlated "striping" errors following `Swenson and Wahr (2006)`__.
-
-    .. __: https://doi.org/10.1029/2005GL025285
-
+        Filters spherical harmonic coefficients for correlated "striping" errors following [Swenson2006]_.
 
     .. method:: object.amplitude(mmax=None)
 
@@ -488,3 +485,9 @@ General Attributes and Methods
         Keyword arguments:
 
             ``mmax`` maximum order of spherical harmonics
+
+
+References
+##########
+
+.. [Swenson2006] S. Swenson and J. Wahr, "Post‐processing removal of correlated errors in GRACE data", *Geophysical Research Letters*, 33(L08402), (2006). `doi: 10.1029/2005GL025285 <https://doi.org/10.1029/2005GL025285>`_

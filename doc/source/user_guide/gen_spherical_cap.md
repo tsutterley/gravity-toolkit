@@ -33,5 +33,5 @@ Ylms = gen_spherical_cap(data, lon, lat, UNITS=1, LMAX=LMAX, PLM=PLM, LOVE=(hl,k
 #### Returns
 - `clm`: Cosine spherical harmonic coefficients (geodesy normalization)
 - `slm`: Sine spherical harmonic coefficients (geodesy normalization)
-- `l`: spherical harmonic degree to LMAX
-- `m`: spherical harmonic order to MMAX
+- `l`: spherical harmonic degree to `LMAX`
+- `m`: spherical harmonic order to `MMAX`

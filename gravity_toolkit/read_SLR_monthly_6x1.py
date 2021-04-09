@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
-read_CSR_monthly_6x1.py
-Written by Tyler Sutterley (12/2020)
+read_SLR_monthly_6x1.py
+Written by Tyler Sutterley (04/2021)
 
 Reads in monthly 5x5 spherical harmonic coefficients with 1
     coefficient from degree 6 all calculated from SLR measurements
@@ -27,6 +27,11 @@ REFERENCE:
     Axis from Satellite Laser Ranging and GRACE', J. Geophys. Res., 116, B01409,
     2011, DOI:10.1029/2010JB000850.
 
+NOTES:
+    Degree-1 variations are not included with the new 5x5 product
+    Thanks to Hugo Lecomte (University of Strasbourg) for pointing out the
+        change in the CSR SLR file format (04/2021)
+
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
         https://numpy.org
@@ -38,6 +43,8 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 04/2021: renamed module. new SLR 5x5 format from CSR (see notes)
+        add file read checks (for mean harmonics header and arc number)
     Updated 12/2020: using utilities from time module
     Updated 07/2020: added function docstrings
     Updated 07/2019: following new format with mean field in header and no C6,0
@@ -53,7 +60,7 @@ import numpy as np
 import gravity_toolkit.time
 
 #-- PURPOSE: read low degree harmonic data from Satellite Laser Ranging (SLR)
-def read_CSR_monthly_6x1(input_file, HEADER=True):
+def read_SLR_monthly_6x1(input_file, HEADER=True):
     """
     Reads in monthly low degree and order spherical harmonic coefficients
     from Satellite Laser Ranging (SLR) measurements
@@ -81,13 +88,15 @@ def read_CSR_monthly_6x1(input_file, HEADER=True):
         file_contents = f.read().splitlines()
     file_lines = len(file_contents)
 
-    #-- spherical harmonic degree range (full 5x5 with 6,1)
-    LMIN = 1
+    #-- spherical harmonic degree range (5x5 with 6,1)
+    #-- new 5x5 fields no longer include geocenter components
+    LMIN = 2
     LMAX = 6
     n_harm = (LMAX**2 + 3*LMAX - LMIN**2 - LMIN)//2 - 5
 
     #-- counts the number of lines in the header
     count = 0
+    indice = None
     #-- Reading over header text
     while HEADER:
         #-- file line at count
@@ -99,6 +108,10 @@ def read_CSR_monthly_6x1(input_file, HEADER=True):
         #-- add 1 to counter
         count += 1
 
+    #-- verify that mean field header indice was found
+    if not indice:
+        raise Exception('Mean field header not found')
+
     #-- number of dates within the file
     n_dates = (file_lines - count)//(n_harm + 1)
 
@@ -109,7 +122,7 @@ def read_CSR_monthly_6x1(input_file, HEADER=True):
     mean_Ylms['slm'] = np.zeros((LMAX+1,LMAX+1))
     mean_Ylm_error['clm'] = np.zeros((LMAX+1,LMAX+1))
     mean_Ylm_error['slm'] = np.zeros((LMAX+1,LMAX+1))
-    for i in range(n_harm+1):
+    for i in range(n_harm):
         #-- split the line into individual components
         line = file_contents[indice+i].split()
         #-- degree and order for the line
@@ -141,6 +154,9 @@ def read_CSR_monthly_6x1(input_file, HEADER=True):
     for d in range(n_dates):
         #-- split the date line into individual components
         line_contents = file_contents[count].split()
+        #-- verify arc number from iteration and file
+        IARC = int(line_contents[0])
+        assert (IARC == (d+1))
         #-- modified Julian date of the middle of the month
         Ylms['MJD'][d] = np.mean(np.array(line_contents[5:7],dtype=np.float))
         #-- date of the mid-point of the arc given in years

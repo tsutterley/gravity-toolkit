@@ -5,8 +5,7 @@ Time Series Analysis
 Least-squares mascons are a method of extracting a regional signal from the
 GRACE/GRACE-FO spherical harmonic data.
 The procedure was outlined in procedure outlined in
-`Tiwari et al. (2009) <https://doi.org/10.1029/2009GL039401>`_ and
-`Jacob et al. (2012) <https://doi.org/10.1038/nature10847>`_.
+[Tiwari2009]_ and [Jacob2012]_.
 Least-squares mascons can be considered a post-processing technique for
 analyzing the GRACE/GRACE-FO data.
 The technique calculates the scaling factor between an input kernel and the
@@ -25,15 +24,12 @@ Thus there is a balance between wanting kernels as geophysically relevant as
 possible with wanting idealistic kernels which minimize ringing and are resolvable.
 Getting the kernels "just right" in order to isolate regions of interest takes some time.
 
-The set of least-squares mascon programs have been used in
-`Velicogna et al. (2014) <https://doi.org/10.1002/2014GL061052>`_
+The set of least-squares mascon programs have been used in [Velicogna2014]_
 and other publications for regional time series analysis.
-The `calc_mascon.py <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/calc_mascon.py>`_
-program additionally calculates the GRACE/GRACE-FO error harmonics following
-`Wahr et al. (2006) <https://doi.org/10.1029/2005GL025305>`_.
+The ``calc_mascon.py`` program additionally calculates the GRACE/GRACE-FO error
+harmonics following [Wahr2006]_.
 
-The `calc_mascon.py <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/calc_mascon.py>`_
-program will output a text file of the time series for each mascon
+The ``calc_mascon.py`` program will output a text file of the time series for each mascon
 (format: GRACE/GRACE-FO month, mid-month date in decimal-year format,
 estimated monthly mass anomaly [Gt], estimated monthly error [Gt],
 mascon area [km\ :sup:`2`]).
@@ -41,8 +37,8 @@ mascon area [km\ :sup:`2`]).
 Parameter Files
 ###############
 
-The `calc_mascon.py <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/calc_mascon.py>`_
-program works by accepting parameter file system arguments (``sys.argv``) listed after the program.
+The ``calc_mascon.py`` program works by accepting parameter file system arguments
+(``sys.argv``) listed after the program.
 These parameter files can be ran individually or in a series.
 
 .. code-block:: bash
@@ -73,12 +69,12 @@ Dataset Parameters
 - ``DSET``: GRACE data product (see `GRACE Data File Formats <./GRACE-Data-File-Formats.html>`_)
 - ``LMIN``: minimum spherical harmonic degree (lower bound of truncation)
 - ``LMAX``: maximum spherical harmonic degree (upper bound of truncation)
-- ``MMAX``: maximum spherical harmonic order (None if LMAX)
+- ``MMAX``: maximum spherical harmonic order (None if ``LMAX``)
 - ``START``: first month to be analyzed
 - ``END``: last month to be analyzed
 - ``MISSING``: GRACE/GRACE-FO months that are not be analyzed (see available GRACE/GRACE-FO months)
-- ``RAD``: Gaussian smoothing radius in km (`Jekeli, 1981 <http://www.geology.osu.edu/~jekeli.1/OSUReports/reports/report_327.pdf>`_)
-- ``DESTRIPE``: filter coefficients using destriping procedure (`Swenson et al., 2006 <https://doi.org/10.1029/2005GL025285>`_)
+- ``RAD``: Gaussian smoothing radius in km [Jekeli1981]_
+- ``DESTRIPE``: filter coefficients using destriping procedure [Swenson2006]_
 - ``SLR_C20``: replace *C*\ :sub:`20` coefficients with values from Satellite Laser Ranging (SLR)
 
 	* `None`: use original values
@@ -149,5 +145,24 @@ Dataset Parameters
 - ``REDISTRIBUTE_REMOVED``: Redistribute total mass of removed harmonics over the ocean
 - ``MASCON_OCEAN``: remove uniformly distributed mascon mass over ocean
 - ``RECONSTRUCT``: remove the reconstructed time series for a region to get the statistical leakage
-- ``POLE_TIDE``: correct GSM *C*\ :sub:`21` and *S*\ :sub:`21` for pole tide (`Wahr et al., 2015 <https://doi.org/10.1002/2015JB011986>`_)
-- ``ATM``: correct Atmosphere with `ECMWF "jump" corrections <https://doi.org/10.1093/gji/ggv276>`_
+- ``POLE_TIDE``: correct GSM *C*\ :sub:`21` and *S*\ :sub:`21` for pole tide [Wahr2015]_
+- ``ATM``: correct Atmosphere with ECMWF "jump" corrections [Fagiolini2015]_
+
+References
+##########
+
+.. [Fagiolini2015] E. Fagiolini, F. Flechtner, M. Horwath, and H. Dobslaw, "Correction of inconsistencies in ECMWF's operational analysis data during de-aliasing of GRACE gravity models", *Geophysical Journal International*, 202(3), 2150--2158, (2015). `doi: 10.1093/gji/ggv276 <https://doi.org/10.1093/gji/ggv276>`_
+
+.. [Jacob2012] T. Jacob, J. Wahr, W. T. Pfeffer, and S. Swenson, "Recent contributions of glaciers and ice caps to sea level rise", *Nature*, 482, 514--518, (2012). `doi: 10.1038/nature10847 <https://doi.org/10.1038/nature10847>`_
+
+.. [Jekeli1981] C. Jekeli, "Alternative Methods to Smooth the Earth's Gravity Field", NASA Grant No. NGR 36-008-161, OSURF Proj. No. 783210, 48 pp., (1981).
+
+.. [Swenson2006] S. Swenson and J. Wahr, "Post‐processing removal of correlated errors in GRACE data", *Geophysical Research Letters*, 33(L08402), (2006). `doi: 10.1029/2005GL025285 <https://doi.org/10.1029/2005GL025285>`_
+
+.. [Tiwari2009] V. M. Tiwari, J. Wahr, and S. Swenson, "Dwindling groundwater resources in northern India, from satellite gravity observations", *Geophysical Research Letters*, 36(L18401), (2009). `doi: 10.1029/2009GL039401 <https://doi.org/10.1029/2009GL039401>`_
+
+.. [Velicogna2014] I. Velicogna, T. C. Sutterley, and M. R. van den Broeke, "Regional acceleration in ice mass loss from Greenland and Antarctica using GRACE time‐variable gravity data", *Geophysical Research Letters*, 119, 8130--8137, (2014). `doi: 10.1002/2014GL061052 <https://doi.org/10.1002/2014GL061052>`_
+
+.. [Wahr2006] J. Wahr, S. Swenson, and I. Velicogna, "Accuracy of GRACE mass estimates", Geophysical Research Letters, 33(L06401), (2006). `doi: 10.1029/2005GL025305 <https://doi.org/10.1029/2005GL025305>`_
+
+.. [Wahr2015] J. Wahr, R. S. Nerem, and S. V. Bettadpur, "The pole tide and its effect on GRACE time‐variable gravity measurements: Implications for estimates of surface mass variations". *Journal of Geophysical Research: Solid Earth*, 120, 4597--4615. `doi: 10.1002/2015JB011986 <https://doi.org/10.1002/2015JB011986>`_

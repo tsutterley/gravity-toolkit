@@ -48,7 +48,6 @@ from gravity_toolkit.piecewise_regress import piecewise_regress
 from gravity_toolkit.plm_colombo import plm_colombo
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.plm_mohlenkamp import plm_mohlenkamp
-from gravity_toolkit.read_CSR_monthly_6x1 import read_CSR_monthly_6x1
 from gravity_toolkit.read_GIA_model import read_GIA_model
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 from gravity_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
@@ -56,6 +55,7 @@ from gravity_toolkit.read_love_numbers import read_love_numbers
 from gravity_toolkit.read_SLR_C20 import read_SLR_C20
 from gravity_toolkit.read_SLR_C30 import read_SLR_C30
 from gravity_toolkit.read_SLR_geocenter import read_SLR_geocenter
+from gravity_toolkit.read_SLR_monthly_6x1 import read_SLR_monthly_6x1
 from gravity_toolkit.read_swenson_geocenter import read_swenson_geocenter
 from gravity_toolkit.read_tellus_geocenter import read_tellus_geocenter
 from gravity_toolkit.spatial import spatial
