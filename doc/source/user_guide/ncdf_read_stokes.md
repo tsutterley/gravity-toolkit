@@ -26,8 +26,8 @@ file_inp = ncdf_read_stokes(filename, DATE=True, VERBOSE=False)
 - `slm`: Sine spherical harmonic coefficients
 - `l`: spherical harmonic degree
 - `m`: spherical harmonic order
-- `time`: time of measurement (if specified by DATE)
-- `month`: GRACE/GRACE-FO month (if specified by DATE)
+- `time`: time of measurement (if specified by `DATE`)
+- `month`: GRACE/GRACE-FO month (if specified by `DATE`)
 - `attributes`: netCDF4 attributes for:
     * spherical harmonics (`clm`,`slm`)
     * variables (`l`,`m`,`time`,`month`)

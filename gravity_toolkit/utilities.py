@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (04/2021)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
     lxml: processing XML and HTML in Python (https://pypi.python.org/pypi/lxml)
 
 UPDATE HISTORY:
+    Updated 04/2021: download CSR SLR figure axis and azimuthal dependence files
+    Updated 03/2021: added sha1 option for retrieving file hashes
     Updated 12/2020: added ICGEM list for static models
         added figshare geocenter download for Sutterley and Velicogna files
         added download for satellite laser ranging (SLR) files from UTCSR
@@ -514,7 +516,7 @@ def drive_list(HOST,username=None,password=None,build=True,timeout=None,
     """
     #-- use netrc credentials
     if build and not (username or password):
-        username,login,password = netrc.netrc().authenticators(urs)
+        username,_,password = netrc.netrc().authenticators(urs)
     #-- build urllib2 opener and check credentials
     if build:
         #-- build urllib2 opener with credentials
@@ -548,7 +550,7 @@ def drive_list(HOST,username=None,password=None,build=True,timeout=None,
         #-- return the list of column names and last modified times
         return (colnames,collastmod)
 
-#-- PURPOSE: download a file from a PO.DAAC/Ecco Drive https server
+#-- PURPOSE: download a file from a PO.DAAC/ECCO Drive https server
 def from_drive(HOST,username=None,password=None,build=True,timeout=None,
     urs='podaac-tools.jpl.nasa.gov',local=None,hash='',chunk=16384,
     verbose=False,fid=sys.stdout,mode=0o775):
@@ -579,7 +581,7 @@ def from_drive(HOST,username=None,password=None,build=True,timeout=None,
     """
     #-- use netrc credentials
     if build and not (username or password):
-        username,login,password = netrc.netrc().authenticators(urs)
+        username,_,password = netrc.netrc().authenticators(urs)
     #-- build urllib2 opener and check credentials
     if build:
         #-- build urllib2 opener with credentials
@@ -691,31 +693,36 @@ def from_csr(directory,timeout=None,context=ssl.SSLContext(),
     fid: open file object to print if verbose
     mode: permissions mode of output local file
     """
-    #-- create directory if non-existent
+    #-- CSR download http server
+    HOST = 'http://download.csr.utexas.edu'
+    #-- recursively create directory if non-existent
     directory = os.path.abspath(os.path.expanduser(directory))
     if not os.access(os.path.join(directory,'geocenter'), os.F_OK):
         os.makedirs(os.path.join(directory,'geocenter'), mode)
-    #-- download SLR 5x5 file
-    HOST = ['http://download.csr.utexas.edu','pub','slr','degree_5',
-        'CSR_Monthly_5x5_Gravity_Harmonics.txt']
-    original_md5 = get_hash(os.path.join(directory,HOST[-1]))
-    from_http(HOST,timeout=timeout,context=context,
-        local=os.path.join(directory,HOST[-1]),hash=original_md5,
-        chunk=chunk,verbose=verbose,fid=fid,mode=mode)
-    #-- download CF-CM SLR geocenter file
-    HOST = ['http://download.csr.utexas.edu','pub','slr','geocenter',
-        'GCN_L1_L2_30d_CF-CM.txt']
-    original_md5 = get_hash(os.path.join(directory,'geocenter',HOST[-1]))
-    from_http(HOST,timeout=timeout,context=context,
-        local=os.path.join(directory,'geocenter',HOST[-1]),hash=original_md5,
-        chunk=chunk,verbose=verbose,fid=fid,mode=mode)
-    #-- download updated SLR geocenter file from Minkang Cheng
-    HOST = ['http://download.csr.utexas.edu','outgoing','cheng',
-        'gct2est.220_5s']
-    original_md5 = get_hash(os.path.join(directory,'geocenter',HOST[-1]))
-    from_http(HOST,timeout=timeout,context=context,
-        local=os.path.join(directory,'geocenter',HOST[-1]),hash=original_md5,
-        chunk=chunk,verbose=verbose,fid=fid,mode=mode)
+    #-- download SLR 5x5, figure axis and azimuthal dependence files
+    FILES = []
+    FILES.append([HOST,'pub','slr','degree_5',
+        'CSR_Monthly_5x5_Gravity_Harmonics.txt'])
+    FILES.append([HOST,'pub','slr','degree_2','C21_S21_RL06.txt'])
+    FILES.append([HOST,'pub','slr','degree_2','C22_S22_RL06.txt'])
+    #-- for each SLR file
+    for FILE in FILES:
+        original_md5 = get_hash(os.path.join(directory,FILE[-1]))
+        from_http(FILE,timeout=timeout,context=context,
+            local=os.path.join(directory,FILE[-1]),
+            hash=original_md5,chunk=chunk,verbose=verbose,
+            fid=fid,mode=mode)
+    #-- download CF-CM SLR and updated SLR geocenter files from Minkang Cheng
+    FILES = []
+    FILES.append([HOST,'pub','slr','geocenter','GCN_L1_L2_30d_CF-CM.txt'])
+    FILES.append([HOST,'outgoing','cheng','gct2est.220_5s'])
+    #-- for each SLR geocenter file
+    for FILE in FILES:
+        original_md5 = get_hash(os.path.join(directory,'geocenter',FILE[-1]))
+        from_http(FILE,timeout=timeout,context=context,
+            local=os.path.join(directory,'geocenter',FILE[-1]),
+            hash=original_md5,chunk=chunk,verbose=verbose,
+            fid=fid,mode=mode)
 
 #-- PURPOSE: list a directory on the GFZ ICGEM https server
 #-- http://icgem.gfz-potsdam.de

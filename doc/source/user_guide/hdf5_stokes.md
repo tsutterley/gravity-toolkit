@@ -13,8 +13,8 @@ hdf5_stokes(clm, slm, linp, minp, tinp, month, FILENAME=output_HDF5_file)
 #### Arguments
 - `clm`: Cosine spherical harmonic coefficients
 - `slm`: Sine spherical harmonic coefficients
-- `linp`: spherical harmonic degree (l)
-- `minp`: spherical harmonic order (m)
+- `linp`: spherical harmonic degree (`l`)
+- `minp`: spherical harmonic order (`m`)
 - `tinp`: date of measurement
 - `month`: GRACE/GRACE-FO month
 

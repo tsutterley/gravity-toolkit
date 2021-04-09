@@ -103,7 +103,7 @@ This project contains work and contributions from the `scientific community <./C
 This program is not sponsored or maintained by the Universities Space Research Association (USRA),
 the Center for Space Research at the University of Texas (UTCSR), the Jet Propulsion Laboratory (JPL),
 the German Research Centre for Geosciences (GeoForschungsZentrum, GFZ) or NASA.
-It is provided here for your convenience but `with no guarantees whatsoever`.
+It is provided here for your convenience but *with no guarantees whatsoever*.
 
 License
 #######

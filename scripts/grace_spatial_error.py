@@ -34,6 +34,7 @@ INPUTS:
 COMMAND LINE OPTIONS:
     --help: list the command line options
     -P X, --np X: Run in parallel with X number of processes
+    -D X, --directory X: Working data directory
     -n X, --love X: Load Love numbers dataset
         0: Han and Wahr (1995) values from PREM
         1: Gegout (2005) values from PREM
@@ -180,7 +181,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF'):
         #-- https://doi.org/10.1016/j.cageo.2012.06.022
         love_numbers_file = get_data_path(['data','PREM-LLNs-truncated.dat'])
         header = 1
-        columns = ['l','hl','ll','kl','nl','nk']    
+        columns = ['l','hl','ll','kl','nl','nk']
     #-- LMAX of load love numbers from Han and Wahr (1995) is 696.
     #-- from Wahr (2007) linearly interpolating kl works
     #-- however, as we are linearly extrapolating out, do not make

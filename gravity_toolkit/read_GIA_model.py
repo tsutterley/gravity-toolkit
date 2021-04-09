@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GIA_model.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (04/2021)
 
 Reads GIA data files that can come in various formats depending on the group
 Outputs spherical harmonics for the GIA rates and the GIA model parameters
@@ -95,32 +95,33 @@ REFERENCES:
     https://doi.org/10.1002/2016JB013844
 
 UPDATE HISTORY:
-    UPDATED 08/2020: flake8 compatible regular expression strings
-    UPDATED 04/2020: include spherical harmonic degree and order in output dict
+    Updated 04/2021: use regular expressions to find ICE6G-D header positions
+    Updated 08/2020: flake8 compatible regular expression strings
+    Updated 04/2020: include spherical harmonic degree and order in output dict
         added option to truncate to spherical harmonic order
-    UPDATED 03/2020: updated for public release.  added reformatted ascii option
-    UPDATED 08/2019: added ICE-6G Version D
-    UPDATED 07/2019: added Geruo ICE-6G models and Caron JPL assimilation
-    UPDATED 06/2018: using python3 compatible octal and input
-    UPDATED 02/2017: added MODE to set output file permissions
-    UPDATED 05-06/2016: using __future__ print function, use format for output
-    UPDATED 08/2015: changed sys.exit to raise ValueError
-    UPDATED 02/2015: update to reading the original file index index_orig
+    Updated 03/2020: updated for public release.  added reformatted ascii option
+    Updated 08/2019: added ICE-6G Version D
+    Updated 07/2019: added Geruo ICE-6G models and Caron JPL assimilation
+    Updated 06/2018: using python3 compatible octal and input
+    Updated 02/2017: added MODE to set output file permissions
+    Updated 05-06/2016: using __future__ print function, use format for output
+    Updated 08/2015: changed sys.exit to raise ValueError
+    Updated 02/2015: update to reading the original file index index_orig
         and using regular expressions for some cases
-    UPDATED 11/2014: added output option HDF5
-    UPDATED 06/2014: changed message to sys.exit
-    UPDATED 05/2014: added test IJ05 files
-    UPDATED 09/2013: changed Wu parameter to 2010 (previously was in the name)
+    Updated 11/2014: added output option HDF5
+    Updated 06/2014: changed message to sys.exit
+    Updated 05/2014: added test IJ05 files
+    Updated 09/2013: changed Wu parameter to 2010 (previously was in the name)
         this is in case the inversion is updated
-    UPDATED 08/2013: updated comments (expanded)
+    Updated 08/2013: updated comments (expanded)
         merged IJ05 with G13, W12a, SM09
         simplified ICE-6G code
         changed Wu code to convert to numerical array first
             then unwrapping the numerical array (vs. string)
-    UPDATED 05/2013: converted to python and updated SM09 with latest best
+    Updated 05/2013: converted to python and updated SM09 with latest best
         updated SM09 parameters to be automated from file input
-    UPDATED 12/2012: changed the naming scheme for Simpson and Whitehouse
-    UPDATED 09/2012: combined several GIA read programs into this standard
+    Updated 12/2012: changed the naming scheme for Simpson and Whitehouse
+    Updated 09/2012: combined several GIA read programs into this standard
 """
 from __future__ import print_function
 
@@ -222,9 +223,6 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
         scale = 1e-11
     elif (GIA == 'ICE6G-D'):
         #-- ICE-6G Version-D
-        #-- header lines to skip
-        header = 1
-        start = 17
         #-- scale factor for geodesy normalization
         scale = 1.0
     else:
@@ -357,6 +355,13 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
             gia_data = f.read().splitlines()
         #-- number of lines in file
         gia_lines = len(gia_data)
+
+        #-- find header lines to skip
+        h1 = r'^GRACE Approximation for degrees 0 to 2'
+        h2 = r'^GRACE Approximation\/Absolute Sea-level Values for degrees \> 2'
+        #-- header lines to skip
+        header, = [(i+1) for i,l in enumerate(gia_data) if re.match(h1,l)]
+        start, = [(i+1) for i,l in enumerate(gia_data) if re.match(h2,l)]
 
         #-- Calculating number of cos and sin harmonics to read from header
         n_harm = (2**2 + 3*2)//2 + 1

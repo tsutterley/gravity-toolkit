@@ -26,5 +26,5 @@ Ylms = gen_harmonics(data, lon, lat, LMAX=LMAX, PLM=PLM)
 #### Returns
 - `clm`: Cosine spherical harmonic coefficients (4-pi normalized)
 - `slm`: Sine spherical harmonic coefficients (4-pi normalized)
-- `l`: spherical harmonic degree to LMAX
-- `m`: spherical harmonic order to MMAX
+- `l`: spherical harmonic degree to `LMAX`
+- `m`: spherical harmonic order to `MMAX`

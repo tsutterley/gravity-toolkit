@@ -13,8 +13,8 @@ ncdf_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=output_netcdf4_file)
 #### Arguments
 - `clm1`: cosine spherical harmonic coefficients
 - `slm1`: sine spherical harmonic coefficients
-- `linp`: spherical harmonic degree (l)
-- `minp`: spherical harmonic order (m)
+- `linp`: spherical harmonic degree (`l`)
+- `minp`: spherical harmonic order (`m`)
 - `tinp`: date of measurement
 - `month`: GRACE/GRACE-FO month
 

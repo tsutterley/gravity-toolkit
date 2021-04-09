@@ -7,7 +7,7 @@ Download and management utilities for syncing time and auxiliary files
  - Can list a directory on a ftp host
  - Can download a file from a ftp or http host
  - Can download a file from PO.DAAC via https when WebDAV credentials are supplied
- - Checks MD5 hashes between local and remote files
+ - Checks ``MD5`` or ``sha1`` hashes between local and remote files
 
 `Source code`__
 
@@ -318,7 +318,7 @@ General Methods
 
 .. method:: gravity_toolkit.utilities.from_figshare(directory,article='7388540',timeout=None,context=ssl.SSLContext(),chunk=16384,verbose=False,fid=sys.stdout,pattern='',mode=0o775)
 
-    Download `Sutterley and Velicogna (2019)`__ geocenter files from `figshare`_
+    Download [Sutterley2019]_ geocenter files from `figshare`_
 
     Arguments:
 
@@ -339,8 +339,6 @@ General Methods
         ``pattern``: regular expression pattern for reducing list
 
         ``mode``: permissions mode of output local file
-
-    .. __: https://doi.org/10.3390/rs11182108
 
     .. _figshare: https://doi.org/10.6084/m9.figshare.7388540
 
@@ -387,3 +385,8 @@ General Methods
         ``colfiles``: dictionary of static file urls mapped by field name
 
     .. __: http://icgem.gfz-potsdam.de/
+
+References
+##########
+
+.. [Sutterley2019] T. C. Sutterley and I. Velicogna, "Improved Estimates of Geocenter Variability from Time-Variable Gravity and Ocean Model Outputs", *Remote Sensing*, 11(18), 2108, (2019). `doi: 10.3390/rs11182108 <https://doi.org/10.3390/rs11182108>`_

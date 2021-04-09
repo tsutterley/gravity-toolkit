@@ -29,5 +29,5 @@ file_inp = hdf5_read(filename, DATE=True, VERBOSE=False)
 - `data`: z value of dataset
 - `lon`: longitudinal array
 - `lat`: latitudinal array
-- `time`: time value of dataset (if specified by DATE)
+- `time`: time value of dataset (if specified by `DATE`)
 - `attributes`: HDF5 attributes (for variables and title)

@@ -108,20 +108,22 @@ General Attributes and Methods
 
 .. method:: object.harmonic(hl, kl, ll)
 
-    Calculates degree dependent factors for converting harmonic units from `Wahr et al. (1998)`__
+    Calculates degree dependent factors for converting harmonic units from [Wahr1998]_
 
     Arguments:
 
         ``hl``, ``kl``, ``ll`` load Love numbers to degree ``lmax``
-
-.. __: https://doi.org/10.1029/98JB02844
 
 .. method:: object.spatial(hl, kl, ll)
 
-    Calculates degree dependent factors for converting spatial units from `Wahr et al. (1998)`__
+    Calculates degree dependent factors for converting spatial units from [Wahr1998]_
 
     Arguments:
 
         ``hl``, ``kl``, ``ll`` load Love numbers to degree ``lmax``
 
-.. __: https://doi.org/10.1029/98JB02844
+
+References
+##########
+
+.. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan, "Time variability of the Earth's gravity field: Hydrological and oceanic effects and their possible detection using GRACE", *Journal of Geophysical Research*, 103(B12), 30205--30229, (1998). `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_

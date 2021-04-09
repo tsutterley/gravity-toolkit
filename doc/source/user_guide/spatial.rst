@@ -429,7 +429,7 @@ General Attributes and Methods
 
     .. method:: object.kfactor(var)
 
-        Calculate the scaling factor and scaling factor errors from two spatial objects following `Landerer and Swenson (2012) <https://doi.org/10.1029/2011WR011453>`_
+        Calculate the scaling factor and scaling factor errors from two spatial objects following [Landerer2012]_
 
         Arguments:
 
@@ -509,3 +509,8 @@ General Attributes and Methods
     .. method:: object.replace_masked()
 
         Replace the masked values with fill_value
+
+References
+##########
+
+.. [Landerer2012] F. W. Landerer and S. C. Swenson, "Accuracy of scaled GRACE terrestrial water storage estimates", *Water Resources Research*, 48(W04531), (2012). `doi: 10.1029/2011WR011453 <https://doi.org/10.1029/2011WR011453>`_

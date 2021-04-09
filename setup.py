@@ -1,17 +1,27 @@
 import os
 from setuptools import setup, find_packages
 
-# package description
+# package description and keywords
 description = ('Python tools for obtaining and working with spherical harmonic'
     'coefficients from the NASA/DLR GRACE and NASA/GFZ GRACE Follow-on missions')
-
+keywords = 'GRACE, GRACE-FO, Gravity, satellite geodesy, spherical harmonics'
 # get long_description from README.rst
 with open("README.rst", "r") as fh:
     long_description = fh.read()
+long_description_content_type = "text/x-rst"
 
-# get install requirements
-with open('requirements.txt') as fh:
-    install_requires = fh.read().splitlines()
+# install requirements and dependencies
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+if on_rtd:
+    install_requires = []
+    dependency_links = []
+else:
+    # get install requirements
+    with open('requirements.txt') as fh:
+        install_requires = fh.read().splitlines()
+    # dependency links (data readers)
+    dependency_links = ['https://github.com/tsutterley/read-GRACE-geocenter/tarball/main',
+        'https://github.com/tsutterley/geoid-toolkit/tarball/tarball/main']
 
 # get version
 with open('version.txt') as fh:
@@ -27,7 +37,7 @@ setup(
     version=version,
     description=description,
     long_description=long_description,
-    long_description_content_type="text/x-rst",
+    long_description_content_type=long_description_content_type,
     url='https://github.com/tsutterley/read-GRACE-harmonics',
     author='Tyler Sutterley',
     author_email='tsutterl@uw.edu',
@@ -43,9 +53,10 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
     ],
-    keywords='GRACE, GRACE-FO, Gravity, satellite geodesy, spherical harmonics',
+    keywords=keywords,
     packages=find_packages(),
     install_requires=install_requires,
+    dependency_links=dependency_links,
     scripts=scripts,
     include_package_data=True,
 )

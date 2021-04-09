@@ -3,7 +3,8 @@ Background
 ==========
 
 
-This documentation is intended to explain how to compute spatial and time series estimates using GRACE/GRACE-FO time-variable gravity measurements.
+This documentation is intended to explain how to compute spatial and time series
+estimates using GRACE/GRACE-FO time-variable gravity measurements.
 ``read-GRACE-harmonics`` is a Python-based geophysical software that reads
 GRACE/GRACE-FO time-variable gravity solutions for estimating regional mass change.
 This software was developed with the goal of supporting science applications for
@@ -13,6 +14,7 @@ time-variable gravity.
 use of `Jupyter Notebooks <./Examples.html>`_.
 
 .. graphviz::
+    :caption: Data Processing Framework
     :align: center
 
     digraph {
@@ -31,7 +33,10 @@ use of `Jupyter Notebooks <./Examples.html>`_.
         R -> T
     }
 
-GRACE and the GRACE Follow-on (GRACE-FO) missions each consist of twin satellites in similar low Earth orbits.
+Measurement Principle
+#####################
+
+GRACE and the GRACE Follow-on (GRACE-FO) missions each consist of twin satellites in similar low Earth orbits [Tapley2019]_.
 The primary and secondary instrumentation onboard the GRACE/GRACE-FO satellites are the ranging instrument
 (GRACE has a microwave ranging instrument, GRACE-FO has both a microwave ranging instrument and a laser interferometer),
 the global positioning system (GPS), the accelerometers and the star cameras.
@@ -51,6 +56,9 @@ and tides to create the `Level-2 spherical harmonic product of GRACE and GRACE-F
 
 .. __: https://podaac-tools.jpl.nasa.gov/drive/files/GeodeticsGravity/gracefo/docs/GRACE-FO_L2-UserHandbook_v1.1.pdf
 
+Data Processing
+###############
+
 There are three main processing centers that create the Level-2 spherical harmonic data as part of the GRACE/GRACE-FO Science Data System (SDS):
 the `University of Texas Center for Space Research (CSR) <http://www2.csr.utexas.edu/grace/>`_,
 the `German Research Centre for Geosciences (GeoForschungsZentrum, GFZ) <https://www.gfz-potsdam.de/en/grace/>`_ and
@@ -58,9 +66,14 @@ the `Jet Propulsion Laboratory (JPL) <https://grace.jpl.nasa.gov/>`_.
 
 GRACE/GRACE-FO data is freely available in the US from
 the `NASA Physical Oceanography Distributed Active Archive Center (PO.DAAC) <https://podaac.jpl.nasa.gov/grace>`_ and
-internationally from the `GFZ Information System and Data Center <http://isdc.gfz-potsdam.de/grace-isdc/>`_.
-There are programs within this repository that can sync with both of these data archives
-`podaac_grace_sync.py <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/podaac_grace_sync.py>`_ and
-`gfz_isdc_grace_ftp.py <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/gfz_isdc_grace_ftp.py>`_.
+internationally from the `GFZ Information System and Data Center (ISDC) <http://isdc.gfz-potsdam.de/grace-isdc/>`_.
+There are programs within this repository that can sync with both of these data archives:
+``podaac_grace_sync.py`` for `PO.DAAC <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/podaac_grace_sync.py>`_ and
+``gfz_isdc_grace_ftp.py`` for the `GFZ ISDC <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/gfz_isdc_grace_ftp.py>`_.
+
+References
+##########
+
+.. [Tapley2019] B. D. Tapley, M. M. Watkins, F. Flechtner et al. "Contributions of GRACE to understanding climate change", *Nature Climate Change*, 9, 358--369 (2019). `doi: 10.1038/s41558-019-0456-2 <https://doi.org/10.1038/s41558-019-0456-2>`_
 
 .. |rarr|    unicode:: U+2192 .. RIGHTWARDS ARROW
