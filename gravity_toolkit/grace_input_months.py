@@ -212,6 +212,9 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
 
     #-- upper bound of spherical harmonic orders (default = LMAX)
     MMAX = np.copy(LMAX) if (MMAX is None) else MMAX
+    
+    #-- SLR low-degree harmonic, geocenter and correction flags
+    FLAGS = []
 
     #-- Replacing C2,0 with SLR C2,0
     #-- Running function read_SLR_C20.py
@@ -224,65 +227,55 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         elif (DREL == 'RL06'):
             SLR_file = os.path.join(base_dir,'TN-11_C20_SLR.txt')
         C20_input = read_SLR_C20(SLR_file)
-        C20_str = '_wCSR_C20'
+        FLAGS.append('_wCSR_C20')
     elif (SLR_C20 == 'GSFC'):
         SLR_file=os.path.join(base_dir,'TN-14_C30_C20_GSFC_SLR.txt')
         C20_input = read_SLR_C20(SLR_file)
-        C20_str = '_wGSFC_C20'
-    else:
-        C20_str = ''
+        FLAGS.append('_wGSFC_C20')
 
     #-- Replacing C2,1/S2,1 with SLR
     #-- Running function read_SLR_CS2.py
     if (SLR_21 == 'CSR'):
         SLR_file = os.path.join(base_dir,'C21_S21_{0}.txt'.format(DREL))
         C21_input = read_SLR_CS2(SLR_file)
-        C21_str = '_wCSR_21'
-    else:
-        C21_str = ''
+        FLAGS.append('_wCSR_21')
 
     #-- Replacing C2,2/S2,2 with SLR
     #-- Running function read_SLR_CS2.py
     if (SLR_22 == 'CSR'):
         SLR_file = os.path.join(base_dir,'C22_S22_{0}.txt'.format(DREL))
         C22_input = read_SLR_CS2(SLR_file)
-        C22_str = '_wCSR_22'
-    else:
-        C22_str = ''
+        FLAGS.append('_wCSR_22')
 
     #-- Replacing C3,0 with SLR C3,0
     #-- Running function read_SLR_C30.py
     if (SLR_C30 == 'CSR'):
         SLR_file=os.path.join(base_dir,'CSR_Monthly_5x5_Gravity_Harmonics.txt')
         C30_input = read_SLR_C30(SLR_file)
-        C30_str = '_wCSR_C30'
+        FLAGS.append('_wCSR_C30')
     elif (SLR_C30 == 'LARES'):
         SLR_file=os.path.join(base_dir,'C30_LARES_filtered.txt')
         C30_input = read_SLR_C30(SLR_file)
-        C30_str = '_wLARES_C30'
+        FLAGS.append('_wLARES_C30')
     elif (SLR_C30 == 'GSFC'):
         SLR_file=os.path.join(base_dir,'TN-14_C30_C20_GSFC_SLR.txt')
         C30_input = read_SLR_C30(SLR_file)
-        C30_str = '_wGSFC_C30'
-    else:
-        C30_str = ''
+        FLAGS.append('_wGSFC_C30')
 
     #-- Replacing C5,0 with SLR C5,0
     #-- Running function read_SLR_C50.py
     if (SLR_C50 == 'CSR'):
         SLR_file=os.path.join(base_dir,'CSR_Monthly_5x5_Gravity_Harmonics.txt')
         C50_input = read_SLR_C50(SLR_file)
-        C50_str = '_wCSR_C50'
+        FLAGS.append('_wCSR_C50')
     elif (SLR_C50 == 'LARES'):
         SLR_file=os.path.join(base_dir,'C50_LARES_filtered.txt')
         C50_input = read_SLR_C50(SLR_file)
-        C50_str = '_wLARES_C50'
+        FLAGS.append('_wLARES_C50')
     elif (SLR_C50 == 'GSFC'):
         SLR_file=os.path.join(base_dir,'GSFC_SLR_C20_C30_C50_GSM_replacement.txt')
         C50_input = read_SLR_C50(SLR_file)
-        C50_str = '_wGSFC_C50'
-    else:
-        C50_str = ''
+        FLAGS.append('_wGSFC_C50')
 
     #-- Correcting for Degree 1 (geocenter variations)
     #-- reading degree 1 file for given release if specified
@@ -298,7 +291,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             JPL = True
         #-- Running function read_tellus_geocenter.py
         DEG1_input = read_tellus_geocenter(DEG1_file,JPL=JPL)
-        DEG1_str = '_w{0}_DEG1'.format(DEG1)
+        FLAGS.append('_w{0}_DEG1'.format(DEG1))
     elif (DEG1 == 'SLR'):
         #-- CSR Satellite Laser Ranging (SLR) degree 1
         # #-- SLR-derived degree-1 mass variations
@@ -320,7 +313,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         DEG1_input = aod_corrected_SLR_geocenter(DEG1_file,HEADER=15,
             RADIUS=6.378136e9,COLUMNS=['MJD','time','X','Y','Z','XM','YM','ZM',
             'X_sigma','Y_sigma','Z_sigma','XM_sigma','YM_sigma','ZM_sigma'])
-        DEG1_str = '_w{0}_DEG1'.format(DEG1)
+        FLAGS.append('_w{0}_DEG1'.format(DEG1))
     elif (DEG1 == 'SLF'):
         #-- read iterated degree one files from Sutterley and Velicogna (2019)
         #-- that includes self-attraction and loading effects
@@ -330,23 +323,22 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         DEG1_file = os.path.join(base_dir,'geocenter',
             '{0}_{1}_{2}_{3}{4}.txt'.format(*args))
         DEG1_input = read_GRACE_geocenter(DEG1_file)
-        DEG1_str = '_w{0}_DEG1'.format(DEG1)
+        FLAGS.append('_w{0}_DEG1'.format(DEG1))
     elif (DEG1 == 'Swenson'):
         #-- degree 1 coefficients provided by Sean Swenson in mm w.e.
         DEG1_file = os.path.join(base_dir,'geocenter',
             'gad_gsm.{0}.txt'.format(DREL))
         #-- Running function read_swenson_geocenter.py
         DEG1_input = read_swenson_geocenter(DEG1_file)
-        DEG1_str = '_w{0}_DEG1'.format(DEG1)
-    else:#-- not using a degree 1 file (non-GSM or only using degree 2+)
-        DEG1_str = ''
+        FLAGS.append('_w{0}_DEG1'.format(DEG1))
 
     #-- atmospheric flag if correcting ECMWF "jumps" (using GAE/GAF/GAG files)
-    atm_str = '_wATM' if ATM else ''
+    if ATM:
+        FLAGS.append('_wATM')
     #-- pole tide flag if correcting for pole tide drift (Wahr et al. 2015)
-    pt_str = '_wPT' if POLE_TIDE else ''
+    if POLE_TIDE:
+        FLAGS.append('_wPT')
     #-- full output string (SLR, geocenter and correction flags)
-    FLAGS = [C20_str,C21_str,C22_str,C30_str,C50_str,DEG1_str,atm_str,pt_str]
     out_str = ''.join(FLAGS)
 
     #-- Range of months from start_mon to end_mon (end_mon+1 to include end_mon)
