@@ -14,11 +14,6 @@ Dataset distributed by NASA PO.DAAC
 Additional dataset distributed by UTCSR
     ftp://ftp.csr.utexas.edu/pub/slr/degree_2/C20_RL05.txt
 
-REFERENCE:
-    Cheng, M. and Tapley, B. D., "Variations in the Earth's oblateness during
-        the past 28 years", Journal of Geophysical Research: Solid Earth,
-        109(B9), B09402, 2004. 10.1029/2004JB003028
-
 CALLING SEQUENCE:
     SLR_C20 = read_SLR_C20(SLR_file)
 
@@ -48,6 +43,15 @@ PYTHON DEPENDENCIES:
 
 PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
+
+REFERENCE:
+    Cheng, M. and Tapley, B. D., "Variations in the Earth's oblateness during
+        the past 28 years", Journal of Geophysical Research: Solid Earth,
+        109(B9), B09402, 2004. 10.1029/2004JB003028
+    Loomis, B. D., Rachlin, K. E., and Luthcke, S. B., "Improved Earth
+        Oblateness Rate Reveals Increased Ice Sheet Losses and Mass-Driven Sea
+        Level Rise", Geophysical Research Letters, 46(12), 6910-6917, 2019.
+        https://doi.org/10.1029/2019GL082929
 
 UPDATE HISTORY:
     Updated 02/2021: use adjust_months function to fix special months cases
@@ -117,7 +121,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
 
     #-- check that SLR file exists
     if not os.access(os.path.expanduser(SLR_file), os.F_OK):
-        raise IOError('SLR file not found in file system')
+        raise FileNotFoundError('SLR file not found in file system')
 
     #-- determine if imported file is from PO.DAAC or CSR
     if bool(re.search(r'C20_RL\d+',SLR_file)):
@@ -146,7 +150,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
         #-- product. The monthly mean of the AOD model has been restored.
         if AOD:#-- Removing AOD product that was restored in the solution
             C20 -= file_input['AOD']*1e-10
-    elif bool(re.search('TN-(11|14)',SLR_file)):
+    elif bool(re.search(r'TN-(11|14)',SLR_file)):
         #-- SLR C20 RL06 file from PO.DAAC
         with open(os.path.expanduser(SLR_file),'r') as f:
             file_contents = f.read().splitlines()

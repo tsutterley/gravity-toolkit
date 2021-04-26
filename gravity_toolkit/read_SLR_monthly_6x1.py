@@ -45,6 +45,7 @@ PROGRAM DEPENDENCIES:
 UPDATE HISTORY:
     Updated 04/2021: renamed module. new SLR 5x5 format from CSR (see notes)
         add file read checks (for mean harmonics header and arc number)
+        use file not found exceptions for test
     Updated 12/2020: using utilities from time module
     Updated 07/2020: added function docstrings
     Updated 07/2019: following new format with mean field in header and no C6,0
@@ -82,6 +83,9 @@ def read_SLR_monthly_6x1(input_file, HEADER=True):
     MJD: output date as Modified Julian Day
     time: output date in year-decimal
     """
+    #-- check that SLR file exists
+    if not os.access(os.path.expanduser(input_file), os.F_OK):
+        raise FileNotFoundError('SLR file not found in file system')
 
     #-- read the file and get contents
     with open(os.path.expanduser(input_file),'r') as f:

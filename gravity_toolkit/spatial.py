@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (02/2021)
+Written by Tyler Sutterley (04/2021)
 
 Data class for reading, writing and processing spatial data
 
@@ -24,6 +24,7 @@ PROGRAM DEPENDENCIES:
     hdf5_read.py: reads spatial data from HDF5
 
 UPDATE HISTORY:
+    Updated 04/2021: use file not found exceptions
     Updated 02/2021: added replace_masked to replace masked values in data
         use adjust_months function to fix special cases of GRACE/GRACE-FO months
         added generic reader, generic writer and write to list functions
@@ -92,7 +93,8 @@ class spatial(object):
                 directory = os.path.dirname(os.path.expanduser(filename))
                 f = [f for f in os.listdir(directory) if re.match(basename,f,re.I)]
                 if not f:
-                    raise IOError('{0} not found in file system'.format(filename))
+                    errmsg = '{0} not found in file system'.format(filename)
+                    raise FileNotFoundError(errmsg)
                 self.filename = os.path.join(directory,f.pop())
         return self
 

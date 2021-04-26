@@ -1,0 +1,122 @@
+#!/usr/bin/env python
+u"""
+read_SLR_CS2.py
+Written by Hugo Lecomte and Tyler Sutterley (04/2021)
+
+Reads monthly degree 2,m (figure axis and azimuthal dependence)
+    spherical harmonic data files from satellite laser ranging (SLR)
+
+Dataset distributed by CSR
+    http://download.csr.utexas.edu/pub/slr/degree_2/
+        C21_S21_RL06.txt or C22_S22_RL06.txt
+
+CALLING SEQUENCE:
+    SLR_2m = read_SLR_CS2(SLR_file)
+
+INPUTS:
+    SLR_file:
+        CSR 2,1: C21_S21_RL06.txt
+        CSR 2,2: C22_S22_RL06.txt
+
+OUTPUTS:
+    C2m: SLR degree 2 order m cosine stokes coefficients
+    S2m: SLR degree 2 order m sine stokes coefficients
+    eC2m: SLR degree 2 order m cosine stokes coefficient error
+    eS2m: SLR degree 2 order m sine stokes coefficient error
+    month: GRACE/GRACE-FO month of measurement (Apr. 2002 = 004)
+    time: date of SLR measurement
+
+PYTHON DEPENDENCIES:
+    numpy: Scientific Computing Tools For Python
+        https://numpy.org
+        https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
+
+PROGRAM DEPENDENCIES:
+    time.py: utilities for calculating time operations
+
+REFERENCE:
+    Cheng et al., " Variations of the Earth's figure axis from satellite
+        laser ranging and GRACE", Journal of Geophysical Research,
+        116, B01409, (2011). https://doi.org/10.1029/2010JB000850
+    Dahle et al., "The GFZ GRACE RL06 Monthly Gravity Field Time Series:
+        Processing Details, and Quality Assessment", Remote Sensing,
+        11(18), 2116, (2019). https://doi.org/10.3390/rs11182116
+    Chen el al., "Assessment of degree-2 order-1 gravitational changes
+        from GRACE and GRACE Follow-on, Earth rotation, satellite laser
+        ranging, and models", Journal of Geodesy, 95(38), (2021).
+        https://doi.org/10.1007/s00190-021-01492-x
+
+UPDATE HISTORY:
+    Updated 04/2021: use adjust_months function to fix special months cases
+    Written 11/2020
+"""
+import os
+import re
+import numpy as np
+import gravity_toolkit.time
+
+#-- PURPOSE: read Degree 2,m data from Satellite Laser Ranging (SLR)
+def read_SLR_CS2(SLR_file):
+    """
+    Reads CS2,m spherical harmonic coefficients from SLR measurements
+
+    Arguments
+    ---------
+    SLR_file: Satellite Laser Ranging file
+
+    Returns
+    -------
+    C2m: SLR degree 2 order m cosine stokes coefficients
+    S2m: SLR degree 2 order m sine stokes coefficients
+    eC2m: SLR degree 2 order m cosine stokes coefficient error
+    eS2m: SLR degree 2 order m sine stokes coefficient error
+    month: GRACE/GRACE-FO month of measurement
+    time: date of SLR measurement
+    """
+
+    #-- check that SLR file exists
+    if not os.access(os.path.expanduser(SLR_file), os.F_OK):
+        raise FileNotFoundError('SLR file not found in file system')
+    #-- output dictionary with input data
+    dinput = {}
+    #-- input variable names and types
+    dtype = {}
+    dtype['names']=('time','C2','S2','eC2','eS2','C2aod','S2aod','start','end')
+    dtype['formats']=('f','f8','f8','f','f','f','f','f','f')
+
+    if bool(re.search(r'C2(\d)_S2(\d)_(RL\d{2})',SLR_file)):
+
+        #-- read SLR 2,1 or 2,2 RL06 file from CSR
+        #-- Column 1: Approximate mid-point of monthly solution (years)
+        #-- Column 2: Solution from SLR (normalized)
+        #-- Column 3: Solution from SLR (normalized)
+        #-- Column 4: Solution sigma (1E-10)
+        #-- Column 5: Solution sigma (1E-10)
+        #-- Column 6: Mean value of Atmosphere-Ocean De-aliasing model (1E-10)
+        #-- Column 7: Mean value of Atmosphere-Ocean De-aliasing model (1E-10)
+        #-- Columns 8-9: Start and end dates of data used in solution
+        #-- header text is commented and won't be read
+        content = np.loadtxt(os.path.expanduser(SLR_file),dtype=dtype)
+        #-- date and GRACE/GRACE-FO month
+        dinput['time'] = content['time'].copy()
+        dinput['month'] = 1 + np.floor((dinput['time']-2002.0)*12.0)
+        #-- remove the monthly mean of the AOD model
+        dinput['C2m'] = content['C2'] - content['C2aod']*10**-10
+        dinput['S2m'] = content['S2'] - content['S2aod']*10**-10
+        #-- scale SLR solution sigmas
+        dinput['eC2m'] = content['eC2']*10**-10
+        dinput['eS2m'] = content['eS2']*10**-10
+
+    #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
+    #-- Accelerometer shutoffs make the relation between month number
+    #-- and date more complicated as days from other months are used
+    #-- For CSR and GFZ: Nov 2011 (119) is centered in Oct 2011 (118)
+    #-- For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
+    #-- For all: May 2015 (161) is centered in Apr 2015 (160)
+    #-- For GSFC: Oct 2018 (202) is centered in Nov 2018 (203)
+    dinput['month'] = gravity_toolkit.time.adjust_months(dinput['month'])
+
+    #-- return the input CS2m data, year-decimal date, and GRACE/GRACE-FO month
+    return dinput

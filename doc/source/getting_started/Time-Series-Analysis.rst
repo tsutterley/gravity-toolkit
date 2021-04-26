@@ -81,11 +81,28 @@ Dataset Parameters
 	* ``'CSR'``: use values from CSR (TN-07, TN-09, TN-11)
 	* ``'GSFC'``: use values from GSFC (TN-14)
 
+- ``SLR_21``: replace *C*\ :sub:`21` and *S*\ :sub:`21` coefficients with values from Satellite Laser Ranging (SLR)
+
+	* `None`: use original values
+	* ``'CSR'``: use values from CSR
+
+- ``SLR_22``: replace *C*\ :sub:`22` and *S*\ :sub:`22` coefficients with values from Satellite Laser Ranging (SLR)
+
+	* `None`: use original values
+	* ``'CSR'``: use values from CSR
+
 - ``SLR_C30``: replace *C*\ :sub:`30` coefficients with values from Satellite Laser Ranging (SLR)
 
 	* `None`: use original values
 	* ``'CSR'``: use values from CSR (5x5 with 6,1)
 	* ``'GSFC'``: use values from GSFC (TN-14)
+	* ``'LARES'``: use filtered values from CSR (John Ries)
+
+- ``SLR_C50``: replace *C*\ :sub:`50` coefficients with values from Satellite Laser Ranging (SLR)
+
+	* `None`: use original values
+	* ``'CSR'``: use values from CSR (5x5 with 6,1)
+	* ``'GSFC'``: use values from GSFC
 	* ``'LARES'``: use filtered values from CSR (John Ries)
 
 - ``DEG1``: account for variations in geocenter with specified values

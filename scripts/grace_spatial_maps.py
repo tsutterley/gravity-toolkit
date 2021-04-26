@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_maps.py
-Written by Tyler Sutterley (02/2021)
+Written by Tyler Sutterley (04/2021)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly spatial fields
@@ -66,7 +66,7 @@ PROGRAM DEPENDENCIES:
     grace_input_months.py: Reads GRACE/GRACE-FO files for a specified spherical
             harmonic degree and order and for a specified date range
         Replaces Degree 1 with with Swenson values (if specified)
-        Replaces C20 and C30 with SLR values (if specified)
+        Replaces C20,C21,S21,C22,S22,C30 and C50 with SLR values (if specified)
     read_GIA_model.py: reads harmonics for a glacial isostatic adjustment model
     read_love_numbers.py: reads Load Love Numbers from Han and Wahr (1995)
     plm_holmes.py: Computes fully normalized associated Legendre polynomials
@@ -91,6 +91,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 04/2021: include parameters for replacing C21/S21 and C22/S22
     Updated 02/2021: changed remove index to files with specified formats
     Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
     Updated 12/2020: added more love number options and from gfc for mean files
@@ -209,9 +210,12 @@ def grace_spatial_maps(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
         MMAX = np.copy(LMAX)
     else:
         MMAX = np.int(parameters['MMAX'])
-    #-- SLR C2,0 and C3,0
+    #-- replace low-degree coefficients with values from SLR
     SLR_C20 = parameters['SLR_C20']
+    SLR_21 = parameters['SLR_21']
+    SLR_22 = parameters['SLR_22']
     SLR_C30 = parameters['SLR_C30']
+    SLR_C50 = parameters['SLR_C50']
     #-- Degree 1 correction
     DEG1 = parameters['DEG1']
     MODEL_DEG1 = parameters['MODEL_DEG1'] in ('Y','y')
@@ -268,10 +272,12 @@ def grace_spatial_maps(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
     order_str = 'M{0:d}'.format(MMAX) if (MMAX != LMAX) else ''
 
     #-- reading GRACE months for input range with grace_input_months.py
-    #-- replacing SLR and Degree 1 if specified
+    #-- replacing low-degree harmonics with SLR values if specified
+    #-- include degree 1 (geocenter) harmonics if specified
     #-- correcting for Pole-Tide and Atmospheric Jumps if specified
     Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
-        start_mon, end_mon, missing, SLR_C20, DEG1, MMAX=MMAX, SLR_C30=SLR_C30,
+        start_mon, end_mon, missing, SLR_C20, DEG1, MMAX=MMAX,
+        SLR_21=SLR_21, SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C50=SLR_C50,
         MODEL_DEG1=MODEL_DEG1, ATM=ATM, POLE_TIDE=POLE_TIDE)
     #-- convert to harmonics object and remove mean if specified
     GRACE_Ylms = harmonics().from_dict(Ylms)

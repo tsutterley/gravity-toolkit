@@ -5,7 +5,7 @@ grace_input_months.py
 - Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order and for a specified date range
 - Replaces Degree 1 with with input values (if specified)
 - Replaces C20 with SLR values (if specified)
-- Replaces C30 with SLR values for months 179+ (if specified)
+- Replaces C21/S21/C22/S22/C30/C50 with SLR values for months 179+ (if specified)
 - Corrects for ECMWF atmospheric "jumps" using the GAE, GAF and GAG files following [Fagiolini2015]_
 - Corrects for Pole Tide drift following [Wahr2015]_
 
@@ -16,7 +16,7 @@ Calling Sequence
 
       from gravity_toolkit.grace_input_months import grace_input_months
       GRACE_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
-      start_mon, end_mon, missing, SLR_C20, DEG1, SLR_C30=SLR_C30)
+        start_mon, end_mon, missing, SLR_C20, DEG1, SLR_C30=SLR_C30)
 
 `Source code`__
 
@@ -61,11 +61,24 @@ Keyword arguments
 #################
 
 - ``MMAX``: Upper bound of Spherical Harmonic Orders
+- ``SLR_21``: Replaces C21/S21 with values from Satellite Laser Ranging (SLR)
+
+    * ``None``: use original values
+    * ``'CSR'``: use values from CSR
+- ``SLR_22``: Replaces C22/S22 with values from Satellite Laser Ranging (SLR)
+
+    * ``None``: use original values
+    * ``'CSR'``: use values from CSR
 - ``SLR_C30``: Replaces C30 with values from Satellite Laser Ranging (SLR)
 
     * ``None``: use original values
     * ``'CSR'``: use values from CSR (5x5 with 6,1)
     * ``'GSFC'``: use values from GSFC (TN-14)
+- ``SLR_C50``: Replaces C50 with values from Satellite Laser Ranging (SLR)
+
+    * ``None``: use original values
+    * ``'CSR'``: use values from CSR (5x5 with 6,1)
+    * ``'GSFC'``: use values from GSFC
 - ``POLE_TIDE``: correct GSM data for pole tide drift
 - ``ATM``: correct data with ECMWF "jump" corrections GAE, GAF and GAG
 - ``MODEL_DEG1``: least-squares model missing degree 1 coefficients
