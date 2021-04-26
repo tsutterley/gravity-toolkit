@@ -7,14 +7,14 @@ Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
     and for a specified date range
 Replaces Degree 1 with with input values (if specified)
 Replaces C20 with SLR values (if specified)
-Replaces C30 with SLR values for months 179+ (if specified)
+Replaces C21/S21/C22/S22/C30/C50 with SLR values for months 179+ (if specified)
 Corrects for ECMWF atmospheric "jumps" using the GAE, GAF and GAG files
 Corrects for Pole Tide drift following Wahr et al. (2015)
 
 INPUTS:
     base_dir: Working data directory for GRACE/GRACE-FO data
     PROC: (CSR/CNES/JPL/GFZ) data processing center
-    DREL: (RL01,RL02,RL03,RL04,RL05,RL06) data release
+    DREL: (RL01/RL02/RL03/RL04/RL05/RL06) data release
     DSET: (GAA/GAB/GAC/GAD/GSM) data product
     LMAX: Upper bound of Spherical Harmonic Degrees (e.g. 60)
     start_mon: starting month to consider in analysis
@@ -146,17 +146,17 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     """
     Reads GRACE/GRACE-FO files for a spherical harmonic degree and order
         and a date range
-    Replaces Degree 1 with with input values (if specified)
-    Replaces C20 with SLR values (if specified)
-    Replaces C21,S21,C22,S22,C30 with SLR values for months 179+ (if specified)
-    Corrects for ECMWF atmospheric "jumps" using the GAE, GAF and GAG files
-    Corrects for Pole Tide drift following Wahr et al. (2015)
+    Can include geocenter values for degree 1 coefficients
+    Can replace C20 with SLR values for all months
+    Can replace C21,S21,C22,S22,C30,C50 with SLR values for months 179+
+    Can correct for ECMWF atmospheric "jumps" using GAE/GAF/GAG files
+    Can correct for Pole Tide drift following Wahr et al. (2015)
 
     Arguments
     ---------
     base_dir: Working data directory for GRACE/GRACE-FO data
     PROC: (CSR/CNES/JPL/GFZ) data processing center
-    DREL: (RL01,RL02,RL03,RL04,RL05,RL06) data release
+    DREL: (RL01/RL02/RL03/RL04/RL05/RL06) data release
     DSET: (GAA/GAB/GAC/GAD/GSM) data product
     LMAX: Upper bound of Spherical Harmonic Degrees
     start_mon: starting month to consider in analysis
