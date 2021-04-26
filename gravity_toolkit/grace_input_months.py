@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (04/2021)
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
     and for a specified date range
 Replaces Degree 1 with with input values (if specified)
 Replaces C20 with SLR values (if specified)
-Replaces C30 with SLR values for months 179+ (if specified)
+Replaces C21/S21/C22/S22/C30/C50 with SLR values for months 179+ (if specified)
 Corrects for ECMWF atmospheric "jumps" using the GAE, GAF and GAG files
 Corrects for Pole Tide drift following Wahr et al. (2015)
 
 INPUTS:
     base_dir: Working data directory for GRACE/GRACE-FO data
     PROC: (CSR/CNES/JPL/GFZ) data processing center
-    DREL: (RL01,RL02,RL03,RL04,RL05,RL06) data release
+    DREL: (RL01/RL02/RL03/RL04/RL05/RL06) data release
     DSET: (GAA/GAB/GAC/GAD/GSM) data product
     LMAX: Upper bound of Spherical Harmonic Degrees (e.g. 60)
     start_mon: starting month to consider in analysis
@@ -47,10 +47,20 @@ OUTPUTS:
 
 OPTIONS:
     MMAX: Upper bound of Spherical Harmonic Orders (default=LMAX)
+    SLR_21: replaces C21 and S21 with SLR values
+        None: use original values
+        CSR: use values from CSR
+    SLR_22: replaces C22 and S22 with SLR values
+        None: use original values
+        CSR: use values from CSR
     SLR_C30: replaces C30 with SLR values
         None: use original values
         CSR: use values from CSR (5x5 with 6,1)
         GSFC: use values from GSFC (TN-14)
+    SLR_C50: replaces C50 with SLR values
+        None: use original values
+        CSR: use values from CSR (5x5 with 6,1)
+        GSFC: use values from GSFC
     POLE_TIDE: correct GSM data with pole tides following Wahr et al (2015)
     ATM: correct data with ECMWF "jump" corrections GAE, GAF and GAG
     MODEL_DEG1: least-squares model missing degree 1 coefficients (True/False)
@@ -76,6 +86,7 @@ PROGRAM DEPENDENCIES:
     read_GRACE_harmonics.py: reads an input GRACE data file and calculates date
 
 UPDATE HISTORY:
+    Updated 04/2021: can replace figure axis and azimuthal dependence with SLR
     Updated 12/2020: updated SLR geocenter for new solutions from Minkang Cheng
     Updated 11/2020: set regress_model RELATIVE option to 2003.3 to match others
     Updated 08/2020: flake8 compatible regular expression strings
@@ -120,30 +131,32 @@ import gzip
 import numpy as np
 from gravity_toolkit.grace_date import grace_date
 from gravity_toolkit.read_SLR_C20 import read_SLR_C20
+from gravity_toolkit.read_SLR_CS2 import read_SLR_CS2
 from gravity_toolkit.read_SLR_C30 import read_SLR_C30
+from gravity_toolkit.read_SLR_C50 import read_SLR_C50
 from gravity_toolkit.read_swenson_geocenter import read_swenson_geocenter
 from gravity_toolkit.read_tellus_geocenter import read_tellus_geocenter
 from gravity_toolkit.read_SLR_geocenter import aod_corrected_SLR_geocenter
 from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 
-def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
-    start_mon, end_mon, missing, SLR_C20, DEG1, MMAX=None, SLR_C30='',
-    MODEL_DEG1=False, DEG1_GIA='', ATM=False, POLE_TIDE=False):
+def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
+    missing, SLR_C20, DEG1, MMAX=None, SLR_21='', SLR_22='',  SLR_C30='',
+    SLR_C50='', MODEL_DEG1=False, DEG1_GIA='', ATM=False, POLE_TIDE=False):
     """
     Reads GRACE/GRACE-FO files for a spherical harmonic degree and order
         and a date range
-    Replaces Degree 1 with with input values (if specified)
-    Replaces C20 with SLR values (if specified)
-    Replaces C30 with SLR values for months 179+ (if specified)
-    Corrects for ECMWF atmospheric "jumps" using the GAE, GAF and GAG files
-    Corrects for Pole Tide drift following Wahr et al. (2015)
+    Can include geocenter values for degree 1 coefficients
+    Can replace C20 with SLR values for all months
+    Can replace C21,S21,C22,S22,C30,C50 with SLR values for months 179+
+    Can correct for ECMWF atmospheric "jumps" using GAE/GAF/GAG files
+    Can correct for Pole Tide drift following Wahr et al. (2015)
 
     Arguments
     ---------
     base_dir: Working data directory for GRACE/GRACE-FO data
     PROC: (CSR/CNES/JPL/GFZ) data processing center
-    DREL: (RL01,RL02,RL03,RL04,RL05,RL06) data release
+    DREL: (RL01/RL02/RL03/RL04/RL05/RL06) data release
     DSET: (GAA/GAB/GAC/GAD/GSM) data product
     LMAX: Upper bound of Spherical Harmonic Degrees
     start_mon: starting month to consider in analysis
@@ -163,10 +176,20 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
     Keyword arguments
     -----------------
     MMAX: Upper bound of Spherical Harmonic Orders
+    SLR_21: replaces C21 and S21 with SLR values
+        None: use original values
+        CSR: use values from CSR
+    SLR_22: replaces C22 and S22 with SLR values
+        None: use original values
+        CSR: use values from CSR
     SLR_C30: replaces C30 with SLR values
         None: use original values
         CSR: use values from CSR (5x5 with 6,1)
         GSFC: use values from GSFC (TN-14)
+    SLR_C50: replaces C50 with SLR values
+        None: use original values
+        CSR: use values from CSR (5x5 with 6,1)
+        GSFC: use values from GSFC
     POLE_TIDE: correct GSM data with pole tides following Wahr et al (2015)
     ATM: correct data with ECMWF "jump" corrections GAE, GAF and GAG
     MODEL_DEG1: least-squares model missing degree 1 coefficients (True/False)
@@ -189,6 +212,9 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
 
     #-- upper bound of spherical harmonic orders (default = LMAX)
     MMAX = np.copy(LMAX) if (MMAX is None) else MMAX
+    
+    #-- SLR low-degree harmonic, geocenter and correction flags
+    FLAGS = []
 
     #-- Replacing C2,0 with SLR C2,0
     #-- Running function read_SLR_C20.py
@@ -201,30 +227,55 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         elif (DREL == 'RL06'):
             SLR_file = os.path.join(base_dir,'TN-11_C20_SLR.txt')
         C20_input = read_SLR_C20(SLR_file)
-        C20_str = '_wCSR_C20'
+        FLAGS.append('_wCSR_C20')
     elif (SLR_C20 == 'GSFC'):
         SLR_file=os.path.join(base_dir,'TN-14_C30_C20_GSFC_SLR.txt')
         C20_input = read_SLR_C20(SLR_file)
-        C20_str = '_wGSFC_C20'
-    else:
-        C20_str = ''
+        FLAGS.append('_wGSFC_C20')
+
+    #-- Replacing C2,1/S2,1 with SLR
+    #-- Running function read_SLR_CS2.py
+    if (SLR_21 == 'CSR'):
+        SLR_file = os.path.join(base_dir,'C21_S21_{0}.txt'.format(DREL))
+        C21_input = read_SLR_CS2(SLR_file)
+        FLAGS.append('_wCSR_21')
+
+    #-- Replacing C2,2/S2,2 with SLR
+    #-- Running function read_SLR_CS2.py
+    if (SLR_22 == 'CSR'):
+        SLR_file = os.path.join(base_dir,'C22_S22_{0}.txt'.format(DREL))
+        C22_input = read_SLR_CS2(SLR_file)
+        FLAGS.append('_wCSR_22')
 
     #-- Replacing C3,0 with SLR C3,0
     #-- Running function read_SLR_C30.py
     if (SLR_C30 == 'CSR'):
         SLR_file=os.path.join(base_dir,'CSR_Monthly_5x5_Gravity_Harmonics.txt')
         C30_input = read_SLR_C30(SLR_file)
-        C30_str = '_wCSR_C30'
+        FLAGS.append('_wCSR_C30')
     elif (SLR_C30 == 'LARES'):
         SLR_file=os.path.join(base_dir,'C30_LARES_filtered.txt')
         C30_input = read_SLR_C30(SLR_file)
-        C30_str = '_wLARES_C30'
+        FLAGS.append('_wLARES_C30')
     elif (SLR_C30 == 'GSFC'):
         SLR_file=os.path.join(base_dir,'TN-14_C30_C20_GSFC_SLR.txt')
         C30_input = read_SLR_C30(SLR_file)
-        C30_str = '_wGSFC_C30'
-    else:
-        C30_str = ''
+        FLAGS.append('_wGSFC_C30')
+
+    #-- Replacing C5,0 with SLR C5,0
+    #-- Running function read_SLR_C50.py
+    if (SLR_C50 == 'CSR'):
+        SLR_file=os.path.join(base_dir,'CSR_Monthly_5x5_Gravity_Harmonics.txt')
+        C50_input = read_SLR_C50(SLR_file)
+        FLAGS.append('_wCSR_C50')
+    elif (SLR_C50 == 'LARES'):
+        SLR_file=os.path.join(base_dir,'C50_LARES_filtered.txt')
+        C50_input = read_SLR_C50(SLR_file)
+        FLAGS.append('_wLARES_C50')
+    elif (SLR_C50 == 'GSFC'):
+        SLR_file=os.path.join(base_dir,'GSFC_SLR_C20_C30_C50_GSM_replacement.txt')
+        C50_input = read_SLR_C50(SLR_file)
+        FLAGS.append('_wGSFC_C50')
 
     #-- Correcting for Degree 1 (geocenter variations)
     #-- reading degree 1 file for given release if specified
@@ -240,7 +291,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
             JPL = True
         #-- Running function read_tellus_geocenter.py
         DEG1_input = read_tellus_geocenter(DEG1_file,JPL=JPL)
-        DEG1_str = '_w{0}_DEG1'.format(DEG1)
+        FLAGS.append('_w{0}_DEG1'.format(DEG1))
     elif (DEG1 == 'SLR'):
         #-- CSR Satellite Laser Ranging (SLR) degree 1
         # #-- SLR-derived degree-1 mass variations
@@ -262,7 +313,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         DEG1_input = aod_corrected_SLR_geocenter(DEG1_file,HEADER=15,
             RADIUS=6.378136e9,COLUMNS=['MJD','time','X','Y','Z','XM','YM','ZM',
             'X_sigma','Y_sigma','Z_sigma','XM_sigma','YM_sigma','ZM_sigma'])
-        DEG1_str = '_w{0}_DEG1'.format(DEG1)
+        FLAGS.append('_w{0}_DEG1'.format(DEG1))
     elif (DEG1 == 'SLF'):
         #-- read iterated degree one files from Sutterley and Velicogna (2019)
         #-- that includes self-attraction and loading effects
@@ -272,23 +323,23 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         DEG1_file = os.path.join(base_dir,'geocenter',
             '{0}_{1}_{2}_{3}{4}.txt'.format(*args))
         DEG1_input = read_GRACE_geocenter(DEG1_file)
-        DEG1_str = '_w{0}_DEG1'.format(DEG1)
+        FLAGS.append('_w{0}_DEG1'.format(DEG1))
     elif (DEG1 == 'Swenson'):
         #-- degree 1 coefficients provided by Sean Swenson in mm w.e.
         DEG1_file = os.path.join(base_dir,'geocenter',
             'gad_gsm.{0}.txt'.format(DREL))
         #-- Running function read_swenson_geocenter.py
         DEG1_input = read_swenson_geocenter(DEG1_file)
-        DEG1_str = '_w{0}_DEG1'.format(DEG1)
-    else:#-- not using a degree 1 file (non-GSM or only using degree 2+)
-        DEG1_str = ''
+        FLAGS.append('_w{0}_DEG1'.format(DEG1))
 
     #-- atmospheric flag if correcting ECMWF "jumps" (using GAE/GAF/GAG files)
-    atm_str = '_wATM' if ATM else ''
+    if ATM:
+        FLAGS.append('_wATM')
     #-- pole tide flag if correcting for pole tide drift (Wahr et al. 2015)
-    pt_str = '_wPT' if POLE_TIDE else ''
-    #-- full output string (C20, C30, geocenter and atmospheric flags)
-    out_str = C20_str + C30_str + DEG1_str + atm_str + pt_str
+    if POLE_TIDE:
+        FLAGS.append('_wPT')
+    #-- full output string (SLR, geocenter and correction flags)
+    out_str = ''.join(FLAGS)
 
     #-- Range of months from start_mon to end_mon (end_mon+1 to include end_mon)
     #-- Removing the missing months and months not to consider
@@ -332,6 +383,36 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
                 k, = np.nonzero(C20_input['month'] == grace_month)
                 grace_clm[2,0,i] = C20_input['data'][k]
 
+    #-- Replace C21/S21 with SLR coefficients for single-accelerometer months
+    if SLR_21 in ('CSR',):
+        #-- verify that there are replacement C21/S21 months for specified range
+        months_test = sorted(set(mon[mon > 176]) - set(C21_input['month']))
+        if months_test:
+            gm = ','.join('{0:03d}'.format(gm) for gm in months_test)
+            raise IOError('No Matching C21/S21 Months ({0})'.format(gm))
+        #-- replace C21/S21 with SLR coefficients
+        for i,grace_month in enumerate(months):
+            count = np.count_nonzero(C21_input['month'] == grace_month)
+            if (count != 0) and (grace_month > 176):
+                k, = np.nonzero(C21_input['month'] == grace_month)
+                grace_clm[2,1,i] = C21_input['C2m'][k]
+                grace_slm[2,1,i] = C21_input['S2m'][k]
+
+    #-- Replace C22/S22 with SLR coefficients for single-accelerometer months
+    if SLR_22 in ('CSR',):
+        #-- verify that there are replacement C22/S22 months for specified range
+        months_test = sorted(set(mon[mon > 176]) - set(C22_input['month']))
+        if months_test:
+            gm = ','.join('{0:03d}'.format(gm) for gm in months_test)
+            raise IOError('No Matching C22/S22 Months ({0})'.format(gm))
+        #-- replace C22/S22 with SLR coefficients
+        for i,grace_month in enumerate(months):
+            count = np.count_nonzero(C22_input['month'] == grace_month)
+            if (count != 0) and (grace_month > 176):
+                k, = np.nonzero(C22_input['month'] == grace_month)
+                grace_clm[2,2,i] = C22_input['C2m'][k]
+                grace_slm[2,2,i] = C22_input['S2m'][k]
+
     #-- Replace C30 with SLR coefficients for single-accelerometer months
     if SLR_C30 in ('CSR','GSFC','LARES'):
         #-- verify that there are replacement C30 months for specified range
@@ -345,6 +426,20 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
             if (count != 0) and (grace_month > 176):
                 k, = np.nonzero(C30_input['month'] == grace_month)
                 grace_clm[3,0,i] = C30_input['data'][k]
+
+    #-- Replace C50 with SLR coefficients for single-accelerometer months
+    if SLR_C50 in ('CSR','GSFC','LARES'):
+        #-- verify that there are replacement C50 months for specified range
+        months_test = sorted(set(mon[mon > 176]) - set(C50_input['month']))
+        if months_test:
+            gm = ','.join('{0:03d}'.format(gm) for gm in months_test)
+            raise IOError('No Matching C50 Months ({0})'.format(gm))
+        #-- replace C50 with SLR coefficients
+        for i,grace_month in enumerate(months):
+            count = np.count_nonzero(C50_input['month'] == grace_month)
+            if (count != 0) and (grace_month > 176):
+                k, = np.nonzero(C50_input['month'] == grace_month)
+                grace_clm[5,0,i] = C50_input['data'][k]
 
     #-- Use Degree 1 coefficients
     #-- Tellus: Tellus Degree 1 (PO.DAAC following Sun et al., 2016)

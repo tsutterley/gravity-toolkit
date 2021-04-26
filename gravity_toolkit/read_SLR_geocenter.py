@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_geocenter.py
-Written by Tyler Sutterley (02/2021)
+Written by Tyler Sutterley (04/2021)
 
 Reads monthly geocenter files from satellite laser ranging provided by CSR
     http://download.csr.utexas.edu/pub/slr/geocenter/
@@ -53,6 +53,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 04/2021: use file not found exceptions
     Updated 02/2021: use adjust_months function to fix special months cases
     Updated 12/2020: added option COLUMNS to generalize the ascii data format
         replaced numpy loadtxt with generic read using regular expressions
@@ -117,7 +118,7 @@ def read_SLR_geocenter(geocenter_file, RADIUS=None, HEADER=0,
 
     #-- check that geocenter file exists
     if not os.access(os.path.expanduser(geocenter_file), os.F_OK):
-        raise IOError('Geocenter file not found in file system')
+        raise FileNotFoundError('Geocenter file not found in file system')
 
     #-- Input geocenter file and split lines
     with open(os.path.expanduser(geocenter_file),'r') as f:
@@ -230,6 +231,10 @@ def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, HEADER=0,
     month: GRACE/GRACE-FO month
     time: date of each month in year-decimal
     """
+    #-- check that geocenter file exists
+    if not os.access(os.path.expanduser(geocenter_file), os.F_OK):
+        raise FileNotFoundError('Geocenter file not found in file system')
+
     #-- directory setup for AOD1b data starting with input degree 1 file
     #-- this will verify that the input paths work
     AOD1B_dir = os.path.abspath(os.path.join(geocenter_file,os.path.pardir,
@@ -328,7 +333,8 @@ def read_AOD1b_geocenter(AOD1B_file, calendar_month):
     """
     #-- check that file exists
     if not os.access(AOD1B_file, os.F_OK):
-        raise IOError('AOD1b File {0} not in File System'.format(AOD1B_file))
+        errmsg = 'AOD1b File {0} not in File System'.format(AOD1B_file)
+        raise FileNotFoundError(errmsg)
     #-- read AOD1b geocenter skipping over commented header text
     with open(AOD1B_file, 'r') as f:
         file_contents=[i for i in f.read().splitlines() if not re.match(r'#',i)]

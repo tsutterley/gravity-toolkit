@@ -45,8 +45,8 @@ the reference frame for the load Love numbers needs to be updated accordingly [B
 In ``grace_spatial_maps.py`` and other GRACE/GRACE-FO programs, the reference frame for the load Love numbers
 is adjusted by setting the ``--reference`` command line option to ``'CF'``.
 
-Low-Degree Zonals
-#################
+Low-Degree Harmonics
+####################
 
 For both GRACE and GRACE-FO, there have been operational issues that have affected the
 quality of the time-variable gravity fields.
@@ -65,12 +65,22 @@ independent methods to spatiotemporally transplant the accelerometer data retrie
 from GRACE-A to GRACE-B and from GF1 to GF2 [Bandikova2019]_.
 These single-accelerometer months for both GRACE and GRACE-FO contain significantly
 more noise, particularly the low-degree zonal harmonics
-(particularly *C*\ :sub:`20` and *C*\ :sub:`30` but possibly *C*\ :sub:`40` and *C*\ :sub:`50`).
-*C*\ :sub:`20` has also been difficult for GRACE and GRACE-FO to independently measure throughout both missions.
+(predominantly *C*\ :sub:`20` and *C*\ :sub:`30` but possibly *C*\ :sub:`40` and *C*\ :sub:`50`).
+*C*\ :sub:`20` has also been difficult for GRACE and GRACE-FO to independently measure
+throughout both missions.
+The figure axis harmonics (*C*\ :sub:`21` and *S*\ :sub:`21`) may also be contaminated
+by noise during the single-accelerometer months in the GFZ products [Dahle2019]_.
 Measurements from satellite laser ranging (SLR) can provide an independent assessment
-for some low degree and order spherical harmonics [Cheng2018]_ [Loomis2019]_ [Loomis2020]_.
-``grace_spatial_maps.py`` has options for replacing both *C*\ :sub:`20` and *C*\ :sub:`30` with
-SLR low degree zonal products.
+for some low degree and order spherical harmonics.
+``grace_spatial_maps.py`` has options for replacing
+*C*\ :sub:`20`,
+*C*\ :sub:`21`,
+*S*\ :sub:`21`,
+*C*\ :sub:`22`,
+*S*\ :sub:`22`,
+*C*\ :sub:`30`,
+and *C*\ :sub:`50` with
+SLR low degree harmonic products [Cheng2011]_ [Cheng2018]_ [Loomis2019]_ [Loomis2020]_.
 
 Corrections
 ###########
@@ -155,11 +165,28 @@ Dataset Parameters
      * ``'CSR'``: use values from CSR (TN-07, TN-09, TN-11)
      * ``'GSFC'``: use values from GSFC (TN-14)
 
+- ``SLR_21``: replace *C*\ :sub:`21` and *S*\ :sub:`21` coefficients with values from Satellite Laser Ranging (SLR)
+
+     * `None`: use original values
+     * ``'CSR'``: use values from CSR
+
+- ``SLR_22``: replace *C*\ :sub:`22` and *S*\ :sub:`22` coefficients with values from Satellite Laser Ranging (SLR)
+
+     * `None`: use original values
+     * ``'CSR'``: use values from CSR
+
 - ``SLR_C30``: replace *C*\ :sub:`30` coefficients with values from Satellite Laser Ranging (SLR)
 
      * `None`: use original values
      * ``'CSR'``: use values from CSR (5x5 with 6,1)
      * ``'GSFC'``: use values from GSFC (TN-14)
+     * ``'LARES'``: use filtered values from CSR (John Ries)
+
+- ``SLR_C50``: replace *C*\ :sub:`50` coefficients with values from Satellite Laser Ranging (SLR)
+
+     * `None`: use original values
+     * ``'CSR'``: use values from CSR (5x5 with 6,1)
+     * ``'GSFC'``: use values from GSFC
      * ``'LARES'``: use filtered values from CSR (John Ries)
 
 - ``DEG1``: account for variations in geocenter with specified values
@@ -236,9 +263,13 @@ References
 
 .. [Blewett2003] G. Blewitt, "Self‐consistency in reference frames, geocenter definition, and surface loading of the solid Earth", *Journal of Geophysical Research: Solid Earth*, 108(B2), 2103, (2003). `doi: 10.1029/2002JB002082 <https://doi.org/10.1029/2002JB002082>`_
 
+.. [Cheng2011] M. Cheng, J. C. Ries, and B. D. Tapley, "Variations of the Earth's figure axis from satellite laser ranging and GRACE", *Journal of Geophysical Research: Solid Earth*, 116, B01409, (2011). `doi: 10.1029/2010JB000850 <https://doi.org/10.1029/2010JB000850>`_
+
 .. [Cheng2013] M. Cheng, "Geocenter Variations from Analysis of SLR Data", *Reference Frames for Applications in Geosciences*, 19--25, (2013). `doi: 10.1007/978-3-642-32998-2_4 <https://doi.org/10.1007/978-3-642-32998-2_4>`_
 
 .. [Cheng2018] M. Cheng and J. C. Ries, "Decadal variation in Earth's oblateness (J2) from satellite laser ranging data", *Geophysical Journal International*, 212(2), 1218--1224 (2018). `doi: 10.1093/gji/ggx483 <https://doi.org/10.1093/gji/ggx483>`_
+
+.. [Dahle2019] C. Dahle et al. "The GFZ GRACE RL06 Monthly Gravity Field Time Series: Processing Details, and Quality Assessment", *Remote Sensing*, 11(18), 2116, (2019). `doi: 10.3390/rs11182116 <https://doi.org/10.3390/rs11182116>`_
 
 .. [Dziewonski1981] A. M. Dziewonski and D. L. Anderson, "Preliminary reference Earth model", *Physics of the Earth and Planetary Interiors*, 25(4), 297--356, (1981). `doi: 10.1016/0031-9201(81)90046-7 <https://doi.org/10.1016/0031-9201(81)90046-7>`_
 

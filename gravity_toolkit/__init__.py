@@ -53,7 +53,9 @@ from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 from gravity_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 from gravity_toolkit.read_love_numbers import read_love_numbers
 from gravity_toolkit.read_SLR_C20 import read_SLR_C20
+from gravity_toolkit.read_SLR_CS2 import read_SLR_CS2
 from gravity_toolkit.read_SLR_C30 import read_SLR_C30
+from gravity_toolkit.read_SLR_C50 import read_SLR_C50
 from gravity_toolkit.read_SLR_geocenter import read_SLR_geocenter
 from gravity_toolkit.read_SLR_monthly_6x1 import read_SLR_monthly_6x1
 from gravity_toolkit.read_swenson_geocenter import read_swenson_geocenter

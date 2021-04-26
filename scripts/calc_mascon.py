@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_mascon.py
-Written by Tyler Sutterley (01/2021)
+Written by Tyler Sutterley (04/2021)
 
 Calculates a time-series of regional mass anomalies through a least-squares
     mascon procedure from GRACE/GRACE-FO time-variable gravity data
@@ -74,8 +74,7 @@ PYTHON DEPENDENCIES:
 PROGRAM DEPENDENCIES:
     grace_input_months.py: Reads GRACE/GRACE-FO files for a specified date range
         Replaces Degree 1 values (if specified)
-        Replaces C20 with SLR values (if specified)
-        Replaces C30 with SLR values (if specified)
+        Replaces C20,C21,S21,C22,S22,C30 and C50 with SLR values (if specified)
     read_GIA_model.py: reads spherical harmonics for glacial isostatic adjustment
     read_love_numbers.py: reads Load Love Numbers from Han and Wahr (1995)
     gauss_weights.py: Computes the Gaussian weights as a function of degree
@@ -113,6 +112,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 04/2021: include parameters for replacing C21/S21 and C22/S22
     Updated 02/2021: changed remove index to files with specified formats
     Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
     Updated 12/2020: added more love number options and from gfc for mean files
@@ -166,8 +166,6 @@ UPDATE HISTORY:
     Updated 09/2013: saving GRACE DELTA file (won't calculate each time)
         added option to remove RACMO data
     Updated 08/2013: general updates to inputting data
-        wrote grace_find_months, grace_input_months, gia_input
-        to input spherical harmonics similar to python programs
     Updated 03/2012: edited to use new gen_stokes time-series option
     Updated 02/2012: Added sensitivity kernels
     Written 02/2012
@@ -290,9 +288,12 @@ def calc_mascon(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
     #-- SLF: Sutterley and Velicogna, Remote Sensing (2019)
     #--     https://www.mdpi.com/2072-4292/11/18/2108
     DEG1 = parameters['DEG1']
-    #-- replace C20, C30 with coefficients from SLR
+    #-- replace low-degree coefficients with values from SLR
     SLR_C20 = parameters['SLR_C20']
+    SLR_21 = parameters['SLR_21']
+    SLR_22 = parameters['SLR_22']
     SLR_C30 = parameters['SLR_C30']
+    SLR_C50 = parameters['SLR_C50']
     #-- ECMWF jump corrections
     ATM = parameters['ATM'] in ('Y','y')
     #-- Pole-Tide from Wahr et al. (2015)
@@ -369,11 +370,13 @@ def calc_mascon(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
 
     #-- input GRACE/GRACE-FO spherical harmonic datafiles
     #-- reading GRACE months for input range with grace_input_months.py
-    #-- replacing SLR and Degree 1 if specified
+    #-- replacing low-degree harmonics with SLR values if specified
+    #-- include degree 1 (geocenter) harmonics if specified
     #-- correcting for Pole-Tide and Atmospheric Jumps if specified
     Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         start_mon, end_mon, missing, SLR_C20, DEG1, MMAX=MMAX,
-        SLR_C30=SLR_C30, MODEL_DEG1=True, ATM=ATM, POLE_TIDE=POLE_TIDE)
+        SLR_21=SLR_21, SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C50=SLR_C50,
+        MODEL_DEG1=True, ATM=ATM, POLE_TIDE=POLE_TIDE)
     #-- full path to directory for specific GRACE/GRACE-FO product
     grace_dir = Ylms['directory']
     #-- create harmonics object from GRACE/GRACE-FO data

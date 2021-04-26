@@ -136,8 +136,6 @@ UPDATE HISTORY:
         directories and files (generalizing code)
         some general updates to the program code
     Updated 08/2013: general updates to inputting data
-        wrote grace_find_months, grace_input_months, gia_input
-        to input spherical harmonics similar to python programs
     Updated 03/2012: edited to use new gen_stokes time-series option
     Written 02/2012
 """

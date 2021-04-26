@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_tellus_geocenter.py
-Written by Tyler Sutterley (02/2021)
+Written by Tyler Sutterley (04/2021)
 
 Reads monthly geocenter spherical harmonic data files from GRACE Tellus
     Technical Notes (TN-13) calculated using GRACE/GRACE-FO measurements and
@@ -54,6 +54,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 04/2021: use file not found exceptions
     Updated 02/2021: use adjust_months function to fix special months cases
     Updated 12/2020: using utilities from time module
     Updated 08/2020: flake8 compatible regular expression strings
@@ -106,7 +107,7 @@ def read_tellus_geocenter(geocenter_file, HEADER=True, JPL=False):
 
     #-- check that geocenter file exists
     if not os.access(os.path.expanduser(geocenter_file), os.F_OK):
-        raise IOError('Geocenter file not found in file system')
+        raise FileNotFoundError('Geocenter file not found in file system')
 
     #-- read degree 1 file and get contents
     with open(os.path.expanduser(geocenter_file),'r') as f:

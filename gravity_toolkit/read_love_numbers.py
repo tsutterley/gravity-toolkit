@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_love_numbers.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (04/2021)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
 Can linearly extrapolate load love numbers beyond maximum degree of dataset
@@ -38,6 +38,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 04/2021: use file not found exceptions
     Updated 12/2020: generalized ascii read for outputs from Gegout and Wang
         added linear interpolation of love numbers to a specified LMAX
     Updated 08/2020: flake8 compatible regular expression strings
@@ -58,7 +59,7 @@ import re
 import numpy as np
 
 #-- PURPOSE: read load love numbers from PREM
-def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2, 
+def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
     COLUMNS=['l','hl','kl','ll'], REFERENCE='CE', FORMAT='tuple'):
     """
     Reads PREM load Love numbers file and applies isomorphic parameters
@@ -97,7 +98,7 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
     #-- check that load love number data file is present in file system
     if not os.access(os.path.expanduser(love_numbers_file), os.F_OK):
         #-- raise error if love_numbers file is not found in path
-        raise IOError('{0} not found'.format(love_numbers_file))
+        raise FileNotFoundError('{0} not found'.format(love_numbers_file))
 
     #-- Input load love number data file and read contents
     with open(os.path.expanduser(love_numbers_file),'r') as f:
@@ -125,7 +126,7 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
     for file_line in file_contents[HEADER:]:
         #-- find numerical instances in line
         #-- replacing fortran double precision exponential
-        love_numbers = rx.findall(file_line.replace('D','E'))            
+        love_numbers = rx.findall(file_line.replace('D','E'))
         #-- spherical harmonic degree
         l = np.int(love_numbers[COLUMNS.index('l')])
         #-- truncate to spherical harmonic degree LMAX

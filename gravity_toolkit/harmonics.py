@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (02/2021)
+Written by Tyler Sutterley (04/2021)
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 
@@ -26,6 +26,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 04/2021: use file not found exceptions
     Updated 02/2021: added degree amplitude function
         use adjust_months function to fix special cases of GRACE/GRACE-FO months
         added generic reader, generic writer and write to list functions
@@ -98,7 +99,8 @@ class harmonics(object):
                 directory = os.path.dirname(os.path.expanduser(filename))
                 f = [f for f in os.listdir(directory) if re.match(basename,f,re.I)]
                 if not f:
-                    raise IOError('{0} not found in file system'.format(filename))
+                    errmsg = '{0} not found in file system'.format(filename)
+                    raise FileNotFoundError(errmsg)
                 self.filename = os.path.join(directory,f.pop())
         return self
 
