@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_sensitivity_kernel.py
-Written by Tyler Sutterley (01/2021)
+Written by Tyler Sutterley (04/2021)
 
 Calculates spatial sensitivity kernels through a least-squares mascon procedure
 
@@ -105,6 +105,7 @@ REFERENCES:
         https://doi.org/10.1029/2009GL039401
 
 UPDATE HISTORY:
+    Updated 04/2021: add parser object for removing commented or empty lines
     Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
     Updated 12/2020: added more love number options
     Updated 10/2020: use argparse to set command line parameters
@@ -143,6 +144,7 @@ from __future__ import print_function, division
 
 import sys
 import os
+import re
 import time
 import argparse
 import numpy as np
@@ -257,6 +259,10 @@ def calc_sensitivity_kernel(parameters, LOVE_NUMBERS=0, REFERENCE=None,
 
     #-- file information
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
+    #-- file parser for reading index files
+    #-- removes commented lines (can comment out files in the index)
+    #-- removes empty lines (if there are extra empty lines)
+    parser = re.compile(r'^(?!\#|\%|$)', re.VERBOSE)
 
     #-- Create output Directory if not currently existing
     if (not os.access(DIRECTORY,os.F_OK)):
@@ -300,7 +306,7 @@ def calc_sensitivity_kernel(parameters, LOVE_NUMBERS=0, REFERENCE=None,
 
     #-- input mascon spherical harmonic datafiles
     with open(MASCON_INDEX,'r') as f:
-        mascon_files = f.read().splitlines()
+        mascon_files = [l for l in f.read().splitlines() if parser.match(l)]
     #-- number of mascons
     n_mas = len(mascon_files)
     #-- spatial area of the mascon
