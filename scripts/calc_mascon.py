@@ -113,6 +113,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 04/2021: include parameters for replacing C21/S21 and C22/S22
+        add parser object for removing commented or empty lines
     Updated 02/2021: changed remove index to files with specified formats
     Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
     Updated 12/2020: added more love number options and from gfc for mean files
@@ -330,6 +331,10 @@ def calc_mascon(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
 
     #-- file information
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
+    #-- file parser for reading index files
+    #-- removes commented lines (can comment out files in the index)
+    #-- removes empty lines (if there are extra empty lines)
+    parser = re.compile(r'^(?!\#|\%|$)', re.VERBOSE)
 
     #-- read arrays of kl, hl, and ll Love Numbers
     hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
@@ -477,21 +482,19 @@ def calc_mascon(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
         #-- input index for reconstructed spherical harmonic datafiles
         RECONSTRUCT_INDEX = os.path.expanduser(parameters['RECONSTRUCT_INDEX'])
         with open(RECONSTRUCT_INDEX,'r') as f:
-            reconstruct_files = f.read().splitlines()
-        #-- remove commented lines (can comment out files in the index)
-        reconstruct_files=[f for f in reconstruct_files if not re.match('#',f)]
+            file_list = [l for l in f.read().splitlines() if parser.match(l)]
         #-- for each valid file in the index (iterate over mascons)
-        for construct_file in reconstruct_files:
+        for reconstruct_file in file_list:
             #-- read reconstructed spherical harmonics
             if (DATAFORM == 'ascii'):
                 #-- ascii (.txt)
-                Ylms = harmonics().from_ascii(construct_file)
+                Ylms = harmonics().from_ascii(reconstruct_file)
             elif (DATAFORM == 'netCDF4'):
                 #-- netcdf (.nc)
-                Ylms = harmonics().from_netCDF4(construct_file)
+                Ylms = harmonics().from_netCDF4(reconstruct_file)
             elif (DATAFORM == 'HDF5'):
                 #-- HDF5 (.H5)
-                Ylms = harmonics().from_HDF5(construct_file)
+                Ylms = harmonics().from_HDF5(reconstruct_file)
             #-- truncate clm and slm matrices to LMAX/MMAX
             #-- add harmonics object to total
             construct_Ylms.add(Ylms.truncate(lmax=LMAX, mmax=MMAX))
@@ -506,7 +509,7 @@ def calc_mascon(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
 
     #-- input mascon spherical harmonic datafiles
     with open(MASCON_INDEX,'r') as f:
-        mascon_files = f.read().splitlines()
+        mascon_files = [l for l in f.read().splitlines() if parser.match(l)]
     #-- number of mascons
     n_mas = len(mascon_files)
     #-- spatial area of the mascon

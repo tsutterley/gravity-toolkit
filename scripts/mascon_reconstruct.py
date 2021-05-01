@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 mascon_reconstruct.py
-Written by Tyler Sutterley (01/2021)
+Written by Tyler Sutterley (04/2021)
 
 Calculates the equivalent spherical harmonics from a mascon time series
 
@@ -50,6 +50,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 04/2021: add parser object for removing commented or empty lines
     Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
     Updated 12/2020: added more love number options
     Updated 10/2020: use argparse to set command line parameters
@@ -78,6 +79,7 @@ from __future__ import print_function
 
 import sys
 import os
+import re
 import argparse
 import numpy as np
 import multiprocessing
@@ -207,6 +209,10 @@ def mascon_reconstruct(parameters,LOVE_NUMBERS=0,REFERENCE=None,MODE=0o775):
     ds_str = '_FL' if DESTRIPE else ''
     #-- output filename suffix
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
+    #-- file parser for reading index files
+    #-- removes commented lines (can comment out files in the index)
+    #-- removes empty lines (if there are extra empty lines)
+    parser = re.compile(r'^(?!\#|\%|$)', re.VERBOSE)
 
     #-- GRACE output filename prefix
     #-- mascon directory for GRACE product, processing and date range
@@ -239,7 +245,7 @@ def mascon_reconstruct(parameters,LOVE_NUMBERS=0,REFERENCE=None,MODE=0o775):
 
     #-- input mascon spherical harmonic datafiles
     with open(MASCON_INDEX,'r') as f:
-        mascon_files = f.read().splitlines()
+        mascon_files = [l for l in f.read().splitlines() if parser.match(l)]
     for k,fi in enumerate(mascon_files):
         #-- read mascon spherical harmonics
         if (DATAFORM == 'ascii'):

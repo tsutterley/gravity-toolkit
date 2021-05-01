@@ -26,7 +26,8 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
-    Updated 04/2021: use file not found exceptions
+    Updated 04/2021: add parser object for removing commented or empty lines
+        use file not found exceptions in case insensitive filename
     Updated 02/2021: added degree amplitude function
         use adjust_months function to fix special cases of GRACE/GRACE-FO months
         added generic reader, generic writer and write to list functions
@@ -287,9 +288,13 @@ class harmonics(object):
         """
         #-- set filename
         self.case_insensitive_filename(filename)
+        #-- file parser for reading index files
+        #-- removes commented lines (can comment out files in the index)
+        #-- removes empty lines (if there are extra empty lines)
+        parser = re.compile(r'^(?!\#|\%|$)', re.VERBOSE)
         #-- Read index file of input spherical harmonics
         with open(self.filename,'r') as f:
-            file_list = f.read().splitlines()
+            file_list = [l for l in f.read().splitlines() if parser.match(l)]
         #-- create a list of harmonic objects
         h = []
         #-- for each file in the index
