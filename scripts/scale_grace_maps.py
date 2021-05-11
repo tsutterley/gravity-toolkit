@@ -64,7 +64,7 @@ PYTHON DEPENDENCIES:
 
 PROGRAM DEPENDENCIES:
     grace_input_months.py: Reads GRACE/GRACE-FO files for a specified date range
-        Replaces Degree 1 values (if specified)
+        Includes degree 1 values (if specified)
         Replaces C20,C21,S21,C22,S22,C30 and C50 with SLR values (if specified)
     read_GIA_model.py: reads spherical harmonics for glacial isostatic adjustment
     read_love_numbers.py: reads Load Love Numbers from Han and Wahr (1995)

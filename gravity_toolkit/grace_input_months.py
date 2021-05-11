@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (05/2021)
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
     and for a specified date range
-Replaces Degree 1 with with input values (if specified)
+Includes degree 1 with with input values (if specified)
 Replaces C20 with SLR values (if specified)
 Replaces C21/S21/C22/S22/C30/C50 with SLR values for months 179+ (if specified)
 Corrects for ECMWF atmospheric "jumps" using the GAE, GAF and GAG files
@@ -23,6 +23,7 @@ INPUTS:
     SLR_C20: Replaces C20 with SLR values
         N: use original values
         CSR: use values from CSR (TN-07,TN-09,TN-11)
+        GFZ: use values from GFZ
         GSFC: use values from GSFC (TN-14)
     DEG1: Use Degree 1 coefficients
         None: No degree 1
@@ -34,6 +35,8 @@ INPUTS:
             https://doi.org/10.6084/m9.figshare.7388540
         Swenson: GRACE-derived coefficients from Sean Swenson
             https://doi.org/10.1029/2007JB005338
+        GFZ: GRACE/GRACE-FO coefficients from GFZ GravIS
+            http://gravis.gfz-potsdam.de/corrections
 
 OUTPUTS:
     clm: GRACE/GRACE-FO cosine spherical harmonic to degree/order LMAX and MMAX
@@ -50,12 +53,14 @@ OPTIONS:
     SLR_21: replaces C21 and S21 with SLR values
         None: use original values
         CSR: use values from CSR
+        GFZ: use values from GFZ GravIS
     SLR_22: replaces C22 and S22 with SLR values
         None: use original values
         CSR: use values from CSR
     SLR_C30: replaces C30 with SLR values
         None: use original values
         CSR: use values from CSR (5x5 with 6,1)
+        GFZ: use values from GFZ GravIS
         GSFC: use values from GSFC (TN-14)
     SLR_C50: replaces C50 with SLR values
         None: use original values
@@ -86,6 +91,7 @@ PROGRAM DEPENDENCIES:
     read_GRACE_harmonics.py: reads an input GRACE data file and calculates date
 
 UPDATE HISTORY:
+    Updated 05/2021: can use SLR low-degree harmonic values produced by GFZ
     Updated 04/2021: can replace figure axis and azimuthal dependence with SLR
     Updated 12/2020: updated SLR geocenter for new solutions from Minkang Cheng
     Updated 11/2020: set regress_model RELATIVE option to 2003.3 to match others
@@ -137,6 +143,7 @@ from gravity_toolkit.read_SLR_C50 import read_SLR_C50
 from gravity_toolkit.read_swenson_geocenter import read_swenson_geocenter
 from gravity_toolkit.read_tellus_geocenter import read_tellus_geocenter
 from gravity_toolkit.read_SLR_geocenter import aod_corrected_SLR_geocenter
+from gravity_toolkit.read_gravis_geocenter import read_gravis_geocenter
 from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 
@@ -165,6 +172,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     SLR_C20: Replaces C20 with SLR values
         N: use original values
         CSR: use values from CSR (TN-07,TN-09,TN-11)
+        GFZ: use values from GFZ
         GSFC: use values from GSFC (TN-14)
     DEG1: Use Degree 1 coefficients
         None: No degree 1
@@ -179,12 +187,14 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     SLR_21: replaces C21 and S21 with SLR values
         None: use original values
         CSR: use values from CSR
+        GFZ: use values from GFZ GravIS
     SLR_22: replaces C22 and S22 with SLR values
         None: use original values
         CSR: use values from CSR
     SLR_C30: replaces C30 with SLR values
         None: use original values
         CSR: use values from CSR (5x5 with 6,1)
+        GFZ: use values from GFZ GravIS
         GSFC: use values from GSFC (TN-14)
     SLR_C50: replaces C50 with SLR values
         None: use original values
@@ -212,7 +222,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
 
     #-- upper bound of spherical harmonic orders (default = LMAX)
     MMAX = np.copy(LMAX) if (MMAX is None) else MMAX
-    
+
     #-- SLR low-degree harmonic, geocenter and correction flags
     FLAGS = []
 
@@ -228,6 +238,10 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             SLR_file = os.path.join(base_dir,'TN-11_C20_SLR.txt')
         C20_input = read_SLR_C20(SLR_file)
         FLAGS.append('_wCSR_C20')
+    elif (SLR_C20 == 'GFZ'):
+        SLR_file=os.path.join(base_dir,'GFZ_{0}_C20_SLR.dat'.format(DREL))
+        C20_input = read_SLR_C20(SLR_file)
+        FLAGS.append('_wGFZ_C20')
     elif (SLR_C20 == 'GSFC'):
         SLR_file=os.path.join(base_dir,'TN-14_C30_C20_GSFC_SLR.txt')
         C20_input = read_SLR_C20(SLR_file)
@@ -239,6 +253,11 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         SLR_file = os.path.join(base_dir,'C21_S21_{0}.txt'.format(DREL))
         C21_input = read_SLR_CS2(SLR_file)
         FLAGS.append('_wCSR_21')
+    elif (SLR_C20 == 'GFZ'):
+        GravIS_file = 'GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat'
+        SLR_file = os.path.join(base_dir,GravIS_file)
+        C21_input = read_SLR_CS2(SLR_file)
+        FLAGS.append('_wGFZ_21')
 
     #-- Replacing C2,2/S2,2 with SLR
     #-- Running function read_SLR_CS2.py
@@ -261,6 +280,11 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         SLR_file=os.path.join(base_dir,'TN-14_C30_C20_GSFC_SLR.txt')
         C30_input = read_SLR_C30(SLR_file)
         FLAGS.append('_wGSFC_C30')
+    elif (SLR_C20 == 'GFZ'):
+        GravIS_file = 'GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat'
+        SLR_file = os.path.join(base_dir,GravIS_file)
+        C30_input = read_SLR_C30(SLR_file)
+        FLAGS.append('_wGFZ_C30')
 
     #-- Replacing C5,0 with SLR C5,0
     #-- Running function read_SLR_C50.py
@@ -330,6 +354,14 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             'gad_gsm.{0}.txt'.format(DREL))
         #-- Running function read_swenson_geocenter.py
         DEG1_input = read_swenson_geocenter(DEG1_file)
+        FLAGS.append('_w{0}_DEG1'.format(DEG1))
+    elif (DEG1 == 'GFZ'):
+        #-- degree 1 coefficients provided by GFZ GravIS
+        #-- http://gravis.gfz-potsdam.de/corrections
+        DEG1_file = os.path.join(base_dir,'geocenter',
+            'GRAVIS-2B_GFZOP_GEOCENTER_0002.dat')
+        #-- Running function read_gravis_geocenter.py
+        DEG1_input = read_gravis_geocenter(DEG1_file)
         FLAGS.append('_w{0}_DEG1'.format(DEG1))
 
     #-- atmospheric flag if correcting ECMWF "jumps" (using GAE/GAF/GAG files)
