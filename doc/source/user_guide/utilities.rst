@@ -368,6 +368,27 @@ General Methods
     .. __: http://download.csr.utexas.edu/pub/slr/
 
 
+.. method:: gravity_toolkit.utilities.from_gfz(directory,timeout=None,chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
+
+    Download GravIS and satellite laser ranging (SLR) files from the German Research Centre for Geosciences (GeoForschungsZentrum, GFZ)
+
+    Arguments:
+
+        ``directory``: download directory
+
+    Keyword arguments
+
+        ``timeout``: timeout in seconds for blocking operations
+
+        ``chunk``: chunk size for transfer encoding
+
+        ``verbose``: print file transfer information
+
+        ``fid``: open file object to print if verbose
+
+        ``mode``: permissions mode of output local file
+
+
 .. method:: gravity_toolkit.utilities.icgem_list(host='http://icgem.gfz-potsdam.de/tom_longtime',timeout=None,parser=lxml.etree.HTMLParser())
 
     Parse table of gravity field models on the `GFZ International Centre for Global Earth Models (ICGEM)`__ server

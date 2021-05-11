@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_CS2.py
-Written by Hugo Lecomte and Tyler Sutterley (04/2021)
+Written by Hugo Lecomte and Tyler Sutterley (05/2021)
 
 Reads monthly degree 2,m (figure axis and azimuthal dependence)
     spherical harmonic data files from satellite laser ranging (SLR)
@@ -9,6 +9,9 @@ Reads monthly degree 2,m (figure axis and azimuthal dependence)
 Dataset distributed by CSR
     http://download.csr.utexas.edu/pub/slr/degree_2/
         C21_S21_RL06.txt or C22_S22_RL06.txt
+Dataset distributed by GFZ
+    ftp://isdcftp.gfz-potsdam.de/grace/GravIS/GFZ/Level-2B/aux_data/
+        GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat
 
 CALLING SEQUENCE:
     SLR_2m = read_SLR_CS2(SLR_file)
@@ -17,6 +20,10 @@ INPUTS:
     SLR_file:
         CSR 2,1: C21_S21_RL06.txt
         CSR 2,2: C22_S22_RL06.txt
+        GFZ: GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat
+
+OPTIONS:
+    HEADER: file contains header text to be skipped (default: True)
 
 OUTPUTS:
     C2m: SLR degree 2 order m cosine stokes coefficients
@@ -43,12 +50,17 @@ REFERENCE:
     Dahle et al., "The GFZ GRACE RL06 Monthly Gravity Field Time Series:
         Processing Details, and Quality Assessment", Remote Sensing,
         11(18), 2116, (2019). https://doi.org/10.3390/rs11182116
+    Dahle and Murboeck, "Post-processed GRACE/GRACE-FO Geopotential
+        GSM Coefficients GFZ RL06 (Level-2B Product)."
+        V. 0002. GFZ Data Services, (2019).
+        http://doi.org/10.5880/GFZ.GRAVIS_06_L2B
     Chen el al., "Assessment of degree-2 order-1 gravitational changes
         from GRACE and GRACE Follow-on, Earth rotation, satellite laser
         ranging, and models", Journal of Geodesy, 95(38), (2021).
         https://doi.org/10.1007/s00190-021-01492-x
 
 UPDATE HISTORY:
+    Updated 05/2021: added GFZ GravIS GRACE/SLR low degree solutions
     Updated 04/2021: use adjust_months function to fix special months cases
     Written 11/2020
 """
@@ -58,13 +70,17 @@ import numpy as np
 import gravity_toolkit.time
 
 #-- PURPOSE: read Degree 2,m data from Satellite Laser Ranging (SLR)
-def read_SLR_CS2(SLR_file):
+def read_SLR_CS2(SLR_file, HEADER=True):
     """
     Reads CS2,m spherical harmonic coefficients from SLR measurements
 
     Arguments
     ---------
     SLR_file: Satellite Laser Ranging file
+
+    Keyword arguments
+    -----------------
+    HEADER: file contains header text to be skipped
 
     Returns
     -------
@@ -81,14 +97,16 @@ def read_SLR_CS2(SLR_file):
         raise FileNotFoundError('SLR file not found in file system')
     #-- output dictionary with input data
     dinput = {}
-    #-- input variable names and types
-    dtype = {}
-    dtype['names']=('time','C2','S2','eC2','eS2','C2aod','S2aod','start','end')
-    dtype['formats']=('f','f8','f8','f','f','f','f','f','f')
 
     if bool(re.search(r'C2(\d)_S2(\d)_(RL\d{2})',SLR_file)):
-
+        #-- SLR RL06 file produced by CSR
+        #-- input variable names and types
+        dtype = {}
+        dtype['names'] = ('time','C2','S2','eC2','eS2',
+            'C2aod','S2aod','start','end')
+        dtype['formats'] = ('f','f8','f8','f','f','f','f','f','f')
         #-- read SLR 2,1 or 2,2 RL06 file from CSR
+        #-- header text is commented and won't be read
         #-- Column 1: Approximate mid-point of monthly solution (years)
         #-- Column 2: Solution from SLR (normalized)
         #-- Column 3: Solution from SLR (normalized)
@@ -97,7 +115,6 @@ def read_SLR_CS2(SLR_file):
         #-- Column 6: Mean value of Atmosphere-Ocean De-aliasing model (1E-10)
         #-- Column 7: Mean value of Atmosphere-Ocean De-aliasing model (1E-10)
         #-- Columns 8-9: Start and end dates of data used in solution
-        #-- header text is commented and won't be read
         content = np.loadtxt(os.path.expanduser(SLR_file),dtype=dtype)
         #-- date and GRACE/GRACE-FO month
         dinput['time'] = content['time'].copy()
@@ -108,6 +125,67 @@ def read_SLR_CS2(SLR_file):
         #-- scale SLR solution sigmas
         dinput['eC2m'] = content['eC2']*10**-10
         dinput['eS2m'] = content['eS2']*10**-10
+    elif bool(re.search(r'GRAVIS-2B_GFZOP',SLR_file)):
+        #-- Combined GRACE/SLR solution file produced by GFZ
+        #-- Column  1: MJD of BEGINNING of solution data span
+        #-- Column  2: Year and fraction of year of BEGINNING of solution span
+        #-- Column  9: Replacement C(2,1)
+        #-- Column 10: Replacement C(2,1) - mean C(2,1) (1.0E-10)
+        #-- Column 11: C(2,1) formal standard deviation (1.0E-12)
+        #-- Column 12: Replacement S(2,1)
+        #-- Column 13: Replacement S(2,1) - mean S(2,1) (1.0E-10)
+        #-- Column 14: S(2,1) formal standard deviation (1.0E-12)
+        with open(os.path.expanduser(SLR_file),'r') as f:
+            file_contents = f.read().splitlines()
+        #-- number of lines contained in the file
+        file_lines = len(file_contents)
+
+        #-- counts the number of lines in the header
+        count = 0
+        #-- Reading over header text
+        while HEADER:
+            #-- file line at count
+            line = file_contents[count]
+            #-- find PRODUCT: within line to set HEADER flag to False when found
+            HEADER = not bool(re.match(r'PRODUCT:+',line))
+            #-- add 1 to counter
+            count += 1
+
+        #-- number of months within the file
+        n_mon = file_lines - count
+        #-- date and GRACE/GRACE-FO month
+        dinput['time'] = np.zeros((n_mon))
+        dinput['month'] = np.zeros((n_mon),dtype=int)
+        #-- monthly spherical harmonic replacement solutions
+        dinput['C2m'] = np.zeros((n_mon))
+        dinput['S2m'] = np.zeros((n_mon))
+        #-- monthly spherical harmonic formal standard deviations
+        dinput['eC2m'] = np.zeros((n_mon))
+        dinput['eS2m'] = np.zeros((n_mon))
+        #-- time count
+        t = 0
+        #-- for every other line:
+        for line in file_contents[count:]:
+            #-- find numerical instances in line including exponents,
+            #-- decimal points and negatives
+            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
+            count = len(line_contents)
+            #-- check for empty lines
+            if (count > 0):
+                #-- reading decimal year for start of span
+                dinput['time'][t] = np.float(line_contents[1])
+                #-- Spherical Harmonic data for line
+                dinput['C2m'][t] = np.float(line_contents[8])
+                dinput['eC2m'][t] = np.float(line_contents[10])*1e-10
+                dinput['S2m'][t] = np.float(line_contents[11])
+                dinput['eS2m'][t] = np.float(line_contents[13])*1e-10
+                #-- GRACE/GRACE-FO month of SLR solutions
+                dinput['month'][t] = 1+np.round((dinput['time'][t]-2002.)*12.)
+                #-- add to t count
+                t += 1
+        #-- truncate variables if necessary
+        for key,val in dinput.items():
+            dinput[key] = val[:t]
 
     #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
     #-- Accelerometer shutoffs make the relation between month number
@@ -118,5 +196,5 @@ def read_SLR_CS2(SLR_file):
     #-- For GSFC: Oct 2018 (202) is centered in Nov 2018 (203)
     dinput['month'] = gravity_toolkit.time.adjust_months(dinput['month'])
 
-    #-- return the input CS2m data, year-decimal date, and GRACE/GRACE-FO month
+    #-- return the SLR-derived degree 2 solutions
     return dinput

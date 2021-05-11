@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (05/2021)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
     lxml: processing XML and HTML in Python (https://pypi.python.org/pypi/lxml)
 
 UPDATE HISTORY:
+    Updated 05/2021: download GFZ satellite laser ranging and GravIS files
     Updated 04/2021: download CSR SLR figure axis and azimuthal dependence files
     Updated 03/2021: added sha1 option for retrieving file hashes
     Updated 12/2020: added ICGEM list for static models
@@ -723,6 +724,49 @@ def from_csr(directory,timeout=None,context=ssl.SSLContext(),
             local=os.path.join(directory,'geocenter',FILE[-1]),
             hash=original_md5,chunk=chunk,verbose=verbose,
             fid=fid,mode=mode)
+
+#-- PURPOSE: download GravIS and satellite laser ranging files from GFZ
+#-- ftp://isdcftp.gfz-potsdam.de/grace/Level-2/GFZ/RL06_SLR_C20/
+#-- ftp://isdcftp.gfz-potsdam.de/grace/GravIS/GFZ/Level-2B/aux_data/
+def from_gfz(directory,timeout=None,chunk=8192,verbose=False,fid=sys.stdout,
+    mode=0o775):
+    """
+    Download GravIS and satellite laser ranging (SLR) files from the
+        German Research Centre for Geosciences (GeoForschungsZentrum, GFZ)
+
+    Arguments
+    ---------
+    directory: download directory
+
+    Keyword arguments
+    -----------------
+    timeout: timeout in seconds for blocking operations
+    chunk: chunk size for transfer encoding
+    verbose: print file transfer information
+    fid: open file object to print if verbose
+    mode: permissions mode of output local file
+    """
+    #-- recursively create directories if non-existent
+    directory = os.path.abspath(os.path.expanduser(directory))
+    if not os.access(os.path.join(directory,'geocenter'), os.F_OK):
+        os.makedirs(os.path.join(directory,'geocenter'), mode)
+    #-- SLR oblateness and combined low-degree harmonic files
+    FILES = []
+    FILES.append(['isdcftp.gfz-potsdam.de','grace','Level-2','GFZ',
+        'RL06_SLR_C20','GFZ_RL06_C20_SLR.dat'])
+    FILES.append(['isdcftp.gfz-potsdam.de','grace','GravIS','GFZ',
+        'Level-2B','aux_data','GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat'])
+    #-- get each file
+    for FILE in FILES:
+        local = os.path.join(directory,FILE[-1])
+        from_ftp(FILE,timeout=timeout,local=local,hash=get_hash(local),
+            chunk=chunk,verbose=verbose,fid=fid,mode=mode)
+    #-- GravIS geocenter file
+    FILE = ['isdcftp.gfz-potsdam.de','grace','GravIS','GFZ','Level-2B',
+        'aux_data','GRAVIS-2B_GFZOP_GEOCENTER_0002.dat']
+    local = os.path.join(directory,'geocenter',FILE[-1])
+    from_ftp(FILE,timeout=timeout,local=local,hash=get_hash(local),
+        chunk=chunk,verbose=verbose,fid=fid,mode=mode)
 
 #-- PURPOSE: list a directory on the GFZ ICGEM https server
 #-- http://icgem.gfz-potsdam.de

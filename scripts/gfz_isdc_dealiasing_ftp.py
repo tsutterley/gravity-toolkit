@@ -25,7 +25,7 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/lxml
 
 PROGRAM DEPENDENCIES:
-    utilities: download and management utilities for syncing files
+    utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
     Updated 01/2021: using utilities module to list files from ftp

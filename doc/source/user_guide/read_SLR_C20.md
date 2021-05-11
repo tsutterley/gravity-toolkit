@@ -19,7 +19,7 @@ SLR_C20 = read_SLR_C20(SLR_file)
     * GSFC: `TN-14_C30_C30_GSFC_SLR.txt`
 
 #### Keyword arguments
-- `HEADER`: file contains header text to be skipped (default: True)
+- `HEADER`: file contains header text to be skipped
 - `AOD`: remove background de-aliasing product from the SLR solution (for CSR)
 
 #### Returns

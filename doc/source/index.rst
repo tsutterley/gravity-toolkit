@@ -61,6 +61,7 @@ missions
     user_guide/plm_mohlenkamp.rst
     user_guide/read_GIA_model.rst
     user_guide/read_GRACE_harmonics.rst
+    user_guide/read_gravis_geocenter.rst
     user_guide/read_love_numbers.rst
     user_guide/read_SLR_C20.md
     user_guide/read_SLR_CS2.md
@@ -70,6 +71,7 @@ missions
     user_guide/read_SLR_monthly_6x1.rst
     user_guide/read_swenson_geocenter.rst
     user_guide/read_tellus_geocenter.rst
+    user_guide/savitzky_golay.rst
     user_guide/spatial.rst
     user_guide/time.rst
     user_guide/tsamplitude.md

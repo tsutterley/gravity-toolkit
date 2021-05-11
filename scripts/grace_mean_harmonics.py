@@ -45,7 +45,7 @@ PYTHON DEPENDENCIES:
 PROGRAM DEPENDENCIES:
     grace_input_months.py: Reads GRACE/GRACE-FO files for a specified spherical
             harmonic degree and order and for a specified date range
-        Replaces Degree 1 with with Swenson values (if specified)
+        Includes degree 1 with with Swenson values (if specified)
         Replaces C20,C21,S21,C22,S22,C30 and C50 with SLR values (if specified)
     harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
         destripe_harmonics.py: calculates the decorrelation (destriping) filter

@@ -50,6 +50,7 @@ from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.plm_mohlenkamp import plm_mohlenkamp
 from gravity_toolkit.read_GIA_model import read_GIA_model
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
+from gravity_toolkit.read_gravis_geocenter import read_gravis_geocenter
 from gravity_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 from gravity_toolkit.read_love_numbers import read_love_numbers
 from gravity_toolkit.read_SLR_C20 import read_SLR_C20
@@ -60,6 +61,7 @@ from gravity_toolkit.read_SLR_geocenter import read_SLR_geocenter
 from gravity_toolkit.read_SLR_monthly_6x1 import read_SLR_monthly_6x1
 from gravity_toolkit.read_swenson_geocenter import read_swenson_geocenter
 from gravity_toolkit.read_tellus_geocenter import read_tellus_geocenter
+from gravity_toolkit.savitzky_golay import savitzky_golay
 from gravity_toolkit.spatial import spatial
 from gravity_toolkit.tsamplitude import tsamplitude
 from gravity_toolkit.tsregress import tsregress

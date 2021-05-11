@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C50.py
-Written by Yara Mohajerani and Tyler Sutterley (04/2021)
+Written by Yara Mohajerani and Tyler Sutterley (05/2021)
 
 This program reads in C50 spherical harmonic coefficients from SLR measurements
     https://neptune.gsfc.nasa.gov/gngphys/index.php?section=519
@@ -43,6 +43,7 @@ PROGRAM DEPENDENCIES:
     read_SLR_monthly_6x1.py: reads monthly 5x5 spherical harmonic coefficients
 
 UPDATE HISTORY:
+    Updated 05/2021: simplified program similar to other SLR readers
     Updated 04/2021: using utilities from time module
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
@@ -103,10 +104,13 @@ def read_SLR_C50(SLR_file, HEADER=True, C50_MEAN=0.):
 
         #-- number of months within the file
         n_mon = file_lines - count
-        date_conv = np.zeros((n_mon))
-        C50_input = np.zeros((n_mon))
-        eC50_input = np.zeros((n_mon))
-        mon = np.zeros((n_mon),dtype=np.int)
+        #-- date and GRACE/GRACE-FO month
+        dinput['time'] = np.zeros((n_mon))
+        dinput['month'] = np.zeros((n_mon),dtype=int)
+        #-- monthly spherical harmonic replacement solutions
+        dinput['data'] = np.zeros((n_mon))
+        #-- monthly spherical harmonic formal standard deviations
+        dinput['error'] = np.zeros((n_mon))
         #-- time count
         t = 0
         #-- for every other line:
@@ -123,23 +127,21 @@ def read_SLR_C50(SLR_file, HEADER=True, C50_MEAN=0.):
                 YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
                     MJD+2400000.5, FORMAT='tuple')
                 #-- converting from month, day, year into decimal year
-                date_conv[t] = gravity_toolkit.time.convert_calendar_decimal(
+                dinput['time'][t] = gravity_toolkit.time.convert_calendar_decimal(
                     YY, MM, day=DD, hour=hh)
                 #-- Spherical Harmonic data for line
-                C50_input[t] = np.float(line_contents[10])
-                eC50_input[t] = np.float(line_contents[12])*1e-10
+                dinput['data'][t] = np.float(line_contents[10])
+                dinput['error'][t] = np.float(line_contents[12])*1e-10
                 #-- GRACE/GRACE-FO month of SLR solutions
-                mon[t] = 1 + np.round((date_conv[t]-2002.)*12.)
+                dinput['month'][t] = 1 + np.round((dinput['time'][t]-2002.)*12.)
                 #-- add to t count
                 t += 1
         #-- verify that there imported C50 solutions
         if (t == 0):
             raise Exception('No GSFC C50 data imported')
-        #-- convert to output variables and truncate if necessary
-        dinput['time'] = date_conv[:t]
-        dinput['data'] = C50_input[:t]
-        dinput['error'] = eC50_input[:t]
-        dinput['month'] = mon[:t]
+        #-- truncate variables if necessary
+        for key,val in dinput.items():
+            dinput[key] = val[:t]
     elif bool(re.search(r'C50_LARES',SLR_file)):
         #-- read LARES filtered values
         LARES_input = np.loadtxt(SLR_file,skiprows=1)
@@ -172,5 +174,5 @@ def read_SLR_C50(SLR_file, HEADER=True, C50_MEAN=0.):
     #-- For GSFC: Oct 2018 (202) is centered in Nov 2018 (203)
     dinput['month'] = gravity_toolkit.time.adjust_months(dinput['month'])
 
-    #-- return the input C50 data, year-decimal date, and GRACE/GRACE-FO month
+    #-- return the SLR-derived degree 5 zonal solutions
     return dinput

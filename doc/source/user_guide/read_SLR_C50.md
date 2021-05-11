@@ -17,7 +17,7 @@ SLR_C50 = read_SLR_C50(SLR_file)
     * LARES: `C50_LARES_filtered.txt`
 
 #### Keyword arguments
-- `HEADER`: file contains header text to be skipped (default: True)
+- `HEADER`: file contains header text to be skipped
 - `C50_MEAN`: mean C50 to add to LARES C50 anomalies
 
 #### Returns

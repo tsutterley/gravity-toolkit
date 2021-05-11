@@ -13,11 +13,12 @@ SLR_C30 = read_SLR_C30(SLR_file)
 #### Arguments
 - `SLR_file`: low degree zonal file from satellite laser ranging
     * CSR: `CSR_Monthly_5x5_Gravity_Harmonics.txt`
+    * GFZ: `GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat`
     * GSFC: `TN-14_C30_C30_GSFC_SLR.txt`
     * LARES: `C30_LARES_filtered.txt`
 
 #### Keyword arguments
-- `HEADER`: file contains header text to be skipped (default: True)
+- `HEADER`: file contains header text to be skipped
 - `C30_MEAN`: mean C30 to add to LARES C30 anomalies
 
 #### Returns

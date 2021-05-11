@@ -3,7 +3,7 @@ grace_input_months.py
 =====================
 
 - Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order and for a specified date range
-- Replaces Degree 1 with with input values (if specified)
+- Includes Degree 1 coefficients with input values (if specified)
 - Replaces C20 with SLR values (if specified)
 - Replaces C21/S21/C22/S22/C30/C50 with SLR values for months 179+ (if specified)
 - Corrects for ECMWF atmospheric "jumps" using the GAE, GAF and GAG files following [Fagiolini2015]_
@@ -48,14 +48,16 @@ Arguments
 
       * ``None``: use original values
       * ``'CSR'``: use values from CSR (TN-07, TN-09, TN-11)
+      * ``'GFZ'``: use values from GFZ
       * ``'GSFC'``: use values from GSFC (TN-14)
 10. ``DEG1``: Use Degree 1 coefficients
 
       * ``None``: No degree 1 replacement
       * ``'Tellus'``: `GRACE/GRACE-FO TN-13 coefficients from PO.DAAC <https://grace.jpl.nasa.gov/data/get-data/geocenter/>`_ [Sun2016]_
       * ``'SLR'``: `Satellite laser ranging coefficients from CSR <ftp://ftp.csr.utexas.edu/pub/slr/geocenter/>`_ [Cheng2013]_
-      * ``'SLF'``: `GRACE-derived coefficients from Sutterley and Velicogna <https://doi.org/10.6084/m9.figshare.7388540>`_ [Sutterley2019]_
+      * ``'SLF'``: `GRACE/GRACE-FO coefficients from Sutterley and Velicogna <https://doi.org/10.6084/m9.figshare.7388540>`_ [Sutterley2019]_
       * ``'Swenson'``: GRACE-derived coefficients from Sean Swenson [Swenson2008]_
+      * ``'GFZ'``: `GRACE/GRACE-FO coefficients from GFZ GravIS <http://gravis.gfz-potsdam.de/corrections>`_
 
 Keyword arguments
 #################
@@ -65,6 +67,7 @@ Keyword arguments
 
     * ``None``: use original values
     * ``'CSR'``: use values from CSR
+    * ``'GFZ'``: use values from GFZ GravIS
 - ``SLR_22``: Replaces C22/S22 with values from Satellite Laser Ranging (SLR)
 
     * ``None``: use original values
@@ -73,6 +76,7 @@ Keyword arguments
 
     * ``None``: use original values
     * ``'CSR'``: use values from CSR (5x5 with 6,1)
+    * ``'GFZ'``: use values from GFZ GravIS
     * ``'GSFC'``: use values from GSFC (TN-14)
 - ``SLR_C50``: Replaces C50 with values from Satellite Laser Ranging (SLR)
 

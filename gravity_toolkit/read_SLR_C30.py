@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C30.py
-Written by Yara Mohajerani and Tyler Sutterley (04/2021)
+Written by Yara Mohajerani and Tyler Sutterley (05/2021)
 
 Reads monthly degree 3 zonal spherical harmonic data files from SLR
     https://neptune.gsfc.nasa.gov/gngphys/index.php?section=519
@@ -11,14 +11,18 @@ Dataset distributed by NASA PO.DAAC
         TN-14_C30_C30_GSFC_SLR.txt
     ftp://ftp.csr.utexas.edu/pub/slr/degree_5/
         CSR_Monthly_5x5_Gravity_Harmonics.txt
+Dataset distributed by GFZ
+    ftp://isdcftp.gfz-potsdam.de/grace/GravIS/GFZ/Level-2B/aux_data/
+        GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat
 
 CALLING SEQUENCE:
     SLR_C30 = read_SLR_C30(SLR_file)
 
 INPUTS:
     SLR_file:
-        GSFC: TN-14_C30_C30_GSFC_SLR.txt
         CSR: CSR_Monthly_5x5_Gravity_Harmonics.txt
+        GFZ: GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat
+        GSFC: TN-14_C30_C30_GSFC_SLR.txt
         LARES: C30_LARES_filtered.txt
 
 OUTPUTS:
@@ -51,8 +55,13 @@ REFERENCE:
         C30 with satellite laser ranging: Impacts on Antarctic Ice Sheet
         mass change". Geophysical Research Letters, 47, (2020).
         https://doi.org/10.1029/2019GL085488
+    Dahle and Murboeck, "Post-processed GRACE/GRACE-FO Geopotential
+        GSM Coefficients GFZ RL06 (Level-2B Product)."
+        V. 0002. GFZ Data Services, (2019).
+        http://doi.org/10.5880/GFZ.GRAVIS_06_L2B
 
 UPDATE HISTORY:
+    Updated 05/2021: added GFZ GravIS GRACE/SLR low degree solutions
     Updated 04/2021: renamed SLR monthly 5x5 function from CSR
     Updated 02/2021: use adjust_months function to fix special months cases
     Updated 12/2020: using utilities from time module
@@ -121,10 +130,13 @@ def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
 
         #-- number of months within the file
         n_mon = file_lines - count
-        date_conv = np.zeros((n_mon))
-        C30_input = np.zeros((n_mon))
-        eC30_input = np.zeros((n_mon))
-        mon = np.zeros((n_mon),dtype=np.int)
+        #-- date and GRACE/GRACE-FO month
+        dinput['time'] = np.zeros((n_mon))
+        dinput['month'] = np.zeros((n_mon),dtype=int)
+        #-- monthly spherical harmonic replacement solutions
+        dinput['data'] = np.zeros((n_mon))
+        #-- monthly spherical harmonic formal standard deviations
+        dinput['error'] = np.zeros((n_mon))
         #-- time count
         t = 0
         #-- for every other line:
@@ -141,24 +153,22 @@ def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
                 YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
                     MJD+2400000.5, FORMAT='tuple')
                 #-- converting from month, day, year into decimal year
-                date_conv[t] = gravity_toolkit.time.convert_calendar_decimal(
+                dinput['time'][t] = gravity_toolkit.time.convert_calendar_decimal(
                     YY, MM, day=DD, hour=hh)
                 #-- Spherical Harmonic data for line
-                C30_input[t] = np.float(line_contents[5])
-                eC30_input[t] = np.float(line_contents[7])*1e-10
+                dinput['data'][t] = np.float(line_contents[5])
+                dinput['error'][t] = np.float(line_contents[7])*1e-10
                 #-- GRACE/GRACE-FO month of SLR solutions
-                mon[t] = 1 + np.round((date_conv[t]-2002.)*12.)
+                dinput['month'][t] = 1 + np.round((dinput['time'][t]-2002.)*12.)
                 #-- add to t count
                 t += 1
         #-- verify that there imported C30 solutions
         #-- (TN-14 data format has changed in the past)
         if (t == 0):
             raise Exception('No GSFC C30 data imported')
-        #-- convert to output variables and truncate if necessary
-        dinput['time'] = date_conv[:t]
-        dinput['data'] = C30_input[:t]
-        dinput['error'] = eC30_input[:t]
-        dinput['month'] = mon[:t]
+        #-- truncate variables if necessary
+        for key,val in dinput.items():
+            dinput[key] = val[:t]
     elif bool(re.search(r'C30_LARES',SLR_file)):
         #-- read LARES filtered values
         LARES_input = np.loadtxt(SLR_file,skiprows=1)
@@ -169,6 +179,60 @@ def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
         dinput['error'] = np.zeros_like(LARES_input[:,1])
         #-- calculate GRACE/GRACE-FO month
         dinput['month'] = 1 + np.array(12.0*(LARES_input[:,0]-2002.0),dtype='i')
+    elif bool(re.search(r'GRAVIS-2B_GFZOP',SLR_file)):
+        #-- Combined GRACE/SLR solution file produced by GFZ
+        #-- Column  1: MJD of BEGINNING of solution data span
+        #-- Column  2: Year and fraction of year of BEGINNING of solution span
+        #-- Column  6: Replacement C(3,0)
+        #-- Column  7: Replacement C(3,0) - mean C(3,0) (1.0E-10)
+        #-- Column  8: C(3,0) formal standard deviation (1.0E-12)
+        with open(os.path.expanduser(SLR_file),'r') as f:
+            file_contents = f.read().splitlines()
+        #-- number of lines contained in the file
+        file_lines = len(file_contents)
+
+        #-- counts the number of lines in the header
+        count = 0
+        #-- Reading over header text
+        while HEADER:
+            #-- file line at count
+            line = file_contents[count]
+            #-- find PRODUCT: within line to set HEADER flag to False when found
+            HEADER = not bool(re.match(r'PRODUCT:+',line))
+            #-- add 1 to counter
+            count += 1
+
+        #-- number of months within the file
+        n_mon = file_lines - count
+        #-- date and GRACE/GRACE-FO month
+        dinput['time'] = np.zeros((n_mon))
+        dinput['month'] = np.zeros((n_mon),dtype=int)
+        #-- monthly spherical harmonic replacement solutions
+        dinput['data'] = np.zeros((n_mon))
+        #-- monthly spherical harmonic formal standard deviations
+        dinput['error'] = np.zeros((n_mon))
+        #-- time count
+        t = 0
+        #-- for every other line:
+        for line in file_contents[count:]:
+            #-- find numerical instances in line including exponents,
+            #-- decimal points and negatives
+            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
+            count = len(line_contents)
+            #-- check for empty lines
+            if (count > 0):
+                #-- reading decimal year for start of span
+                dinput['time'][t] = np.float(line_contents[1])
+                #-- Spherical Harmonic data for line
+                dinput['data'][t] = np.float(line_contents[5])
+                dinput['error'][t] = np.float(line_contents[7])*1e-10
+                #-- GRACE/GRACE-FO month of SLR solutions
+                dinput['month'][t] = 1+np.round((dinput['time'][t]-2002.)*12.)
+                #-- add to t count
+                t += 1
+        #-- truncate variables if necessary
+        for key,val in dinput.items():
+            dinput[key] = val[:t]
     else:
         #-- CSR 5x5 + 6,1 file from CSR and extract C3,0 coefficients
         Ylms = read_SLR_monthly_6x1(SLR_file, HEADER=True)
@@ -191,5 +255,5 @@ def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
     #-- For GSFC: Oct 2018 (202) is centered in Nov 2018 (203)
     dinput['month'] = gravity_toolkit.time.adjust_months(dinput['month'])
 
-    #-- return the input C30 data, year-decimal date, and GRACE/GRACE-FO month
+    #-- return the SLR-derived degree 3 zonal solutions
     return dinput

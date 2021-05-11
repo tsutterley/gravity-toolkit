@@ -25,7 +25,7 @@ Arguments
 Keyword arguments
 #################
 
-- ``HEADER``: file contains header text to be skipped (default: True)
+- ``HEADER``: file contains header text to be skipped
 
 Returns
 #######
