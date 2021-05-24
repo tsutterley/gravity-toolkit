@@ -21,6 +21,7 @@ python podaac_grace_sync.py --user <username> --directory <path_to_grace_directo
 - `-c X`, `--center X`: GRACE Processing Center (CSR,GFZ,JPL)
 - `-r X`, `--release X`: GRACE/GRACE-FO Data Releases to sync (RL05,RL06)
 - `--newsletters`: Sync GRACE Newsletters
+- `-t X`, `--timeout X`: Timeout in seconds for blocking operations
 - `-L`, `--list`: Only print files that are to be transferred
 - `-C`, `--clobber`: Overwrite existing data in transfer
 - `--checksum`: Compare hashes to check if overwriting existing data

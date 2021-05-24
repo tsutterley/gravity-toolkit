@@ -14,6 +14,7 @@ python cnes_grace_sync.py --directory <path_to_grace_directory> --release RL05
 #### Command Line Options
 - `-D X`, `--directory X`: Working Data Directory
 - `-r X`, `--release X`: GRACE/GRACE-FO Data Releases to sync (RL04,RL05)
+- `-t X`, `--timeout X`: Timeout in seconds for blocking operations
 - `-C`, `--clobber`: Overwrite existing data in transfer
 - `-M X`, `--mode X`: Permission mode of directories and files synced
 - `-l`, `--log`: Output log file
