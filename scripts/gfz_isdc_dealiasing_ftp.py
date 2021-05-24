@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_dealiasing_ftp.py
-Written by Tyler Sutterley (01/2021)
+Written by Tyler Sutterley (05/2021)
 Syncs GRACE Level-1b dealiasing products from the GFZ Information
     System and Data Center (ISDC)
 Optionally outputs as monthly tar files
@@ -14,6 +14,7 @@ COMMAND LINE OPTIONS:
     -r X, --release X: GRACE/GRACE-FO Data Releases to run (RL05,RL06)
     -Y X, --year X: Years to sync separated by commas
     -T, --tar: Output data as monthly tar files (.tar.gz or .tgz)
+    -t X, --timeout X: Timeout in seconds for blocking operations
     -M X, --mode X: permissions mode of files synced
     -l, --log: output log of files downloaded
     -C, --clobber: Overwrite existing data in transfers
@@ -28,6 +29,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 05/2021: added option for connection timeout (in seconds)
     Updated 01/2021: using utilities module to list files from ftp
     Updated 10/2020: use argparse to set command line parameters
     Updated 08/2020: flake8 compatible regular expression strings
@@ -41,7 +43,6 @@ from __future__ import print_function
 import sys
 import os
 import re
-import io
 import time
 import ftplib
 import tarfile
@@ -51,8 +52,8 @@ import gravity_toolkit.utilities
 
 #-- PURPOSE: syncs GRACE Level-1b dealiasing products from the GFZ data server
 #-- and optionally outputs as monthly tar files
-def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False, LOG=False,
-    CLOBBER=False, MODE=None):
+def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False,
+    TIMEOUT=None, LOG=False, CLOBBER=False, MODE=None):
     #-- output data directory
     grace_dir = os.path.join(base_dir,'AOD1B',DREL)
     os.makedirs(grace_dir) if not os.access(grace_dir,os.F_OK) else None
@@ -70,7 +71,7 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False, LOG=False,
 
     #-- remote HOST for DREL on GFZ data server
     #-- connect and login to GFZ ftp server
-    ftp = ftplib.FTP('isdcftp.gfz-potsdam.de')
+    ftp = ftplib.FTP('isdcftp.gfz-potsdam.de',timeout=TIMEOUT)
     ftp.login()
 
     #-- compile regular expression operator for years to sync
@@ -84,8 +85,9 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False, LOG=False,
     SUFFIX = dict(RL04='tar.gz',RL05='tar.gz',RL06='tgz')
 
     #-- find remote yearly directories for DREL
-    YRS,_ = gravity_toolkit.utilities.ftp_list([ftp.host,'grace','Level-1B',
-        'GFZ','AOD',DREL],basename=True, pattern=R1, sort=True)
+    YRS,_ = gravity_toolkit.utilities.ftp_list([ftp.host,'grace',
+        'Level-1B', 'GFZ','AOD',DREL], timeout=TIMEOUT, basename=True,
+        pattern=R1, sort=True)
     #-- for each year
     for Y in YRS:
         #-- for each month
@@ -101,7 +103,7 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False, LOG=False,
             R2 = re.compile(regex_pattern.format(Y,M), re.VERBOSE)
             remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
                 [ftp.host,'grace','Level-1B','GFZ','AOD',DREL,Y],
-                basename=True, pattern=R2, sort=True)
+                timeout=TIMEOUT, basename=True, pattern=R2, sort=True)
             file_count = len(remote_files)
             #-- if compressing into monthly tar files
             if TAR and (file_count > 0) and (TEST or CLOBBER):
@@ -112,7 +114,8 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False, LOG=False,
                     remote = [ftp.host,'grace','Level-1B','GFZ','AOD',DREL,Y,fi]
                     print(posixpath.join('ftp://',*remote), file=fid1)
                     #-- retrieve bytes from remote file
-                    remote_buffer = gravity_toolkit.utilities.from_ftp(remote)
+                    remote_buffer = gravity_toolkit.utilities.from_ftp(remote,
+                        timeout=TIMEOUT)
                     #-- add file to tar
                     tar_info = tarfile.TarInfo(name=fi)
                     tar_info.mtime = mt
@@ -128,7 +131,8 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False, LOG=False,
                     #-- remote and local version of each input file
                     remote = [ftp.host,'grace','Level-1B','GFZ','AOD',DREL,Y,fi]
                     local = os.path.join(grace_dir,fi)
-                    ftp_mirror_file(fid1,ftp,remote,mt,local,CLOBBER,MODE)
+                    ftp_mirror_file(fid1,ftp,remote,mt,local,
+                        CLOBBER=CLOBBER,MODE=MODE)
 
     #-- close the ftp connection
     ftp.quit()
@@ -139,7 +143,8 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False, LOG=False,
 
 #-- PURPOSE: pull file from a remote host checking if file exists locally
 #-- and if the remote file is newer than the local file
-def ftp_mirror_file(fid,ftp,remote_path,remote_mtime,local_file,CLOBBER,MODE):
+def ftp_mirror_file(fid,ftp,remote_path,remote_mtime,local_file,
+    CLOBBER=False,MODE=0o775):
     #-- path to remote file
     remote_file = posixpath.join(*remote_path[1:])
     #-- if file exists in file system: check if remote file is newer
@@ -195,6 +200,10 @@ def main():
     parser.add_argument('--tar','-T',
         default=False, action='store_true',
         help='Output data as monthly tar files')
+    #-- connection timeout
+    parser.add_argument('--timeout','-t',
+        type=int, default=360,
+        help='Timeout in seconds for blocking operations')
     #-- Output log file in form
     #-- GFZ_AOD1B_sync_2002-04-01.log
     parser.add_argument('--log','-l',
@@ -215,8 +224,8 @@ def main():
     if gravity_toolkit.utilities.check_ftp_connection(HOST):
         for DREL in args.release:
             gfz_isdc_dealiasing_ftp(args.directory, DREL=DREL,
-                YEAR=args.year, TAR=args.tar, LOG=args.log,
-                CLOBBER=args.clobber, MODE=args.mode)
+                YEAR=args.year, TAR=args.tar, TIMEOUT=args.timeout,
+                LOG=args.log, CLOBBER=args.clobber, MODE=args.mode)
 
 #-- run main program
 if __name__ == '__main__':

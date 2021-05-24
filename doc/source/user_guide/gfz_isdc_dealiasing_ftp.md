@@ -15,6 +15,7 @@ python gfz_isdc_dealiasing_ftp.py --tar --directory <path_to_grace_directory> --
 - `-r X`, `--release X`: GRACE/GRACE-FO Data Releases to sync (RL05,RL06)
 - `-Y X`, `--year X`: Years to sync separated by commas
 - `-T`, `--tar`: Output data as monthly tar files (.tar.gz or .tgz)
+- `-t X`, `--timeout X`: Timeout in seconds for blocking operations
 - `-C`, `--clobber`: Overwrite existing data in transfer
 - `-l`, `--log`: Output log file
 - `-M X`, `--mode X`: Permission mode of directories and files synced

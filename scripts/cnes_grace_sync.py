@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 cnes_grace_sync.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (05/2021)
 
 CNES/GRGS GRACE data download program for gravity field products
     http://grgs.obs-mip.fr/grace
@@ -26,6 +26,7 @@ COMMAND LINE OPTIONS:
     --help: list the command line options
     -D X, --directory: working data directory
     -R X, --release X: CNES/GRGS data releases to sync
+    -t X, --timeout X: Timeout in seconds for blocking operations
     -C, --clobber: overwrite existing data in transfer
     -M X, --mode X: Local permissions mode of the directories and files synced
     -l, --log: output log of files downloaded
@@ -34,6 +35,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 05/2021: added option for connection timeout (in seconds)
     Updated 12/2020: use argparse to set command line parameters
         use gravity toolkit utilities to download tar files
         update remote link paths for new structure
@@ -100,7 +102,8 @@ import posixpath
 import gravity_toolkit.utilities
 
 #-- PURPOSE: sync local GRACE/GRACE-FO files with CNES server
-def cnes_grace_sync(DIRECTORY, DREL=[], LOG=False, CLOBBER=False, MODE=None):
+def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
+    CLOBBER=False, MODE=None):
     #-- remote CNES/GRGS host directory
     HOST = ['http://gravitegrace.get.obs-mip.fr','grgs.obs-mip.fr','data']
     #-- check if directory exists and recursively create if not
@@ -188,12 +191,13 @@ def cnes_grace_sync(DIRECTORY, DREL=[], LOG=False, CLOBBER=False, MODE=None):
                 MD5 = gravity_toolkit.utilities.get_hash(local_file)
                 #-- copy remote tar file to local if new or updated
                 gravity_toolkit.utilities.from_http(remote_tar_path,
-                    local=local_file, hash=MD5, chunk=16384, verbose=True,
-                    fid=fid1, mode=MODE)
+                    local=local_file, timeout=TIMEOUT, hash=MD5, chunk=16384,
+                    verbose=True, fid=fid1, mode=MODE)
                 #-- Create and submit request to get modification time of file
                 remote_file = posixpath.join(*remote_tar_path)
                 request = gravity_toolkit.utilities.urllib2.Request(remote_file)
-                response = gravity_toolkit.utilities.urllib2.urlopen(request)
+                response = gravity_toolkit.utilities.urllib2.urlopen(request,
+                    timeout=TIMEOUT)
                 #-- change modification time to remote
                 time_string=response.headers['last-modified']
                 remote_mtime=gravity_toolkit.utilities.get_unix_time(time_string,
@@ -285,6 +289,10 @@ def main():
         metavar='DREL', type=str, nargs='+',
         default=['RL05'], choices=['RL01','RL02','RL03','RL04','RL05'],
         help='GRACE/GRACE-FO data release')
+    #-- connection timeout
+    parser.add_argument('--timeout','-t',
+        type=int, default=360,
+        help='Timeout in seconds for blocking operations')
     #-- Output log file in form
     #-- CNES_sync_2002-04-01.log
     parser.add_argument('--log','-l',
@@ -302,8 +310,8 @@ def main():
     #-- check internet connection before attempting to run program
     HOST = 'http://gravitegrace.get.obs-mip.fr'
     if gravity_toolkit.utilities.check_connection(HOST):
-        cnes_grace_sync(args.directory, DREL=args.release, LOG=args.log,
-            CLOBBER=args.clobber, MODE=args.mode)
+        cnes_grace_sync(args.directory, DREL=args.release, TIMEOUT=args.timeout,
+            LOG=args.log, CLOBBER=args.clobber, MODE=args.mode)
 
 #-- run main program
 if __name__ == '__main__':

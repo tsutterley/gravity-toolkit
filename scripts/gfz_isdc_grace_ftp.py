@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_grace_ftp.py
-Written by Tyler Sutterley (01/2021)
+Written by Tyler Sutterley (05/2021)
 Syncs GRACE/GRACE-FO data from the GFZ Information System and Data Center (ISDC)
 Syncs CSR/GFZ/JPL files for RL06 GAA/GAB/GAC/GAD/GSM
     GAA and GAB are GFZ/JPL only
@@ -20,6 +20,7 @@ COMMAND LINE OPTIONS:
     -m X, --mission X: Sync GRACE (grace) or GRACE Follow-On (grace-fo) data
     -c X, --center X: GRACE/GRACE-FO Processing Center
     -r X, --release X: GRACE/GRACE-FO data releases to sync (RL05,RL06)
+    -t X, --timeout X: Timeout in seconds for blocking operations
     -L, --list: print files to be transferred, but do not execute transfer
     -l, --log: output log of files downloaded
     -C, --clobber: Overwrite existing data in transfer
@@ -36,6 +37,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 05/2021: added option for connection timeout (in seconds)
     Updated 01/2021: using utilities module to list files from ftp
     Updated 10/2020: use argparse to set command line parameters
     Updated 08/2020: flake8 compatible regular expression strings
@@ -102,11 +104,11 @@ def compile_regex_pattern(PROC, DREL, DSET):
     return re.compile(regex_pattern, re.VERBOSE)
 
 #-- PURPOSE: sync local GRACE/GRACE-FO files with GFZ ISDC server
-def gfz_isdc_grace_ftp(DIRECTORY, PROC, DREL=[], MISSION=['grace','grace-fo'],
+def gfz_isdc_grace_ftp(DIRECTORY, PROC, DREL=[], MISSION=[], TIMEOUT=None,
     LOG=False, LIST=False, CLOBBER=False, CHECKSUM=False, MODE=None):
 
     #-- connect and login to GFZ ISDC ftp server
-    ftp = ftplib.FTP('isdcftp.gfz-potsdam.de')
+    ftp = ftplib.FTP('isdcftp.gfz-potsdam.de', timeout=TIMEOUT)
     ftp.login()
 
     #-- check if directory exists and recursively create if not
@@ -160,14 +162,15 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC, DREL=[], MISSION=['grace','grace-fo'],
                     R1 = re.compile(r'({0}-(.*?)(gz|txt|dif))'.format(ds))
                     #-- get filenames from remote directory
                     remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
-                        [ftp.host,mi,'Level-2',pr,drel_str],
+                        [ftp.host,mi,'Level-2',pr,drel_str], timeout=TIMEOUT,
                         basename=True, pattern=R1, sort=True)
                     for fi,remote_mtime in zip(remote_files,remote_mtimes):
                         #-- extract filename from regex object
                         remote_path = [ftp.host,mi,'Level-2',pr,drel_str,fi]
                         local_file = os.path.join(local_dir,fi)
                         ftp_mirror_file(fid1, ftp, remote_path, remote_mtime,
-                            local_file, LIST, CLOBBER, CHECKSUM, MODE)
+                            local_file, TIMEOUT=TIMEOUT, LIST=LIST,
+                            CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
 
                     #-- Create an index file for each GRACE/GRACE-FO product
                     #-- finding all dataset files *.gz in directory
@@ -191,7 +194,7 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC, DREL=[], MISSION=['grace','grace-fo'],
 #-- PURPOSE: pull file from a remote host checking if file exists locally
 #-- and if the remote file is newer than the local file
 def ftp_mirror_file(fid,ftp,remote_path,remote_mtime,local_file,
-    LIST,CLOBBER,CHECKSUM,MODE):
+    TIMEOUT=None,LIST=False,CLOBBER=False,CHECKSUM=False,MODE=0o775):
     #-- if file exists in file system: check if remote file is newer
     TEST = False
     OVERWRITE = ' (clobber)'
@@ -202,7 +205,8 @@ def ftp_mirror_file(fid,ftp,remote_path,remote_mtime,local_file,
         with open(local_file, 'rb') as local_buffer:
             local_hash = hashlib.md5(local_buffer.read()).hexdigest()
         #-- copy remote file contents to bytesIO object
-        remote_buffer = gravity_toolkit.utilities.from_ftp(remote_path)
+        remote_buffer = gravity_toolkit.utilities.from_ftp(remote_path,
+            timeout=TIMEOUT)
         #-- generate checksum hash for remote file
         remote_hash = hashlib.md5(remote_buffer.getvalue()).hexdigest()
         #-- compare checksums
@@ -272,6 +276,10 @@ def main():
         metavar='DREL', type=str, nargs='+',
         default=['RL06'], choices=['RL04','RL05','RL06'],
         help='GRACE/GRACE-FO data release')
+    #-- connection timeout
+    parser.add_argument('--timeout','-t',
+        type=int, default=360,
+        help='Timeout in seconds for blocking operations')
     #-- Output log file in form
     #-- GFZ_ISDC_sync_2002-04-01.log
     parser.add_argument('--log','-l',
@@ -297,8 +305,9 @@ def main():
     HOST = 'isdcftp.gfz-potsdam.de'
     if gravity_toolkit.utilities.check_ftp_connection(HOST):
         gfz_isdc_grace_ftp(args.directory, args.center, DREL=args.release,
-            MISSION=args.mission, LIST=args.list, LOG=args.log,
-            CLOBBER=args.clobber, CHECKSUM=args.checksum, MODE=args.mode)
+            MISSION=args.mission, TIMEOUT=args.timeout, LIST=args.list,
+            LOG=args.log, CLOBBER=args.clobber, CHECKSUM=args.checksum,
+            MODE=args.mode)
     else:
         raise RuntimeError('Check internet connection')
 

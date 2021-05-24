@@ -19,6 +19,7 @@ python gfz_isdc_grace_ftp.py --directory <path_to_grace_directory> --release RL0
 - `-c X`, `--center X`: GRACE/GRACE-FO Processing Center (CSR,GFZ,JPL)
 - `-r X`, `--release X`: GRACE/GRACE-FO Data Releases to sync (RL05,RL06)
 - `--newsletters`: Sync GRACE Newsletters
+- `-t X`, `--timeout X`: Timeout in seconds for blocking operations
 - `-L`, `--list`: Only print files that are to be transferred
 - `-C`, `--clobber`: Overwrite existing data in transfer
 - `--checksum`: Compare hashes to check if overwriting existing data
