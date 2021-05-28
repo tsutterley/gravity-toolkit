@@ -39,7 +39,7 @@ jobs:
     - name: Install dependencies for MacOS
       if: matrix.os == 'macos-latest'
       run: |
-        brew install proj
+        brew install proj@7
         brew install geos
         brew install hdf5
         brew install netcdf
