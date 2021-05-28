@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_monthly_6x1.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (05/2021)
 
 Reads in monthly 5x5 spherical harmonic coefficients with 1
     coefficient from degree 6 all calculated from SLR measurements
@@ -43,6 +43,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: renamed module. new SLR 5x5 format from CSR (see notes)
         add file read checks (for mean harmonics header and arc number)
         use file not found exceptions for test
@@ -130,13 +131,13 @@ def read_SLR_monthly_6x1(input_file, HEADER=True):
         #-- split the line into individual components
         line = file_contents[indice+i].split()
         #-- degree and order for the line
-        l1 = np.int(line[0])
-        m1 = np.int(line[1])
+        l1 = np.int64(line[0])
+        m1 = np.int64(line[1])
         #-- fill mean field Ylms
-        mean_Ylms['clm'][l1,m1] = np.float(line[2].replace('D','E'))
-        mean_Ylms['slm'][l1,m1] = np.float(line[3].replace('D','E'))
-        mean_Ylm_error['clm'][l1,m1] = np.float(line[4].replace('D','E'))
-        mean_Ylm_error['slm'][l1,m1] = np.float(line[5].replace('D','E'))
+        mean_Ylms['clm'][l1,m1] = np.float64(line[2].replace('D','E'))
+        mean_Ylms['slm'][l1,m1] = np.float64(line[3].replace('D','E'))
+        mean_Ylm_error['clm'][l1,m1] = np.float64(line[4].replace('D','E'))
+        mean_Ylm_error['slm'][l1,m1] = np.float64(line[5].replace('D','E'))
 
     #-- output spherical harmonic fields
     Ylms = {}
@@ -162,7 +163,7 @@ def read_SLR_monthly_6x1(input_file, HEADER=True):
         IARC = int(line_contents[0])
         assert (IARC == (d+1))
         #-- modified Julian date of the middle of the month
-        Ylms['MJD'][d] = np.mean(np.array(line_contents[5:7],dtype=np.float))
+        Ylms['MJD'][d] = np.mean(np.array(line_contents[5:7],dtype=np.float64))
         #-- date of the mid-point of the arc given in years
         YY,MM = np.array(line_contents[3:5])
         Ylms['time'][d] = gravity_toolkit.time.convert_calendar_decimal(YY,MM)
@@ -174,13 +175,13 @@ def read_SLR_monthly_6x1(input_file, HEADER=True):
             #-- split the line into individual components
             line = file_contents[count].split()
             #-- degree and order for the line
-            l1 = np.int(line[0])
-            m1 = np.int(line[1])
+            l1 = np.int64(line[0])
+            m1 = np.int64(line[1])
             #-- fill anomaly field Ylms (variations and sigmas scaled by 1.0e10)
-            Ylm_anomalies['clm'][l1,m1,d] = np.float(line[2])*1e-10
-            Ylm_anomalies['slm'][l1,m1,d] = np.float(line[3])*1e-10
-            Ylm_anomaly_error['clm'][l1,m1,d] = np.float(line[6])*1e-10
-            Ylm_anomaly_error['slm'][l1,m1,d] = np.float(line[7])*1e-10
+            Ylm_anomalies['clm'][l1,m1,d] = np.float64(line[2])*1e-10
+            Ylm_anomalies['slm'][l1,m1,d] = np.float64(line[3])*1e-10
+            Ylm_anomaly_error['clm'][l1,m1,d] = np.float64(line[6])*1e-10
+            Ylm_anomaly_error['slm'][l1,m1,d] = np.float64(line[7])*1e-10
             #-- add 1 to counter
             count += 1
 

@@ -44,6 +44,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 05/2021: simplified program similar to other SLR readers
+        define int/float precision to prevent deprecation warning
     Updated 04/2021: using utilities from time module
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
@@ -122,7 +123,7 @@ def read_SLR_C50(SLR_file, HEADER=True, C50_MEAN=0.):
             #-- only read lines where C50 data exists (don't read NaN lines)
             if (count > 7):
                 #-- modified julian date for line
-                MJD = np.float(line_contents[0])
+                MJD = np.float64(line_contents[0])
                 #-- converting from MJD into month, day and year
                 YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
                     MJD+2400000.5, FORMAT='tuple')
@@ -130,8 +131,8 @@ def read_SLR_C50(SLR_file, HEADER=True, C50_MEAN=0.):
                 dinput['time'][t] = gravity_toolkit.time.convert_calendar_decimal(
                     YY, MM, day=DD, hour=hh)
                 #-- Spherical Harmonic data for line
-                dinput['data'][t] = np.float(line_contents[10])
-                dinput['error'][t] = np.float(line_contents[12])*1e-10
+                dinput['data'][t] = np.float64(line_contents[10])
+                dinput['error'][t] = np.float64(line_contents[12])*1e-10
                 #-- GRACE/GRACE-FO month of SLR solutions
                 dinput['month'][t] = 1 + np.round((dinput['time'][t]-2002.)*12.)
                 #-- add to t count
@@ -163,7 +164,7 @@ def read_SLR_C50(SLR_file, HEADER=True, C50_MEAN=0.):
         YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
             Ylms['MJD']+2400000.5, FORMAT='tuple')
         #-- calculate GRACE/GRACE-FO month
-        dinput['month'] = np.array(12.0*(YY - 2002.) + MM, dtype=np.int)
+        dinput['month'] = np.array(12.0*(YY - 2002.) + MM, dtype=np.int64)
 
     #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
     #-- Accelerometer shutoffs make the relation between month number

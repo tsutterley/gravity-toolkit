@@ -44,6 +44,7 @@ REFERENCE:
         http://doi.org/10.5880/GFZ.GRAVIS_06_L2B
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Written 05/2021
 """
 import os
@@ -134,15 +135,15 @@ def read_gravis_geocenter(geocenter_file, HEADER=True):
         #-- check for empty lines
         if (count > 0):
             #-- reading decimal year for start of span
-            dinput['time'][t] = np.float(line_contents[1])
+            dinput['time'][t] = np.float64(line_contents[1])
             #-- Spherical Harmonic data for line
-            dinput['C10'][t] = np.float(line_contents[2])
-            dinput['C11'][t] = np.float(line_contents[5])
-            dinput['S11'][t] = np.float(line_contents[8])
+            dinput['C10'][t] = np.float64(line_contents[2])
+            dinput['C11'][t] = np.float64(line_contents[5])
+            dinput['S11'][t] = np.float64(line_contents[8])
             #-- monthly spherical harmonic formal standard deviations
-            dinput['eC10'][t] = np.float(line_contents[4])*1e-10
-            dinput['eC11'][t] = np.float(line_contents[7])*1e-10
-            dinput['eS11'][t] = np.float(line_contents[10])*1e-10
+            dinput['eC10'][t] = np.float64(line_contents[4])*1e-10
+            dinput['eC11'][t] = np.float64(line_contents[7])*1e-10
+            dinput['eS11'][t] = np.float64(line_contents[10])*1e-10
             #-- GRACE/GRACE-FO month of geocenter solutions
             dinput['month'][t] = 1+np.round((dinput['time'][t]-2002.)*12.)
             #-- add to t count

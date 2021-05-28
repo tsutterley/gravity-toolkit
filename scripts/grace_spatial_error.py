@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_error.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (05/2021)
 
 Calculates the GRACE/GRACE-FO errors following Wahr et al. (2006)
 
@@ -88,6 +88,7 @@ REFERENCES:
         http://dx.doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: include parameters for replacing C21/S21 and C22/S22
     Updated 12/2020: added more love number options and from gfc for mean files
     Updated 10/2020: use argparse to set command line parameters
@@ -206,17 +207,17 @@ def grace_spatial_error(base_dir, parameters, LOVE_NUMBERS=0,
     #-- GRACE dataset
     DSET = parameters['DSET']
     #-- Date Range and missing months
-    start_mon = np.int(parameters['START'])
-    end_mon = np.int(parameters['END'])
-    missing = np.array(parameters['MISSING'].split(','),dtype=np.int)
+    start_mon = np.int64(parameters['START'])
+    end_mon = np.int64(parameters['END'])
+    missing = np.array(parameters['MISSING'].split(','),dtype=np.int64)
     #-- minimum degree
-    LMIN = np.int(parameters['LMIN'])
+    LMIN = np.int64(parameters['LMIN'])
     #-- maximum degree and order
-    LMAX = np.int(parameters['LMAX'])
+    LMAX = np.int64(parameters['LMAX'])
     if (parameters['MMAX'].title() == 'None'):
         MMAX = np.copy(LMAX)
     else:
-        MMAX = np.int(parameters['MMAX'])
+        MMAX = np.int64(parameters['MMAX'])
     #-- replace low-degree coefficients with values from SLR
     SLR_C20 = parameters['SLR_C20']
     SLR_21 = parameters['SLR_21']
@@ -231,16 +232,16 @@ def grace_spatial_error(base_dir, parameters, LOVE_NUMBERS=0,
     #-- Pole Tide correction from Wahr et al. (2015)
     POLE_TIDE = parameters['POLE_TIDE'] in ('Y','y')
     #-- smoothing radius
-    RAD = np.int(parameters['RAD'])
+    RAD = np.int64(parameters['RAD'])
     #-- destriped coefficients
     DESTRIPE = parameters['DESTRIPE'] in ('Y','y')
     #-- output spatial units
-    UNITS = np.int(parameters['UNITS'])
+    UNITS = np.int64(parameters['UNITS'])
     #-- output degree spacing
     #-- can enter dlon and dlat as [dlon,dlat] or a single value
     DDEG = np.squeeze(np.array(parameters['DDEG'].split(','),dtype='f'))
     #-- output degree interval (0:360, 90:-90) or (degree spacing/2)
-    INTERVAL = np.int(parameters['INTERVAL'])
+    INTERVAL = np.int64(parameters['INTERVAL'])
     #-- output data format (ascii, netCDF4, HDF5)
     DATAFORM = parameters['DATAFORM']
     #-- output directory and base filename
@@ -387,7 +388,7 @@ def grace_spatial_error(base_dir, parameters, LOVE_NUMBERS=0,
             delta_Ylms=harmonics().from_HDF5(os.path.join(grace_dir,DELTA_FILE))
         #-- truncate grace delta clm and slm to d/o LMAX/MMAX
         delta_Ylms = delta_Ylms.truncate(lmax=LMAX, mmax=MMAX)
-        nsmth = np.int(delta_Ylms.time)
+        nsmth = np.int64(delta_Ylms.time)
 
     #-- Output spatial data object
     delta = spatial()
@@ -396,8 +397,8 @@ def grace_spatial_error(base_dir, parameters, LOVE_NUMBERS=0,
     #-- Output Degree Interval
     if (INTERVAL == 1):
         #-- (-180:180,90:-90)
-        nlon = np.int((360.0/dlon)+1.0)
-        nlat = np.int((180.0/dlat)+1.0)
+        nlon = np.int64((360.0/dlon)+1.0)
+        nlat = np.int64((180.0/dlat)+1.0)
         delta.lon = -180 + dlon*np.arange(0,nlon)
         delta.lat = 90.0 - dlat*np.arange(0,nlat)
     elif (INTERVAL == 2):

@@ -672,6 +672,57 @@ def from_figshare(directory,article='7388540',timeout=None,
         if (computed_md5 != f['supplied_md5']):
             raise Exception('Checksum mismatch: {0}'.format(f['download_url']))
 
+#-- PURPOSE: send files to figshare using secure FTP uploader
+def to_figshare(files,username=None,password=None,directory=None,
+    timeout=None,context=ssl.SSLContext(ssl.PROTOCOL_TLS),
+    get_ca_certs=False,verbose=False,chunk=8192):
+    """
+    Send files to figshare using secure FTP uploader
+
+    Arguments
+    ---------
+    files: list of files to upload
+
+    Keyword arguments
+    -----------------
+    username: ftp username
+    password: ftp password
+    directory: figshare subdirectory for sending data
+    timeout: timeout in seconds for blocking operations
+    context: SSL context for ftp connection
+    get_ca_certs: get list of loaded “certification authority” certificates
+    verbose: print ftp transfer information
+    chunk: chunk size for transfer encoding
+    """
+    #-- SSL context handler
+    if get_ca_certs:
+        context.get_ca_certs()
+    #-- connect to figshare secure ftp host
+    ftps = ftplib.FTP_TLS(host='ftps.figshare.com',
+        user=username,
+        passwd=password,
+        context=context,
+        timeout=timeout)
+    #-- set the verbosity level
+    ftps.set_debuglevel(1) if verbose else None
+    #-- encrypt data connections
+    ftps.prot_p()
+    #-- try to create project directory
+    try:
+        #-- will only create the directory if non-existent
+        ftps.mkd(posixpath.join('data',directory))
+    except:
+        pass
+    #-- upload each file
+    for local_file in files:
+        #-- remote ftp file
+        ftp_remote_path = posixpath.join('data',directory,
+            os.path.basename(local_file))
+        #-- open local file and send bytes
+        with open(os.path.expanduser(local_file),'rb') as fp:
+            ftps.storbinary('STOR {0}'.format(ftp_remote_path), fp,
+                blocksize=chunk, callback=None, rest=None)
+
 #-- PURPOSE: download satellite laser ranging files from CSR
 #-- http://download.csr.utexas.edu/pub/slr/geocenter/GCN_L1_L2_30d_CF-CM.txt
 #-- http://download.csr.utexas.edu/outgoing/cheng/gct2est.220_5s

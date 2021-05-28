@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_geocenter.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (05/2021)
 
 Reads monthly geocenter files from satellite laser ranging provided by CSR
     http://download.csr.utexas.edu/pub/slr/geocenter/
@@ -53,6 +53,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: use file not found exceptions
     Updated 02/2021: use adjust_months function to fix special months cases
     Updated 12/2020: added option COLUMNS to generalize the ascii data format
@@ -149,14 +150,14 @@ def read_SLR_geocenter(geocenter_file, RADIUS=None, HEADER=0,
         #-- replacing fortran double precision exponential
         line_contents = rx.findall(file_line.replace('D','E'))
         #-- extract date
-        date[t] = np.float(line_contents[COLUMNS.index('time')])
+        date[t] = np.float64(line_contents[COLUMNS.index('time')])
         #-- extract geocenter variations
-        X = np.float(line_contents[COLUMNS.index('X')])
-        Y = np.float(line_contents[COLUMNS.index('Y')])
-        Z = np.float(line_contents[COLUMNS.index('Z')])
-        X_sigma = np.float(line_contents[COLUMNS.index('X_sigma')])
-        Y_sigma = np.float(line_contents[COLUMNS.index('Y_sigma')])
-        Z_sigma = np.float(line_contents[COLUMNS.index('Z_sigma')])
+        X = np.float64(line_contents[COLUMNS.index('X')])
+        Y = np.float64(line_contents[COLUMNS.index('Y')])
+        Z = np.float64(line_contents[COLUMNS.index('Z')])
+        X_sigma = np.float64(line_contents[COLUMNS.index('X_sigma')])
+        Y_sigma = np.float64(line_contents[COLUMNS.index('Y_sigma')])
+        Z_sigma = np.float64(line_contents[COLUMNS.index('Z_sigma')])
         #-- converting from geocenter into spherical harmonics
         CS1 = geocenter(X=X,Y=Y,Z=Z,RADIUS=RADIUS,INVERSE=True)
         dCS1 = geocenter(X=X_sigma,Y=Y_sigma,Z=Z_sigma,
@@ -172,7 +173,7 @@ def read_SLR_geocenter(geocenter_file, RADIUS=None, HEADER=0,
         #-- calculation of day of the year (with decimals for fraction of day)
         DofY = dpy*(date[t] % 1)
         #-- Calculation of the Julian date from year and DofY
-        JD[t] = np.float(367.0*year -
+        JD[t] = np.float64(367.0*year -
             np.floor(7.0*(year + np.floor(10.0/12.0))/4.0) -
             np.floor(3.0*(np.floor((year - 8.0/7.0)/100.0) + 1.0)/4.0) +
             np.floor(275.0/9.0) + DofY + 1721028.5)
@@ -269,14 +270,14 @@ def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, HEADER=0,
         #-- replacing fortran double precision exponential
         line_contents = rx.findall(file_line.replace('D','E'))
         #-- extract date
-        date[t] = np.float(line_contents[COLUMNS.index('time')])
+        date[t] = np.float64(line_contents[COLUMNS.index('time')])
         #-- extract geocenter variations
-        X = np.float(line_contents[COLUMNS.index('X')])
-        Y = np.float(line_contents[COLUMNS.index('Y')])
-        Z = np.float(line_contents[COLUMNS.index('Z')])
-        X_sigma = np.float(line_contents[COLUMNS.index('X_sigma')])
-        Y_sigma = np.float(line_contents[COLUMNS.index('Y_sigma')])
-        Z_sigma = np.float(line_contents[COLUMNS.index('Z_sigma')])
+        X = np.float64(line_contents[COLUMNS.index('X')])
+        Y = np.float64(line_contents[COLUMNS.index('Y')])
+        Z = np.float64(line_contents[COLUMNS.index('Z')])
+        X_sigma = np.float64(line_contents[COLUMNS.index('X_sigma')])
+        Y_sigma = np.float64(line_contents[COLUMNS.index('Y_sigma')])
+        Z_sigma = np.float64(line_contents[COLUMNS.index('Z_sigma')])
         #-- converting from geocenter into spherical harmonics
         CS1 = geocenter(X=X,Y=Y,Z=Z,RADIUS=RADIUS,INVERSE=True)
         dCS1 = geocenter(X=X_sigma,Y=Y_sigma,Z=Z_sigma,
@@ -289,11 +290,11 @@ def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, HEADER=0,
         #-- calculation of day of the year (with decimals for fraction of day)
         DofY = dpy*(date[t] % 1)
         #-- Calculation of the Julian date from year and DofY
-        JD[t] =np.float(367.*year - np.floor(7.*(year + np.floor(10./12.))/4.) -
+        JD[t] =np.float64(367.*year - np.floor(7.*(year + np.floor(10./12.))/4.) -
             np.floor(3.0*(np.floor((year - 8.0/7.0)/100.0) + 1.0)/4.0) +
             np.floor(275.0/9.0) + DofY + 1721028.5)
         #-- convert the julian date into calendar dates (hour, day, month, year)
-        cal_date = gravity_toolkit.time.convert_julian(JD[t], ASTYPE=np.int)
+        cal_date = gravity_toolkit.time.convert_julian(JD[t], ASTYPE=np.int64)
         #-- full path to AOD geocenter for month (using glo coefficients)
         args = (DREL, 'glo', cal_date['year'], cal_date['month'])
         AOD1B_file = 'AOD1B_{0}_{1}_{2:4d}_{3:02d}.txt'.format(*args)
@@ -345,12 +346,12 @@ def read_AOD1b_geocenter(AOD1B_file, calendar_month):
     X = np.zeros((n_lines))
     Y = np.zeros((n_lines))
     Z = np.zeros((n_lines))
-    month = np.zeros((n_lines),dtype=np.int)
+    month = np.zeros((n_lines),dtype=np.int64)
     for i,line in enumerate(file_contents):
         line_contents = line.split()
         AOD1B_time = time.strptime(line_contents[0],'%Y-%m-%dT%H:%M:%S')
         month[i] = AOD1B_time.tm_mon
-        X[i],Y[i],Z[i] = np.array(line_contents[1:],dtype=np.float)
+        X[i],Y[i],Z[i] = np.array(line_contents[1:],dtype=np.float64)
     #-- use only dates within month (should be all)
     ii, = np.nonzero(month == calendar_month)
     #-- convert mean X,Y,Z into spherical harmonics

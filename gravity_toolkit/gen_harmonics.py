@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_harmonics.py
-Written by Tyler Sutterley (01/2021)
+Written by Tyler Sutterley (05/2021)
 Converts data from the spatial domain to spherical harmonic coefficients
 
 Differs from the gen_stokes() function as it does not
@@ -46,6 +46,7 @@ REFERENCE:
         Associated Legendre Functions", Journal of Geodesy (2002)
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 01/2021: use harmonics class for spherical harmonic operations
     Updated 07/2020: added function docstrings
     Updated 04/2020: include degrees and orders in output dictionary
@@ -86,8 +87,8 @@ def gen_harmonics(data, lon, lat, LMAX=60, MMAX=None, PLM=0):
         MMAX = np.copy(LMAX)
 
     #-- dimensions of the longitude and latitude arrays
-    nlon = np.int(len(lon))
-    nlat = np.int(len(lat))
+    nlon = np.int64(len(lon))
+    nlat = np.int64(len(lat))
 
     #-- grid step
     dlon = np.abs(lon[1]-lon[0])
@@ -98,8 +99,8 @@ def gen_harmonics(data, lon, lat, LMAX=60, MMAX=None, PLM=0):
     dth = dlat*np.pi/180.0
 
     #-- convert latitude and longitude to float if integers
-    lon = lon.astype(np.float)
-    lat = lat.astype(np.float)
+    lon = lon.astype(np.float64)
+    lat = lat.astype(np.float64)
     #-- reformatting longitudes to range 0:360 (if previously -180:180)
     if np.count_nonzero(lon < 0):
         lon[lon < 0] += 360.0

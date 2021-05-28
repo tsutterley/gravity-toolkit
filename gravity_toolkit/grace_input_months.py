@@ -92,6 +92,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 05/2021: can use SLR low-degree harmonic values produced by GFZ
+        define int/float precision to prevent deprecation warning
     Updated 04/2021: can replace figure axis and azimuthal dependence with SLR
     Updated 12/2020: updated SLR geocenter for new solutions from Minkang Cheng
     Updated 11/2020: set regress_model RELATIVE option to 2003.3 to match others
@@ -384,7 +385,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     grace_clm = np.zeros((LMAX+1,MMAX+1,n_cons))
     grace_slm = np.zeros((LMAX+1,MMAX+1,n_cons))
     tdec = np.zeros((n_cons))
-    mon = np.zeros((n_cons),dtype=np.int)
+    mon = np.zeros((n_cons),dtype=np.int64)
     #-- output dimensions
     lout = np.arange(LMAX+1)
     mout = np.arange(MMAX+1)
@@ -400,7 +401,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         grace_clm[:,:,i] = Ylms['clm'][0:LMAX+1,0:MMAX+1]
         grace_slm[:,:,i] = Ylms['slm'][0:LMAX+1,0:MMAX+1]
         tdec[i] = Ylms['time']
-        mon[i] = np.int(grace_month)
+        mon[i] = np.int64(grace_month)
 
     #-- Replace C20 with SLR coefficients
     if SLR_C20 in ('CSR','GFZ','GSFC'):
@@ -580,12 +581,12 @@ def read_ecmwf_corrections(base_dir, LMAX, months, MMAX=None):
                 #-- split the line into individual components
                 line_contents = line.split()
                 #-- degree and order for the line
-                l1 = np.int(line_contents[1])
-                m1 = np.int(line_contents[2])
+                l1 = np.int64(line_contents[1])
+                m1 = np.int64(line_contents[2])
                 #-- if degree and order are below the truncation limits
                 if ((l1 <= LMAX) and (m1 <= MMAX)):
-                    atm_corr_clm[key][l1,m1] = np.float(line_contents[3])
-                    atm_corr_slm[key][l1,m1] = np.float(line_contents[4])
+                    atm_corr_clm[key][l1,m1] = np.float64(line_contents[3])
+                    atm_corr_slm[key][l1,m1] = np.float64(line_contents[4])
 
     #-- create output atmospheric corrections to be removed/added to data
     atm_corr = {}
@@ -647,10 +648,10 @@ def regress_model(t_in, d_in, t_out, ORDER=2, CYCLES=None, RELATIVE=0.0):
         MMAT.append((t_out-RELATIVE)**o)
     #-- add cyclical terms (0.5=semi-annual, 1=annual)
     for c in CYCLES:
-        DMAT.append(np.sin(2.0*np.pi*t_in/np.float(c)))
-        DMAT.append(np.cos(2.0*np.pi*t_in/np.float(c)))
-        MMAT.append(np.sin(2.0*np.pi*t_out/np.float(c)))
-        MMAT.append(np.cos(2.0*np.pi*t_out/np.float(c)))
+        DMAT.append(np.sin(2.0*np.pi*t_in/np.float64(c)))
+        DMAT.append(np.cos(2.0*np.pi*t_in/np.float64(c)))
+        MMAT.append(np.sin(2.0*np.pi*t_out/np.float64(c)))
+        MMAT.append(np.cos(2.0*np.pi*t_out/np.float64(c)))
     #-- Calculating Least-Squares Coefficients
     #-- Standard Least-Squares fitting (the [0] denotes coefficients output)
     beta_mat = np.linalg.lstsq(np.transpose(DMAT), d_in, rcond=-1)[0]

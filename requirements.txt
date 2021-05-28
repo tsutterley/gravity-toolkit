@@ -5,6 +5,6 @@ lxml
 future
 matplotlib
 python-dateutil
-cartopy
+cartopy --no-binary=cartopy
 netCDF4
 h5py

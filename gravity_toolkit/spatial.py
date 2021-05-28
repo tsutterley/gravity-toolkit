@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (05/2021)
 
 Data class for reading, writing and processing spatial data
 
@@ -24,6 +24,7 @@ PROGRAM DEPENDENCIES:
     hdf5_read.py: reads spatial data from HDF5
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: add parser object for removing commented or empty lines
         use file not found exceptions in case insensitive filename
     Updated 02/2021: added replace_masked to replace masked values in data
@@ -156,12 +157,12 @@ class spatial(object):
             #-- convert fortran exponentials if applicable
             d = {c:r.replace('D','E') for c,r in zip(columns,rx.findall(line))}
             #-- convert line coordinates to integers
-            ilon = np.int(np.float(d['lon'])/self.spacing[0])
-            ilat = np.int((90.0-np.float(d['lat']))//self.spacing[1])
-            self.data[ilat,ilon] = np.float(d['data'])
+            ilon = np.int64(np.float64(d['lon'])/self.spacing[0])
+            ilat = np.int64((90.0-np.float64(d['lat']))//self.spacing[1])
+            self.data[ilat,ilon] = np.float64(d['data'])
             self.mask[ilat,ilon] = False
-            self.lon[ilon] = np.float(d['lon'])
-            self.lat[ilat] = np.float(d['lat'])
+            self.lon[ilon] = np.float64(d['lon'])
+            self.lat[ilat] = np.float64(d['lat'])
             #-- if the ascii file contains date variables
             if date:
                 self.time = np.array(d['time'],dtype='f')
@@ -355,7 +356,7 @@ class spatial(object):
         #-- output dates
         if date:
             self.time = np.zeros((n))
-            self.month = np.zeros((n),dtype=np.int)
+            self.month = np.zeros((n),dtype=np.int64)
         #-- for each indice
         for t,i in enumerate(list_sort):
             self.data[:,:,t] = object_list[i].data[:,:].copy()
@@ -722,7 +723,7 @@ class spatial(object):
         temp.lon = self.lon.copy()
         temp.lat = self.lat.copy()
         temp.time = np.zeros((n))
-        temp.month = np.zeros((n),dtype=np.int)
+        temp.month = np.zeros((n),dtype=np.int64)
         temp.filename = []
         #-- for each indice
         for t,i in enumerate(months_list):

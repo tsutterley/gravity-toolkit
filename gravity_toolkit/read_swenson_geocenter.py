@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_swenson_geocenter.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (05/2021)
 
 Reads monthly geocenter coefficients from GRACE measurements and
     Ocean Models of Degree 1 provided by Sean Swenson in mm w.e.
@@ -37,6 +37,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: use file not found exceptions
     Updated 02/2021: use adjust_months function to fix special months cases
     Updated 12/2020: using utilities from time module
@@ -108,13 +109,13 @@ def read_swenson_geocenter(geocenter_file, HEADER=True):
         raise IOError('Data lines not found in file {0}'.format(geocenter_file))
 
     #-- number of months within the file
-    n_mon = np.int(file_lines - count)
+    n_mon = np.int64(file_lines - count)
     C10 = np.zeros((n_mon))
     C11 = np.zeros((n_mon))
     S11 = np.zeros((n_mon))
     date = np.zeros((n_mon))
     JD = np.zeros((n_mon))
-    mon = np.zeros((n_mon), dtype=np.int)
+    mon = np.zeros((n_mon), dtype=np.int64)
 
     #-- Average Density of the Earth [g/cm^3]
     rho_e = 5.517
@@ -132,12 +133,12 @@ def read_swenson_geocenter(geocenter_file, HEADER=True):
         line_contents = rx.findall(line)
 
         #-- extacting data
-        date[t]=np.float(line_contents[0])
+        date[t]=np.float64(line_contents[0])
         #-- Convert from mm w.e. into cm w.e. (0.1)
         #-- then convert from cm w.e. into normalized geoid coeffs (rho_e*rad_e)
-        C10[t]=0.1*np.float(line_contents[1])/(rho_e*rad_e)
-        C11[t]=0.1*np.float(line_contents[2])/(rho_e*rad_e)
-        S11[t]=0.1*np.float(line_contents[3])/(rho_e*rad_e)
+        C10[t]=0.1*np.float64(line_contents[1])/(rho_e*rad_e)
+        C11[t]=0.1*np.float64(line_contents[2])/(rho_e*rad_e)
+        S11[t]=0.1*np.float64(line_contents[3])/(rho_e*rad_e)
 
         #-- calculate the GRACE months
         #-- calendar year of date
@@ -153,14 +154,14 @@ def read_swenson_geocenter(geocenter_file, HEADER=True):
         #-- calculation of day of the year
         DofY = dpy*(date[t] % 1)
         #-- Calculation of the Julian date from year and DofY
-        JD[t] = np.float(367.0*year - \
+        JD[t] = np.float64(367.0*year - \
             np.floor(7.0*(year + np.floor(10.0/12.0))/4.0) - \
             np.floor(3.0*(np.floor((year - 8.0/7.0)/100.0) + 1.0)/4.0) + \
             np.floor(275.0/9.0) + DofY + 1721028.5)
 
         #-- months are included as last column
         if (len(line_contents) == 5):
-            mon[t] = np.int(line_contents[4])
+            mon[t] = np.int64(line_contents[4])
         else:
             #-- months to be calculated from date
             #-- convert the julian date into calendar dates (day, month, year)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_stokes.py
-Written by Tyler Sutterley (01/2021)
+Written by Tyler Sutterley (05/2021)
 
 Converts data from the spatial domain to spherical harmonic coefficients
 
@@ -46,6 +46,7 @@ PROGRAM DEPENDENCIES:
         hdf5_stokes.py: writes output spherical harmonic data to HDF5
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 01/2021: use harmonics class for spherical harmonic operations
     Updated 07/2020: added function docstrings
     Updated 04/2020: reading load love numbers outside of this function
@@ -103,13 +104,13 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     """
 
     #-- converting LMIN and LMAX to integer
-    LMIN = np.int(LMIN)
-    LMAX = np.int(LMAX)
+    LMIN = np.int64(LMIN)
+    LMAX = np.int64(LMAX)
     #-- upper bound of spherical harmonic orders (default = LMAX)
     MMAX = np.copy(LMAX) if (MMAX is None) else MMAX
 
     #-- grid dimensions
-    nlat = np.int(len(lat))
+    nlat = np.int64(len(lat))
     #-- grid step
     dlon = np.abs(lon[1]-lon[0])
     dlat = np.abs(lat[1]-lat[0])

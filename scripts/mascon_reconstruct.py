@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 mascon_reconstruct.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (05/2021)
 
 Calculates the equivalent spherical harmonics from a mascon time series
 
@@ -50,6 +50,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: add parser object for removing commented or empty lines
     Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
     Updated 12/2020: added more love number options
@@ -168,17 +169,17 @@ def mascon_reconstruct(parameters,LOVE_NUMBERS=0,REFERENCE=None,MODE=0o775):
     #-- GRACE dataset
     DSET = parameters['DSET']
     #-- Date Range
-    START_MON = np.int(parameters['START'])
-    END_MON = np.int(parameters['END'])
+    START_MON = np.int64(parameters['START'])
+    END_MON = np.int64(parameters['END'])
     #-- spherical harmonic parameters
-    LMAX = np.int(parameters['LMAX'])
+    LMAX = np.int64(parameters['LMAX'])
     #-- maximum spherical harmonic order
     if (parameters['MMAX'].title() == 'None'):
         MMAX = np.copy(LMAX)
     else:
-        MMAX = np.int(parameters['MMAX'])
+        MMAX = np.int64(parameters['MMAX'])
     #-- gaussian smoothing radius
-    RAD = np.float(parameters['RAD'])
+    RAD = np.float64(parameters['RAD'])
     #-- filtered coefficients for stripe effects
     DESTRIPE = parameters['DESTRIPE'] in ('Y','y')
     #-- ECMWF jump corrections
@@ -295,7 +296,7 @@ def mascon_reconstruct(parameters,LOVE_NUMBERS=0,REFERENCE=None,MODE=0o775):
         #-- mascon time-series Ylms
         mascon_Ylms = Ylms.scale(mascon_sigma)
         mascon_Ylms.time = mascon_data_input[:,1].copy()
-        mascon_Ylms.month = mascon_data_input[:,0].astype(np.int)
+        mascon_Ylms.month = mascon_data_input[:,0].astype(np.int64)
 
         #-- output to file: no ascii option
         args = (mascon_name,dset_str,gia_str.upper(),atm_str,ocean_str,

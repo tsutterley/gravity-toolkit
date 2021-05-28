@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 plm_colombo.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (05/2021)
 
 Computes fully-normalized associated Legendre Polynomials
     for a vector of x values (can also be singular)
@@ -24,7 +24,7 @@ OUTPUT:
     dplms: first differentials of Legendre polynomials of x
 
 OPTIONS:
-    ASTYPE: output variable type.  Default is np.float
+    ASTYPE: output variable type.  Default is np.float64
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
@@ -33,6 +33,7 @@ REFERENCES:
     Geoid Cookbook: http://mitgcm.org/~mlosch/geoidcookbook.pdf
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 09/2020: verify dimensions of input x variable
     Updated 08/2020: prevent zero divisions by changing u==0 to eps of data type
     Updated 07/2020: added function docstrings
@@ -42,7 +43,7 @@ UPDATE HISTORY:
 """
 import numpy as np
 
-def plm_colombo(LMAX, x, ASTYPE=np.float):
+def plm_colombo(LMAX, x, ASTYPE=np.float64):
     """
     Computes fully-normalized associated Legendre Polynomials and
     their first derivative using a Standard forward column method
@@ -67,7 +68,7 @@ def plm_colombo(LMAX, x, ASTYPE=np.float):
     #-- length of the x array
     jm = len(x)
     #-- verify data type of spherical harmonic truncation
-    LMAX = np.int(LMAX)
+    LMAX = np.int64(LMAX)
 
     #-- allocating for the plm matrix and differentials
     plm = np.zeros((LMAX+1,LMAX+1,jm))

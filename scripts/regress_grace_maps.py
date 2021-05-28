@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 regress_grace_maps.py
-Written by Tyler Sutterley (02/2021)
+Written by Tyler Sutterley (05/2021)
 
 Reads in GRACE/GRACE-FO spatial files from grace_spatial_maps.py and
     fits a regression model at each grid point
@@ -54,6 +54,7 @@ PROGRAM DEPENDENCIES:
         hdf5_write.py: writes output spatial data to HDF5
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: replaced numpy bool to prevent deprecation warning
     Updated 10/2020: use argparse to set command line parameters
     Updated 06/2020: using spatial data class for input and output operations
@@ -107,33 +108,33 @@ def regress_grace_maps(parameters, ORDER=None, CYCLES=None,
     #-- GRACE/GRACE-FO dataset
     DSET = parameters['DSET']
     #-- GRACE/GRACE-FO months
-    START_MON = np.int(parameters['START'])
-    END_MON = np.int(parameters['END'])
-    MISSING = np.array(parameters['MISSING'].split(','),dtype=np.int)
+    START_MON = np.int64(parameters['START'])
+    END_MON = np.int64(parameters['END'])
+    MISSING = np.array(parameters['MISSING'].split(','),dtype=np.int64)
     months = sorted(set(np.arange(START_MON,END_MON+1)) - set(MISSING))
     nmon = len(months)
     #-- maximum degree and order
-    LMAX = np.int(parameters['LMAX'])
+    LMAX = np.int64(parameters['LMAX'])
     if (parameters['MMAX'].title() == 'None'):
         MMAX = np.copy(LMAX)
     else:
-        MMAX = np.int(parameters['MMAX'])
+        MMAX = np.int64(parameters['MMAX'])
     #-- Glacial Isostatic Adjustment file to read
     GIA = parameters['GIA'] if (parameters['GIA'].title() != 'None') else None
     GIA_FILE = os.path.expanduser(parameters['GIA_FILE'])
     #-- remove a set of spherical harmonics from the GRACE data
     REDISTRIBUTE_REMOVED = parameters['REDISTRIBUTE_REMOVED'] in ('Y','y')
     #-- smoothing radius
-    RAD = np.int(parameters['RAD'])
+    RAD = np.int64(parameters['RAD'])
     #-- destriped coefficients
     DESTRIPE = parameters['DESTRIPE'] in ('Y','y')
     #-- output spatial units
-    UNITS = np.int(parameters['UNITS'])
+    UNITS = np.int64(parameters['UNITS'])
     #-- output degree spacing
     #-- can enter dlon and dlat as [dlon,dlat] or a single value
     DDEG = np.squeeze(np.array(parameters['DDEG'].split(','),dtype='f'))
     #-- output degree interval (0:360, 90:-90) or (degree spacing/2)
-    INTERVAL = np.int(parameters['INTERVAL'])
+    INTERVAL = np.int64(parameters['INTERVAL'])
     #-- input/output data format (ascii, netCDF4, HDF5)
     DATAFORM = parameters['DATAFORM']
     #-- output directory and base filename
@@ -166,12 +167,12 @@ def regress_grace_maps(parameters, ORDER=None, CYCLES=None,
     #-- Output Degree Interval
     if (INTERVAL == 1):
         #-- (-180:180,90:-90)
-        nlon = np.int((360.0/dlon)+1.0)
-        nlat = np.int((180.0/dlat)+1.0)
+        nlon = np.int64((360.0/dlon)+1.0)
+        nlat = np.int64((180.0/dlat)+1.0)
     elif (INTERVAL == 2):
         #-- (Degree spacing)/2
-        nlon = np.int(360.0/dlon)
-        nlat = np.int(180.0/dlat)
+        nlon = np.int64(360.0/dlon)
+        nlat = np.int64(180.0/dlat)
 
     #-- Setting output parameters for each fit type
     coef_str = ['x{0:d}'.format(o) for o in range(ORDER+1)]

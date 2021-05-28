@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 scale_grace_maps.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (05/2021)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly scaled spatial fields, estimated scaling errors,
@@ -104,6 +104,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: include parameters for replacing C21/S21 and C22/S22
     Updated 02/2021: changed remove index to files with specified formats
     Updated 02/2021: for public release
@@ -209,17 +210,17 @@ def scale_grace_maps(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
     #-- GRACE dataset
     DSET = parameters['DSET']
     #-- Date Range and missing months
-    start_mon = np.int(parameters['START'])
-    end_mon = np.int(parameters['END'])
-    missing = np.array(parameters['MISSING'].split(','),dtype=np.int)
+    start_mon = np.int64(parameters['START'])
+    end_mon = np.int64(parameters['END'])
+    missing = np.array(parameters['MISSING'].split(','),dtype=np.int64)
     #-- spherical harmonic degree range
-    LMIN = np.int(parameters['LMIN'])
-    LMAX = np.int(parameters['LMAX'])
+    LMIN = np.int64(parameters['LMIN'])
+    LMAX = np.int64(parameters['LMAX'])
     #-- maximum spherical harmonic order
     if (parameters['MMAX'].title() == 'None'):
         MMAX = np.copy(LMAX)
     else:
-        MMAX = np.int(parameters['MMAX'])
+        MMAX = np.int64(parameters['MMAX'])
     #-- degree 1 coefficients
     #-- None: No degree 1
     #-- Tellus: GRACE/GRACE-FO TN-13 from PO.DAAC
@@ -246,14 +247,14 @@ def scale_grace_maps(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
     #-- remove a set of spherical harmonics from the GRACE data
     REDISTRIBUTE_REMOVED = parameters['REDISTRIBUTE_REMOVED'] in ('Y','y')
     #-- gaussian smoothing radius
-    RAD = np.float(parameters['RAD'])
+    RAD = np.float64(parameters['RAD'])
     #-- filter coefficients for stripe effects
     DESTRIPE = parameters['DESTRIPE'] in ('Y','y')
     #-- output degree spacing
     #-- can enter dlon and dlat as [dlon,dlat] or a single value
     DDEG = np.squeeze(np.array(parameters['DDEG'].split(','),dtype='f'))
     #-- output degree interval (0:360, 90:-90) or (degree spacing/2)
-    INTERVAL = np.int(parameters['INTERVAL'])
+    INTERVAL = np.int64(parameters['INTERVAL'])
     #-- input/output data format (ascii, netCDF4, HDF5)
     DATAFORM = parameters['DATAFORM']
     #-- output directory and base filename
@@ -305,11 +306,11 @@ def scale_grace_maps(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
     dlon,dlat = (DDEG,DDEG) if (np.ndim(DDEG) == 0) else (DDEG[0],DDEG[1])
     #-- Grid dimensions
     if (INTERVAL == 1):#-- (0:360, 90:-90)
-        nlon = np.int((360.0/dlon)+1.0)
-        nlat = np.int((180.0/dlat)+1.0)
+        nlon = np.int64((360.0/dlon)+1.0)
+        nlat = np.int64((180.0/dlat)+1.0)
     elif (INTERVAL == 2):#-- degree spacing/2
-        nlon = np.int((360.0/dlon))
-        nlat = np.int((180.0/dlat))
+        nlon = np.int64((360.0/dlon))
+        nlat = np.int64((180.0/dlat))
 
     #-- read data for input scale files (ascii, netCDF4, HDF5)
     if (DATAFORM == 'ascii'):
@@ -480,7 +481,7 @@ def scale_grace_maps(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
 
         #-- save GRACE/GRACE-FO delta harmonics to file
         delta_Ylms.time = np.copy(tsmth)
-        delta_Ylms.month = np.int(nsmth)
+        delta_Ylms.month = np.int64(nsmth)
         if (DATAFORM == 'ascii'):
             #-- ascii (.txt)
             delta_Ylms.to_ascii(os.path.join(grace_dir,DELTA_FILE))
@@ -503,14 +504,14 @@ def scale_grace_maps(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
             delta_Ylms=harmonics().from_HDF5(os.path.join(grace_dir,DELTA_FILE))
         #-- copy time and number of smoothed fields
         tsmth = np.squeeze(delta_Ylms.time)
-        nsmth = np.int(delta_Ylms.month)
+        nsmth = np.int64(delta_Ylms.month)
 
     #-- Output spatial data object
     grid = spatial()
     grid.lon = np.copy(kfactor.lon)
     grid.lat = np.copy(kfactor.lat)
     grid.time = np.zeros((nfiles))
-    grid.month = np.zeros((nfiles),dtype=np.int)
+    grid.month = np.zeros((nfiles),dtype=np.int64)
     grid.data = np.zeros((nlat,nlon,nfiles))
     grid.mask = np.zeros((nlat,nlon,nfiles),dtype=bool)
 

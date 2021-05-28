@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GIA_model.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (05/2021)
 
 Reads GIA data files that can come in various formats depending on the group
 Outputs spherical harmonics for the GIA rates and the GIA model parameters
@@ -95,6 +95,7 @@ REFERENCES:
     https://doi.org/10.1002/2016JB013844
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: use regular expressions to find ICE6G-D header positions
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 04/2020: include spherical harmonic degree and order in output dict
@@ -251,13 +252,13 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
                 #-- decimal points and negatives
                 #-- Replacing Double Exponent with Standard Exponent
                 line = rx.findall(gia_data[ii].replace('D','E'))
-                l1 = np.int(line[0])
-                m1 = np.int(line[1])
+                l1 = np.int64(line[0])
+                m1 = np.int64(line[1])
                 #-- truncate to LMAX
                 if (l1 <= LMAX) and (m1 <= LMAX):
                     #-- scaling to geodesy normalization
-                    gia_Ylms['clm'][l1,m1] = np.float(line[2])*scale
-                    gia_Ylms['slm'][l1,m1] = np.float(line[3])*scale
+                    gia_Ylms['clm'][l1,m1] = np.float64(line[2])*scale
+                    gia_Ylms['slm'][l1,m1] = np.float64(line[3])*scale
 
     elif (GIA == 'ICE6G'):
         #-- ICE-6G VM5 notes
@@ -291,8 +292,8 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
                 if (len(line) > 0):
                     #-- no empty lines
                     #-- convert to float and scale
-                    gia_Ylms['clm'][l,m] = np.float(line[0+c])*scale
-                    gia_Ylms['slm'][l,m] = np.float(line[1+c])*scale
+                    gia_Ylms['clm'][l,m] = np.float64(line[0+c])*scale
+                    gia_Ylms['slm'][l,m] = np.float64(line[1+c])*scale
 
     elif (GIA == 'Wu10'):
         #-- Wu (2010) notes:
@@ -374,13 +375,13 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
                 #-- decimal points and negatives
                 #-- Replacing Double Exponent with Standard Exponent
                 line = rx.findall(gia_data[ii].replace('D','E'))
-                l1 = np.int(line[0])
-                m1 = np.int(line[1])
+                l1 = np.int64(line[0])
+                m1 = np.int64(line[1])
                 #-- truncate to LMAX
                 if (l1 <= LMAX) and (m1 <= LMAX):
                     #-- scaling to geodesy normalization
-                    gia_Ylms['clm'][l1,m1] = np.float(line[2])*scale
-                    gia_Ylms['slm'][l1,m1] = np.float(line[3])*scale
+                    gia_Ylms['clm'][l1,m1] = np.float64(line[2])*scale
+                    gia_Ylms['slm'][l1,m1] = np.float64(line[3])*scale
 
         #-- Skipping rest of file header
         for ii in range(start,gia_lines):
@@ -391,13 +392,13 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
                 #-- decimal points and negatives
                 #-- Replacing Double Exponent with Standard Exponent
                 line = rx.findall(gia_data[ii].replace('D','E'))
-                l1 = np.int(line[0])
-                m1 = np.int(line[1])
+                l1 = np.int64(line[0])
+                m1 = np.int64(line[1])
                 #-- truncate to LMAX
                 if (l1 <= LMAX) and (m1 <= LMAX):
                     #-- scaling to geodesy normalization
-                    gia_Ylms['clm'][l1,m1] = np.float(line[2])*scale
-                    gia_Ylms['slm'][l1,m1] = np.float(line[3])*scale
+                    gia_Ylms['clm'][l1,m1] = np.float64(line[2])*scale
+                    gia_Ylms['slm'][l1,m1] = np.float64(line[3])*scale
 
     elif (GIA == 'ascii'):
         #-- reading GIA data from reformatted (simplified) ascii files

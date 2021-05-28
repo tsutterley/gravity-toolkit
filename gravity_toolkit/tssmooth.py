@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 tssmooth.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (05/2021)
 
 Computes a moving average of a time-series using three possible routines:
     1) centered moving average
@@ -48,6 +48,7 @@ PYTHON DEPENDENCIES:
     scipy: Scientific Tools for Python (https://docs.scipy.org/doc/)
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 07/2020: added function docstrings
     Updated 10/2019: changing Y/N flags to True/False. output amplitudes
     Updated 09/2019: calculate and output annual and semi-annual phase
@@ -159,8 +160,8 @@ def tssmooth(t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0,
         tout = np.copy(t_in)
         if (WEIGHT == 1):
             #-- linear weights (range from 1:HFWTH+1:-1)
-            wi = np.concatenate((np.arange(1,HFWTH+2,dtype=np.float),
-                np.arange(HFWTH,0,-1,dtype=np.float)),axis=0)
+            wi = np.concatenate((np.arange(1,HFWTH+2,dtype=np.float64),
+                np.arange(HFWTH,0,-1,dtype=np.float64)),axis=0)
         elif (WEIGHT == 2):
             #-- gaussian weights
             #-- default standard deviation of 2

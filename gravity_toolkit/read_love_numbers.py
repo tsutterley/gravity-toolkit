@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_love_numbers.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (05/2021)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
 Can linearly extrapolate load love numbers beyond maximum degree of dataset
@@ -38,6 +38,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: use file not found exceptions
     Updated 12/2020: generalized ascii read for outputs from Gegout and Wang
         added linear interpolation of love numbers to a specified LMAX
@@ -110,7 +111,7 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
 
     #-- extract maximum spherical harmonic degree from final line in file
     if LMAX is None:
-        LMAX = np.int(rx.findall(file_contents[-1])[COLUMNS.index('l')])
+        LMAX = np.int64(rx.findall(file_contents[-1])[COLUMNS.index('l')])
 
     #-- output love numbers
     love = {}
@@ -128,16 +129,16 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
         #-- replacing fortran double precision exponential
         love_numbers = rx.findall(file_line.replace('D','E'))
         #-- spherical harmonic degree
-        l = np.int(love_numbers[COLUMNS.index('l')])
+        l = np.int64(love_numbers[COLUMNS.index('l')])
         #-- truncate to spherical harmonic degree LMAX
         if (l <= LMAX):
             #-- convert love numbers to float
             #-- vertical displacement hl
-            love['hl'][l] = np.float(love_numbers[COLUMNS.index('hl')])
+            love['hl'][l] = np.float64(love_numbers[COLUMNS.index('hl')])
             #-- gravitational potential kl
-            love['kl'][l] = np.float(love_numbers[COLUMNS.index('kl')])
+            love['kl'][l] = np.float64(love_numbers[COLUMNS.index('kl')])
             #-- horizontal displacement ll
-            love['ll'][l] = np.float(love_numbers[COLUMNS.index('ll')])
+            love['ll'][l] = np.float64(love_numbers[COLUMNS.index('ll')])
 
     #-- LMAX of load love numbers from Han and Wahr (1995) is 696
     #-- From Wahr (2007), can linearly extrapolate the load numbers

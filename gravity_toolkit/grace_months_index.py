@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_months_index.py
-Written by Tyler Sutterley (10/2020)
+Written by Tyler Sutterley (05/2021)
 
 Creates a file with the start and end days for each dataset
 Shows the range of each month for (CSR/GFZ/JPL) (RL04/RL05/RL06)
@@ -33,6 +33,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 10/2020: use argparse to set command line parameters
     Updated 09/2020: add column for GSFC v02.4 GRACE mascons
     Updated 07/2020: added function docstrings
@@ -112,20 +113,20 @@ def grace_months_index(base_dir, DREL=['RL06','v02.4'], MODE=None):
                 #-- Adding data to dictionary for data processing and release
                 var_info[var_name] = {}
                 #-- allocate for output variables
-                var_info[var_name]['mon'] = np.zeros((nmon),dtype=np.int)
-                var_info[var_name]['styr'] = np.zeros((nmon),dtype=np.int)
-                var_info[var_name]['stday'] = np.zeros((nmon),dtype=np.int)
-                var_info[var_name]['endyr'] = np.zeros((nmon),dtype=np.int)
-                var_info[var_name]['endday'] = np.zeros((nmon),dtype=np.int)
+                var_info[var_name]['mon'] = np.zeros((nmon),dtype=np.int64)
+                var_info[var_name]['styr'] = np.zeros((nmon),dtype=np.int64)
+                var_info[var_name]['stday'] = np.zeros((nmon),dtype=np.int64)
+                var_info[var_name]['endyr'] = np.zeros((nmon),dtype=np.int64)
+                var_info[var_name]['endday'] = np.zeros((nmon),dtype=np.int64)
                 #-- place output variables in dictionary
                 for i,key in enumerate(['mon','styr','stday','endyr','endday']):
                     #-- first column is date in decimal form (start at 1 not 0)
-                    var_info[var_name][key] = date_input[:,i+1].astype(np.int)
+                    var_info[var_name][key] = date_input[:,i+1].astype(np.int64)
                 #-- Finding the maximum month measured
                 if (var_info[var_name]['mon'].max() > max_mon):
                     #-- if the maximum month in this dataset is greater
                     #-- than the previously read datasets
-                    max_mon = np.int(var_info[var_name]['mon'].max())
+                    max_mon = np.int64(var_info[var_name]['mon'].max())
 
     #-- sort datasets alphanumerically
     var_name = sorted(var_info.keys())
