@@ -18,8 +18,8 @@ if on_rtd:
 else:
     # get install requirements
     with open('requirements.txt') as fh:
-        install_requires = fh.read().splitlines()
-    # dependency links (data readers)
+        install_requires = [line.split().pop(0) for line in fh.read().splitlines()]
+    # dependency links
     dependency_links = ['https://github.com/tsutterley/read-GRACE-geocenter/tarball/main',
         'https://github.com/tsutterley/geoid-toolkit/tarball/tarball/main']
 
