@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 convert_harmonics.py
-Written by Tyler Sutterley (01/2021)
+Written by Tyler Sutterley (05/2021)
 Converts a file from the spatial domain into the spherical harmonic domain
 
 CALLING SEQUENCE:
@@ -68,6 +68,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 01/2021: harmonics object output from gen_stokes.py
     Updated 12/2020: added more love number options
     Updated 10/2020: use argparse to set command line parameters
@@ -160,11 +161,11 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None, UNITS=None,
     dlon,dlat = (DDEG,DDEG) if (np.ndim(DDEG) == 0) else (DDEG[0],DDEG[1])
     #-- Grid dimensions
     if (INTERVAL == 1):#-- (0:360, 90:-90)
-        nlon = np.int((360.0/dlon)+1.0)
-        nlat = np.int((180.0/dlat)+1.0)
+        nlon = np.int64((360.0/dlon)+1.0)
+        nlat = np.int64((180.0/dlat)+1.0)
     elif (INTERVAL == 2):#-- degree spacing/2
-        nlon = np.int((360.0/dlon))
-        nlat = np.int((180.0/dlat))
+        nlon = np.int64((360.0/dlon))
+        nlat = np.int64((180.0/dlat))
 
     #-- read spatial file in data format
     #-- expand dimensions
@@ -199,7 +200,7 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None, UNITS=None,
             input_spatial.lon, input_spatial.lat, UNITS=UNITS,
             LMIN=0, LMAX=LMAX, MMAX=MMAX, PLM=PLM, LOVE=LOVE)
         output_Ylms.time = np.copy(t)
-        output_Ylms.month = np.int(12.0*(t - 2002.0)) + 1
+        output_Ylms.month = np.int64(12.0*(t - 2002.0)) + 1
         #-- append to list
         Ylms_list.append(output_Ylms)
     #-- convert Ylms list for output spherical harmonics

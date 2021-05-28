@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 plm_holmes.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (05/2021)
 
 Computes fully-normalized associated Legendre Polynomials
     for a vector of x values (can also be singular)
@@ -43,6 +43,7 @@ REFERENCES:
     Geoid Cookbook: http://mitgcm.org/~mlosch/geoidcookbook.pdf
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 09/2020: verify dimensions of input x variable
     Updated 08/2020: prevent zero divisions by changing u==0 to eps of data type
     Updated 07/2020: added function docstrings
@@ -53,7 +54,7 @@ UPDATE HISTORY:
 from __future__ import division
 import numpy as np
 
-def plm_holmes(LMAX, x, ASTYPE=np.float):
+def plm_holmes(LMAX, x, ASTYPE=np.float64):
     """
     Computes fully-normalized associated Legendre Polynomials and
     their first derivative using Holmes and Featherstone relation
@@ -78,7 +79,7 @@ def plm_holmes(LMAX, x, ASTYPE=np.float):
     #-- length of the x array
     jm = len(x)
     #-- verify data type of spherical harmonic truncation
-    LMAX = np.int(LMAX)
+    LMAX = np.int64(LMAX)
     #-- scaling factor
     scalef = 1.0e-280
 

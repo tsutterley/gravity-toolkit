@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 legendre.py
-Written by Tyler Sutterley (02/2021)
+Written by Tyler Sutterley (05/2021)
 Computes associated Legendre functions of degree l evaluated for elements x
 l must be a scalar integer and x must contain real values ranging -1 <= x <= 1
 Parallels the MATLAB legendre function
@@ -30,6 +30,7 @@ REFERENCES:
     J. A. Jacobs, "Geomagnetism", Academic Press, 1987, Ch.4.
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: modify case with underflow
     Updated 09/2020: verify dimensions of x variable
     Updated 07/2020: added function docstrings
@@ -64,18 +65,18 @@ def legendre(l,x,NORMALIZE=False):
 
     #-- for the l = 0 case
     if (l == 0):
-        Pl = np.ones((1,nx), dtype=np.float)
+        Pl = np.ones((1,nx), dtype=np.float64)
         return Pl
 
     #-- for all other degrees greater than 0
     rootl = np.sqrt(np.arange(0,2*l+1))#-- +1 to include 2*l
     #-- s is sine of colatitude (cosine of latitude) so that 0 <= s <= 1
     s = np.sqrt(1.0 - x**2)#-- for x=cos(th): s=sin(th)
-    P = np.zeros((l+3,nx), dtype=np.float)
+    P = np.zeros((l+3,nx), dtype=np.float64)
 
     #-- Find values of x,s for which there will be underflow
     sn = (-s)**l
-    tol = np.sqrt(np.finfo(np.float).tiny)
+    tol = np.sqrt(np.finfo(np.float64).tiny)
     count = np.count_nonzero((s > 0) & (np.abs(sn) <= tol))
     if (count > 0):
         ind, = np.nonzero((s > 0) & (np.abs(sn) <= tol))
@@ -83,7 +84,7 @@ def legendre(l,x,NORMALIZE=False):
         v = 9.2 - np.log(tol)/(l*s[ind])
         w = 1.0/np.log(v)
         m1 = 1+l*s[ind]*v*w*(1.0058+ w*(3.819 - w*12.173))
-        m1 = np.where(l < np.floor(m1), l, np.floor(m1)).astype(np.int)
+        m1 = np.where(l < np.floor(m1), l, np.floor(m1)).astype(np.int64)
         #-- Column-by-column recursion
         for k,mm1 in enumerate(m1):
             col = ind[k]
@@ -91,7 +92,7 @@ def legendre(l,x,NORMALIZE=False):
             twocot = -2.0*x[col]/s[col]
             P[mm1-1:l+1,col] = 0.0
             #-- Start recursion with proper sign
-            tstart = np.finfo(np.float).eps
+            tstart = np.finfo(np.float64).eps
             P[mm1-1,col] = np.sign(np.fmod(mm1,2)-0.5)*tstart
             if (x[col] < 0):
                 P[mm1-1,col] = np.sign(np.fmod(l+1,2)-0.5)*tstart

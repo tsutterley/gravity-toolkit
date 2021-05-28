@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_mascon.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (05/2021)
 
 Calculates a time-series of regional mass anomalies through a least-squares
     mascon procedure from GRACE/GRACE-FO time-variable gravity data
@@ -112,6 +112,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: include parameters for replacing C21/S21 and C22/S22
         add parser object for removing commented or empty lines
     Updated 02/2021: changed remove index to files with specified formats
@@ -269,17 +270,17 @@ def calc_mascon(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
     #-- GRACE dataset
     DSET = parameters['DSET']
     #-- Date Range and missing months
-    start_mon = np.int(parameters['START'])
-    end_mon = np.int(parameters['END'])
-    missing = np.array(parameters['MISSING'].split(','),dtype=np.int)
+    start_mon = np.int64(parameters['START'])
+    end_mon = np.int64(parameters['END'])
+    missing = np.array(parameters['MISSING'].split(','),dtype=np.int64)
     #-- spherical harmonic degree range
-    LMIN = np.int(parameters['LMIN'])
-    LMAX = np.int(parameters['LMAX'])
+    LMIN = np.int64(parameters['LMIN'])
+    LMAX = np.int64(parameters['LMAX'])
     #-- maximum spherical harmonic order
     if (parameters['MMAX'].title() == 'None'):
         MMAX = np.copy(LMAX)
     else:
-        MMAX = np.int(parameters['MMAX'])
+        MMAX = np.int64(parameters['MMAX'])
     #-- degree 1 coefficients
     #-- None: No degree 1
     #-- Tellus: GRACE/GRACE-FO TN-13 from PO.DAAC
@@ -307,7 +308,7 @@ def calc_mascon(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
     #-- remove reconstructed fields
     RECONSTRUCT = parameters['RECONSTRUCT'] in ('Y','y')
     #-- gaussian smoothing radius
-    RAD = np.float(parameters['RAD'])
+    RAD = np.float64(parameters['RAD'])
     #-- filter coefficients for stripe effects
     DESTRIPE = parameters['DESTRIPE'] in ('Y','y')
     #-- input/output data format (ascii, netCDF4, HDF5)
@@ -318,7 +319,7 @@ def calc_mascon(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
     #-- output directory for mascon time series files
     DIRECTORY = os.path.expanduser(parameters['DIRECTORY'])
     #-- 1: fit mass, 2: fit geoid
-    FIT_METHOD = np.int(parameters['FIT_METHOD'])
+    FIT_METHOD = np.int64(parameters['FIT_METHOD'])
     #-- mascon redistribution
     MASCON_OCEAN = parameters['MASCON_OCEAN'] in ('Y','y')
 
@@ -599,7 +600,7 @@ def calc_mascon(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
 
         #-- save GRACE/GRACE-FO delta harmonics to file
         delta_Ylms.time = np.copy(tsmth)
-        delta_Ylms.month = np.int(nsmth)
+        delta_Ylms.month = np.int64(nsmth)
         if (DATAFORM == 'ascii'):
             #-- ascii (.txt)
             delta_Ylms.to_ascii(os.path.join(grace_dir,DELTA_FILE))
@@ -623,11 +624,11 @@ def calc_mascon(base_dir, parameters, LOVE_NUMBERS=0, REFERENCE=None,
         #-- truncate GRACE/GRACE-FO delta clm and slm to d/o LMAX/MMAX
         delta_Ylms = delta_Ylms.truncate(lmax=LMAX, mmax=MMAX)
         tsmth = np.squeeze(delta_Ylms.time)
-        nsmth = np.int(delta_Ylms.month)
+        nsmth = np.int64(delta_Ylms.month)
 
     #-- Calculating the number of cos and sin harmonics between LMIN and LMAX
     #-- taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
-    n_harm=np.int(LMAX**2 - LMIN**2 + 2*LMAX + 1 - (LMAX-MMAX)**2 - (LMAX-MMAX))
+    n_harm=np.int64(LMAX**2 - LMIN**2 + 2*LMAX + 1 - (LMAX-MMAX)**2 - (LMAX-MMAX))
 
     #-- Initialing harmonics for least squares fitting
     #-- mascon kernel

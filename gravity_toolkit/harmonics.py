@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (05/2021)
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 
@@ -26,6 +26,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: add parser object for removing commented or empty lines
         use file not found exceptions in case insensitive filename
     Updated 02/2021: added degree amplitude function
@@ -150,7 +151,7 @@ class harmonics(object):
             else:
                 l1,m1,clm1,slm1 = rx.findall(line)
             #-- convert line degree and order to integers
-            l1,m1 = np.array([l1,m1],dtype=np.int)
+            l1,m1 = np.array([l1,m1],dtype=np.int64)
             self.lmax = np.copy(l1) if (l1 > self.lmax) else self.lmax
             self.mmax = np.copy(m1) if (m1 > self.mmax) else self.mmax
         #-- output spherical harmonics dimensions array
@@ -161,8 +162,8 @@ class harmonics(object):
         self.slm = np.zeros((self.lmax+1,self.mmax+1))
         #-- if the ascii file contains date variables
         if date:
-            self.time = np.float(time)
-            self.month = np.int(12.0*(self.time - 2002.0)) + 1
+            self.time = np.float64(time)
+            self.month = np.int64(12.0*(self.time - 2002.0)) + 1
             #-- adjust months to fix special cases if necessary
             self.month = adjust_months(self.month)
         #-- extract harmonics and convert to matrix
@@ -173,10 +174,10 @@ class harmonics(object):
             else:
                 l1,m1,clm1,slm1 = rx.findall(line)
             #-- convert line degree and order to integers
-            ll,mm = np.array([l1,m1],dtype=np.int)
+            ll,mm = np.array([l1,m1],dtype=np.int64)
             #-- convert fortran exponentials if applicable
-            self.clm[ll,mm] = np.float(clm1.replace('D','E'))
-            self.slm[ll,mm] = np.float(slm1.replace('D','E'))
+            self.clm[ll,mm] = np.float64(clm1.replace('D','E'))
+            self.slm[ll,mm] = np.float64(slm1.replace('D','E'))
         #-- assign shape and ndim attributes
         self.update_dimensions()
         return self
@@ -265,13 +266,13 @@ class harmonics(object):
         #-- copy variables for static gravity model
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
-        self.lmax = np.int(Ylms['max_degree'])
-        self.mmax = np.int(Ylms['max_degree'])
+        self.lmax = np.int64(Ylms['max_degree'])
+        self.mmax = np.int64(Ylms['max_degree'])
         self.l = np.arange(self.lmax+1)
         self.m = np.arange(self.mmax+1)
         #-- geophysical parameters of gravity model
-        self.GM = np.float(Ylms['earth_gravity_constant'])
-        self.R = np.float(Ylms['radius'])
+        self.GM = np.float64(Ylms['earth_gravity_constant'])
+        self.R = np.float64(Ylms['radius'])
         self.tide = Ylms['tide_system']
         #-- assign shape and ndim attributes
         self.update_dimensions()
@@ -341,7 +342,7 @@ class harmonics(object):
         #-- output dates
         if date:
             self.time = np.zeros((n))
-            self.month = np.zeros((n),dtype=np.int)
+            self.month = np.zeros((n),dtype=np.int64)
         #-- for each indice
         for t,i in enumerate(list_sort):
             self.clm[:,:,t] = object_list[i].clm[:self.lmax+1,:self.mmax+1]
@@ -753,8 +754,8 @@ class harmonics(object):
         lm = 0
         for m in range(0,self.mmax+1):#-- MMAX+1 to include MMAX
             for l in range(m,self.lmax+1):#-- LMAX+1 to include LMAX
-                temp.l[lm] = np.int(l)
-                temp.m[lm] = np.int(m)
+                temp.l[lm] = np.int64(l)
+                temp.m[lm] = np.int64(m)
                 if (self.clm.ndim == 2):
                     temp.clm[lm] = self.clm[l,m]
                     temp.slm[lm] = self.slm[l,m]
@@ -852,7 +853,7 @@ class harmonics(object):
         temp.clm = np.zeros((temp.lmax+1,temp.mmax+1,n))
         temp.slm = np.zeros((temp.lmax+1,temp.mmax+1,n))
         temp.time = np.zeros((n))
-        temp.month = np.zeros((n),dtype=np.int)
+        temp.month = np.zeros((n),dtype=np.int64)
         temp.filename = []
         #-- for each indice
         for t,i in enumerate(months_list):

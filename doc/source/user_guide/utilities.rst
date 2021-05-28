@@ -343,6 +343,35 @@ General Methods
     .. _figshare: https://doi.org/10.6084/m9.figshare.7388540
 
 
+.. method:: gravity_toolkit.utilities.to_figshare(files,username=None,password=None,directory=None,timeout=None,context=ssl.SSLContext(ssl.PROTOCOL_TLS),get_ca_certs=False,verbose=False,chunk=8192)
+
+    Send files to `figshare`_ using secure `FTP uploader <https://help.figshare.com/article/upload-large-datasets-and-bulk-upload-using-the-ftp-uploader-desktop-uploader-or-api>`_
+
+    Arguments:
+
+      ``files``: list of files to upload
+
+    Keyword arguments:
+
+        ``username``: ftp username
+
+        ``password``: ftp password
+
+        ``directory``: figshare subdirectory for sending data
+
+        ``timeout``: timeout in seconds for blocking operations
+
+        ``context``: SSL context for ftp connection
+
+        ``get_ca_certs``: get list of loaded “certification authority” certificates
+
+        ``verbose``: print ftp transfer information
+
+        ``chunk``: chunk size for transfer encoding
+
+    .. _figshare: https://doi.org/10.6084/m9.figshare.7388540
+
+
 .. method:: gravity_toolkit.utilities.from_csr(directory,timeout=None,context=ssl.SSLContext(),chunk=16384,verbose=False,fid=sys.stdout,mode=0o775)
 
     Download `satellite laser ranging (SLR)`__ files from the University of Texas Center for Space Research (UTCSR)

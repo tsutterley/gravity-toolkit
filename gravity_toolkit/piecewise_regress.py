@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 piecewise_regress.py
-Written by Tyler Sutterley (01/2021)
+Written by Tyler Sutterley (05/2021)
 
 Fits a synthetic signal to data over a time period by ordinary or weighted
     least-squares for breakpoint analysis
@@ -59,6 +59,7 @@ PYTHON DEPENDENCIES:
     scipy: Scientific Tools for Python (https://docs.scipy.org/doc/)
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 01/2021: added function docstrings
     Updated 10/2019: changing Y/N flags to True/False
     Updated 01/2019: added option S2 to include 161-day tidal aliasing terms
@@ -162,8 +163,8 @@ def piecewise_regress(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
     DMAT.append(P_x1)
     #-- add cyclical terms (0.5=semi-annual, 1=annual)
     for c in CYCLES:
-        DMAT.append(np.sin(2.0*np.pi*t_in/np.float(c)))
-        DMAT.append(np.cos(2.0*np.pi*t_in/np.float(c)))
+        DMAT.append(np.sin(2.0*np.pi*t_in/np.float64(c)))
+        DMAT.append(np.cos(2.0*np.pi*t_in/np.float64(c)))
     #-- take the transpose of the design matrix
     DMAT = np.transpose(DMAT)
 
@@ -175,7 +176,7 @@ def piecewise_regress(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
         #-- check if any error values are 0 (prevent infinite weights)
         if np.count_nonzero(DATA_ERR == 0.0):
             #-- change to minimum floating point value
-            DATA_ERR[DATA_ERR == 0.0] = np.finfo(np.float).eps
+            DATA_ERR[DATA_ERR == 0.0] = np.finfo(np.float64).eps
         #--- Weight Precision
         wi = np.squeeze(DATA_ERR**(-2))
         #-- If uncorrelated weights are the diagonal
@@ -220,10 +221,10 @@ def piecewise_regress(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
     #-- R**2 term = 1- SSerror/SStotal
     rsquare = 1.0 - (SSerror/SStotal)
     #-- Adjusted R**2 term: weighted by degrees of freedom
-    rsq_adj = 1.0 - (SSerror/SStotal)*np.float((nmax-1.0)/nu)
+    rsq_adj = 1.0 - (SSerror/SStotal)*np.float64((nmax-1.0)/nu)
     #-- Fit Criterion
     #-- number of parameters including the intercept and the variance
-    K = np.float(n_terms + 1)
+    K = np.float64(n_terms + 1)
     #-- Log-Likelihood with weights (if unweighted, weight portions == 0)
     #-- log(L) = -0.5*n*log(sigma^2) - 0.5*n*log(2*pi) - 0.5*n
     #log_lik = -0.5*nmax*(np.log(2.0 * np.pi) + 1.0 + np.log(np.sum((res**2)/nmax)))
@@ -259,7 +260,7 @@ def piecewise_regress(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
         beta_err[2] = np.sqrt(temp_err[1]**2 + temp_err[2]**2)
         #-- Weighted sum of squares Error
         WSSE = np.dot(np.transpose(wi*(d_in[0:nmax] - np.dot(DMAT,beta_mat))),
-            wi*(d_in[0:nmax] - np.dot(DMAT,beta_mat)))/np.float(nu)
+            wi*(d_in[0:nmax] - np.dot(DMAT,beta_mat)))/np.float64(nu)
 
         return {'beta':beta_out, 'error':beta_err, 'R2':rsquare,
             'R2Adj':rsq_adj, 'WSSE':WSSE, 'AIC':AIC, 'BIC':BIC,
@@ -280,7 +281,7 @@ def piecewise_regress(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
         beta_err[2] = np.sqrt(temp_err[1]**2 + temp_err[2]**2)
         #-- Mean square error
         MSE = np.dot(np.transpose(d_in[0:nmax] - np.dot(DMAT,beta_mat)),
-            (d_in[0:nmax] - np.dot(DMAT,beta_mat)))/np.float(nu)
+            (d_in[0:nmax] - np.dot(DMAT,beta_mat)))/np.float64(nu)
 
         return {'beta':beta_out, 'error':beta_err, 'R2':rsquare,
             'R2Adj':rsq_adj, 'MSE':MSE, 'AIC':AIC, 'BIC':BIC,
@@ -292,7 +293,7 @@ def piecewise_regress(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
         #-- MSE = (1/nu)*sum((Y-X*B)**2)
         #-- Mean square error
         MSE = np.dot(np.transpose(d_in[0:nmax] - np.dot(DMAT,beta_mat)),
-            (d_in[0:nmax] - np.dot(DMAT,beta_mat)))/np.float(nu)
+            (d_in[0:nmax] - np.dot(DMAT,beta_mat)))/np.float64(nu)
         #-- Root mean square error
         RMSE = np.sqrt(MSE)
         #-- Normalized root mean square error

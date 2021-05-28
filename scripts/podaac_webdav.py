@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_webdav.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (05/2021)
 
 Retrieves and prints a user's PO.DAAC Drive WebDAV credentials
 
@@ -46,8 +46,9 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 05/2021: use try/except for retrieving netrc credentials
     Updated 04/2021: set a default netrc file and check access
-        efault credentials from environmental variables
+        default credentials from environmental variables
     Updated 10/2020: use argparse to set command line parameters
     Written 05/2020 for public release
 """
@@ -124,16 +125,17 @@ def main():
     #-- JPL PO.DAAC drive hostname
     HOST = 'podaac-tools.jpl.nasa.gov'
     #-- get NASA Earthdata credentials
-    if not args.user and not os.access(args.netrc,os.F_OK):
+    try:
+        args.user,_,args.password = netrc.netrc(args.netrc).authenticators(URS)
+    except:
         #-- check that NASA Earthdata credentials were entered
-        args.user=builtins.input('Username for {0}: '.format(URS))
+        if not args.user:
+            prompt = 'Username for {0}: '.format(URS)
+            args.user = builtins.input(prompt)
         #-- enter password securely from command-line
-        args.password=getpass.getpass('Password for {0}@{1}: '.format(args.user,URS))
-    elif not args.user and os.access(args.netrc,os.F_OK):
-        args.user,_,args.password=netrc.netrc(args.netrc).authenticators(URS)
-    elif args.user and not args.password:
-        #-- enter password securely from command-line
-        args.password=getpass.getpass('Password for {0}@{1}: '.format(args.user,URS))
+        if not args.password:
+            prompt = 'Password for {0}@{1}: '.format(args.user,URS)
+            args.password = getpass.getpass(prompt)
 
     #-- check internet connection before attempting to run program
     DRIVE = posixpath.join('https://podaac-tools.jpl.nasa.gov','drive')

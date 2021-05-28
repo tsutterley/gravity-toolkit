@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_sensitivity_kernel.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (05/2021)
 
 Calculates spatial sensitivity kernels through a least-squares mascon procedure
 
@@ -105,6 +105,7 @@ REFERENCES:
         https://doi.org/10.1029/2009GL039401
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: add parser object for removing commented or empty lines
     Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
     Updated 12/2020: added more love number options
@@ -232,15 +233,15 @@ def calc_sensitivity_kernel(parameters, LOVE_NUMBERS=0, REFERENCE=None,
     MODE=0o775):
     #-- convert parameters to variables
     #-- spherical harmonic degree range
-    LMIN = np.int(parameters['LMIN'])
-    LMAX = np.int(parameters['LMAX'])
+    LMIN = np.int64(parameters['LMIN'])
+    LMAX = np.int64(parameters['LMAX'])
     #-- maximum spherical harmonic order
     if (parameters['MMAX'].title() == 'None'):
         MMAX = np.copy(LMAX)
     else:
-        MMAX = np.int(parameters['MMAX'])
+        MMAX = np.int64(parameters['MMAX'])
     #-- gaussian smoothing radius
-    RAD = np.float(parameters['RAD'])
+    RAD = np.float64(parameters['RAD'])
     #-- input/output data format (ascii, netCDF4, HDF5)
     DATAFORM = parameters['DATAFORM']
     #-- index of mascons spherical harmonics
@@ -249,13 +250,13 @@ def calc_sensitivity_kernel(parameters, LOVE_NUMBERS=0, REFERENCE=None,
     #-- output directory
     DIRECTORY = os.path.expanduser(parameters['DIRECTORY'])
     #-- 1: fit mass, 2: fit geoid
-    FIT_METHOD = np.int(parameters['FIT_METHOD'])
+    FIT_METHOD = np.int64(parameters['FIT_METHOD'])
     #-- mascon distribution
     MASCON_OCEAN = parameters['MASCON_OCEAN'] in ('Y','y')
     #-- spatial output parameters
-    DDEG = np.array(parameters['DDEG'].split(','),dtype=np.float)
+    DDEG = np.array(parameters['DDEG'].split(','),dtype=np.float64)
     DDEG = np.squeeze(DDEG)
-    INTERVAL = np.int(parameters['INTERVAL'])
+    INTERVAL = np.int64(parameters['INTERVAL'])
 
     #-- file information
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
@@ -359,8 +360,8 @@ def calc_sensitivity_kernel(parameters, LOVE_NUMBERS=0, REFERENCE=None,
     #-- Output Degree Interval
     if (INTERVAL == 1):
         #-- (-180:180,90:-90)
-        n_lon = np.int((360.0/dlon)+1.0)
-        n_lat = np.int((180.0/dlat)+1.0)
+        n_lon = np.int64((360.0/dlon)+1.0)
+        n_lat = np.int64((180.0/dlat)+1.0)
         grid.lon = -180 + dlon*np.arange(0,n_lon)
         grid.lat = 90.0 - dlat*np.arange(0,n_lat)
     elif (INTERVAL == 2):
@@ -376,7 +377,7 @@ def calc_sensitivity_kernel(parameters, LOVE_NUMBERS=0, REFERENCE=None,
 
     #-- Calculating the number of cos and sin harmonics between LMIN and LMAX
     #-- taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
-    n_harm=np.int(LMAX**2 - LMIN**2 + 2*LMAX + 1 - (LMAX-MMAX)**2 - (LMAX-MMAX))
+    n_harm=np.int64(LMAX**2 - LMIN**2 + 2*LMAX + 1 - (LMAX-MMAX)**2 - (LMAX-MMAX))
 
     #-- Initialing harmonics for least squares fitting
     #-- mascon kernel

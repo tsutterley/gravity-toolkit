@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_stokes.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (05/2021)
 
 Writes spherical harmonic coefficients to netCDF4 files
 
@@ -36,6 +36,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 12/2020: added REFERENCE option to set file attribute
     Updated 07/2020: added function docstrings
     Updated 03/2020: only include title if not None
@@ -138,8 +139,8 @@ def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
     lm = 0
     for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
         for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
-            lout[lm] = np.int(l)
-            mout[lm] = np.int(m)
+            lout[lm] = np.int64(l)
+            mout[lm] = np.int64(m)
             if (DATE and (n_time > 1)):
                 clm[lm,:] = clm1[l,m,:]
                 slm[lm,:] = slm1[l,m,:]

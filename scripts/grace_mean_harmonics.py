@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_mean_harmonics.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (05/2021)
 
 Calculates the temporal mean of the GRACE/GRACE-FO spherical harmonics
     for a given date range from a set of parameters
@@ -56,6 +56,7 @@ PROGRAM DEPENDENCIES:
         hdf5_stokes.py: writes output spherical harmonic data to HDF5
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: include parameters for replacing C21/S21 and C22/S22
     Updated 10/2020: use argparse to set command line parameters
     Updated 08/2020: use utilities to define path to load love numbers file
@@ -114,20 +115,20 @@ def grace_mean_harmonics(base_dir, parameters, MODE=0o775):
     ATM = parameters['ATM'] in ('Y','y')
 
     #-- maximum degree and order
-    LMAX = np.int(parameters['LMAX'])
+    LMAX = np.int64(parameters['LMAX'])
     #-- maximum spherical harmonic order
     if (parameters['MMAX'].title() == 'None'):
         MMAX = np.copy(LMAX)
     else:
-        MMAX = np.int(parameters['MMAX'])
+        MMAX = np.int64(parameters['MMAX'])
 
     #-- output string for both LMAX==MMAX and LMAX != MMAX cases
     order_str = 'M{0:d}'.format(MMAX) if (MMAX != LMAX) else ''
 
     #-- Date Range and missing months
-    START_MON = np.int(parameters['START'])
-    END_MON = np.int(parameters['END'])
-    MISSING = np.array(parameters['MISSING'].split(','),dtype=np.int)
+    START_MON = np.int64(parameters['START'])
+    END_MON = np.int64(parameters['END'])
+    MISSING = np.array(parameters['MISSING'].split(','),dtype=np.int64)
     #-- replace low-degree coefficients with values from SLR
     SLR_C20 = parameters['SLR_C20']
     SLR_21 = parameters['SLR_21']

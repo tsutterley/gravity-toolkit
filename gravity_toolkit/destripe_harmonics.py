@@ -3,7 +3,7 @@ u"""
 destripe_harmonics.py
 Original Fortran program remove_errors.f written by Isabella Velicogna
 Adapted by Chia-Wei Hsu (05/2018)
-Updated by Tyler Sutterley (02/2021)
+Updated by Tyler Sutterley (05/2021)
 
 Filters spherical harmonic coefficients for correlated "striping" errors
 
@@ -45,6 +45,7 @@ REFERENCE:
         http://dx.doi.org/10.1029/2005GL025285
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: replaced numpy bool to prevent deprecation warning
     Updated 07/2020: added function docstrings
     Updated 03/2020: Updated for public release
@@ -135,8 +136,8 @@ def destripe_harmonics(clm1, slm1, LMIN=2, LMAX=60, MMAX=None,
         #-- put the even and odd l's into their own arrays
         ieven = -1
         iodd = -1
-        leven = np.zeros((LMAX), dtype=np.int)
-        lodd = np.zeros((LMAX), dtype=np.int)
+        leven = np.zeros((LMAX), dtype=np.int64)
+        lodd = np.zeros((LMAX), dtype=np.int64)
 
         for l in range(int(m),int(LMAX+1)):
             #-- check if degree is odd or even

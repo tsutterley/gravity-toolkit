@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 run_grace_date.py
-Written by Tyler Sutterley (10/2020)
+Written by Tyler Sutterley (05/2021)
 
 Wrapper program for running GRACE date and months programs
 
@@ -44,6 +44,7 @@ PROGRAM DEPENDENCIES:
     grace_months_index.py: creates a single file showing the GRACE dates
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 10/2020: use argparse to set command line parameters
     Updated 05/2020: updated for public release
     Updated 10/2019: changing Y/N flags to True/False

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ocean_stokes.py
-Written by Tyler Sutterley (01/2021)
+Written by Tyler Sutterley (05/2021)
 
 Reads a land-sea mask and converts to a series of spherical harmonics
 
@@ -47,6 +47,7 @@ REFERENCE:
     Earth and Space Science, 7, 2020. https://doi.org/10.1029/2019EA000860
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 01/2021: added option VARNAME to generalize input masks
     Updated 12/2020: added simplify function to remove isolated points
     Updated 07/2020: added function docstrings
@@ -94,7 +95,7 @@ def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
         date=False, varname=VARNAME)
     #-- create land function
     nth,nphi = landsea.shape
-    land_function = np.zeros((nth,nphi),dtype=np.float)
+    land_function = np.zeros((nth,nphi),dtype=np.float64)
     #-- combine land and island levels for land function
     indx,indy = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))
     land_function[indx,indy] = 1.0

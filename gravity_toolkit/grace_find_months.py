@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_find_months.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (05/2021)
 
 Parses date index file from grace_date.py
 Finds the months available for a GRACE/GRACE-FO product
@@ -29,6 +29,7 @@ PROGRAM DEPENDENCIES:
     grace_date.py: reads GRACE index file and calculates dates for each month
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 07/2020: added function docstrings
     Updated 03/2020: check that GRACE/GRACE-FO date file exists
     Updated 10/2019: using local() function to set subdirectories
@@ -91,18 +92,18 @@ def grace_find_months(base_dir, PROC, DREL, DSET='GSM'):
     #-- skip the header row and extract dates (decimal format) and months
     date_input = np.loadtxt(date_file, skiprows=1)
     tdec = date_input[:,0]
-    months = date_input[:,1].astype(np.int)
+    months = date_input[:,1].astype(np.int64)
 
     #-- array of all possible months (or in case of CNES RL01/2: 10-day sets)
-    all_months = np.arange(1,months.max(),dtype=np.int)
+    all_months = np.arange(1,months.max(),dtype=np.int64)
     #-- missing months (values in all_months but not in months)
     missing = sorted(set(all_months)-set(months))
     #-- If CNES RL01/2: simply convert into numpy array
     #-- else: remove months 1-3 and convert into numpy array
     if ((PROC == 'CNES') & (DREL in ('RL01','RL02'))):
-        missing = np.array(missing,dtype=np.int)
+        missing = np.array(missing,dtype=np.int64)
     else:
-        missing = np.array(missing[3:],dtype=np.int)
+        missing = np.array(missing[3:],dtype=np.int64)
 
     return {'time':tdec, 'start':months[0], 'end':months[-1], 'months':months,
         'missing':missing}

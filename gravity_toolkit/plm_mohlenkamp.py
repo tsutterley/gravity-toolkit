@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 plm_mohlenkamp.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (05/2021)
 
 Computes fully-normalized associated Legendre Polynomials
     for an array of x values
@@ -43,6 +43,7 @@ REFERENCES:
     http://www.ohiouniversityfaculty.com/mohlenka/research/uguide.pdf
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 09/2020: verify dimensions of input x variable
     Updated 07/2020: added function docstrings
     Updated 05/2015: added parameter MMAX for MMAX != LMAX
@@ -70,7 +71,7 @@ def plm_mohlenkamp(LMAX, x, MMAX=None):
     """
 
     #-- Verify LMAX as integer
-    LMAX = np.int(LMAX)
+    LMAX = np.int64(LMAX)
     #-- upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:
         MMAX = np.copy(LMAX)

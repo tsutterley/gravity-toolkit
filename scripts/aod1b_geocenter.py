@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 aod1b_geocenter.py
-Written by Tyler Sutterley (10/2020)
+Written by Tyler Sutterley (05/2021)
 
 Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
     atm: atmospheric loading from ECMWF
@@ -32,6 +32,7 @@ PROGRAM DEPENDENCIES:
     geocenter.py: converts degree 1 spherical harmonics to geocenter variations
 
 UPDATED HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 10/2020: use argparse to set command line parameters
     Updated 07/2020: added function docstrings
     Updated 06/2019: using python3 compatible regular expression patterns
@@ -122,7 +123,7 @@ def aod1b_geocenter(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
     for i in sorted(input_tar_files):
         #-- extract the year and month from the file
         YY,MM,SFX = tx.findall(i).pop()
-        YY,MM = np.array([YY,MM], dtype=np.int)
+        YY,MM = np.array([YY,MM], dtype=np.int64)
         #-- output monthly geocenter file
         FILE = 'AOD1B_{0}_{1}_{2:4d}_{3:02d}.txt'.format(DREL,DSET,YY,MM)
         #-- if output file exists: check if input tar file is newer
@@ -161,7 +162,7 @@ def aod1b_geocenter(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
             for member in tar.getmembers():
                 #-- get calendar day from file
                 DD,SFX = fx.findall(member.name).pop()
-                DD = np.int(DD)
+                DD = np.int64(DD)
                 #-- open data file for day
                 if (SFX == '.gz'):
                     fid = gzip.GzipFile(fileobj=tar.extractfile(member))
@@ -171,7 +172,7 @@ def aod1b_geocenter(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
                 C10 = np.zeros((4))
                 C11 = np.zeros((4))
                 S11 = np.zeros((4))
-                hours = np.zeros((4),dtype=np.int)
+                hours = np.zeros((4),dtype=np.int64)
 
                 #-- create counter for hour in dataset
                 c = 0
@@ -183,20 +184,20 @@ def aod1b_geocenter(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
                     if bool(hx.search(file_contents)):
                         #-- extract hour from header and convert to float
                         HH, = re.findall(r'(\d+):\d+:\d+',file_contents)
-                        hours[c] = np.int(HH)
+                        hours[c] = np.int64(HH)
                         #-- read each line of spherical harmonics
                         for k in range(0,n_harm):
                             file_contents = fid.readline().decode('ISO-8859-1')
                             #-- find numerical instances in the data line
                             line_contents = rx.findall(file_contents)
                             #-- spherical harmonic degree and order
-                            l1 = np.int(line_contents[0])
-                            m1 = np.int(line_contents[1])
+                            l1 = np.int64(line_contents[0])
+                            m1 = np.int64(line_contents[1])
                             if (l1 == 1) and (m1 == 0):
-                                C10[c] = np.float(line_contents[2])
+                                C10[c] = np.float64(line_contents[2])
                             elif (l1 == 1) and (m1 == 1):
-                                C11[c] = np.float(line_contents[2])
-                                S11[c] = np.float(line_contents[3])
+                                C11[c] = np.float64(line_contents[2])
+                                S11[c] = np.float64(line_contents[3])
                         #-- add 1 to hour counter
                         c += 1
                 #-- close the input file for day

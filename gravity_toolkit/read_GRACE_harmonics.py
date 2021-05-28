@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GRACE_harmonics.py
-Written by Tyler Sutterley (08/2020)
+Written by Tyler Sutterley (05/2021)
 
 Reads GRACE files and extracts spherical harmonic data and drift rates (RL04)
 Adds drift rates to clm and slm for release 4 harmonics
@@ -39,6 +39,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 12/2020: using utilities from time module
     Updated 08/2020: flake8 compatible regular expression strings
         input file can be "diskless" bytesIO object
@@ -94,26 +95,26 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
     #-- JPL Mascon solutions
     if PRC in ('JPLMSC'):
         DSET = 'GSM'
-        DREL = np.int(DRL)
+        DREL = np.int64(DRL)
         FLAG = r'GRCOF2'
     #-- Kusche et al. (2009) DDK filtered solutions 10.1007/s00190-009-0308-3
     elif PFX.startswith('kfilter_DDK'):
         DSET = 'GSM'
-        DREL = np.int(DRL)
+        DREL = np.int64(DRL)
         FLAG = r'gfc'
     #-- Standard GRACE solutions
     else:
         DSET = PFX
-        DREL = np.int(DRL)
+        DREL = np.int64(DRL)
         FLAG = r'GRCOF2'
 
     #-- output python dictionary with GRACE data and date information
     grace_L2_input = {}
     #-- extract GRACE date information from input file name
-    start_yr = np.float(SD[:4])
-    end_yr = np.float(ED[:4])
-    start_day = np.float(SD[4:])
-    end_day = np.float(ED[4:])
+    start_yr = np.float64(SD[:4])
+    end_yr = np.float64(ED[:4])
+    start_day = np.float64(SD[4:])
+    end_day = np.float64(ED[4:])
     #-- calculate mid-month date taking into account if measurements are
     #-- on different years
     dpy = gravity_toolkit.time.calendar_days(start_yr).sum()
@@ -163,23 +164,23 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
             #-- split the line into individual components
             line_contents = line.split()
             #-- degree and order for the line
-            l1 = np.int(line_contents[1])
-            m1 = np.int(line_contents[2])
+            l1 = np.int64(line_contents[1])
+            m1 = np.int64(line_contents[2])
             #-- if degree and order are below the truncation limits
             if ((l1 <= LMAX) and (m1 <= MMAX)):
-                grace_L2_input['clm'][l1,m1] = np.float(line_contents[3])
-                grace_L2_input['slm'][l1,m1] = np.float(line_contents[4])
-                grace_L2_input['eclm'][l1,m1] = np.float(line_contents[5])
-                grace_L2_input['eslm'][l1,m1] = np.float(line_contents[6])
+                grace_L2_input['clm'][l1,m1] = np.float64(line_contents[3])
+                grace_L2_input['slm'][l1,m1] = np.float64(line_contents[4])
+                grace_L2_input['eclm'][l1,m1] = np.float64(line_contents[5])
+                grace_L2_input['eslm'][l1,m1] = np.float64(line_contents[6])
         #-- find if line starts with drift rate flag
         elif bool(re.match(r'GRDOTA',line)):
             #-- split the line into individual components
             line_contents = line.split()
-            l1 = np.int(line_contents[1])
-            m1 = np.int(line_contents[2])
+            l1 = np.int64(line_contents[1])
+            m1 = np.int64(line_contents[2])
             #-- Reading Drift rates for low degree harmonics
-            drift_c[l1,m1] = np.float(line_contents[3])
-            drift_s[l1,m1] = np.float(line_contents[4])
+            drift_c[l1,m1] = np.float64(line_contents[3])
+            drift_s[l1,m1] = np.float64(line_contents[4])
 
     #-- Adding drift rates to clm and slm for RL04
     #-- if drift rates exist at any time, will add to harmonics

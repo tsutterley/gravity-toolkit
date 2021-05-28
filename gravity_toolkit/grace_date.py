@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_date.py
-Written by Tyler Sutterley (02/2021)
+Written by Tyler Sutterley (05/2021)
 
 Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
 Parses dates of each GRACE/GRACE-FO file and assigns the month number
@@ -38,6 +38,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: use adjust_months function to fix special months cases
     Updated 12/2020: using utilities from time module
     Updated 10/2020: use argparse to set command line parameters
@@ -135,7 +136,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     mid_day = np.zeros((n_files))#-- mid-month day
     tot_days = np.zeros((n_files))#-- number of days since Jan 2002
     tdec = np.zeros((n_files))#-- tdec is the date in decimal form
-    mon = np.zeros((n_files,),dtype=np.int)#-- GRACE/GRACE-FO month number
+    mon = np.zeros((n_files,),dtype=np.int64)#-- GRACE/GRACE-FO month number
 
     #-- compile numerical expression operator for parameters from files
     #-- will work with previous releases and releases for GRACE-FO
@@ -153,10 +154,10 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
         #-- extract parameters from input filename
         PFX,start_date,end_date,AUX,PRC,F1,DRL,F2,SFX = rx.findall(infile).pop()
         #-- find start date, end date and number of days
-        start_yr[t] = np.float(start_date[:4])
-        end_yr[t] = np.float(end_date[:4])
-        start_day[t] = np.float(start_date[4:])
-        end_day[t] = np.float(end_date[4:])
+        start_yr[t] = np.float64(start_date[:4])
+        end_yr[t] = np.float64(end_date[:4])
+        start_day[t] = np.float64(start_date[4:])
+        end_day[t] = np.float64(end_date[4:])
 
         #-- number of days in the starting year for leap and standard years
         dpy = gravity_toolkit.time.calendar_days(start_yr[t]).sum()
@@ -176,7 +177,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
 
         #-- Calculation of total days since start of campaign
         count = 0
-        n_yrs = np.int(start_yr[t]-2002)
+        n_yrs = np.int64(start_yr[t]-2002)
         #-- for each of the GRACE years up to the file year
         for iyr in range(n_yrs):
             #-- year

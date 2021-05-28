@@ -173,12 +173,12 @@ def read_SLR_CS2(SLR_file, HEADER=True):
             #-- check for empty lines
             if (count > 0):
                 #-- reading decimal year for start of span
-                dinput['time'][t] = np.float(line_contents[1])
+                dinput['time'][t] = np.float64(line_contents[1])
                 #-- Spherical Harmonic data for line
-                dinput['C2m'][t] = np.float(line_contents[8])
-                dinput['eC2m'][t] = np.float(line_contents[10])*1e-10
-                dinput['S2m'][t] = np.float(line_contents[11])
-                dinput['eS2m'][t] = np.float(line_contents[13])*1e-10
+                dinput['C2m'][t] = np.float64(line_contents[8])
+                dinput['eC2m'][t] = np.float64(line_contents[10])*1e-10
+                dinput['S2m'][t] = np.float64(line_contents[11])
+                dinput['eS2m'][t] = np.float64(line_contents[13])*1e-10
                 #-- GRACE/GRACE-FO month of SLR solutions
                 dinput['month'][t] = 1+np.round((dinput['time'][t]-2002.)*12.)
                 #-- add to t count

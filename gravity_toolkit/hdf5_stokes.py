@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_stokes.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (05/2021)
 
 Writes spherical harmonic coefficients to HDF5 files
 
@@ -36,6 +36,7 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 12/2020: added REFERENCE option to set file attribute
     Updated 07/2020: added function docstrings
     Updated 03/2020: only include title if not None
@@ -137,8 +138,8 @@ def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
     lm = 0
     for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
         for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
-            lout[lm] = np.int(l)
-            mout[lm] = np.int(m)
+            lout[lm] = np.int64(l)
+            mout[lm] = np.int64(m)
             if (DATE and (n_time > 1)):
                 clm[lm,:] = clm1[l,m,:]
                 slm[lm,:] = slm1[l,m,:]
@@ -151,25 +152,25 @@ def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
     #-- Defining the HDF5 dataset variables
     h5 = {}
     h5['l'] = fileID.create_dataset('l', (n_harm,),
-        data=lout, dtype=np.int, compression='gzip')
+        data=lout, dtype=np.int64, compression='gzip')
     h5['m'] = fileID.create_dataset('m', (n_harm,),
-        data=mout, dtype=np.int, compression='gzip')
+        data=mout, dtype=np.int64, compression='gzip')
     if DATE:
         h5['time'] = fileID.create_dataset('time', (n_time,),
-            data=tinp, dtype=np.float, compression='gzip')
+            data=tinp, dtype=np.float64, compression='gzip')
         h5['month'] = fileID.create_dataset(MONTHS_NAME, (n_time,),
-            data=month, dtype=np.int, compression='gzip')
+            data=month, dtype=np.int64, compression='gzip')
     #-- if more than 1 date in file
     if (n_time > 1):
         h5['clm'] = fileID.create_dataset('clm', (n_harm,n_time,),
-            data=clm, dtype=np.float, compression='gzip')
+            data=clm, dtype=np.float64, compression='gzip')
         h5['slm'] = fileID.create_dataset('slm', (n_harm,n_time,),
-            data=slm, dtype=np.float, compression='gzip')
+            data=slm, dtype=np.float64, compression='gzip')
     else:
         h5['clm'] = fileID.create_dataset('clm', (n_harm,),
-            data=clm, dtype=np.float, compression='gzip')
+            data=clm, dtype=np.float64, compression='gzip')
         h5['slm'] = fileID.create_dataset('slm', (n_harm,),
-            data=slm, dtype=np.float, compression='gzip')
+            data=slm, dtype=np.float64, compression='gzip')
 
     #-- filling HDF5 dataset attributes
     #-- Defining attributes for degree and order

@@ -66,6 +66,7 @@ REFERENCE:
 
 UPDATE HISTORY:
     Updated 05/2021: added GFZ SLR and GravIS oblateness solutions
+        define int/float precision to prevent deprecation warning
     Updated 02/2021: use adjust_months function to fix special months cases
         replaced numpy bool to prevent deprecation warning
     Updated 12/2020: using utilities from time module
@@ -193,7 +194,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
         n_mon = file_lines - count
         #-- date and GRACE/GRACE-FO month
         dinput['time'] = np.zeros((n_mon))
-        dinput['month'] = np.zeros((n_mon),dtype=np.int)
+        dinput['month'] = np.zeros((n_mon),dtype=np.int64)
         #-- monthly spherical harmonic replacement solutions
         dinput['data'] = np.zeros((n_mon))
         #-- monthly spherical harmonic formal standard deviations
@@ -208,10 +209,10 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
             #-- check if line has G* or Gm flags
             if bool(re.search(r'(G\*|Gm)',line)):
                 #-- reading decimal year for start of span
-                dinput['time'][t] = np.float(line_contents[1])
+                dinput['time'][t] = np.float64(line_contents[1])
                 #-- Spherical Harmonic data for line
-                dinput['data'][t] = np.float(line_contents[2])
-                dinput['error'][t] = np.float(line_contents[4])*1e-10
+                dinput['data'][t] = np.float64(line_contents[2])
+                dinput['error'][t] = np.float64(line_contents[4])*1e-10
                 #-- GRACE/GRACE-FO month of SLR solutions
                 dinput['month'][t] = 1+np.round((dinput['time'][t]-2002.)*12.)
                 #-- add to t count
@@ -263,10 +264,10 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
             #-- check for empty lines
             if (count > 0):
                 #-- reading decimal year for start of span
-                dinput['time'][t] = np.float(line_contents[1])
+                dinput['time'][t] = np.float64(line_contents[1])
                 #-- Spherical Harmonic data for line
-                dinput['data'][t] = np.float(line_contents[2])
-                dinput['error'][t] = np.float(line_contents[4])*1e-10
+                dinput['data'][t] = np.float64(line_contents[2])
+                dinput['error'][t] = np.float64(line_contents[4])*1e-10
                 #-- GRACE/GRACE-FO month of SLR solutions
                 dinput['month'][t] = 1+np.round((dinput['time'][t]-2002.)*12.)
                 #-- add to t count
@@ -297,7 +298,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
         n_mon = file_lines - count
         #-- date and GRACE/GRACE-FO month
         dinput['time'] = np.zeros((n_mon))
-        dinput['month'] = np.zeros((n_mon),dtype=np.int)
+        dinput['month'] = np.zeros((n_mon),dtype=np.int64)
         #-- monthly spherical harmonic replacement solutions
         dinput['data'] = np.zeros((n_mon))
         #-- monthly spherical harmonic formal standard deviations
@@ -316,7 +317,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
             #-- if count is greater than 0
             if (count > 0):
                 #-- modified julian date for line
-                MJD = np.float(line_contents[0])
+                MJD = np.float64(line_contents[0])
                 #-- converting from MJD into month, day and year
                 YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
                     MJD+2400000.5, FORMAT='tuple')
@@ -324,8 +325,8 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
                 dinput['time'][t] = gravity_toolkit.time.convert_calendar_decimal(
                     YY, MM, day=DD, hour=hh)
                 #-- Spherical Harmonic data for line
-                dinput['data'][t] = np.float(line_contents[2])
-                dinput['error'][t] = np.float(line_contents[4])*1e-10
+                dinput['data'][t] = np.float64(line_contents[2])
+                dinput['error'][t] = np.float64(line_contents[4])*1e-10
                 #-- GRACE/GRACE-FO month of SLR solutions
                 dinput['month'][t] = 1+np.round((dinput['time'][t]-2002.)*12.)
                 #-- add to t count
@@ -375,7 +376,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
             #-- if count is greater than 0
             if (count > 0):
                 #-- modified julian date for line
-                MJD = np.float(line_contents[0])
+                MJD = np.float64(line_contents[0])
                 #-- converting from MJD into month, day and year
                 YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
                     MJD+2400000.5, FORMAT='tuple')
@@ -383,8 +384,8 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
                 date_conv[t] = gravity_toolkit.time.convert_calendar_decimal(
                     YY, MM, day=DD, hour=hh)
                 #-- Spherical Harmonic data for line
-                C20_input[t] = np.float(line_contents[2])
-                eC20_input[t] = np.float(line_contents[4])*1e-10
+                C20_input[t] = np.float64(line_contents[2])
+                eC20_input[t] = np.float64(line_contents[4])*1e-10
                 #-- line has * flag
                 if bool(re.search(r'\*',line)):
                     slr_flag[t] = True

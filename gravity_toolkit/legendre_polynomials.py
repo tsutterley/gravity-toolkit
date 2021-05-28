@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 legendre_polynomials.py
-Written by Tyler Sutterley (09/2020)
+Written by Tyler Sutterley (05/2021)
 
 Computes fully normalized Legendre polynomials for an array of x values
     and their first derivative
@@ -33,16 +33,17 @@ REFERENCE:
         http://www.springerlink.com/content/978-3-211-33544-4
 
 UPDATE HISTORY:
+    Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 09/2020: verify dimensions of x variable
     Updated 08/2020: prevent zero divisions by changing u==0 to eps of data type
     Updated 07/2020: added function docstrings
     Updated 07/2017: added first derivative of Legendre polynomials (dpl)
-        added option ASTYPE to output as different variable types e.g. np.float
+        added option ASTYPE to output as different variable types e.g. np.float64
     Written 03/2013
 """
 import numpy as np
 
-def legendre_polynomials(lmax,x,ASTYPE=np.float):
+def legendre_polynomials(lmax,x,ASTYPE=np.float64):
     """
     Computes fully-normalized Legendre polynomials and their first derivative
 
@@ -65,7 +66,7 @@ def legendre_polynomials(lmax,x,ASTYPE=np.float):
     #-- size of the x array
     nx = len(x)
     #-- verify data type of spherical harmonic truncation
-    lmax = np.int(lmax)
+    lmax = np.int64(lmax)
     #-- output matrix of normalized legendre polynomials
     pl = np.zeros((lmax+1,nx),dtype=ASTYPE)
     #-- output matrix of First derivative of Legendre polynomials
