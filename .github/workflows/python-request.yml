@@ -45,6 +45,7 @@ jobs:
         brew install netcdf
         brew install libxml2
         brew install libxslt
+        brew install pkg-config
         pip install --upgrade pip
         pip install flake8 pytest pytest-cov numpy
         pip install git+https://github.com/tsutterley/geoid-toolkit.git
