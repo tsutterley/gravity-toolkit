@@ -51,6 +51,7 @@ jobs:
         export LDFLAGS="-L/usr/local/opt/proj@7/lib"
         export CPPFLAGS="-I/usr/local/opt/proj@7/include"
         export ACCEPT_USE_OF_DEPRECATED_PROJ_API_H=1
+        export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/opt/proj@7/lib/pkgconfig"
         pip install git+https://github.com/tsutterley/geoid-toolkit.git
         pip install git+https://github.com/tsutterley/read-GRACE-geocenter.git
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
