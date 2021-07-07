@@ -26,7 +26,7 @@ Command Line Options
      * ``0``: Han and Wahr (1995) values from PREM [Han1995]_
      * ``1``: Gegout (2005) values from PREM [Gegout2010]_
      * ``2``: Wang et al. (2012) values from PREM [Wang2012]_
-- ``-r X``, ``--reference X``: Reference frame for load love numbers
+- ``--reference X``: Reference frame for load love numbers
 
      * ``'CF'``: Center of Surface Figure (default)
      * ``'CM'``: Center of Mass of Earth System

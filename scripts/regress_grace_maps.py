@@ -1,41 +1,44 @@
 #!/usr/bin/env python
 u"""
 regress_grace_maps.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (06/2021)
 
 Reads in GRACE/GRACE-FO spatial files from grace_spatial_maps.py and
     fits a regression model at each grid point
 
-CALLING SEQUENCE:
-    python regress_grace_maps.py --start 4 --end 175 --order 2 parameter_file
-
 COMMAND LINE OPTIONS:
-    -P X, --np X: Run in parallel with X number of processes
+    --help: list the command line options
+    -O X, --output-directory X: output directory for spatial files
+    -P X, --file-prefix X: prefix string for input and output files
     -S X, --start X: starting GRACE month for time series regression
     -E X, --end X: ending GRACE month for time series regression
+    -N X, --missing X: Missing GRACE/GRACE-FO months
+    -l X, --lmax X: maximum spherical harmonic degree
+    -m X, --mmax X: maximum spherical harmonic order
+    -R X, --radius X: Gaussian smoothing radius (km)
+    -d, --destripe: use decorrelation filter (destriping filter)
+    -U X, --units X: output units
+        1: cm of water thickness
+        2: mm of geoid height
+        3: mm of elastic crustal deformation [Davis 2004]
+        4: microGal gravitational perturbation
+        5: mbar equivalent surface pressure
+    --spacing X: spatial resolution of output data (dlon,dlat)
+    --interval X: output grid interval
+        1: (0:360, 90:-90)
+        2: (degree spacing/2)
+        3: non-global grid (set with defined bounds)
+    --bounds X: non-global grid bounding box (minlon,maxlon,minlat,maxlat)
+    -F X, --format X: input/output data format
+        ascii
+        netCDF4
+        HDF5
+    --redistribute-removed: redistribute removed mass fields over the ocean
     --order X: regression fit polynomial order
     --cycles X: regression fit cyclical terms
-    -M X, --mode X: permissions mode of the output files
+    --log: Output log of files created for each job
     -V, --verbose: verbose output of processing run
-    -l, --log: output log file for each job
-
-SYSTEM ARGUMENTS README:
-    program is run as:
-    python regress_grace_maps.py parameter_file
-
-    As python is base 0, sys.argv[0] is equal to regress_grace_maps.py
-        (which is useful in some applications, but not for this program)
-
-    For this program, the system arguments are parameter files
-    The program reads the parameter file, which is separated by column as:
-        Column 1: parameter name (such as LMAX)
-        Column 2: parameter (e.g. 60)
-        Column 3: comments (which are discarded)
-    The parameters are stored in a python dictionary (variables indexed by keys)
-        the keys are the parameter name (for LMAX: parameters['LMAX'] == 60)
-
-INPUTS:
-    parameter file containing specific variables for the analysis
+    -M X, --mode X: Permissions mode of the files created
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
@@ -54,6 +57,7 @@ PROGRAM DEPENDENCIES:
         hdf5_write.py: writes output spatial data to HDF5
 
 UPDATE HISTORY:
+    Updated 06/2021: switch from parameter files to argparse arguments
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: replaced numpy bool to prevent deprecation warning
     Updated 10/2020: use argparse to set command line parameters
@@ -69,7 +73,7 @@ UPDATE HISTORY:
         use output_data wrapper function for writing data to file
     Updated 04/2018: changed the names of the output log files
     Updated 03/2018: added option --mode to set the output file permissions
-        added option for output in pascals (UNITS=5)
+        added option for output in equivalent surface pressure (UNITS=5)
     Updated 06/2016: using __future__ print function, MMAX for LMAX != MMAX
     Updated 06/2015: added output_files for log files
     Written 09/2013
@@ -82,69 +86,46 @@ import time
 import argparse
 import traceback
 import numpy as np
-import multiprocessing
 
+import gravity_toolkit.utilities as utilities
 from gravity_toolkit.tsregress import tsregress
 from gravity_toolkit.tsamplitude import tsamplitude
 from gravity_toolkit.spatial import spatial
 
-#-- PURPOSE: keep track of multiprocessing threads
-def info(title):
+#-- PURPOSE: keep track of threads
+def info(args):
     print(os.path.basename(sys.argv[0]))
-    print(title)
+    print(args)
     print('module name: {0}'.format(__name__))
     if hasattr(os, 'getppid'):
         print('parent process: {0:d}'.format(os.getppid()))
     print('process id: {0:d}'.format(os.getpid()))
 
 #-- program module to run with specified parameters
-def regress_grace_maps(parameters, ORDER=None, CYCLES=None,
-    VERBOSE=False, MODE=0o775):
-    #-- convert parameters into variables
-    #-- Data processing center
-    PROC = parameters['PROC']
-    #-- Data Release
-    DREL = parameters['DREL']
-    #-- GRACE/GRACE-FO dataset
-    DSET = parameters['DSET']
-    #-- GRACE/GRACE-FO months
-    START_MON = np.int64(parameters['START'])
-    END_MON = np.int64(parameters['END'])
-    MISSING = np.array(parameters['MISSING'].split(','),dtype=np.int64)
-    months = sorted(set(np.arange(START_MON,END_MON+1)) - set(MISSING))
-    nmon = len(months)
-    #-- maximum degree and order
-    LMAX = np.int64(parameters['LMAX'])
-    if (parameters['MMAX'].title() == 'None'):
-        MMAX = np.copy(LMAX)
-    else:
-        MMAX = np.int64(parameters['MMAX'])
-    #-- Glacial Isostatic Adjustment file to read
-    GIA = parameters['GIA'] if (parameters['GIA'].title() != 'None') else None
-    GIA_FILE = os.path.expanduser(parameters['GIA_FILE'])
-    #-- remove a set of spherical harmonics from the GRACE data
-    REDISTRIBUTE_REMOVED = parameters['REDISTRIBUTE_REMOVED'] in ('Y','y')
-    #-- smoothing radius
-    RAD = np.int64(parameters['RAD'])
-    #-- destriped coefficients
-    DESTRIPE = parameters['DESTRIPE'] in ('Y','y')
-    #-- output spatial units
-    UNITS = np.int64(parameters['UNITS'])
-    #-- output degree spacing
-    #-- can enter dlon and dlat as [dlon,dlat] or a single value
-    DDEG = np.squeeze(np.array(parameters['DDEG'].split(','),dtype='f'))
-    #-- output degree interval (0:360, 90:-90) or (degree spacing/2)
-    INTERVAL = np.int64(parameters['INTERVAL'])
-    #-- input/output data format (ascii, netCDF4, HDF5)
-    DATAFORM = parameters['DATAFORM']
-    #-- output directory and base filename
-    DIRECTORY = os.path.expanduser(parameters['DIRECTORY'])
-    FILENAME = parameters['FILENAME']
+def regress_grace_maps(LMAX, RAD,
+    START=None,
+    END=None,
+    MISSING=None,
+    MMAX=None,
+    DESTRIPE=False,
+    UNITS=None,
+    DDEG=None,
+    INTERVAL=None,
+    BOUNDS=None,
+    DATAFORM=None,
+    REDISTRIBUTE_REMOVED=False,
+    ORDER=None,
+    CYCLES=None,
+    OUTPUT_DIRECTORY=None,
+    FILE_PREFIX=None,
+    VERBOSE=False,
+    MODE=0o775):
+
     #-- output filename suffix
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')[DATAFORM]
 
     #-- flag for spherical harmonic order
-    order_str = 'M{0:d}'.format(MMAX) if (MMAX != LMAX) else ''
+    order_str = 'M{0:d}'.format(MMAX) if MMAX and (MMAX != LMAX) else ''
     #-- Calculating the Gaussian smoothing for radius RAD
     gw_str = '_r{0:0.0f}km'.format(RAD) if (RAD != 0) else ''
     #-- destriped GRACE/GRACE-FO coefficients
@@ -162,8 +143,12 @@ def regress_grace_maps(parameters, ORDER=None, CYCLES=None,
     #-- output file format
     output_format = '{0}{1}_L{2:d}{3}{4}{5}_{6}{7}_{8:03d}-{9:03d}.{10}'
 
+    #-- GRACE months to read
+    months = sorted(set(np.arange(START,END+1)) - set(MISSING))
+    nmon = len(months)
+
     #-- Output Degree Spacing
-    dlon,dlat = (DDEG,DDEG) if (np.ndim(DDEG) == 0) else (DDEG[0],DDEG[1])
+    dlon,dlat = (DDEG,DDEG) if (len(DDEG) == 1) else (DDEG[0],DDEG[1])
     #-- Output Degree Interval
     if (INTERVAL == 1):
         #-- (-180:180,90:-90)
@@ -173,6 +158,13 @@ def regress_grace_maps(parameters, ORDER=None, CYCLES=None,
         #-- (Degree spacing)/2
         nlon = np.int64(360.0/dlon)
         nlat = np.int64(180.0/dlat)
+    elif (INTERVAL == 3):
+        #-- non-global grid set with BOUNDS parameter
+        minlon,maxlon,minlat,maxlat = BOUNDS.copy()
+        lon = np.arange(minlon+dlon/2.0,maxlon+dlon/2.0,dlon)
+        lat = np.arange(maxlat-dlat/2.0,minlat-dlat/2.0,-dlat)
+        nlon = len(lon)
+        nlat = len(lat)
 
     #-- Setting output parameters for each fit type
     coef_str = ['x{0:d}'.format(o) for o in range(ORDER+1)]
@@ -210,18 +202,18 @@ def regress_grace_maps(parameters, ORDER=None, CYCLES=None,
     spatial_list = []
     for t,grace_month in enumerate(months):
         #-- input GRACE/GRACE-FO spatial file
-        fi = input_format.format(FILENAME,unit_list[UNITS-1],LMAX,
+        fi = input_format.format(FILE_PREFIX,unit_list[UNITS-1],LMAX,
             order_str,gw_str,ds_str,grace_month,suffix)
         #-- read GRACE/GRACE-FO spatial file
         if (DATAFORM == 'ascii'):
             dinput = spatial(spacing=[dlon,dlat],nlon=nlon,
-                nlat=nlat).from_ascii(os.path.join(DIRECTORY,fi))
+                nlat=nlat).from_ascii(os.path.join(OUTPUT_DIRECTORY,fi))
         elif (DATAFORM == 'netCDF4'):
             #-- netcdf (.nc)
-            dinput = spatial().from_netCDF4(os.path.join(DIRECTORY,fi))
+            dinput = spatial().from_netCDF4(os.path.join(OUTPUT_DIRECTORY,fi))
         elif (DATAFORM == 'HDF5'):
             #-- HDF5 (.H5)
-            dinput = spatial().from_HDF5(os.path.join(DIRECTORY,fi))
+            dinput = spatial().from_HDF5(os.path.join(OUTPUT_DIRECTORY,fi))
         #-- append to spatial list
         dinput.month = grace_month
         nlat,nlon = dinput.shape
@@ -274,25 +266,25 @@ def regress_grace_maps(parameters, ORDER=None, CYCLES=None,
     #-- Output spatial files
     for i in range(0,ncomp):
         #-- output spatial file name
-        f1 = output_format.format(FILENAME,unit_list[UNITS-1],LMAX,order_str,
-            gw_str,ds_str,coef_str[i],'',START_MON,END_MON,suffix)
-        f2 = output_format.format(FILENAME,unit_list[UNITS-1],LMAX,order_str,
-            gw_str,ds_str,coef_str[i],'_ERROR',START_MON,END_MON,suffix)
+        f1 = output_format.format(FILE_PREFIX,unit_list[UNITS-1],LMAX,
+            order_str,gw_str,ds_str,coef_str[i],'',START,END,suffix)
+        f2 = output_format.format(FILE_PREFIX,unit_list[UNITS-1],LMAX,
+            order_str,gw_str,ds_str,coef_str[i],'_ERROR',START,END,suffix)
         #-- full attributes
         UNITS_TITLE = '{0}{1}'.format(unit_list[UNITS-1],unit_suffix[i])
         LONGNAME = unit_name[UNITS-1]
         FILE_TITLE = 'GRACE/GRACE-FO_Spatial_Data_{0}'.format(unit_longname[i])
         #-- output regression fit to file
         output = out.index(i, date=False)
-        output_data(output, FILENAME=os.path.join(DIRECTORY,f1),
+        output_data(output, FILENAME=os.path.join(OUTPUT_DIRECTORY,f1),
             DATAFORM=DATAFORM, UNITS=UNITS_TITLE, LONGNAME=LONGNAME,
             TITLE=FILE_TITLE, VERBOSE=VERBOSE, MODE=MODE)
-        output_data(output, FILENAME=os.path.join(DIRECTORY,f2),
+        output_data(output, FILENAME=os.path.join(OUTPUT_DIRECTORY,f2),
             DATAFORM=DATAFORM, UNITS=UNITS_TITLE, LONGNAME=LONGNAME,
             TITLE=FILE_TITLE, KEY='error', VERBOSE=VERBOSE, MODE=MODE)
         #-- add output files to list object
-        output_files.append(os.path.join(DIRECTORY,f1))
-        output_files.append(os.path.join(DIRECTORY,f2))
+        output_files.append(os.path.join(OUTPUT_DIRECTORY,f1))
+        output_files.append(os.path.join(OUTPUT_DIRECTORY,f2))
 
     #-- if fitting coefficients with cyclical components
     if (ncycles > 0):
@@ -324,15 +316,15 @@ def regress_grace_maps(parameters, ORDER=None, CYCLES=None,
             ph.error = (180.0/np.pi)*np.sqrt(comp1**2 + comp2**2)
 
             #-- output file names for amplitude, phase and errors
-            f3 = output_format.format(FILENAME,unit_list[UNITS-1],LMAX,order_str,
-                gw_str,ds_str,flag,'',START_MON,END_MON,suffix)
-            f4 = output_format.format(FILENAME,unit_list[UNITS-1],LMAX,order_str,
-                gw_str,ds_str,flag,'_PHASE',START_MON,END_MON,suffix)
+            f3 = output_format.format(FILE_PREFIX,unit_list[UNITS-1],LMAX,
+                order_str,gw_str,ds_str,flag,'',START,END,suffix)
+            f4 = output_format.format(FILE_PREFIX,unit_list[UNITS-1],LMAX,
+                order_str,gw_str,ds_str,flag,'_PHASE',START,END,suffix)
             #-- output spatial error file name
-            f5 = output_format.format(FILENAME,unit_list[UNITS-1],LMAX,order_str,
-                gw_str,ds_str,flag,'_ERROR',START_MON,END_MON,suffix)
-            f6 = output_format.format(FILENAME,unit_list[UNITS-1],LMAX,order_str,
-                gw_str,ds_str,flag,'_PHASE_ERROR',START_MON,END_MON,suffix)
+            f5 = output_format.format(FILE_PREFIX,unit_list[UNITS-1],LMAX,
+                order_str,gw_str,ds_str,flag,'_ERROR',START,END,suffix)
+            f6 = output_format.format(FILE_PREFIX,unit_list[UNITS-1],LMAX,
+                order_str,gw_str,ds_str,flag,'_PHASE_ERROR',START,END,suffix)
             #-- full attributes
             AMP_UNITS = unit_list[UNITS-1]
             PH_UNITS = 'degrees'
@@ -340,24 +332,24 @@ def regress_grace_maps(parameters, ORDER=None, CYCLES=None,
             AMP_TITLE = 'GRACE/GRACE-FO_Spatial_Data_{0}'.format(amp_title[flag])
             PH_TITLE = 'GRACE/GRACE-FO_Spatial_Data_{0}'.format(ph_title[flag])
             #-- Output seasonal amplitude and phase to files
-            output_data(amp, FILENAME=os.path.join(DIRECTORY,f3),
+            output_data(amp, FILENAME=os.path.join(OUTPUT_DIRECTORY,f3),
                 DATAFORM=DATAFORM, UNITS=AMP_UNITS, LONGNAME=LONGNAME,
                 TITLE=AMP_TITLE, VERBOSE=VERBOSE, MODE=MODE)
-            output_data(ph, FILENAME=os.path.join(DIRECTORY,f4),
+            output_data(ph, FILENAME=os.path.join(OUTPUT_DIRECTORY,f4),
                 DATAFORM=DATAFORM, UNITS=PH_UNITS, LONGNAME='Phase',
                 TITLE=PH_TITLE, VERBOSE=VERBOSE, MODE=MODE)
             #-- Output seasonal amplitude and phase error to files
-            output_data(amp, FILENAME=os.path.join(DIRECTORY,f5),
+            output_data(amp, FILENAME=os.path.join(OUTPUT_DIRECTORY,f5),
                 DATAFORM=DATAFORM, UNITS=AMP_UNITS, LONGNAME=LONGNAME,
                 TITLE=AMP_TITLE, KEY='error', VERBOSE=VERBOSE, MODE=MODE)
-            output_data(ph, FILENAME=os.path.join(DIRECTORY,f6),
+            output_data(ph, FILENAME=os.path.join(OUTPUT_DIRECTORY,f6),
                 DATAFORM=DATAFORM, UNITS=PH_UNITS, LONGNAME='Phase',
                 TITLE=PH_TITLE, KEY='error', VERBOSE=VERBOSE, MODE=MODE)
             #-- add output files to list object
-            output_files.append(os.path.join(DIRECTORY,f3))
-            output_files.append(os.path.join(DIRECTORY,f4))
-            output_files.append(os.path.join(DIRECTORY,f5))
-            output_files.append(os.path.join(DIRECTORY,f6))
+            output_files.append(os.path.join(OUTPUT_DIRECTORY,f3))
+            output_files.append(os.path.join(OUTPUT_DIRECTORY,f4))
+            output_files.append(os.path.join(OUTPUT_DIRECTORY,f5))
+            output_files.append(os.path.join(OUTPUT_DIRECTORY,f6))
 
     #-- Output fit significance
     signif_longname = {'SSE':'Sum of Squares Error',
@@ -368,16 +360,16 @@ def regress_grace_maps(parameters, ORDER=None, CYCLES=None,
     for key,fs in FS.items():
         #-- output file names for fit significance
         signif_str = '{0}_'.format(key)
-        f7 = output_format.format(FILENAME,unit_list[UNITS-1],LMAX,order_str,
-            gw_str,ds_str,signif_str,coef_str[ORDER],START_MON,END_MON,suffix)
+        f7 = output_format.format(FILE_PREFIX,unit_list[UNITS-1],LMAX,
+            order_str,gw_str,ds_str,signif_str,coef_str[ORDER],START,END,suffix)
         #-- full attributes
         LONGNAME = signif_longname[key]
         #-- output fit significance to file
-        output_data(fs, FILENAME=os.path.join(DIRECTORY,f7),
+        output_data(fs, FILENAME=os.path.join(OUTPUT_DIRECTORY,f7),
             DATAFORM=DATAFORM, UNITS=key, LONGNAME=LONGNAME,
             TITLE=nu, VERBOSE=VERBOSE, MODE=MODE)
         #-- add output files to list object
-        output_files.append(os.path.join(DIRECTORY,f7))
+        output_files.append(os.path.join(OUTPUT_DIRECTORY,f7))
 
     #-- return the list of output files
     return output_files
@@ -402,24 +394,17 @@ def output_data(data, FILENAME=None, KEY='data', DATAFORM=None,
     os.chmod(FILENAME, MODE)
 
 #-- PURPOSE: print a file log for the GRACE/GRACE-FO regression
-#-- lists: the parameter file, the parameters and the output files
-def output_log_file(parameters,output_files):
+def output_log_file(arguments,output_files):
     #-- format: GRACE_processing_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_processing_run_{0}_PID-{1:d}.log'.format(*args)
-    DIRECTORY = os.path.expanduser(parameters['DIRECTORY'])
     #-- create a unique log and open the log file
-    fid = create_unique_logfile(os.path.join(DIRECTORY,LOGFILE))
-    #-- check if run from entering parameters or from parameter files
-    if parameters['PARAMETER_FILE'] is not None:
-        #-- print parameter file on top
-        print('PARAMETER FILE:\n{0}\n\nPARAMETERS:'.format(
-            os.path.abspath(parameters['PARAMETER_FILE'])), file=fid)
-    else:
-        print('PARAMETERS:', file=fid)
-    #-- print parameter values sorted alphabetically
-    for p in sorted(list(set(parameters.keys())-set(['PARAMETER_FILE']))):
-        print('{0}: {1}'.format(p, parameters[p]), file=fid)
+    DIRECTORY = os.path.expanduser(arguments.output_directory)
+    fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    #-- print argument values sorted alphabetically
+    print('ARGUMENTS:', file=fid)
+    for arg, value in sorted(vars(arguments).items()):
+        print('{0}: {1}'.format(arg, value), file=fid)
     #-- print output files
     print('\n\nOUTPUT FILES:', file=fid)
     for f in output_files:
@@ -428,115 +413,90 @@ def output_log_file(parameters,output_files):
     fid.close()
 
 #-- PURPOSE: print a error file log for the GRACE/GRACE-FO regression
-#-- lists: the parameter file, the parameters and the error
-def output_error_log_file(parameters):
+def output_error_log_file(arguments):
     #-- format: GRACE_processing_failed_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_processing_failed_run_{0}_PID-{1:d}.log'.format(*args)
-    DIRECTORY = os.path.expanduser(parameters['DIRECTORY'])
     #-- create a unique log and open the log file
-    fid = create_unique_logfile(os.path.join(DIRECTORY,LOGFILE))
-    #-- check if run from entering parameters or from parameter files
-    if parameters['PARAMETER_FILE'] is not None:
-        #-- print parameter file on top
-        print('PARAMETER FILE:\n{0}\n\nPARAMETERS:'.format(
-            os.path.abspath(parameters['PARAMETER_FILE'])), file=fid)
-    else:
-        print('PARAMETERS:', file=fid)
-    #-- print parameter values sorted alphabetically
-    for p in sorted(list(set(parameters.keys())-set(['PARAMETER_FILE']))):
-        print('{0}: {1}'.format(p, parameters[p]), file=fid)
+    DIRECTORY = os.path.expanduser(arguments.output_directory)
+    fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    #-- print argument values sorted alphabetically
+    print('ARGUMENTS:', file=fid)
+    for arg, value in sorted(vars(arguments).items()):
+        print('{0}: {1}'.format(arg, value), file=fid)
     #-- print traceback error
     print('\n\nTRACEBACK ERROR:', file=fid)
     traceback.print_exc(file=fid)
     #-- close the log file
     fid.close()
 
-#-- PURPOSE: open a unique log file adding a numerical instance if existing
-def create_unique_logfile(filename):
-    #-- split filename into fileBasename and fileExtension
-    fileBasename, fileExtension = os.path.splitext(filename)
-    #-- create counter to add to the end of the filename if existing
-    counter = 1
-    while counter:
-        try:
-            #-- open file descriptor only if the file doesn't exist
-            fd = os.open(filename, os.O_CREAT | os.O_EXCL | os.O_RDWR)
-        except OSError:
-            pass
-        else:
-            return os.fdopen(fd, 'w+')
-        #-- new filename adds counter the between fileBasename and fileExtension
-        filename = '{0}_{1:d}{2}'.format(fileBasename, counter, fileExtension)
-        counter += 1
-
-#-- PURPOSE: define the analysis
-def define_analysis(parameter_file,START,END,ORDER=None,CYCLES=None,
-    VERBOSE=False,LOG=False,MODE=0o775):
-    #-- keep track of progress
-    info(os.path.basename(parameter_file))
-
-    #-- variable with parameter definitions
-    parameters = {}
-    parameters['PARAMETER_FILE'] = parameter_file
-    #-- Opening parameter file and assigning file ID number (fid)
-    fid = open(os.path.expanduser(parameter_file), 'r')
-    #-- for each line in the file will extract the parameter (name and value)
-    for fileline in fid:
-        #-- Splitting the input line between parameter name and value
-        part = fileline.split()
-        #-- filling the parameter definition variable
-        parameters[part[0]] = part[1]
-    #-- close the parameter file
-    fid.close()
-
-    #-- can change the date range from the defaults (change parameters for logs)
-    parameters['START'] = np.copy(START) if START else parameters['START']
-    parameters['END'] = np.copy(END) if END else parameters['END']
-    #-- set regression fit type as parameter for logs
-    parameters['ORDER'] = '{0:d}'.format(ORDER)
-    parameters['CYCLES'] = ','.join(['{0:4f}'.format(c) for c in CYCLES])
-    #-- try to run the program with listed parameters
-    try:
-        #-- run GRACE/GRACE-FO spatial regression program with parameters
-        output_files = regress_grace_maps(parameters,ORDER=ORDER,
-            CYCLES=CYCLES,VERBOSE=VERBOSE,MODE=MODE)
-    except:
-        #-- if there has been an error exception
-        #-- print the type, value, and stack trace of the
-        #-- current exception being handled
-        print('process id {0:d} failed'.format(os.getpid()))
-        traceback.print_exc()
-        if LOG:#-- write failed job completion log file
-            output_error_log_file(parameters)
-    else:
-        if LOG:#-- write successful job completion log file
-            output_log_file(parameters,output_files)
-
 #-- This is the main part of the program that calls the individual modules
-#-- If no parameter file is listed as an argument: will exit with an error
 def main():
     #-- Read the system arguments listed after the program
     parser = argparse.ArgumentParser(
         description="""Reads in GRACE/GRACE-FO spatial files and calculates the
             trends at each grid point following an input regression model
-            """
+            """,
+        fromfile_prefix_chars="@"
     )
+    parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
     #-- command line parameters
-    parser.add_argument('parameters',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='+',
-        help='Parameter files containing specific variables for each analysis')
-    #-- number of processes to run in parallel
-    parser.add_argument('--np','-P',
-        metavar='PROCESSES', type=int, default=0,
-        help='Number of processes to run in parallel')
-    #-- start and end years for regression
+    parser.add_argument('--output-directory','-O',
+        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        default=os.getcwd(),
+        help='Output directory for spatial files')
+    parser.add_argument('--file-prefix','-P',
+        type=str,
+        help='Prefix string for input and output files')
+    #-- maximum spherical harmonic degree and order
+    parser.add_argument('--lmax','-l',
+        type=int, default=60,
+        help='Maximum spherical harmonic degree')
+    parser.add_argument('--mmax','-m',
+        type=int, default=None,
+        help='Maximum spherical harmonic order')
+    #-- start and end GRACE/GRACE-FO months
     parser.add_argument('--start','-S',
-        type=int,
-        help='Starting GRACE/GRACE_FO month for time series regression')
+        type=int, default=4,
+        help='Starting GRACE/GRACE-FO month for time series regression')
     parser.add_argument('--end','-E',
-        type=int,
-        help='Ending GRACE/GRACE_FO month for time series regression')
+        type=int, default=232,
+        help='Ending GRACE/GRACE-FO month for time series regression')
+    MISSING = [6,7,18,109,114,125,130,135,140,141,146,151,156,162,166,167,
+        172,177,178,182,187,188,189,190,191,192,193,194,195,196,197,200,201]
+    parser.add_argument('--missing','-N',
+        metavar='MISSING', type=int, nargs='+', default=MISSING,
+        help='Missing GRACE/GRACE-FO months')
+    #-- Gaussian smoothing radius (km)
+    parser.add_argument('--radius','-R',
+        type=float, default=0,
+        help='Gaussian smoothing radius (km)')
+    #-- Use a decorrelation (destriping) filter
+    parser.add_argument('--destripe','-d',
+        default=False, action='store_true',
+        help='Use decorrelation (destriping) filter')
+    #-- output units
+    parser.add_argument('--units','-U',
+        type=int, default=1, choices=[1,2,3,4,5],
+        help='Output units')
+    #-- output grid parameters
+    parser.add_argument('--spacing',
+        type=float, nargs='+', default=[0.5,0.5], metavar=('dlon','dlat'),
+        help='Spatial resolution of output data')
+    parser.add_argument('--interval',
+        type=int, default=2, choices=[1,2,3],
+        help=('Output grid interval '
+            '(1: global, 2: centered global, 3: non-global)'))
+    parser.add_argument('--bounds',
+        type=float, nargs=4, metavar=('lon_min','lon_max','lat_min','lat_max'),
+        help='Bounding box for non-global grid')
+    #-- input data format (ascii, netCDF4, HDF5)
+    parser.add_argument('--format','-F',
+        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
+        help='Input/output data format')
+    parser.add_argument('--redistribute-removed',
+        default=False, action='store_true',
+        help='Redistribute removed mass fields over the ocean')
     #-- regression parameters
     #-- 0: mean
     #-- 1: trend
@@ -548,44 +508,57 @@ def main():
     parser.add_argument('--cycle','-c',
         type=float, default=[0.5,1.0,161.0/365.25], nargs='+',
         help='Regression fit cyclical terms')
-    #-- verbose output
-    parser.add_argument('--verbose','-V',
-        default=False, action='store_true',
-        help='Verbose output of run')
     #-- Output log file for each job in forms
     #-- GRACE_processing_run_2002-04-01_PID-00000.log
     #-- GRACE_processing_failed_run_2002-04-01_PID-00000.log
-    parser.add_argument('--log','-l',
+    parser.add_argument('--log',
         default=False, action='store_true',
         help='Output log file for each job')
+    #-- print information about each input and output file
+    parser.add_argument('--verbose','-V',
+        default=False, action='store_true',
+        help='Verbose output of run')
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='permissions mode of output files')
-    args = parser.parse_args()
+    args,_ = parser.parse_known_args()
 
-    #-- use parameter files from system arguments listed after the program.
-    if (args.np == 0):
-        #-- run directly as series if PROCESSES = 0
-        for f in args.parameters:
-            define_analysis(f,args.start,args.end,
-                ORDER=args.order,CYCLES=args.cycle,VERBOSE=args.verbose,
-                LOG=args.log,MODE=args.mode)
+    #-- try to run the analysis with listed parameters
+    try:
+        info(args) if args.verbose else None
+        #-- run regress_grace_maps algorithm with parameters
+        output_files = regress_grace_maps(
+            args.lmax,
+            args.radius,
+            START=args.start,
+            END=args.end,
+            MISSING=args.missing,
+            MMAX=args.mmax,
+            DESTRIPE=args.destripe,
+            UNITS=args.units,
+            DDEG=args.spacing,
+            INTERVAL=args.interval,
+            BOUNDS=args.bounds,
+            DATAFORM=args.format,
+            REDISTRIBUTE_REMOVED=args.redistribute_removed,
+            ORDER=args.order,
+            CYCLES=args.cycles,
+            OUTPUT_DIRECTORY=args.output_directory,
+            FILE_PREFIX=args.file_prefix,
+            VERBOSE=args.verbose,
+            MODE=args.mode)
+    except:
+        #-- if there has been an error exception
+        #-- print the type, value, and stack trace of the
+        #-- current exception being handled
+        print('process id {0:d} failed'.format(os.getpid()))
+        traceback.print_exc()
+        if args.log:#-- write failed job completion log file
+            output_error_log_file(args)
     else:
-        #-- run in parallel with multiprocessing Pool
-        pool = multiprocessing.Pool(processes=args.np)
-        #-- for each parameter file
-        for f in args.parameters:
-            kwds=dict(ORDER=args.order,CYCLES=args.cycle,
-                VERBOSE=args.verbose,LOG=args.log,MODE=args.mode)
-            pool.apply_async(define_analysis,args=(f,args.start,args.end),
-                kwds=kwds)
-        #-- start multiprocessing jobs
-        #-- close the pool
-        #-- prevents more tasks from being submitted to the pool
-        pool.close()
-        #-- exit the completed processes
-        pool.join()
+        if args.log:#-- write successful job completion log file
+            output_log_file(args,output_files)
 
 #-- run main program
 if __name__ == '__main__':

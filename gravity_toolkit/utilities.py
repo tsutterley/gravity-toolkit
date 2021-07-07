@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (07/2021)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
     lxml: processing XML and HTML in Python (https://pypi.python.org/pypi/lxml)
 
 UPDATE HISTORY:
+    Updated 07/2021: added unique filename opener for log files
+    Updated 06/2021: add parser for converting file files to arguments
     Updated 05/2021: download GFZ satellite laser ranging and GravIS files
     Updated 04/2021: download CSR SLR figure axis and azimuthal dependence files
     Updated 03/2021: added sha1 option for retrieving file hashes
@@ -116,6 +118,21 @@ def url_split(s):
         return tail,
     return url_split(head) + (tail,)
 
+#-- PURPOSE: convert file lines to arguments
+def convert_arg_line_to_args(arg_line):
+    """
+    Convert file lines to arguments
+
+    Arguments
+    ---------
+    arg_line: line string containing a single argument and/or comments
+    """
+    # remove commented lines and after argument comments
+    for arg in re.sub(r'\#(.*?)$',r'',arg_line).split():
+        if not arg.strip():
+            continue
+        yield arg
+
 #-- PURPOSE: returns the Unix timestamp value for a formatted date string
 def get_unix_time(time_string, format='%Y-%m-%d %H:%M:%S'):
     """
@@ -169,6 +186,31 @@ def copy(source, destination, verbose=False, move=False):
     shutil.copystat(source, destination)
     if move:
         os.remove(source)
+
+#-- PURPOSE: open a unique file adding a numerical instance if existing
+def create_unique_file(filename):
+    """
+    Open a unique file adding a numerical instance if existing
+
+    Arguments
+    ---------
+    filename: full path to output file
+    """
+    #-- split filename into fileBasename and fileExtension
+    fileBasename, fileExtension = os.path.splitext(filename)
+    #-- create counter to add to the end of the filename if existing
+    counter = 1
+    while counter:
+        try:
+            #-- open file descriptor only if the file doesn't exist
+            fd = os.open(filename, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+        except OSError:
+            pass
+        else:
+            return os.fdopen(fd, 'w+')
+        #-- new filename adds counter the between fileBasename and fileExtension
+        filename = '{0}_{1:d}{2}'.format(fileBasename, counter, fileExtension)
+        counter += 1
 
 #-- PURPOSE: check ftp connection
 def check_ftp_connection(HOST,username=None,password=None):

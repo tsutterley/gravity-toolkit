@@ -26,7 +26,7 @@ Command Line Options
      * ``0``: Han and Wahr (1995) values from PREM [Han1995]_
      * ``1``: Gegout (2005) values from PREM [Gegout2010]_
      * ``2``: Wang et al. (2012) values from PREM [Wang2012]_
-- ``-r X``, ``--reference X``: Reference frame for load love numbers
+- ``--reference X``: Reference frame for load love numbers
 
      * ``'CF'``: Center of Surface Figure (default)
      * ``'CM'``: Center of Mass of Earth System
@@ -39,7 +39,7 @@ Command Line Options
      * ``2``: mm of geoid height
      * ``3``: mm of elastic crustal deformation
      * ``4``: |mu|\ Gal gravitational perturbation
-     * ``5``: Pa, equivalent surface pressure in Pascals
+     * ``5``: mbar equivalent surface pressure
 - ``-S X``, ``--spacing X``: spatial resolution of output data (dlon,dlat)
 - ``-I X``, ``--interval X``: output grid interval
 
@@ -47,7 +47,7 @@ Command Line Options
      * ``2``: (degree spacing/2)
      * ``3``: non-global grid (set bounds with --bounds)
 - ``-B X``, ``--bounds X``: bounding box for non-global grid interval (minlon,maxlon,minlat,maxlat)
-- ``-O``, ``--ocean``: redistribute total mass over the ocean
+- ``--redistribute-mass``: redistribute total mass over the ocean
 - ``--mask X``: input land-sea function (netCDF4) with variable ``LSMASK`` as mask
 - ``--mean X``: mean file to remove from the harmonic data
 - ``-F X``, ``--format X``: input and output data format

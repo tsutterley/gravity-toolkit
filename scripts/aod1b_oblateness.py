@@ -23,6 +23,7 @@ INPUTS:
 COMMAND LINE OPTIONS:
     -D X, --directory X: Working Data Directory
     -r X, --release X: GRACE/GRACE-FO Data Release (RL05 or RL06)
+    -p X, --product X: GRACE/GRACE-FO dealiasing product (atm, ocn, glo, oba)
     -C, --clobber: Overwrite existing data
     -M X, --mode X: Permission mode of directories and files
     -V, --verbose: Output information for each output file
@@ -226,7 +227,7 @@ def main():
     parser.add_argument('--product','-p',
         metavar='DSET', type=str.lower, nargs='+',
         choices=['atm','ocn','glo','oba'],
-        help='GRACE/GRACE-FO AOD1B dataset')
+        help='GRACE/GRACE-FO Level-1b data product')
     #-- clobber will overwrite the existing data
     parser.add_argument('--clobber','-C',
         default=False, action='store_true',
@@ -239,7 +240,7 @@ def main():
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='permissions mode of output files')
-    args = parser.parse_args()
+    args,_ = parser.parse_known_args()
 
     #-- for each entered AOD1B dataset
     for DSET in args.product:

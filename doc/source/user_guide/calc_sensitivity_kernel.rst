@@ -8,33 +8,46 @@ calc_sensitivity_kernel.py
 
 .. code-block:: bash
 
-     python calc_sensitivity_kernel.py --mode 0o775 parameter_file
+     python calc_sensitivity_kernel.py @default_arguments_file
 
 `Source code`__
 
 .. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/calc_sensitivity_kernel.py
 
-Inputs
-######
-
-- parameter file containing specific variables for the analysis
-
 Command Line Options
 ####################
 
-- ``-P X``, ``--np X``: Run in parallel with X number of processes
+- ``-O X``, ``--output-directory X``: output directory for mascon files
+- ``--lmin X``: minimum spherical harmonic degree
+- ``-l X``, ``--lmax X``: maximum spherical harmonic degree
+- ``-m X``, ``--mmax X``: maximum spherical harmonic order
+- ``-R X``, ``--radius X``: Gaussian smoothing radius (km)
+- ``-d``, ``--destripe``: use decorrelation filter (destriping filter)
 - ``-n X``, ``--love X``: Load Love numbers dataset
 
      * ``0``: Han and Wahr (1995) values from PREM [Han1995]_
      * ``1``: Gegout (2005) values from PREM [Gegout2010]_
      * ``2``: Wang et al. (2012) values from PREM [Wang2012]_
-- ``-r X``, ``--reference X``: Reference frame for load love numbers
+- ``--reference X``: Reference frame for load love numbers
 
      * ``'CF'``: Center of Surface Figure (default)
      * ``'CM'``: Center of Mass of Earth System
      * ``'CE'``: Center of Mass of Solid Earth
-- ``-l``, ``--log``: output log file for each job
-- ``-M X``, ``--mode X``: permissions mode of output files
+- ``-F X``, ``--format X``: input data format for auxiliary files
+
+     * ``'ascii'``
+     * ``'netCDF4'``
+     * ``'HDF5'``
+- ``--mask X``: Land-sea mask for redistributing mascon mass and land water flux
+- ``--mascon-file X``: index file of mascons spherical harmonics
+- ``--redistribute-mascons``: redistribute mascon mass over the ocean
+- ``--fit-method X``: method for fitting sensitivity kernel to harmonics
+
+    * ``1``: mass coefficients
+    * ``2``: geoid coefficients
+- ``--log``: Output log file for job
+- ``-V``, ``--verbose``: verbose output of processing run
+- ``-M X``, ``--mode X``: Permissions mode of the files created
 
 References
 ##########

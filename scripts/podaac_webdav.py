@@ -118,7 +118,7 @@ def main():
     parser.add_argument('--append','-A',
         default=False, action='store_true',
         help='Append .netrc file instead of printing')
-    args = parser.parse_args()
+    args,_ = parser.parse_known_args()
 
     #-- NASA Earthdata hostname
     URS = 'urs.earthdata.nasa.gov'

@@ -13,34 +13,122 @@ Calling Sequence
 
 .. code-block:: bash
 
-     python calc_mascon.py --mode 0o775 parameter_file
+     python calc_mascon.py @default_arguments_file
 
 `Source code`__
 
 .. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/calc_mascon.py
 
-Inputs
-######
-
-- parameter file containing specific variables for the analysis
-
 Command Line Options
 ####################
 
-- ``-P X``, ``--np X``: Run in parallel with X number of processes
 - ``-D X``, ``--directory X``: Working data directory
+- ``-O X``, ``--output-directory X``: output directory for mascon files
+- ``-c X``, ``--center X``: GRACE/GRACE-FO processing center
+- ``-r X``, ``--release X``: GRACE/GRACE-FO data release
+- ``-p X``, ``--product X``: GRACE/GRACE-FO Level-2 data product
+- ``-S X``, ``--start X``: starting GRACE/GRACE-FO month
+- ``-E X``, ``--end X``: ending GRACE/GRACE-FO month
+- ``-N X``, ``--missing X``: Missing GRACE/GRACE-FO months
+- ``--lmin X``: minimum spherical harmonic degree
+- ``-l X``, ``--lmax X``: maximum spherical harmonic degree
+- ``-m X``, ``--mmax X``: maximum spherical harmonic order
+- ``-R X``, ``--radius X``: Gaussian smoothing radius (km)
+- ``-d``, ``--destripe``: use decorrelation filter (destriping filter)
 - ``-n X``, ``--love X``: Load Love numbers dataset
 
      * ``0``: Han and Wahr (1995) values from PREM [Han1995]_
      * ``1``: Gegout (2005) values from PREM [Gegout2010]_
      * ``2``: Wang et al. (2012) values from PREM [Wang2012]_
-- ``-r X``, ``--reference X``: Reference frame for load love numbers
+- ``--reference X``: Reference frame for load love numbers
 
      * ``'CF'``: Center of Surface Figure (default)
      * ``'CM'``: Center of Mass of Earth System
      * ``'CE'``: Center of Mass of Solid Earth
-- ``-l``, ``--log``: output log file for each job
-- ``-M X``, ``--mode X``: permissions mode of output files
+- ``-F X``, ``--format X``: input data format for auxiliary files
+
+     * ``'ascii'``
+     * ``'netCDF4'``
+     * ``'HDF5'``
+- ``-G X``, ``--gia X``: GIA model type to read
+
+    * ``'IJ05-R2'``: `Ivins R2 GIA Models <https://doi.org/10.1002/jgrb.50208>`_
+    * ``'W12a'``: `Whitehouse GIA Models <https://doi.org/10.1111/j.1365-246X.2012.05557.x>`_
+    * ``'SM09'``: `Simpson/Milne GIA Models <https://doi.org/10.1029/2010JB007776>`_
+    * ``'ICE6G'``: `ICE-6G GIA Models <https://doi.org/10.1002/2014JB011176>`_
+    * ``'Wu10'``: `Wu (2010) GIA Correction <https://doi.org/10.1038/ngeo938>`_
+    * ``'AW13-ICE6G'``: `Geruo A ICE-6G GIA Models <https://doi.org/10.1093/gji/ggs030>`_
+    * ``'Caron'``: `Caron JPL GIA Assimilation <https://doi.org/10.1002/2017GL076644>`_
+    * ``'ICE6G-D'``: `ICE-6G Version-D GIA Models <https://doi.org/10.1002/2016JB013844>`_
+    * ``'ascii'``: reformatted GIA in ascii format
+    * ``'netCDF4'``: reformatted GIA in netCDF4 format
+    * ``'HDF5'``: reformatted GIA in HDF5 format
+- ``--gia-file X``: GIA file to read
+- ``--atm-correction``: Apply atmospheric jump correction coefficients
+- ``--pole-tide``: Correct for pole tide drift
+- ``--geocenter X``: Update Degree 1 coefficients with SLR or derived values
+
+    * ``None``
+    * ``'Tellus'``: GRACE/GRACE-FO TN-13 coefficients from PO.DAAC
+    * ``'SLR'``: satellite laser ranging coefficients from CSR
+    * ``'SLF'``: Sutterley and Velicogna coefficients, Remote Sensing (2019)
+    * ``'Swenson'``: GRACE-derived coefficients from Sean Swenson
+    * ``'GFZ'``: GRACE/SLR derived coefficients from GFZ GravIS
+- ``--slr-c20 X``: Replace *C*\ :sub:`20` coefficients with SLR values
+
+    * ``None``: use original values
+    * ``'CSR'``: use values from CSR (TN-07, TN-09, TN-11)
+    * ``'GFZ'``: use values from GFZ
+    * ``'GSFC'``: use values from GSFC (TN-14)
+- ``--slr-21 X``: Replace *C*\ :sub:`21` and *S*\ :sub:`21` coefficients with SLR values
+
+    * ``None``: use original values
+    * ``'CSR'``: use values from CSR
+    * ``'GFZ'``: use values from GFZ GravIS
+- ``--slr-22 X``: Replace *C*\ :sub:`22` and *S*\ :sub:`22` coefficients with SLR values
+
+    * ``None``: use original values
+    * ``'CSR'``: use values from CSR
+- ``--slr-c30 X``: Replace *C*\ :sub:`30` coefficients with SLR values
+
+    * ``None``: use original values
+    * ``'CSR'``: use values from CSR (5x5 with 6,1)
+    * ``'GFZ'``: use values from GFZ GravIS
+    * ``'GSFC'``: use values from GSFC (TN-14)
+    * ``'LARES'``: use filtered values from CSR
+- ``--slr-c50 X``: Replace *C*\ :sub:`50` coefficients with SLR values
+
+    * ``None``: use original values
+    * ``'CSR'``: use values from CSR (5x5 with 6,1)
+    * ``'GSFC'``: use values from GSFC
+    * ``'LARES'``: use filtered values from CSR
+- ``--mean-file X``: GRACE/GRACE-FO mean file to remove from the harmonic data
+- ``--mean-format X``: Input data format for GRACE/GRACE-FO mean file
+
+    * ``'ascii'``
+    * ``'netCDF4'``
+    * ``'HDF5'``
+    * ``'gfc'``
+- ``--mask X``: Land-sea mask for redistributing mascon mass and land water flux
+- ``--mascon-file X``: index file of mascons spherical harmonics
+- ``--redistribute-mascons``: redistribute mascon mass over the ocean
+- ``--fit-method X``: method for fitting sensitivity kernel to harmonics
+
+    * ``1``: mass coefficients
+    * ``2``: geoid coefficients
+- ``--remove-file X``: Monthly files to be removed from the GRACE/GRACE-FO data
+- ``--remove-format X``: Input data format for files to be removed
+
+    * ``'ascii'``
+    * ``'netCDF4'``
+    * ``'HDF5'``
+    * ``'index'``: index file containing monthly files in data format
+- ``--redistribute-removed``: redistribute removed mass fields over the ocean
+- ``--reconstruct-file X``: reconstructed mascon time series file to be removed
+- ``--remove-reconstruct``: remove reconstructed mascon time series fields
+- ``--log``: Output log file for job
+- ``-V``, ``--verbose``: verbose output of processing run
+- ``-M X``, ``--mode X``: Permissions mode of the files created
 
 References
 ##########

@@ -53,6 +53,15 @@ General Methods
         ``s``: url string
 
 
+.. method:: gravity_toolkit.utilities.convert_arg_line_to_args(arg_line):
+
+    Convert file lines to arguments
+
+    Arguments:
+
+        ``arg_line``: line string containing a single argument and/or comments
+
+
 .. method:: gravity_toolkit.utilities.get_unix_time(time_string, format='%Y-%m-%d %H:%M:%S')
 
     Get the Unix timestamp value for a formatted date string
@@ -90,6 +99,15 @@ General Methods
         ``verbose``: print file transfer information
 
         ``move``: remove the source file
+
+
+.. method:: gravity_toolkit.utilities.create_unique_file(filename)
+
+    Open a unique file adding a numerical instance if existing
+
+    Arguments:
+
+        ``filename``: full path to output file
 
 
 .. method:: gravity_toolkit.utilities.check_ftp_connection(HOST,username=None,password=None)

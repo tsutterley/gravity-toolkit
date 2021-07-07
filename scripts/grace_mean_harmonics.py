@@ -1,38 +1,33 @@
 #!/usr/bin/env python
 u"""
 grace_mean_harmonics.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (06/2021)
 
 Calculates the temporal mean of the GRACE/GRACE-FO spherical harmonics
     for a given date range from a set of parameters
 
-SYSTEM ARGUMENTS README:
-    program is run as:
-    python grace_mean_harmonics.py inp1 inp2 inp3
-        where inp1, inp2 and inp3 are different inputs
-
-        firstinput=sys.argv[1] (in this case inp1)
-        secondinput=sys.argv[2] (in this case inp2)
-        thirdinput=sys.argv[3] (in this case inp3)
-
-    As python is base 0, sys.argv[0] is equal to grace_mean_harmonics.py
-        (which is useful in some applications, but not for this program)
-
-    For this program, the system arguments are parameter files
-    The program reads the parameter file, which is separated by column as:
-        Column 1: parameter name (such as LMAX)
-        Column 2: parameter (e.g. 60)
-        Column 3: comments (which are discarded)
-    The parameters are stored in a python dictionary (variables indexed by keys)
-        the keys are the parameter name (for LMAX: parameters['LMAX'] == 60)
-
-INPUTS:
-    parameter files containing specific variables for each analysis
-
 COMMAND LINE OPTIONS:
     -D X, --directory X: GRACE/GRACE-FO working data directory
-    -P X, --np X: Run in parallel with X number of processes
-    -l, --log: Output a log file listing output files
+    -c X, --center X: GRACE/GRACE-FO processing center
+    -r X, --release X: GRACE/GRACE-FO data release
+    -p X, --product X: GRACE/GRACE-FO Level-2 data product
+    -S X, --start X: starting GRACE/GRACE-FO month
+    -E X, --end X: ending GRACE/GRACE-FO month
+    -N X, --missing X: Missing GRACE/GRACE-FO months
+    -l X, --lmax X: maximum spherical harmonic degree
+    -m X, --mmax X: maximum spherical harmonic order
+    --atm-correction: Apply atmospheric jump correction coefficients
+    --pole-tide: Correct for pole tide drift
+    --geocenter X: Update Degree 1 coefficients with SLR or derived values
+    --slr-c20 X: Replace C20 coefficients with SLR values
+    --slr-21 X: Replace C21 and S21 coefficients with SLR values
+    --slr-22 X: Replace C22 and S22 coefficients with SLR values
+    --slr-c30 X: Replace C30 coefficients with SLR values
+    --slr-c50 X: Replace C50 coefficients with SLR values
+    --mean-file X: Output GRACE/GRACE-FO mean file
+    --mean-format X: Output data format for GRACE/GRACE-FO mean file
+    --log: Output a log file listing output files
+    -V, --verbose: verbose output of processing run
     -M X, --mode X: Permissions mode of the files created
 
 PYTHON DEPENDENCIES:
@@ -54,8 +49,10 @@ PROGRAM DEPENDENCIES:
         ncdf_stokes.py: writes output spherical harmonic data to netcdf
         hdf5_read_stokes.py: reads spherical harmonic HDF5 files
         hdf5_stokes.py: writes output spherical harmonic data to HDF5
+    utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 06/2021: switch from parameter files to argparse arguments
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: include parameters for replacing C21/S21 and C22/S22
     Updated 10/2020: use argparse to set command line parameters
@@ -86,15 +83,15 @@ import os
 import time
 import argparse
 import numpy as np
-import multiprocessing
 import traceback
 from gravity_toolkit.grace_input_months import grace_input_months
 from gravity_toolkit.harmonics import harmonics
+import gravity_toolkit.utilities as utilities
 
-#-- PURPOSE: keep track of multiprocessing threads
-def info(title):
+#-- PURPOSE: keep track of threads
+def info(args):
     print(os.path.basename(sys.argv[0]))
-    print(title)
+    print(args)
     print('module name: {0}'.format(__name__))
     if hasattr(os, 'getppid'):
         print('parent process: {0:d}'.format(os.getppid()))
@@ -102,61 +99,40 @@ def info(title):
 
 #-- PURPOSE: import GRACE/GRACE-FO files for a given months range
 #-- calculate the mean of the spherical harmonics and output to file
-def grace_mean_harmonics(base_dir, parameters, MODE=0o775):
-    #-- Data processing center
-    PROC = parameters['PROC']
-    #-- Data Release
-    DREL = parameters['DREL']
-    #-- GRACE dataset
-    DSET = parameters['DSET']
-    #-- pole tide corrections from Wahr et al (2015)
-    POLE_TIDE = parameters['POLE_TIDE'] in ('Y','y')
-    #-- ATM corrections
-    ATM = parameters['ATM'] in ('Y','y')
-
-    #-- maximum degree and order
-    LMAX = np.int64(parameters['LMAX'])
-    #-- maximum spherical harmonic order
-    if (parameters['MMAX'].title() == 'None'):
-        MMAX = np.copy(LMAX)
-    else:
-        MMAX = np.int64(parameters['MMAX'])
+def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
+    START=None,
+    END=None,
+    MISSING=None,
+    MMAX=None,
+    ATM=False,
+    POLE_TIDE=False,
+    DEG1=None,
+    SLR_C20=None,
+    SLR_21=None,
+    SLR_22=None,
+    SLR_C30=None,
+    SLR_C50=None,
+    MEAN_FILE=None,
+    MEANFORM=None,
+    VERBOSE=False,
+    MODE=0o775):
 
     #-- output string for both LMAX==MMAX and LMAX != MMAX cases
+    MMAX = np.copy(LMAX) if not MMAX else MMAX
     order_str = 'M{0:d}'.format(MMAX) if (MMAX != LMAX) else ''
 
-    #-- Date Range and missing months
-    START_MON = np.int64(parameters['START'])
-    END_MON = np.int64(parameters['END'])
-    MISSING = np.array(parameters['MISSING'].split(','),dtype=np.int64)
-    #-- replace low-degree coefficients with values from SLR
-    SLR_C20 = parameters['SLR_C20']
-    SLR_21 = parameters['SLR_21']
-    SLR_22 = parameters['SLR_22']
-    SLR_C30 = parameters['SLR_C30']
-    SLR_C50 = parameters['SLR_C50']
-    #-- Degree 1 correction
-    DEG1 = parameters['DEG1']
-
     #-- data formats for output: ascii, netCDF4, HDF5
-    DATAFORM = parameters['DATAFORM']
-    suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
+    suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')[MEANFORM]
 
     #-- reading GRACE months for input range with grace_input_months.py
     #-- replacing low-degree harmonics with SLR values if specified
     #-- include degree 1 (geocenter) harmonics if specified
     #-- correcting for Pole Tide Drift and Atmospheric Jumps if specified
     input_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
-        START_MON, END_MON, MISSING, SLR_C20, DEG1, MMAX=MMAX,
+        START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX,
         SLR_21=SLR_21, SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C50=SLR_C50,
         MODEL_DEG1=False, POLE_TIDE=POLE_TIDE, ATM=ATM)
     grace_Ylms = harmonics().from_dict(input_Ylms)
-    #-- output directory
-    if (parameters['DIRECTORY'].title() == 'None'):
-        #-- if not entering via parameter file use directory for product
-        DIRECTORY = os.path.expanduser(input_Ylms['directory'])
-    else:
-        DIRECTORY = os.path.expanduser(parameters['DIRECTORY'])
     #-- descriptor string for processing parameters
     grace_str = input_Ylms['title']
     #-- calculate mean Ylms
@@ -165,44 +141,45 @@ def grace_mean_harmonics(base_dir, parameters, MODE=0o775):
     mean_Ylms.month = np.mean(grace_Ylms.month)
 
     #-- default output filename if not entering via parameter file
-    if (parameters['FILENAME'].title() == 'None'):
+    if not MEAN_FILE:
+        DIRECTORY = os.path.expanduser(input_Ylms['directory'])
+        args = (PROC,DREL,DSET,grace_str,LMAX,order_str,START,END,suffix)
         file_format = '{0}_{1}_{2}_MEAN_CLM{3}_L{4:d}{5}_{6:03d}-{7:03d}.{8}'
-        FILENAME = file_format.format(PROC, DREL, DSET, grace_str, LMAX,
-            order_str, START_MON, END_MON, suffix[DATAFORM])
+        MEAN_FILE = os.path.join(DIRECTORY,file_format.format(*args))
     else:
-        FILENAME = parameters['FILENAME']
+        DIRECTORY = os.path.dirname(MEAN_FILE)
+    #-- recursively create output directory if non-existent
+    if not os.access(DIRECTORY, os.F_OK):
+        os.makedirs(DIRECTORY, MODE)
 
     #-- output spherical harmonics for the static field
-    if (DATAFORM == 'ascii'):
+    if (MEANFORM == 'ascii'):
         #-- output mean field to ascii
-        mean_Ylms.to_ascii(os.path.join(DIRECTORY,FILENAME))
-    elif (DATAFORM == 'netCDF4'):
+        mean_Ylms.to_ascii(MEAN_FILE,verbose=VERBOSE)
+    elif (MEANFORM == 'netCDF4'):
         #-- output mean field to netCDF4
-        mean_Ylms.to_netCDF4(os.path.join(DIRECTORY,FILENAME))
-    elif (DATAFORM == 'HDF5'):
+        mean_Ylms.to_netCDF4(MEAN_FILE,verbose=VERBOSE)
+    elif (MEANFORM == 'HDF5'):
         #-- output mean field to HDF5
-        mean_Ylms.to_HDF5(os.path.join(DIRECTORY,FILENAME))
+        mean_Ylms.to_HDF5(MEAN_FILE,verbose=VERBOSE)
     #-- change the permissions mode
-    os.chmod(os.path.join(DIRECTORY,FILENAME), MODE)
+    os.chmod(MEAN_FILE, MODE)
 
     #-- return the output file
-    return os.path.join(DIRECTORY,FILENAME)
+    return MEAN_FILE
 
 #-- PURPOSE: print a file log for the GRACE/GRACE-FO mean program
-#-- lists: the parameter file, the parameters and the output file
-def output_log_file(parameters,output_file):
+def output_log_file(arguments,output_file):
     #-- format: GRACE_mean_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_mean_run_{0}_PID-{1:d}.log'.format(*args)
-    DIRECTORY = os.path.expanduser(parameters['DIRECTORY'])
     #-- create a unique log and open the log file
-    fid = create_unique_logfile(os.path.join(DIRECTORY,LOGFILE))
-    #-- print parameter file on top
-    print('PARAMETER FILE:\n{0}\n\nPARAMETERS:'.format(
-        os.path.abspath(parameters['PARAMETER_FILE'])),file=fid)
-    #-- print parameter values sorted alphabetically
-    for p in sorted(list(set(parameters.keys())-set(['PARAMETER_FILE']))):
-        print('{0}: {1}'.format(p, parameters[p]), file=fid)
+    DIRECTORY = os.path.expanduser(arguments.directory)
+    fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    #-- print argument values sorted alphabetically
+    print('ARGUMENTS:', file=fid)
+    for arg, value in sorted(vars(arguments).items()):
+        print('{0}: {1}'.format(arg, value), file=fid)
     #-- print output files
     print('\n\nOUTPUT FILE:',file=fid)
     print('{0}'.format(output_file),file=fid)
@@ -210,79 +187,22 @@ def output_log_file(parameters,output_file):
     fid.close()
 
 #-- PURPOSE: print a error file log for the GRACE/GRACE-FO mean program
-#-- lists: the parameter file, the parameters and the error
-def output_error_log_file(parameters):
+def output_error_log_file(arguments):
     #-- format: GRACE_mean_failed_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_mean_failed_run_{0}_PID-{1:d}.log'.format(*args)
-    DIRECTORY = os.path.expanduser(parameters['DIRECTORY'])
     #-- create a unique log and open the log file
-    fid = create_unique_logfile(os.path.join(DIRECTORY,LOGFILE))
-    #-- print parameter file on top
-    print('PARAMETER FILE:\n{0}\n\nPARAMETERS:'.format(
-        os.path.abspath(parameters['PARAMETER_FILE'])),file=fid)
-    #-- print parameter values sorted alphabetically
-    for p in sorted(list(set(parameters.keys())-set(['PARAMETER_FILE']))):
-        print('{0}: {1}'.format(p, parameters[p]), file=fid)
+    DIRECTORY = os.path.expanduser(arguments.directory)
+    fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    #-- print argument values sorted alphabetically
+    print('ARGUMENTS:', file=fid)
+    for arg, value in sorted(vars(arguments).items()):
+        print('{0}: {1}'.format(arg, value), file=fid)
     #-- print traceback error
     print('\n\nTRACEBACK ERROR:', file=fid)
     traceback.print_exc(file=fid)
     #-- close the log file
     fid.close()
-
-#-- PURPOSE: open a unique log file adding a numerical instance if existing
-def create_unique_logfile(filename):
-    #-- split filename into fileBasename and fileExtension
-    fileBasename, fileExtension = os.path.splitext(filename)
-    #-- create counter to add to the end of the filename if existing
-    counter = 1
-    while counter:
-        try:
-            #-- open file descriptor only if the file doesn't exist
-            fd = os.open(filename, os.O_CREAT | os.O_EXCL | os.O_RDWR)
-        except OSError:
-            pass
-        else:
-            return os.fdopen(fd, 'w+')
-        #-- new filename adds counter the between fileBasename and fileExtension
-        filename = '{0}_{1:d}{2}'.format(fileBasename, counter, fileExtension)
-        counter += 1
-
-#-- PURPOSE: define the analysis for multiprocessing
-def define_analysis(parameter_file,base_dir,LOG=False,MODE=0o775):
-    #-- keep track of multiprocessing threads
-    info(os.path.basename(parameter_file))
-
-    #-- variable with parameter definitions
-    parameters = {}
-    parameters['PARAMETER_FILE'] = parameter_file
-    #-- Opening parameter file and assigning file ID number (fid)
-    fid = open(os.path.expanduser(parameter_file), 'r')
-    #-- for each line in the file will extract the parameter (name and value)
-    for fileline in fid:
-        #-- Splitting the input line between parameter name and value
-        part = fileline.split()
-        #-- filling the parameter definition variable
-        parameters[part[0]] = part[1]
-    #-- close the parameter file
-    fid.close()
-
-    #-- try to run the analysis with listed parameters
-    try:
-        #-- run mean algorithm with parameters
-        output = grace_mean_harmonics(base_dir, parameters, MODE=MODE)
-    except:
-        #-- if there has been an error exception
-        #-- print the type, value, and stack trace of the
-        #-- current exception being handled
-        print('process id {0:d} failed'.format(os.getpid()))
-        traceback.print_exc()
-        if LOG:#-- write failed job completion log file
-            output_error_log_file(parameters)
-    else:
-        #-- write successful job completion log file
-        if LOG:
-            output_log_file(parameters,output)
 
 #-- This is the main part of the program that calls the individual modules
 def main():
@@ -290,52 +210,148 @@ def main():
     parser = argparse.ArgumentParser(
         description="""Calculates the temporal mean of the GRACE/GRACE-FO
             spherical harmonics
-            """
+            """,
+        fromfile_prefix_chars="@"
     )
+    parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
     #-- command line parameters
-    parser.add_argument('parameters',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='+',
-        help='Parameter files containing specific variables for each analysis')
-    #-- number of processes to run in parallel
-    parser.add_argument('--np','-P',
-        metavar='PROCESSES', type=int, default=0,
-        help='Number of processes to run in parallel')
     #-- working data directory
     parser.add_argument('--directory','-D',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
+    #-- GRACE/GRACE-FO data processing center
+    parser.add_argument('--center','-c',
+        metavar='PROC', type=str, default='CSR',
+        choices=['CSR','GFZ','JPL','CNES'],
+        help='GRACE/GRACE-FO Processing Center')
+    #-- GRACE/GRACE-FO data release
+    parser.add_argument('--release','-r',
+        metavar='DREL', type=str, default='RL06',
+        help='GRACE/GRACE-FO Data Release')
+    #-- GRACE/GRACE-FO Level-2 data product
+    parser.add_argument('--product','-p',
+        metavar='DSET', type=str, default='GSM',
+        help='GRACE/GRACE-FO Level-2 data product')
+    #-- maximum spherical harmonic degree and order
+    parser.add_argument('--lmax','-l',
+        type=int, default=60,
+        help='Maximum spherical harmonic degree')
+    parser.add_argument('--mmax','-m',
+        type=int, default=None,
+        help='Maximum spherical harmonic order')
+    #-- start and end GRACE/GRACE-FO months
+    parser.add_argument('--start','-S',
+        type=int, default=4,
+        help='Starting GRACE/GRACE-FO month')
+    parser.add_argument('--end','-E',
+        type=int, default=232,
+        help='Ending GRACE/GRACE-FO month')
+    MISSING = [6,7,18,109,114,125,130,135,140,141,146,151,156,162,166,167,
+        172,177,178,182,187,188,189,190,191,192,193,194,195,196,197,200,201]
+    parser.add_argument('--missing','-N',
+        metavar='MISSING', type=int, nargs='+', default=MISSING,
+        help='Missing GRACE/GRACE-FO months')
+    #-- use atmospheric jump corrections from Fagiolini et al. (2015)
+    parser.add_argument('--atm-correction',
+        default=False, action='store_true',
+        help='Apply atmospheric jump correction coefficients')
+    #-- correct for pole tide drift follow Wahr et al. (2015)
+    parser.add_argument('--pole-tide',
+        default=False, action='store_true',
+        help='Correct for pole tide drift')
+    #-- Update Degree 1 coefficients with SLR or derived values
+    #-- Tellus: GRACE/GRACE-FO TN-13 from PO.DAAC
+    #--     https://grace.jpl.nasa.gov/data/get-data/geocenter/
+    #-- SLR: satellite laser ranging from CSR
+    #--     ftp://ftp.csr.utexas.edu/pub/slr/geocenter/
+    #-- SLF: Sutterley and Velicogna, Remote Sensing (2019)
+    #--     https://www.mdpi.com/2072-4292/11/18/2108
+    #-- Swenson: GRACE-derived coefficients from Sean Swenson
+    #--     https://doi.org/10.1029/2007JB005338
+    #-- GFZ: GRACE/GRACE-FO coefficients from GFZ GravIS
+    #--     http://gravis.gfz-potsdam.de/corrections
+    parser.add_argument('--geocenter',
+        metavar='DEG1', type=str,
+        choices=['Tellus','SLR','SLF','Swenson','GFZ'],
+        help='Update Degree 1 coefficients with SLR or derived values')
+    #-- replace low degree harmonics with values from Satellite Laser Ranging
+    parser.add_argument('--slr-c20',
+        type=str, default='GSFC', choices=['CSR','GFZ','GSFC'],
+        help='Replace C20 coefficients with SLR values')
+    parser.add_argument('--slr-21',
+        type=str, default=None, choices=['CSR','GFZ','GSFC'],
+        help='Replace C21 and S21 coefficients with SLR values')
+    parser.add_argument('--slr-22',
+        type=str, default=None, choices=['CSR'],
+        help='Replace C22 and S22 coefficients with SLR values')
+    parser.add_argument('--slr-c30',
+        type=str, default='GSFC', choices=['CSR','GFZ','GSFC','LARES'],
+        help='Replace C30 coefficients with SLR values')
+    parser.add_argument('--slr-c50',
+        type=str, default=None, choices=['CSR','GSFC','LARES'],
+        help='Replace C50 coefficients with SLR values')
+    #-- mean file to remove
+    parser.add_argument('--mean-file',
+        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        help='Output GRACE/GRACE-FO mean file')
+    #-- input data format (ascii, netCDF4, HDF5)
+    parser.add_argument('--mean-format',
+        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
+        help='Output data format for GRACE/GRACE-FO mean file')
     #-- Output log file for each job in forms
     #-- GRACE_mean_run_2002-04-01_PID-00000.log
     #-- GRACE_mean_failed_run_2002-04-01_PID-00000.log
-    parser.add_argument('--log','-l',
+    parser.add_argument('--log',
         default=False, action='store_true',
         help='Output log file for each job')
+    #-- print information about each input and output file
+    parser.add_argument('--verbose','-V',
+        default=False, action='store_true',
+        help='Verbose output of run')
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='permissions mode of output files')
-    args = parser.parse_args()
+    args,_ = parser.parse_known_args()
 
-    #-- use parameter files from system arguments listed after the program
-    if (args.np == 0):
-        #-- run directly as series if PROCESSES = 0
-        #-- for each entered parameter file
-        for f in args.parameters:
-            define_analysis(f,args.directory,LOG=args.log,MODE=args.mode)
+    #-- try to run the analysis with listed parameters
+    try:
+        info(args) if args.verbose else None
+        #-- run grace_mean_harmonics algorithm with parameters
+        output_file = grace_mean_harmonics(
+            args.directory,
+            args.center,
+            args.release,
+            args.product,
+            args.lmax,
+            START=args.start,
+            END=args.end,
+            MISSING=args.missing,
+            MMAX=args.mmax,
+            ATM=args.atm_correction,
+            POLE_TIDE=args.pole_tide,
+            DEG1=args.geocenter,
+            SLR_C20=args.slr_c20,
+            SLR_21=args.slr_21,
+            SLR_22=args.slr_22,
+            SLR_C30=args.slr_c30,
+            SLR_C50=args.slr_c50,
+            MEAN_FILE=args.mean_file,
+            MEANFORM=args.mean_format,
+            VERBOSE=args.verbose,
+            MODE=args.mode)
+    except:
+        #-- if there has been an error exception
+        #-- print the type, value, and stack trace of the
+        #-- current exception being handled
+        print('process id {0:d} failed'.format(os.getpid()))
+        traceback.print_exc()
+        if args.log:#-- write failed job completion log file
+            output_error_log_file(args)
     else:
-        #-- run in parallel with multiprocessing Pool
-        pool = multiprocessing.Pool(processes=args.np)
-        #-- for each entered parameter file
-        for f in args.parameters:
-            kwds=dict(LOG=args.log,MODE=args.mode)
-            pool.apply_async(define_analysis,args=(f,args.directory),kwds=kwds)
-        #-- start multiprocessing jobs
-        #-- close the pool
-        #-- prevents more tasks from being submitted to the pool
-        pool.close()
-        #-- exit the completed processes
-        pool.join()
+        if args.log:#-- write successful job completion log file
+            output_log_file(args,output_file)
 
 #-- run main program
 if __name__ == '__main__':
