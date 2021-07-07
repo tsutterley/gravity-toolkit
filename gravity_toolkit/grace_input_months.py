@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (06/2021)
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
     and for a specified date range
@@ -54,6 +54,7 @@ OPTIONS:
         None: use original values
         CSR: use values from CSR
         GFZ: use values from GFZ GravIS
+        GSFC: use values from GSFC
     SLR_22: replaces C22 and S22 with SLR values
         None: use original values
         CSR: use values from CSR
@@ -91,6 +92,8 @@ PROGRAM DEPENDENCIES:
     read_GRACE_harmonics.py: reads an input GRACE data file and calculates date
 
 UPDATE HISTORY:
+    Updated 06/2021: can use SLR figure axis harmonics produced by GSFC
+        read GRACE/GRACE-FO fields before reading replacement values
     Updated 05/2021: can use SLR low-degree harmonic values produced by GFZ
         define int/float precision to prevent deprecation warning
     Updated 04/2021: can replace figure axis and azimuthal dependence with SLR
@@ -190,6 +193,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         None: use original values
         CSR: use values from CSR
         GFZ: use values from GFZ GravIS
+        GSFC: use values from GSFC
     SLR_22: replaces C22 and S22 with SLR values
         None: use original values
         CSR: use values from CSR
@@ -224,6 +228,34 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
 
     #-- upper bound of spherical harmonic orders (default = LMAX)
     MMAX = np.copy(LMAX) if (MMAX is None) else MMAX
+
+    #-- Range of months from start_mon to end_mon (end_mon+1 to include end_mon)
+    #-- Removing the missing months and months not to consider
+    months = sorted(set(np.arange(start_mon,end_mon+1)) - set(missing))
+    #-- number of months to consider in analysis
+    n_cons = len(months)
+
+    #-- Initializing input data matrices
+    grace_clm = np.zeros((LMAX+1,MMAX+1,n_cons))
+    grace_slm = np.zeros((LMAX+1,MMAX+1,n_cons))
+    tdec = np.zeros((n_cons))
+    mon = np.zeros((n_cons),dtype=np.int64)
+    #-- output dimensions
+    lout = np.arange(LMAX+1)
+    mout = np.arange(MMAX+1)
+
+    #-- associate GRACE/GRACE-FO files with each GRACE/GRACE-FO month
+    grace_files=grace_date(base_dir,PROC=PROC,DREL=DREL,DSET=DSET,OUTPUT=False)
+
+    #-- importing data from GRACE/GRACE-FO files
+    for i,grace_month in enumerate(months):
+        #-- Effects of Pole tide drift will be compensated if soecified
+        infile = grace_files[grace_month]
+        Ylms = read_GRACE_harmonics(infile,LMAX,MMAX=MMAX,POLE_TIDE=POLE_TIDE)
+        grace_clm[:,:,i] = Ylms['clm'][0:LMAX+1,0:MMAX+1]
+        grace_slm[:,:,i] = Ylms['slm'][0:LMAX+1,0:MMAX+1]
+        tdec[i] = Ylms['time']
+        mon[i] = np.int64(grace_month)
 
     #-- SLR low-degree harmonic, geocenter and correction flags
     FLAGS = []
@@ -260,6 +292,11 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         SLR_file = os.path.join(base_dir,GravIS_file)
         C21_input = read_SLR_CS2(SLR_file)
         FLAGS.append('_wGFZ_21')
+    elif (SLR_21 == 'GSFC'):
+        #-- calculate monthly averages from 7-day arcs
+        SLR_file = os.path.join(base_dir,'GSFC_C21_S21.txt')
+        C21_input = read_SLR_CS2(SLR_file, DATE=tdec)
+        FLAGS.append('_wGSFC_21')
 
     #-- Replacing C2,2/S2,2 with SLR
     #-- Running function read_SLR_CS2.py
@@ -375,34 +412,6 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     #-- full output string (SLR, geocenter and correction flags)
     out_str = ''.join(FLAGS)
 
-    #-- Range of months from start_mon to end_mon (end_mon+1 to include end_mon)
-    #-- Removing the missing months and months not to consider
-    months = sorted(set(np.arange(start_mon,end_mon+1)) - set(missing))
-    #-- number of months to consider in analysis
-    n_cons = len(months)
-
-    #-- Initializing input data matrices
-    grace_clm = np.zeros((LMAX+1,MMAX+1,n_cons))
-    grace_slm = np.zeros((LMAX+1,MMAX+1,n_cons))
-    tdec = np.zeros((n_cons))
-    mon = np.zeros((n_cons),dtype=np.int64)
-    #-- output dimensions
-    lout = np.arange(LMAX+1)
-    mout = np.arange(MMAX+1)
-
-    #-- associate GRACE/GRACE-FO files with each GRACE/GRACE-FO month
-    grace_files=grace_date(base_dir,PROC=PROC,DREL=DREL,DSET=DSET,OUTPUT=False)
-
-    #-- importing data from GRACE/GRACE-FO files
-    for i,grace_month in enumerate(months):
-        #-- Effects of Pole tide drift will be compensated if soecified
-        infile = grace_files[grace_month]
-        Ylms = read_GRACE_harmonics(infile,LMAX,MMAX=MMAX,POLE_TIDE=POLE_TIDE)
-        grace_clm[:,:,i] = Ylms['clm'][0:LMAX+1,0:MMAX+1]
-        grace_slm[:,:,i] = Ylms['slm'][0:LMAX+1,0:MMAX+1]
-        tdec[i] = Ylms['time']
-        mon[i] = np.int64(grace_month)
-
     #-- Replace C20 with SLR coefficients
     if SLR_C20 in ('CSR','GFZ','GSFC'):
         #-- verify that there are replacement C20 months for specified range
@@ -418,7 +427,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
                 grace_clm[2,0,i] = C20_input['data'][k]
 
     #-- Replace C21/S21 with SLR coefficients for single-accelerometer months
-    if SLR_21 in ('CSR','GFZ'):
+    if SLR_21 in ('CSR','GFZ','GSFC'):
         #-- verify that there are replacement C21/S21 months for specified range
         months_test = sorted(set(mon[mon > 176]) - set(C21_input['month']))
         if months_test:
@@ -531,6 +540,10 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
                     grace_clm[l,m,:] += atm_corr['clm'][l,m,:]
                     grace_slm[l,m,:] += atm_corr['slm'][l,m,:]
 
+    #-- return the harmonic solutions with possible low-degree replacements
+    #-- return the harmonic dimensions (spectral and temporal)
+    #-- return string specifying processing and correction flags
+    #-- return directory of exact GRACE/GRACE-FO product
     return {'clm':grace_clm, 'slm':grace_slm, 'time':tdec, 'month':mon,
         'l':lout, 'm':mout, 'title':out_str, 'directory':grace_dir}
 

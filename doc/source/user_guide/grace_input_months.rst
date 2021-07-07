@@ -68,6 +68,7 @@ Keyword arguments
     * ``None``: use original values
     * ``'CSR'``: use values from CSR
     * ``'GFZ'``: use values from GFZ GravIS
+    * ``'GSFC'``: use values from GSFC
 - ``SLR_22``: Replaces C22/S22 with values from Satellite Laser Ranging (SLR)
 
     * ``None``: use original values

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 convert_harmonics.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (06/2021)
 Converts a file from the spatial domain into the spherical harmonic domain
 
 CALLING SEQUENCE:
@@ -15,7 +15,7 @@ COMMAND LINE OPTIONS:
         0: Han and Wahr (1995) values from PREM
         1: Gegout (2005) values from PREM
         2: Wang et al. (2012) values from PREM
-    -r X, --reference X: Reference frame for load love numbers
+    --reference X: Reference frame for load love numbers
         CF: Center of Surface Figure (default)
         CM: Center of Mass of Earth System
         CE: Center of Mass of Solid Earth
@@ -68,6 +68,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 06/2021: can use input files to define command line arguments
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 01/2021: harmonics object output from gen_stokes.py
     Updated 12/2020: added more love number options
@@ -82,14 +83,24 @@ import sys
 import os
 import re
 import argparse
+import traceback
 import numpy as np
 
+import gravity_toolkit.utilities as utilities
 from gravity_toolkit.read_love_numbers import read_love_numbers
 from gravity_toolkit.gen_stokes import gen_stokes
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.harmonics import harmonics
 from gravity_toolkit.spatial import spatial
-from gravity_toolkit.utilities import get_data_path
+
+#-- PURPOSE: keep track of threads
+def info(args):
+    print(os.path.basename(sys.argv[0]))
+    print(args)
+    print('module name: {0}'.format(__name__))
+    if hasattr(os, 'getppid'):
+        print('parent process: {0:d}'.format(os.getppid()))
+    print('process id: {0:d}'.format(os.getpid()))
 
 #-- PURPOSE: read load love numbers for the range of spherical harmonic degrees
 def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF'):
@@ -122,19 +133,22 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF'):
     if (LOVE_NUMBERS == 0):
         #-- PREM outputs from Han and Wahr (1995)
         #-- https://doi.org/10.1111/j.1365-246X.1995.tb01819.x
-        love_numbers_file = get_data_path(['data','love_numbers'])
+        love_numbers_file = utilities.get_data_path(
+            ['data','love_numbers'])
         header = 2
         columns = ['l','hl','kl','ll']
     elif (LOVE_NUMBERS == 1):
         #-- PREM outputs from Gegout (2005)
         #-- http://gemini.gsfc.nasa.gov/aplo/
-        love_numbers_file = get_data_path(['data','Load_Love2_CE.dat'])
+        love_numbers_file = utilities.get_data_path(
+            ['data','Load_Love2_CE.dat'])
         header = 3
         columns = ['l','hl','ll','kl']
     elif (LOVE_NUMBERS == 2):
         #-- PREM outputs from Wang et al. (2012)
         #-- https://doi.org/10.1016/j.cageo.2012.06.022
-        love_numbers_file = get_data_path(['data','PREM-LLNs-truncated.dat'])
+        love_numbers_file = utilities.get_data_path(
+            ['data','PREM-LLNs-truncated.dat'])
         header = 1
         columns = ['l','hl','ll','kl','nl','nk']
     #-- LMAX of load love numbers from Han and Wahr (1995) is 696.
@@ -148,9 +162,20 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF'):
     return (hl,kl,ll)
 
 #-- PURPOSE: converts from the spatial domain into the spherical harmonic domain
-def convert_harmonics(INPUT_FILE, OUTPUT_FILE, LMAX=None, MMAX=None, UNITS=None,
-    LOVE_NUMBERS=0, REFERENCE=None, DDEG=None, INTERVAL=None, MISSING=False,
-    FILL_VALUE=None, HEADER=None, DATAFORM=None, VERBOSE=False, MODE=0o775):
+def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
+    LMAX=None,
+    MMAX=None,
+    UNITS=None,
+    LOVE_NUMBERS=0,
+    REFERENCE=None,
+    DDEG=None,
+    INTERVAL=None,
+    MISSING=False,
+    FILL_VALUE=None,
+    HEADER=None,
+    DATAFORM=None,
+    VERBOSE=False,
+    MODE=0o775):
 
     #-- verify that output directory exists
     DIRECTORY = os.path.abspath(os.path.dirname(OUTPUT_FILE))
@@ -230,8 +255,10 @@ def main():
     parser = argparse.ArgumentParser(
         description="""Converts a file from the spatial domain into the
             spherical harmonic domain
-            """
+            """,
+        fromfile_prefix_chars="@"
     )
+    parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
     #-- command line parameters
     #-- input and output file
     parser.add_argument('infile',
@@ -256,7 +283,7 @@ def main():
         help='Treatment of the Load Love numbers')
     #-- option for setting reference frame for gravitational load love number
     #-- reference frame options (CF, CM, CE)
-    parser.add_argument('--reference','-r',
+    parser.add_argument('--reference',
         type=str.upper, default='CF', choices=['CF','CM','CE'],
         help='Reference frame for load Love numbers')
     #-- output units
@@ -293,14 +320,31 @@ def main():
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='permissions mode of output files')
-    args = parser.parse_args()
+    args,_ = parser.parse_known_args()
 
     #-- run program with parameters
-    convert_harmonics(args.infile, args.outfile, LMAX=args.lmax, MMAX=args.mmax,
-        LOVE_NUMBERS=args.love, REFERENCE=args.reference,
-        UNITS=args.units, DDEG=args.spacing, INTERVAL=args.interval,
-        MISSING=args.missing, FILL_VALUE=args.fill_value, HEADER=args.header,
-        DATAFORM=args.format, VERBOSE=args.verbose, MODE=args.mode)
+    try:
+        info(args)
+        convert_harmonics(args.infile, args.outfile,
+            LMAX=args.lmax,
+            MMAX=args.mmax,
+            LOVE_NUMBERS=args.love,
+            REFERENCE=args.reference,
+            UNITS=args.units,
+            DDEG=args.spacing,
+            INTERVAL=args.interval,
+            MISSING=args.missing,
+            FILL_VALUE=args.fill_value,
+            HEADER=args.header,
+            DATAFORM=args.format,
+            VERBOSE=args.verbose,
+            MODE=args.mode)
+    except:
+        #-- if there has been an error exception
+        #-- print the type, value, and stack trace of the
+        #-- current exception being handled
+        print('process id {0:d} failed'.format(os.getpid()))
+        traceback.print_exc()
 
 #-- run main program
 if __name__ == '__main__':
