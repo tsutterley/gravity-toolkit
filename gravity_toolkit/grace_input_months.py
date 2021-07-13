@@ -130,9 +130,9 @@ from gravity_toolkit.read_tellus_geocenter import read_tellus_geocenter
 from gravity_toolkit.read_SLR_geocenter import aod_corrected_SLR_geocenter
 from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
-from gravity_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 from gravity_toolkit.read_love_numbers import read_love_numbers
 from gravity_toolkit.utilities import get_data_path
+import geoid_toolkit.read_ICGEM_harmonics
 
 def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
     start_mon, end_mon, missing, SLR_C20, DEG1, MMAX=None, SLR_C30='',
@@ -348,8 +348,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         infile = grace_files[grace_month]
         if PROC in ('CSR', 'GFZ', 'JPL', 'CNES', 'JPLMSC'):
             Ylms = read_GRACE_harmonics(infile,LMAX,MMAX=MMAX,POLE_TIDE=POLE_TIDE)
-        elif PROC in ('GRAZ', 'SWARM'):
-            Ylms = read_ICGEM_harmonics(infile)
+        elif PROC in ('GRAZ', 'SWARM', 'COSTG'):
+            Ylms = geoid_toolkit.read_ICGEM_harmonics(infile)
         grace_clm[:,:,i] = Ylms['clm'][0:LMAX+1,0:MMAX+1]
         grace_slm[:,:,i] = Ylms['slm'][0:LMAX+1,0:MMAX+1]
         tdec[i] = Ylms['time']
@@ -376,11 +376,11 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         # -- apply conversion formula from IERS 2010 Notes
         grace_clm[2, 0, :] += 4.4228e-8 * 0.31460 * k2
 
-    elif SLR_C20 == 'ZeroTide' and PROC in ('CNES', 'GFZ', 'SWARM'):
+    elif SLR_C20 == 'ZeroTide' and PROC in ('CNES', 'GFZ', 'SWARM', 'COSTG'):
         #-- k2,0 nominal from IERS 2010 convention
-        if PROC in ('CNES', 'SWARM'):
+        if PROC in ('CNES', 'SWARM', 'COSTG'):
             k2 = 0.3
-        elif PROC == 'GFZ':
+        elif PROC in ('GFZ'):
             k2 = 0.3190
 
         #-- apply conversion formula from IERS 2010 Notes

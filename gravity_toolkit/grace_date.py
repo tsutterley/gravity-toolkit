@@ -11,7 +11,7 @@ INPUTS:
     base_dir: Working data directory for GRACE/GRACE-FO data
 
 OPTIONS:
-    PROC: GRACE data processing center (CSR/CNES/JPL/GFZ)
+    PROC: GRACE data processing center (CSR/CNES/JPL/GFZ/GRAZ/COSTG/SWARM)
     DREL: GRACE/GRACE-FO Data Release (RL03 for CNES) (RL06 for CSR/GFZ/JPL)
     DSET: GRACE dataset (GAA/GAB/GAC/GAD/GSM)
         GAA is the non-tidal atmospheric correction
@@ -106,6 +106,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
         JPL: Jet Propulsion Laboratory
         CNES: French Centre National D'Etudes Spatiales
         GRAZ: Institute of Geodesy from GRAZ University of Technology
+        COSTG: International Combination Service for Time-variable Gravity Fields
 
         SWARM: gravity data from SWARM satellite
     DREL: GRACE/GRACE-FO data release
@@ -142,7 +143,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     tdec = np.zeros((n_files))#-- tdec is the date in decimal form
     mon = np.zeros((n_files,),dtype=np.int)#-- GRACE/GRACE-FO month number
 
-    if PROC in ('CSR', 'GFZ', 'JPL', 'CNES'):
+    if PROC in ('CSR', 'GFZ', 'JPL', 'CNES', 'COSTG'):
         #-- compile numerical expression operator for parameters from files
         #-- will work with previous releases and releases for GRACE-FO
         #-- UTCSR: The University of Texas at Austin Center for Space Research
@@ -152,7 +153,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
         #-- JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
         #-- GRGS: CNES Groupe de Recherche de Géodésie Spatiale
         regex_pattern = (r'(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
-           r'(\.gz|\.gfc|\.txt)?$').format(r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC|GRGS')
+           r'(\.gz|\.gfc|\.txt)?$').format(r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC|GRGS|COSTG')
     elif PROC == 'GRAZ':
         # -- GRAZ: Institute of Geodesy from GRAZ University of Technology
         regex_pattern = (r'(.*?)-({0})_(.*?)_(\d+)-(\d+)'
@@ -169,7 +170,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     #-- for each data file
     for t, infile in enumerate(input_files):
         #-- extract parameters from input filename
-        if PROC in ('CSR', 'GFZ', 'JPL', 'CNES'):
+        if PROC in ('CSR', 'GFZ', 'JPL', 'CNES', 'COSTG'):
             PFX,start_date,end_date,AUX,PRC,F1,DRL,F2,SFX = rx.findall(infile).pop()
 
             #-- find start date, end date and number of days
@@ -297,7 +298,7 @@ def main():
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, nargs='+',
         default=['CSR','GFZ','JPL'],
-        choices=['CSR','GFZ','JPL', 'CNES'],
+        choices=['CSR','GFZ','JPL', 'CNES','GRAZ','SWARM', 'COSTG'],
         help='GRACE/GRACE-FO Processing Center')
     #-- GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
