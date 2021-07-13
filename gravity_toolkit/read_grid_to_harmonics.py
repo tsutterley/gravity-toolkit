@@ -82,17 +82,13 @@ def read_grid_to_harmonics(input_file, VARNAME, LMAX, MMAX=None, LONNAME='lon',
     title: string denoting low degree zonals replacement, geocenter usage and corrections
     directory: directory of exact GRACE/GRACE-FO product
     """
-
-    #-- parse filename
-    pfx,center,time,realm,release,v_id,sfx = parse_file(input_file)
-
     #-- read file content
     if input_file[-3:] == '.nc':
         file_contents = ncdf_read(input_file, DATE=True, VARNAME=VARNAME, LONNAME=LONNAME,
-                                  LATNAME=LATNAME, TIMENAME=TIMENAME, COMPRESSION=sfx)
+                                  LATNAME=LATNAME, TIMENAME=TIMENAME)
     elif input_file[-4:] == '.hdf' or input_file[-3:] == '.h5' or input_file[-5:] == '.hdf5':
         file_contents = hdf5_read(input_file, DATE=True, VARNAME=VARNAME, LONNAME=LONNAME,
-                                  LATNAME=LATNAME, TIMENAME=TIMENAME, COMPRESSION=sfx)
+                                  LATNAME=LATNAME, TIMENAME=TIMENAME)
 
     #-- load love numbers
     hl, kl, ll = read_love_numbers(get_data_path(['data', 'love_numbers']), REFERENCE='CF')
@@ -122,7 +118,7 @@ def read_grid_to_harmonics(input_file, VARNAME, LMAX, MMAX=None, LONNAME='lon',
         grace_slm[:, :, i] = harmo.slm
 
     #-- extract GRACE date information from input file name
-    start_yr = np.float(time[:4])
+    start_yr = np.int(file_contents['time'][0])
 
     #-- variables initialization for date conversion
     current_year = start_yr
