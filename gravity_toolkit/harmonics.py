@@ -1200,9 +1200,9 @@ class harmonics(object):
         plt.figure()
         plt.title("Normalized spherical harmonics coefficient $C_{" + str(l) + "," + str(m) + "}$")
         if len(ylms):
-            plt.plot(self.time, self.clm[l, m, :], 'r', label=label[0])
+            plt.plot(self.time, self.clm[l, m, :], label=label[0])
         else:
-            plt.plot(self.time, self.clm[l, m, :], 'r', label="$C_{" + str(l) + "," + str(m) + "}$")
+            plt.plot(self.time, self.clm[l, m, :], label="$C_{" + str(l) + "," + str(m) + "}$")
 
         try:
             for i in range(len(ylms)):
@@ -1227,9 +1227,9 @@ class harmonics(object):
             plt.figure()
             plt.title("Normalized spherical harmonics coefficient $S_{" + str(l) + "," + str(m) + "}$")
             if len(ylms):
-                plt.plot(self.time, self.slm[l, m, :], 'r', label=label[0])
+                plt.plot(self.time, self.slm[l, m, :], label=label[0])
             else:
-                plt.plot(self.time, self.slm[l, m, :], 'r', label="$S_{" + str(l) + "," + str(m) + "}$")
+                plt.plot(self.time, self.slm[l, m, :], label="$S_{" + str(l) + "," + str(m) + "}$")
 
             try:
                 for i in range(len(ylms)):
