@@ -15,7 +15,7 @@ Dataset distributed by GFZ
 Dataset from GSFC provided by Bryant Loomis
 
 CALLING SEQUENCE:
-    SLR_2m = read_SLR_CS2(SLR_file)
+    SLR_2x = read_SLR_CS2(SLR_file)
 
 INPUTS:
     SLR_file:

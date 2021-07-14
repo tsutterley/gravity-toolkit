@@ -11,7 +11,7 @@ INPUTS:
     base_dir: Working data directory for GRACE/GRACE-FO data
 
 OPTIONS:
-    PROC: GRACE data processing center (CSR/CNES/JPL/GFZ)
+    PROC: GRACE data processing center (CSR/CNES/JPL/GFZ/GRAZ/COSTG/SWARM)
     DREL: GRACE/GRACE-FO Data Release (RL03 for CNES) (RL06 for CSR/GFZ/JPL)
     DSET: GRACE dataset (GAA/GAB/GAC/GAD/GSM)
         GAA is the non-tidal atmospheric correction
@@ -40,7 +40,9 @@ PROGRAM DEPENDENCIES:
 UPDATE HISTORY:
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: use adjust_months function to fix special months cases
+    Updated 12/2020: Add SWARM data compilance
     Updated 12/2020: using utilities from time module
+    Updated 11/2020: updated for CNES RL04 & RL05 and GRAZ 2018 (monthly fields)
     Updated 10/2020: use argparse to set command line parameters
     Updated 07/2020: added function docstrings
     Updated 03/2020: for public release
@@ -104,6 +106,10 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
         GFZ: German Research Centre for Geosciences (GeoForschungsZentrum)
         JPL: Jet Propulsion Laboratory
         CNES: French Centre National D'Etudes Spatiales
+        GRAZ: Institute of Geodesy from GRAZ University of Technology
+        COSTG: International Combination Service for Time-variable Gravity Fields
+
+        SWARM: gravity data from SWARM satellite
     DREL: GRACE/GRACE-FO data release
     DSET: GRACE/GRACE-FO dataset
         GAA: non-tidal atmospheric correction
@@ -138,28 +144,64 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     tdec = np.zeros((n_files))#-- tdec is the date in decimal form
     mon = np.zeros((n_files,),dtype=np.int64)#-- GRACE/GRACE-FO month number
 
-    #-- compile numerical expression operator for parameters from files
-    #-- will work with previous releases and releases for GRACE-FO
-    #-- UTCSR: The University of Texas at Austin Center for Space Research
-    #-- EIGEN: GFZ German Research Center for Geosciences (RL01-RL05)
-    #-- GFZOP: GFZ German Research Center for Geosciences (RL06+GRACE-FO)
-    #-- JPLEM: NASA Jet Propulsion Laboratory (harmonic solutions)
-    #-- JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
-    regex_pattern = (r'(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
-       r'(\.gz|\.gfc)?$').format(r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC')
+    if PROC in ('CSR', 'GFZ', 'JPL', 'CNES', 'COSTG'):
+        #-- compile numerical expression operator for parameters from files
+        #-- will work with previous releases and releases for GRACE-FO
+        #-- UTCSR: The University of Texas at Austin Center for Space Research
+        #-- EIGEN: GFZ German Research Center for Geosciences (RL01-RL05)
+        #-- GFZOP: GFZ German Research Center for Geosciences (RL06+GRACE-FO)
+        #-- JPLEM: NASA Jet Propulsion Laboratory (harmonic solutions)
+        #-- JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
+        #-- GRGS: CNES Groupe de Recherche de Géodésie Spatiale
+        regex_pattern = (r'(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
+           r'(\.gz|\.gfc|\.txt)?$').format(r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC|GRGS|COSTG')
+    elif PROC == 'GRAZ':
+        # -- GRAZ: Institute of Geodesy from GRAZ University of Technology
+        regex_pattern = (r'(.*?)-({0})_(.*?)_(\d+)-(\d+)'
+                         r'(\.gz|\.gfc|\.txt)').format(r'Grace_operational|Grace2018')
+    elif PROC == 'SWARM':
+        # -- SWARM: data from SWARM satellite
+        regex_pattern = (r'({0})_(.*?)_(EGF_SHA_2)__(.*?)_(.*?)_(.*?)'
+                         r'(\.gz|\.gfc|\.txt)').format(r'SW')
+    else:
+        raise ValueError("Unknown PROC value:", PROC)
+
     rx = re.compile(regex_pattern, re.VERBOSE)
 
     #-- for each data file
     for t, infile in enumerate(input_files):
         #-- extract parameters from input filename
-        PFX,start_date,end_date,AUX,PRC,F1,DRL,F2,SFX = rx.findall(infile).pop()
-        #-- find start date, end date and number of days
-        start_yr[t] = np.float64(start_date[:4])
-        end_yr[t] = np.float64(end_date[:4])
-        start_day[t] = np.float64(start_date[4:])
-        end_day[t] = np.float64(end_date[4:])
+        if PROC in ('CSR', 'GFZ', 'JPL', 'CNES', 'COSTG'):
+            PFX,start_date,end_date,AUX,PRC,F1,DRL,F2,SFX = rx.findall(infile).pop()
 
-        #-- number of days in the starting year for leap and standard years
+            #-- find start date, end date and number of days
+            start_yr[t] = np.float64(start_date[:4])
+            end_yr[t] = np.float64(end_date[:4])
+            start_day[t] = np.float64(start_date[4:])
+            end_day[t] = np.float64(end_date[4:])
+
+        elif PROC == 'GRAZ' or PROC == 'SWARM':
+            if PROC == 'GRAZ':
+                PFX,SAT,trunc,year,month,SFX = rx.findall(infile).pop()
+                #-- find start year, end year
+                start_yr[t] = np.float(year)
+                end_yr[t] = np.float(year)
+            elif PROC == 'SWARM':
+                SAT, tmp, PROD, start_date, end_date, RL, SFX = rx.findall(os.path.basename(infile)).pop()
+
+                start_yr[t] = int(start_date[:4])
+                end_yr[t] = int(end_date[:4])
+                month = int(start_date[4:6])
+
+            #-- Calculation of total days since start of campaign
+            #-- Get information on the current year (day per month and day per year)
+            dpm = gravity_toolkit.time.dpm_count(start_yr[t])
+
+            #-- find start day, end day
+            start_day[t] = np.sum(dpm[:np.int(month) - 1]) + 1
+            end_day[t] = np.sum(dpm[:np.int(month)])
+
+        # -- number of days in the starting year for leap and standard years
         dpy = gravity_toolkit.time.calendar_days(start_yr[t]).sum()
         #-- end date taking into account measurements taken on different years
         end_cyclic = (end_yr[t]-start_yr[t])*dpy + end_day[t]
@@ -254,7 +296,7 @@ def main():
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, nargs='+',
         default=['CSR','GFZ','JPL'],
-        choices=['CSR','GFZ','JPL'],
+        choices=['CSR','GFZ','JPL', 'CNES','GRAZ','SWARM', 'COSTG'],
         help='GRACE/GRACE-FO Processing Center')
     #-- GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',

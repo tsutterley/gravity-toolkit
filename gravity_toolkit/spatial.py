@@ -32,6 +32,7 @@ UPDATE HISTORY:
         added generic reader, generic writer and write to list functions
         generalize ascii, netCDF4 and HDF5 readers and writers
         replaced numpy bool to prevent deprecation warning
+    Updated 02/2021: added replace_masked to replace masked values in data
     Updated 01/2021: added scaling factor and scaling factor error function
         from Lander and Swenson (2012) https://doi.org/10.1029/2011WR011453
     Updated 12/2020: added transpose function, can calculate mean over indices
@@ -863,7 +864,7 @@ class spatial(object):
             indices of spatial object to compute mean
         """
         #-- output spatial object
-        temp = spatial(nlon=self.shape[0],nlat=self.shape[1],
+        temp = spatial(nlon=self.data.shape[0],nlat=self.data.shape[1],
             fill_value=self.fill_value)
         #-- copy dimensions
         temp.lon = self.lon.copy()

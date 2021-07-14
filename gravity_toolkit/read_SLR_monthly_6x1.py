@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
-read_SLR_monthly_6x1.py
-Written by Tyler Sutterley (05/2021)
+read_CSR_monthly_6x1.py
+Written by Tyler Sutterley (12/2020)
 
 Reads in monthly 5x5 spherical harmonic coefficients with 1
     coefficient from degree 6 all calculated from SLR measurements

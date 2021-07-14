@@ -98,7 +98,10 @@ UPDATE HISTORY:
         define int/float precision to prevent deprecation warning
     Updated 04/2021: can replace figure axis and azimuthal dependence with SLR
     Updated 12/2020: updated SLR geocenter for new solutions from Minkang Cheng
+    Updated 12/2020: gestion of tide free and zero tide convention (IERS 2010)
+                     added SWARM gestion
     Updated 11/2020: set regress_model RELATIVE option to 2003.3 to match others
+    Updated 11/2020: added C/S2,1 and C/S2,2 correction from John Ries
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 07/2020: added function docstrings
     Updated 06/2020: set relative time to mean of input within regress_model
@@ -150,6 +153,9 @@ from gravity_toolkit.read_SLR_geocenter import aod_corrected_SLR_geocenter
 from gravity_toolkit.read_gravis_geocenter import read_gravis_geocenter
 from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
+from gravity_toolkit.read_love_numbers import read_love_numbers
+from gravity_toolkit.utilities import get_data_path
+import geoid_toolkit.read_ICGEM_harmonics
 
 def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     missing, SLR_C20, DEG1, MMAX=None, SLR_21='', SLR_22='',  SLR_C30='',
@@ -166,7 +172,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     Arguments
     ---------
     base_dir: Working data directory for GRACE/GRACE-FO data
-    PROC: (CSR/CNES/JPL/GFZ) data processing center
+    PROC: (CSR/CNES/JPL/GFZ/GRAZ/SWARM) data processing center
     DREL: (RL01/RL02/RL03/RL04/RL05/RL06) data release
     DSET: (GAA/GAB/GAC/GAD/GSM) data product
     LMAX: Upper bound of Spherical Harmonic Degrees
@@ -175,6 +181,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     missing: missing months to not consider in analysis
     SLR_C20: Replaces C20 with SLR values
         N: use original values
+        TideFree: add a bias for CSR, GFZ, GRAZ or SWARM to convert C2,0 to tide free convention
+        ZeroTide: add a bias for CNES or JPL to convert C2,0 to zero tide convention
         CSR: use values from CSR (TN-07,TN-09,TN-11)
         GFZ: use values from GFZ
         GSFC: use values from GSFC (TN-14)
@@ -344,7 +352,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     #-- reading degree 1 file for given release if specified
     if (DEG1 == 'Tellus'):
         #-- Tellus (PO.DAAC) degree 1
-        if DREL in ('RL04','RL05'):
+        if DREL in ('RL04','RL05') and PROC in ('JPL', 'CSR', 'GFZ'):
             DEG1_file = os.path.join(base_dir,'geocenter',
                 'deg1_coef_{0}.txt'.format(DREL))
             JPL = False
@@ -373,7 +381,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         #-- new file of degree-1 mass variations from Minkang Cheng
         #-- http://download.csr.utexas.edu/outgoing/cheng/gct2est.220_5s
         DEG1_file = os.path.join(base_dir,'geocenter','gct2est.220_5s')
-        DEG1_input = aod_corrected_SLR_geocenter(DEG1_file,HEADER=15,
+        DEG1_input = aod_corrected_SLR_geocenter(DEG1_file, DREL=DREL, HEADER=15,
             RADIUS=6.378136e9,COLUMNS=['MJD','time','X','Y','Z','XM','YM','ZM',
             'X_sigma','Y_sigma','Z_sigma','XM_sigma','YM_sigma','ZM_sigma'])
         FLAGS.append('_w{0}_DEG1'.format(DEG1))
@@ -425,6 +433,23 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             if (count != 0):
                 k, = np.nonzero(C20_input['month'] == grace_month)
                 grace_clm[2,0,i] = C20_input['data'][k]
+
+    elif SLR_C20 == 'TideFree' and PROC in ('CSR', 'JPL', 'GRAZ'):
+        # -- k2,0 nominal from IERS 2010 convention
+        k2 = 0.3190
+
+        # -- apply conversion formula from IERS 2010 Notes
+        grace_clm[2, 0, :] += 4.4228e-8 * 0.31460 * k2
+
+    elif SLR_C20 == 'ZeroTide' and PROC in ('CNES', 'GFZ', 'SWARM', 'COSTG'):
+        #-- k2,0 nominal from IERS 2010 convention
+        if PROC in ('CNES', 'SWARM', 'COSTG'):
+            k2 = 0.3
+        elif PROC in ('GFZ'):
+            k2 = 0.3190
+
+        #-- apply conversion formula from IERS 2010 Notes
+        grace_clm[2, 0, :] -= 4.4228e-8 * 0.31460 * k2
 
     #-- Replace C21/S21 with SLR coefficients for single-accelerometer months
     if SLR_21 in ('CSR','GFZ','GSFC'):

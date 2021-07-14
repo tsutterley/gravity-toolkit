@@ -9,7 +9,7 @@ Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
     glo: global atmospheric and oceanic loading
     oba: ocean bottom pressure from OMCT/MPIOM
 
-Creates monthly files of geocenter variations at 6-hour intervals
+Creates monthly files of geocenter variations at 6-hour or 3-hour intervals
 
 NOTE: this reads the GFZ AOD1B files downloaded from PO.DAAC
 https://podaac-uat.jpl.nasa.gov/drive/files/allData/grace/L1B/GFZ/AOD1B/RL06/
@@ -33,6 +33,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATED HISTORY:
     Updated 05/2021: define int/float precision to prevent deprecation warning
+    Updated 03/2021: Add 3-hour interval depending on Release
     Updated 10/2020: use argparse to set command line parameters
     Updated 07/2020: added function docstrings
     Updated 06/2019: using python3 compatible regular expression patterns
@@ -70,7 +71,7 @@ product['oba'] = 'Ocean bottom pressure from OMCT'
 def aod1b_geocenter(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
     VERBOSE=False):
     """
-    Creates monthly files of geocenter variations at 6-hour intervals from
+    Creates monthly files of geocenter variations at 6-hour or 3-hour intervals from
     GRACE/GRACE-FO level-1b dealiasing data files
 
     Arguments
@@ -89,6 +90,13 @@ def aod1b_geocenter(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
     MODE: Permission mode of directories and files
     VERBOSE: Output information for each output file
     """
+    #-- set number of hours in a file
+    if DREL in ['RL01', 'RL02', 'RL03', 'RL04', 'RL05']:
+        hourly_max = 4 # for 00, 06, 12 and 18
+    elif DREL == 'RL06':
+        hourly_max = 8 # for 00, 03, 06, 09, 12, 15, 18 and 21
+    else:
+        raise ValueError('Invalid DREL value')
 
     #-- compile regular expressions operators for file dates
     #-- will extract the year and month from the tar file (.tar.gz)
@@ -169,15 +177,15 @@ def aod1b_geocenter(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
                 else:
                     fid = tar.extractfile(member)
                 #-- degree 1 spherical harmonics for day and hours
-                C10 = np.zeros((4))
-                C11 = np.zeros((4))
-                S11 = np.zeros((4))
-                hours = np.zeros((4),dtype=np.int64)
+                C10 = np.zeros((hourly_max))
+                C11 = np.zeros((hourly_max))
+                S11 = np.zeros((hourly_max))
+                hours = np.zeros((hourly_max),dtype=np.int64)
 
                 #-- create counter for hour in dataset
                 c = 0
                 #-- while loop ends when dataset is read
-                while (c < 4):
+                while (c < hourly_max):
                     #-- read line
                     file_contents = fid.readline().decode('ISO-8859-1')
                     #-- find file header for data product
@@ -220,7 +228,7 @@ def main():
     #-- Read the system arguments listed after the program
     parser = argparse.ArgumentParser(
         description="""Creates monthly files of geocenter variations
-            at 6-hour intervals
+            at 6-hour or 3-hour intervals
             """
     )
     #-- command line parameters

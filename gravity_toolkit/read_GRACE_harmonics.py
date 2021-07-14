@@ -41,6 +41,7 @@ PROGRAM DEPENDENCIES:
 UPDATE HISTORY:
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 12/2020: using utilities from time module
+    Updated 10/2020: Change parse function to work with GRGS data
     Updated 08/2020: flake8 compatible regular expression strings
         input file can be "diskless" bytesIO object
     Updated 07/2020: added function docstrings
@@ -182,6 +183,11 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
             drift_c[l1,m1] = np.float64(line_contents[3])
             drift_s[l1,m1] = np.float64(line_contents[4])
 
+    #-- Adding 0,0 coefficient for JPl
+    #-- to be able to compare it with CSR and GFZ
+    if (PRC == 'JPLEM') and (DSET == 'GSM'):
+        grace_L2_input['clm'][0, 0] = 1
+
     #-- Adding drift rates to clm and slm for RL04
     #-- if drift rates exist at any time, will add to harmonics
     #-- Will convert the secular rates into a stokes contribution
@@ -251,8 +257,9 @@ def parse_file(input_file):
     #-- GFZOP: GFZ German Research Center for Geosciences (RL06+GRACE-FO)
     #-- JPLEM: NASA Jet Propulsion Laboratory (harmonic solutions)
     #-- JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
+    # -- GRGS: CNES Groupe de Recherche de Géodésie Spatiale
     regex_pattern = (r'(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
-        r'(\.gz|\.gfc)?$').format('UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC')
+        r'(\.gz|\.gfc|\.txt)?$').format('UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC|GRGS')
     rx = re.compile(regex_pattern, re.VERBOSE)
     #-- extract parameters from input filename
     if isinstance(input_file, io.IOBase):
