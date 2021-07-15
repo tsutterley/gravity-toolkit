@@ -153,8 +153,6 @@ from gravity_toolkit.read_SLR_geocenter import aod_corrected_SLR_geocenter
 from gravity_toolkit.read_gravis_geocenter import read_gravis_geocenter
 from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
-from gravity_toolkit.read_love_numbers import read_love_numbers
-from gravity_toolkit.utilities import get_data_path
 import geoid_toolkit.read_ICGEM_harmonics
 
 def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
@@ -172,7 +170,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     Arguments
     ---------
     base_dir: Working data directory for GRACE/GRACE-FO data
-    PROC: (CSR/CNES/JPL/GFZ/GRAZ/SWARM) data processing center
+    PROC: (CSR/CNES/JPL/GFZ/GRAZ/COST-G/SWARM) data processing center
     DREL: (RL01/RL02/RL03/RL04/RL05/RL06) data release
     DSET: (GAA/GAB/GAC/GAD/GSM) data product
     LMAX: Upper bound of Spherical Harmonic Degrees
@@ -181,8 +179,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     missing: missing months to not consider in analysis
     SLR_C20: Replaces C20 with SLR values
         N: use original values
-        TideFree: add a bias for CSR, GFZ, GRAZ or SWARM to convert C2,0 to tide free convention
-        ZeroTide: add a bias for CNES or JPL to convert C2,0 to zero tide convention
+        TideFree: add a bias for CSR, JPL, GRAZ to convert C2,0 to tide free convention
+        ZeroTide: add a bias for CNES, GFZ, SWARM or COST-G to convert C2,0 to zero tide convention
         CSR: use values from CSR (TN-07,TN-09,TN-11)
         GFZ: use values from GFZ
         GSFC: use values from GSFC (TN-14)
