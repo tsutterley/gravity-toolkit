@@ -9,7 +9,7 @@ Parses date of GRACE/GRACE-FO data from filename
 
 Design for JPL MASCON netCDF data available on
 https://podaac-tools.jpl.nasa.gov/drive/files
-In the folder /allData/tellus/retired/L3/mascon/RL06/JPL/v02
+In the folder /allData/tellus/L3/mascon/RL06/JPL/v02
 
 INPUTS:
     input_file: GRACE/GRACE-FO Level-3 netCDF grid data file
@@ -45,7 +45,7 @@ from gravity_toolkit.utilities import get_data_path
 from gravity_toolkit.read_love_numbers import read_love_numbers
 from gravity_toolkit.gen_stokes import gen_stokes
 
-#-- PURPOSE: read Level-3 GRACE and GRACE-FO netCDF files
+#-- PURPOSE: read Level-3 GRACE and GRACE-FO netCDF or hdf5 files
 def read_grid_to_harmonics(input_file, VARNAME, LMAX, MMAX=None, LONNAME='lon',
                          LATNAME='lat', TIMENAME='time', UNITS=1, POLE_TIDE=False):
     """
@@ -82,6 +82,9 @@ def read_grid_to_harmonics(input_file, VARNAME, LMAX, MMAX=None, LONNAME='lon',
     title: string denoting low degree zonals replacement, geocenter usage and corrections
     directory: directory of exact GRACE/GRACE-FO product
     """
+    # -- parse filename to extract begin date of the file
+    pfx, center, time, realm, release, v_id, sfx = parse_file(input_file)
+
     #-- read file content
     if input_file[-3:] == '.nc':
         file_contents = ncdf_read(input_file, DATE=True, VARNAME=VARNAME, LONNAME=LONNAME,
@@ -118,7 +121,7 @@ def read_grid_to_harmonics(input_file, VARNAME, LMAX, MMAX=None, LONNAME='lon',
         grace_slm[:, :, i] = harmo.slm
 
     #-- extract GRACE date information from input file name
-    start_yr = np.int(file_contents['time'][0])
+    start_yr = np.float(time[:4])
 
     #-- variables initialization for date conversion
     current_year = start_yr

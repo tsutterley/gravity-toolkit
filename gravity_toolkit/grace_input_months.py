@@ -259,7 +259,10 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     for i,grace_month in enumerate(months):
         #-- Effects of Pole tide drift will be compensated if soecified
         infile = grace_files[grace_month]
-        Ylms = read_GRACE_harmonics(infile,LMAX,MMAX=MMAX,POLE_TIDE=POLE_TIDE)
+        if PROC in ('CSR', 'GFZ', 'JPL', 'CNES', 'JPLMSC'):
+            Ylms = read_GRACE_harmonics(infile,LMAX,MMAX=MMAX,POLE_TIDE=POLE_TIDE)
+        elif PROC in ('GRAZ', 'SWARM', 'COSTG'):
+            Ylms = geoid_toolkit.read_ICGEM_harmonics(infile)
         grace_clm[:,:,i] = Ylms['clm'][0:LMAX+1,0:MMAX+1]
         grace_slm[:,:,i] = Ylms['slm'][0:LMAX+1,0:MMAX+1]
         tdec[i] = Ylms['time']
