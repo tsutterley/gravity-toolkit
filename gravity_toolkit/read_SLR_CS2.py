@@ -17,7 +17,7 @@ REFERENCE:
         https://doi.org/10.3390/rs11182116
 
 CALLING SEQUENCE:
-    SLR_2x = read_SLR_CS2(SLR_file)
+    SLR_2m = read_SLR_CS2(SLR_file)
 
 INPUTS:
     SLR_file:
