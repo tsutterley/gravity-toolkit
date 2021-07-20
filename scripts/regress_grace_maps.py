@@ -501,11 +501,11 @@ def main():
     #-- 0: mean
     #-- 1: trend
     #-- 2: acceleration
-    parser.add_argument('--order','-o',
+    parser.add_argument('--order',
         type=int, default=2,
         help='Regression fit polynomial order')
     #-- regression fit cyclical terms
-    parser.add_argument('--cycle','-c',
+    parser.add_argument('--cycles',
         type=float, default=[0.5,1.0,161.0/365.25], nargs='+',
         help='Regression fit cyclical terms')
     #-- Output log file for each job in forms

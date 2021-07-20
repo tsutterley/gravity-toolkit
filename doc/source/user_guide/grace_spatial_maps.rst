@@ -103,6 +103,7 @@ Command Line Options
     * ``'GSFC'``: use values from GSFC
     * ``'LARES'``: use filtered values from CSR
 - ``-U X``, ``--units X``: output units
+
     * ``1``: cm of water thickness
     * ``2``: mm of geoid height
     * ``3``: mm of elastic crustal deformation [Davis 2004]
@@ -110,6 +111,7 @@ Command Line Options
     * ``5``: mbar equivalent surface pressure
 - ``--spacing X``: spatial resolution of output data (dlon,dlat)
 - ``--interval X``: output grid interval
+
     * ``1``: (0:360, 90:-90)
     * ``2``: (degree spacing/2)
     * ``3``: non-global grid (set with defined bounds)

@@ -28,6 +28,7 @@ Command Line Options
 - ``-R X``, ``--radius X``: Gaussian smoothing radius (km)
 - ``-d``, ``--destripe``: use decorrelation filter (destriping filter)
 - ``-U X``, ``--units X``: output units
+
     * ``1``: cm of water thickness
     * ``2``: mm of geoid height
     * ``3``: mm of elastic crustal deformation [Davis 2004]
@@ -35,6 +36,7 @@ Command Line Options
     * ``5``: mbar equivalent surface pressure
 - ``--spacing X``: spatial resolution of output data (dlon,dlat)
 - ``--interval X``: output grid interval
+
     * ``1``: (0:360, 90:-90)
     * ``2``: (degree spacing/2)
     * ``3``: non-global grid (set with defined bounds)
@@ -45,8 +47,8 @@ Command Line Options
      * ``'netCDF4'``
      * ``'HDF5'``
 - ``--redistribute-removed``: redistribute removed mass fields over the ocean
-- `--order X`: regression fit polynomial order
-- `--cycles X`: regression fit cyclical terms as wavelength in decimal years
+- ``--order X``: regression fit polynomial order
+- ``--cycles X``: regression fit cyclical terms as wavelength in decimal years
 - ``--log``: Output log file for job
 - ``-V``, ``--verbose``: verbose output of processing run
 - ``-M X``, ``--mode X``: Permissions mode of the files created

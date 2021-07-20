@@ -106,6 +106,7 @@ Command Line Options
     * ``'LARES'``: use filtered values from CSR
 - ``--spacing X``: spatial resolution of output data (dlon,dlat)
 - ``--interval X``: output grid interval
+
     * ``1``: (0:360, 90:-90)
     * ``2``: (degree spacing/2)
 - ``--mean-file X``: GRACE/GRACE-FO mean file to remove from the harmonic data

@@ -510,6 +510,7 @@ def build_opener(username, password, context=ssl.SSLContext(),
     #-- All calls to urllib2.urlopen will now use handler
     #-- Make sure not to include the protocol in with the URL, or
     #-- HTTPPasswordMgrWithDefaultRealm will be confused.
+    return opener
 
 #-- PURPOSE: check that entered JPL PO.DAAC/ECCO Drive credentials are valid
 def check_credentials(HOST='https://podaac-tools.jpl.nasa.gov'):
