@@ -11,7 +11,7 @@ read-GRACE-harmonics
 .. |Language| image:: https://img.shields.io/badge/python-v3.7-green.svg
    :target: https://www.python.org/
 
-.. |License| image:: https://img.shields.io/badge/license-MIT-green.svg
+.. |License| image:: https://img.shields.io/github/license/tsutterley/read-grace-harmonics
    :target: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/LICENSE
 
 .. |Documentation Status| image:: https://readthedocs.org/projects/read-grace-harmonics/badge/?version=latest
