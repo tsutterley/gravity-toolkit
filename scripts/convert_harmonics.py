@@ -324,7 +324,7 @@ def main():
 
     #-- run program with parameters
     try:
-        info(args)
+        info(args) if args.verbose else None
         convert_harmonics(args.infile, args.outfile,
             LMAX=args.lmax,
             MMAX=args.mmax,

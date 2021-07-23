@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_sensitivity_kernel.py
-Written by Tyler Sutterley (06/2021)
+Written by Tyler Sutterley (07/2021)
 
 Calculates spatial sensitivity kernels through a least-squares mascon procedure
 
@@ -83,6 +83,7 @@ REFERENCES:
         https://doi.org/10.1029/2009GL039401
 
 UPDATE HISTORY:
+    Updated 07/2021: simplified file imports using wrappers in harmonics
     Updated 06/2021: switch from parameter files to argparse arguments
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: add parser object for removing commented or empty lines
@@ -285,15 +286,8 @@ def calc_sensitivity_kernel(LMAX, RAD,
     mascon_list = []
     for k,fi in enumerate(mascon_files):
         #-- read mascon spherical harmonics
-        if (DATAFORM == 'ascii'):
-            #-- ascii (.txt)
-            Ylms = harmonics().from_ascii(os.path.expanduser(fi),date=False)
-        elif (DATAFORM == 'netCDF4'):
-            #-- netcdf (.nc)
-            Ylms = harmonics().from_netCDF4(os.path.expanduser(fi),date=False)
-        elif (DATAFORM == 'HDF5'):
-            #-- HDF5 (.H5)
-            Ylms = harmonics().from_HDF5(os.path.expanduser(fi),date=False)
+        Ylms = harmonics().from_file(os.path.expanduser(fi),
+            format=DATAFORM, date=False)
         #-- Calculating the total mass of each mascon (1 cmwe uniform)
         total_area[k] = 4.0*np.pi*(rad_e**3)*rho_e*Ylms.clm[0,0]/3.0
         #-- distribute mascon mass uniformly over the ocean
