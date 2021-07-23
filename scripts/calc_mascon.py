@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_mascon.py
-Written by Tyler Sutterley (06/2021)
+Written by Tyler Sutterley (07/2021)
 
 Calculates a time-series of regional mass anomalies through a least-squares
     mascon procedure from GRACE/GRACE-FO time-variable gravity data
@@ -49,11 +49,28 @@ COMMAND LINE OPTIONS:
     --atm-correction: Apply atmospheric jump correction coefficients
     --pole-tide: Correct for pole tide drift
     --geocenter X: Update Degree 1 coefficients with SLR or derived values
+        Tellus: GRACE/GRACE-FO TN-13 coefficients from PO.DAAC
+        SLR: satellite laser ranging coefficients from CSR
+        SLF: Sutterley and Velicogna coefficients, Remote Sensing (2019)
+        Swenson: GRACE-derived coefficients from Sean Swenson
+        GFZ: GRACE/GRACE-FO coefficients from GFZ GravIS
     --slr-c20 X: Replace C20 coefficients with SLR values
+        CSR: use values from CSR (TN-07,TN-09,TN-11)
+        GFZ: use values from GFZ
+        GSFC: use values from GSFC (TN-14)
     --slr-21 X: Replace C21 and S21 coefficients with SLR values
+        CSR: use values from CSR
+        GFZ: use values from GFZ GravIS
+        GSFC: use values from GSFC
     --slr-22 X: Replace C22 and S22 coefficients with SLR values
+        CSR: use values from CSR
     --slr-c30 X: Replace C30 coefficients with SLR values
+        CSR: use values from CSR (5x5 with 6,1)
+        GFZ: use values from GFZ GravIS
+        GSFC: use values from GSFC (TN-14)
     --slr-c50 X: Replace C50 coefficients with SLR values
+        CSR: use values from CSR (5x5 with 6,1)
+        GSFC: use values from GSFC
     --mean-file X: GRACE/GRACE-FO mean file to remove from the harmonic data
     --mean-format X: Input data format for GRACE/GRACE-FO mean file
     --mask X: Land-sea mask for redistributing mascon mass and land water flux
@@ -125,6 +142,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 07/2021: simplified file imports using wrappers in harmonics
     Updated 06/2021: switch from parameter files to argparse arguments
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: include parameters for replacing C21/S21 and C22/S22
@@ -361,8 +379,7 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         #-- not distributing uniformly over ocean
         ocean_str = ''
 
-    #-- input GRACE/GRACE-FO spherical harmonic datafiles
-    #-- reading GRACE months for input range with grace_input_months.py
+    #-- input GRACE/GRACE-FO spherical harmonic datafiles for date range
     #-- replacing low-degree harmonics with SLR values if specified
     #-- include degree 1 (geocenter) harmonics if specified
     #-- correcting for Pole-Tide and Atmospheric Jumps if specified
@@ -370,21 +387,14 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX,
         SLR_21=SLR_21, SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C50=SLR_C50,
         MODEL_DEG1=True, ATM=ATM, POLE_TIDE=POLE_TIDE)
-    #-- full path to directory for specific GRACE/GRACE-FO product
-    grace_dir = Ylms['directory']
     #-- create harmonics object from GRACE/GRACE-FO data
     GRACE_Ylms = harmonics().from_dict(Ylms)
+    #-- full path to directory for specific GRACE/GRACE-FO product
+    GRACE_Ylms.directory = Ylms['directory']
     #-- use a mean file for the static field to remove
     if MEAN_FILE:
         #-- read data form for input mean file (ascii, netCDF4, HDF5, gfc)
-        if (MEANFORM == 'ascii'):
-            mean_Ylms=harmonics().from_ascii(MEAN_FILE,date=False)
-        elif (MEANFORM == 'netCDF4'):
-            mean_Ylms=harmonics().from_netCDF4(MEAN_FILE,date=False)
-        elif (MEANFORM == 'HDF5'):
-            mean_Ylms=harmonics().from_HDF5(MEAN_FILE,date=False)
-        elif (MEANFORM == 'gfc'):
-            mean_Ylms=harmonics().from_gfc(MEAN_FILE)
+        mean_Ylms = harmonics().from_file(MEAN_FILE,format=DATAFORM,date=False)
         #-- remove the input mean
         GRACE_Ylms.subtract(mean_Ylms)
     else:
@@ -425,18 +435,12 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
             REMOVE_FORMAT = REMOVE_FORMAT*len(REMOVE_FILES)
         #-- for each file to be removed
         for REMOVE_FILE,REMOVEFORM in zip(REMOVE_FILES,REMOVE_FORMAT):
-            if (REMOVEFORM == 'ascii'):
-                #-- ascii (.txt)
-                Ylms = harmonics().from_ascii(REMOVE_FILE)
-            elif (REMOVEFORM == 'netCDF4'):
-                #-- netCDF4 (.nc)
-                Ylms = harmonics().from_netCDF4(REMOVE_FILE)
-            elif (REMOVEFORM == 'HDF5'):
-                #-- HDF5 (.h5)
-                Ylms = harmonics().from_HDF5(REMOVE_FILE)
-            elif (REMOVEFORM == 'index'):
+            if (REMOVEFORM == 'index'):
                 #-- index containing files in data format
                 Ylms = harmonics().from_index(REMOVE_FILE, DATAFORM)
+            else:
+                #-- individual file in ascii, netCDF4 or HDF5 formats
+                Ylms = harmonics().from_file(REMOVE_FILE, format=DATAFORM)
             #-- reduce to GRACE/GRACE-FO months and truncate to degree and order
             Ylms = Ylms.subset(GRACE_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
             #-- distribute removed Ylms uniformly over the ocean
@@ -470,15 +474,7 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         #-- for each valid file in the index (iterate over mascons)
         for reconstruct_file in file_list:
             #-- read reconstructed spherical harmonics
-            if (DATAFORM == 'ascii'):
-                #-- ascii (.txt)
-                Ylms = harmonics().from_ascii(reconstruct_file)
-            elif (DATAFORM == 'netCDF4'):
-                #-- netcdf (.nc)
-                Ylms = harmonics().from_netCDF4(reconstruct_file)
-            elif (DATAFORM == 'HDF5'):
-                #-- HDF5 (.H5)
-                Ylms = harmonics().from_HDF5(reconstruct_file)
+            Ylms = harmonics().from_file(reconstruct_file,format=DATAFORM)
             #-- truncate clm and slm matrices to LMAX/MMAX
             #-- add harmonics object to total
             construct_Ylms.add(Ylms.truncate(lmax=LMAX, mmax=MMAX))
@@ -504,15 +500,8 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     mascon_list = []
     for k,fi in enumerate(mascon_files):
         #-- read mascon spherical harmonics
-        if (DATAFORM == 'ascii'):
-            #-- ascii (.txt)
-            Ylms = harmonics().from_ascii(os.path.expanduser(fi),date=False)
-        elif (DATAFORM == 'netCDF4'):
-            #-- netcdf (.nc)
-            Ylms = harmonics().from_netCDF4(os.path.expanduser(fi),date=False)
-        elif (DATAFORM == 'HDF5'):
-            #-- HDF5 (.H5)
-            Ylms = harmonics().from_HDF5(os.path.expanduser(fi),date=False)
+        Ylms = harmonics().from_file(os.path.expanduser(fi),
+            format=DATAFORM, date=False)
         #-- Calculating the total mass of each mascon (1 cmwe uniform)
         total_area[k] = 4.0*np.pi*(rad_e**3)*rho_e*Ylms.clm[0,0]/3.0
         #-- distribute mascon mass uniformly over the ocean
@@ -544,13 +533,13 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     args = (PROC,DREL,DSET,LMAX,order_str,ds_str,atm_str,GRACE_Ylms.month[0],
         GRACE_Ylms.month[-1], suffix[DATAFORM])
     delta_format = '{0}_{1}_{2}_DELTA_CLM_L{3:d}{4}{5}{6}_{7:03d}-{8:03d}.{9}'
-    DELTA_FILE = delta_format.format(*args)
+    DELTA_FILE = os.path.join(GRACE_Ylms.directory,delta_format.format(*args))
     #-- check full path of the GRACE directory for delta file
     #-- if file was previously calculated: will read file
     #-- else: will calculate the GRACE/GRACE-FO error
-    if (not os.access(os.path.join(grace_dir, DELTA_FILE),os.F_OK)):
+    if not os.access(DELTA_FILE, os.F_OK):
         #-- add output delta file to list object
-        output_files.append(os.path.join(grace_dir,DELTA_FILE))
+        output_files.append(DELTA_FILE)
 
         #-- Delta coefficients of GRACE time series (Error components)
         delta_Ylms = harmonics(lmax=LMAX,mmax=MMAX)
@@ -584,26 +573,10 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         #-- save GRACE/GRACE-FO delta harmonics to file
         delta_Ylms.time = np.copy(tsmth)
         delta_Ylms.month = np.int64(nsmth)
-        if (DATAFORM == 'ascii'):
-            #-- ascii (.txt)
-            delta_Ylms.to_ascii(os.path.join(grace_dir,DELTA_FILE))
-        elif (DATAFORM == 'netCDF4'):
-            #-- netcdf (.nc)
-            delta_Ylms.to_netCDF4(os.path.join(grace_dir,DELTA_FILE))
-        elif (DATAFORM == 'HDF5'):
-            #-- HDF5 (.H5)
-            delta_Ylms.to_HDF5(os.path.join(grace_dir,DELTA_FILE))
+        delta_Ylms.to_file(DELTA_FILE,format=DATAFORM)
     else:
         #-- read GRACE/GRACE-FO delta harmonics from file
-        if (DATAFORM == 'ascii'):
-            #-- ascii (.txt)
-            delta_Ylms=harmonics().from_ascii(os.path.join(grace_dir,DELTA_FILE))
-        elif (DATAFORM == 'netCDF4'):
-            #-- netcdf (.nc)
-            delta_Ylms=harmonics().from_netCDF4(os.path.join(grace_dir,DELTA_FILE))
-        elif (DATAFORM == 'HDF5'):
-            #-- HDF5 (.H5)
-            delta_Ylms=harmonics().from_HDF5(os.path.join(grace_dir,DELTA_FILE))
+        delta_Ylms = harmonics().from_file(DELTA_FILE,format=DATAFORM)
         #-- truncate GRACE/GRACE-FO delta clm and slm to d/o LMAX/MMAX
         delta_Ylms = delta_Ylms.truncate(lmax=LMAX, mmax=MMAX)
         tsmth = np.squeeze(delta_Ylms.time)

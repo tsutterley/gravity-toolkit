@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (07/2021)
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 
@@ -26,6 +26,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 07/2021: fixed gfc format in from file wrapper
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: add parser object for removing commented or empty lines
         use file not found exceptions in case insensitive filename
@@ -389,7 +390,7 @@ class harmonics(object):
             return harmonics().from_HDF5(filename, date=date, **kwargs)
         elif (format == 'gfc'):
             #-- ICGEM gravity model (.gfc)
-            return harmonics().from_HDF5(filename, **kwargs)
+            return harmonics().from_gfc(filename, **kwargs)
 
     def from_dict(self, d):
         """

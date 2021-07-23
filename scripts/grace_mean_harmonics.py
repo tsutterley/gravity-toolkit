@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_mean_harmonics.py
-Written by Tyler Sutterley (06/2021)
+Written by Tyler Sutterley (07/2021)
 
 Calculates the temporal mean of the GRACE/GRACE-FO spherical harmonics
     for a given date range from a set of parameters
@@ -19,11 +19,28 @@ COMMAND LINE OPTIONS:
     --atm-correction: Apply atmospheric jump correction coefficients
     --pole-tide: Correct for pole tide drift
     --geocenter X: Update Degree 1 coefficients with SLR or derived values
+        Tellus: GRACE/GRACE-FO TN-13 coefficients from PO.DAAC
+        SLR: satellite laser ranging coefficients from CSR
+        SLF: Sutterley and Velicogna coefficients, Remote Sensing (2019)
+        Swenson: GRACE-derived coefficients from Sean Swenson
+        GFZ: GRACE/GRACE-FO coefficients from GFZ GravIS
     --slr-c20 X: Replace C20 coefficients with SLR values
+        CSR: use values from CSR (TN-07,TN-09,TN-11)
+        GFZ: use values from GFZ
+        GSFC: use values from GSFC (TN-14)
     --slr-21 X: Replace C21 and S21 coefficients with SLR values
+        CSR: use values from CSR
+        GFZ: use values from GFZ GravIS
+        GSFC: use values from GSFC
     --slr-22 X: Replace C22 and S22 coefficients with SLR values
+        CSR: use values from CSR
     --slr-c30 X: Replace C30 coefficients with SLR values
+        CSR: use values from CSR (5x5 with 6,1)
+        GFZ: use values from GFZ GravIS
+        GSFC: use values from GSFC (TN-14)
     --slr-c50 X: Replace C50 coefficients with SLR values
+        CSR: use values from CSR (5x5 with 6,1)
+        GSFC: use values from GSFC
     --mean-file X: Output GRACE/GRACE-FO mean file
     --mean-format X: Output data format for GRACE/GRACE-FO mean file
     --log: Output a log file listing output files
@@ -52,6 +69,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 07/2021: simplified file exports using wrappers in harmonics
     Updated 06/2021: switch from parameter files to argparse arguments
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: include parameters for replacing C21/S21 and C22/S22
@@ -124,7 +142,7 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
     #-- data formats for output: ascii, netCDF4, HDF5
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')[MEANFORM]
 
-    #-- reading GRACE months for input range with grace_input_months.py
+    #-- reading GRACE months for input date range
     #-- replacing low-degree harmonics with SLR values if specified
     #-- include degree 1 (geocenter) harmonics if specified
     #-- correcting for Pole Tide Drift and Atmospheric Jumps if specified
@@ -153,15 +171,8 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
         os.makedirs(DIRECTORY, MODE)
 
     #-- output spherical harmonics for the static field
-    if (MEANFORM == 'ascii'):
-        #-- output mean field to ascii
-        mean_Ylms.to_ascii(MEAN_FILE,verbose=VERBOSE)
-    elif (MEANFORM == 'netCDF4'):
-        #-- output mean field to netCDF4
-        mean_Ylms.to_netCDF4(MEAN_FILE,verbose=VERBOSE)
-    elif (MEANFORM == 'HDF5'):
-        #-- output mean field to HDF5
-        mean_Ylms.to_HDF5(MEAN_FILE,verbose=VERBOSE)
+    #-- output mean field to specified file format
+    mean_Ylms.to_file(MEAN_FILE, format=MEANFORM, verbose=VERBOSE)
     #-- change the permissions mode
     os.chmod(MEAN_FILE, MODE)
 

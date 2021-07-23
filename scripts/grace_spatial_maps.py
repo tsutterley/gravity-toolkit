@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_maps.py
-Written by Tyler Sutterley (06/2021)
+Written by Tyler Sutterley (07/2021)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly spatial fields
@@ -56,11 +56,29 @@ COMMAND LINE OPTIONS:
     --atm-correction: Apply atmospheric jump correction coefficients
     --pole-tide: Correct for pole tide drift
     --geocenter X: Update Degree 1 coefficients with SLR or derived values
+        Tellus: GRACE/GRACE-FO TN-13 coefficients from PO.DAAC
+        SLR: satellite laser ranging coefficients from CSR
+        SLF: Sutterley and Velicogna coefficients, Remote Sensing (2019)
+        Swenson: GRACE-derived coefficients from Sean Swenson
+        GFZ: GRACE/GRACE-FO coefficients from GFZ GravIS
+    --interpolate-geocenter: Least-squares model missing Degree 1 coefficients
     --slr-c20 X: Replace C20 coefficients with SLR values
+        CSR: use values from CSR (TN-07,TN-09,TN-11)
+        GFZ: use values from GFZ
+        GSFC: use values from GSFC (TN-14)
     --slr-21 X: Replace C21 and S21 coefficients with SLR values
+        CSR: use values from CSR
+        GFZ: use values from GFZ GravIS
+        GSFC: use values from GSFC
     --slr-22 X: Replace C22 and S22 coefficients with SLR values
+        CSR: use values from CSR
     --slr-c30 X: Replace C30 coefficients with SLR values
+        CSR: use values from CSR (5x5 with 6,1)
+        GFZ: use values from GFZ GravIS
+        GSFC: use values from GSFC (TN-14)
     --slr-c50 X: Replace C50 coefficients with SLR values
+        CSR: use values from CSR (5x5 with 6,1)
+        GSFC: use values from GSFC
     -U X, --units X: output units
         1: cm of water thickness
         2: mm of geoid height
@@ -123,6 +141,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 07/2021: simplified file imports using wrappers in harmonics
     Updated 06/2021: switch from parameter files to argparse arguments
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: include parameters for replacing C21/S21 and C22/S22
@@ -289,7 +308,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     MMAX = np.copy(LMAX) if not MMAX else MMAX
     order_str = 'M{0:d}'.format(MMAX) if (MMAX != LMAX) else ''
 
-    #-- reading GRACE months for input range with grace_input_months.py
+    #-- reading GRACE months for input date range
     #-- replacing low-degree harmonics with SLR values if specified
     #-- include degree 1 (geocenter) harmonics if specified
     #-- correcting for Pole-Tide and Atmospheric Jumps if specified
@@ -301,17 +320,13 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     GRACE_Ylms = harmonics().from_dict(Ylms)
     GRACE_Ylms.directory = Ylms['directory']
     GRACE_Ylms.title = Ylms['title']
+    #-- default file prefix
+    if not FILE_PREFIX:
+        FILE_PREFIX = GRACE_Ylms.title
     #-- use a mean file for the static field to remove
     if MEAN_FILE:
         #-- read data form for input mean file (ascii, netCDF4, HDF5, gfc)
-        if (MEANFORM == 'ascii'):
-            mean_Ylms=harmonics().from_ascii(MEAN_FILE,date=False)
-        elif (MEANFORM == 'netCDF4'):
-            mean_Ylms=harmonics().from_netCDF4(MEAN_FILE,date=False)
-        elif (MEANFORM == 'HDF5'):
-            mean_Ylms=harmonics().from_HDF5(MEAN_FILE,date=False)
-        elif (MEANFORM == 'gfc'):
-            mean_Ylms=harmonics().from_gfc(MEAN_FILE)
+        mean_Ylms = harmonics().from_file(MEAN_FILE,format=DATAFORM,date=False)
         #-- remove the input mean
         GRACE_Ylms.subtract(mean_Ylms)
     else:
@@ -359,18 +374,12 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
             REMOVE_FORMAT = REMOVE_FORMAT*len(REMOVE_FILES)
         #-- for each file to be removed
         for REMOVE_FILE,REMOVEFORM in zip(REMOVE_FILES,REMOVE_FORMAT):
-            if (REMOVEFORM == 'ascii'):
-                #-- ascii (.txt)
-                Ylms = harmonics().from_ascii(REMOVE_FILE)
-            elif (REMOVEFORM == 'netCDF4'):
-                #-- netCDF4 (.nc)
-                Ylms = harmonics().from_netCDF4(REMOVE_FILE)
-            elif (REMOVEFORM == 'HDF5'):
-                #-- HDF5 (.h5)
-                Ylms = harmonics().from_HDF5(REMOVE_FILE)
-            elif (REMOVEFORM == 'index'):
+            if (REMOVEFORM == 'index'):
                 #-- index containing files in data format
                 Ylms = harmonics().from_index(REMOVE_FILE, DATAFORM)
+            else:
+                #-- individual file in ascii, netCDF4 or HDF5 formats
+                Ylms = harmonics().from_file(REMOVE_FILE, format=DATAFORM)
             #-- reduce to GRACE/GRACE-FO months and truncate to degree and order
             Ylms = Ylms.subset(GRACE_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
             #-- distribute removed Ylms uniformly over the ocean
