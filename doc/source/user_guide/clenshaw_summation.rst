@@ -3,6 +3,7 @@ clenshaw_summation.py
 =====================
 
 - Returns the spatial field for a series of spherical harmonics at a sequence of ungridded points
+- Uses a Clenshaw summation to calculate the spherical harmonic summation [Holmes2002]_ [Tscherning1982]_
 
 Calling Sequence
 ################
@@ -59,6 +60,6 @@ References
 
 .. [Holmes2002] S. A. Holmes and W. E. Featherstone, "A unified approach to the Clenshaw summation and the recursive computation of very high degree and order normalised associated Legendre functions", *Journal of Geodesy*, 76, 279--299, (2002). `doi: 10.1007/s00190-002-0216-2 <https://doi.org/10.1007/s00190-002-0216-2>`_
 
-.. [Tscherning1982] C. C. Tscherning and K. Poder, "Some Geodetic Applications of Clenshaw Summation", Bollettino di Geodesia e Scienze, 4, 349--375, (1982).
+.. [Tscherning1982] C. C. Tscherning and K. Poder, "Some Geodetic Applications of Clenshaw Summation", *Bollettino di Geodesia e Scienze*, 4, 349--375, (1982).
 
 .. [Wahr2000] J. Wahr, D. Wingham, and C. Bentley, "A method of combining ICESat and GRACE satellite data to constrain Antarctic mass balance", *Journal of Geophysical Research: Solid Earth*, 105(B7), 16279--16294, (2000). `doi: 10.1029/2000JB900113 <https://doi.org/10.1029/2000JB900113>`_

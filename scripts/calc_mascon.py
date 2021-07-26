@@ -394,7 +394,7 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     #-- use a mean file for the static field to remove
     if MEAN_FILE:
         #-- read data form for input mean file (ascii, netCDF4, HDF5, gfc)
-        mean_Ylms = harmonics().from_file(MEAN_FILE,format=DATAFORM,date=False)
+        mean_Ylms = harmonics().from_file(MEAN_FILE,format=MEANFORM,date=False)
         #-- remove the input mean
         GRACE_Ylms.subtract(mean_Ylms)
     else:
