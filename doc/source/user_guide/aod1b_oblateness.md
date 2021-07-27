@@ -6,7 +6,7 @@ aod1b_oblateness.py
     * `'ocn'`: oceanic loading from OMCT/MPIOM
     * `'glo'`: global atmospheric and oceanic loading
     * `'oba'`: ocean bottom pressure from OMCT/MPIOM
-- Creates monthly files of oblateness variations at 6-hour intervals
+- Creates monthly files of oblateness variations at 3 or 6-hour intervals
 
 #### Calling Sequence
 ```bash
