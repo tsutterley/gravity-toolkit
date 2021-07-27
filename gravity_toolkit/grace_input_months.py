@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (06/2021)
+Written by Tyler Sutterley (07/2021)
+Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
     and for a specified date range
@@ -92,6 +93,7 @@ PROGRAM DEPENDENCIES:
     read_GRACE_harmonics.py: reads an input GRACE data file and calculates date
 
 UPDATE HISTORY:
+    Updated 07/2021: fix inputs to AOD-corrected SLR geocenter coefficients
     Updated 06/2021: can use SLR figure axis harmonics produced by GSFC
         read GRACE/GRACE-FO fields before reading replacement values
     Updated 05/2021: can use SLR low-degree harmonic values produced by GFZ
@@ -373,7 +375,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         #-- new file of degree-1 mass variations from Minkang Cheng
         #-- http://download.csr.utexas.edu/outgoing/cheng/gct2est.220_5s
         DEG1_file = os.path.join(base_dir,'geocenter','gct2est.220_5s')
-        DEG1_input = aod_corrected_SLR_geocenter(DEG1_file,HEADER=15,
+        DEG1_input = aod_corrected_SLR_geocenter(DEG1_file,DREL,HEADER=15,
             RADIUS=6.378136e9,COLUMNS=['MJD','time','X','Y','Z','XM','YM','ZM',
             'X_sigma','Y_sigma','Z_sigma','XM_sigma','YM_sigma','ZM_sigma'])
         FLAGS.append('_w{0}_DEG1'.format(DEG1))

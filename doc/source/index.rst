@@ -105,6 +105,7 @@ missions
     user_guide/grace_mean_harmonics.rst
     user_guide/grace_spatial_error.rst
     user_guide/grace_spatial_maps.rst
+    user_guide/make_monthly_dealiasing.md
     user_guide/mascon_reconstruct.rst
     user_guide/regress_grace_maps.rst
     user_guide/run_grace_date.md

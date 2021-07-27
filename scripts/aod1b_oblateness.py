@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 u"""
 aod1b_oblateness.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (07/2021)
+Contributions by Hugo Lecomte (03/2021)
 
 Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
     atm: atmospheric loading from ECMWF
@@ -9,7 +10,7 @@ Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
     glo: global atmospheric and oceanic loading
     oba: ocean bottom pressure from OMCT
 
-Creates monthly files of oblateness (C20) variations at 6-hour intervals
+Creates monthly files of oblateness (C20) variations at 3 or 6 hour intervals
 
 NOTE: this reads the GFZ AOD1B files downloaded from PO.DAAC
 https://podaac-uat.jpl.nasa.gov/drive/files/allData/grace/L1B/GFZ/AOD1B/RL05/
@@ -31,7 +32,12 @@ COMMAND LINE OPTIONS:
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
+PROGRAM DEPENDENCIES:
+    utilities.py: download and management utilities for files
+
 UPDATED HISTORY:
+    Updated 07/2021: can use default argument files to define options
+        Add 3-hour interval depending on Release
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 10/2020: use argparse to set command line parameters
     Updated 07/2020: added function docstrings
@@ -56,13 +62,7 @@ import gzip
 import tarfile
 import argparse
 import numpy as np
-
-#-- aod1b data products
-product = {}
-product['atm'] = 'Atmospheric loading from ECMWF'
-product['ocn'] = 'Oceanic loading from OMCT'
-product['glo'] = 'Global atmospheric and oceanic loading'
-product['oba'] = 'Ocean bottom pressure from OMCT'
+import gravity_toolkit.utilities as utilities
 
 #-- program module to read the C20 coefficients of the AOD1b data
 def aod1b_oblateness(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
@@ -103,10 +103,31 @@ def aod1b_oblateness(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
     #-- output formatting string
     fstr = '{0:4d}-{1:02d}-{2:02d}T{3:02d}:00:00 {4:+16.8E}'
 
-    #-- Maximum spherical harmonic degree (LMAX)
-    LMAX = 100
+    #-- set number of hours in a file
+    #-- set the ocean model for a given release
+    if DREL in ('RL01','RL02','RL03','RL04','RL05'):
+        #-- for 00, 06, 12 and 18
+        n_time = 4
+        ATMOSPHERE = 'ECMWF'
+        OCEAN_MODEL = 'OMCT'
+        LMAX = 100
+    elif DREL in ('RL06',):
+        #-- for 00, 03, 06, 09, 12, 15, 18 and 21
+        n_time = 8
+        ATMOSPHERE = 'ECMWF'
+        OCEAN_MODEL = 'MPIOM'
+        LMAX = 180
+    else:
+        raise ValueError('Invalid data release')
     #-- Calculating the number of cos and sin harmonics up to LMAX
     n_harm = (LMAX**2 + 3*LMAX)//2 + 1
+
+    #-- AOD1B data products
+    product = {}
+    product['atm'] = 'Atmospheric loading from {0}'.format(ATMOSPHERE)
+    product['ocn'] = 'Oceanic loading from {0}'.format(OCEAN_MODEL)
+    product['glo'] = 'Global atmospheric and oceanic loading'
+    product['oba'] = 'Ocean bottom pressure from {0}'.format(OCEAN_MODEL)
 
     #-- AOD1B directory and output oblateness directory
     grace_dir = os.path.join(base_dir,'AOD1B',DREL)
@@ -166,13 +187,13 @@ def aod1b_oblateness(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
                 else:
                     fid = tar.extractfile(member)
                 #-- C20 spherical harmonics for day and hours
-                C20 = np.zeros((4))
-                hours = np.zeros((4),dtype=np.int64)
+                C20 = np.zeros((n_time))
+                hours = np.zeros((n_time),dtype=np.int64)
 
                 #-- create counter for hour in dataset
                 c = 0
                 #-- while loop ends when dataset is read
-                while (c < 4):
+                while (c < n_time):
                     #-- read line
                     file_contents = fid.readline().decode('ISO-8859-1')
                     #-- find file header for data product
@@ -210,9 +231,11 @@ def main():
     #-- Read the system arguments listed after the program
     parser = argparse.ArgumentParser(
         description="""Creates monthly files of oblateness (C20)
-            variations at 6-hour intervals
-            """
+            variations at 3 or 6-hour intervals
+            """,
+        fromfile_prefix_chars="@"
     )
+    parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
     #-- command line parameters
     #-- working data directory
     parser.add_argument('--directory','-D',

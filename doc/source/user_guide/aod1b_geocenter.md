@@ -6,7 +6,7 @@ aod1b_geocenter.py
     * `'ocn'`: oceanic loading from OMCT/MPIOM
     * `'glo'`: global atmospheric and oceanic loading
     * `'oba'`: ocean bottom pressure from OMCT/MPIOM
-- Creates monthly files of geocenter variations at 6-hour intervals
+- Creates monthly files of geocenter variations at 3 or 6-hour intervals
 
 #### Calling Sequence
 ```bash
