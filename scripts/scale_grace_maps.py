@@ -151,6 +151,7 @@ REFERENCES:
 UPDATE HISTORY:
     Updated 07/2021: switch from parameter files to argparse arguments
         simplified file imports using wrappers in harmonics
+        added path to default land-sea mask for mass redistribution
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: include parameters for replacing C21/S21 and C22/S22
     Updated 02/2021: changed remove index to files with specified formats
@@ -873,8 +874,9 @@ def main():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         required=True, help='Scaling factor power file')
     #-- land-sea mask for redistributing fluxes
+    lsmask = utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
         help='Land-sea mask for redistributing land water flux')
     #-- Output log file for each job in forms
     #-- scale_GRACE_maps_run_2002-04-01_PID-00000.log

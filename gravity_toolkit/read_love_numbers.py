@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 u"""
 read_love_numbers.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (07/2021)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
-Can linearly extrapolate load love numbers beyond maximum degree of dataset
+Linearly interpolates load love numbers for missing degrees
+Linearly extrapolates load love numbers beyond maximum degree of dataset
 
 INPUTS:
     love_numbers_file: Elastic load Love numbers file
@@ -37,7 +38,22 @@ OPTIONS:
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
+REFERENCES:
+    G. Blewitt, "Self‐consistency in reference frames, geocenter definition,
+        and surface loading of the solid Earth",
+        Journal of Geophysical Research: Solid Earth, 108(B2), 2103, (2003)
+    W. E. Farrell, "Deformation of the Earth by surface loads",
+        Reviews of Geophysics, 10(3), 761--797, (1972)
+    A. S. Trupin, M. F. Meier, and J. Wahr, "Effect of melting glaciers
+        on the Earth's rotation and gravitational field: 1965-1984"
+        Geophysical Journal International, 108(1), (1992)
+    J. Wahr, M. Molenaar, and F. Bryan, "Time variability of the Earth's
+        gravity field: Hydrological and oceanic effects and their possible
+        detection using GRACE", Journal of Geophysical Research,
+        103(B12), 30205-30229, (1998)
+
 UPDATE HISTORY:
+    Updated 07/2021: added check if needing to interpolate love numbers
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: use file not found exceptions
     Updated 12/2020: generalized ascii read for outputs from Gegout and Wang
@@ -113,17 +129,18 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
     if LMAX is None:
         LMAX = np.int64(rx.findall(file_contents[-1])[COLUMNS.index('l')])
 
-    #-- output love numbers
+    #-- dictionary of output love numbers
     love = {}
     #-- spherical harmonic degree
     love['l'] = np.arange(LMAX+1)
     #-- vertical displacement hl
-    love['hl'] = np.zeros((LMAX+1))
     #-- gravitational potential kl
-    love['kl'] = np.zeros((LMAX+1))
     #-- horizontal displacement ll
-    love['ll'] = np.zeros((LMAX+1))
-    #-- for each line in the file (skipping the 2 header lines)
+    for n in ('hl','kl','ll'):
+        love[n] = np.zeros((LMAX+1))
+    #-- check if needing to interpolate between degrees
+    flag = np.ones((LMAX+1),dtype=bool)
+    #-- for each line in the file (skipping header lines)
     for file_line in file_contents[HEADER:]:
         #-- find numerical instances in line
         #-- replacing fortran double precision exponential
@@ -134,21 +151,27 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
         if (l <= LMAX):
             #-- convert love numbers to float
             #-- vertical displacement hl
-            love['hl'][l] = np.float64(love_numbers[COLUMNS.index('hl')])
             #-- gravitational potential kl
-            love['kl'][l] = np.float64(love_numbers[COLUMNS.index('kl')])
             #-- horizontal displacement ll
-            love['ll'][l] = np.float64(love_numbers[COLUMNS.index('ll')])
+            for n in ('hl','kl','ll'):
+                love[n][l] = np.float64(love_numbers[COLUMNS.index(n)])
+            #-- set interpolation flag for degree
+            flag[l] = False
 
-    #-- LMAX of load love numbers from Han and Wahr (1995) is 696
-    #-- From Wahr (2007), can linearly extrapolate the load numbers
-    #-- however, as we are linearly extrapolating out, do not make
-    #-- LMAX too much larger than 696 (or LMAX of dataset)
+    #-- if needing to linearly interpolate love numbers
+    if np.any(flag):
+        #-- linearly interpolate each load love number following Wahr (1998)
+        for n in ('hl','kl','ll'):
+            love[n][flag] = np.interp(love['l'][flag],
+                love['l'][~flag], love[n][~flag])
+
+    #-- if needing to linearly extrapolate love numbers
+    #-- NOTE: use caution if extrapolating far beyond the
+    #-- maximum degree of the love numbers dataset
     for lint in range(l,LMAX+1):
-        #-- linearly extrapolating load love numbers
-        love['hl'][lint] = 2.0*love['hl'][lint-1] - love['hl'][lint-2]
-        love['kl'][lint] = 2.0*love['kl'][lint-1] - love['kl'][lint-2]
-        love['ll'][lint] = 2.0*love['ll'][lint-1] - love['ll'][lint-2]
+        #-- linearly extrapolate each load love number
+        for n in ('hl','kl','ll'):
+            love[n][lint] = 2.0*love[n][lint-1] - love[n][lint-2]
 
     #-- calculate isomorphic parameters for different reference frames
     #-- From Blewitt (2003), Wahr (1998), Trupin (1992) and Farrell (1972)
@@ -170,9 +193,8 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
     else:
         raise Exception('Invalid Reference Frame {0}'.format(REFERENCE))
     #-- apply isomorphic parameters
-    love['hl'][1] -= alpha
-    love['kl'][1] -= alpha
-    love['ll'][1] -= alpha
+    for n in ('hl','kl','ll'):
+        love[n][1] -= alpha
 
     #-- return love numbers in output format
     if (FORMAT == 'dict'):

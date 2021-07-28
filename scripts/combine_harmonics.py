@@ -76,6 +76,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 07/2021: dded path to default land-sea mask for mass redistribution
     Updated 06/2021: can use input files to define command line arguments
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
@@ -414,8 +415,9 @@ def main():
         default=False, action='store_true',
         help='Redistribute total mass over the ocean')
     #-- land-sea mask for redistributing over the ocean
+    lsmask = utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
         help='Land-sea mask for redistributing over the ocean')
     #-- mean file to remove
     parser.add_argument('--mean',
