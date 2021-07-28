@@ -255,7 +255,7 @@ def make_monthly_dealiasing(base_dir, PROC=None, DREL=None, DSET=None,
             #-- if verbose: output information about the output file
             print('{0} ({1})'.format(FILE,OVERWRITE)) if VERBOSE else None
             #-- allocate for the mean output harmonics
-            Ylms = dealiasing(lmax=LMAX, mmax=LMAX)
+            Ylms = harmonics(lmax=LMAX, mmax=LMAX)
             nt = len(julian_days_to_read)*n_time
             Ylms.clm = np.zeros((LMAX+1,LMAX+1,nt))
             Ylms.slm = np.zeros((LMAX+1,LMAX+1,nt))
@@ -314,7 +314,8 @@ def make_monthly_dealiasing(base_dir, PROC=None, DREL=None, DSET=None,
                     count += n_time
 
             #-- calculate mean harmonics for GRACE/GRACE-FO month
-            mean_Ylms = Ylms.mean()
+            #-- convert from harmonics object to dealiasing object
+            mean_Ylms = dealiasing().convert(Ylms.mean())
             mean_Ylms.time = np.mean(Ylms.time)
             mean_Ylms.month = np.int64(gm)
             #-- product information
@@ -347,6 +348,19 @@ def make_monthly_dealiasing(base_dir, PROC=None, DREL=None, DSET=None,
 
         elif not COMPLETE:
             print('File {0} not output (incomplete)'.format(FILE))
+
+    #-- if outputting as spherical harmonic model files
+    if (DATAFORM == 'SHM'):
+        #-- Create an index file for each GRACE product
+        grace_files = [fi for fi in os.listdir(os.path.join(grace_dir,DSET)) if 
+            re.match(r'{0}-2(.*?)\.gz'.format(DSET),fi)]
+        #-- outputting GRACE filenames to index
+        with open(os.path.join(grace_dir,DSET,'index.txt'),'w') as fid:
+            for fi in sorted(grace_files):
+                print('{0}'.format(fi), file=fid)
+        #-- change permissions of index file
+        os.chmod(os.path.join(grace_dir,DSET,'index.txt'), MODE)
+
     #-- print completion flag
     print('Complete: {0}/{1}/{2}'.format(PROC,DREL,DSET))
     #-- close the output date file
@@ -361,6 +375,23 @@ class dealiasing(harmonics):
         self.product=None
         self.start_time=[None]*3
         self.end_time=[None]*3
+
+    def convert(self, temp):
+        """
+        Convert a harmonics object to a new dealiasing object
+        """
+        self = dealiasing(lmax=temp.lmax, mmax=temp.mmax)
+        #-- try to assign variables to self
+        for key in ['clm','slm','time','month','shape','ndim','filename',
+            'center','release','product','start_time','end_time']:
+            try:
+                val = getattr(temp, key)
+                setattr(self, key, np.copy(val))
+            except AttributeError:
+                pass
+        #-- assign ndim and shape attributes
+        self.update_dimensions()
+        return self
 
     def to_SHM(self, filename, **kwargs):
         """

@@ -78,6 +78,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 07/2021: switch from parameter files to argparse arguments
+        added path to default land-sea mask for mass redistribution
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: add parser object for removing commented or empty lines
     Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
@@ -424,8 +425,9 @@ def main():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='Reconstructed mascon time series file')
     #-- land-sea mask for redistributing mascon mass
+    lsmask = utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
         help='Land-sea mask for redistributing mascon mass')
     #-- print information about processing run
     parser.add_argument('--verbose','-V',

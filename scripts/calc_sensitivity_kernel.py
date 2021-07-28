@@ -84,6 +84,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 07/2021: simplified file imports using wrappers in harmonics
+        added path to default land-sea mask for mass redistribution
     Updated 06/2021: switch from parameter files to argparse arguments
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: add parser object for removing commented or empty lines
@@ -574,8 +575,9 @@ def main():
         type=int, default=1, choices=(1,2),
         help='Method for fitting sensitivity kernel to harmonics')
     #-- land-sea mask for redistributing mascon mass
+    lsmask = utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
         help='Land-sea mask for redistributing mascon mass')
     #-- output grid parameters
     parser.add_argument('--spacing','-S',
