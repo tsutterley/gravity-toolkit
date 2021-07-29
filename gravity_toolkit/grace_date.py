@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_date.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (07/2021)
 
 Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
 Parses dates of each GRACE/GRACE-FO file and assigns the month number
@@ -38,6 +38,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 07/2021: remove choices for argparse processing centers
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: use adjust_months function to fix special months cases
     Updated 12/2020: using utilities from time module
@@ -254,7 +255,6 @@ def main():
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, nargs='+',
         default=['CSR','GFZ','JPL'],
-        choices=['CSR','GFZ','JPL'],
         help='GRACE/GRACE-FO Processing Center')
     #-- GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',

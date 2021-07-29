@@ -102,10 +102,10 @@ missions
     user_guide/calc_sensitivity_kernel.rst
     user_guide/combine_harmonics.rst
     user_guide/convert_harmonics.rst
+    user_guide/dealiasing_monthly_mean.md
     user_guide/grace_mean_harmonics.rst
     user_guide/grace_spatial_error.rst
     user_guide/grace_spatial_maps.rst
-    user_guide/make_monthly_dealiasing.md
     user_guide/mascon_reconstruct.rst
     user_guide/regress_grace_maps.rst
     user_guide/run_grace_date.md

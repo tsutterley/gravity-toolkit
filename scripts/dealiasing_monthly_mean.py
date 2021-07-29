@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 u"""
-make_monthly_dealiasing.py
+dealiasing_monthly_mean.py
 Written by Tyler Sutterley (07/2021)
 
 Reads GRACE/GRACE-FO AOD1B datafiles for a specific product and outputs monthly
@@ -13,7 +13,7 @@ Reads GRACE/GRACE-FO AOD1B datafiles for a specific product and outputs monthly
 Creates a file for each month (such as making GAA and GAB files for CSR)
 
 CALLING SEQUENCE:
-    python make_monthly_dealiasing.py --center CSR --release RL06 --product GAA
+    python dealiasing_monthly_mean.py --center CSR --release RL06 --product GAA
 
 COMMAND LINE OPTIONS:
     -D X, --directory X: Working Data Directory
@@ -54,6 +54,7 @@ PROGRAM DEPENDENCIES:
 UPDATED HISTORY:
     Updated 07/2021: can use default argument files to define options
         added option to output in spherical harmonic model (SHM) format
+        remove choices for argparse processing centers
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: replaced numpy bool to prevent deprecation warning
     Updated 12/2020: using utilities from time module
@@ -90,8 +91,8 @@ def calc_julian_day(YEAR, DAY_OF_YEAR):
         np.floor(275.0/9.0) + np.float64(DAY_OF_YEAR) + 1721028.5
     return JD
 
-#-- program module to read the aod1b data and output a monthly mean
-def make_monthly_dealiasing(base_dir, PROC=None, DREL=None, DSET=None,
+#-- PURPOSE: reads the AOD1B data and outputs a monthly mean
+def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
     LMAX=None, DATAFORM=None, CLOBBER=False, VERBOSE=False, MODE=0o775):
     #-- output data suffix
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
@@ -315,7 +316,7 @@ def make_monthly_dealiasing(base_dir, PROC=None, DREL=None, DSET=None,
 
             #-- calculate mean harmonics for GRACE/GRACE-FO month
             #-- convert from harmonics object to dealiasing object
-            mean_Ylms = dealiasing().convert(Ylms.mean())
+            mean_Ylms = dealiasing().from_harmonics(Ylms.mean())
             mean_Ylms.time = np.mean(Ylms.time)
             mean_Ylms.month = np.int64(gm)
             #-- product information
@@ -352,7 +353,7 @@ def make_monthly_dealiasing(base_dir, PROC=None, DREL=None, DSET=None,
     #-- if outputting as spherical harmonic model files
     if (DATAFORM == 'SHM'):
         #-- Create an index file for each GRACE product
-        grace_files = [fi for fi in os.listdir(os.path.join(grace_dir,DSET)) if 
+        grace_files = [fi for fi in os.listdir(os.path.join(grace_dir,DSET)) if
             re.match(r'{0}-2(.*?)\.gz'.format(DSET),fi)]
         #-- outputting GRACE filenames to index
         with open(os.path.join(grace_dir,DSET,'index.txt'),'w') as fid:
@@ -376,7 +377,7 @@ class dealiasing(harmonics):
         self.start_time=[None]*3
         self.end_time=[None]*3
 
-    def convert(self, temp):
+    def from_harmonics(self, temp):
         """
         Convert a harmonics object to a new dealiasing object
         """
@@ -395,11 +396,11 @@ class dealiasing(harmonics):
 
     def to_SHM(self, filename, **kwargs):
         """
-        Write a harmonics object to ascii file
-        Inputs: full path of output ascii file
+        Write a harmonics object to SHM file
+        Inputs: full path of output SHM file
         Options:
             harmonics objects contain date information
-            keyword arguments for ascii output
+            keyword arguments for SHM output
         """
         self.filename = os.path.expanduser(filename)
         #-- set default verbosity
@@ -653,7 +654,7 @@ class dealiasing(harmonics):
         #-- end of header
         fid.write('\n\n# End of YAML header\n')
 
-#-- Main program that calls make_monthly_dealiasing()
+#-- Main program that calls dealiasing_monthly_mean()
 def main():
     #-- command line parameters
     #-- Read the system arguments listed after the program
@@ -708,8 +709,8 @@ def main():
     args,_ = parser.parse_known_args()
 
     for DSET in args.product:
-        #-- run AOD1b program with parameters
-        make_monthly_dealiasing(args.directory, PROC=args.center,
+        #-- run monthly mean AOD1b program with parameters
+        dealiasing_monthly_mean(args.directory, PROC=args.center,
             DREL=args.release, DSET=DSET, LMAX=args.lmax,
             DATAFORM=args.format, CLOBBER=args.clobber,
             VERBOSE=args.verbose, MODE=args.mode)

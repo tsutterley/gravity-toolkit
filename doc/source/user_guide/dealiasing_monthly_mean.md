@@ -1,4 +1,4 @@
-make_monthly_dealiasing.py
+dealiasing_monthly_mean.py
 ==========================
 
 - Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product and outputs monthly the mean for a specific GRACE/GRACE-FO processing center and data release
@@ -10,9 +10,9 @@ make_monthly_dealiasing.py
 
 #### Calling Sequence
 ```bash
-python make_monthly_dealiasing.py --release RL06 --product GAD
+python dealiasing_monthly_mean.py --release RL06 --product GAD
 ```
-[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/make_monthly_dealiasing.py)
+[Source code](https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/dealiasing_monthly_mean.py)
 
 #### Command Line Options
 - `-D X`, `--directory X`: Working Data Directory

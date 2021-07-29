@@ -43,6 +43,10 @@ COMMAND LINE OPTIONS:
         GSFC: use values from GSFC
     --mean-file X: Output GRACE/GRACE-FO mean file
     --mean-format X: Output data format for GRACE/GRACE-FO mean file
+        ascii
+        netCDF4
+        HDF5
+        gfc
     --log: Output a log file listing output files
     -V, --verbose: verbose output of processing run
     -M X, --mode X: Permissions mode of the files created
@@ -70,6 +74,8 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 07/2021: simplified file exports using wrappers in harmonics
+        added option to output in gravity field coefficients (gfc) format
+        remove choices for argparse processing centers
     Updated 06/2021: switch from parameter files to argparse arguments
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: include parameters for replacing C21/S21 and C22/S22
@@ -139,8 +145,8 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
     MMAX = np.copy(LMAX) if not MMAX else MMAX
     order_str = 'M{0:d}'.format(MMAX) if (MMAX != LMAX) else ''
 
-    #-- data formats for output: ascii, netCDF4, HDF5
-    suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')[MEANFORM]
+    #-- data formats for output: ascii, netCDF4, HDF5, gfc
+    suffix = dict(ascii='txt',netCDF4='nc',HDF5='H5',gfc='gfc')[MEANFORM]
 
     #-- reading GRACE months for input date range
     #-- replacing low-degree harmonics with SLR values if specified
@@ -154,9 +160,18 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
     #-- descriptor string for processing parameters
     grace_str = input_Ylms['title']
     #-- calculate mean Ylms
-    mean_Ylms = grace_Ylms.mean()
+    mean_Ylms = mean().from_harmonics(grace_Ylms.mean())
     mean_Ylms.time = np.mean(grace_Ylms.time)
     mean_Ylms.month = np.mean(grace_Ylms.month)
+    #-- number of months
+    nt = grace_Ylms.shape[-1]
+    #-- calculate RMS of harmonic errors
+    mean_Ylms.eclm = np.sqrt(np.sum(input_Ylms['eclm']**2,axis=2)/nt)
+    mean_Ylms.eslm = np.sqrt(np.sum(input_Ylms['eslm']**2,axis=2)/nt)
+    #-- product information
+    mean_Ylms.center = PROC
+    mean_Ylms.release = DREL
+    mean_Ylms.product = DSET
 
     #-- default output filename if not entering via parameter file
     if not MEAN_FILE:
@@ -171,13 +186,90 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
         os.makedirs(DIRECTORY, MODE)
 
     #-- output spherical harmonics for the static field
-    #-- output mean field to specified file format
-    mean_Ylms.to_file(MEAN_FILE, format=MEANFORM, verbose=VERBOSE)
+    if (MEANFORM == 'gfc'):
+        #-- output mean field to gfc format
+        mean_Ylms.to_gfc(MEAN_FILE, verbose=VERBOSE)
+    else:
+        #-- output mean field to specified file format
+        mean_Ylms.to_file(MEAN_FILE, format=MEANFORM, verbose=VERBOSE)
     #-- change the permissions mode
     os.chmod(MEAN_FILE, MODE)
 
     #-- return the output file
     return MEAN_FILE
+
+#-- PURPOSE: additional routines for the harmonics module
+class mean(harmonics):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.center=None
+        self.release='RLxx'
+        self.product=None
+        self.eclm=None
+        self.eslm=None
+
+    def from_harmonics(self, temp):
+        """
+        Convert a harmonics object to a new mean object
+        """
+        self = mean(lmax=temp.lmax, mmax=temp.mmax)
+        #-- try to assign variables to self
+        for key in ['clm','slm','eclm','eslm','shape','ndim','filename',
+            'center','release','product']:
+            try:
+                val = getattr(temp, key)
+                setattr(self, key, np.copy(val))
+            except AttributeError:
+                pass
+        #-- assign ndim and shape attributes
+        self.update_dimensions()
+        return self
+
+    def to_gfc(self, filename, **kwargs):
+        """
+        Write a harmonics object to gfc file
+        Inputs: full path of output gfc file
+        Options:
+            harmonics objects contain date information
+            keyword arguments for gfc output
+        """
+        self.filename = os.path.expanduser(filename)
+        #-- set default verbosity
+        kwargs.setdefault('verbose',False)
+        print(self.filename) if kwargs['verbose'] else None
+        #-- open the output file
+        fid = open(self.filename, 'w')
+        #-- print the header informat
+        self.print_header(fid)
+        #-- output file format
+        file_format = ('{0:3} {1:4d} {2:4d} {3:+18.12E} {4:+18.12E}  '
+            '{5:11.5E}  {6:11.5E}')
+        #-- write to file for each spherical harmonic degree and order
+        for m in range(0, self.mmax+1):
+            for l in range(m, self.lmax+1):
+                args = ('gfc', l, m, self.clm[l,m], self.slm[l,m],
+                    self.eclm[l,m], self.eslm[l,m])
+                print(file_format.format(*args), file=fid)
+        #-- close the output file
+        fid.close()
+
+    #-- PURPOSE: print gfc header to top of file
+    def print_header(self, fid):
+        #-- print header
+        fid.write('{0} {1}\n'.format('begin_of_head',73*'='))
+        fid.write('{0:30}{1}\n'.format('product_type','gravity_field'))
+        fid.write('{0:30}{1}\n'.format('center',self.center))
+        fid.write('{0:30}{1}\n'.format('release',self.release))
+        fid.write('{0:30}{1}\n'.format('product',self.product))
+        fid.write('{0:30}{1:+16.10E}\n'.format('earth_gravity_constant',
+            3.986004415E+14))
+        fid.write('{0:30}{1:+16.10E}\n'.format('radius',6.378136300E+06))
+        fid.write('{0:30}{1:d}\n'.format('max_degree',self.lmax))
+        fid.write('{0:30}{1}\n'.format('errors','uncalibrated'))
+        fid.write('{0:30}{1}\n'.format('norm','fully_normalized'))
+        args = ('key','L','M','C','S','sigma C','sigma S')
+        fid.write('\n{0:7}{1:5}{2:10}{3:20}{4:15}{5:13}{6:7}\n'.format(*args))
+        fid.write('{0} {1}\n'.format('end_of_head',75*'='))
 
 #-- PURPOSE: print a file log for the GRACE/GRACE-FO mean program
 def output_log_file(arguments,output_file):
@@ -234,7 +326,6 @@ def main():
     #-- GRACE/GRACE-FO data processing center
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, default='CSR',
-        choices=['CSR','GFZ','JPL','CNES'],
         help='GRACE/GRACE-FO Processing Center')
     #-- GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
@@ -288,7 +379,7 @@ def main():
         help='Update Degree 1 coefficients with SLR or derived values')
     #-- replace low degree harmonics with values from Satellite Laser Ranging
     parser.add_argument('--slr-c20',
-        type=str, default='GSFC', choices=['CSR','GFZ','GSFC'],
+        type=str, default=None, choices=['CSR','GFZ','GSFC'],
         help='Replace C20 coefficients with SLR values')
     parser.add_argument('--slr-21',
         type=str, default=None, choices=['CSR','GFZ','GSFC'],
@@ -297,7 +388,7 @@ def main():
         type=str, default=None, choices=['CSR'],
         help='Replace C22 and S22 coefficients with SLR values')
     parser.add_argument('--slr-c30',
-        type=str, default='GSFC', choices=['CSR','GFZ','GSFC','LARES'],
+        type=str, default=None, choices=['CSR','GFZ','GSFC','LARES'],
         help='Replace C30 coefficients with SLR values')
     parser.add_argument('--slr-c50',
         type=str, default=None, choices=['CSR','GSFC','LARES'],
@@ -306,9 +397,9 @@ def main():
     parser.add_argument('--mean-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='Output GRACE/GRACE-FO mean file')
-    #-- input data format (ascii, netCDF4, HDF5)
+    #-- input data format (ascii, netCDF4, HDF5, gfc)
     parser.add_argument('--mean-format',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
+        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5','gfc'],
         help='Output data format for GRACE/GRACE-FO mean file')
     #-- Output log file for each job in forms
     #-- GRACE_mean_run_2002-04-01_PID-00000.log

@@ -152,6 +152,7 @@ UPDATE HISTORY:
     Updated 07/2021: switch from parameter files to argparse arguments
         simplified file imports using wrappers in harmonics
         added path to default land-sea mask for mass redistribution
+        remove choices for argparse processing centers
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: include parameters for replacing C21/S21 and C22/S22
     Updated 02/2021: changed remove index to files with specified formats
@@ -718,7 +719,6 @@ def main():
     #-- GRACE/GRACE-FO data processing center
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, default='CSR',
-        choices=['CSR','GFZ','JPL','CNES'],
         help='GRACE/GRACE-FO Processing Center')
     #-- GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
@@ -827,7 +827,7 @@ def main():
         help='Least-squares model missing Degree 1 coefficients')
     #-- replace low degree harmonics with values from Satellite Laser Ranging
     parser.add_argument('--slr-c20',
-        type=str, default='GSFC', choices=['CSR','GFZ','GSFC'],
+        type=str, default=None, choices=['CSR','GFZ','GSFC'],
         help='Replace C20 coefficients with SLR values')
     parser.add_argument('--slr-21',
         type=str, default=None, choices=['CSR','GFZ','GSFC'],
@@ -836,7 +836,7 @@ def main():
         type=str, default=None, choices=['CSR'],
         help='Replace C22 and S22 coefficients with SLR values')
     parser.add_argument('--slr-c30',
-        type=str, default='GSFC', choices=['CSR','GFZ','GSFC','LARES'],
+        type=str, default=None, choices=['CSR','GFZ','GSFC','LARES'],
         help='Replace C30 coefficients with SLR values')
     parser.add_argument('--slr-c50',
         type=str, default=None, choices=['CSR','GSFC','LARES'],
