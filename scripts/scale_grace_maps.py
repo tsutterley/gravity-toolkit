@@ -718,7 +718,7 @@ def main():
         help='Prefix string for input and output files')
     #-- GRACE/GRACE-FO data processing center
     parser.add_argument('--center','-c',
-        metavar='PROC', type=str, default='CSR',
+        metavar='PROC', type=str, default=None,
         help='GRACE/GRACE-FO Processing Center')
     #-- GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
