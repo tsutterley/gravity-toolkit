@@ -94,6 +94,8 @@ Returns
 
 - ``clm``: GRACE/GRACE-FO cosine spherical harmonics to degree/order ``LMAX`` and ``MMAX``
 - ``slm``: GRACE/GRACE-FO sine spherical harmonics to degree/order ``LMAX`` and ``MMAX``
+- ``eclm``: GRACE/GRACE-FO uncalibrated cosine spherical harmonic errors
+- ``eslm``: GRACE/GRACE-FO uncalibrated sine spherical harmonic errors
 - ``time``: time of each GRACE/GRACE-FO measurement (mid-month)
 - ``month``: GRACE/GRACE-FO months of input datasets
 - ``l``: spherical harmonic degree to ``LMAX``

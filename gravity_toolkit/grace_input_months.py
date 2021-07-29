@@ -42,6 +42,8 @@ INPUTS:
 OUTPUTS:
     clm: GRACE/GRACE-FO cosine spherical harmonic to degree/order LMAX and MMAX
     slm: GRACE/GRACE-FO sine spherical harmonic to degree/order LMAX and MMAX
+    eclm: GRACE/GRACE-FO uncalibrated cosine spherical harmonic errors
+    eslm: GRACE/GRACE-FO uncalibrated sine spherical harmonic errors
     time: time of each GRACE/GRACE-FO measurement (mid-month)
     month: GRACE/GRACE-FO months of input datasets
     l: spherical harmonic degree to LMAX
@@ -94,6 +96,8 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 07/2021: fix inputs to AOD-corrected SLR geocenter coefficients
+        output uncalibrated spherical harmonic errors (eclm and eslm)
+        test if GRACE directory for product exists at start of program
     Updated 06/2021: can use SLR figure axis harmonics produced by GSFC
         read GRACE/GRACE-FO fields before reading replacement values
     Updated 05/2021: can use SLR low-degree harmonic values produced by GFZ
@@ -140,6 +144,7 @@ from __future__ import print_function, division
 import os
 import re
 import gzip
+import copy
 import numpy as np
 from gravity_toolkit.grace_date import grace_date
 from gravity_toolkit.read_SLR_C20 import read_SLR_C20
@@ -217,6 +222,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     -------
     clm: GRACE/GRACE-FO cosine spherical harmonics
     slm: GRACE/GRACE-FO sine spherical harmonics
+    eclm: GRACE/GRACE-FO uncalibrated cosine spherical harmonic errors
+    eslm: GRACE/GRACE-FO uncalibrated sine spherical harmonic errors
     time: time of each GRACE/GRACE-FO measurement (mid-month)
     month: GRACE/GRACE-FO months of input datasets
     l: spherical harmonic degree to LMAX
@@ -227,6 +234,9 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
 
     #-- Directory of exact GRACE product
     grace_dir = os.path.join(base_dir, PROC, DREL, DSET)
+    #-- test if GRACE product directory exists
+    if not os.access(grace_dir, os.F_OK):
+        raise FileNotFoundError(grace_dir)
 
     #-- upper bound of spherical harmonic orders (default = LMAX)
     MMAX = np.copy(LMAX) if (MMAX is None) else MMAX
@@ -238,26 +248,38 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     n_cons = len(months)
 
     #-- Initializing input data matrices
-    grace_clm = np.zeros((LMAX+1,MMAX+1,n_cons))
-    grace_slm = np.zeros((LMAX+1,MMAX+1,n_cons))
-    tdec = np.zeros((n_cons))
-    mon = np.zeros((n_cons),dtype=np.int64)
+    grace_Ylms = {}
+    grace_Ylms['clm'] = np.zeros((LMAX+1,MMAX+1,n_cons))
+    grace_Ylms['slm'] = np.zeros((LMAX+1,MMAX+1,n_cons))
+    grace_Ylms['eclm'] = np.zeros((LMAX+1,MMAX+1,n_cons))
+    grace_Ylms['eslm'] = np.zeros((LMAX+1,MMAX+1,n_cons))
+    grace_Ylms['time'] = np.zeros((n_cons))
+    grace_Ylms['month'] = np.zeros((n_cons),dtype=np.int64)
     #-- output dimensions
-    lout = np.arange(LMAX+1)
-    mout = np.arange(MMAX+1)
+    grace_Ylms['l'] = np.arange(LMAX+1)
+    grace_Ylms['m'] = np.arange(MMAX+1)
+    #-- input directory for product
+    grace_Ylms['directory'] = copy.copy(grace_dir)
 
     #-- associate GRACE/GRACE-FO files with each GRACE/GRACE-FO month
     grace_files=grace_date(base_dir,PROC=PROC,DREL=DREL,DSET=DSET,OUTPUT=False)
 
     #-- importing data from GRACE/GRACE-FO files
     for i,grace_month in enumerate(months):
-        #-- Effects of Pole tide drift will be compensated if soecified
+        #-- Effects of Pole tide drift will be compensated if specified
         infile = grace_files[grace_month]
         Ylms = read_GRACE_harmonics(infile,LMAX,MMAX=MMAX,POLE_TIDE=POLE_TIDE)
-        grace_clm[:,:,i] = Ylms['clm'][0:LMAX+1,0:MMAX+1]
-        grace_slm[:,:,i] = Ylms['slm'][0:LMAX+1,0:MMAX+1]
-        tdec[i] = Ylms['time']
-        mon[i] = np.int64(grace_month)
+        #-- truncate harmonics to degree and order
+        grace_Ylms['clm'][:,:,i] = Ylms['clm'][0:LMAX+1,0:MMAX+1]
+        grace_Ylms['slm'][:,:,i] = Ylms['slm'][0:LMAX+1,0:MMAX+1]
+        #-- truncate harmonic errors to degree and order
+        grace_Ylms['eclm'][:,:,i] = Ylms['eclm'][0:LMAX+1,0:MMAX+1]
+        grace_Ylms['eslm'][:,:,i] = Ylms['eslm'][0:LMAX+1,0:MMAX+1]
+        #-- copy date variables
+        grace_Ylms['time'][i] = np.copy(Ylms['time'])
+        grace_Ylms['month'][i] = np.int64(grace_month)
+    #-- single accelerometer months
+    single_acc_months = np.copy(grace_Ylms['month'][grace_Ylms['month'] > 176])
 
     #-- SLR low-degree harmonic, geocenter and correction flags
     FLAGS = []
@@ -297,7 +319,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     elif (SLR_21 == 'GSFC'):
         #-- calculate monthly averages from 7-day arcs
         SLR_file = os.path.join(base_dir,'GSFC_C21_S21.txt')
-        C21_input = read_SLR_CS2(SLR_file, DATE=tdec)
+        C21_input = read_SLR_CS2(SLR_file, DATE=grace_Ylms['time'])
         FLAGS.append('_wGSFC_21')
 
     #-- Replacing C2,2/S2,2 with SLR
@@ -412,7 +434,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     if POLE_TIDE:
         FLAGS.append('_wPT')
     #-- full output string (SLR, geocenter and correction flags)
-    out_str = ''.join(FLAGS)
+    grace_Ylms['title'] = ''.join(FLAGS)
 
     #-- Replace C20 with SLR coefficients
     if SLR_C20 in ('CSR','GFZ','GSFC'):
@@ -426,12 +448,13 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             count = np.count_nonzero(C20_input['month'] == grace_month)
             if (count != 0):
                 k, = np.nonzero(C20_input['month'] == grace_month)
-                grace_clm[2,0,i] = C20_input['data'][k]
+                grace_Ylms['clm'][2,0,i] = np.copy(C20_input['data'][k])
+                grace_Ylms['eclm'][2,0,i] = np.copy(C20_input['error'][k])
 
     #-- Replace C21/S21 with SLR coefficients for single-accelerometer months
     if SLR_21 in ('CSR','GFZ','GSFC'):
         #-- verify that there are replacement C21/S21 months for specified range
-        months_test = sorted(set(mon[mon > 176]) - set(C21_input['month']))
+        months_test = sorted(set(single_acc_months) - set(C21_input['month']))
         if months_test:
             gm = ','.join('{0:03d}'.format(gm) for gm in months_test)
             raise IOError('No Matching C21/S21 Months ({0})'.format(gm))
@@ -440,13 +463,15 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             count = np.count_nonzero(C21_input['month'] == grace_month)
             if (count != 0) and (grace_month > 176):
                 k, = np.nonzero(C21_input['month'] == grace_month)
-                grace_clm[2,1,i] = C21_input['C2m'][k]
-                grace_slm[2,1,i] = C21_input['S2m'][k]
+                grace_Ylms['clm'][2,1,i] = np.copy(C21_input['C2m'][k])
+                grace_Ylms['slm'][2,1,i] = np.copy(C21_input['S2m'][k])
+                grace_Ylms['eclm'][2,1,i] = np.copy(C30_input['eC2m'][k])
+                grace_Ylms['eslm'][2,1,i] = np.copy(C30_input['eS2m'][k])
 
     #-- Replace C22/S22 with SLR coefficients for single-accelerometer months
     if SLR_22 in ('CSR',):
         #-- verify that there are replacement C22/S22 months for specified range
-        months_test = sorted(set(mon[mon > 176]) - set(C22_input['month']))
+        months_test = sorted(set(single_acc_months) - set(C22_input['month']))
         if months_test:
             gm = ','.join('{0:03d}'.format(gm) for gm in months_test)
             raise IOError('No Matching C22/S22 Months ({0})'.format(gm))
@@ -455,13 +480,15 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             count = np.count_nonzero(C22_input['month'] == grace_month)
             if (count != 0) and (grace_month > 176):
                 k, = np.nonzero(C22_input['month'] == grace_month)
-                grace_clm[2,2,i] = C22_input['C2m'][k]
-                grace_slm[2,2,i] = C22_input['S2m'][k]
+                grace_Ylms['clm'][2,2,i] = np.copy(C22_input['C2m'][k])
+                grace_Ylms['slm'][2,2,i] = np.copy(C22_input['S2m'][k])
+                grace_Ylms['eclm'][2,2,i] = np.copy(C30_input['eC2m'][k])
+                grace_Ylms['eslm'][2,2,i] = np.copy(C30_input['eS2m'][k])
 
     #-- Replace C30 with SLR coefficients for single-accelerometer months
     if SLR_C30 in ('CSR','GFZ','GSFC','LARES'):
         #-- verify that there are replacement C30 months for specified range
-        months_test = sorted(set(mon[mon > 176]) - set(C30_input['month']))
+        months_test = sorted(set(single_acc_months) - set(C30_input['month']))
         if months_test:
             gm = ','.join('{0:03d}'.format(gm) for gm in months_test)
             raise IOError('No Matching C30 Months ({0})'.format(gm))
@@ -470,12 +497,13 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             count = np.count_nonzero(C30_input['month'] == grace_month)
             if (count != 0) and (grace_month > 176):
                 k, = np.nonzero(C30_input['month'] == grace_month)
-                grace_clm[3,0,i] = C30_input['data'][k]
+                grace_Ylms['clm'][3,0,i] = np.copy(C30_input['data'][k])
+                grace_Ylms['eclm'][3,0,i] = np.copy(C30_input['error'][k])
 
     #-- Replace C50 with SLR coefficients for single-accelerometer months
     if SLR_C50 in ('CSR','GSFC','LARES'):
         #-- verify that there are replacement C50 months for specified range
-        months_test = sorted(set(mon[mon > 176]) - set(C50_input['month']))
+        months_test = sorted(set(single_acc_months) - set(C50_input['month']))
         if months_test:
             gm = ','.join('{0:03d}'.format(gm) for gm in months_test)
             raise IOError('No Matching C50 Months ({0})'.format(gm))
@@ -484,7 +512,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             count = np.count_nonzero(C50_input['month'] == grace_month)
             if (count != 0) and (grace_month > 176):
                 k, = np.nonzero(C50_input['month'] == grace_month)
-                grace_clm[5,0,i] = C50_input['data'][k]
+                grace_Ylms['clm'][5,0,i] = np.copy(C50_input['data'][k])
+                grace_Ylms['eclm'][5,0,i] = np.copy(C50_input['error'][k])
 
     #-- Use Degree 1 coefficients
     #-- Tellus: Tellus Degree 1 (PO.DAAC following Sun et al., 2016)
@@ -498,11 +527,11 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             #-- least-squares modeling the degree 1 coefficients
             #-- fitting annual, semi-annual, linear and quadratic terms
             C10_model = regress_model(DEG1_input['time'], DEG1_input['C10'],
-                tdec, ORDER=2, CYCLES=[0.5,1.0], RELATIVE=2003.3)
+                grace_Ylms['time'], ORDER=2, CYCLES=[0.5,1.0], RELATIVE=2003.3)
             C11_model = regress_model(DEG1_input['time'], DEG1_input['C11'],
-                tdec, ORDER=2, CYCLES=[0.5,1.0], RELATIVE=2003.3)
+                grace_Ylms['time'], ORDER=2, CYCLES=[0.5,1.0], RELATIVE=2003.3)
             S11_model = regress_model(DEG1_input['time'], DEG1_input['S11'],
-                tdec, ORDER=2, CYCLES=[0.5,1.0], RELATIVE=2003.3)
+                grace_Ylms['time'], ORDER=2, CYCLES=[0.5,1.0], RELATIVE=2003.3)
         else:
             #-- check that all months are available for a given geocenter
             months_test = sorted(set(months) - set(DEG1_input['month']))
@@ -517,13 +546,13 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             if (count == 0) and MODEL_DEG1:
                 #-- using least-squares modeled coefficients from
                 #-- lsq_model_degree_one.py
-                grace_clm[1,0,i] = C10_model[i]
-                grace_clm[1,1,i] = C11_model[i]
-                grace_slm[1,1,i] = S11_model[i]
+                grace_Ylms['clm'][1,0,i] = np.copy(C10_model[i])
+                grace_Ylms['clm'][1,1,i] = np.copy(C11_model[i])
+                grace_Ylms['slm'][1,1,i] = np.copy(S11_model[i])
             else:#-- using coefficients from data file
-                grace_clm[1,0,i] = DEG1_input['C10'][k]
-                grace_clm[1,1,i] = DEG1_input['C11'][k]
-                grace_slm[1,1,i] = DEG1_input['S11'][k]
+                grace_Ylms['clm'][1,0,i] = np.copy(DEG1_input['C10'][k])
+                grace_Ylms['clm'][1,1,i] = np.copy(DEG1_input['C11'][k])
+                grace_Ylms['slm'][1,1,i] = np.copy(DEG1_input['S11'][k])
 
     #-- read and add/remove the GAE and GAF atmospheric correction coefficients
     if ATM:
@@ -533,21 +562,20 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         if (DSET == 'GSM'):
             for m in range(0,MMAX+1):#-- MMAX+1 to include l
                 for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
-                    grace_clm[l,m,:] -= atm_corr['clm'][l,m,:]
-                    grace_slm[l,m,:] -= atm_corr['slm'][l,m,:]
+                    grace_Ylms['clm'][l,m,:] -= atm_corr['clm'][l,m,:]
+                    grace_Ylms['slm'][l,m,:] -= atm_corr['slm'][l,m,:]
         #-- Adding GAE/GAF/GAG to RL05 Atmospheric Products (GAA,GAC)
         elif DSET in ('GAC','GAA'):
             for m in range(0,MMAX+1):#-- MMAX+1 to include l
                 for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
-                    grace_clm[l,m,:] += atm_corr['clm'][l,m,:]
-                    grace_slm[l,m,:] += atm_corr['slm'][l,m,:]
+                    grace_Ylms['clm'][l,m,:] += atm_corr['clm'][l,m,:]
+                    grace_Ylms['slm'][l,m,:] += atm_corr['slm'][l,m,:]
 
     #-- return the harmonic solutions with possible low-degree replacements
     #-- return the harmonic dimensions (spectral and temporal)
     #-- return string specifying processing and correction flags
     #-- return directory of exact GRACE/GRACE-FO product
-    return {'clm':grace_clm, 'slm':grace_slm, 'time':tdec, 'month':mon,
-        'l':lout, 'm':mout, 'title':out_str, 'directory':grace_dir}
+    return grace_Ylms
 
 #-- PURPOSE: read atmospheric jump corrections from Fagiolini et al. (2015)
 def read_ecmwf_corrections(base_dir, LMAX, months, MMAX=None):

@@ -12,12 +12,13 @@ CALLING SEQUENCE:
 COMMAND LINE OPTIONS:
     -D X, --directory X: working data directory
     -r X, --release X: GRACE/GRACE-FO Data Releases to run (RL05,RL06)
-    -Y X, --year X: Years to sync separated by commas
+    -Y X, --year X: Years of data to sync
+    -m X, --month X: Months of data to sync
     -T, --tar: Output data as monthly tar files (.tar.gz or .tgz)
     -t X, --timeout X: Timeout in seconds for blocking operations
-    -M X, --mode X: permissions mode of files synced
     -l, --log: output log of files downloaded
     -C, --clobber: Overwrite existing data in transfers
+    -M X, --mode X: permissions mode of files synced
 
 PYTHON DEPENDENCIES:
     future: Compatibility layer between Python 2 and Python 3
@@ -29,6 +30,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 07/2021: added option to sync only specific months
     Updated 05/2021: added option for connection timeout (in seconds)
     Updated 01/2021: using utilities module to list files from ftp
     Updated 10/2020: use argparse to set command line parameters
@@ -52,7 +54,7 @@ import gravity_toolkit.utilities
 
 #-- PURPOSE: syncs GRACE Level-1b dealiasing products from the GFZ data server
 #-- and optionally outputs as monthly tar files
-def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False,
+def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, MONTHS=None, TAR=False,
     TIMEOUT=None, LOG=False, CLOBBER=False, MODE=None):
     #-- output data directory
     grace_dir = os.path.join(base_dir,'AOD1B',DREL)
@@ -60,7 +62,7 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False,
     #-- create log file with list of synchronized files (or print to terminal)
     if LOG:
         #-- output to log file
-        #-- format: PODAAC_sync_2002-04-01.log
+        #-- format: GFZ_AOD1B_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
         LOGFILE = 'GFZ_AOD1B_sync_{0}.log'.format(today)
         fid1 = open(os.path.join(base_dir,LOGFILE),'w')
@@ -90,8 +92,8 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, TAR=False,
         pattern=R1, sort=True)
     #-- for each year
     for Y in YRS:
-        #-- for each month
-        for M in range(1,13):
+        #-- for each month of interest
+        for M in MONTHS:
             #-- output tar file for year and month
             args = (Y, M, DREL.replace('RL',''), SUFFIX[DREL])
             FILE = 'AOD1B_{0}-{1:02d}_{2}.{3}'.format(*args)
@@ -197,6 +199,11 @@ def main():
     parser.add_argument('--year','-Y',
         type=int, nargs='+', default=range(2000,2021),
         help='Years of data to sync')
+    #-- months to download
+    parser.add_argument('--month','-m',
+        type=int, nargs='+', default=range(1,13),
+        help='Months of data to sync')
+    #-- output dealiasing files as monthly tar files
     parser.add_argument('--tar','-T',
         default=False, action='store_true',
         help='Output data as monthly tar files')
@@ -224,8 +231,9 @@ def main():
     if gravity_toolkit.utilities.check_ftp_connection(HOST):
         for DREL in args.release:
             gfz_isdc_dealiasing_ftp(args.directory, DREL=DREL,
-                YEAR=args.year, TAR=args.tar, TIMEOUT=args.timeout,
-                LOG=args.log, CLOBBER=args.clobber, MODE=args.mode)
+                YEAR=args.year, MONTHS=args.month, TAR=args.tar,
+                TIMEOUT=args.timeout, LOG=args.log,
+                CLOBBER=args.clobber, MODE=args.mode)
 
 #-- run main program
 if __name__ == '__main__':
