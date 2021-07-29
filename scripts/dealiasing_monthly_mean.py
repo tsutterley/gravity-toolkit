@@ -673,8 +673,7 @@ def main():
         help='Working data directory')
     #-- GRACE/GRACE-FO data processing center
     parser.add_argument('--center','-c',
-        metavar='PROC', type=str, default='AOD1B',
-        choices=['CSR','GFZ','JPL','AOD1B'],
+        metavar='PROC', type=str, default=None,
         help='GRACE/GRACE-FO Processing Center')
     #-- GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
