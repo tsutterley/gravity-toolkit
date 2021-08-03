@@ -99,6 +99,7 @@ missions
     user_guide/aod1b_geocenter.md
     user_guide/aod1b_oblateness.md
     user_guide/calc_mascon.rst
+    user_guide/calc_harmonic_resolution.rst
     user_guide/calc_sensitivity_kernel.rst
     user_guide/combine_harmonics.rst
     user_guide/convert_harmonics.rst
