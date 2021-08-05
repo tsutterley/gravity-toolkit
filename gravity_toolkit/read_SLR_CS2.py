@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_CS2.py
-Written by Hugo Lecomte and Tyler Sutterley (06/2021)
+Written by Hugo Lecomte and Tyler Sutterley (08/2021)
 
 Reads monthly degree 2,m (figure axis and azimuthal dependence)
     spherical harmonic data files from satellite laser ranging (SLR)
@@ -63,6 +63,7 @@ REFERENCE:
         https://doi.org/10.1007/s00190-021-01492-x
 
 UPDATE HISTORY:
+    Updated 08/2021: output empty spherical harmonic errors for GSFC
     Updated 06/2021: added GSFC 7-day SLR figure axis solutions
     Updated 05/2021: added GFZ GravIS GRACE/SLR low degree solutions
     Updated 04/2021: use adjust_months function to fix special months cases
@@ -126,6 +127,9 @@ def read_SLR_CS2(SLR_file, HEADER=True, DATE=None):
         dinput['time'] = np.zeros_like(DATE)
         dinput['C2m'] = np.zeros_like(DATE,dtype='f8')
         dinput['S2m'] = np.zeros_like(DATE,dtype='f8')
+        #-- no estimated spherical harmonic errors
+        dinput['eC2m'] = np.zeros_like(DATE,dtype='f8')
+        dinput['eS2m'] = np.zeros_like(DATE,dtype='f8')
         for i,D in enumerate(DATE):
             isort = np.argsort((tdec - D)**2)[:n_neighbors]
             dinput['time'][i] = np.mean(tdec[isort])

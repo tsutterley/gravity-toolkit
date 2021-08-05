@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (07/2021)
+Written by Tyler Sutterley (08/2021)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
@@ -95,6 +95,7 @@ PROGRAM DEPENDENCIES:
     read_GRACE_harmonics.py: reads an input GRACE data file and calculates date
 
 UPDATE HISTORY:
+    Updated 08/2021: fix spherical harmonic errors for SLR C21,S21,C22,S22
     Updated 07/2021: fix inputs to AOD-corrected SLR geocenter coefficients
         output uncalibrated spherical harmonic errors (eclm and eslm)
         test if GRACE directory for product exists at start of program
@@ -465,8 +466,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
                 k, = np.nonzero(C21_input['month'] == grace_month)
                 grace_Ylms['clm'][2,1,i] = np.copy(C21_input['C2m'][k])
                 grace_Ylms['slm'][2,1,i] = np.copy(C21_input['S2m'][k])
-                grace_Ylms['eclm'][2,1,i] = np.copy(C30_input['eC2m'][k])
-                grace_Ylms['eslm'][2,1,i] = np.copy(C30_input['eS2m'][k])
+                grace_Ylms['eclm'][2,1,i] = np.copy(C21_input['eC2m'][k])
+                grace_Ylms['eslm'][2,1,i] = np.copy(C21_input['eS2m'][k])
 
     #-- Replace C22/S22 with SLR coefficients for single-accelerometer months
     if SLR_22 in ('CSR',):
@@ -482,8 +483,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
                 k, = np.nonzero(C22_input['month'] == grace_month)
                 grace_Ylms['clm'][2,2,i] = np.copy(C22_input['C2m'][k])
                 grace_Ylms['slm'][2,2,i] = np.copy(C22_input['S2m'][k])
-                grace_Ylms['eclm'][2,2,i] = np.copy(C30_input['eC2m'][k])
-                grace_Ylms['eslm'][2,2,i] = np.copy(C30_input['eS2m'][k])
+                grace_Ylms['eclm'][2,2,i] = np.copy(C22_input['eC2m'][k])
+                grace_Ylms['eslm'][2,2,i] = np.copy(C22_input['eS2m'][k])
 
     #-- Replace C30 with SLR coefficients for single-accelerometer months
     if SLR_C30 in ('CSR','GFZ','GSFC','LARES'):
