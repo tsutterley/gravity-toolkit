@@ -155,6 +155,10 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
         #-- Input in kg/m^2 (mm w.e.)
         dfactor = factors.mmwe
         int_fact[:] = np.sin(th)*dphi*dth
+    elif (UNITS == 4):
+        #-- Inputs in mmGH
+        dfactor = factors.mmGH
+        int_fact[:] = np.sin(th) * dphi * dth
     else:
         #-- default is cm w.e. (g/cm^2)
         dfactor = factors.cmwe

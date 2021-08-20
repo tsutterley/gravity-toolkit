@@ -98,6 +98,8 @@ class units(object):
         self.cmwe=3.0*(1.0+kl[self.l])/(1.0+2.0*self.l)/(4.0*np.pi*self.rad_e*self.rho_e)
         # mmwe, millimeters water equivalent [kg/m^2]
         self.mmwe=3.0*(1.0+kl[self.l])/(1.0+2.0*self.l)/(40.0*np.pi*self.rad_e*self.rho_e)
+        # mmGH, millimeters geoid height
+        self.mmGH=np.ones((self.lmax+1))/(4.0*np.pi*self.rad_e)
 
         # return the degree dependent unit conversions
         return self
