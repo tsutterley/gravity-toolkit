@@ -7,7 +7,7 @@ Adapted by Tyler Sutterley (08/2021)
 Generates averaging kernel coefficients which minimize the total error
 
 CALLING SEQUENCE:
-    Wlms = gen_wclms_me(gclm,gslm,eclm,eslm,sigma,hw,
+    Wlms = gen_averaging_kernel(gclm,gslm,eclm,eslm,sigma,hw,
         LMIN=0, LMAX=60, UNITS=0, LOVE=(hl,kl,ll))
 
 INPUTS:
