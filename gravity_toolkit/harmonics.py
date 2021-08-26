@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (07/2021)
+Written by Tyler Sutterley (08/2021)
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 
@@ -22,10 +22,12 @@ PROGRAM DEPENDENCIES:
     hdf5_stokes.py: writes output spherical harmonic data to HDF5
     ncdf_read_stokes.py: reads spherical harmonic data from netcdf
     hdf5_read_stokes.py: reads spherical harmonic data from HDF5
+    read_GRACE_harmonics.py: read spherical harmonic data from SHM files
     read_ICGEM_harmonics.py: reads gravity model coefficients from GFZ ICGEM
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 08/2021: added from spherical harmonic model (SHM) format
     Updated 07/2021: fixed gfc format in from file wrapper
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: add parser object for removing commented or empty lines
@@ -66,6 +68,7 @@ from gravity_toolkit.ncdf_read_stokes import ncdf_read_stokes
 from gravity_toolkit.hdf5_read_stokes import hdf5_read_stokes
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
 from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
+from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 
 class harmonics(object):
     """
@@ -279,6 +282,34 @@ class harmonics(object):
         self.update_dimensions()
         return self
 
+    def from_SHM(self, filename, **kwargs):
+        """
+        Read a harmonics object from a spherical harmonic model file
+        Inputs: full path of input SHM file
+        Options:
+            keyword arguments for SHM input
+        """
+        #-- set filename
+        self.case_insensitive_filename(filename)
+        #-- set default verbosity
+        kwargs.setdefault('verbose',False)
+        #-- read data from SHM file
+        Ylms = read_GRACE_harmonics(self.filename, self.lmax, **kwargs)
+        #-- Output file information
+        if kwargs['verbose']:
+            print(self.filename)
+            print(list(Ylms.keys()))
+        #-- copy variables for gravity model
+        self.clm = Ylms['clm'].copy()
+        self.slm = Ylms['slm'].copy()
+        self.time = Ylms['time'].copy()
+        self.month = np.int64(12.0*(self.time - 2002.0)) + 1
+        #-- copy header information for gravity model
+        self.header = Ylms['header']
+        #-- assign shape and ndim attributes
+        self.update_dimensions()
+        return self
+
     def from_index(self, filename, format=None, date=True, sort=True):
         """
         Read a harmonics object from an index of ascii, netCDF4 or HDF5 files
@@ -391,6 +422,9 @@ class harmonics(object):
         elif (format == 'gfc'):
             #-- ICGEM gravity model (.gfc)
             return harmonics().from_gfc(filename, **kwargs)
+        elif (format == 'SHM'):
+            #-- spherical harmonic model
+            return harmonics().from_SHM(filename, self.lmax, **kwargs)
 
     def from_dict(self, d):
         """

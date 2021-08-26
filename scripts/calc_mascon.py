@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_mascon.py
-Written by Tyler Sutterley (07/2021)
+Written by Tyler Sutterley (08/2021)
 
 Calculates a time-series of regional mass anomalies through a least-squares
     mascon procedure from GRACE/GRACE-FO time-variable gravity data
@@ -142,6 +142,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 08/2021: reorganize GRACE/GRACE-FO file import
     Updated 07/2021: simplified file imports using wrappers in harmonics
         added path to default land-sea mask for mass redistribution
         remove choices for argparse processing centers
@@ -391,8 +392,6 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         MODEL_DEG1=True, ATM=ATM, POLE_TIDE=POLE_TIDE)
     #-- create harmonics object from GRACE/GRACE-FO data
     GRACE_Ylms = harmonics().from_dict(Ylms)
-    #-- full path to directory for specific GRACE/GRACE-FO product
-    GRACE_Ylms.directory = Ylms['directory']
     #-- use a mean file for the static field to remove
     if MEAN_FILE:
         #-- read data form for input mean file (ascii, netCDF4, HDF5, gfc)
@@ -401,9 +400,6 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         GRACE_Ylms.subtract(mean_Ylms)
     else:
         GRACE_Ylms.mean(apply=True)
-    #-- date information of GRACE/GRACE-FO coefficients
-    n_files = len(GRACE_Ylms.time)
-
     #-- filter GRACE/GRACE-FO coefficients
     if DESTRIPE:
         #-- destriping GRACE/GRACE-FO coefficients
@@ -412,6 +408,10 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     else:
         #-- using standard GRACE/GRACE-FO harmonics
         ds_str = ''
+    #-- full path to directory for specific GRACE/GRACE-FO product
+    GRACE_Ylms.directory = Ylms['directory']
+    #-- date information of GRACE/GRACE-FO coefficients
+    n_files = len(GRACE_Ylms.time)
 
     #-- input GIA spherical harmonic datafiles
     GIA_Ylms_rate = read_GIA_model(GIA_FILE,GIA=GIA,LMAX=LMAX,MMAX=MMAX)

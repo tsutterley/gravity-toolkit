@@ -28,7 +28,7 @@ NOTES:
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
-REFERENCE:
+REFERENCES:
     Hofmann-Wellenhof and Moritz, "Physical Geodesy" (2005)
         http://www.springerlink.com/content/978-3-211-33544-4
 

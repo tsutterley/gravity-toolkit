@@ -181,6 +181,19 @@ General Attributes and Methods
     .. __: http://icgem.gfz-potsdam.de/
 
 
+    .. method:: object.from_SHM(filename, verbose=False)
+
+        Read a harmonics object from a spherical harmonic model file
+
+        Arguments:
+
+            full path of input SHM file
+
+        Keyword arguments:
+
+            ``verbose`` print SHM file information
+
+
     .. method:: object.from_index(filename, format=None, date=True, sort=True)
 
         Read a harmonics object from an index of ascii, netCDF4 or HDF5 files
@@ -225,7 +238,7 @@ General Attributes and Methods
 
         Keyword arguments:
 
-            file format (``'ascii'``, ``'netCDF4'``, ``'HDF5'`` or ``'gfc'``)
+            file format (``'ascii'``, ``'netCDF4'``, ``'HDF5'``, ``'gfc'``, ``'SHM'``)
 
             file contains date information
 

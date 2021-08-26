@@ -39,7 +39,7 @@ PROGRAM DEPENDENCIES:
     gauss_weights.py: Computes the Gaussian weights as a function of degree
     units.py: class for converting spherical harmonic data to specific units
 
-REFERENCE:
+REFERENCES:
     Holmes and Featherstone, "A Unified Approach to the Clenshaw Summation and
         the Recursive Computation of Very High Degree and Order Normalised
         Associated Legendre Functions", Journal of Geodesy (2002)
