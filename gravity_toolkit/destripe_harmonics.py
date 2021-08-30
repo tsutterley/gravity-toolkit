@@ -39,7 +39,7 @@ OPTIONS:
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
-REFERENCE:
+REFERENCES:
     S C Swenson and J Wahr, "Post-processing removal of correlated errors in
         GRACE data", Geophysical Research Letters, 33(L08402), 2006
         http://dx.doi.org/10.1029/2005GL025285

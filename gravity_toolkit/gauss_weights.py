@@ -69,7 +69,7 @@ def gauss_weights(hw, LMAX):
         #-- weight for degree 0
         wl[0] = 1.0/(2.0*np.pi)
         #-- weight for degree 1
-        wl[1] = wl[0]*((1.0 +np.exp(-2.0*b))/(1. -np.exp(-2.0*b))-1.0/b)
+        wl[1] = wl[0]*((1.0+np.exp(-2.0*b))/(1.0-np.exp(-2.0*b))-1.0/b)
         #-- valid flag
         valid = True
         #-- spherical harmonic degree

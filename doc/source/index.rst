@@ -32,6 +32,7 @@ missions
     user_guide/degree_amplitude.md
     user_guide/destripe_harmonics.rst
     user_guide/gauss_weights.rst
+    user_guide/gen_averaging_kernel.rst
     user_guide/gen_disc_load.md
     user_guide/gen_harmonics.md
     user_guide/gen_point_load.md

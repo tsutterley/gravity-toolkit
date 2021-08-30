@@ -46,7 +46,7 @@ PYTHON DEPENDENCIES:
 PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
-REFERENCE:
+REFERENCES:
     Cheng et al., " Variations of the Earth's figure axis from satellite
         laser ranging and GRACE", Journal of Geophysical Research,
         116, B01409, (2011). https://doi.org/10.1029/2010JB000850

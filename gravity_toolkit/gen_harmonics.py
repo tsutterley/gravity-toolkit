@@ -40,7 +40,7 @@ PROGRAM DEPENDENCIES:
         hdf5_read_stokes.py: reads spherical harmonic HDF5 files
         hdf5_stokes.py: writes output spherical harmonic data to HDF5
 
-REFERENCE:
+REFERENCES:
     Holmes and Featherstone, "A Unified Approach to the Clenshaw Summation and
         the Recursive Computation of Very High Degree and Order Normalised
         Associated Legendre Functions", Journal of Geodesy (2002)
