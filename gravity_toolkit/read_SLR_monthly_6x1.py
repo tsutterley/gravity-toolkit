@@ -22,7 +22,7 @@ OUTPUTS:
     MJD: output date as Modified Julian Day
     time: output date in year-decimal
 
-REFERENCE:
+REFERENCES:
     Cheng, M., J. C.  Ries, and B. D. Tapley, 'Variations of the Earth's Figure
     Axis from Satellite Laser Ranging and GRACE', J. Geophys. Res., 116, B01409,
     2011, DOI:10.1029/2010JB000850.

@@ -111,6 +111,11 @@ Command Line Options
     * ``'gfc'``
 - ``--mask X``: Land-sea mask for redistributing mascon mass and land water flux
 - ``--mascon-file X``: index file of mascons spherical harmonics
+- ``--mascon-format X``: Input data format for mascon files
+
+     * ``'ascii'``
+     * ``'netCDF4'``
+     * ``'HDF5'``
 - ``--redistribute-mascons``: redistribute mascon mass over the ocean
 - ``--fit-method X``: method for fitting sensitivity kernel to harmonics
 
@@ -122,7 +127,9 @@ Command Line Options
     * ``'ascii'``
     * ``'netCDF4'``
     * ``'HDF5'``
-    * ``'index'``: index file containing monthly files in data format
+    * ``'index-ascii'``
+    * ``'index-netCDF4'``
+    * ``'index-HDF5'``
 - ``--redistribute-removed``: redistribute removed mass fields over the ocean
 - ``--reconstruct-file X``: reconstructed mascon time series file to be removed
 - ``--remove-reconstruct``: remove reconstructed mascon time series fields

@@ -39,7 +39,7 @@ PROGRAM DEPENDENCIES:
         hdf5_read_stokes.py: reads spherical harmonic HDF5 files
         hdf5_stokes.py: writes output spherical harmonic data to HDF5
 
-REFERENCE:
+REFERENCES:
     Holmes and Featherstone, Journal of Geodesy, 76, 279-299, 2002
         https://doi.org/10.1007/s00190-002-0216-2
     I. M. Longman, Journal of Geophysical Research, 67(2), 1962

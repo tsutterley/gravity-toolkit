@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 convert_harmonics.py
-Written by Tyler Sutterley (06/2021)
+Written by Tyler Sutterley (08/2021)
 Converts a file from the spatial domain into the spherical harmonic domain
 
 CALLING SEQUENCE:
@@ -68,6 +68,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 08/2021: fix spherical harmonic orders if not set
     Updated 06/2021: can use input files to define command line arguments
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 01/2021: harmonics object output from gen_stokes.py
@@ -212,6 +213,10 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     #-- read arrays of kl, hl, and ll Love Numbers
     LOVE = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE)
+
+    #-- upper bound of spherical harmonic orders (default = LMAX)
+    if MMAX is None:
+        MMAX = np.copy(LMAX)
 
     #-- calculate associated Legendre polynomials
     th = (90.0 - input_spatial.lat)*np.pi/180.0

@@ -37,7 +37,7 @@ PYTHON DEPENDENCIES:
 PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
-REFERENCE:
+REFERENCES:
     Dahle and Murboeck, "Post-processed GRACE/GRACE-FO Geopotential
         GSM Coefficients GFZ RL06 (Level-2B Product)."
         V. 0002. GFZ Data Services, (2019).

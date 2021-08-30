@@ -46,7 +46,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
     read_SLR_monthly_6x1.py: reads monthly 5x5 spherical harmonic coefficients
 
-REFERENCE:
+REFERENCES:
     Loomis, Rachlin, and Luthcke, "Improved Earth Oblateness Rate Reveals
         Increased Ice Sheet Losses and Mass-Driven Sea Level Rise",
         Geophysical Research Letters, 46(12), 6910-6917, (2019).

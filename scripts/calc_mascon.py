@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_mascon.py
-Written by Tyler Sutterley (07/2021)
+Written by Tyler Sutterley (08/2021)
 
 Calculates a time-series of regional mass anomalies through a least-squares
     mascon procedure from GRACE/GRACE-FO time-variable gravity data
@@ -75,6 +75,7 @@ COMMAND LINE OPTIONS:
     --mean-format X: Input data format for GRACE/GRACE-FO mean file
     --mask X: Land-sea mask for redistributing mascon mass and land water flux
     --mascon-file X: index file of mascons spherical harmonics
+    --mascon-format X: input format for mascon files
     --redistribute-mascons: redistribute mascon mass over the ocean
     --fit-method X: method for fitting sensitivity kernel to harmonics
         1: mass coefficients
@@ -142,6 +143,8 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 08/2021: reorganize GRACE/GRACE-FO file import
+        add option for setting input format of the mascon files
     Updated 07/2021: simplified file imports using wrappers in harmonics
         added path to default land-sea mask for mass redistribution
         remove choices for argparse processing centers
@@ -319,6 +322,7 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     MEAN_FILE=None,
     MEANFORM=None,
     MASCON_FILE=None,
+    MASCON_FORMAT=None,
     REDISTRIBUTE_MASCONS=False,
     FIT_METHOD=0,
     REMOVE_FILES=None,
@@ -391,8 +395,6 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         MODEL_DEG1=True, ATM=ATM, POLE_TIDE=POLE_TIDE)
     #-- create harmonics object from GRACE/GRACE-FO data
     GRACE_Ylms = harmonics().from_dict(Ylms)
-    #-- full path to directory for specific GRACE/GRACE-FO product
-    GRACE_Ylms.directory = Ylms['directory']
     #-- use a mean file for the static field to remove
     if MEAN_FILE:
         #-- read data form for input mean file (ascii, netCDF4, HDF5, gfc)
@@ -401,9 +403,6 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         GRACE_Ylms.subtract(mean_Ylms)
     else:
         GRACE_Ylms.mean(apply=True)
-    #-- date information of GRACE/GRACE-FO coefficients
-    n_files = len(GRACE_Ylms.time)
-
     #-- filter GRACE/GRACE-FO coefficients
     if DESTRIPE:
         #-- destriping GRACE/GRACE-FO coefficients
@@ -412,6 +411,10 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     else:
         #-- using standard GRACE/GRACE-FO harmonics
         ds_str = ''
+    #-- full path to directory for specific GRACE/GRACE-FO product
+    GRACE_Ylms.directory = Ylms['directory']
+    #-- date information of GRACE/GRACE-FO coefficients
+    n_files = len(GRACE_Ylms.time)
 
     #-- input GIA spherical harmonic datafiles
     GIA_Ylms_rate = read_GIA_model(GIA_FILE,GIA=GIA,LMAX=LMAX,MMAX=MMAX)
@@ -437,12 +440,16 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
             REMOVE_FORMAT = REMOVE_FORMAT*len(REMOVE_FILES)
         #-- for each file to be removed
         for REMOVE_FILE,REMOVEFORM in zip(REMOVE_FILES,REMOVE_FORMAT):
-            if (REMOVEFORM == 'index'):
+            if REMOVEFORM in ('ascii','netCDF4','HDF5'):
+                #-- ascii (.txt)
+                #-- netCDF4 (.nc)
+                #-- HDF5 (.H5)
+                Ylms = harmonics().from_file(REMOVE_FILE, format=REMOVEFORM)
+            elif REMOVEFORM in ('index-ascii','index-netCDF4','index-HDF5'):
+                #-- read from index file
+                _,removeform = REMOVEFORM.split('-')
                 #-- index containing files in data format
-                Ylms = harmonics().from_index(REMOVE_FILE, DATAFORM)
-            else:
-                #-- individual file in ascii, netCDF4 or HDF5 formats
-                Ylms = harmonics().from_file(REMOVE_FILE, format=DATAFORM)
+                Ylms = harmonics().from_index(REMOVE_FILE, format=removeform)
             #-- reduce to GRACE/GRACE-FO months and truncate to degree and order
             Ylms = Ylms.subset(GRACE_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
             #-- distribute removed Ylms uniformly over the ocean
@@ -503,7 +510,7 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     for k,fi in enumerate(mascon_files):
         #-- read mascon spherical harmonics
         Ylms = harmonics().from_file(os.path.expanduser(fi),
-            format=DATAFORM, date=False)
+            format=MASCON_FORMAT, date=False)
         #-- Calculating the total mass of each mascon (1 cmwe uniform)
         total_area[k] = 4.0*np.pi*(rad_e**3)*rho_e*Ylms.clm[0,0]/3.0
         #-- distribute mascon mass uniformly over the ocean
@@ -904,6 +911,9 @@ def main():
     parser.add_argument('--mascon-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='Index file of mascons spherical harmonics')
+    parser.add_argument('--mascon-format',
+        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
+        help='Input data format for mascon files')
     parser.add_argument('--redistribute-mascons',
         default=False, action='store_true',
         help='Redistribute mascon mass over the ocean')
@@ -983,6 +993,7 @@ def main():
             MEAN_FILE=args.mean_file,
             MEANFORM=args.mean_format,
             MASCON_FILE=args.mascon_file,
+            MASCON_FORMAT=args.mascon_format,
             REDISTRIBUTE_MASCONS=args.redistribute_mascons,
             FIT_METHOD=args.fit_method,
             REMOVE_FILES=args.remove_file,

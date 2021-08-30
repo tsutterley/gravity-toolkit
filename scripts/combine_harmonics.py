@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 combine_harmonics.py
-Written by Tyler Sutterley (06/2021)
+Written by Tyler Sutterley (08/2021)
 Converts a file from the spherical harmonic domain into the spatial domain
 
 CALLING SEQUENCE:
@@ -76,6 +76,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 08/2021: fix spherical harmonic orders if not set
     Updated 07/2021: dded path to default land-sea mask for mass redistribution
     Updated 06/2021: can use input files to define command line arguments
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -202,6 +203,10 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     DIRECTORY = os.path.abspath(os.path.dirname(OUTPUT_FILE))
     if not os.access(DIRECTORY, os.F_OK):
         os.makedirs(DIRECTORY,MODE,exist_ok=True)
+
+    #-- upper bound of spherical harmonic orders (default = LMAX)
+    if MMAX is None:
+        MMAX = np.copy(LMAX)
 
     #-- read input spherical harmonic coefficients from file in DATAFORM
     if (DATAFORM == 'ascii'):

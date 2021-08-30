@@ -51,7 +51,7 @@ PYTHON DEPENDENCIES:
 PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
-REFERENCE:
+REFERENCES:
     Cheng, M. and Tapley, B. D., "Variations in the Earth's oblateness during
         the past 28 years", Journal of Geophysical Research: Solid Earth,
         109(B9), B09402, 2004. 10.1029/2004JB003028
