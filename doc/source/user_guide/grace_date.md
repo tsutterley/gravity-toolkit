@@ -21,6 +21,9 @@ grace_files = grace_date(base_dir, PROC=PROC, DREL=DREL, DSET=DSET)
    * `'GFZ'`: German Research Centre for Geosciences (GeoForschungsZentrum)
    * `'JPL'`: Jet Propulsion Laboratory
    * `'CNES'`: French Centre National D'Etudes Spatiales
+   * `'GRAZ'`: Institute of Geodesy from GRAZ University of Technology
+   * `'COSTG'`: Combination Service for Time-variable Gravity Fields
+   * `'SWARM'`: Time-variable gravity data from SWARM satellites
 - `DREL`: GRACE/GRACE-FO data release (RL04/RL05/RL06)
 - `DSET`: GRACE/GRACE-FO dataset (GAA/GAB/GAC/GAD/GSM)
    * `'GAA'`: non-tidal atmospheric correction

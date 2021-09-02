@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (08/2021)
+Written by Tyler Sutterley (09/2021)
+Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 
@@ -23,10 +24,12 @@ PROGRAM DEPENDENCIES:
     ncdf_read_stokes.py: reads spherical harmonic data from netcdf
     hdf5_read_stokes.py: reads spherical harmonic data from HDF5
     read_GRACE_harmonics.py: read spherical harmonic data from SHM files
+    read_gfc_harmonics.py: reads spherical harmonic data from gfc files
     read_ICGEM_harmonics.py: reads gravity model coefficients from GFZ ICGEM
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 09/2021: added time-variable gravity data from gfc format
     Updated 08/2021: added from spherical harmonic model (SHM) format
     Updated 07/2021: fixed gfc format in from file wrapper
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -67,6 +70,7 @@ from gravity_toolkit.hdf5_stokes import hdf5_stokes
 from gravity_toolkit.ncdf_read_stokes import ncdf_read_stokes
 from gravity_toolkit.hdf5_read_stokes import hdf5_read_stokes
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
+from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
 from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 
@@ -110,7 +114,7 @@ class harmonics(object):
                 self.filename = os.path.join(directory,f.pop())
         return self
 
-    def from_ascii(self, filename, date=True, **kwargs):
+    def from_ascii(self, filename, **kwargs):
         """
         Read a harmonics object from an ascii file
         Inputs: full path of input ascii file
@@ -121,6 +125,7 @@ class harmonics(object):
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- set default parameters
+        kwargs.setdefault('date',False)
         kwargs.setdefault('verbose',False)
         kwargs.setdefault('compression',None)
         #-- open the ascii file and extract contents
@@ -150,7 +155,7 @@ class harmonics(object):
         self.mmax = 0
         #-- for each line in the file
         for line in file_contents:
-            if date:
+            if kwargs['date']:
                 l1,m1,clm1,slm1,time = rx.findall(line)
             else:
                 l1,m1,clm1,slm1 = rx.findall(line)
@@ -165,7 +170,7 @@ class harmonics(object):
         self.clm = np.zeros((self.lmax+1,self.mmax+1))
         self.slm = np.zeros((self.lmax+1,self.mmax+1))
         #-- if the ascii file contains date variables
-        if date:
+        if kwargs['date']:
             self.time = np.float64(time)
             self.month = np.int64(12.0*(self.time - 2002.0)) + 1
             #-- adjust months to fix special cases if necessary
@@ -173,7 +178,7 @@ class harmonics(object):
         #-- extract harmonics and convert to matrix
         #-- for each line in the file
         for line in file_contents:
-            if date:
+            if kwargs['date']:
                 l1,m1,clm1,slm1,time = rx.findall(line)
             else:
                 l1,m1,clm1,slm1 = rx.findall(line)
@@ -186,7 +191,7 @@ class harmonics(object):
         self.update_dimensions()
         return self
 
-    def from_netCDF4(self, filename, date=True, **kwargs):
+    def from_netCDF4(self, filename, **kwargs):
         """
         Read a harmonics object from a netCDF4 file
         Inputs: full path of input netCDF4 file
@@ -197,10 +202,12 @@ class harmonics(object):
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- set default parameters
+        kwargs.setdefault('date',False)
         kwargs.setdefault('verbose',False)
         kwargs.setdefault('compression',None)
         #-- read data from netCDF4 file
-        Ylms = ncdf_read_stokes(self.filename, DATE=date,
+        Ylms = ncdf_read_stokes(self.filename,
+            DATE=kwargs['date'],
             COMPRESSION=kwargs['compression'],
             VERBOSE=kwargs['verbose'])
         #-- copy variables to harmonics object
@@ -210,7 +217,7 @@ class harmonics(object):
         self.m = Ylms['m'].copy()
         self.lmax = np.max(Ylms['l'])
         self.mmax = np.max(Ylms['m'])
-        if date:
+        if kwargs['date']:
             self.time = Ylms['time'].copy()
             #-- adjust months to fix special cases if necessary
             self.month = adjust_months(Ylms['month'])
@@ -218,7 +225,7 @@ class harmonics(object):
         self.update_dimensions()
         return self
 
-    def from_HDF5(self, filename, date=True, **kwargs):
+    def from_HDF5(self, filename, **kwargs):
         """
         Read a harmonics object from a HDF5 file
         Inputs: full path of input HDF5 file
@@ -229,10 +236,12 @@ class harmonics(object):
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- set default parameters
+        kwargs.setdefault('date',False)
         kwargs.setdefault('verbose',False)
         kwargs.setdefault('compression',None)
         #-- read data from HDF5 file
-        Ylms = hdf5_read_stokes(self.filename, DATE=date,
+        Ylms = hdf5_read_stokes(self.filename,
+            DATE=kwargs['date'],
             COMPRESSION=kwargs['compression'],
             VERBOSE=kwargs['verbose'])
         #-- copy variables to harmonics object
@@ -242,7 +251,7 @@ class harmonics(object):
         self.m = Ylms['m'].copy()
         self.lmax = np.max(Ylms['l'])
         self.mmax = np.max(Ylms['m'])
-        if date:
+        if kwargs['date']:
             self.time = Ylms['time'].copy()
             #-- adjust months to fix special cases if necessary
             self.month = adjust_months(Ylms['month'])
@@ -252,28 +261,40 @@ class harmonics(object):
 
     def from_gfc(self, filename, **kwargs):
         """
-        Read a harmonics object from a gfc gravity model file from the GFZ ICGEM
+        Read a harmonics object from a gfc gravity model file
         Inputs: full path of input gfc file
         Options:
             keyword arguments for gfc input
         """
         #-- set filename
         self.case_insensitive_filename(filename)
-        #-- set default verbosity
+        #-- set default parameters
+        kwargs.setdefault('date',False)
+        kwargs.setdefault('tide',None)
         kwargs.setdefault('verbose',False)
         #-- read data from gfc file
-        Ylms = read_ICGEM_harmonics(self.filename)
+        if kwargs['date']:
+            Ylms = read_gfc_harmonics(self.filename,
+                TIDE=kwargs['tide'])
+        else:
+            Ylms = read_ICGEM_harmonics(self.filename,
+                TIDE=kwargs['tide'])
         #-- Output file information
         if kwargs['verbose']:
             print(self.filename)
             print(list(Ylms.keys()))
-        #-- copy variables for static gravity model
+        #-- copy variables for gravity model
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
         self.lmax = np.int64(Ylms['max_degree'])
         self.mmax = np.int64(Ylms['max_degree'])
         self.l = np.arange(self.lmax+1)
         self.m = np.arange(self.mmax+1)
+        #-- copy date variables
+        if kwargs['date']:
+            self.time = Ylms['time'].copy()
+            #-- adjust months to fix special cases if necessary
+            self.month = adjust_months(Ylms['month'])
         #-- geophysical parameters of gravity model
         self.GM = np.float64(Ylms['earth_gravity_constant'])
         self.R = np.float64(Ylms['radius'])

@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 u"""
 read_GRACE_harmonics.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (09/2021)
+Contributions by Hugo Lecomte
 
 Reads GRACE files and extracts spherical harmonic data and drift rates (RL04)
 Adds drift rates to clm and slm for release 4 harmonics
@@ -21,10 +22,12 @@ OUTPUTS:
     time: mid-month date in year-decimal
     start: start date of range as Julian day
     end: end date of range as Julian day
-    clm: cosine spherical harmonics of input data (LMAX,MMAX)
-    slm: sine spherical harmonics of input data (LMAX,MMAX)
-    eclm: cosine spherical harmonic uncalibrated standard deviations (LMAX,MMAX)
-    eslm: sine spherical harmonic uncalibrated standard deviations (LMAX,MMAX)
+    l: spherical harmonic degree to LMAX
+    m: spherical harmonic order to MMAX
+    clm: cosine spherical harmonics of input data
+    slm: sine spherical harmonics of input data
+    eclm: cosine spherical harmonic uncalibrated standard deviations
+    eslm: sine spherical harmonic uncalibrated standard deviations
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
@@ -39,8 +42,11 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 09/2021: added COST-G combined solutions from the GFZ ICGEM
+        output spherical harmonic degree and order in dict
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 12/2020: using utilities from time module
+    Updated 10/2020: Change parse function to work with GRGS data
     Updated 08/2020: flake8 compatible regular expression strings
         input file can be "diskless" bytesIO object
     Updated 07/2020: added function docstrings
@@ -82,6 +88,8 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
     time: mid-month date in year-decimal
     start: start date of range as Julian day
     end: end date of range as Julian day
+    l: spherical harmonic degree to LMAX
+    m: spherical harmonic order to MMAX
     clm: cosine spherical harmonics coefficients
     slm: sine spherical harmonics coefficients
     eclm: cosine spherical harmonic uncalibrated standard deviations
@@ -93,13 +101,20 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
     file_contents = extract_file(input_file, (SFX=='.gz'))
 
     #-- JPL Mascon solutions
-    if PRC in ('JPLMSC'):
+    if PRC in ('JPLMSC',):
         DSET = 'GSM'
         DREL = np.int64(DRL)
         FLAG = r'GRCOF2'
-    #-- Kusche et al. (2009) DDK filtered solutions 10.1007/s00190-009-0308-3
+    #-- Kusche et al. (2009) DDK filtered solutions
+    #-- https://doi.org/10.1007/s00190-009-0308-3
     elif PFX.startswith('kfilter_DDK'):
         DSET = 'GSM'
+        DREL = np.int64(DRL)
+        FLAG = r'gfc'
+    #-- COST-G unfiltered combination solutions
+    #-- https://doi.org/10.5880/ICGEM.COST-G.001
+    elif PRC in ('COSTG',):
+        DSET, = re.findall('GSM|GAC',PFX)
         DREL = np.int64(DRL)
         FLAG = r'gfc'
     #-- Standard GRACE solutions
@@ -135,6 +150,9 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
 
     #-- set maximum spherical harmonic order
     MMAX = np.copy(LMAX) if (MMAX is None) else MMAX
+    #-- output dimensions
+    grace_L2_input['l'] = np.arange(LMAX+1)
+    grace_L2_input['m'] = np.arange(MMAX+1)
     #-- Spherical harmonic coefficient matrices to be filled from data file
     grace_L2_input['clm'] = np.zeros((LMAX+1,MMAX+1))
     grace_L2_input['slm'] = np.zeros((LMAX+1,MMAX+1))
@@ -150,7 +168,13 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
     #-- replace colons in header if within quotations
     head = [re.sub(r'\"(.*?)\:\s(.*?)\"',r'"\1, \2"',l) for l in file_contents
         if not re.match(r'{0}|GRDOTA'.format(FLAG),l)]
-    if ((N == 'GRAC') and (DREL >= 6)) or (N == 'GRFO'):
+    if SFX in ('.gfc',):
+        #-- extract parameters from header
+        header_parameters = ['modelname','earth_gravity_constant','radius',
+            'max_degree','errors','norm','tide_system']
+        header_regex = re.compile(r'(' + r'|'.join(header_parameters) + r')')
+        grace_L2_input['header'] = [l for l in head if header_regex.match(l)]
+    elif ((N == 'GRAC') and (DREL >= 6)) or (N == 'GRFO'):
         #-- parse the YAML header for RL06 or GRACE-FO (specifying yaml loader)
         grace_L2_input.update(yaml.load('\n'.join(head),Loader=yaml.BaseLoader))
     else:
@@ -251,8 +275,11 @@ def parse_file(input_file):
     #-- GFZOP: GFZ German Research Center for Geosciences (RL06+GRACE-FO)
     #-- JPLEM: NASA Jet Propulsion Laboratory (harmonic solutions)
     #-- JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
+    #-- GRGS: French Centre National D'Etudes Spatiales (CNES)
+    #-- COSTG: International Combined Time-variable Gravity Fields
+    args = r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC|GRGS|COSTG'
     regex_pattern = (r'(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
-        r'(\.gz|\.gfc)?$').format('UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC')
+        r'(\.gz|\.gfc)?$').format(args)
     rx = re.compile(regex_pattern, re.VERBOSE)
     #-- extract parameters from input filename
     if isinstance(input_file, io.IOBase):

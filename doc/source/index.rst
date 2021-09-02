@@ -60,6 +60,7 @@ missions
     user_guide/plm_colombo.rst
     user_guide/plm_holmes.rst
     user_guide/plm_mohlenkamp.rst
+    user_guide/read_gfc_harmonics.rst
     user_guide/read_GIA_model.rst
     user_guide/read_GRACE_harmonics.rst
     user_guide/read_gravis_geocenter.rst

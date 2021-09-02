@@ -32,6 +32,9 @@ Arguments
       * ``'GFZ'``: German Research Centre for Geosciences (GeoForschungsZentrum)
       * ``'JPL'``: Jet Propulsion Laboratory
       * ``'CNES'``: French Centre National D'Etudes Spatiales
+      * ``'GRAZ'``: Institute of Geodesy from GRAZ University of Technology
+      * ``'COSTG'``: Combination Service for Time-variable Gravity Fields
+      * ``'SWARM'``: Time-variable gravity data from SWARM satellites
 3. ``DREL``: GRACE/GRACE-FO data release (RL04, RL05, RL06)
 4. ``DSET``: GRACE/GRACE-FO data product (GAA, GAB, GAC, GAD, GSM)
 
