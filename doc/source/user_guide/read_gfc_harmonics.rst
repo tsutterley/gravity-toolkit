@@ -38,8 +38,8 @@ Returns
 - ``time``: mid-month date in decimal form
 - ``start``: Julian dates of the start date
 - ``end``: Julian dates of the start date
-- ``l``: spherical harmonic degree to maximum degree of model
-- ``m``: spherical harmonic order to maximum degree of model
+- ``l``: spherical harmonic degree to maximum degree of data
+- ``m``: spherical harmonic order to maximum degree of data
 - ``clm``: cosine spherical harmonics of input data
 - ``slm``: sine spherical harmonics of input data
 - ``eclm``: cosine spherical harmonic standard deviations

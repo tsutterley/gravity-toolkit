@@ -7,6 +7,7 @@ read-GRACE-harmonics
 |Documentation Status|
 |Binder|
 |Pangeo|
+|zenodo|
 
 .. |Language| image:: https://img.shields.io/badge/python-v3.7-green.svg
    :target: https://www.python.org/
@@ -22,6 +23,9 @@ read-GRACE-harmonics
 
 .. |Pangeo| image:: https://binder.pangeo.io/badge.svg
    :target: https://binder.pangeo.io/v2/gh/tsutterley/read-GRACE-harmonics/main
+
+.. |zenodo| image:: https://zenodo.org/badge/107323776.svg
+   :target: https://zenodo.org/badge/latestdoi/107323776
 
 Python tools for obtaining and working with Level-2 spherical harmonic coefficients from the NASA/DLR Gravity Recovery and Climate Experiment (GRACE) and the NASA/GFZ Gravity Recovery and Climate Experiment Follow-On (GRACE-FO) missions
 

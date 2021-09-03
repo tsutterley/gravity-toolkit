@@ -25,8 +25,8 @@ OUTPUTS:
     time: mid-month date in decimal form
     start: Julian dates of the start date
     end: Julian dates of the start date
-    l: spherical harmonic degree to maximum degree of model
-    m: spherical harmonic order to maximum degree of model
+    l: spherical harmonic degree to maximum degree of data
+    m: spherical harmonic order to maximum degree of data
     clm: cosine spherical harmonics of input data
     slm: sine spherical harmonics of input data
     eclm: cosine spherical harmonic standard deviations
@@ -51,7 +51,6 @@ PROGRAM DEPENDENCIES:
 UPDATE HISTORY:
     Updated 09/2021: forked from read_ICGEM_harmonics in geoid toolkit
         use gravity toolkit time modules and reorganize structure
-        output spherical harmonic degree and order in dict
     Updated 05/2021: Add GRAZ/SWARM/COST-G ICGEM file
     Updated 03/2021: made degree of truncation LMAX a keyword argument
     Updated 07/2020: added function docstrings
@@ -61,11 +60,9 @@ UPDATE HISTORY:
 """
 import os
 import re
-import io
-import zipfile
 import numpy as np
 import gravity_toolkit.time
-from geoid_toolkit.calculate_tidal_offset import calculate_tidal_offset
+from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 
 #-- PURPOSE: read spherical harmonic coefficients of a gravity model
 def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
@@ -89,8 +86,8 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
     time: mid-month date in decimal form
     start: Julian dates of the start date
     end: Julian dates of the start date
-    l: spherical harmonic degree to maximum degree of model
-    m: spherical harmonic order to maximum degree of model
+    l: spherical harmonic degree to maximum degree of data
+    m: spherical harmonic order to maximum degree of data
     clm: cosine spherical harmonics of input data
     slm: sine spherical harmonics of input data
     eclm: cosine spherical harmonic standard deviations of type errors
@@ -151,7 +148,9 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         end_date = [int(year),int(month),dpm[int(month)-1],23,59,59]
 
     #-- python dictionary with model input and headers
-    model_input = {}
+    ZIP = bool(re.search('ZIP',SFX,re.IGNORECASE))
+    model_input = read_ICGEM_harmonics(input_file, TIDE=TIDE,
+        FLAG=FLAG, ZIP=ZIP)
 
     #-- start and end day of the year
     start_day = np.sum(dpm[:start_date[1]-1]) + start_date[2] + \
@@ -174,64 +173,5 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         end_date[1],end_date[2],hour=end_date[3],minute=end_date[4],
         second=end_date[5],epoch=(1858,11,17,0,0,0))
 
-    #-- read data from compressed or gfc file
-    if re.search('ZIP',SFX,re.IGNORECASE):
-        #-- extract zip file with gfc file
-        with zipfile.ZipFile(os.path.expanduser(input_file)) as zs:
-            #-- find gfc file within zipfile
-            gfc, = [io.BytesIO(zs.read(s)) for s in zs.namelist()
-                if s.endswith('gfc')]
-            #-- read input gfc data file
-            file_contents = gfc.read().decode('ISO-8859-1').splitlines()
-    else:
-        #-- read input gfc data file
-        with open(os.path.expanduser(input_file),'r') as f:
-            file_contents = f.read().splitlines()
-    #-- extract parameters from header
-    header_parameters = ['modelname','earth_gravity_constant','radius',
-        'max_degree','errors','norm','tide_system']
-    parameters_regex = '(' + '|'.join(header_parameters) + ')'
-    header = [l for l in file_contents if re.match(parameters_regex,l)]
-    for line in header:
-        #-- split the line into individual components
-        line_contents = line.split()
-        model_input[line_contents[0]] = line_contents[1]
-    #-- set degree of truncation from model
-    LMAX = int(model_input['max_degree'])
-    #-- output dimensions
-    model_input['l'] = np.arange(LMAX+1)
-    model_input['m'] = np.arange(LMAX+1)
-    #-- allocate for each Coefficient
-    model_input['clm'] = np.zeros((LMAX+1,LMAX+1))
-    model_input['slm'] = np.zeros((LMAX+1,LMAX+1))
-    model_input['eclm'] = np.zeros((LMAX+1,LMAX+1))
-    model_input['eslm'] = np.zeros((LMAX+1,LMAX+1))
-    #-- reduce file_contents to input data using data marker flag
-    input_data = [l for l in file_contents if re.match(FLAG,l)]
-    #-- for each line of data in the gravity file
-    for line in input_data:
-        #-- split the line into individual components replacing fortran d
-        line_contents = re.sub('d','e',line,flags=re.IGNORECASE).split()
-        #-- degree and order for the line
-        l1 = int(line_contents[1])
-        m1 = int(line_contents[2])
-        #-- fill gravity fields for degree and order
-        model_input['clm'][l1,m1] = np.float64(line_contents[3])
-        model_input['slm'][l1,m1] = np.float64(line_contents[4])
-        #-- check if model contains errors
-        try:
-            model_input['eclm'][l1,m1] = np.float64(line_contents[5])
-            model_input['eslm'][l1,m1] = np.float64(line_contents[6])
-        except:
-            pass
-    #-- calculate the tidal offset if changing the tide system
-    if TIDE in ('mean_tide','zero_tide','tide_free'):
-        #-- earth parameters
-        GM = np.float64(model_input['earth_gravity_constant'])
-        R = np.float64(model_input['radius'])
-        model_input['clm'][2,0] += calculate_tidal_offset(TIDE,GM,R,'WGS84',
-            REFERENCE=model_input['tide_system'])
-        #-- update attribute for tide system
-        model_input['tide_system'] = TIDE
     #-- return the spherical harmonics and parameters
     return model_input
