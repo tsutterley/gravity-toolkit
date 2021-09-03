@@ -26,7 +26,7 @@ Arguments
 #########
 
 1. ``base_dir``: Working data directory for GRACE/GRACE-FO data
-2. ``PROC``: GRACE/GRACE-FO data processing center (CSR, CNES, JPL, GFZ)
+2. ``PROC``: Data processing center or satellite mission
 
       * ``'CSR'``: University of Texas Center for Space Research
       * ``'GFZ'``: German Research Centre for Geosciences (GeoForschungsZentrum)
@@ -34,9 +34,9 @@ Arguments
       * ``'CNES'``: French Centre National D'Etudes Spatiales
       * ``'GRAZ'``: Institute of Geodesy from GRAZ University of Technology
       * ``'COSTG'``: Combination Service for Time-variable Gravity Fields
-      * ``'SWARM'``: Time-variable gravity data from SWARM satellites
-3. ``DREL``: GRACE/GRACE-FO data release (RL04, RL05, RL06)
-4. ``DSET``: GRACE/GRACE-FO data product (GAA, GAB, GAC, GAD, GSM)
+      * ``'Swarm'``: Time-variable gravity data from Swarm satellites
+3. ``DREL``: GRACE/GRACE-FO/Swarm data release (RL04, RL05, RL06)
+4. ``DSET``: GRACE/GRACE-FO/Swarm data product
 
       * ``'GAA'``: non-tidal atmospheric correction
       * ``'GAB'``: non-tidal oceanic correction

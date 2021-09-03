@@ -125,7 +125,7 @@ class harmonics(object):
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- set default parameters
-        kwargs.setdefault('date',False)
+        kwargs.setdefault('date',True)
         kwargs.setdefault('verbose',False)
         kwargs.setdefault('compression',None)
         #-- open the ascii file and extract contents
@@ -202,7 +202,7 @@ class harmonics(object):
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- set default parameters
-        kwargs.setdefault('date',False)
+        kwargs.setdefault('date',True)
         kwargs.setdefault('verbose',False)
         kwargs.setdefault('compression',None)
         #-- read data from netCDF4 file
@@ -236,7 +236,7 @@ class harmonics(object):
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- set default parameters
-        kwargs.setdefault('date',False)
+        kwargs.setdefault('date',True)
         kwargs.setdefault('verbose',False)
         kwargs.setdefault('compression',None)
         #-- read data from HDF5 file

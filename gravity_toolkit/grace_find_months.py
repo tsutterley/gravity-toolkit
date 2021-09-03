@@ -3,17 +3,24 @@ u"""
 grace_find_months.py
 Written by Tyler Sutterley (05/2021)
 
-Parses date index file from grace_date.py
-Finds the months available for a GRACE/GRACE-FO product
+Parses date index file from grace_date program
+Finds the months available for a GRACE/GRACE-FO/Swarm product
 Finds the all months missing from the product
 
 INPUTS:
     base_dir: Working data directory for GRACE/GRACE-FO data
-    PROC: GRACE/GRACE-FO data processing center (CSR, CNES, JPL, GFZ)
-    DREL: GRACE/GRACE-FO data release (RL04, RL05, RL06)
+    PROC: Data processing center or satellite mission
+        CSR: University of Texas Center for Space Research
+        GFZ: German Research Centre for Geosciences (GeoForschungsZentrum)
+        JPL: Jet Propulsion Laboratory
+        CNES: French Centre National D'Etudes Spatiales
+        GRAZ: Institute of Geodesy from GRAZ University of Technology
+        COSTG: Combination Service for Time-variable Gravity Fields
+        Swarm: Time-variable gravity data from Swarm satellites
+    DREL: GRACE/GRACE-FO/Swarm data release
 
 OPTIONS:
-    DSET: GRACE dataset (GSM, GAC, GAD, GAB, GAA)
+    DSET: GRACE/GRACE-FO/Swarm dataset (GSM, GAC, GAD, GAB, GAA)
 
 OUTPUTS:
     start: First month in a GRACE/GRACE-FO dataset
@@ -60,11 +67,11 @@ def grace_find_months(base_dir, PROC, DREL, DSET='GSM'):
         GFZ: German Research Centre for Geosciences (GeoForschungsZentrum)
         JPL: Jet Propulsion Laboratory
         CNES: French Centre National D'Etudes Spatiales
-    DREL: GRACE/GRACE-FO data release
+    DREL: GRACE/GRACE-FO/Swarm data release
 
     Keyword arguments
     -----------------
-    DSET: GRACE/GRACE-FO dataset
+    DSET: GRACE/GRACE-FO/Swarm dataset
         GAA: non-tidal atmospheric correction
         GAB: non-tidal oceanic correction
         GAC: combined non-tidal atmospheric and oceanic correction

@@ -14,9 +14,21 @@ Corrects for Pole Tide drift following Wahr et al. (2015)
 
 INPUTS:
     base_dir: Working data directory for GRACE/GRACE-FO data
-    PROC: (CSR/CNES/JPL/GFZ) data processing center
-    DREL: (RL01/RL02/RL03/RL04/RL05/RL06) data release
-    DSET: (GAA/GAB/GAC/GAD/GSM) data product
+    PROC: Data processing center or satellite mission
+        CSR: University of Texas Center for Space Research
+        GFZ: German Research Centre for Geosciences (GeoForschungsZentrum)
+        JPL: Jet Propulsion Laboratory
+        CNES: French Centre National D'Etudes Spatiales
+        GRAZ: Institute of Geodesy from GRAZ University of Technology
+        COSTG: Combination Service for Time-variable Gravity Fields
+        Swarm: Time-variable gravity data from Swarm satellites
+    DREL: GRACE/GRACE-FO/Swarm data release
+    DSET: GRACE/GRACE-FO/Swarm data product
+        GAA: non-tidal atmospheric correction
+        GAB: non-tidal oceanic correction
+        GAC: combined non-tidal atmospheric and oceanic correction
+        GAD: ocean bottom pressure product
+        GSM: monthly static field product
     LMAX: Upper bound of Spherical Harmonic Degrees (e.g. 60)
     start_mon: starting month to consider in analysis
     end_mon: ending month to consider in analysis
@@ -96,7 +108,7 @@ PROGRAM DEPENDENCIES:
     read_gfc_harmonics.py: reads spherical harmonic data from gfc files
 
 UPDATE HISTORY:
-    Updated 09/2021: added time-variable gravity data from GRAZ and SWARM
+    Updated 09/2021: added time-variable gravity data from GRAZ and Swarm
     Updated 08/2021: fix spherical harmonic errors for SLR C21,S21,C22,S22
     Updated 07/2021: fix inputs to AOD-corrected SLR geocenter coefficients
         output uncalibrated spherical harmonic errors (eclm and eslm)
@@ -272,7 +284,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     for i,grace_month in enumerate(months):
         #-- read spherical harmonic data products
         infile = grace_files[grace_month]
-        if PROC in ('GRAZ','SWARM'):
+        if PROC in ('GRAZ','Swarm'):
             #-- Degree 2 zonals will be converted to a tide free state
             Ylms = read_gfc_harmonics(infile, TIDE='tide_free')
         else:

@@ -97,7 +97,7 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
     """
 
     #-- parse filename
-    PFX,SD,ED,N,PRC,F1,DRL,F2,SFX = parse_file(input_file)
+    PFX,SY,SD,EY,ED,N,PRC,F1,DRL,F2,SFX = parse_file(input_file)
     file_contents = extract_file(input_file, (SFX=='.gz'))
 
     #-- JPL Mascon solutions
@@ -126,10 +126,10 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
     #-- output python dictionary with GRACE data and date information
     grace_L2_input = {}
     #-- extract GRACE date information from input file name
-    start_yr = np.float64(SD[:4])
-    end_yr = np.float64(ED[:4])
-    start_day = np.float64(SD[4:])
-    end_day = np.float64(ED[4:])
+    start_yr = np.float64(SY)
+    end_yr = np.float64(EY)
+    start_day = np.float64(SD)
+    end_day = np.float64(ED)
     #-- calculate mid-month date taking into account if measurements are
     #-- on different years
     dpy = gravity_toolkit.time.calendar_days(start_yr).sum()
@@ -278,8 +278,8 @@ def parse_file(input_file):
     #-- GRGS: French Centre National D'Etudes Spatiales (CNES)
     #-- COSTG: International Combined Time-variable Gravity Fields
     args = r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC|GRGS|COSTG'
-    regex_pattern = (r'(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
-        r'(\.gz|\.gfc)?$').format(args)
+    regex_pattern = (r'(.*?)-2_(\d{{4}})(\d{{3}})-(\d{{4}})(\d{{3}})_'
+        r'(.*?)_({0})_(.*?)_(\d+)(.*?)(\.gz|\.gfc)?$').format(args)
     rx = re.compile(regex_pattern, re.VERBOSE)
     #-- extract parameters from input filename
     if isinstance(input_file, io.IOBase):

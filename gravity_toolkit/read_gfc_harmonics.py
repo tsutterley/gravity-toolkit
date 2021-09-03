@@ -4,12 +4,12 @@ read_gfc_harmonics.py
 Written by Tyler Sutterley (09/2021)
 Contributions by Hugo Lecomte
 
-Reads gfc files and extracts spherical harmonics for SWARM and
+Reads gfc files and extracts spherical harmonics for Swarm and
     GRAZ GRACE/GRACE-FO data
-Parses date of GRACE/GRACE-FO data from filename
+Parses date of GRACE/GRACE-FO/Swarm data from filename
 
 GRAZ: https://www.tugraz.at/institute/ifg/downloads/gravity-field-models
-SWARM: https://earth.esa.int/eogateway/missions/swarm
+Swarm: https://earth.esa.int/eogateway/missions/swarm
 
 INPUTS:
     input_file: full path to gfc spherical harmonic data file
@@ -37,7 +37,10 @@ OUTPUTS:
     max_degree: maximum degree and order for the gravity model
     errors: error type of the gravity model
     norm: normalization of the spherical harmonics
-    tide_system: tide system of gravity model (mean_tide, zero_tide, tide_free)
+    tide_system: tide system of gravity model
+        tide_free: no permanent direct and indirect tidal potentials
+        mean_tide: permanent tidal potentials (direct and indirect)
+        zero_tide: permanent direct tidal potential
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
@@ -51,7 +54,7 @@ PROGRAM DEPENDENCIES:
 UPDATE HISTORY:
     Updated 09/2021: forked from read_ICGEM_harmonics in geoid toolkit
         use gravity toolkit time modules and reorganize structure
-    Updated 05/2021: Add GRAZ/SWARM/COST-G ICGEM file
+    Updated 05/2021: Add GRAZ/Swarm/COST-G ICGEM file
     Updated 03/2021: made degree of truncation LMAX a keyword argument
     Updated 07/2020: added function docstrings
     Updated 07/2019: split read and wrapper funciton into separate files
@@ -110,7 +113,7 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
     itsg_products.append(r'Grace_operational')
     itsg_pattern = (r'(AOD1B_RL\d+|model|ITSG)[-_]({0})(_n\d+)?_'
         r'(\d+)-(\d+)(\.gfc)').format(r'|'.join(itsg_products))
-    #-- regular expression operators for SWARM data and models
+    #-- regular expression operators for Swarm data and models
     swarm_data = r'(SW)_(.*?)_(EGF_SHA_2)__(.*?)_(.*?)_(.*?)(\.gfc|.ZIP)'
     swarm_model = r'(GAA|GAB|GAC|GAD)_Swarm_(\d+)_(\d{2})_(\d{4}).(\.gfc|.ZIP)'
     #-- extract parameters for each data center and product
@@ -127,7 +130,7 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         end_date = [int(year),int(month),dpm[int(month)-1],23,59,59]
     elif re.match(swarm_data, os.path.basename(input_file)):
         #-- compile numerical expression operator for parameters from files
-        #-- SWARM: data from SWARM satellite
+        #-- Swarm: data from Swarm satellite
         rx = re.compile(swarm_data, re.VERBOSE | re.IGNORECASE)
         #-- extract parameters from input filename
         SAT,tmp,PROD,starttime,endtime,RL,SFX = rx.findall(input_file).pop()
@@ -137,7 +140,7 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         dpm = gravity_toolkit.time.calendar_days(start_date[0])
     elif re.match(swarm_model, os.path.basename(input_file)):
         #-- compile numerical expression operator for parameters from files
-        #-- SWARM: dealiasing products for SWARM data
+        #-- Swarm: dealiasing products for Swarm data
         rx = re.compile(swarm_data, re.VERBOSE | re.IGNORECASE)
         #-- extract parameters from input filename
         PROD,trunc,month,year,SFX = rx.findall(input_file).pop()
