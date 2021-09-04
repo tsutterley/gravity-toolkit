@@ -88,6 +88,8 @@ missions
     :caption: Utilities
 
     user_guide/cnes_grace_sync.md
+    user_guide/esa_costg_swarm_sync.md
+    user_guide/gfz_icgem_costg_ftp.md
     user_guide/gfz_isdc_dealiasing_ftp.md
     user_guide/gfz_isdc_grace_ftp.md
     user_guide/podaac_grace_sync.md

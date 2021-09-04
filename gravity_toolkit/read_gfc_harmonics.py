@@ -46,9 +46,12 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
         https://numpy.org
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
 
 PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
+    read_ICGEM_harmonics.py: reads gravity model coefficients from GFZ ICGEM
     calculate_tidal_offset.py: calculates the C20 offset for a tidal system
 
 UPDATE HISTORY:
@@ -114,8 +117,8 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
     itsg_pattern = (r'(AOD1B_RL\d+|model|ITSG)[-_]({0})(_n\d+)?_'
         r'(\d+)-(\d+)(\.gfc)').format(r'|'.join(itsg_products))
     #-- regular expression operators for Swarm data and models
-    swarm_data = r'(SW)_(.*?)_(EGF_SHA_2)__(.*?)_(.*?)_(.*?)(\.gfc|.ZIP)'
-    swarm_model = r'(GAA|GAB|GAC|GAD)_Swarm_(\d+)_(\d{2})_(\d{4}).(\.gfc|.ZIP)'
+    swarm_data = r'(SW)_(.*?)_(EGF_SHA_2)__(.*?)_(.*?)_(.*?)(\.gfc|\.ZIP)'
+    swarm_model = r'(GAA|GAB|GAC|GAD)_Swarm_(\d+)_(\d{2})_(\d{4})(\.gfc|\.ZIP)'
     #-- extract parameters for each data center and product
     if re.match(itsg_pattern, os.path.basename(input_file)):
         #-- compile numerical expression operator for parameters from files

@@ -157,7 +157,7 @@ def parse_date(input_file, PROC, DSET):
         itsg_products.append(r'Grace2016')
         itsg_products.append(r'Grace2018')
         itsg_products.append(r'Grace_operational')
-        regex_pattern = (r'(AOD1B_RL\d+|model|ITSG)[-_]({0})(_n\d+)?_'
+        regex_pattern=(r'(AOD1B_RL\d+|model|ITSG)[-_]({0})(_n\d+)?_'
             r'(\d+)-(\d+)(\.gfc)').format(r'|'.join(itsg_products))
         #-- compile regular expression operator for parameters from files
         rx = re.compile(regex_pattern, re.VERBOSE | re.IGNORECASE)
@@ -170,7 +170,7 @@ def parse_date(input_file, PROC, DSET):
         end_date = [int(year),int(month),dpm[int(month)-1],23,59,59]
     elif (PROC == 'Swarm') and (DSET == 'GSM'):
         #-- regular expression operators for Swarm data
-        regex_pattern = r'(SW)_(.*?)_(EGF_SHA_2)__(.*?)_(.*?)_(.*?)(\.gfc|.ZIP)'
+        regex_pattern=r'(SW)_(.*?)_(EGF_SHA_2)__(.*?)_(.*?)_(.*?)(\.gfc|\.ZIP)'
         #-- compile regular expression operator for parameters from files
         rx = re.compile(regex_pattern, re.VERBOSE | re.IGNORECASE)
         #-- extract parameters from input filename
@@ -179,8 +179,8 @@ def parse_date(input_file, PROC, DSET):
         end_date,_ = gravity_toolkit.time.parse_date_string(endtime)
     elif (PROC == 'Swarm') and (DSET != 'GSM'):
         #-- regular expression operators for Swarm models
-        regex_pattern = (r'(GAA|GAB|GAC|GAD)_Swarm_(\d+)_(\d{2})_(\d{4}).'
-            r'(\.gfc|.ZIP)')
+        regex_pattern=(r'(GAA|GAB|GAC|GAD)_Swarm_(\d+)_(\d{2})_(\d{4})'
+            r'(\.gfc|\.ZIP)')
         #-- compile regular expression operator for parameters from files
         rx = re.compile(regex_pattern, re.VERBOSE | re.IGNORECASE)
         #-- extract parameters from input filename
