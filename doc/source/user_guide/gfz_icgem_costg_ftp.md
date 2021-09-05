@@ -14,6 +14,9 @@ python gfz_icgem_costg_ftp.py --directory <path_to_grace_directory> \
 #### Command Line Options
 - `-D X`, `--directory X`: Working Data Directory
 - `-m X`, `--mission X`: Mission to sync between GRACE, GRACE-FO and Swarm
+    * `'Grace'`
+    * `'Grace-FO'`
+    * `'Swarm'`
 - `-t X`, `--timeout X`: Timeout in seconds for blocking operations
 - `-l`, `--log`: Output log file
 - `-L`, `--list`: Only print files that are to be transferred

@@ -92,6 +92,7 @@ missions
     user_guide/gfz_icgem_costg_ftp.md
     user_guide/gfz_isdc_dealiasing_ftp.md
     user_guide/gfz_isdc_grace_ftp.md
+    user_guide/itsg_graz_grace_sync.md
     user_guide/podaac_grace_sync.md
     user_guide/podaac_webdav.md
 

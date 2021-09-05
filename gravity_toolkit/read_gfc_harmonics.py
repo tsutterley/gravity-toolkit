@@ -110,6 +110,8 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
     itsg_products = []
     itsg_products.append(r'atmosphere')
     itsg_products.append(r'dealiasing')
+    itsg_products.append(r'oceanBottomPressure')
+    itsg_products.append(r'ocean')
     itsg_products.append(r'Grace2014')
     itsg_products.append(r'Grace2016')
     itsg_products.append(r'Grace2018')

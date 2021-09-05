@@ -17,6 +17,9 @@ COMMAND LINE OPTIONS:
     --help: list the command line options
     -D X, --directory X: working data directory
     -m X, --mission X: Sync GRACE, GRACE Follow-On (GRACE-FO) and Swarm data
+         Grace
+         Grace-FO
+         Swarm
     -t X, --timeout X: Timeout in seconds for blocking operations
     -L, --list: print files to be transferred, but do not execute transfer
     -l, --log: output log of files downloaded
@@ -123,8 +126,6 @@ def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], TIMEOUT=None, LOG=False,
         remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
             remote_path, timeout=TIMEOUT, basename=True, pattern=R1,
             sort=True)
-        #-- write each file to an index
-        fid = open(os.path.join(local_dir,'index.txt'),'w')
         #-- download the file from the ftp server
         for fi,remote_mtime in zip(remote_files,remote_mtimes):
             #-- remote and local versions of the file
@@ -135,8 +136,13 @@ def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], TIMEOUT=None, LOG=False,
                 CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
             #-- remove the file from the remote path list
             remote_path.remove(fi)
+        #-- find local GRACE/GRACE-FO/Swarm files to create index
+        grace_files=[fi for fi in os.listdir(local_dir) if R1.match(fi)]
+        #-- write each file to an index
+        with open(os.path.join(local_dir,'index.txt'),'w') as fid:
             #-- output GRACE/GRACE-FO/Swarm filenames to index
-            print('{0}'.format(fi), file=fid)
+            for fi in sorted(grace_files):
+                print('{0}'.format(fi), file=fid)
         #-- change permissions of index file
         os.chmod(os.path.join(local_dir,'index.txt'), MODE)
 

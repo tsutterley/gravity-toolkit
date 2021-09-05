@@ -111,6 +111,8 @@ def esa_costg_swarm_sync(DIRECTORY, TIMEOUT=None, LOG=False,
 
     #-- find lines of valid files
     valid_lines = [i for i,f in enumerate(colnames) if R1.match(f)]
+    #-- write each file to an index
+    fid = open(os.path.join(local_dir,'index.txt'),'w')
     #-- for each data and header file
     for i in valid_lines:
         #-- remote and local versions of the file
@@ -123,6 +125,10 @@ def esa_costg_swarm_sync(DIRECTORY, TIMEOUT=None, LOG=False,
         http_pull_file(fid1, remote_file, collastmod[i], local_file,
             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
             CHECKSUM=CHECKSUM, MODE=MODE)
+        #-- output Swarm filenames to index
+        print('{0}'.format(colnames[i]), file=fid)
+    #-- change permissions of index file
+    os.chmod(os.path.join(local_dir,'index.txt'), MODE)
 
     #-- close log file and set permissions level to MODE
     if LOG:
