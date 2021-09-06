@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 u"""
 grace_date.py
-Written by Tyler Sutterley (07/2021)
+Written by Tyler Sutterley (09/2021)
+Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
 Parses dates of each GRACE/GRACE-FO file and assigns the month number
@@ -11,14 +12,21 @@ INPUTS:
     base_dir: Working data directory for GRACE/GRACE-FO data
 
 OPTIONS:
-    PROC: GRACE data processing center (CSR/CNES/JPL/GFZ)
-    DREL: GRACE/GRACE-FO Data Release (RL03 for CNES) (RL06 for CSR/GFZ/JPL)
-    DSET: GRACE dataset (GAA/GAB/GAC/GAD/GSM)
-        GAA is the non-tidal atmospheric correction
-        GAB is the non-tidal oceanic correction
-        GAC is the combined non-tidal atmospheric and oceanic correction
-        GAD is the GRACE ocean bottom pressure product
-        GSM is corrected monthly GRACE/GRACE-FO static field product
+    PROC: Data processing center or satellite mission
+        CSR: University of Texas Center for Space Research
+        GFZ: German Research Centre for Geosciences (GeoForschungsZentrum)
+        JPL: Jet Propulsion Laboratory
+        CNES: French Centre National D'Etudes Spatiales
+        GRAZ: Institute of Geodesy from GRAZ University of Technology
+        COSTG: Combination Service for Time-variable Gravity Fields
+        Swarm: Time-variable gravity data from Swarm satellites
+    DREL: GRACE/GRACE-FO/Swarm data release
+    DSET: GRACE/GRACE-FO/Swarm dataset
+        GAA: non-tidal atmospheric correction
+        GAB: non-tidal oceanic correction
+        GAC: combined non-tidal atmospheric and oceanic correction
+        GAD: ocean bottom pressure product
+        GSM: monthly static field product
     OUTPUT: create index of dates for GRACE/GRACE-FO data
     MODE: permissions mode of output files
 
@@ -38,10 +46,13 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 09/2021: adjust regular expression operators for Swarm and GRAZ
     Updated 07/2021: remove choices for argparse processing centers
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: use adjust_months function to fix special months cases
     Updated 12/2020: using utilities from time module
+        Add Swarm data time-variable gravity fields
+    Updated 11/2020: added CNES RL04 & RL05 and GRAZ 2018 (monthly fields)
     Updated 10/2020: use argparse to set command line parameters
     Updated 07/2020: added function docstrings
     Updated 03/2020: for public release
@@ -88,6 +99,103 @@ import argparse
 import numpy as np
 import gravity_toolkit.time
 
+#-- PURPOSE: extract parameters from filename
+def parse_file(input_file):
+    """
+    Extract parameters from filename
+
+    Arguments
+    ---------
+    input_file: GRACE/GRACE-FO Level-2 spherical harmonic data file
+    """
+    #-- reduce to basename of file
+    file_basename = os.path.basename(input_file)
+    #-- compile numerical expression operator for parameters from files
+    #-- UTCSR: The University of Texas at Austin Center for Space Research
+    #-- EIGEN: GFZ German Research Center for Geosciences (RL01-RL05)
+    #-- GFZOP: GFZ German Research Center for Geosciences (RL06+GRACE-FO)
+    #-- JPLEM: NASA Jet Propulsion Laboratory (harmonic solutions)
+    #-- JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
+    #-- GRGS: French Centre National D'Etudes Spatiales (CNES)
+    #-- COSTG: International Combined Time-variable Gravity Fields
+    args = r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC|GRGS|COSTG'
+    regex_pattern = (r'(.*?)-2_(\d{{4}})(\d{{3}})-(\d{{4}})(\d{{3}})_'
+        r'(.*?)_({0})_(.*?)_(\d+)(.*?)(\.gz|\.gfc)?$').format(args)
+    rx = re.compile(regex_pattern, re.VERBOSE)
+    #-- extract parameters from input filename
+    PFX,SY,SD,EY,ED,AUX,PRC,F1,DRL,F2,SFX = rx.findall(file_basename).pop()
+    #-- return the start and end date lists
+    return ([SY,SD],[EY,ED])
+
+#-- PURPOSE: extract dates from GRAZ or Swarm files with regular expressions
+def parse_date(input_file, PROC, DSET):
+    """
+    Extract dates from GRAZ and Swarm filenames
+
+    Arguments
+    ---------
+    input_file: GRAZ or Swarm spherical harmonic data file
+    PROC: GRACE/GRACE-FO Processing Center or Satellite mission
+        GRAZ: Institute of Geodesy from GRAZ University of Technology
+        Swarm: Time-variable gravity data from Swarm satellites
+    DSET: GRACE/GRACE-FO/Swarm dataset
+        GAA: non-tidal atmospheric correction
+        GAB: non-tidal oceanic correction
+        GAC: combined non-tidal atmospheric and oceanic correction
+        GAD: ocean bottom pressure product
+        GSM: monthly static field product
+    """
+    #-- reduce to basename of file
+    file_basename = os.path.basename(input_file)
+    #-- extract parameters from input filename
+    if (PROC == 'GRAZ'):
+        #-- regular expression operators for ITSG data and models
+        itsg_products = []
+        itsg_products.append(r'atmosphere')
+        itsg_products.append(r'dealiasing')
+        itsg_products.append(r'oceanBottomPressure')
+        itsg_products.append(r'ocean')
+        itsg_products.append(r'Grace2014')
+        itsg_products.append(r'Grace2016')
+        itsg_products.append(r'Grace2018')
+        itsg_products.append(r'Grace_operational')
+        regex_pattern=(r'(AOD1B_RL\d+|model|ITSG)[-_]({0})(_n\d+)?_'
+            r'(\d+)-(\d+)(\.gfc)').format(r'|'.join(itsg_products))
+        #-- compile regular expression operator for parameters from files
+        rx = re.compile(regex_pattern, re.VERBOSE | re.IGNORECASE)
+        #-- extract parameters from input filename
+        PFX,PRD,trunc,year,month,SFX = rx.findall(file_basename).pop()
+        #-- number of days in each month for the calendar year
+        dpm = gravity_toolkit.time.calendar_days(int(year))
+        #-- create start and end date lists
+        start_date = [int(year),int(month),1,0,0,0]
+        end_date = [int(year),int(month),dpm[int(month)-1],23,59,59]
+    elif (PROC == 'Swarm') and (DSET == 'GSM'):
+        #-- regular expression operators for Swarm data
+        regex_pattern=r'(SW)_(.*?)_(EGF_SHA_2)__(.*?)_(.*?)_(.*?)(\.gfc|\.ZIP)'
+        #-- compile regular expression operator for parameters from files
+        rx = re.compile(regex_pattern, re.VERBOSE | re.IGNORECASE)
+        #-- extract parameters from input filename
+        SAT,tmp,PROD,starttime,endtime,RL,SFX = rx.findall(file_basename).pop()
+        start_date,_ = gravity_toolkit.time.parse_date_string(starttime)
+        end_date,_ = gravity_toolkit.time.parse_date_string(endtime)
+    elif (PROC == 'Swarm') and (DSET != 'GSM'):
+        #-- regular expression operators for Swarm models
+        regex_pattern=(r'(GAA|GAB|GAC|GAD)_Swarm_(\d+)_(\d{2})_(\d{4})'
+            r'(\.gfc|\.ZIP)')
+        #-- compile regular expression operator for parameters from files
+        rx = re.compile(regex_pattern, re.VERBOSE | re.IGNORECASE)
+        #-- extract parameters from input filename
+        PROD,trunc,month,year,SFX = rx.findall(file_basename).pop()
+        #-- number of days in each month for the calendar year
+        dpm = gravity_toolkit.time.calendar_days(int(year))
+        #-- create start and end date lists
+        start_date = [int(year),int(month),1,0,0,0]
+        end_date = [int(year),int(month),dpm[int(month)-1],23,59,59]
+    #-- return the start and end date lists
+    return (start_date, end_date)
+
+#-- PURPOSE: parses GRACE/GRACE-FO data files and assigns month numbers
 def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     """
     Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
@@ -100,13 +208,16 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
 
     Keyword arguments
     -----------------
-    PROC: GRACE data processing center
+    PROC: Data processing center or satellite mission
         CSR: University of Texas Center for Space Research
         GFZ: German Research Centre for Geosciences (GeoForschungsZentrum)
         JPL: Jet Propulsion Laboratory
         CNES: French Centre National D'Etudes Spatiales
-    DREL: GRACE/GRACE-FO data release
-    DSET: GRACE/GRACE-FO dataset
+        GRAZ: Institute of Geodesy from GRAZ University of Technology
+        COSTG: Combination Service for Time-variable Gravity Fields
+        Swarm: Time-variable gravity data from Swarm satellites
+    DREL: GRACE/GRACE-FO/Swarm data release
+    DSET: GRACE/GRACE-FO/Swarm dataset
         GAA: non-tidal atmospheric correction
         GAB: non-tidal oceanic correction
         GAC: combined non-tidal atmospheric and oceanic correction
@@ -139,26 +250,30 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     tdec = np.zeros((n_files))#-- tdec is the date in decimal form
     mon = np.zeros((n_files,),dtype=np.int64)#-- GRACE/GRACE-FO month number
 
-    #-- compile numerical expression operator for parameters from files
-    #-- will work with previous releases and releases for GRACE-FO
-    #-- UTCSR: The University of Texas at Austin Center for Space Research
-    #-- EIGEN: GFZ German Research Center for Geosciences (RL01-RL05)
-    #-- GFZOP: GFZ German Research Center for Geosciences (RL06+GRACE-FO)
-    #-- JPLEM: NASA Jet Propulsion Laboratory (harmonic solutions)
-    #-- JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
-    regex_pattern = (r'(.*?)-2_(\d+)-(\d+)_(.*?)_({0})_(.*?)_(\d+)(.*?)'
-       r'(\.gz|\.gfc)?$').format(r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC')
-    rx = re.compile(regex_pattern, re.VERBOSE)
-
     #-- for each data file
-    for t, infile in enumerate(input_files):
-        #-- extract parameters from input filename
-        PFX,start_date,end_date,AUX,PRC,F1,DRL,F2,SFX = rx.findall(infile).pop()
-        #-- find start date, end date and number of days
-        start_yr[t] = np.float64(start_date[:4])
-        end_yr[t] = np.float64(end_date[:4])
-        start_day[t] = np.float64(start_date[4:])
-        end_day[t] = np.float64(end_date[4:])
+    for t,infile in enumerate(input_files):
+        if PROC in ('GRAZ','Swarm',):
+            #-- get date lists for the start and end of fields
+            start_date,end_date = parse_date(infile, PROC, DSET)
+            #-- start and end year
+            start_yr[t] = np.float64(start_date[0])
+            end_yr[t] = np.float64(end_date[0])
+            #-- number of days in each month for the calendar year
+            dpm = gravity_toolkit.time.calendar_days(start_yr[t])
+            #-- start and end day of the year
+            start_day[t] = np.sum(dpm[:start_date[1]-1]) + start_date[2] + \
+                start_date[3]/24. + start_date[4]/1440. + start_date[5]/86400.
+            end_day[t] = np.sum(dpm[:end_date[1]-1]) + end_date[2] + \
+                end_date[3]/24. + end_date[4]/1440. + end_date[5]/86400.
+        else:
+            #-- get date lists for the start and end of fields
+            start_date,end_date = parse_file(infile)
+            #-- start and end year
+            start_yr[t] = np.float64(start_date[0])
+            end_yr[t] = np.float64(end_date[0])
+            #-- start and end day of the year
+            start_day[t] = np.float64(start_date[1])
+            end_day[t] = np.float64(end_date[1])
 
         #-- number of days in the starting year for leap and standard years
         dpy = gravity_toolkit.time.calendar_days(start_yr[t]).sum()
@@ -251,7 +366,7 @@ def main():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
-    #-- GRACE/GRACE-FO data processing center
+    #-- Data processing center or satellite mission
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, nargs='+',
         default=['CSR','GFZ','JPL'],

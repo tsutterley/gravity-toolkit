@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 run_grace_date.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (09/2021)
 
 Wrapper program for running GRACE date and months programs
 
@@ -15,8 +15,11 @@ CALLING SEQUENCE:
 
 INPUTS:
     base_dir: working GRACE/GRACE-FO data directory
-    PROC: GRACE processing centers to run
-    DREL: GRACE/GRACE-FO Data Releases to run
+    PROC: GRACE/GRACE-FO data processing center
+        CSR: University of Texas Center for Space Research
+        GFZ: German Research Centre for Geosciences (GeoForschungsZentrum)
+        JPL: Jet Propulsion Laboratory
+    DREL: GRACE/GRACE-FO data release to run
 
 OPTIONS:
     VERBOSE: Track program progress
@@ -44,6 +47,7 @@ PROGRAM DEPENDENCIES:
     grace_months_index.py: creates a single file showing the GRACE dates
 
 UPDATE HISTORY:
+    Updated 09/2021: using verbose option to track program progress
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 10/2020: use argparse to set command line parameters
     Updated 05/2020: updated for public release
@@ -94,12 +98,13 @@ def run_grace_date(base_dir, PROC, DREL, VERBOSE=False, MODE=0o775):
         for r in drel:
             #-- for number of data products
             for d in DSET[p][r]:
-                print('GRACE Date Program: {0} {1} {2}'.format(p,r,d))
+                if VERBOSE:
+                    print('GRACE Date Program: {0} {1} {2}'.format(p,r,d))
                 #-- run program for processing center, data release and product
                 grace_date(base_dir,PROC=p,DREL=r,DSET=d,OUTPUT=True,MODE=MODE)
 
     #-- run grace months program for data releases
-    print('GRACE Months Program')
+    print('GRACE Months Program') if VERBOSE else None
     grace_months_index(base_dir, DREL=DREL, MODE=MODE)
 
 
@@ -117,7 +122,7 @@ def main():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
-    #-- GRACE/GRACE-FO data processing center
+    #-- Data processing center or satellite mission
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, nargs='+',
         default=['CSR','GFZ','JPL'],

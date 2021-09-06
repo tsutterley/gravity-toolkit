@@ -11,7 +11,7 @@ INPUTS:
     base_dir: Working data directory for GRACE/GRACE-FO data
 
 OPTIONS:
-    DREL: GRACE/GRACE-FO data release (RL04, RL05, RL06)
+    DREL: GRACE/GRACE-FO/Swarm data release (RL04, RL05, RL06)
     MODE: Permissions mode of output index file
 
 OUTPUTS:
@@ -69,7 +69,7 @@ def grace_months_index(base_dir, DREL=['RL06','v02.4'], MODE=None):
 
     Keyword arguments
     -----------------
-    DREL: GRACE/GRACE-FO data release (RL04, RL05, RL06)
+    DREL: GRACE/GRACE-FO/Swarm data release (RL04, RL05, RL06)
     MODE: Permissions mode of output index file
     """
     #-- Output GRACE months file

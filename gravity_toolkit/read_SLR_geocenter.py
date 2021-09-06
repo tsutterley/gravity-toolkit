@@ -206,7 +206,7 @@ def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, HEADER=0,
     Arguments
     ---------
     geocenter_file: Satellite Laser Ranging file
-    DREL: GRACE/GRACE-FO data release
+    DREL: GRACE/GRACE-FO/Swarm data release
 
     Keyword arguments
     -----------------

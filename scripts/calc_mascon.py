@@ -780,7 +780,7 @@ def main():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Output directory for mascon files')
-    #-- GRACE/GRACE-FO data processing center
+    #-- Data processing center or satellite mission
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, required=True,
         help='GRACE/GRACE-FO Processing Center')

@@ -4,7 +4,7 @@ cnes_grace_sync.py
 Written by Tyler Sutterley (05/2021)
 
 CNES/GRGS GRACE data download program for gravity field products
-    http://grgs.obs-mip.fr/grace
+    https://grace.obs-mip.fr/
 
 Downloads the tar file containing the CNES/GRGS GRACE data for a given release
 Iterates through files to determine if any are not in the local file system

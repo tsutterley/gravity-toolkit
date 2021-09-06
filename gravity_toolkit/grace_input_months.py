@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (08/2021)
+Written by Tyler Sutterley (09/2021)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
@@ -14,9 +14,21 @@ Corrects for Pole Tide drift following Wahr et al. (2015)
 
 INPUTS:
     base_dir: Working data directory for GRACE/GRACE-FO data
-    PROC: (CSR/CNES/JPL/GFZ) data processing center
-    DREL: (RL01/RL02/RL03/RL04/RL05/RL06) data release
-    DSET: (GAA/GAB/GAC/GAD/GSM) data product
+    PROC: Data processing center or satellite mission
+        CSR: University of Texas Center for Space Research
+        GFZ: German Research Centre for Geosciences (GeoForschungsZentrum)
+        JPL: Jet Propulsion Laboratory
+        CNES: French Centre National D'Etudes Spatiales
+        GRAZ: Institute of Geodesy from GRAZ University of Technology
+        COSTG: Combination Service for Time-variable Gravity Fields
+        Swarm: Time-variable gravity data from Swarm satellites
+    DREL: GRACE/GRACE-FO/Swarm data release
+    DSET: GRACE/GRACE-FO/Swarm data product
+        GAA: non-tidal atmospheric correction
+        GAB: non-tidal oceanic correction
+        GAC: combined non-tidal atmospheric and oceanic correction
+        GAD: ocean bottom pressure product
+        GSM: monthly static field product
     LMAX: Upper bound of Spherical Harmonic Degrees (e.g. 60)
     start_mon: starting month to consider in analysis
     end_mon: ending month to consider in analysis
@@ -92,9 +104,11 @@ PROGRAM DEPENDENCIES:
     read_swenson_geocenter.py: reads degree 1 files from Sean Swenson
     read_SLR_geocenter.py: reads degree 1 files from Satellite Laser Ranging
     read_GRACE_geocenter.py: reads degree 1 files from Sutterley et al. (2019)
-    read_GRACE_harmonics.py: reads an input GRACE data file and calculates date
+    read_GRACE_harmonics.py: read spherical harmonic data from SHM files
+    read_gfc_harmonics.py: reads spherical harmonic data from gfc files
 
 UPDATE HISTORY:
+    Updated 09/2021: added time-variable gravity data from GRAZ and Swarm
     Updated 08/2021: fix spherical harmonic errors for SLR C21,S21,C22,S22
     Updated 07/2021: fix inputs to AOD-corrected SLR geocenter coefficients
         output uncalibrated spherical harmonic errors (eclm and eslm)
@@ -158,6 +172,7 @@ from gravity_toolkit.read_SLR_geocenter import aod_corrected_SLR_geocenter
 from gravity_toolkit.read_gravis_geocenter import read_gravis_geocenter
 from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
+from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
 
 def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     missing, SLR_C20, DEG1, MMAX=None, SLR_21='', SLR_22='',  SLR_C30='',
@@ -267,9 +282,15 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
 
     #-- importing data from GRACE/GRACE-FO files
     for i,grace_month in enumerate(months):
-        #-- Effects of Pole tide drift will be compensated if specified
+        #-- read spherical harmonic data products
         infile = grace_files[grace_month]
-        Ylms = read_GRACE_harmonics(infile,LMAX,MMAX=MMAX,POLE_TIDE=POLE_TIDE)
+        if PROC in ('GRAZ','Swarm'):
+            #-- Degree 2 zonals will be converted to a tide free state
+            Ylms = read_gfc_harmonics(infile, TIDE='tide_free')
+        else:
+            #-- Effects of Pole tide drift will be compensated if specified
+            Ylms = read_GRACE_harmonics(infile, LMAX, MMAX=MMAX,
+                POLE_TIDE=POLE_TIDE)
         #-- truncate harmonics to degree and order
         grace_Ylms['clm'][:,:,i] = Ylms['clm'][0:LMAX+1,0:MMAX+1]
         grace_Ylms['slm'][:,:,i] = Ylms['slm'][0:LMAX+1,0:MMAX+1]

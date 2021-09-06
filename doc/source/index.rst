@@ -60,6 +60,7 @@ missions
     user_guide/plm_colombo.rst
     user_guide/plm_holmes.rst
     user_guide/plm_mohlenkamp.rst
+    user_guide/read_gfc_harmonics.rst
     user_guide/read_GIA_model.rst
     user_guide/read_GRACE_harmonics.rst
     user_guide/read_gravis_geocenter.rst
@@ -87,8 +88,11 @@ missions
     :caption: Utilities
 
     user_guide/cnes_grace_sync.md
+    user_guide/esa_costg_swarm_sync.md
+    user_guide/gfz_icgem_costg_ftp.md
     user_guide/gfz_isdc_dealiasing_ftp.md
     user_guide/gfz_isdc_grace_ftp.md
+    user_guide/itsg_graz_grace_sync.md
     user_guide/podaac_grace_sync.md
     user_guide/podaac_webdav.md
 

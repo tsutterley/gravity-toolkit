@@ -40,6 +40,8 @@ Returns
 - ``time``: mid-month date of GRACE file in year-decimal
 - ``start``: start date of range as Julian day
 - ``end``: end date of range as Julian day
+- ``l``: spherical harmonic degree to LMAX
+- ``m``: spherical harmonic order to MMAX
 - ``clm``: cosine spherical harmonics of input data
 - ``slm``: sine spherical harmonics of input data
 - ``eclm``: cosine spherical harmonic uncalibrated standard deviations

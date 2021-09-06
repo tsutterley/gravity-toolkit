@@ -16,13 +16,16 @@ grace_files = grace_date(base_dir, PROC=PROC, DREL=DREL, DSET=DSET)
 1. Working data directory for GRACE/GRACE-FO data
 
 #### Keyword arguments
-- `PROC`: GRACE/GRACE-FO data processing center (CSR/CNES/JPL/GFZ)
+- `PROC`: Data processing center or satellite mission
    * `'CSR'`: University of Texas Center for Space Research
    * `'GFZ'`: German Research Centre for Geosciences (GeoForschungsZentrum)
    * `'JPL'`: Jet Propulsion Laboratory
    * `'CNES'`: French Centre National D'Etudes Spatiales
-- `DREL`: GRACE/GRACE-FO data release (RL04/RL05/RL06)
-- `DSET`: GRACE/GRACE-FO dataset (GAA/GAB/GAC/GAD/GSM)
+   * `'GRAZ'`: Institute of Geodesy from GRAZ University of Technology
+   * `'COSTG'`: Combination Service for Time-variable Gravity Fields
+   * `'Swarm'`: Time-variable gravity data from Swarm satellites
+- `DREL`: GRACE/GRACE-FO/Swarm data release
+- `DSET`: GRACE/GRACE-FO/Swarm dataset
    * `'GAA'`: non-tidal atmospheric correction
    * `'GAB'`: non-tidal oceanic correction
    * `'GAC'`: combined non-tidal atmospheric and oceanic correction
