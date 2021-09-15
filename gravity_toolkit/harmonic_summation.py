@@ -27,14 +27,16 @@ PROGRAM DEPENDENCIES:
     plm_holmes.py: Computes fully-normalized associated Legendre polynomials
 
 UPDATE HISTORY:
+    Updated 09/2020: added influence of Earth oblateness in option
     Updated 07/2020: added function docstrings
     Updated 05/2015: added parameter MMAX for MMAX != LMAX.
     Written 05/2013
 """
 import numpy as np
 from gravity_toolkit.plm_holmes import plm_holmes
+from gravity_toolkit.units import units
 
-def harmonic_summation(clm1,slm1,lon,lat,LMIN=0,LMAX=0,MMAX=None,PLM=None):
+def harmonic_summation(clm1,slm1,lon,lat,LMIN=0,LMAX=0,MMAX=None,PLM=None,ellps=False):
     """
     Converts data from spherical harmonic coefficients to a spatial field
 
@@ -51,6 +53,7 @@ def harmonic_summation(clm1,slm1,lon,lat,LMIN=0,LMAX=0,MMAX=None,PLM=None):
     LMAX: Upper bound of Spherical Harmonic Degrees
     MMAX: Upper bound of Spherical Harmonic Orders
     PLM: Fully-normalized associated Legendre polynomials
+    ellps: Consideration of the Earth oblateness
 
     Returns
     -------
@@ -69,6 +72,9 @@ def harmonic_summation(clm1,slm1,lon,lat,LMIN=0,LMAX=0,MMAX=None,PLM=None):
     #-- Colatitude in radians
     th = (90.0 - np.squeeze(lat))*np.pi/180.0
     thmax = len(th)
+
+     #-- create a unit object to get constants
+    unit = units(lmax=LMAX)
 
     #--  Calculate fourier coefficients from legendre coefficients
     d_cos = np.zeros((MMAX+1,thmax))#-- [m,th]
@@ -91,9 +97,13 @@ def harmonic_summation(clm1,slm1,lon,lat,LMIN=0,LMAX=0,MMAX=None,PLM=None):
 
     #-- Final signal recovery from fourier coefficients
     m = np.arange(0,MMAX+1)[:,np.newaxis]
-    #-- Calculating cos(m*phi) and sin(m*phi)
-    ccos = np.cos(np.dot(m,phi))
-    ssin = np.sin(np.dot(m,phi))
+    # -- Calculating cos(m*phi) and sin(m*phi) in the case of Earth oblateness consideration
+    if ellps:
+        ccos = np.cos(np.dot(m, phi))*(np.sqrt(1 - (2*unit.flat - unit.flat**2)*np.sin(th)**2)/(1 - unit.flat))**(unit.l + 2)
+        ssin = np.sin(np.dot(m, phi))*(np.sqrt(1 - (2*unit.flat - unit.flat**2)*np.sin(th)**2)/(1 - unit.flat))**(unit.l + 2)
+    else: #-- Calculating cos(m*phi) and sin(m*phi)
+        ccos = np.cos(np.dot(m,phi))
+        ssin = np.sin(np.dot(m,phi))
     #-- summation of cosine and sine harmonics
     s = np.dot(np.transpose(ccos),d_cos) + np.dot(np.transpose(ssin),d_sin)
 
