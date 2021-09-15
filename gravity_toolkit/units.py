@@ -87,6 +87,7 @@ class units(object):
         self.microGal = None
         self.mbar = None
         self.Pa = None
+        self.cmweEl = None
         self.lmax = lmax
         # calculate spherical harmonic degree (0 is falsy)
         self.l = np.arange(self.lmax+1) if (self.lmax is not None) else None
@@ -185,6 +186,8 @@ class units(object):
         self.mbar = self.g_wmo*self.rho_e*self.rad_e*(2.0*self.l+1.0)/fraction/3e3
         # Pa, pascals equivalent surface pressure
         self.Pa = self.g_wmo*self.rho_e*self.rad_e*(2.0*self.l+1.0)/fraction/30.0
+        # cmwe, centimeters water equivalent [g/cm^2] considering Earth oblateness
+        self.cmweEl = self.rho_e*self.rad_e*(2.0*self.l+1.0)/(1.0+kl[self.l])/3.0 *(1 - self.flat)
         # return the degree dependent unit conversions
         return self
 
