@@ -92,18 +92,18 @@ def harmonic_summation(clm1,slm1,lon,lat,LMIN=0,LMAX=0,MMAX=None,PLM=None,ellps=
     slm[LMIN:LMAX+1,mm] = slm1[LMIN:LMAX+1,mm]
     for k in range(0,thmax):
         #-- summation over all spherical harmonic degrees
-        d_cos[:,k] = np.sum(PLM[:,mm,k]*clm[:,mm],axis=0)
-        d_sin[:,k] = np.sum(PLM[:,mm,k]*slm[:,mm],axis=0)
+        if ellps:
+            d_cos[:,k] = np.sum(PLM[:,mm,k]*clm[:,mm],axis=0)*(np.sqrt(1 - (2*unit.flat - unit.flat**2)*np.sin(th[k])**2)/(1 - unit.flat))**(unit.l + 2)
+            d_sin[:,k] = np.sum(PLM[:,mm,k]*slm[:,mm],axis=0)*(np.sqrt(1 - (2*unit.flat - unit.flat**2)*np.sin(th[k])**2)/(1 - unit.flat))**(unit.l + 2)
+        else:
+            d_cos[:, k] = np.sum(PLM[:, mm, k] * clm[:, mm], axis=0)
+            d_sin[:, k] = np.sum(PLM[:, mm, k] * slm[:, mm], axis=0)
 
     #-- Final signal recovery from fourier coefficients
     m = np.arange(0,MMAX+1)[:,np.newaxis]
-    # -- Calculating cos(m*phi) and sin(m*phi) in the case of Earth oblateness consideration
-    if ellps:
-        ccos = np.cos(np.dot(m, phi))*(np.sqrt(1 - (2*unit.flat - unit.flat**2)*np.sin(th)**2)/(1 - unit.flat))**(unit.l + 2)
-        ssin = np.sin(np.dot(m, phi))*(np.sqrt(1 - (2*unit.flat - unit.flat**2)*np.sin(th)**2)/(1 - unit.flat))**(unit.l + 2)
-    else: #-- Calculating cos(m*phi) and sin(m*phi)
-        ccos = np.cos(np.dot(m,phi))
-        ssin = np.sin(np.dot(m,phi))
+    # -- Calculating cos(m*phi) and sin(m*phi)
+    ccos = np.cos(np.dot(m, phi))
+    ssin = np.sin(np.dot(m, phi))
     #-- summation of cosine and sine harmonics
     s = np.dot(np.transpose(ccos),d_cos) + np.dot(np.transpose(ssin),d_sin)
 
