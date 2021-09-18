@@ -20,6 +20,7 @@ import gravity_toolkit.utilities
 from gravity_toolkit.clenshaw_summation import clenshaw_summation
 from gravity_toolkit.degree_amplitude import degree_amplitude
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
+from gravity_toolkit.fourier_legendre import fourier_legendre
 from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.gen_averaging_kernel import gen_averaging_kernel
 from gravity_toolkit.gen_disc_load import gen_disc_load

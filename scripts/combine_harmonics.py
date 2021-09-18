@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 combine_harmonics.py
-Written by Tyler Sutterley (08/2021)
+Written by Tyler Sutterley (09/2021)
 Converts a file from the spherical harmonic domain into the spatial domain
 
 CALLING SEQUENCE:
@@ -76,6 +76,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 09/2021: update grid attributes after allocating for data
     Updated 08/2021: fix spherical harmonic orders if not set
     Updated 07/2021: dded path to default land-sea mask for mass redistribution
     Updated 06/2021: can use input files to define command line arguments
@@ -266,6 +267,7 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     grid = spatial()
     grid.time = np.copy(input_Ylms.time)
     grid.month = np.copy(input_Ylms.month)
+    nt = len(input_Ylms.time)
 
     #-- Output Degree Spacing
     dlon,dlat = (DDEG[0],DDEG[0]) if (len(DDEG) == 1) else (DDEG[0],DDEG[1])
@@ -289,6 +291,12 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
         grid.lat = np.arange(maxlat-dlat/2.0,minlat-dlat/2.0,-dlat)
         nlon = len(grid.lon)
         nlat = len(grid.lat)
+    #-- output spatial grid
+    grid.data = np.zeros((nlat,nlon,nt))
+    #-- update attributes
+    grid.update_spacing()
+    grid.update_extents()
+    grid.update_dimensions()
 
     #-- Setting units factor for output
     #-- dfactor computes the degree dependent coefficients
@@ -314,9 +322,6 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     theta = (90.0-grid.lat)*np.pi/180.0
     PLM,dPLM = plm_holmes(LMAX,np.cos(theta))
 
-    #-- output spatial grid
-    nt = len(input_Ylms.time)
-    grid.data = np.zeros((nlat,nlon,nt))
     #-- converting harmonics to truncated, smoothed coefficients in output units
     for t in range(nt):
         #-- spherical harmonics for time t

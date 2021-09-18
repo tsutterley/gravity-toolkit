@@ -37,11 +37,10 @@ Command Line Options
      * ``2``: Gigatonnes (Gt)
      * ``3``: mm of water thickness (kg/m\ :sup:`2`)
 - ``-S X``, ``--spacing X``: spatial resolution of output data (dlon,dlat)
-- ``-I X``, ``--interval X``: output grid interval
+- ``-I X``, ``--interval X``: input grid interval
 
      * ``1``: (0:360, 90:-90)
      * ``2``: (degree spacing/2)
-- ``--missing``: input spatial fields have missing values
 - ``--fill-value X``: set fill_value for input spatial fields
 - ``--header X``: number of header rows to skip in input ascii files
 - ``--delimiter X``: delimiter in input ascii files
