@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 convert_harmonics.py
-Written by Tyler Sutterley (08/2021)
+Written by Tyler Sutterley (09/2021)
 Converts a file from the spatial domain into the spherical harmonic domain
 
 CALLING SEQUENCE:
@@ -27,7 +27,6 @@ COMMAND LINE OPTIONS:
     -I X, --interval X: input grid interval
         1: (0:360, 90:-90)
         2: (degree spacing/2)
-    --missing: input spatial fields have missing values
     -f X, --fill-value X: set fill_value for input spatial fields
     --header X: number of header rows to skip in input ascii files
     -F X, --format X: input and output data format
@@ -68,6 +67,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 09/2021: fix to use fill values for input ascii files
     Updated 08/2021: fix spherical harmonic orders if not set
     Updated 06/2021: can use input files to define command line arguments
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -171,7 +171,6 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     REFERENCE=None,
     DDEG=None,
     INTERVAL=None,
-    MISSING=False,
     FILL_VALUE=None,
     HEADER=None,
     DATAFORM=None,
@@ -198,7 +197,8 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     if (DATAFORM == 'ascii'):
         #-- ascii (.txt)
         input_spatial = spatial(spacing=[dlon,dlat],nlat=nlat,
-            nlon=nlon).from_ascii(INPUT_FILE,header=HEADER).expand_dims()
+            nlon=nlon,fill_value=FILL_VALUE).from_ascii(INPUT_FILE,
+            header=HEADER).expand_dims()
     elif (DATAFORM == 'netCDF4'):
         #-- netcdf (.nc)
         input_spatial = spatial().from_netCDF4(INPUT_FILE).expand_dims()
@@ -300,12 +300,9 @@ def main():
         type=float, nargs='+', default=[0.5,0.5], metavar=('dlon','dlat'),
         help='Spatial resolution of output data')
     parser.add_argument('--interval','-I',
-        type=int, default=2, choices=[1,2,3],
-        help='Output grid interval (1: global, 2: centered global)')
-    #-- fill value
-    parser.add_argument('--missing',
-        default=False, action='store_true',
-        help='Input spatial fields have missing values')
+        type=int, default=2, choices=[1,2],
+        help='Input grid interval (1: global, 2: centered global)')
+    #-- fill value for ascii
     parser.add_argument('--fill-value','-f',
         type=float,
         help='Set fill_value for input spatial fields')
@@ -338,7 +335,6 @@ def main():
             UNITS=args.units,
             DDEG=args.spacing,
             INTERVAL=args.interval,
-            MISSING=args.missing,
             FILL_VALUE=args.fill_value,
             HEADER=args.header,
             DATAFORM=args.format,

@@ -2,7 +2,7 @@ gen_harmonics.py
 ================
 
 - Converts data from the spatial domain to spherical harmonic coefficients
-- Does not compute the solid Earth elastic response
+- Does not compute the solid Earth elastic response or convert units
 
 #### Calling Sequence
 ```python
@@ -21,7 +21,10 @@ Ylms = gen_harmonics(data, lon, lat, LMAX=LMAX, PLM=PLM)
 #### Keyword arguments
 - `LMAX`:  maximum spherical harmonic degree of the output harmonics
 - `MMAX`: maximum spherical harmonic order of the output harmonics
-- `PLM`: input Legendre polynomials (for improving computational time)
+- `PLM`: input fully normalized associated Legendre polynomials or Fourier coefficients of Legendre polynomials
+- `METHOD`: conversion method for calculating harmonics
+    * `'integration'`: for global grids
+    *  `'fourier'`: for regional or global grids
 
 #### Returns
 - `clm`: Cosine spherical harmonic coefficients (4-pi normalized)

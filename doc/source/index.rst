@@ -31,6 +31,7 @@ missions
     user_guide/clenshaw_summation.rst
     user_guide/degree_amplitude.md
     user_guide/destripe_harmonics.rst
+    user_guide/fourier_legendre.rst
     user_guide/gauss_weights.rst
     user_guide/gen_averaging_kernel.rst
     user_guide/gen_disc_load.md
