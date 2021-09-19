@@ -60,6 +60,7 @@ jobs:
         sudo projsync --system-directory --all
         pip install --upgrade pip
         pip install flake8 pytest pytest-cov numpy
+        pip install git+https://github.com/SciTools/cartopy.git
         pip install git+https://github.com/tsutterley/geoid-toolkit.git
         pip install git+https://github.com/tsutterley/read-GRACE-geocenter.git
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
@@ -79,6 +80,7 @@ jobs:
         export CPPFLAGS="-I/usr/local/opt/proj/include"
         export ACCEPT_USE_OF_DEPRECATED_PROJ_API_H=1
         export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/opt/proj/lib/pkgconfig"
+        pip install git+https://github.com/SciTools/cartopy.git
         pip install git+https://github.com/tsutterley/geoid-toolkit.git
         pip install git+https://github.com/tsutterley/read-GRACE-geocenter.git
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
