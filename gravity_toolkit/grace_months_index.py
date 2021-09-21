@@ -56,6 +56,7 @@ import os
 import argparse
 import calendar
 import numpy as np
+from gravity_toolkit.time import grace_to_calendar
 
 def grace_months_index(base_dir, DREL=['RL06','v02.4'], MODE=None):
     """
@@ -139,8 +140,7 @@ def grace_months_index(base_dir, DREL=['RL06','v02.4'], MODE=None):
     #-- max_mon+1 to include max_mon
     for m in range(4, max_mon+1):
         #-- finding the month name e.g. Apr
-        calendar_year = 2002 + (m-1)//12
-        calendar_month = (m-1) % 12 + 1
+        calendar_year,calendar_month = grace_to_calendar(m)
         month_string = calendar.month_abbr[calendar_month]
         #-- create list object for output string
         output_string = []

@@ -160,7 +160,8 @@ def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
                 dinput['data'][t] = np.float64(line_contents[5])
                 dinput['error'][t] = np.float64(line_contents[7])*1e-10
                 #-- GRACE/GRACE-FO month of SLR solutions
-                dinput['month'][t] = 1 + np.round((dinput['time'][t]-2002.)*12.)
+                dinput['month'][t] = gravity_toolkit.time.calendar_to_grace(
+                    dinput['time'][t], around=np.round)
                 #-- add to t count
                 t += 1
         #-- verify that there imported C30 solutions
@@ -179,7 +180,7 @@ def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
         #-- filtered data does not have errors
         dinput['error'] = np.zeros_like(LARES_input[:,1])
         #-- calculate GRACE/GRACE-FO month
-        dinput['month'] = 1 + np.array(12.0*(LARES_input[:,0]-2002.0),dtype='i')
+        dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
     elif bool(re.search(r'GRAVIS-2B_GFZOP',SLR_file)):
         #-- Combined GRACE/SLR solution file produced by GFZ
         #-- Column  1: MJD of BEGINNING of solution data span
@@ -228,7 +229,8 @@ def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
                 dinput['data'][t] = np.float64(line_contents[5])
                 dinput['error'][t] = np.float64(line_contents[7])*1e-10
                 #-- GRACE/GRACE-FO month of SLR solutions
-                dinput['month'][t] = 1+np.round((dinput['time'][t]-2002.)*12.)
+                dinput['month'][t] = gravity_toolkit.time.calendar_to_grace(
+                    dinput['time'][t], around=np.round)
                 #-- add to t count
                 t += 1
         #-- truncate variables if necessary
@@ -245,7 +247,7 @@ def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
         YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
             Ylms['MJD']+2400000.5, FORMAT='tuple')
         #-- calculate GRACE/GRACE-FO month
-        dinput['month'] = np.array(12.0*(YY - 2002.) + MM, dtype=np.int64)
+        dinput['month'] = gravity_toolkit.time.calendar_to_grace(YY,MM)
 
     #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
     #-- Accelerometer shutoffs make the relation between month number

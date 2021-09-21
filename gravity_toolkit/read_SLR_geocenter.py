@@ -181,7 +181,8 @@ def read_SLR_geocenter(geocenter_file, RADIUS=None, HEADER=0,
         cal_date = gravity_toolkit.time.convert_julian(JD[t])
         #-- calculate the GRACE/GRACE-FO month (Apr02 == 004)
         #-- https://grace.jpl.nasa.gov/data/grace-months/
-        mon[t] = 12*(cal_date['year']-2002) + cal_date['month']
+        mon[t] = gravity_toolkit.time.calendar_to_grace(cal_date['year'],
+            cal_date['month'])
 
     #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
     #-- Accelerometer shutoffs make the relation between month number
@@ -307,7 +308,8 @@ def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, HEADER=0,
         eC10[t],eC11[t],eS11[t] = (dCS1['C10'], dCS1['C11'], dCS1['S11'])
         #-- calculate the GRACE/GRACE-FO month (Apr02 == 004)
         #-- https://grace.jpl.nasa.gov/data/grace-months/
-        mon[t] = 12*(cal_date['year']-2002) + cal_date['month']
+        mon[t] = gravity_toolkit.time.calendar_to_grace(cal_date['year'],
+            cal_date['month'])
 
     #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
     #-- Accelerometer shutoffs make the relation between month number

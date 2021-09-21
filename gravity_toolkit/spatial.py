@@ -51,7 +51,7 @@ import copy
 import gzip
 import zipfile
 import numpy as np
-from gravity_toolkit.time import adjust_months
+from gravity_toolkit.time import adjust_months, calendar_to_grace
 from gravity_toolkit.ncdf_write import ncdf_write
 from gravity_toolkit.hdf5_write import hdf5_write
 from gravity_toolkit.ncdf_read import ncdf_read
@@ -166,7 +166,7 @@ class spatial(object):
             #-- if the ascii file contains date variables
             if date:
                 self.time = np.array(d['time'],dtype='f')
-                self.month = np.array(12.0*(self.time-2002.0)+1,dtype='i')
+                self.month = calendar_to_grace(self.time)
         #-- if the ascii file contains date variables
         if date:
             #-- adjust months to fix special cases if necessary
@@ -210,7 +210,7 @@ class spatial(object):
         #-- if the netCDF4 file contains date variables
         if date:
             self.time = data['time'].copy()
-            self.month = np.array(12.0*(self.time-2002.0)+1,dtype='i')
+            self.month = calendar_to_grace(self.time)
             #-- adjust months to fix special cases if necessary
             self.month = adjust_months(self.month)
         #-- update attributes
@@ -254,7 +254,7 @@ class spatial(object):
         #-- if the HDF5 file contains date variables
         if date:
             self.time = data['time'].copy()
-            self.month = np.array(12.0*(self.time-2002.0)+1,dtype='i')
+            self.month = calendar_to_grace(self.time)
             #-- adjust months to fix special cases if necessary
             self.month = adjust_months(self.month)
         #-- update attributes

@@ -16,6 +16,7 @@ the GRACE/GRACE-FO missions and to support their science applications
 Documentation is available at https://read-grace-harmonics.readthedocs.io
 """
 import gravity_toolkit.time
+import gravity_toolkit.tools
 import gravity_toolkit.utilities
 from gravity_toolkit.clenshaw_summation import clenshaw_summation
 from gravity_toolkit.degree_amplitude import degree_amplitude

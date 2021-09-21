@@ -145,7 +145,8 @@ def read_gravis_geocenter(geocenter_file, HEADER=True):
             dinput['eC11'][t] = np.float64(line_contents[7])*1e-10
             dinput['eS11'][t] = np.float64(line_contents[10])*1e-10
             #-- GRACE/GRACE-FO month of geocenter solutions
-            dinput['month'][t] = 1+np.round((dinput['time'][t]-2002.)*12.)
+            dinput['month'][t] = gravity_toolkit.time.calendar_to_grace(
+                dinput['time'][t], around=np.round)
             #-- add to t count
             t += 1
     #-- truncate variables if necessary

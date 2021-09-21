@@ -89,9 +89,14 @@ def datetime_to_list(date):
     """
     return [date.year,date.month,date.day,date.hour,date.minute,date.second]
 
-def adjust_months(months):
+#-- PURPOSE: Adjust GRACE/GRACE-FO months to fix "Special Cases"
+def adjust_months(grace_month):
     """
     Adjust estimated GRACE/GRACE-FO months to fix "Special Cases"
+
+    Arguments
+    ---------
+    grace_month: GRACE/GRACE-FO months
 
     The "Special Months" (Nov 2011, Dec 2011 and April 2012) with
     Accelerometer shutoffs make the relation between month number
@@ -102,38 +107,79 @@ def adjust_months(months):
     For GSFC: Oct 2018 (202) is centered in Nov 2018 (203)
     """
     #-- verify dimensions
-    months = np.atleast_1d(months)
+    grace_month = np.atleast_1d(grace_month)
     #-- create temporary months object
-    m = np.zeros_like(months)
+    m = np.zeros_like(grace_month)
     #-- find unique months
-    _,i,c = np.unique(months,return_inverse=True,return_counts=True)
+    _,i,c = np.unique(grace_month,return_inverse=True,return_counts=True)
     #-- simple unique months case
     case1, = np.nonzero(c[i] == 1)
-    m[case1] = months[case1]
+    m[case1] = grace_month[case1]
     #-- Special Months cases
     case2, = np.nonzero(c[i] == 2)
     #-- for each special case month
     for j in case2:
+        # prior month, current month, subsequent 2 months
+        mm1 = grace_month[j-1]
+        mon = grace_month[j]
+        mp1 = grace_month[j+1]
+        mp2 = grace_month[j+2]
         #-- determine the months which meet the criteria need to be adjusted
-        if months[j] == (months[j-1] + 1):
+        if (mon == (mm1 + 1)):
             #-- case where month is correct
             #-- but subsequent month needs to be +1
-            m[j] = np.copy(months[j])
-        elif (months[j] == months[j-1]) and (months[j] != m[j-1]):
+            m[j] = np.copy(grace_month[j])
+        elif (mon == mm1) and (mon != m[j-1]):
             #-- case where prior month needed to be -1
             #-- but current month is correct
-            m[j] = np.copy(months[j])
-        elif months[j] == months[j-1]:
+            m[j] = np.copy(grace_month[j])
+        elif (mon == mm1):
             #-- case where month should be +1
-            m[j] = months[j] + 1
-        elif (months[j] == months[j+1]) and (months[j] == (months[j-1] + 2)):
+            m[j] = grace_month[j] + 1
+        elif (mon == mp1) and ((mon == (mm1 + 2)) or (mp2 == (mp1 + 1))):
             #-- case where month should be -1
-            m[j] = months[j] - 1
-        elif (months[j] == months[j+1]) and (months[j+2] == (months[j+1] + 1)):
-            #-- case where month should be -1
-            m[j] = months[j] - 1
+            m[j] = grace_month[j] - 1
     #-- update months and remove singleton dimensions if necessary
     return np.squeeze(m)
+
+#-- PURPOSE: convert calendar dates to GRACE/GRACE-FO months
+def calendar_to_grace(year,month=1,around=np.floor):
+    """
+    Converts calendar dates to GRACE/GRACE-FO months
+
+    Arguments
+    ---------
+    year: calendar year
+
+    Keyword arguments
+    -----------------
+    month: calendar month
+    around: method of rounding to nearest method
+
+    Returns
+    -------
+    grace_month: GRACE/GRACE-FO month
+    """
+    grace_month = around(12.0*(year - 2002.0)) + month
+    return grace_month
+
+#-- PURPOSE: convert GRACE/GRACE-FO months to calendar dates
+def grace_to_calendar(grace_month):
+    """
+    Converts GRACE/GRACE-FO months to calendar dates
+
+    Arguments
+    ---------
+    grace_month: GRACE/GRACE-FO month
+
+    Returns
+    -------
+    year: calendar year
+    month: calendar month
+    """
+    year = np.array(2002 + (grace_month-1)//12).astype(int)
+    month = np.mod(grace_month-1,12) + 1
+    return (year, month)
 
 #-- PURPOSE: gets the number of days per month for a given year
 def calendar_days(year):

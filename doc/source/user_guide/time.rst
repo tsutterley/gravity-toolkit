@@ -85,13 +85,47 @@ General Methods
         ``date``: datetime object
 
 
-.. method:: gravity_toolkit.time.adjust_months(months)
+.. method:: gravity_toolkit.time.adjust_months(grace_months)
 
     Adjust estimated GRACE/GRACE-FO months to fix "Special Cases"
 
     Arguments:
 
-        ``months``: GRACE/GRACE-FO months
+        ``grace_months``: GRACE/GRACE-FO months
+
+
+.. method:: gravity_toolkit.time.calendar_to_grace(year,month=1,around=np.floor)
+
+    Converts calendar dates to GRACE/GRACE-FO months
+
+    Arguments:
+
+        ``year``: calendar year
+
+    Keyword arguments:
+
+        ``month``: calendar month
+
+        ``around``: method of rounding to nearest method
+
+    Returns:
+
+        ``grace_month``: GRACE/GRACE-FO month
+
+
+.. method:: gravity_toolkit.time.grace_to_calendar(grace_month)
+
+    Converts GRACE/GRACE-FO months to calendar dates
+
+    Arguments:
+
+        ``grace_month``: GRACE/GRACE-FO month
+
+    Returns:
+
+        ``year``: calendar year
+
+        ``month``: calendar month
 
 
 .. method:: gravity_toolkit.time.calendar_days(year)

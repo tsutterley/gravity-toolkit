@@ -136,7 +136,7 @@ def read_SLR_CS2(SLR_file, HEADER=True, DATE=None):
             dinput['C2m'][i] = np.mean(c2m[isort])
             dinput['S2m'][i] = np.mean(s2m[isort])
         #-- GRACE/GRACE-FO month
-        dinput['month'] = 1 + np.floor((dinput['time']-2002.0)*12.0)
+        dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
     elif bool(re.search(r'C2(\d)_S2(\d)_(RL\d{2})',SLR_file)):
         #-- SLR RL06 file produced by CSR
         #-- input variable names and types
@@ -157,7 +157,7 @@ def read_SLR_CS2(SLR_file, HEADER=True, DATE=None):
         content = np.loadtxt(os.path.expanduser(SLR_file),dtype=dtype)
         #-- date and GRACE/GRACE-FO month
         dinput['time'] = content['time'].copy()
-        dinput['month'] = 1 + np.floor((dinput['time']-2002.0)*12.0)
+        dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
         #-- remove the monthly mean of the AOD model
         dinput['C2m'] = content['C2'] - content['C2aod']*10**-10
         dinput['S2m'] = content['S2'] - content['S2aod']*10**-10
@@ -219,7 +219,8 @@ def read_SLR_CS2(SLR_file, HEADER=True, DATE=None):
                 dinput['S2m'][t] = np.float64(line_contents[11])
                 dinput['eS2m'][t] = np.float64(line_contents[13])*1e-10
                 #-- GRACE/GRACE-FO month of SLR solutions
-                dinput['month'][t] = 1+np.round((dinput['time'][t]-2002.)*12.)
+                dinput['month'][t] = gravity_toolkit.time.calendar_to_grace(
+                    dinput['time'][t], around=np.round)
                 #-- add to t count
                 t += 1
         #-- truncate variables if necessary

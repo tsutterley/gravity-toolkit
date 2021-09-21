@@ -93,6 +93,7 @@ from gravity_toolkit.gen_stokes import gen_stokes
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.harmonics import harmonics
 from gravity_toolkit.spatial import spatial
+from gravity_toolkit.time import calendar_to_grace
 
 #-- PURPOSE: keep track of threads
 def info(args):
@@ -230,7 +231,7 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
             input_spatial.lon, input_spatial.lat, UNITS=UNITS,
             LMIN=0, LMAX=LMAX, MMAX=MMAX, PLM=PLM, LOVE=LOVE)
         output_Ylms.time = np.copy(t)
-        output_Ylms.month = np.int64(12.0*(t - 2002.0)) + 1
+        output_Ylms.month = calendar_to_grace(t)
         #-- append to list
         Ylms_list.append(output_Ylms)
     #-- convert Ylms list for output spherical harmonics

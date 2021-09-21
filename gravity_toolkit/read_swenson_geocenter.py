@@ -169,7 +169,8 @@ def read_swenson_geocenter(geocenter_file, HEADER=True):
             #-- calculate the GRACE month (Apr02 == 004)
             #-- https://grace.jpl.nasa.gov/data/grace-months/
             #-- Notes on special months (e.g. 119, 120) below
-            mon[t] = 12*(cal_date['year']-2002) + cal_date['month']
+            mon[t] = gravity_toolkit.time.calendar_to_grace(cal_date['year'],
+                cal_date['month'])
 
     #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
     #-- Accelerometer shutoffs make the relation between month number
