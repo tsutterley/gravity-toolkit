@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_CS2.py
-Written by Hugo Lecomte and Tyler Sutterley (08/2021)
+Written by Hugo Lecomte and Tyler Sutterley (09/2021)
 
 Reads monthly degree 2,m (figure axis and azimuthal dependence)
     spherical harmonic data files from satellite laser ranging (SLR)
@@ -63,6 +63,7 @@ REFERENCES:
         https://doi.org/10.1007/s00190-021-01492-x
 
 UPDATE HISTORY:
+    Updated 09/2021: use functions for converting to and from GRACE months
     Updated 08/2021: output empty spherical harmonic errors for GSFC
     Updated 06/2021: added GSFC 7-day SLR figure axis solutions
     Updated 05/2021: added GFZ GravIS GRACE/SLR low degree solutions

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C20.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (09/2021)
 
 Reads in C20 spherical harmonic coefficients derived from SLR measurements
 
@@ -65,6 +65,7 @@ REFERENCES:
         http://doi.org/10.5880/GFZ.GRAVIS_06_C20_SLR
 
 UPDATE HISTORY:
+    Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: added GFZ SLR and GravIS oblateness solutions
         define int/float precision to prevent deprecation warning
     Updated 02/2021: use adjust_months function to fix special months cases

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C50.py
-Written by Yara Mohajerani and Tyler Sutterley (05/2021)
+Written by Yara Mohajerani and Tyler Sutterley (09/2021)
 
 This program reads in C50 spherical harmonic coefficients from SLR measurements
     https://neptune.gsfc.nasa.gov/gngphys/index.php?section=519
@@ -43,6 +43,7 @@ PROGRAM DEPENDENCIES:
     read_SLR_monthly_6x1.py: reads monthly 5x5 spherical harmonic coefficients
 
 UPDATE HISTORY:
+    Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: simplified program similar to other SLR readers
         define int/float precision to prevent deprecation warning
     Updated 04/2021: using utilities from time module

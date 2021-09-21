@@ -30,6 +30,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 09/2021: added time-variable gravity data from gfc format
+        use functions for converting to and from GRACE months
     Updated 08/2021: added from spherical harmonic model (SHM) format
     Updated 07/2021: fixed gfc format in from file wrapper
     Updated 05/2021: define int/float precision to prevent deprecation warning

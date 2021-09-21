@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C30.py
-Written by Yara Mohajerani and Tyler Sutterley (05/2021)
+Written by Yara Mohajerani and Tyler Sutterley (09/2021)
 
 Reads monthly degree 3 zonal spherical harmonic data files from SLR
     https://neptune.gsfc.nasa.gov/gngphys/index.php?section=519
@@ -61,6 +61,7 @@ REFERENCES:
         http://doi.org/10.5880/GFZ.GRAVIS_06_L2B
 
 UPDATE HISTORY:
+    Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: added GFZ GravIS GRACE/SLR low degree solutions
         define int/float precision to prevent deprecation warning
     Updated 04/2021: renamed SLR monthly 5x5 function from CSR

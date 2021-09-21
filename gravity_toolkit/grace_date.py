@@ -47,6 +47,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 09/2021: adjust regular expression operators for Swarm and GRAZ
+        use functions for converting to and from GRACE months
     Updated 07/2021: remove choices for argparse processing centers
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: use adjust_months function to fix special months cases

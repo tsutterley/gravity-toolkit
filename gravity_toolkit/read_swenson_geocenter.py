@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_swenson_geocenter.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (09/2021)
 
 Reads monthly geocenter coefficients from GRACE measurements and
     Ocean Models of Degree 1 provided by Sean Swenson in mm w.e.
@@ -37,6 +37,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: use file not found exceptions
     Updated 02/2021: use adjust_months function to fix special months cases

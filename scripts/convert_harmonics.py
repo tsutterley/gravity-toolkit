@@ -68,6 +68,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 09/2021: fix to use fill values for input ascii files
+        use functions for converting to and from GRACE months
     Updated 08/2021: fix spherical harmonic orders if not set
     Updated 06/2021: can use input files to define command line arguments
     Updated 05/2021: define int/float precision to prevent deprecation warning
