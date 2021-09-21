@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_geocenter.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (09/2021)
 
 Reads monthly geocenter files from satellite laser ranging provided by CSR
     http://download.csr.utexas.edu/pub/slr/geocenter/
@@ -53,6 +53,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: use file not found exceptions
     Updated 02/2021: use adjust_months function to fix special months cases
@@ -181,7 +182,8 @@ def read_SLR_geocenter(geocenter_file, RADIUS=None, HEADER=0,
         cal_date = gravity_toolkit.time.convert_julian(JD[t])
         #-- calculate the GRACE/GRACE-FO month (Apr02 == 004)
         #-- https://grace.jpl.nasa.gov/data/grace-months/
-        mon[t] = 12*(cal_date['year']-2002) + cal_date['month']
+        mon[t] = gravity_toolkit.time.calendar_to_grace(cal_date['year'],
+            cal_date['month'])
 
     #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
     #-- Accelerometer shutoffs make the relation between month number
@@ -307,7 +309,8 @@ def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, HEADER=0,
         eC10[t],eC11[t],eS11[t] = (dCS1['C10'], dCS1['C11'], dCS1['S11'])
         #-- calculate the GRACE/GRACE-FO month (Apr02 == 004)
         #-- https://grace.jpl.nasa.gov/data/grace-months/
-        mon[t] = 12*(cal_date['year']-2002) + cal_date['month']
+        mon[t] = gravity_toolkit.time.calendar_to_grace(cal_date['year'],
+            cal_date['month'])
 
     #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
     #-- Accelerometer shutoffs make the relation between month number

@@ -4,7 +4,9 @@ pyyaml
 lxml
 future
 matplotlib
+ipywidgets
 python-dateutil
 cartopy --no-binary=cartopy
 netCDF4
 h5py
+tk

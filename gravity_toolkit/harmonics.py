@@ -30,6 +30,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 09/2021: added time-variable gravity data from gfc format
+        use functions for converting to and from GRACE months
     Updated 08/2021: added from spherical harmonic model (SHM) format
     Updated 07/2021: fixed gfc format in from file wrapper
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -64,7 +65,7 @@ import copy
 import gzip
 import zipfile
 import numpy as np
-from gravity_toolkit.time import adjust_months
+from gravity_toolkit.time import adjust_months,calendar_to_grace
 from gravity_toolkit.ncdf_stokes import ncdf_stokes
 from gravity_toolkit.hdf5_stokes import hdf5_stokes
 from gravity_toolkit.ncdf_read_stokes import ncdf_read_stokes
@@ -172,7 +173,7 @@ class harmonics(object):
         #-- if the ascii file contains date variables
         if kwargs['date']:
             self.time = np.float64(time)
-            self.month = np.int64(12.0*(self.time - 2002.0)) + 1
+            self.month = np.int64(calendar_to_grace(self.time))
             #-- adjust months to fix special cases if necessary
             self.month = adjust_months(self.month)
         #-- extract harmonics and convert to matrix
@@ -324,7 +325,7 @@ class harmonics(object):
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
         self.time = Ylms['time'].copy()
-        self.month = np.int64(12.0*(self.time - 2002.0)) + 1
+        self.month = np.int64(calendar_to_grace(self.time))
         #-- copy header information for gravity model
         self.header = Ylms['header']
         #-- assign shape and ndim attributes

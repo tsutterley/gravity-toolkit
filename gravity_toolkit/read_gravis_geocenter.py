@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_gravis_geocenter.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (09/2021)
 
 Reads monthly geocenter spherical harmonic data files from
     GFZ GravIS calculated using GRACE/GRACE-FO measurements
@@ -44,6 +44,7 @@ REFERENCES:
         http://doi.org/10.5880/GFZ.GRAVIS_06_L2B
 
 UPDATE HISTORY:
+    Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Written 05/2021
 """
@@ -145,7 +146,8 @@ def read_gravis_geocenter(geocenter_file, HEADER=True):
             dinput['eC11'][t] = np.float64(line_contents[7])*1e-10
             dinput['eS11'][t] = np.float64(line_contents[10])*1e-10
             #-- GRACE/GRACE-FO month of geocenter solutions
-            dinput['month'][t] = 1+np.round((dinput['time'][t]-2002.)*12.)
+            dinput['month'][t] = gravity_toolkit.time.calendar_to_grace(
+                dinput['time'][t], around=np.round)
             #-- add to t count
             t += 1
     #-- truncate variables if necessary

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (09/2021)
 
 Data class for reading, writing and processing spatial data
 
@@ -24,6 +24,7 @@ PROGRAM DEPENDENCIES:
     hdf5_read.py: reads spatial data from HDF5
 
 UPDATE HISTORY:
+    Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: add parser object for removing commented or empty lines
         use file not found exceptions in case insensitive filename
@@ -51,7 +52,7 @@ import copy
 import gzip
 import zipfile
 import numpy as np
-from gravity_toolkit.time import adjust_months
+from gravity_toolkit.time import adjust_months, calendar_to_grace
 from gravity_toolkit.ncdf_write import ncdf_write
 from gravity_toolkit.hdf5_write import hdf5_write
 from gravity_toolkit.ncdf_read import ncdf_read
@@ -166,7 +167,7 @@ class spatial(object):
             #-- if the ascii file contains date variables
             if date:
                 self.time = np.array(d['time'],dtype='f')
-                self.month = np.array(12.0*(self.time-2002.0)+1,dtype='i')
+                self.month = calendar_to_grace(self.time)
         #-- if the ascii file contains date variables
         if date:
             #-- adjust months to fix special cases if necessary
@@ -210,7 +211,7 @@ class spatial(object):
         #-- if the netCDF4 file contains date variables
         if date:
             self.time = data['time'].copy()
-            self.month = np.array(12.0*(self.time-2002.0)+1,dtype='i')
+            self.month = calendar_to_grace(self.time)
             #-- adjust months to fix special cases if necessary
             self.month = adjust_months(self.month)
         #-- update attributes
@@ -254,7 +255,7 @@ class spatial(object):
         #-- if the HDF5 file contains date variables
         if date:
             self.time = data['time'].copy()
-            self.month = np.array(12.0*(self.time-2002.0)+1,dtype='i')
+            self.month = calendar_to_grace(self.time)
             #-- adjust months to fix special cases if necessary
             self.month = adjust_months(self.month)
         #-- update attributes

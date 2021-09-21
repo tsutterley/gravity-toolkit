@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_tellus_geocenter.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (09/2021)
 
 Reads monthly geocenter spherical harmonic data files from GRACE Tellus
     Technical Notes (TN-13) calculated using GRACE/GRACE-FO measurements and
@@ -54,6 +54,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: use file not found exceptions
     Updated 02/2021: use adjust_months function to fix special months cases
@@ -176,7 +177,7 @@ def read_tellus_geocenter(geocenter_file, HEADER=True, JPL=False):
             tdec[t], = gravity_toolkit.time.convert_calendar_decimal(year,month)
         #-- estimated GRACE/GRACE-FO month
         #-- Accelerometer shutoffs complicate the month number calculation
-        mon[t] = np.int64(12.0*(year - 2002.) + month)
+        mon[t] = gravity_toolkit.time.calendar_to_grace(year,month)
         #-- spherical harmonic order
         m = np.int64(line_contents[2])
         #-- extract spherical harmonic data

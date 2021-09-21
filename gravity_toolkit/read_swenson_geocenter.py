@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_swenson_geocenter.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (09/2021)
 
 Reads monthly geocenter coefficients from GRACE measurements and
     Ocean Models of Degree 1 provided by Sean Swenson in mm w.e.
@@ -37,6 +37,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: use file not found exceptions
     Updated 02/2021: use adjust_months function to fix special months cases
@@ -169,7 +170,8 @@ def read_swenson_geocenter(geocenter_file, HEADER=True):
             #-- calculate the GRACE month (Apr02 == 004)
             #-- https://grace.jpl.nasa.gov/data/grace-months/
             #-- Notes on special months (e.g. 119, 120) below
-            mon[t] = 12*(cal_date['year']-2002) + cal_date['month']
+            mon[t] = gravity_toolkit.time.calendar_to_grace(cal_date['year'],
+                cal_date['month'])
 
     #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
     #-- Accelerometer shutoffs make the relation between month number

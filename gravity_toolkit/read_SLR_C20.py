@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C20.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (09/2021)
 
 Reads in C20 spherical harmonic coefficients derived from SLR measurements
 
@@ -65,6 +65,7 @@ REFERENCES:
         http://doi.org/10.5880/GFZ.GRAVIS_06_C20_SLR
 
 UPDATE HISTORY:
+    Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: added GFZ SLR and GravIS oblateness solutions
         define int/float precision to prevent deprecation warning
     Updated 02/2021: use adjust_months function to fix special months cases
@@ -157,7 +158,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
         file_input = np.loadtxt(os.path.expanduser(SLR_file),dtype=dtype)
         #-- date and GRACE/GRACE-FO month
         dinput['time'] = file_input['time']
-        dinput['month'] = 1 + np.floor((dinput['time']-2002.)*12.)
+        dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
         #-- monthly spherical harmonic replacement solutions
         dinput['data'] = file_input['C20'].copy()
         #-- monthly spherical harmonic formal standard deviations
@@ -214,7 +215,8 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
                 dinput['data'][t] = np.float64(line_contents[2])
                 dinput['error'][t] = np.float64(line_contents[4])*1e-10
                 #-- GRACE/GRACE-FO month of SLR solutions
-                dinput['month'][t] = 1+np.round((dinput['time'][t]-2002.)*12.)
+                dinput['month'][t] = gravity_toolkit.time.calendar_to_grace(
+                    dinput['time'][t], around=np.round)
                 #-- add to t count
                 t += 1
         #-- truncate variables if necessary
@@ -269,7 +271,8 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
                 dinput['data'][t] = np.float64(line_contents[2])
                 dinput['error'][t] = np.float64(line_contents[4])*1e-10
                 #-- GRACE/GRACE-FO month of SLR solutions
-                dinput['month'][t] = 1+np.round((dinput['time'][t]-2002.)*12.)
+                dinput['month'][t] = gravity_toolkit.time.calendar_to_grace(
+                    dinput['time'][t], around=np.round)
                 #-- add to t count
                 t += 1
         #-- truncate variables if necessary
@@ -328,7 +331,8 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
                 dinput['data'][t] = np.float64(line_contents[2])
                 dinput['error'][t] = np.float64(line_contents[4])*1e-10
                 #-- GRACE/GRACE-FO month of SLR solutions
-                dinput['month'][t] = 1+np.round((dinput['time'][t]-2002.)*12.)
+                dinput['month'][t] = gravity_toolkit.time.calendar_to_grace(
+                    dinput['time'][t], around=np.round)
                 #-- add to t count
                 t += 1
         #-- truncate variables if necessary
@@ -399,7 +403,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
         slr_flag = slr_flag[:t]
 
         #-- GRACE/GRACE-FO month of SLR solutions
-        mon = 1 + np.round((date_conv-2002.)*12.)
+        mon = gravity_toolkit.time.calendar_to_grace(date_conv,around=np.round)
         #-- number of unique months
         dinput['month'] = np.unique(mon)
         n_uniq = len(dinput['month'])

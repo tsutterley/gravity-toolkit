@@ -4,6 +4,7 @@ channels:
 dependencies:
   - python>=3.6
   - notebook
+  - ipywidgets
   - numpy
   - scipy
   - pyyaml
@@ -14,6 +15,7 @@ dependencies:
   - cartopy
   - netCDF4
   - h5py
+  - tk
   - pip
   - pip:
      - git+https://github.com/tsutterley/read-GRACE-geocenter.git

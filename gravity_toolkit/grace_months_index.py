@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_months_index.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (09/2021)
 
 Creates a file with the start and end days for each dataset
 Shows the range of each month for (CSR/GFZ/JPL) (RL04/RL05/RL06)
@@ -30,9 +30,17 @@ COMMAND LINE OPTIONS:
     --mode X: permissions mode of output GRACE month file
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (https://numpy.org)
+    numpy: Scientific Computing Tools For Python
+        https://numpy.org
+        https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
+
+PROGRAM DEPENDENCIES:
+    time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 10/2020: use argparse to set command line parameters
     Updated 09/2020: add column for GSFC v02.4 GRACE mascons
@@ -51,11 +59,11 @@ UPDATE HISTORY:
 """
 from __future__ import print_function
 
-import sys
 import os
 import argparse
 import calendar
 import numpy as np
+from gravity_toolkit.time import grace_to_calendar
 
 def grace_months_index(base_dir, DREL=['RL06','v02.4'], MODE=None):
     """
@@ -139,8 +147,7 @@ def grace_months_index(base_dir, DREL=['RL06','v02.4'], MODE=None):
     #-- max_mon+1 to include max_mon
     for m in range(4, max_mon+1):
         #-- finding the month name e.g. Apr
-        calendar_year = 2002 + (m-1)//12
-        calendar_month = (m-1) % 12 + 1
+        calendar_year,calendar_month = grace_to_calendar(m)
         month_string = calendar.month_abbr[calendar_month]
         #-- create list object for output string
         output_string = []

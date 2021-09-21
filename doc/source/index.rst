@@ -77,6 +77,7 @@ missions
     user_guide/savitzky_golay.rst
     user_guide/spatial.rst
     user_guide/time.rst
+    user_guide/tools.rst
     user_guide/tsamplitude.md
     user_guide/tsregress.rst
     user_guide/tssmooth.rst

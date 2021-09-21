@@ -47,6 +47,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 09/2021: adjust regular expression operators for Swarm and GRAZ
+        use functions for converting to and from GRACE months
     Updated 07/2021: remove choices for argparse processing centers
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: use adjust_months function to fix special months cases
@@ -312,7 +313,8 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
             #-- calculate the GRACE/GRACE-FO month (Apr02 == 004)
             #-- https://grace.jpl.nasa.gov/data/grace-months/
             #-- Notes on special months (e.g. 119, 120) below
-            mon[t] = 12*(cal_date['year']-2002) + cal_date['month']
+            mon[t] = gravity_toolkit.time.calendar_to_grace(
+                cal_date['year'],cal_date['month'])
 
     #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
     #-- Accelerometer shutoffs make the relation between month number
