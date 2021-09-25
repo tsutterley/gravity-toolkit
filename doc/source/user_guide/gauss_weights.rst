@@ -23,6 +23,11 @@ Arguments
 1. ``hw``: Gaussian smoothing radius in km
 2. ``LMAX``: Upper bound of Spherical Harmonic Degrees
 
+Keyword arguments
+#################
+
+- ``CUTOFF``: minimum value for tail of Gaussian averaging function
+
 Returns
 #######
 

@@ -48,6 +48,7 @@ REFERENCES:
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 09/2021: fix passing SCALE keyword argument to clenshaw_s_m
     Updated 06/2021: output equivalent pressure in pascals
     Updated 08/2020: parameterize float precision to improve computational time
     Updated 07/2020: added function docstrings
@@ -145,7 +146,8 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
     s_m_c = np.zeros((npts,LMAX*2+2))
     for m in range(LMAX, -1, -1):
         #-- convolve harmonics with unit factors and smoothing
-        s_m_c[:,2*m:2*m+2] = clenshaw_s_m(t, dfactor*wl, m, clm, slm, LMAX)
+        s_m_c[:,2*m:2*m+2] = clenshaw_s_m(t, dfactor*wl, m, clm, slm,
+            LMAX, SCALE=SCALE)
 
     #-- calculate cos(phi)
     cos_phi_2 = 2.0*np.cos(phi)

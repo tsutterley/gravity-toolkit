@@ -20,6 +20,9 @@ INPUTS:
         drops to half its peak value at the shortest wavelength
     LMAX: Maximum degree of spherical harmonic coefficients
 
+OPTIONS:
+    CUTOFF: minimum value for tail of Gaussian averaging function
+
 OUTPUTS:
     wl: degree dependent weighting function
 
@@ -35,6 +38,7 @@ NOTES:
             alpha = alog(2.)/(1.-cos(rad/6371.))
 
 UPDATE HISTORY:
+    Updated 09/2021: added option for setting minimum value threshold
     Updated 07/2020: added function docstrings
     Updated 06/2015: adjusted threshold from 1e-9 to 1e-10
     Updated 12/2014: updated comments and header text updating full reference
@@ -43,7 +47,7 @@ UPDATE HISTORY:
 """
 import numpy as np
 
-def gauss_weights(hw, LMAX):
+def gauss_weights(hw, LMAX, CUTOFF=1e-10):
     """
     Computes the Gaussian weights as a function of degree
 
@@ -51,6 +55,10 @@ def gauss_weights(hw, LMAX):
     ---------
     hw: Gaussian smoothing radius in kilometers
     LMAX: Maximum degree of spherical harmonic coefficients
+
+    Keyword Arguments
+    -----------------
+    CUTOFF: minimum value for tail of Gaussian averaging function
 
     Returns
     -------
@@ -60,7 +68,7 @@ def gauss_weights(hw, LMAX):
     wl = np.zeros((LMAX+1))
     #-- radius of the Earth in km
     rad_e = 6371.0
-    if (hw < 1.0e-10):
+    if (hw < CUTOFF):
         #-- distance is smaller than cutoff
         wl[:]=1.0/(2.0*np.pi)
     else:
@@ -80,9 +88,9 @@ def gauss_weights(hw, LMAX):
             #-- calculate weight with recursion
             wl[l] = (1.0-2.0*l)/b*wl[l-1]+wl[l-2]
             #-- weight is less than cutoff
-            if (np.abs(wl[l]) < 1.0e-10):
+            if (wl[l] < CUTOFF):
                 #-- set all weights to cutoff
-                wl[l:LMAX+1] = 1.0e-10
+                wl[l:LMAX+1] = CUTOFF
                 #-- set valid flag
                 valid = False
             #-- add 1 to l
