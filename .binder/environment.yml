@@ -2,19 +2,19 @@ name: read-GRACE-harmonics
 channels:
   - conda-forge
 dependencies:
-  - python>=3.6
-  - notebook
-  - ipywidgets
-  - numpy
-  - scipy
-  - pyyaml
-  - lxml
-  - future
-  - python-dateutil
-  - matplotlib
   - cartopy
-  - netCDF4
+  - future
   - h5py
+  - ipywidgets
+  - lxml
+  - matplotlib
+  - netCDF4
+  - notebook
+  - numpy
+  - python>=3.6
+  - python-dateutil
+  - pyyaml
+  - scipy
   - tk
   - pip
   - pip:
