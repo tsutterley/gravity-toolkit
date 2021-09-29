@@ -1,12 +1,10 @@
-numpy
-scipy
-pyyaml
-lxml
-future
-matplotlib
-ipywidgets
-python-dateutil
 cartopy --no-binary=cartopy
-netCDF4
+future
 h5py
-tk
+lxml
+matplotlib
+netCDF4
+numpy
+python-dateutil
+pyyaml
+scipy

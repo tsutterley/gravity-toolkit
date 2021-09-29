@@ -42,18 +42,18 @@ Dependencies
 ############
 This software is also dependent on other commonly used Python packages:
 
-- `numpy: Scientific Computing Tools For Python <https://numpy.org>`_
-- `scipy: Scientific Tools for Python <https://docs.scipy.org/doc/>`_
-- `dateutil: powerful extensions to datetime <https://dateutil.readthedocs.io/en/stable/>`_
-- `PyYAML: YAML parser and emitter for Python <https://github.com/yaml/pyyaml>`_
-- `lxml: processing XML and HTML in Python <https://pypi.python.org/pypi/lxml>`_
-- `future: Compatibility layer between Python 2 and Python 3 <https://python-future.org/>`_
-- `matplotlib: Python 2D plotting library <https://matplotlib.org/>`_
 - `cartopy: Python package designed for geospatial data processing <https://scitools.org.uk/cartopy/docs/latest/>`_
-- `netCDF4: Python interface to the netCDF C library <https://unidata.github.io/netcdf4-python/>`_
+- `future: Compatibility layer between Python 2 and Python 3 <https://python-future.org/>`_
 - `h5py: Python interface for Hierarchal Data Format 5 (HDF5) <https://www.h5py.org/>`_
-- `tkinter: Python interface to the Tcl/Tk GUI toolkit <https://docs.python.org/3/library/tkinter.html>`_
 - `ipywidgets: interactive HTML widgets for Jupyter notebooks and IPython <https://ipywidgets.readthedocs.io/en/latest/>`_
+- `lxml: processing XML and HTML in Python <https://pypi.python.org/pypi/lxml>`_
+- `matplotlib: Python 2D plotting library <https://matplotlib.org/>`_
+- `netCDF4: Python interface to the netCDF C library <https://unidata.github.io/netcdf4-python/>`_
+- `numpy: Scientific Computing Tools For Python <https://numpy.org>`_
+- `python-dateutil: powerful extensions to datetime <https://dateutil.readthedocs.io/en/stable/>`_
+- `PyYAML: YAML parser and emitter for Python <https://github.com/yaml/pyyaml>`_
+- `scipy: Scientific Tools for Python <https://docs.scipy.org/doc/>`_
+- `tkinter: Python interface to the Tcl/Tk GUI toolkit <https://docs.python.org/3/library/tkinter.html>`_
 
 Disclaimer
 ##########
