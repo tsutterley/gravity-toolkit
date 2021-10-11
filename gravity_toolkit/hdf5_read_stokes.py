@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_read_stokes.py
-Written by Tyler Sutterley (02/2021)
+Written by Tyler Sutterley (10/2021)
 
 Reads spherical harmonic data from HDF5 files
 
@@ -37,6 +37,7 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 02/2021: prevent warnings with python3 compatible regex strings
     Updated 12/2020: try/except for getting variable unit attributes
         add fallback for finding HDF5 file within from zip files
@@ -64,6 +65,7 @@ import io
 import re
 import gzip
 import h5py
+import logging
 import zipfile
 import numpy as np
 
@@ -135,9 +137,8 @@ def hdf5_read_stokes(filename, DATE=True, VERBOSE=False, COMPRESSION=None):
     dinput['attributes'] = {}
 
     #-- Output HDF5 file information
-    if VERBOSE:
-        print(fileID.filename)
-        print(list(fileID.keys()))
+    logging.info(fileID.filename)
+    logging.info(list(fileID.keys()))
 
     #-- output variable keys
     h5keys = ['l','m','clm','slm']

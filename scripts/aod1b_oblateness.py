@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 aod1b_oblateness.py
-Written by Tyler Sutterley (07/2021)
+Written by Tyler Sutterley (10/2021)
 Contributions by Hugo Lecomte (03/2021)
 
 Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
@@ -36,6 +36,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATED HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: can use default argument files to define options
         Add 3-hour interval depending on Release
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -59,6 +60,7 @@ import sys
 import os
 import re
 import gzip
+import logging
 import tarfile
 import argparse
 import numpy as np
@@ -87,6 +89,10 @@ def aod1b_oblateness(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
     MODE: Permission mode of directories and files
     VERBOSE: Output information for each output file
     """
+
+    #-- create logger
+    loglevel = logging.INFO if VERBOSE else logging.critical
+    logging.basicConfig(level=loglevel)
 
     #-- compile regular expressions operators for file dates
     #-- will extract the year and month from the tar file (.tar.gz)
@@ -164,8 +170,7 @@ def aod1b_oblateness(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
         #-- or will rewrite if CLOBBER is set (if wanting something changed)
         if TEST or CLOBBER:
             #-- if verbose: output information about the oblateness file
-            if VERBOSE:
-                print('{0}{1}'.format(os.path.join(output_dir,FILE),OVERWRITE))
+            logging.info('{0}{1}'.format(os.path.join(output_dir,FILE),OVERWRITE))
             #-- open output monthly oblateness file
             f = open(os.path.join(output_dir,FILE), 'w')
             args = ('Oblateness time series',DREL,DSET)

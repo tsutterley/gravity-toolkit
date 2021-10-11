@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_grace_sync.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (10/2021)
 
 Syncs GRACE/GRACE-FO and auxiliary data from the NASA JPL PO.DAAC Drive Server
 Syncs CSR/GFZ/JPL files for RL04/RL05/RL06 GAA/GAB/GAC/GAD/GSM
@@ -68,6 +68,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 05/2021: added option for connection timeout (in seconds)
         use try/except for retrieving netrc credentials
     Updated 04/2021: set a default netrc file and check access
@@ -125,7 +126,7 @@ UPDATE HISTORY:
         using clobber flag for mget portions (rather than initial delete)
     Updated 08/2015: changed sys.exit to raise RuntimeError
         Sync the TN-08 and TN-09 GAE and GAF products
-    UPDATED 05/2015: updated for Jan/Feb 2015 months (don't include LMAXx30)
+    Updated 05/2015: updated for Jan/Feb 2015 months (don't include LMAXx30)
         improved regular expression usage to create indices
     Updated 03/2015: update for JPL RL05.1 (see L2-JPL_ProcStds_v5.1.pdf)
     Updated 01/2015: added internet connectivity check
@@ -162,6 +163,7 @@ import time
 import netrc
 import shutil
 import getpass
+import logging
 import argparse
 import builtins
 import posixpath
@@ -243,16 +245,17 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
         #-- format: PODAAC_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
         LOGFILE = 'PODAAC_sync_{0}.log'.format(today)
-        fid1 = open(os.path.join(DIRECTORY,LOGFILE),'w')
-        print('PO.DAAC Sync Log ({0})'.format(today), file=fid1)
-        print('CENTERS={0}'.format(','.join(PROC)), file=fid1)
-        print('RELEASES={0}'.format(','.join(DREL)), file=fid1)
+        logging.basicConfig(file=os.path.join(DIRECTORY,LOGFILE),
+            level=logging.INFO)
+        logging.info('PO.DAAC Sync Log ({0})'.format(today))
+        logging.info('CENTERS={0}'.format(','.join(PROC)))
+        logging.info('RELEASES={0}'.format(','.join(DREL)))
     else:
         #-- standard output (terminal output)
-        fid1 = sys.stdout
+        logging.basicConfig(level=logging.INFO)
 
     #-- DEGREE 1 COEFFICIENTS
-    print('Degree 1 Coefficients:', file=fid1)
+    logging.info('Degree 1 Coefficients:')
     PATH = [HOST,'drive','files','allData','tellus','L2','degree_1']
     remote_dir = posixpath.join(*PATH)
     local_dir = os.path.join(DIRECTORY,'geocenter')
@@ -269,12 +272,12 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
         #-- remote and local versions of the file
         remote_file = posixpath.join(remote_dir,colname)
         local_file = os.path.join(local_dir,colname)
-        http_pull_file(fid1, remote_file, remote_mtime, local_file,
+        http_pull_file(remote_file, remote_mtime, local_file,
             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
             CHECKSUM=CHECKSUM, MODE=MODE)
 
     #-- SLR C2,0 COEFFICIENTS
-    print('C2,0 Coefficients:', file=fid1)
+    logging.info('C2,0 Coefficients:')
     PATH = [HOST,'drive','files','allData','grace','docs']
     remote_dir = posixpath.join(*PATH)
     local_dir = os.path.expanduser(DIRECTORY)
@@ -288,12 +291,12 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
         #-- remote and local versions of the file
         remote_file = posixpath.join(remote_dir,colname)
         local_file = os.path.join(local_dir,colname)
-        http_pull_file(fid1, remote_file, remote_mtime, local_file,
+        http_pull_file(remote_file, remote_mtime, local_file,
             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
             CHECKSUM=CHECKSUM, MODE=MODE)
 
     #-- SLR C3,0 COEFFICIENTS
-    print('C3,0 Coefficients:', file=fid1)
+    logging.info('C3,0 Coefficients:')
     PATH = [HOST,'drive','files','allData','gracefo','docs']
     remote_dir = posixpath.join(*PATH)
     local_dir = os.path.expanduser(DIRECTORY)
@@ -307,12 +310,12 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
         #-- remote and local versions of the file
         remote_file = posixpath.join(remote_dir,colname)
         local_file = os.path.join(local_dir,colname)
-        http_pull_file(fid1, remote_file, remote_mtime, local_file,
+        http_pull_file(remote_file, remote_mtime, local_file,
             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
             CHECKSUM=CHECKSUM, MODE=MODE)
 
     #-- TN-08 GAE, TN-09 GAF and TN-10 GAG ECMWF atmosphere correction products
-    print('TN-08 GAE, TN-09 GAF and TN-10 GAG products:', file=fid1)
+    logging.info('TN-08 GAE, TN-09 GAF and TN-10 GAG products:')
     PATH = [HOST,'drive','files','allData','grace','docs']
     remote_dir = posixpath.join(*PATH)
     local_dir = os.path.expanduser(DIRECTORY)
@@ -330,7 +333,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
         #-- remote and local versions of the file
         remote_file = posixpath.join(remote_dir,colname)
         local_file = os.path.join(local_dir,colname)
-        http_pull_file(fid1, remote_file, remote_mtime, local_file,
+        http_pull_file(remote_file, remote_mtime, local_file,
             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
             CHECKSUM=CHECKSUM, MODE=MODE)
 
@@ -342,7 +345,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
         os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
         #-- for each mission
         for MISSION,NAME in zip(['grace','gracefo'],['GRACE','GRACE_FO']):
-            print('{0} Newsletters:'.format(NAME.replace('_','-')), file=fid1)
+            logging.info('{0} Newsletters:'.format(NAME.replace('_','-')))
             PATH = [HOST,'drive','files','allData',*newsletter_sub[MISSION]]
             remote_dir = posixpath.join(*PATH)
             #-- compile regular expression operator for remote files
@@ -355,7 +358,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
                 #-- remote and local versions of the file
                 remote_file = posixpath.join(remote_dir,colname)
                 local_file = os.path.join(local_dir,colname)
-                http_pull_file(fid1, remote_file, remote_mtime, local_file,
+                http_pull_file(remote_file, remote_mtime, local_file,
                     TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
                     CHECKSUM=CHECKSUM, MODE=MODE)
 
@@ -363,11 +366,11 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
     #-- PROCESSING CENTER (GFZ)
     #-- DATA RELEASES (RL04, RL05, RL06)
     if AOD1B:
-        print('GRACE L1B Dealiasing Product:', file=fid1)
+        logging.info('GRACE L1B Dealiasing Product:')
         #-- for each data release
         for rl in DREL:
             #-- print string of exact data product
-            print('{0}/{1}/{2}/{3}'.format('L1B','GFZ','AOD1B',rl), file=fid1)
+            logging.info('{0}/{1}/{2}/{3}'.format('L1B','GFZ','AOD1B',rl))
             #-- remote and local directory for exact data product
             PATH=[HOST,'drive','files','allData','grace','L1B','GFZ','AOD1B',rl]
             remote_dir = posixpath.join(*PATH)
@@ -384,13 +387,13 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
                 #-- remote and local versions of the file
                 remote_file = posixpath.join(remote_dir,colname)
                 local_file = os.path.join(local_dir,colname)
-                http_pull_file(fid1, remote_file, remote_mtime, local_file,
+                http_pull_file(remote_file, remote_mtime, local_file,
                     TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
                     CHECKSUM=CHECKSUM, MODE=MODE)
 
     #-- GRACE DATA
     #-- PROCESSING CENTERS (CSR, GFZ, JPL)
-    print('GRACE L2 Global Spherical Harmonics:', file=fid1)
+    logging.info('GRACE L2 Global Spherical Harmonics:')
     for pr in PROC:
         PATH = [HOST,'drive','files','allData','grace']
         #-- DATA RELEASES (RL04, RL05, RL06)
@@ -411,7 +414,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
             #-- DATA PRODUCTS (GAC, GAD, GSM, GAA, GAB)
             for ds in DSET[pr]:
                 #-- print string of exact data product
-                print('GRACE {0}/{1}/{2}'.format(pr, drel_str, ds), file=fid1)
+                logging.info('GRACE {0}/{1}/{2}'.format(pr, drel_str, ds))
                 #-- local directory for exact data product
                 local_dir = os.path.join(DIRECTORY, pr, rl, ds)
                 #-- check if directory exists and recursively create if not
@@ -425,14 +428,14 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
                     #-- remote and local versions of the file
                     remote_file = posixpath.join(remote_dir,colnames[i])
                     local_file = os.path.join(local_dir,colnames[i])
-                    http_pull_file(fid1, remote_file, mtimes[i], local_file,
+                    http_pull_file(remote_file, mtimes[i], local_file,
                         TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
                         CHECKSUM=CHECKSUM, MODE=MODE)
 
     #-- GRACE-FO DATA
     #-- PROCESSING CENTERS (CSR, GFZ, JPL)
     #-- GRACE-FO data are stored separately for each year
-    print('GRACE-FO L2 Global Spherical Harmonics:', file=fid1)
+    logging.info('GRACE-FO L2 Global Spherical Harmonics:')
     for pr in PROC:
         PATH = [HOST,'drive','files','allData','gracefo']
         #-- DATA RELEASES (RL06)
@@ -455,7 +458,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
                 for ds in DSET[pr]:
                     #-- print string of exact data product
                     args = (pr, rl, ds, yr)
-                    print('GRACE-FO {0}/{1}/{2}/{3}'.format(*args), file=fid1)
+                    logging.info('GRACE-FO {0}/{1}/{2}/{3}'.format(*args))
                     #-- local directory for exact data product
                     local_dir = os.path.join(DIRECTORY, pr, rl, ds)
                     #-- check if directory exists and recursively create if not
@@ -469,7 +472,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
                         #-- remote and local versions of the file
                         remote_file = posixpath.join(remote_dir,colnames[i])
                         local_file = os.path.join(local_dir,colnames[i])
-                        http_pull_file(fid1, remote_file, mtimes[i],
+                        http_pull_file(remote_file, mtimes[i],
                             local_file, TIMEOUT=TIMEOUT, LIST=LIST,
                             CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
                 #-- remove the year directory to the path
@@ -498,12 +501,11 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
 
     #-- close log file and set permissions level to MODE
     if LOG:
-        fid1.close()
         os.chmod(os.path.join(DIRECTORY,LOGFILE), MODE)
 
 #-- PURPOSE: pull file from a remote host checking if file exists locally
 #-- and if the remote file is newer than the local file
-def http_pull_file(fid, remote_file, remote_mtime, local_file, TIMEOUT=120,
+def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
     LIST=False, CLOBBER=False, CHECKSUM=False, MODE=0o775):
     #-- if file exists in file system: check if remote file is newer
     TEST = False
@@ -541,8 +543,8 @@ def http_pull_file(fid, remote_file, remote_mtime, local_file, TIMEOUT=120,
     #-- if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         #-- Printing files transferred
-        print('{0} --> '.format(remote_file), file=fid)
-        print('\t{0}{1}\n'.format(local_file,OVERWRITE), file=fid)
+        logging.info('{0} --> '.format(remote_file))
+        logging.info('\t{0}{1}\n'.format(local_file,OVERWRITE))
         #-- if executing copy command (not only printing the files)
         if not LIST:
             #-- chunked transfer encoding size

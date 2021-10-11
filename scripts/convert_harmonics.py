@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 convert_harmonics.py
-Written by Tyler Sutterley (09/2021)
+Written by Tyler Sutterley (10/2021)
 Converts a file from the spatial domain into the spherical harmonic domain
 
 CALLING SEQUENCE:
@@ -67,6 +67,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 09/2021: fix to use fill values for input ascii files
         use functions for converting to and from GRACE months
     Updated 08/2021: fix spherical harmonic orders if not set
@@ -84,6 +85,7 @@ from __future__ import print_function
 import sys
 import os
 import re
+import logging
 import argparse
 import traceback
 import numpy as np
@@ -98,12 +100,12 @@ from gravity_toolkit.time import calendar_to_grace
 
 #-- PURPOSE: keep track of threads
 def info(args):
-    print(os.path.basename(sys.argv[0]))
-    print(args)
-    print('module name: {0}'.format(__name__))
+    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(args)
+    logging.info('module name: {0}'.format(__name__))
     if hasattr(os, 'getppid'):
-        print('parent process: {0:d}'.format(os.getppid()))
-    print('process id: {0:d}'.format(os.getpid()))
+        logging.info('parent process: {0:d}'.format(os.getppid()))
+    logging.info('process id: {0:d}'.format(os.getpid()))
 
 #-- PURPOSE: read load love numbers for the range of spherical harmonic degrees
 def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF'):
@@ -240,9 +242,8 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     Ylms_list = None
 
     #-- if verbose output: print input and output file names
-    if VERBOSE:
-        print('{0}:'.format(os.path.basename(sys.argv[0])))
-        print('{0} -->\n\t{1}'.format(INPUT_FILE,OUTPUT_FILE))
+    logging.info('{0}:'.format(os.path.basename(sys.argv[0])))
+    logging.info('{0} -->\n\t{1}'.format(INPUT_FILE,OUTPUT_FILE))
     #-- outputting data to file
     if (DATAFORM == 'ascii'):
         #-- ascii (.txt)
@@ -326,9 +327,13 @@ def main():
         help='permissions mode of output files')
     args,_ = parser.parse_known_args()
 
+    #-- create logger
+    loglevel = logging.INFO if args.verbose else logging.critical
+    logging.basicConfig(level=loglevel)
+
     #-- run program with parameters
     try:
-        info(args) if args.verbose else None
+        info(args)
         convert_harmonics(args.infile, args.outfile,
             LMAX=args.lmax,
             MMAX=args.mmax,

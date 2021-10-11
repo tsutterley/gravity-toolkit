@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 itsg_graz_grace_sync.py
-Written by Tyler Sutterley (09/2021)
+Written by Tyler Sutterley (10/2021)
 Syncs GRACE/GRACE-FO and auxiliary data from the ITSG GRAZ server
 
 CALLING SEQUENCE:
@@ -39,6 +39,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Written 09/2021
 """
 from __future__ import print_function
@@ -48,6 +49,7 @@ import os
 import re
 import time
 import shutil
+import logging
 import argparse
 import posixpath
 import gravity_toolkit.utilities
@@ -64,13 +66,14 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
         #-- format: ITSG_GRAZ_GRACE_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
         LOGFILE = 'ITSG_GRAZ_GRACE_sync_{0}.log'.format(today)
-        fid = open(os.path.join(DIRECTORY,LOGFILE),'w')
-        print('ITSG GRAZ GRACE Sync Log ({0})'.format(today), file=fid)
-        print('Release: {0}'.format(RELEASE))
-        print('LMAX: {0:d}'.format(LMAX))
+        logging.basicConfig(file=os.path.join(DIRECTORY,LOGFILE),
+            level=logging.INFO)
+        logging.info('ITSG GRAZ GRACE Sync Log ({0})'.format(today))
+        logging.info('Release: {0}'.format(RELEASE))
+        logging.info('LMAX: {0:d}'.format(LMAX))
     else:
         #-- standard output (terminal output)
-        fid = sys.stdout
+        logging.basicConfig(level=logging.INFO)
 
     #-- ITSG GRAZ server
     HOST = ['http://ftp.tugraz.at','outgoing','ITSG','GRACE']
@@ -119,7 +122,7 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
         local_file = os.path.join(local_dir,colname)
         remote_file = posixpath.join(*REMOTE,colname)
         #-- copy file from remote directory comparing modified dates
-        http_pull_file(fid, remote_file, remote_mtime, local_file,
+        http_pull_file(remote_file, remote_mtime, local_file,
             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER, MODE=MODE)
 
     #-- sync ITSG GRAZ data for truncation
@@ -137,7 +140,7 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
         local_file = os.path.join(local_dir,colname)
         remote_file = posixpath.join(*REMOTE,colname)
         #-- copy file from remote directory comparing modified dates
-        http_pull_file(fid, remote_file, remote_mtime, local_file,
+        http_pull_file(remote_file, remote_mtime, local_file,
             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER, MODE=MODE)
 
     #-- create index file for GRACE/GRACE-FO L2 Spherical Harmonic Data
@@ -158,12 +161,11 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
 
     #-- close log file and set permissions level to MODE
     if LOG:
-        fid.close()
         os.chmod(os.path.join(DIRECTORY,LOGFILE), MODE)
 
 #-- PURPOSE: pull file from a remote host checking if file exists locally
 #-- and if the remote file is newer than the local file
-def http_pull_file(fid,remote_file,remote_mtime,local_file,
+def http_pull_file(remote_file,remote_mtime,local_file,
     TIMEOUT=0,LIST=False,CLOBBER=False,MODE=0o775):
     #-- if file exists in file system: check if remote file is newer
     TEST = False
@@ -183,8 +185,8 @@ def http_pull_file(fid,remote_file,remote_mtime,local_file,
     #-- if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         #-- Printing files transferred
-        print('{0} --> '.format(remote_file), file=fid)
-        print('\t{0}{1}\n'.format(local_file,OVERWRITE), file=fid)
+        logging.info('{0} --> '.format(remote_file))
+        logging.info('\t{0}{1}\n'.format(local_file,OVERWRITE))
         #-- if executing copy command (not only printing the files)
         if not LIST:
             #-- Create and submit request. There are a wide range of exceptions

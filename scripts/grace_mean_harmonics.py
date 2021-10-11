@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_mean_harmonics.py
-Written by Tyler Sutterley (07/2021)
+Written by Tyler Sutterley (10/2021)
 
 Calculates the temporal mean of the GRACE/GRACE-FO spherical harmonics
     for a given date range from a set of parameters
@@ -73,6 +73,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: simplified file exports using wrappers in harmonics
         added option to output in gravity field coefficients (gfc) format
         remove choices for argparse processing centers
@@ -105,6 +106,7 @@ from __future__ import print_function
 import sys
 import os
 import time
+import logging
 import argparse
 import numpy as np
 import traceback
@@ -114,12 +116,12 @@ import gravity_toolkit.utilities as utilities
 
 #-- PURPOSE: keep track of threads
 def info(args):
-    print(os.path.basename(sys.argv[0]))
-    print(args)
-    print('module name: {0}'.format(__name__))
+    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(args)
+    logging.info('module name: {0}'.format(__name__))
     if hasattr(os, 'getppid'):
-        print('parent process: {0:d}'.format(os.getppid()))
-    print('process id: {0:d}'.format(os.getpid()))
+        logging.info('parent process: {0:d}'.format(os.getppid()))
+    logging.info('process id: {0:d}'.format(os.getpid()))
 
 #-- PURPOSE: import GRACE/GRACE-FO files for a given months range
 #-- calculate the mean of the spherical harmonics and output to file
@@ -279,13 +281,14 @@ def output_log_file(arguments,output_file):
     #-- create a unique log and open the log file
     DIRECTORY = os.path.expanduser(arguments.directory)
     fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    logging.basicConfig(stream=fid, level=logging.INFO)
     #-- print argument values sorted alphabetically
-    print('ARGUMENTS:', file=fid)
+    logging.info('ARGUMENTS:')
     for arg, value in sorted(vars(arguments).items()):
-        print('{0}: {1}'.format(arg, value), file=fid)
+        logging.info('{0}: {1}'.format(arg, value))
     #-- print output files
-    print('\n\nOUTPUT FILE:',file=fid)
-    print('{0}'.format(output_file),file=fid)
+    logging.info('\n\nOUTPUT FILE:')
+    logging.info('{0}'.format(output_file))
     #-- close the log file
     fid.close()
 
@@ -297,12 +300,13 @@ def output_error_log_file(arguments):
     #-- create a unique log and open the log file
     DIRECTORY = os.path.expanduser(arguments.directory)
     fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    logging.basicConfig(stream=fid, level=logging.INFO)
     #-- print argument values sorted alphabetically
-    print('ARGUMENTS:', file=fid)
+    logging.info('ARGUMENTS:')
     for arg, value in sorted(vars(arguments).items()):
-        print('{0}: {1}'.format(arg, value), file=fid)
+        logging.info('{0}: {1}'.format(arg, value))
     #-- print traceback error
-    print('\n\nTRACEBACK ERROR:', file=fid)
+    logging.info('\n\nTRACEBACK ERROR:')
     traceback.print_exc(file=fid)
     #-- close the log file
     fid.close()
@@ -417,9 +421,13 @@ def main():
         help='permissions mode of output files')
     args,_ = parser.parse_known_args()
 
+    #-- create logger
+    loglevel = logging.INFO if args.verbose else logging.critical
+    logging.basicConfig(level=loglevel)
+
     #-- try to run the analysis with listed parameters
     try:
-        info(args) if args.verbose else None
+        info(args)
         #-- run grace_mean_harmonics algorithm with parameters
         output_file = grace_mean_harmonics(
             args.directory,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 mascon_reconstruct.py
-Written by Tyler Sutterley (07/2021)
+Written by Tyler Sutterley (10/2021)
 
 Calculates the equivalent spherical harmonics from a mascon time series
 
@@ -77,6 +77,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: switch from parameter files to argparse arguments
         added path to default land-sea mask for mass redistribution
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -110,6 +111,7 @@ from __future__ import print_function
 import sys
 import os
 import re
+import logging
 import argparse
 import numpy as np
 import traceback
@@ -123,12 +125,12 @@ from gravity_toolkit.units import units
 
 #-- PURPOSE: keep track of threads
 def info(args):
-    print(os.path.basename(sys.argv[0]))
-    print(args)
-    print('module name: {0}'.format(__name__))
+    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(args)
+    logging.info('module name: {0}'.format(__name__))
     if hasattr(os, 'getppid'):
-        print('parent process: {0:d}'.format(os.getppid()))
-    print('process id: {0:d}'.format(os.getpid()))
+        logging.info('parent process: {0:d}'.format(os.getppid()))
+    logging.info('process id: {0:d}'.format(os.getpid()))
 
 #-- PURPOSE: tilde-compress a file path string
 def tilde_compress(file_path):
@@ -439,9 +441,13 @@ def main():
         help='permissions mode of output files')
     args,_ = parser.parse_known_args()
 
+    #-- create logger
+    loglevel = logging.INFO if args.verbose else logging.critical
+    logging.basicConfig(level=loglevel)
+
     #-- try to run the analysis with listed parameters
     try:
-        info(args) if args.verbose else None
+        info(args)
         #-- run mascon_reconstruct algorithm with parameters
         mascon_reconstruct(
             args.product,

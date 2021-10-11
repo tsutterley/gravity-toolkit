@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 cnes_grace_sync.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (10/2021)
 
 CNES/GRGS GRACE data download program for gravity field products
     https://grace.obs-mip.fr/
@@ -35,6 +35,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 05/2021: added option for connection timeout (in seconds)
     Updated 12/2020: use argparse to set command line parameters
         use gravity toolkit utilities to download tar files
@@ -96,6 +97,7 @@ import time
 import gzip
 import struct
 import shutil
+import logging
 import tarfile
 import argparse
 import posixpath
@@ -166,17 +168,18 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
         today = time.strftime('%Y-%m-%d',time.localtime())
         LOGFILE = 'CNES_sync_{0}.log'.format(today)
         fid1 = open(os.path.join(DIRECTORY,LOGFILE),'w')
-        print('CNES Sync Log ({0})'.format(today), file=fid1)
+        logging.basicConfig(stream=fid1,level=logging.INFO)
+        logging.info('CNES Sync Log ({0})'.format(today))
     else:
         #-- standard output (terminal output)
-        fid1 = sys.stdout
+        logging.basicConfig(level=logging.INFO)
 
     #-- DATA RELEASES (RL01, RL02, RL03, RL04)
     #-- RL01 and RL02 are no longer updated as default
     for rl in DREL:
         #-- datasets (GSM, GAA, GAB)
         for ds in DSET[rl]:
-            print('CNES/{0}/{1}'.format(rl, ds), file=fid1)
+            logging.info('CNES/{0}/{1}'.format(rl, ds))
             #-- specific GRACE directory
             local_dir = os.path.join(DIRECTORY, 'CNES', rl, ds)
             #-- check if GRACE directory exists and recursively create if not
@@ -215,7 +218,7 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
                     #-- local gzipped version of the file
                     fi = os.path.basename(member.name)
                     local_file = os.path.join(local_dir,'{0}.gz'.format(fi))
-                    gzip_copy_file(fid1, tar, member, local_file, CLOBBER, MODE)
+                    gzip_copy_file(tar, member, local_file, CLOBBER, MODE)
                 #-- close the tar file
                 tar.close()
 
@@ -235,7 +238,7 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
 
 #-- PURPOSE: copy file from tar file checking if file exists locally
 #-- and if the original file is newer than the local file
-def gzip_copy_file(fid, tar, member, local_file, CLOBBER, MODE):
+def gzip_copy_file(tar, member, local_file, CLOBBER, MODE):
     #-- if file exists in file system: check if remote file is newer
     TEST = False
     OVERWRITE = ' (clobber)'
@@ -259,8 +262,8 @@ def gzip_copy_file(fid, tar, member, local_file, CLOBBER, MODE):
     #-- if file does not exist, is to be overwritten, or CLOBBERed
     if TEST or CLOBBER:
         #-- Printing files copied from tar file to new compressed file
-        print('{0}/{1} --> '.format(tar.name,member.name), file=fid)
-        print('\t{0}{1}\n'.format(local_file,OVERWRITE), file=fid)
+        logging.info('{0}/{1} --> '.format(tar.name,member.name))
+        logging.info('\t{0}{1}\n'.format(local_file,OVERWRITE))
         #-- extract file contents to new compressed file
         f_in = tar.extractfile(member)
         with gzip.GzipFile(local_file, 'wb', 9, None, file1_mtime) as f_out:

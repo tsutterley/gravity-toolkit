@@ -17,6 +17,7 @@ Documentation is available at https://read-grace-harmonics.readthedocs.io
 """
 import gravity_toolkit.time
 import gravity_toolkit.utilities
+import gravity_toolkit.version
 from gravity_toolkit.clenshaw_summation import clenshaw_summation
 from gravity_toolkit.degree_amplitude import degree_amplitude
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
@@ -70,3 +71,5 @@ from gravity_toolkit.tsamplitude import tsamplitude
 from gravity_toolkit.tsregress import tsregress
 from gravity_toolkit.tssmooth import tssmooth
 from gravity_toolkit.units import units
+# get version number
+__version__ = gravity_toolkit.version.version

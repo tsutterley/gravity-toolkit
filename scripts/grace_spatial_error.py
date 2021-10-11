@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_error.py
-Written by Tyler Sutterley (07/2021)
+Written by Tyler Sutterley (10/2021)
 
 Calculates the GRACE/GRACE-FO errors following Wahr et al. (2006)
 
@@ -121,6 +121,7 @@ REFERENCES:
         http://dx.doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: simplified file imports using wrappers in harmonics
         remove choices for argparse processing centers
     Updated 06/2021: switch from parameter files to argparse arguments
@@ -152,6 +153,7 @@ import sys
 import os
 import re
 import time
+import logging
 import numpy as np
 import argparse
 import traceback
@@ -168,12 +170,12 @@ from gravity_toolkit.units import units
 
 #-- PURPOSE: keep track of threads
 def info(args):
-    print(os.path.basename(sys.argv[0]))
-    print(args)
-    print('module name: {0}'.format(__name__))
+    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(args)
+    logging.info('module name: {0}'.format(__name__))
     if hasattr(os, 'getppid'):
-        print('parent process: {0:d}'.format(os.getppid()))
-    print('process id: {0:d}'.format(os.getpid()))
+        logging.info('parent process: {0:d}'.format(os.getppid()))
+    logging.info('process id: {0:d}'.format(os.getpid()))
 
 #-- PURPOSE: read load love numbers for the range of spherical harmonic degrees
 def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF'):
@@ -501,14 +503,15 @@ def output_log_file(arguments,output_files):
     #-- create a unique log and open the log file
     DIRECTORY = os.path.expanduser(arguments.output_directory)
     fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    logging.basicConfig(stream=fid, level=logging.INFO)
     #-- print argument values sorted alphabetically
-    print('ARGUMENTS:', file=fid)
+    logging.info('ARGUMENTS:')
     for arg, value in sorted(vars(arguments).items()):
-        print('{0}: {1}'.format(arg, value), file=fid)
+        logging.info('{0}: {1}'.format(arg, value))
     #-- print output files
-    print('\n\nOUTPUT FILES:', file=fid)
+    logging.info('\n\nOUTPUT FILES:')
     for f in output_files:
-        print('{0}'.format(f), file=fid)
+        logging.info('{0}'.format(f))
     #-- close the log file
     fid.close()
 
@@ -520,12 +523,13 @@ def output_error_log_file(arguments):
     #-- create a unique log and open the log file
     DIRECTORY = os.path.expanduser(arguments.output_directory)
     fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    logging.basicConfig(stream=fid, level=logging.INFO)
     #-- print argument values sorted alphabetically
-    print('ARGUMENTS:', file=fid)
+    logging.info('ARGUMENTS:')
     for arg, value in sorted(vars(arguments).items()):
-        print('{0}: {1}'.format(arg, value), file=fid)
+        logging.info('{0}: {1}'.format(arg, value))
     #-- print traceback error
-    print('\n\nTRACEBACK ERROR:', file=fid)
+    logging.info('\n\nTRACEBACK ERROR:')
     traceback.print_exc(file=fid)
     #-- close the log file
     fid.close()
@@ -693,9 +697,13 @@ def main():
         help='permissions mode of output files')
     args,_ = parser.parse_known_args()
 
+    #-- create logger
+    loglevel = logging.INFO if args.verbose else logging.critical
+    logging.basicConfig(level=loglevel)
+
     #-- try to run the analysis with listed parameters
     try:
-        info(args) if args.verbose else None
+        info(args)
         #-- run grace_spatial_error algorithm with parameters
         output_files = grace_spatial_error(
             args.directory,

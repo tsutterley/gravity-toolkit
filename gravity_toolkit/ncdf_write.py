@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_write.py
-Written by Tyler Sutterley (12/2020)
+Written by Tyler Sutterley (10/2021)
 
 Writes spatial data to COARDS-compliant netCDF4 files
 
@@ -36,6 +36,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 12/2020: added REFERENCE option to set file attribute
     Updated 07/2020: added function docstrings
     Updated 04/2020: added option DATE if including time data
@@ -62,6 +63,7 @@ UPDATE HISTORY:
 from __future__ import print_function
 
 import time
+import logging
 import netCDF4
 import numpy as np
 
@@ -153,9 +155,8 @@ def ncdf_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
 
     #-- Output NetCDF structure information
-    if VERBOSE:
-        print(FILENAME)
-        print(list(fileID.variables.keys()))
+    logging.info(FILENAME)
+    logging.info(list(fileID.variables.keys()))
 
     #-- Closing the NetCDF file
     fileID.close()

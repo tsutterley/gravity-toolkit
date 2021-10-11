@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_dealiasing_ftp.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (10/2021)
 Syncs GRACE Level-1b dealiasing products from the GFZ Information
     System and Data Center (ISDC)
 Optionally outputs as monthly tar files
@@ -30,6 +30,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: added option to sync only specific months
     Updated 05/2021: added option for connection timeout (in seconds)
     Updated 01/2021: using utilities module to list files from ftp
@@ -47,6 +48,7 @@ import os
 import re
 import time
 import ftplib
+import logging
 import tarfile
 import argparse
 import posixpath
@@ -65,11 +67,12 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, MONTHS=None, TAR=False,
         #-- format: GFZ_AOD1B_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
         LOGFILE = 'GFZ_AOD1B_sync_{0}.log'.format(today)
-        fid1 = open(os.path.join(base_dir,LOGFILE),'w')
-        print('GFZ AOD1b Sync Log ({0})'.format(today), file=fid1)
+        logging.basicConfig(file=os.path.join(base_dir,LOGFILE),
+            level=logging.INFO)
+        logging.info('GFZ AOD1b Sync Log ({0})'.format(today))
     else:
         #-- standard output (terminal output)
-        fid1 = sys.stdout
+        logging.basicConfig(level=logging.INFO)
 
     #-- remote HOST for DREL on GFZ data server
     #-- connect and login to GFZ ftp server
@@ -111,41 +114,40 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, MONTHS=None, TAR=False,
             if TAR and (file_count > 0) and (TEST or CLOBBER):
                 #-- copy each gzip file and store within monthly tar files
                 tar = tarfile.open(name=os.path.join(grace_dir,FILE),mode='w:gz')
-                for fi,mt in zip(remote_files,remote_mtimes):
+                for fi,remote_mtime in zip(remote_files,remote_mtimes):
                     #-- remote version of each input file
                     remote = [ftp.host,'grace','Level-1B','GFZ','AOD',DREL,Y,fi]
-                    print(posixpath.join('ftp://',*remote), file=fid1)
+                    logging.info(posixpath.join('ftp://',*remote))
                     #-- retrieve bytes from remote file
                     remote_buffer = gravity_toolkit.utilities.from_ftp(remote,
                         timeout=TIMEOUT)
                     #-- add file to tar
                     tar_info = tarfile.TarInfo(name=fi)
-                    tar_info.mtime = mt
+                    tar_info.mtime = remote_mtime
                     tar_info.size = remote_buffer.getbuffer().nbytes
                     tar.addfile(tarinfo=tar_info, fileobj=remote_buffer)
                 #-- close tar file and set permissions level to MODE
                 tar.close()
-                print(' --> {0}\n'.format(os.path.join(grace_dir,FILE)),file=fid1)
+                logging.info(' --> {0}\n'.format(os.path.join(grace_dir,FILE)))
                 os.chmod(os.path.join(grace_dir,FILE), MODE)
             elif (file_count > 0) and not TAR:
                 #-- copy each gzip file and keep as individual daily files
-                for fi,mt in zip(remote_files,remote_mtimes):
+                for fi,remote_mtime in zip(remote_files,remote_mtimes):
                     #-- remote and local version of each input file
                     remote = [ftp.host,'grace','Level-1B','GFZ','AOD',DREL,Y,fi]
                     local = os.path.join(grace_dir,fi)
-                    ftp_mirror_file(fid1,ftp,remote,mt,local,
+                    ftp_mirror_file(ftp,remote,remote_mtime,local,
                         CLOBBER=CLOBBER,MODE=MODE)
 
     #-- close the ftp connection
     ftp.quit()
     #-- close log file and set permissions level to MODE
     if LOG:
-        fid1.close()
         os.chmod(os.path.join(base_dir,LOGFILE), MODE)
 
 #-- PURPOSE: pull file from a remote host checking if file exists locally
 #-- and if the remote file is newer than the local file
-def ftp_mirror_file(fid,ftp,remote_path,remote_mtime,local_file,
+def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
     CLOBBER=False,MODE=0o775):
     #-- path to remote file
     remote_file = posixpath.join(*remote_path[1:])
@@ -168,7 +170,7 @@ def ftp_mirror_file(fid,ftp,remote_path,remote_mtime,local_file,
     if TEST or CLOBBER:
         #-- Printing files transferred
         arg = (posixpath.join('ftp://',*remote_path),local_file,OVERWRITE)
-        fid.write('{0} -->\n\t{1}{2}\n\n'.format(*arg))
+        logging.info('{0} -->\n\t{1}{2}\n'.format(*arg))
         #-- copy remote file contents to local file
         with open(local_file, 'wb') as f:
             ftp.retrbinary('RETR {0}'.format(remote_file), f.write)

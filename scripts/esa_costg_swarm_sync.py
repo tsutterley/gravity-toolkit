@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 esa_costg_swarm_sync.py
-Written by Tyler Sutterley (09/2021)
+Written by Tyler Sutterley (10/2021)
 Syncs Swarm gravity field products from the ESA Swarm Science Server
     https://earth.esa.int/eogateway/missions/swarm/data
     https://www.esa.int/Applications/Observing_the_Earth/Swarm
@@ -12,6 +12,7 @@ CALLING SEQUENCE:
 COMMAND LINE OPTIONS:
     --help: list the command line options
     -D X, --directory X: working data directory
+    -r X, --release X: Data release to sync
     -t X, --timeout X: Timeout in seconds for blocking operations
     -l, --log: output log of files downloaded
     -L, --list: print files to be transferred, but do not execute transfer
@@ -28,6 +29,7 @@ PYTHON DEPENDENCIES:
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Written 09/2021
 """
 from __future__ import print_function
@@ -37,19 +39,20 @@ import re
 import os
 import io
 import json
+import time
 import shutil
+import logging
 import argparse
 import posixpath
 import lxml.etree
-import time
 import gravity_toolkit.utilities
 
 #-- PURPOSE: sync local Swarm files with ESA server
-def esa_costg_swarm_sync(DIRECTORY, TIMEOUT=None, LOG=False,
+def esa_costg_swarm_sync(DIRECTORY, RELEASE=None, TIMEOUT=None, LOG=False,
     LIST=False, CLOBBER=False, CHECKSUM=False, MODE=0o775):
 
     #-- local directory for exact data product
-    local_dir = os.path.join(DIRECTORY,'Swarm','RL01','GSM')
+    local_dir = os.path.join(DIRECTORY,'Swarm',RELEASE,'GSM')
     #-- check if directory exists and recursively create if not
     os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
 
@@ -59,11 +62,12 @@ def esa_costg_swarm_sync(DIRECTORY, TIMEOUT=None, LOG=False,
         #-- format: ESA_Swarm_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
         LOGFILE = 'ESA_Swarm_sync_{0}.log'.format(today)
-        fid1 = open(os.path.join(DIRECTORY,LOGFILE),'w')
-        print('ESA Swarm Sync Log ({0})'.format(today), file=fid1)
+        logging.basicConfig(file=os.path.join(DIRECTORY,LOGFILE),
+            level=logging.INFO)
+        logging.info('ESA Swarm Sync Log ({0})'.format(today))
     else:
         #-- standard output (terminal output)
-        fid1 = sys.stdout
+        logging.basicConfig(level=logging.INFO)
 
     #-- Swarm Science Server url
     #-- using the JSON api protocols to retrieve files
@@ -122,7 +126,7 @@ def esa_costg_swarm_sync(DIRECTORY, TIMEOUT=None, LOG=False,
             '?do=download&{0}'.format(parameters))
         local_file = os.path.join(local_dir,colnames[i])
         #-- check that file is not in file system unless overwriting
-        http_pull_file(fid1, remote_file, collastmod[i], local_file,
+        http_pull_file(remote_file, collastmod[i], local_file,
             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
             CHECKSUM=CHECKSUM, MODE=MODE)
         #-- output Swarm filenames to index
@@ -132,12 +136,11 @@ def esa_costg_swarm_sync(DIRECTORY, TIMEOUT=None, LOG=False,
 
     #-- close log file and set permissions level to MODE
     if LOG:
-        fid1.close()
         os.chmod(os.path.join(DIRECTORY,LOGFILE), MODE)
 
 #-- PURPOSE: pull file from a remote host checking if file exists locally
 #-- and if the remote file is newer than the local file
-def http_pull_file(fid, remote_file, remote_mtime, local_file, TIMEOUT=120,
+def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
     LIST=False, CLOBBER=False, CHECKSUM=False, MODE=0o775):
     #-- if file exists in file system: check if remote file is newer
     TEST = False
@@ -175,8 +178,8 @@ def http_pull_file(fid, remote_file, remote_mtime, local_file, TIMEOUT=120,
     #-- if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         #-- Printing files transferred
-        print('{0} --> '.format(remote_file), file=fid)
-        print('\t{0}{1}\n'.format(local_file,OVERWRITE), file=fid)
+        logging.info('{0} --> '.format(remote_file))
+        logging.info('\t{0}{1}\n'.format(local_file,OVERWRITE))
         #-- if executing copy command (not only printing the files)
         if not LIST:
             #-- chunked transfer encoding size
@@ -215,6 +218,10 @@ def main():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
+    #-- data release
+    parser.add_argument('--release','-r',
+        type=str, default='RL01', choices=['RL01'],
+        help='Data release to sync')
     #-- connection timeout
     parser.add_argument('--timeout','-t',
         type=int, default=360,
@@ -243,9 +250,9 @@ def main():
     #-- check internet connection before attempting to run program
     HOST = 'https://swarm-diss.eo.esa.int'
     if gravity_toolkit.utilities.check_connection(HOST):
-        esa_costg_swarm_sync(args.directory, TIMEOUT=args.timeout,
-            LOG=args.log, LIST=args.list, CLOBBER=args.clobber,
-            CHECKSUM=args.checksum, MODE=args.mode)
+        esa_costg_swarm_sync(args.directory, RELEASE=args.release,
+            TIMEOUT=args.timeout, LOG=args.log, LIST=args.list,
+            CLOBBER=args.clobber, CHECKSUM=args.checksum, MODE=args.mode)
 
 #-- run main program
 if __name__ == '__main__':

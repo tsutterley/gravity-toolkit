@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_read.py
-Written by Tyler Sutterley (02/2021)
+Written by Tyler Sutterley (10/2021)
 
 Reads spatial data from COARDS-compliant netCDF4 files
 
@@ -36,6 +36,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 02/2021: prevent warnings with python3 compatible regex strings
     Updated 12/2020: try/except for getting variable unit attributes
         attempt to get a standard set of attributes from each variable
@@ -75,6 +76,7 @@ import os
 import re
 import uuid
 import gzip
+import logging
 import netCDF4
 import zipfile
 import numpy as np
@@ -138,9 +140,8 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     dinput['attributes'] = {}
 
     #-- Output NetCDF file information
-    if VERBOSE:
-        print(fileID.filepath())
-        print(list(fileID.variables.keys()))
+    logging.info(fileID.filepath())
+    logging.info(list(fileID.variables.keys()))
 
     #-- mapping between output keys and netCDF4 variable names
     keys = ['lon','lat','data']
@@ -161,7 +162,7 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
             #-- try getting the attribute
             try:
                 dinput['attributes'][key][attr] = \
-                    getattr(fileID.variables[nckey],attr)
+                    fileID.variables[nckey].getncattr(attr)
             except (KeyError,ValueError,AttributeError):
                 pass
 
@@ -173,7 +174,7 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     #-- Global attribute (title of dataset)
     try:
         title, = [st for st in dir(fileID) if re.match(r'TITLE',st,re.I)]
-        dinput['attributes']['title'] = getattr(fileID, title)
+        dinput['attributes']['title'] = fileID.getncattr(title)
     except (ValueError, KeyError, AttributeError):
         pass
     #-- Closing the NetCDF file

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_icgem_costg_ftp.py
-Written by Tyler Sutterley (09/2021)
+Written by Tyler Sutterley (10/2021)
 Syncs GRACE/GRACE-FO/Swarm COST-G data from the GFZ International
     Centre for Global Earth Models (ICGEM)
 
@@ -20,6 +20,7 @@ COMMAND LINE OPTIONS:
          Grace
          Grace-FO
          Swarm
+    -r X, --release X: Data release to sync
     -t X, --timeout X: Timeout in seconds for blocking operations
     -L, --list: print files to be transferred, but do not execute transfer
     -l, --log: output log of files downloaded
@@ -37,6 +38,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Written 09/2021
 """
 from __future__ import print_function
@@ -48,6 +50,7 @@ import time
 import ftplib
 import shutil
 import hashlib
+import logging
 import argparse
 import posixpath
 import gravity_toolkit.utilities
@@ -65,8 +68,8 @@ def compile_regex_pattern(MISSION, DSET):
     return re.compile(regex, re.VERBOSE)
 
 #-- PURPOSE: sync local GRACE/GRACE-FO/Swarm files with GFZ ICGEM server
-def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], TIMEOUT=None, LOG=False,
-    LIST=False, CLOBBER=False, CHECKSUM=False, MODE=None):
+def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], RELEASE=None, TIMEOUT=None,
+    LOG=False, LIST=False, CLOBBER=False, CHECKSUM=False, MODE=None):
 
     #-- connect and login to GFZ ICGEM ftp server
     ftp = ftplib.FTP('icgem.gfz-potsdam.de', timeout=TIMEOUT)
@@ -91,21 +94,22 @@ def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], TIMEOUT=None, LOG=False,
         #-- format: GFZ_ICGEM_COST-G_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
         LOGFILE = 'GFZ_ICGEM_COST-G_sync_{0}.log'.format(today)
-        fid1 = open(os.path.join(DIRECTORY,LOGFILE),'w')
-        print('GFZ ICGEM COST-G Sync Log ({0})'.format(today), file=fid1)
+        logging.basicConfig(file=os.path.join(DIRECTORY,LOGFILE),
+            level=logging.INFO)
+        logging.info('GFZ ICGEM COST-G Sync Log ({0})'.format(today))
     else:
         #-- standard output (terminal output)
-        fid1 = sys.stdout
+        logging.basicConfig(level=logging.INFO)
 
     #-- find files for a particular mission
-    print('{0} Spherical Harmonics:'.format(MISSION),file=fid1)
+    logging.info('{0} Spherical Harmonics:'.format(MISSION))
 
     #-- Sync gravity field dealiasing products
     for ds in DSET[MISSION]:
         #-- print string of exact data product
-        print('{0}/{1}/{2}'.format(MISSION,'RL01',ds), file=fid1)
+        logging.info('{0}/{1}/{2}'.format(MISSION,RELEASE,ds))
         #-- local directory for exact data product
-        local_dir = os.path.join(DIRECTORY,LOCAL[MISSION],'RL01',ds)
+        local_dir = os.path.join(DIRECTORY,LOCAL[MISSION],RELEASE,ds)
         #-- check if directory exists and recursively create if not
         if not os.path.exists(local_dir):
             os.makedirs(local_dir,MODE)
@@ -131,7 +135,7 @@ def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], TIMEOUT=None, LOG=False,
             #-- remote and local versions of the file
             remote_path.append(fi)
             local_file = os.path.join(local_dir,fi)
-            ftp_mirror_file(fid1, ftp, remote_path, remote_mtime,
+            ftp_mirror_file(ftp, remote_path, remote_mtime,
                 local_file, TIMEOUT=TIMEOUT, LIST=LIST,
                 CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
             #-- remove the file from the remote path list
@@ -150,12 +154,11 @@ def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], TIMEOUT=None, LOG=False,
     ftp.quit()
     #-- close log file and set permissions level to MODE
     if LOG:
-        fid1.close()
         os.chmod(os.path.join(DIRECTORY,LOGFILE), MODE)
 
 #-- PURPOSE: pull file from a remote host checking if file exists locally
 #-- and if the remote file is newer than the local file
-def ftp_mirror_file(fid,ftp,remote_path,remote_mtime,local_file,
+def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
     TIMEOUT=None,LIST=False,CLOBBER=False,CHECKSUM=False,MODE=0o775):
     #-- if file exists in file system: check if remote file is newer
     TEST = False
@@ -190,7 +193,7 @@ def ftp_mirror_file(fid,ftp,remote_path,remote_mtime,local_file,
     if TEST or CLOBBER:
         #-- Printing files transferred
         arg=(posixpath.join('ftp://',*remote_path),local_file,OVERWRITE)
-        fid.write('{0} -->\n\t{1}{2}\n\n'.format(*arg))
+        logging.info('{0} -->\n\t{1}{2}\n'.format(*arg))
         #-- if executing copy command (not only printing the files)
         if not LIST:
             #-- copy file from ftp server or from bytesIO object
@@ -229,6 +232,10 @@ def main():
         type=str, nargs='+',
         default=['Grace','Grace-FO','Swarm'], choices=choices,
         help='Mission to sync between GRACE, GRACE-FO and Swarm')
+    #-- data release
+    parser.add_argument('--release','-r',
+        type=str, default='RL01', choices=['RL01'],
+        help='Data release to sync')
     #-- connection timeout
     parser.add_argument('--timeout','-t',
         type=int, default=360,
@@ -259,9 +266,9 @@ def main():
     if gravity_toolkit.utilities.check_ftp_connection(HOST):
         for m in args.mission:
             gfz_icgem_costg_ftp(args.directory, MISSION=m,
-                TIMEOUT=args.timeout, LIST=args.list, LOG=args.log,
-                CLOBBER=args.clobber, CHECKSUM=args.checksum,
-                MODE=args.mode)
+                RELEASE=args.release, TIMEOUT=args.timeout,
+                LIST=args.list, LOG=args.log, CLOBBER=args.clobber,
+                CHECKSUM=args.checksum, MODE=args.mode)
     else:
         raise RuntimeError('Check internet connection')
 

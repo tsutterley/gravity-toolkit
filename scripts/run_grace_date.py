@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 run_grace_date.py
-Written by Tyler Sutterley (09/2021)
+Written by Tyler Sutterley (10/2021)
 
 Wrapper program for running GRACE date and months programs
 
@@ -47,6 +47,7 @@ PROGRAM DEPENDENCIES:
     grace_months_index.py: creates a single file showing the GRACE dates
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 09/2021: using verbose option to track program progress
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 10/2020: use argparse to set command line parameters
@@ -67,11 +68,16 @@ from __future__ import print_function
 
 import sys
 import os
+import logging
 import argparse
 from gravity_toolkit.grace_date import grace_date
 from gravity_toolkit.grace_months_index import grace_months_index
 
 def run_grace_date(base_dir, PROC, DREL, VERBOSE=False, MODE=0o775):
+    #-- create logger
+    loglevel = logging.INFO if VERBOSE else logging.critical
+    logging.basicConfig(level=loglevel)
+
     #-- allocate python dictionaries for each processing center
     DSET = {}
     VALID = {}
@@ -98,13 +104,12 @@ def run_grace_date(base_dir, PROC, DREL, VERBOSE=False, MODE=0o775):
         for r in drel:
             #-- for number of data products
             for d in DSET[p][r]:
-                if VERBOSE:
-                    print('GRACE Date Program: {0} {1} {2}'.format(p,r,d))
+                logging.info('GRACE Date Program: {0} {1} {2}'.format(p,r,d))
                 #-- run program for processing center, data release and product
                 grace_date(base_dir,PROC=p,DREL=r,DSET=d,OUTPUT=True,MODE=MODE)
 
     #-- run grace months program for data releases
-    print('GRACE Months Program') if VERBOSE else None
+    logging.info('GRACE Months Program')
     grace_months_index(base_dir, DREL=DREL, MODE=MODE)
 
 
