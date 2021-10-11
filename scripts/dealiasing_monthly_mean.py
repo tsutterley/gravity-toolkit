@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 dealiasing_monthly_mean.py
-Written by Tyler Sutterley (07/2021)
+Written by Tyler Sutterley (10/2021)
 
 Reads GRACE/GRACE-FO AOD1B datafiles for a specific product and outputs monthly
     the mean for a specific GRACE/GRACE-FO processing center and data release
@@ -52,6 +52,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATED HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: can use default argument files to define options
         added option to output in spherical harmonic model (SHM) format
         remove choices for argparse processing centers
@@ -76,6 +77,7 @@ import os
 import re
 import gzip
 import time
+import logging
 import tarfile
 import argparse
 import numpy as np
@@ -94,6 +96,11 @@ def calc_julian_day(YEAR, DAY_OF_YEAR):
 #-- PURPOSE: reads the AOD1B data and outputs a monthly mean
 def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
     LMAX=None, DATAFORM=None, CLOBBER=False, VERBOSE=False, MODE=0o775):
+
+    #-- create logger
+    loglevel = logging.INFO if VERBOSE else logging.CRITICAL
+    logging.basicConfig(level=loglevel)
+
     #-- output data suffix
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
     #-- aod1b data products
@@ -254,7 +261,7 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
         #-- if there are new files, files to be rewritten or clobbered
         if COMPLETE and (TEST or CLOBBER):
             #-- if verbose: output information about the output file
-            print('{0} ({1})'.format(FILE,OVERWRITE)) if VERBOSE else None
+            logging.info('{0} ({1})'.format(FILE,OVERWRITE))
             #-- allocate for the mean output harmonics
             Ylms = harmonics(lmax=LMAX, mmax=LMAX)
             nt = len(julian_days_to_read)*n_time

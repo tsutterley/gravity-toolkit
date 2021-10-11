@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_grace_ftp.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (10/2021)
 Syncs GRACE/GRACE-FO data from the GFZ Information System and Data Center (ISDC)
 Syncs CSR/GFZ/JPL files for RL06 GAA/GAB/GAC/GAD/GSM
     GAA and GAB are GFZ/JPL only
@@ -37,6 +37,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 05/2021: added option for connection timeout (in seconds)
     Updated 01/2021: using utilities module to list files from ftp
     Updated 10/2020: use argparse to set command line parameters
@@ -56,6 +57,7 @@ import time
 import ftplib
 import shutil
 import hashlib
+import logging
 import argparse
 import posixpath
 import gravity_toolkit.utilities
@@ -125,18 +127,19 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC, DREL=[], MISSION=[], TIMEOUT=None,
         #-- format: GFZ_ISDC_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
         LOGFILE = 'GFZ_ISDC_sync_{0}.log'.format(today)
-        fid1 = open(os.path.join(DIRECTORY,LOGFILE),'w')
-        print('GFZ ISDC Sync Log ({0})'.format(today), file=fid1)
-        print('CENTERS={0}'.format(','.join(PROC)), file=fid1)
-        print('RELEASES={0}'.format(','.join(DREL)), file=fid1)
+        logging.basicConfig(file=os.path.join(DIRECTORY,LOGFILE),
+            level=logging.INFO)
+        logging.info('GFZ ISDC Sync Log ({0})'.format(today))
+        logging.info('CENTERS={0}'.format(','.join(PROC)))
+        logging.info('RELEASES={0}'.format(','.join(DREL)))
     else:
         #-- standard output (terminal output)
-        fid1 = sys.stdout
+        logging.basicConfig(level=logging.INFO)
 
     #-- GRACE/GRACE-FO DATA
     for mi in MISSION:
         #-- PROCESSING CENTERS (CSR, GFZ, JPL)
-        print('{0} L2 Global Spherical Harmonics:'.format(mi.upper()),file=fid1)
+        logging.info('{0} L2 Global Spherical Harmonics:'.format(mi.upper()))
         for pr in PROC:
             #-- DATA RELEASES (RL04, RL05, RL06)
             for rl in DREL:
@@ -152,7 +155,7 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC, DREL=[], MISSION=[], TIMEOUT=None,
                 #-- DATA PRODUCTS (GAC GAD GSM GAA GAB)
                 for ds in DSET[pr]:
                     #-- print string of exact data product
-                    print('{0}/{1}/{2}'.format(pr, drel_str, ds), file=fid1)
+                    logging.info('{0}/{1}/{2}'.format(pr, drel_str, ds))
                     #-- local directory for exact data product
                     local_dir = os.path.join(DIRECTORY, pr, rl, ds)
                     #-- check if directory exists and recursively create if not
@@ -168,7 +171,7 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC, DREL=[], MISSION=[], TIMEOUT=None,
                         #-- extract filename from regex object
                         remote_path = [ftp.host,mi,'Level-2',pr,drel_str,fi]
                         local_file = os.path.join(local_dir,fi)
-                        ftp_mirror_file(fid1, ftp, remote_path, remote_mtime,
+                        ftp_mirror_file(ftp, remote_path, remote_mtime,
                             local_file, TIMEOUT=TIMEOUT, LIST=LIST,
                             CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
 
@@ -188,12 +191,11 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC, DREL=[], MISSION=[], TIMEOUT=None,
     ftp.quit()
     #-- close log file and set permissions level to MODE
     if LOG:
-        fid1.close()
         os.chmod(os.path.join(DIRECTORY,LOGFILE), MODE)
 
 #-- PURPOSE: pull file from a remote host checking if file exists locally
 #-- and if the remote file is newer than the local file
-def ftp_mirror_file(fid,ftp,remote_path,remote_mtime,local_file,
+def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
     TIMEOUT=None,LIST=False,CLOBBER=False,CHECKSUM=False,MODE=0o775):
     #-- if file exists in file system: check if remote file is newer
     TEST = False
@@ -228,7 +230,7 @@ def ftp_mirror_file(fid,ftp,remote_path,remote_mtime,local_file,
     if TEST or CLOBBER:
         #-- Printing files transferred
         arg=(posixpath.join('ftp://',*remote_path),local_file,OVERWRITE)
-        fid.write('{0} -->\n\t{1}{2}\n\n'.format(*arg))
+        logging.info('{0} -->\n\t{1}{2}\n'.format(*arg))
         #-- if executing copy command (not only printing the files)
         if not LIST:
             #-- copy file from ftp server or from bytesIO object

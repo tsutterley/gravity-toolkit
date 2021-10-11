@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_read_stokes.py
-Written by Tyler Sutterley (02/2021)
+Written by Tyler Sutterley (10/2021)
 
 Reads spherical harmonic data from netCDF4 files
 
@@ -37,6 +37,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 02/2021: prevent warnings with python3 compatible regex strings
     Updated 12/2020: try/except for getting variable unit attributes
         add fallback for finding netCDF4 file within from zip files
@@ -74,6 +75,7 @@ import os
 import re
 import uuid
 import gzip
+import logging
 import netCDF4
 import zipfile
 import numpy as np
@@ -134,9 +136,8 @@ def ncdf_read_stokes(filename, DATE=True, VERBOSE=False, COMPRESSION=None):
     dinput['attributes'] = {}
 
     #-- Output NetCDF file information
-    if VERBOSE:
-        print(fileID.filepath())
-        print(list(fileID.variables.keys()))
+    logging.info(fileID.filepath())
+    logging.info(list(fileID.variables.keys()))
 
     #-- Getting the data from each NetCDF variable
     #-- converting NetCDF objects into numpy arrays
@@ -192,7 +193,7 @@ def ncdf_read_stokes(filename, DATE=True, VERBOSE=False, COMPRESSION=None):
     #-- Global attribute (title of dataset)
     try:
         title, = [st for st in dir(fileID) if re.match(r'TITLE',st,re.I)]
-        dinput['attributes']['title'] = getattr(fileID, title)
+        dinput['attributes']['title'] = fileID.getncattr(title)
     except:
         pass
 

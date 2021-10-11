@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (09/2021)
+Written by Tyler Sutterley (10/2021)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -29,6 +29,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 09/2021: added time-variable gravity data from gfc format
         use functions for converting to and from GRACE months
     Updated 08/2021: added from spherical harmonic model (SHM) format
@@ -63,6 +64,7 @@ import re
 import io
 import copy
 import gzip
+import logging
 import zipfile
 import numpy as np
 from gravity_toolkit.time import adjust_months,calendar_to_grace
@@ -80,13 +82,17 @@ class harmonics(object):
     Data class for reading, writing and processing spherical harmonic data
     """
     np.seterr(invalid='ignore')
-    def __init__(self, lmax=None, mmax=None):
+    def __init__(self, **kwargs):
+        #-- set default keyword arguments
+        kwargs.setdefault('lmax',None)
+        kwargs.setdefault('mmax',None)
+        #-- set default class attributes
         self.clm=None
         self.slm=None
         self.time=None
         self.month=None
-        self.lmax=lmax
-        self.mmax=mmax
+        self.lmax=kwargs['lmax']
+        self.mmax=kwargs['mmax']
         self.l=np.arange(self.lmax+1) if self.lmax else None
         self.m=np.arange(self.mmax+1) if self.mmax else None
         self.shape=None
@@ -130,7 +136,7 @@ class harmonics(object):
         kwargs.setdefault('verbose',False)
         kwargs.setdefault('compression',None)
         #-- open the ascii file and extract contents
-        print(self.filename) if kwargs['verbose'] else None
+        logging.info(self.filename)
         if (kwargs['compression'] == 'gzip'):
             #-- read input ascii data from gzip compressed file and split lines
             with gzip.open(self.filename,'r') as f:
@@ -281,9 +287,8 @@ class harmonics(object):
             Ylms = read_ICGEM_harmonics(self.filename,
                 TIDE=kwargs['tide'])
         #-- Output file information
-        if kwargs['verbose']:
-            print(self.filename)
-            print(list(Ylms.keys()))
+        logging.info(self.filename)
+        logging.info(list(Ylms.keys()))
         #-- copy variables for gravity model
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
@@ -318,9 +323,8 @@ class harmonics(object):
         #-- read data from SHM file
         Ylms = read_GRACE_harmonics(self.filename, self.lmax, **kwargs)
         #-- Output file information
-        if kwargs['verbose']:
-            print(self.filename)
-            print(list(Ylms.keys()))
+        logging.info(self.filename)
+        logging.info(list(Ylms.keys()))
         #-- copy variables for gravity model
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
@@ -332,7 +336,7 @@ class harmonics(object):
         self.update_dimensions()
         return self
 
-    def from_index(self, filename, format=None, date=True, sort=True):
+    def from_index(self, filename, **kwargs):
         """
         Read a harmonics object from an index of ascii, netCDF4 or HDF5 files
         Inputs: full path of index file to be read into a harmonics object
@@ -341,6 +345,10 @@ class harmonics(object):
             ascii, netCDF4, or HDF5 contains date information
             sort harmonics objects by date information
         """
+        #-- set default keyword arguments
+        kwargs.setdefault('format',None)
+        kwargs.setdefault('date',True)
+        kwargs.setdefault('sort',True)
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- file parser for reading index files
@@ -356,17 +364,20 @@ class harmonics(object):
         for i,f in enumerate(file_list):
             if (format == 'ascii'):
                 #-- ascii (.txt)
-                h.append(harmonics().from_ascii(os.path.expanduser(f),date=date))
+                h.append(harmonics().from_ascii(os.path.expanduser(f),
+                    date=kwargs['date']))
             elif (format == 'netCDF4'):
                 #-- netcdf (.nc)
-                h.append(harmonics().from_netCDF4(os.path.expanduser(f),date=date))
+                h.append(harmonics().from_netCDF4(os.path.expanduser(f),
+                    date=kwargs['date']))
             elif (format == 'HDF5'):
                 #-- HDF5 (.H5)
-                h.append(harmonics().from_HDF5(os.path.expanduser(f),date=date))
+                h.append(harmonics().from_HDF5(os.path.expanduser(f),
+                    date=kwargs['date']))
         #-- create a single harmonic object from the list
-        return self.from_list(h,date=date,sort=sort)
+        return self.from_list(h,date=kwargs['date'],sort=kwargs['sort'])
 
-    def from_list(self, object_list, date=True, sort=True, clear=False):
+    def from_list(self, object_list, **kwargs):
         """
         Build a sorted harmonics object from a list of other harmonics objects
         Inputs: list of harmonics object to be merged
@@ -375,10 +386,14 @@ class harmonics(object):
             sort harmonics objects by date information
             clear the harmonics list from memory
         """
+        #-- set default keyword arguments
+        kwargs.setdefault('date',True)
+        kwargs.setdefault('sort',True)
+        kwargs.setdefault('clear',False)
         #-- number of harmonic objects in list
         n = len(object_list)
         #-- indices to sort data objects if harmonics list contain dates
-        if date and sort:
+        if kwargs['date'] and kwargs['sort']:
             list_sort = np.argsort([d.time for d in object_list],axis=None)
         else:
             list_sort = np.arange(n)
@@ -394,26 +409,26 @@ class harmonics(object):
         #-- create list of files
         self.filename = []
         #-- output dates
-        if date:
+        if kwargs['date']:
             self.time = np.zeros((n))
             self.month = np.zeros((n),dtype=np.int64)
         #-- for each indice
         for t,i in enumerate(list_sort):
             self.clm[:,:,t] = object_list[i].clm[:self.lmax+1,:self.mmax+1]
             self.slm[:,:,t] = object_list[i].slm[:self.lmax+1,:self.mmax+1]
-            if date:
+            if kwargs['date']:
                 self.time[t] = np.atleast_1d(object_list[i].time)
                 self.month[t] = np.atleast_1d(object_list[i].month)
             #-- append filename to list
             if getattr(object_list[i], 'filename'):
                 self.filename.append(object_list[i].filename)
         #-- adjust months to fix special cases if necessary
-        if date:
+        if kwargs['date']:
             self.month = adjust_months(self.month)
         #-- assign shape and ndim attributes
         self.update_dimensions()
         #-- clear the input list to free memory
-        if clear:
+        if kwargs['clear']:
             object_list = None
         #-- return the single harmonic object
         return self
@@ -448,7 +463,7 @@ class harmonics(object):
             #-- spherical harmonic model
             return harmonics().from_SHM(filename, self.lmax, **kwargs)
 
-    def from_dict(self, d):
+    def from_dict(self, d, **kwargs):
         """
         Convert a dict object to a harmonics object
         Inputs: dictionary object to be converted
@@ -477,7 +492,7 @@ class harmonics(object):
         self.filename = os.path.expanduser(filename)
         #-- set default verbosity
         kwargs.setdefault('verbose',False)
-        print(self.filename) if kwargs['verbose'] else None
+        logging.info(self.filename)
         #-- open the output file
         fid = open(self.filename, 'w')
         if date:

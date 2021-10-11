@@ -33,7 +33,7 @@ scripts.append(os.path.join('gravity_toolkit','grace_date.py'))
 scripts.append(os.path.join('gravity_toolkit','grace_months_index.py'))
 
 setup(
-    name='read-GRACE-harmonics',
+    name='gravity-toolkit',
     version=version,
     description=description,
     long_description=long_description,

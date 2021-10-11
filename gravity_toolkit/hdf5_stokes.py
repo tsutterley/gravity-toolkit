@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_stokes.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (10/2021)
 
 Writes spherical harmonic coefficients to HDF5 files
 
@@ -36,6 +36,7 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 12/2020: added REFERENCE option to set file attribute
     Updated 07/2020: added function docstrings
@@ -69,6 +70,7 @@ from __future__ import print_function, division
 
 import time
 import h5py
+import logging
 import numpy as np
 
 def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
@@ -199,9 +201,8 @@ def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
     fileID.attrs['date_created'] = time.strftime('%Y-%m-%d',time.localtime())
 
     #-- Output HDF5 structure information
-    if VERBOSE:
-        print(FILENAME)
-        print(list(fileID.keys()))
+    logging.info(FILENAME)
+    logging.info(list(fileID.keys()))
 
     #-- Closing the HDF5 file
     fileID.close()

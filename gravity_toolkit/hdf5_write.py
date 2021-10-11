@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_write.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (10/2021)
 
 Writes spatial data to HDF5 files
 
@@ -36,6 +36,7 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 12/2020: added REFERENCE option to set file attribute
     Updated 07/2020: added function docstrings
@@ -64,6 +65,7 @@ from __future__ import print_function
 
 import time
 import h5py
+import logging
 import numpy as np
 
 def hdf5_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
@@ -152,9 +154,8 @@ def hdf5_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     fileID.attrs['date_created'] = time.strftime('%Y-%m-%d',time.localtime())
 
     #-- Output HDF5 structure information
-    if VERBOSE:
-        print(FILENAME)
-        print(list(fileID.keys()))
+    logging.info(FILENAME)
+    logging.info(list(fileID.keys()))
 
     #-- Closing the HDF5 file
     fileID.close()

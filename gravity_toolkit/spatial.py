@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (09/2021)
+Written by Tyler Sutterley (10/2021)
 
 Data class for reading, writing and processing spatial data
 
@@ -24,6 +24,7 @@ PROGRAM DEPENDENCIES:
     hdf5_read.py: reads spatial data from HDF5
 
 UPDATE HISTORY:
+    Updated 10/2021: using python logging for handling verbose output
     Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: add parser object for removing commented or empty lines
@@ -50,6 +51,7 @@ import re
 import io
 import copy
 import gzip
+import logging
 import zipfile
 import numpy as np
 from gravity_toolkit.time import adjust_months, calendar_to_grace
@@ -63,19 +65,25 @@ class spatial(object):
     Data class for reading, writing and processing spatial data
     """
     np.seterr(invalid='ignore')
-    def __init__(self, spacing=[None,None], nlat=None, nlon=None,
-        extent=[None]*4, fill_value=None):
+    def __init__(self, **kwargs):
+        #-- set default keyword arguments
+        kwargs.setdefault('spacing',[None,None])
+        kwargs.setdefault('nlat',None)
+        kwargs.setdefault('nlon',None)
+        kwargs.setdefault('extent',[None]*4)
+        kwargs.setdefault('fill_value',None)
+        #-- set default class attributes
         self.data=None
         self.mask=None
         self.lon=None
         self.lat=None
         self.time=None
         self.month=None
-        self.fill_value=fill_value
+        self.fill_value=kwargs['fill_value']
         self.attributes=dict()
-        self.extent=extent
-        self.spacing=spacing
-        self.shape=[nlat,nlon,None]
+        self.extent=kwargs['extent']
+        self.spacing=kwargs['spacing']
+        self.shape=[kwargs['nlat'],kwargs['nlon'],None]
         self.ndim=None
         self.filename=None
 
@@ -117,7 +125,7 @@ class spatial(object):
         kwargs.setdefault('columns',['lon','lat','data','time'])
         kwargs.setdefault('header',0)
         #-- open the ascii file and extract contents
-        print(self.filename) if kwargs['verbose'] else None
+        logging.info(self.filename)
         if (kwargs['compression'] == 'gzip'):
             #-- read input ascii data from gzip compressed file and split lines
             with gzip.open(self.filename,'r') as f:
@@ -291,7 +299,7 @@ class spatial(object):
             #-- HDF5 (.H5)
             return spatial().from_HDF5(filename, date=date, **kwargs)
 
-    def from_index(self, filename, format=None, date=True, sort=True):
+    def from_index(self, filename, **kwargs):
         """
         Read a spatial object from an index of netCDF4 or HDF5 files
         Inputs: full path of index file to be read into a spatial object
@@ -300,6 +308,10 @@ class spatial(object):
             netCDF4, or HDF5 contains date information
             sort spatial objects by date information
         """
+        #-- set default keyword arguments
+        kwargs.setdefault('format',None)
+        kwargs.setdefault('date',True)
+        kwargs.setdefault('sort',True)
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- file parser for reading index files
@@ -315,17 +327,20 @@ class spatial(object):
         for i,f in enumerate(file_list):
             if (format == 'ascii'):
                 #-- netcdf (.nc)
-                s.append(spatial().from_ascii(os.path.expanduser(f),date=date))
+                s.append(spatial().from_ascii(os.path.expanduser(f),
+                    date=kwargs['date']))
             elif (format == 'netCDF4'):
                 #-- netcdf (.nc)
-                s.append(spatial().from_netCDF4(os.path.expanduser(f),date=date))
+                s.append(spatial().from_netCDF4(os.path.expanduser(f),
+                    date=kwargs['date']))
             elif (format == 'HDF5'):
                 #-- HDF5 (.H5)
-                s.append(spatial().from_HDF5(os.path.expanduser(f),date=date))
+                s.append(spatial().from_HDF5(os.path.expanduser(f),
+                    date=kwargs['date']))
         #-- create a single spatial object from the list
-        return self.from_list(s,date=date,sort=sort)
+        return self.from_list(s,date=kwargs['date'],sort=kwargs['sort'])
 
-    def from_list(self, object_list, date=True, sort=True, clear=False):
+    def from_list(self, object_list, **kwargs):
         """
         Build a sorted spatial object from a list of other spatial objects
         Inputs: list of spatial object to be merged
@@ -334,10 +349,14 @@ class spatial(object):
             sort spatial objects by date information
             clear the spatial list from memory
         """
+        #-- set default keyword arguments
+        kwargs.setdefault('date',True)
+        kwargs.setdefault('sort',True)
+        kwargs.setdefault('clear',False)
         #-- number of spatial objects in list
         n = len(object_list)
         #-- indices to sort data objects if spatial list contain dates
-        if date and sort:
+        if kwargs['date'] and kwargs['sort']:
             list_sort = np.argsort([d.time for d in object_list],axis=None)
         else:
             list_sort = np.arange(n)
@@ -355,14 +374,14 @@ class spatial(object):
         self.filename = []
         self.attributes = []
         #-- output dates
-        if date:
+        if kwargs['date']:
             self.time = np.zeros((n))
             self.month = np.zeros((n),dtype=np.int64)
         #-- for each indice
         for t,i in enumerate(list_sort):
             self.data[:,:,t] = object_list[i].data[:,:].copy()
             self.mask[:,:,t] |= object_list[i].mask[:,:]
-            if date:
+            if kwargs['date']:
                 self.time[t] = np.atleast_1d(object_list[i].time)
                 self.month[t] = np.atleast_1d(object_list[i].month)
             #-- append filename to list
@@ -372,18 +391,18 @@ class spatial(object):
             if getattr(object_list[i], 'attributes'):
                 self.attributes.append(object_list[i].attributes)
         #-- adjust months to fix special cases if necessary
-        if date:
+        if kwargs['date']:
             self.month = adjust_months(self.month)
         #-- update the dimensions
         self.update_dimensions()
         self.update_mask()
         #-- clear the input list to free memory
-        if clear:
+        if kwargs['clear']:
             object_list = None
         #-- return the single spatial object
         return self
 
-    def from_dict(self, d):
+    def from_dict(self, d, **kwargs):
         """
         Convert a dict object to a spatial object
         Inputs: dictionary object to be converted
@@ -414,7 +433,7 @@ class spatial(object):
         self.filename = os.path.expanduser(filename)
         #-- set default verbosity
         kwargs.setdefault('verbose',False)
-        print(self.filename) if kwargs['verbose'] else None
+        logging.info(self.filename)
         #-- open the output file
         fid = open(self.filename, 'w')
         if date:
