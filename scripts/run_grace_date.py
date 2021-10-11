@@ -75,7 +75,7 @@ from gravity_toolkit.grace_months_index import grace_months_index
 
 def run_grace_date(base_dir, PROC, DREL, VERBOSE=False, MODE=0o775):
     #-- create logger
-    loglevel = logging.INFO if VERBOSE else logging.critical
+    loglevel = logging.INFO if verbose else logging.CRITICAL
     logging.basicConfig(level=loglevel)
 
     #-- allocate python dictionaries for each processing center

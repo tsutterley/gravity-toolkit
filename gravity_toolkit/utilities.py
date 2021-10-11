@@ -336,7 +336,7 @@ def from_ftp(HOST,username=None,password=None,timeout=None,local=None,
     remote_buffer: BytesIO representation of file
     """
     #-- create logger
-    loglevel = logging.INFO if verbose else logging.critical
+    loglevel = logging.INFO if verbose else logging.CRITICAL
     logging.basicConfig(stream=fid, level=loglevel)
     #-- try downloading from ftp
     try:
@@ -481,7 +481,7 @@ def from_http(HOST,timeout=None,context=ssl.SSLContext(),local=None,hash='',
     remote_buffer: BytesIO representation of file
     """
     #-- create logger
-    loglevel = logging.INFO if verbose else logging.critical
+    loglevel = logging.INFO if verbose else logging.CRITICAL
     logging.basicConfig(stream=fid, level=loglevel)
     #-- try downloading from http
     try:
@@ -687,7 +687,7 @@ def from_drive(HOST,username=None,password=None,build=True,timeout=None,
     remote_buffer: BytesIO representation of file
     """
     #-- create logger
-    loglevel = logging.INFO if verbose else logging.critical
+    loglevel = logging.INFO if verbose else logging.CRITICAL
     logging.basicConfig(stream=fid, level=loglevel)
     #-- use netrc credentials
     if build and not (username or password):

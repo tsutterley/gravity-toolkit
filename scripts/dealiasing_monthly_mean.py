@@ -98,7 +98,7 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
     LMAX=None, DATAFORM=None, CLOBBER=False, VERBOSE=False, MODE=0o775):
 
     #-- create logger
-    loglevel = logging.INFO if VERBOSE else logging.critical
+    loglevel = logging.INFO if verbose else logging.CRITICAL
     logging.basicConfig(level=loglevel)
 
     #-- output data suffix

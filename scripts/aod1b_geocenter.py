@@ -91,7 +91,7 @@ def aod1b_geocenter(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
     """
 
     #-- create logger
-    loglevel = logging.INFO if VERBOSE else logging.critical
+    loglevel = logging.INFO if verbose else logging.CRITICAL
     logging.basicConfig(level=loglevel)
 
     #-- compile regular expressions operators for file dates
