@@ -131,7 +131,9 @@ Command Line Options
     * ``'ascii'``
     * ``'netCDF4'``
     * ``'HDF5'``
-    * ``'index'``: index file containing monthly files in data format
+    * ``'index-ascii'``
+    * ``'index-netCDF4'``
+    * ``'index-HDF5'``
 - ``--redistribute-removed``: redistribute removed mass fields over the ocean
 - ``--log``: Output log file for job
 - ``-V``, ``--verbose``: verbose output of processing run

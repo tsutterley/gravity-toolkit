@@ -73,15 +73,28 @@ COMMAND LINE OPTIONS:
         GSFC: use values from GSFC
     --mean-file X: GRACE/GRACE-FO mean file to remove from the harmonic data
     --mean-format X: Input data format for GRACE/GRACE-FO mean file
+        ascii
+        netCDF4
+        HDF5
+        gfc
     --mask X: Land-sea mask for redistributing mascon mass and land water flux
     --mascon-file X: index file of mascons spherical harmonics
     --mascon-format X: input format for mascon files
+        ascii
+        netCDF4
+        HDF5
     --redistribute-mascons: redistribute mascon mass over the ocean
     --fit-method X: method for fitting sensitivity kernel to harmonics
         1: mass coefficients
         2: geoid coefficients
     --remove-file X: Monthly files to be removed from the GRACE/GRACE-FO data
     --remove-format X: Input data format for files to be removed
+        ascii
+        netCDF4
+        HDF5
+        index-ascii
+        index-netCDF4
+        index-HDF5
     --redistribute-removed: redistribute removed mass fields over the ocean
     --reconstruct-file X: reconstructed mascon time series file to be removed
     --remove-reconstruct: remove reconstructed mascon time series fields
@@ -144,6 +157,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 10/2021: using python logging for handling verbose output
+        fix choices for setting input format of the removed files
     Updated 08/2021: reorganize GRACE/GRACE-FO file import
         add option for setting input format of the mascon files
     Updated 07/2021: simplified file imports using wrappers in harmonics
@@ -930,8 +944,11 @@ def main():
     parser.add_argument('--remove-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='+',
         help='Monthly files to be removed from the GRACE/GRACE-FO data')
+    choices = []
+    choices.extend(['ascii','netCDF4','HDF5'])
+    choices.extend(['index-ascii','index-netCDF4','index-HDF5'])
     parser.add_argument('--remove-format',
-        type=str, nargs='+', choices=['ascii','netCDF4','HDF5','index'],
+        type=str, nargs='+', choices=choices,
         help='Input data format for files to be removed')
     parser.add_argument('--redistribute-removed',
         default=False, action='store_true',

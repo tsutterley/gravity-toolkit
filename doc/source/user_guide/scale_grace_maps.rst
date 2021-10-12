@@ -124,7 +124,9 @@ Command Line Options
     * ``'ascii'``
     * ``'netCDF4'``
     * ``'HDF5'``
-    * ``'index'``: index file containing monthly files in data format
+    * ``'index-ascii'``
+    * ``'index-netCDF4'``
+    * ``'index-HDF5'``
 - ``--redistribute-removed``: redistribute removed mass fields over the ocean
 - ``--scale-file X``: scaling factor file
 - ``--error-file X``: scaling factor error file

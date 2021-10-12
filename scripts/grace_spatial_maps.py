@@ -93,9 +93,19 @@ COMMAND LINE OPTIONS:
     --bounds X: non-global grid bounding box (minlon,maxlon,minlat,maxlat)
     --mean-file X: GRACE/GRACE-FO mean file to remove from the harmonic data
     --mean-format X: Input data format for GRACE/GRACE-FO mean file
+        ascii
+        netCDF4
+        HDF5
+        gfc
     --mask X: Land-sea mask for redistributing land water flux
     --remove-file X: Monthly files to be removed from the GRACE/GRACE-FO data
     --remove-format X: Input data format for files to be removed
+        ascii
+        netCDF4
+        HDF5
+        index-ascii
+        index-netCDF4
+        index-HDF5
     --redistribute-removed: redistribute removed mass fields over the ocean
     --log: Output log of files created for each job
     -V, --verbose: verbose output of processing run
@@ -142,6 +152,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 10/2021: using python logging for handling verbose output
+        add more choices for setting input format of the removed files
     Updated 07/2021: simplified file imports using wrappers in harmonics
         added path to default land-sea mask for mass redistribution
         remove choices for argparse processing centers
@@ -378,12 +389,16 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
             REMOVE_FORMAT = REMOVE_FORMAT*len(REMOVE_FILES)
         #-- for each file to be removed
         for REMOVE_FILE,REMOVEFORM in zip(REMOVE_FILES,REMOVE_FORMAT):
-            if (REMOVEFORM == 'index'):
+            if REMOVEFORM in ('ascii','netCDF4','HDF5'):
+                #-- ascii (.txt)
+                #-- netCDF4 (.nc)
+                #-- HDF5 (.H5)
+                Ylms = harmonics().from_file(REMOVE_FILE, format=REMOVEFORM)
+            elif REMOVEFORM in ('index-ascii','index-netCDF4','index-HDF5'):
+                #-- read from index file
+                _,removeform = REMOVEFORM.split('-')
                 #-- index containing files in data format
-                Ylms = harmonics().from_index(REMOVE_FILE, DATAFORM)
-            else:
-                #-- individual file in ascii, netCDF4 or HDF5 formats
-                Ylms = harmonics().from_file(REMOVE_FILE, format=DATAFORM)
+                Ylms = harmonics().from_index(REMOVE_FILE, format=removeform)
             #-- reduce to GRACE/GRACE-FO months and truncate to degree and order
             Ylms = Ylms.subset(GRACE_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
             #-- distribute removed Ylms uniformly over the ocean
@@ -718,8 +733,11 @@ def main():
     parser.add_argument('--remove-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='+',
         help='Monthly files to be removed from the GRACE/GRACE-FO data')
+    choices = []
+    choices.extend(['ascii','netCDF4','HDF5'])
+    choices.extend(['index-ascii','index-netCDF4','index-HDF5'])
     parser.add_argument('--remove-format',
-        type=str, nargs='+', choices=['ascii','netCDF4','HDF5','index'],
+        type=str, nargs='+', choices=choices,
         help='Input data format for files to be removed')
     parser.add_argument('--redistribute-removed',
         default=False, action='store_true',
