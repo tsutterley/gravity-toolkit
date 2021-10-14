@@ -62,7 +62,7 @@ def esa_costg_swarm_sync(DIRECTORY, RELEASE=None, TIMEOUT=None, LOG=False,
         #-- format: ESA_Swarm_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
         LOGFILE = 'ESA_Swarm_sync_{0}.log'.format(today)
-        logging.basicConfig(file=os.path.join(DIRECTORY,LOGFILE),
+        logging.basicConfig(filename=os.path.join(DIRECTORY,LOGFILE),
             level=logging.INFO)
         logging.info('ESA Swarm Sync Log ({0})'.format(today))
     else:

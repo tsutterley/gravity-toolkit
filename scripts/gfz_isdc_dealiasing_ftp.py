@@ -67,7 +67,7 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, MONTHS=None, TAR=False,
         #-- format: GFZ_AOD1B_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
         LOGFILE = 'GFZ_AOD1B_sync_{0}.log'.format(today)
-        logging.basicConfig(file=os.path.join(base_dir,LOGFILE),
+        logging.basicConfig(filename=os.path.join(base_dir,LOGFILE),
             level=logging.INFO)
         logging.info('GFZ AOD1b Sync Log ({0})'.format(today))
     else:

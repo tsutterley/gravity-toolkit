@@ -66,7 +66,7 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
         #-- format: ITSG_GRAZ_GRACE_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
         LOGFILE = 'ITSG_GRAZ_GRACE_sync_{0}.log'.format(today)
-        logging.basicConfig(file=os.path.join(DIRECTORY,LOGFILE),
+        logging.basicConfig(filename=os.path.join(DIRECTORY,LOGFILE),
             level=logging.INFO)
         logging.info('ITSG GRAZ GRACE Sync Log ({0})'.format(today))
         logging.info('Release: {0}'.format(RELEASE))

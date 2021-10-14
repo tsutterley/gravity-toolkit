@@ -245,7 +245,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
         #-- format: PODAAC_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
         LOGFILE = 'PODAAC_sync_{0}.log'.format(today)
-        logging.basicConfig(file=os.path.join(DIRECTORY,LOGFILE),
+        logging.basicConfig(filename=os.path.join(DIRECTORY,LOGFILE),
             level=logging.INFO)
         logging.info('PO.DAAC Sync Log ({0})'.format(today))
         logging.info('CENTERS={0}'.format(','.join(PROC)))
