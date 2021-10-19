@@ -43,10 +43,21 @@ def test_gfz_ftp_download_and_read():
 
 #-- PURPOSE: Download a GRACE-FO COST-G file from the GFZ ICGEM
 def test_gfz_icgem_costg_download_and_read():
-    HOST=['icgem.gfz-potsdam.de','02_COST-G','Grace-FO',
-        'GSM-2_2018152-2018181_GRFO_COSTG_BF01_0100.gfc']
-    #-- download and read as virtual file object
-    FILE = gravity_toolkit.utilities.from_ftp(HOST,verbose=True)
+    #-- attempt to download from ftp server
+    try:
+        HOST=['icgem.gfz-potsdam.de','02_COST-G','Grace-FO',
+            'GSM-2_2018152-2018181_GRFO_COSTG_BF01_0100.gfc']
+        FILE = gravity_toolkit.utilities.from_ftp(HOST,verbose=True)
+    except:
+        pass
+    #-- attempt to download from http server
+    try:
+        HOST=['http://icgem.gfz-potsdam.de','getseries','02_COST-G',
+            'Grace-FO','GSM-2_2018152-2018181_GRFO_COSTG_BF01_0100.gfc']
+        FILE = gravity_toolkit.utilities.from_http(HOST,verbose=True)
+    except:
+        return
+    #-- read as virtual file object
     Ylms = read_GRACE_harmonics(FILE, 60)
     keys = ['time', 'start', 'end', 'clm', 'slm', 'eclm', 'eslm', 'header']
     test = dict(start=2458270.5, end=2458299.5)
@@ -63,7 +74,8 @@ def test_esa_swarm_download_and_read():
         posixpath.join('swarm','Level2longterm','EGF',swarm_file)})
     remote_file = [HOST,'?do=download&{0}'.format(parameters)]
     #-- download and read as virtual file object
-    gravity_toolkit.utilities.from_http(remote_file,local=swarm_file,verbose=True)
+    gravity_toolkit.utilities.from_http(remote_file,
+        local=swarm_file,verbose=True)
     Ylms = read_gfc_harmonics(swarm_file)
     keys = ['time', 'start', 'end', 'clm', 'slm', 'eclm', 'eslm']
     test = dict(start=2456627.5, end=2456658.499988426)

@@ -11,7 +11,7 @@ UPDATE HISTORY:
     Updated 10/2021: using python logging for handling verbose output
     Updated 09/2021: added generic list from Apache http server
     Updated 07/2021: added unique filename opener for log files
-    Updated 06/2021: add parser for converting file files to arguments
+    Updated 06/2021: add parser for converting file lines to arguments
     Updated 05/2021: download GFZ satellite laser ranging and GravIS files
     Updated 04/2021: download CSR SLR figure axis and azimuthal dependence files
     Updated 03/2021: added sha1 option for retrieving file hashes

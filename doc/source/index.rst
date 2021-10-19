@@ -52,6 +52,7 @@ missions
     user_guide/hdf5_write.md
     user_guide/legendre.rst
     user_guide/legendre_polynomials.rst
+    user_guide/mascons.rst
     user_guide/ncdf_read.md
     user_guide/ncdf_read_stokes.md
     user_guide/ncdf_stokes.md

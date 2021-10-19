@@ -15,6 +15,7 @@ the GRACE/GRACE-FO missions and to support their science applications
 
 Documentation is available at https://read-grace-harmonics.readthedocs.io
 """
+import gravity_toolkit.mascons
 import gravity_toolkit.time
 import gravity_toolkit.utilities
 import gravity_toolkit.version
