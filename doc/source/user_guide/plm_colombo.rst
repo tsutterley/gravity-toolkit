@@ -2,7 +2,7 @@
 plm_colombo.py
 ==============
 
-- Computes fully-normalized associated Legendre Polynomials and their first derivative for a vector of x values using a standard forward column method
+- Computes fully-normalized associated Legendre Polynomials and their first derivative for a vector of ``x`` values using a standard forward column method
 - Uses the [Colombo1981]_ recursion relation listed in [Losch2003]_ and Holmes2002]_
 
 Calling Sequence

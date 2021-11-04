@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 legendre.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (11/2021)
 Computes associated Legendre functions of degree l evaluated for elements x
 l must be a scalar integer and x must contain real values ranging -1 <= x <= 1
 Parallels the MATLAB legendre function
@@ -30,6 +30,7 @@ REFERENCES:
     J. A. Jacobs, "Geomagnetism", Academic Press, 1987, Ch.4.
 
 UPDATE HISTORY:
+    Updated 11/2021: modify normalization to prevent high degree overflows
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: modify case with underflow
     Updated 09/2020: verify dimensions of x variable
@@ -39,9 +40,8 @@ UPDATE HISTORY:
     Written 08/2016
 """
 import numpy as np
-import scipy.special
 
-def legendre(l,x,NORMALIZE=False):
+def legendre(l, x, NORMALIZE=False):
     """
     Computes associated Legendre functions of degree l
 
@@ -58,6 +58,8 @@ def legendre(l,x,NORMALIZE=False):
     -------
     Pl: legendre polynomials of degree l for orders 0 to l
     """
+    #-- verify integer
+    l = np.int64(l)
     #-- verify dimensions
     x = np.atleast_1d(x).flatten()
     #-- size of the x array
@@ -135,22 +137,20 @@ def legendre(l,x,NORMALIZE=False):
         s0, = np.nonzero(s == 0)
         Pl[0,s0] = x[s0]**l
 
-    #-- Calculate the unnormalized Legendre functions by multiplying each row
-    #-- by: sqrt((l+m)!/(l-m)!) == sqrt(prod(n-m+1:n+m))
-    #-- following Abramowitz and Stegun
-    for m in range(1,l):
-        Pl[m,:] = np.prod(rootl[l-m+1:l+m+1])*Pl[m,:]
-
-    #-- sectoral case (l = m) should be done separately to handle 0!
-    Pl[l,:] = np.prod(rootl[1:])*Pl[l,:]
-
     #-- calculate Fully Normalized Associated Legendre functions
     if NORMALIZE:
         norm = np.zeros((l+1))
         norm[0] = np.sqrt(2.0*l+1)
         m = np.arange(1,l+1)
-        norm[1:] = (-1)**m*np.sqrt(2.0*(2.0*l+1.0)*scipy.special.factorial(l-m)/
-            scipy.special.factorial(l+m))
+        norm[1:] = (-1)**m*np.sqrt(2.0*(2.0*l+1.0))
         Pl *= np.kron(np.ones((1,nx)), norm[:,np.newaxis])
+    else:
+        #-- Calculate the unnormalized Legendre functions by multiplying each row
+        #-- by: sqrt((l+m)!/(l-m)!) == sqrt(prod(n-m+1:n+m))
+        #-- following Abramowitz and Stegun
+        for m in range(1,l):
+            Pl[m,:] *= np.prod(rootl[l-m+1:l+m+1])
+        #-- sectoral case (l = m) should be done separately to handle 0!
+        Pl[l,:] *= np.prod(rootl[1:])
 
     return Pl

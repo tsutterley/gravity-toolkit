@@ -2,7 +2,7 @@
 plm_mohlenkamp.py
 =================
 
-- Computes fully-normalized associated Legendre Polynomials for a vector of x values using Martin Mohlenkamp's recursion relation [Mohlenkamp2016]_
+- Computes fully-normalized associated Legendre Polynomials for a vector of ``x`` values using Martin Mohlenkamp's recursion relation [Mohlenkamp2016]_
 - Derived from [Szego1939]_ recurrence formula for Jacobi Polynomials
 
 
