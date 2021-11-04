@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_stokes.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (11/2021)
 
 Writes spherical harmonic coefficients to netCDF4 files
 
@@ -27,7 +27,6 @@ OPTIONS:
     TITLE: title attribute of dataset
     REFERENCE: reference attribute of dataset
     CLOBBER: will overwrite an existing netCDF4 file
-    VERBOSE: will print to screen the netCDF4 structure parameters
     DATE: harmonics have date information
 
 PYTHON DEPENDENCIES:
@@ -36,6 +35,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 11/2021: use remapped dictionary for filling HDF5 variables
     Updated 10/2021: using python logging for handling verbose output
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 12/2020: added REFERENCE option to set file attribute
@@ -74,10 +74,7 @@ import logging
 import netCDF4
 import numpy as np
 
-def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
-    UNITS='Geodesy_Normalization', TIME_UNITS=None, TIME_LONGNAME=None,
-    MONTHS_NAME='month', MONTHS_UNITS='number', MONTHS_LONGNAME='GRACE_month',
-    TITLE=None, REFERENCE=None, DATE=True, CLOBBER=True, VERBOSE=False):
+def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
     """
     Writes spherical harmonic coefficients to netCDF4 files
 
@@ -102,14 +99,25 @@ def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
     TITLE: title attribute of dataset
     REFERENCE: reference attribute of dataset
     CLOBBER: will overwrite an existing netCDF4 file
-    VERBOSE: will print to screen the netCDF4 structure parameters
     DATE: harmonics have date information
     """
+    #-- set default keyword arguments
+    kwargs.setdefault('FILENAME',None)
+    kwargs.setdefault('UNITS','Geodesy_Normalization')
+    kwargs.setdefault('TIME_UNITS',None)
+    kwargs.setdefault('TIME_LONGNAME',None)
+    kwargs.setdefault('MONTHS_NAME','month')
+    kwargs.setdefault('MONTHS_UNITS','number')
+    kwargs.setdefault('MONTHS_LONGNAME','GRACE_month')
+    kwargs.setdefault('TITLE',None)
+    kwargs.setdefault('REFERENCE',None)
+    kwargs.setdefault('DATE',True)
+    kwargs.setdefault('CLOBBER',True)
 
     #-- setting NetCDF clobber attribute
-    clobber = 'w' if CLOBBER else 'a'
+    clobber = 'w' if kwargs['CLOBBER'] else 'a'
     #-- opening netCDF file for writing
-    fileID = netCDF4.Dataset(FILENAME, clobber, format="NETCDF4")
+    fileID = netCDF4.Dataset(kwargs['FILENAME'], clobber, format="NETCDF4")
 
     #-- Maximum spherical harmonic degree (LMAX) and order (MMAX)
     LMAX = np.max(linp)
@@ -118,43 +126,46 @@ def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
     #-- taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
     n_harm = (LMAX**2 + 3*LMAX - (LMAX-MMAX)**2 - (LMAX-MMAX))//2 + 1
 
+    #-- dictionary with output variables
+    output = {}
+    #-- restructured degree and order
+    output['l'] = np.zeros((n_harm,), dtype=np.int32)
+    output['m'] = np.zeros((n_harm,), dtype=np.int32)
     #-- Restructuring output matrix to array format
     #-- will reduce matrix size and insure compatibility between platforms
-    if DATE:
-        if (np.ndim(tinp) == 0):
-            n_time = 1
-            clm = np.zeros((n_harm))
-            slm = np.zeros((n_harm))
+    if kwargs['DATE']:
+        n_time = len(np.atleast_1d(tinp))
+        output['time'] = np.copy(tinp)
+        output['month'] = np.copy(month)
+        if (n_time == 1):
+            output['clm'] = np.zeros((n_harm))
+            output['slm'] = np.zeros((n_harm))
         else:
-            n_time = len(tinp)
-            clm = np.zeros((n_harm,n_time))
-            slm = np.zeros((n_harm,n_time))
+            output['clm'] = np.zeros((n_harm,n_time))
+            output['slm'] = np.zeros((n_harm,n_time))
     else:
         n_time = 0
-        clm = np.zeros((n_harm))
-        slm = np.zeros((n_harm))
+        output['clm'] = np.zeros((n_harm))
+        output['slm'] = np.zeros((n_harm))
 
-    #-- restructured degree and order
-    lout = np.zeros((n_harm,), dtype=np.int32)
-    mout = np.zeros((n_harm,), dtype=np.int32)
     #-- create counter variable lm
     lm = 0
     for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
         for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
-            lout[lm] = np.int64(l)
-            mout[lm] = np.int64(m)
-            if (DATE and (n_time > 1)):
-                clm[lm,:] = clm1[l,m,:]
-                slm[lm,:] = slm1[l,m,:]
+            output['l'][lm] = np.int64(l)
+            output['m'][lm] = np.int64(m)
+            if (kwargs['DATE'] and (n_time > 1)):
+                output['clm'][lm,:] = clm1[l,m,:]
+                output['slm'][lm,:] = slm1[l,m,:]
             else:
-                clm[lm] = clm1[l,m]
-                slm[lm] = slm1[l,m]
+                output['clm'][lm] = clm1[l,m]
+                output['slm'][lm] = slm1[l,m]
             #-- add 1 to lm counter variable
             lm += 1
 
     #-- Defining the netCDF dimensions
     fileID.createDimension('lm', n_harm)
-    if DATE:
+    if kwargs['DATE']:
         fileID.createDimension('time', n_time)
 
     #-- defining the netCDF variables
@@ -163,26 +174,22 @@ def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
     nc['l'] = fileID.createVariable('l', 'i', ('lm',))
     nc['m'] = fileID.createVariable('m', 'i', ('lm',))
     #-- spherical harmonics
-    if (DATE and (n_time > 1)):
+    if (kwargs['DATE'] and (n_time > 1)):
         nc['clm'] = fileID.createVariable('clm', 'd', ('lm','time',))
         nc['slm'] = fileID.createVariable('slm', 'd', ('lm','time',))
     else:
         nc['clm'] = fileID.createVariable('clm', 'd', ('lm',))
         nc['slm'] = fileID.createVariable('slm', 'd', ('lm',))
-    if DATE:
+    if kwargs['DATE']:
         #-- time (in decimal form)
         nc['time'] = fileID.createVariable('time', 'd', ('time',))
         #-- GRACE/GRACE-FO month (or integer date)
-        nc['month'] = fileID.createVariable(MONTHS_NAME, 'i', ('time',))
+        nc['month'] = fileID.createVariable(kwargs['MONTHS_NAME'],
+            'i', ('time',))
 
     #-- filling netCDF variables
-    nc['l'][:] = lout.copy()
-    nc['m'][:] = mout.copy()
-    nc['clm'][:] = clm.copy()
-    nc['slm'][:] = slm.copy()
-    if DATE:
-        nc['time'][:] = tinp
-        nc['month'][:] = month
+    for key,val in output.items():
+        nc[key][:] = val.copy()
 
     #-- Defining attributes for degree and order
     nc['l'].long_name = 'spherical_harmonic_degree'#-- SH degree long name
@@ -191,25 +198,25 @@ def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
     nc['m'].units = 'Wavenumber'#-- SH order units
     #-- Defining attributes for harmonics
     nc['clm'].long_name = 'cosine_spherical_harmonics'
-    nc['clm'].units = UNITS
+    nc['clm'].units = kwargs['UNITS']
     nc['slm'].long_name = 'sine_spherical_harmonics'
-    nc['slm'].units = UNITS
-    if DATE:
+    nc['slm'].units = kwargs['UNITS']
+    if kwargs['DATE']:
         #-- Defining attributes for date and month
-        nc['time'].long_name = TIME_LONGNAME
-        nc['time'].units = TIME_UNITS
-        nc['month'].long_name = MONTHS_LONGNAME
-        nc['month'].units = MONTHS_UNITS
+        nc['time'].long_name = kwargs['TIME_LONGNAME']
+        nc['time'].units = kwargs['TIME_UNITS']
+        nc['month'].long_name = kwargs['MONTHS_LONGNAME']
+        nc['month'].units = kwargs['MONTHS_UNITS']
     #-- global variables of NetCDF file
-    if TITLE:
-        fileID.title = TITLE
-    if REFERENCE:
-        fileID.reference = REFERENCE
+    if kwargs['TITLE']:
+        fileID.title = kwargs['TITLE']
+    if kwargs['REFERENCE']:
+        fileID.reference = kwargs['REFERENCE']
     #-- date created
     fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
 
     #-- Output netCDF structure information
-    logging.info(FILENAME)
+    logging.info(kwargs['FILENAME'])
     logging.info(list(fileID.variables.keys()))
 
     #-- Closing the netCDF file

@@ -30,4 +30,3 @@ ncdf_write(data, lon, lat, tim, FILENAME=output_netcdf4_file)
 - `REFERENCE`: reference attribute of dataset
 - `DATE`: data has date information
 - `CLOBBER`: will overwrite an existing netCDF4 file
-- `VERBOSE`: will print to screen the netCDF4 structure parameters

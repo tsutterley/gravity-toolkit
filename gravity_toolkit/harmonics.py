@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (11/2021)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -29,6 +29,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 11/2021: kwargs to index, netCDF4 and HDF5 read functions
     Updated 10/2021: using python logging for handling verbose output
     Updated 09/2021: added time-variable gravity data from gfc format
         use functions for converting to and from GRACE months
@@ -215,8 +216,7 @@ class harmonics(object):
         #-- read data from netCDF4 file
         Ylms = ncdf_read_stokes(self.filename,
             DATE=kwargs['date'],
-            COMPRESSION=kwargs['compression'],
-            VERBOSE=kwargs['verbose'])
+            COMPRESSION=kwargs['compression'])
         #-- copy variables to harmonics object
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
@@ -249,8 +249,7 @@ class harmonics(object):
         #-- read data from HDF5 file
         Ylms = hdf5_read_stokes(self.filename,
             DATE=kwargs['date'],
-            COMPRESSION=kwargs['compression'],
-            VERBOSE=kwargs['verbose'])
+            COMPRESSION=kwargs['compression'])
         #-- copy variables to harmonics object
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
@@ -362,15 +361,15 @@ class harmonics(object):
         h = []
         #-- for each file in the index
         for i,f in enumerate(file_list):
-            if (format == 'ascii'):
+            if (kwargs['format'] == 'ascii'):
                 #-- ascii (.txt)
                 h.append(harmonics().from_ascii(os.path.expanduser(f),
                     date=kwargs['date']))
-            elif (format == 'netCDF4'):
+            elif (kwargs['format'] == 'netCDF4'):
                 #-- netcdf (.nc)
                 h.append(harmonics().from_netCDF4(os.path.expanduser(f),
                     date=kwargs['date']))
-            elif (format == 'HDF5'):
+            elif (kwargs['format'] == 'HDF5'):
                 #-- HDF5 (.H5)
                 h.append(harmonics().from_HDF5(os.path.expanduser(f),
                     date=kwargs['date']))
@@ -549,7 +548,7 @@ class harmonics(object):
             KWARGS[key.upper()] = val
         #-- write to HDF5
         hdf5_stokes(self.clm, self.slm, self.l, self.m, self.time,
-            self.month, FILENAME=self.filename, DATE=date, **kwargs)
+            self.month, FILENAME=self.filename, DATE=date, **KWARGS)
 
     def to_index(self, filename, file_list, format=None, date=True, **kwargs):
         """

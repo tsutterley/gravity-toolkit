@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_stokes.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (11/2021)
 
 Writes spherical harmonic coefficients to HDF5 files
 
@@ -27,7 +27,6 @@ OPTIONS:
     TITLE: description attribute of dataset
     REFERENCE: reference attribute of dataset
     CLOBBER: will overwrite an existing HDF5 file
-    VERBOSE: will print to screen the HDF5 structure parameters
     DATE: harmonics have date information
 
 PYTHON DEPENDENCIES:
@@ -36,6 +35,7 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 11/2021: use remapped dictionary for filling HDF5 variables
     Updated 10/2021: using python logging for handling verbose output
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 12/2020: added REFERENCE option to set file attribute
@@ -73,10 +73,7 @@ import h5py
 import logging
 import numpy as np
 
-def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
-    UNITS='Geodesy_Normalization', TIME_UNITS=None, TIME_LONGNAME=None,
-    MONTHS_NAME='month', MONTHS_UNITS='number', MONTHS_LONGNAME='GRACE_month',
-    TITLE=None, REFERENCE=None, DATE=True, CLOBBER=True, VERBOSE=False):
+def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
     """
     Writes spherical harmonic coefficients to HDF5 files
 
@@ -101,14 +98,25 @@ def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
     TITLE: description attribute of dataset
     REFERENCE: reference attribute of dataset
     CLOBBER: will overwrite an existing HDF5 file
-    VERBOSE: will print to screen the HDF5 structure parameters
     DATE: harmonics have date information
     """
+    #-- set default keyword arguments
+    kwargs.setdefault('FILENAME',None)
+    kwargs.setdefault('UNITS','Geodesy_Normalization')
+    kwargs.setdefault('TIME_UNITS',None)
+    kwargs.setdefault('TIME_LONGNAME',None)
+    kwargs.setdefault('MONTHS_NAME','month')
+    kwargs.setdefault('MONTHS_UNITS','number')
+    kwargs.setdefault('MONTHS_LONGNAME','GRACE_month')
+    kwargs.setdefault('TITLE',None)
+    kwargs.setdefault('REFERENCE',None)
+    kwargs.setdefault('DATE',True)
+    kwargs.setdefault('CLOBBER',True)
 
     #-- setting HDF5 clobber attribute
-    clobber = 'w' if CLOBBER else 'w-'
+    clobber = 'w' if kwargs['CLOBBER'] else 'w-'
     #-- opening HDF5 file for writing
-    fileID = h5py.File(FILENAME, clobber)
+    fileID = h5py.File(kwargs['FILENAME'], clobber)
 
     #-- Maximum spherical harmonic degree (LMAX) and order (MMAX)
     LMAX = np.max(linp)
@@ -117,62 +125,48 @@ def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
     #-- taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
     n_harm = (LMAX**2 + 3*LMAX - (LMAX-MMAX)**2 - (LMAX-MMAX))//2 + 1
 
+    #-- dictionary with output variables
+    output = {}
+    #-- restructured degree and order
+    output['l'] = np.zeros((n_harm,), dtype=np.int32)
+    output['m'] = np.zeros((n_harm,), dtype=np.int32)
     #-- Restructuring output matrix to array format
     #-- will reduce matrix size and insure compatibility between platforms
-    if DATE:
-        if (np.ndim(tinp) == 0):
-            n_time = 1
-            clm = np.zeros((n_harm))
-            slm = np.zeros((n_harm))
+    if kwargs['DATE']:
+        n_time = len(np.atleast_1d(tinp))
+        output['time'] = np.copy(tinp)
+        output['month'] = np.copy(month)
+        if (n_time == 1):
+            output['clm'] = np.zeros((n_harm))
+            output['slm'] = np.zeros((n_harm))
         else:
-            n_time = len(tinp)
-            clm = np.zeros((n_harm,n_time))
-            slm = np.zeros((n_harm,n_time))
+            output['clm'] = np.zeros((n_harm,n_time))
+            output['slm'] = np.zeros((n_harm,n_time))
     else:
         n_time = 0
-        clm = np.zeros((n_harm))
-        slm = np.zeros((n_harm))
+        output['clm'] = np.zeros((n_harm))
+        output['slm'] = np.zeros((n_harm))
 
-    #-- restructured degree and order
-    lout = np.zeros((n_harm,), dtype=np.int32)
-    mout = np.zeros((n_harm,), dtype=np.int32)
     #-- create counter variable lm
     lm = 0
     for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
         for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
-            lout[lm] = np.int64(l)
-            mout[lm] = np.int64(m)
-            if (DATE and (n_time > 1)):
-                clm[lm,:] = clm1[l,m,:]
-                slm[lm,:] = slm1[l,m,:]
+            output['l'][lm] = np.int64(l)
+            output['m'][lm] = np.int64(m)
+            if (kwargs['DATE'] and (n_time > 1)):
+                output['clm'][lm,:] = clm1[l,m,:]
+                output['slm'][lm,:] = slm1[l,m,:]
             else:
-                clm[lm] = clm1[l,m]
-                slm[lm] = slm1[l,m]
+                output['clm'][lm] = clm1[l,m]
+                output['slm'][lm] = slm1[l,m]
             #-- add 1 to lm counter variable
             lm += 1
 
     #-- Defining the HDF5 dataset variables
     h5 = {}
-    h5['l'] = fileID.create_dataset('l', (n_harm,),
-        data=lout, dtype=np.int64, compression='gzip')
-    h5['m'] = fileID.create_dataset('m', (n_harm,),
-        data=mout, dtype=np.int64, compression='gzip')
-    if DATE:
-        h5['time'] = fileID.create_dataset('time', (n_time,),
-            data=tinp, dtype=np.float64, compression='gzip')
-        h5['month'] = fileID.create_dataset(MONTHS_NAME, (n_time,),
-            data=month, dtype=np.int64, compression='gzip')
-    #-- if more than 1 date in file
-    if (n_time > 1):
-        h5['clm'] = fileID.create_dataset('clm', (n_harm,n_time,),
-            data=clm, dtype=np.float64, compression='gzip')
-        h5['slm'] = fileID.create_dataset('slm', (n_harm,n_time,),
-            data=slm, dtype=np.float64, compression='gzip')
-    else:
-        h5['clm'] = fileID.create_dataset('clm', (n_harm,),
-            data=clm, dtype=np.float64, compression='gzip')
-        h5['slm'] = fileID.create_dataset('slm', (n_harm,),
-            data=slm, dtype=np.float64, compression='gzip')
+    for key,val in output.items():
+        h5[key] = fileID.create_dataset(key, val.shape,
+            data=val, dtype=val.dtype, compression='gzip')
 
     #-- filling HDF5 dataset attributes
     #-- Defining attributes for degree and order
@@ -182,26 +176,26 @@ def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, FILENAME=None,
     h5['m'].attrs['units'] = 'Wavenumber'#-- SH order units
     #-- Defining attributes for dataset
     h5['clm'].attrs['long_name'] = 'cosine_spherical_harmonics'
-    h5['clm'].attrs['units'] = UNITS
+    h5['clm'].attrs['units'] = kwargs['UNITS']
     h5['slm'].attrs['long_name'] = 'sine_spherical_harmonics'
-    h5['slm'].attrs['units'] = UNITS
-    if DATE:
+    h5['slm'].attrs['units'] = kwargs['UNITS']
+    if kwargs['DATE']:
         #-- Defining attributes for date and month (or integer date)
-        h5['time'].attrs['long_name'] = TIME_LONGNAME
-        h5['time'].attrs['units'] = TIME_UNITS
-        h5['month'].attrs['long_name'] = MONTHS_LONGNAME
-        h5['month'].attrs['units'] = MONTHS_UNITS
+        h5['time'].attrs['long_name'] = kwargs['TIME_LONGNAME']
+        h5['time'].attrs['units'] = kwargs['TIME_UNITS']
+        h5['month'].attrs['long_name'] = kwargs['MONTHS_LONGNAME']
+        h5['month'].attrs['units'] = kwargs['MONTHS_UNITS']
     #-- description of file
-    if TITLE:
-        fileID.attrs['description'] = TITLE
+    if kwargs['TITLE']:
+        fileID.attrs['description'] = kwargs['TITLE']
     #-- reference of file
-    if REFERENCE:
-        fileID.attrs['reference'] = REFERENCE
+    if kwargs['REFERENCE']:
+        fileID.attrs['reference'] = kwargs['REFERENCE']
     #-- date created
     fileID.attrs['date_created'] = time.strftime('%Y-%m-%d',time.localtime())
 
     #-- Output HDF5 structure information
-    logging.info(FILENAME)
+    logging.info(kwargs['FILENAME'])
     logging.info(list(fileID.keys()))
 
     #-- Closing the HDF5 file

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 hdf5_read.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (11/2021)
 
 Reads spatial data from HDF5 files
 
@@ -20,7 +20,6 @@ OUTPUTS:
 
 OPTIONS:
     DATE: HDF5 file has date information
-    VERBOSE: will print to screen the HDF5 structure parameters
     VARNAME: z variable name in HDF5 file
     LONNAME: longitude variable name in HDF5 file
     LATNAME: latitude variable name in HDF5 file
@@ -36,6 +35,7 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org)
 
 UPDATE HISTORY:
+    Updated 11/2021: try to get more global attributes. use kwargs
     Updated 10/2021: using python logging for handling verbose output
     Updated 02/2021: prevent warnings with python3 compatible regex strings
     Updated 12/2020: try/except for getting variable unit attributes
@@ -76,8 +76,7 @@ import logging
 import zipfile
 import numpy as np
 
-def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
-    LATNAME='lat', TIMENAME='time', COMPRESSION=None):
+def hdf5_read(filename, **kwargs):
     """
     Reads spatial data from HDF5 files
 
@@ -88,7 +87,6 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     Keyword arguments
     -----------------
     DATE: HDF5 file has date information
-    VERBOSE: will print to screen the HDF5 structure parameters
     VARNAME: z variable name in HDF5 file
     LONNAME: longitude variable name in HDF5 file
     LATNAME: latitude variable name in HDF5 file
@@ -106,9 +104,16 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     time: time value of dataset
     attributes: HDF5 attributes
     """
+    #-- set default keyword arguments
+    kwargs.setdefault('DATE',False)
+    kwargs.setdefault('VARNAME','z')
+    kwargs.setdefault('LONNAME','lon')
+    kwargs.setdefault('LATNAME','lat')
+    kwargs.setdefault('TIMENAME','time')
+    kwargs.setdefault('COMPRESSION',None)
 
     #-- Open the HDF5 file for reading
-    if (COMPRESSION == 'gzip'):
+    if (kwargs['COMPRESSION'] == 'gzip'):
         #-- read gzip compressed file and extract into in-memory file object
         with gzip.open(os.path.expanduser(filename),'r') as f:
             fid = io.BytesIO(f.read())
@@ -118,7 +123,7 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
         fid.seek(0)
         #-- read as in-memory (diskless) HDF5 dataset from BytesIO object
         fileID = h5py.File(fid, 'r')
-    elif (COMPRESSION == 'zip'):
+    elif (kwargs['COMPRESSION'] == 'zip'):
         #-- read zipped file and extract file into in-memory file object
         fileBasename,_ = os.path.splitext(os.path.basename(filename))
         with zipfile.ZipFile(os.path.expanduser(filename)) as z:
@@ -136,7 +141,7 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
         fid.seek(0)
         #-- read as in-memory (diskless) HDF5 dataset from BytesIO object
         fileID = h5py.File(fid, 'r')
-    elif (COMPRESSION == 'bytes'):
+    elif (kwargs['COMPRESSION'] == 'bytes'):
         #-- read as in-memory (diskless) HDF5 dataset
         fileID = h5py.File(filename, 'r')
     else:
@@ -152,10 +157,10 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
 
     #-- mapping between output keys and HDF5 variable names
     keys = ['lon','lat','data']
-    h5keys = [LONNAME,LATNAME,VARNAME]
-    if DATE:
+    h5keys = [kwargs['LONNAME'],kwargs['LATNAME'],kwargs['VARNAME']]
+    if kwargs['DATE']:
         keys.append('time')
-        h5keys.append(TIMENAME)
+        h5keys.append(kwargs['TIMENAME'])
 
     #-- list of variable attributes
     attributes_list = ['description','units','long_name','calendar',
@@ -177,11 +182,12 @@ def hdf5_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     if (dinput['data'].ndim == 2) and (len(dinput['lon']) == sz[0]):
         dinput['data'] = dinput['data'].T
 
-    #-- Global attribute description
-    try:
-        dinput['attributes']['title'] = fileID.attrs['description']
-    except (KeyError, AttributeError):
-        pass
+    #-- Global attributes
+    for att_name in ['title','description','reference']:
+        try:
+            dinput['attributes'][att_name] = fileID.attrs[att_name]
+        except (ValueError, KeyError, AttributeError):
+            pass
 
     #-- Closing the HDF5 file
     fileID.close()

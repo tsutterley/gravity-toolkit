@@ -30,4 +30,3 @@ hdf5_write(data, lon, lat, tim, FILENAME=output_netcdf4_file)
 - `REFERENCE`: reference attribute of dataset
 - `DATE`: data has date information
 - `CLOBBER`: will overwrite an existing HDF5 file
-- `VERBOSE`: will print to screen the HDF5 structure parameters

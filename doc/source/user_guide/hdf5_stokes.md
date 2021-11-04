@@ -29,5 +29,4 @@ hdf5_stokes(clm, slm, linp, minp, tinp, month, FILENAME=output_HDF5_file)
 - `TITLE`: description attribute of dataset
 - `REFERENCE`: reference attribute of dataset
 - `CLOBBER`: will overwrite an existing HDF5 file
-- `VERBOSE`: will print to screen the HDF5 structure parameters
 - `DATE`: harmonics have date information

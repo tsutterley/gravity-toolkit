@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (11/2021)
 
 Data class for reading, writing and processing spatial data
 
@@ -24,6 +24,7 @@ PROGRAM DEPENDENCIES:
     hdf5_read.py: reads spatial data from HDF5
 
 UPDATE HISTORY:
+    Updated 11/2021: fix kwargs to index and hdf5 read functions
     Updated 10/2021: using python logging for handling verbose output
     Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -206,9 +207,11 @@ class spatial(object):
         kwargs.setdefault('timename','time')
         #-- read data from netCDF5 file
         data = ncdf_read(self.filename, DATE=date,
-            COMPRESSION=kwargs['compression'], VERBOSE=kwargs['verbose'],
-            VARNAME=kwargs['varname'], LONNAME=kwargs['lonname'],
-            LATNAME=kwargs['latname'], TIMENAME=kwargs['timename'])
+            COMPRESSION=kwargs['compression'],
+            VARNAME=kwargs['varname'],
+            LONNAME=kwargs['lonname'],
+            LATNAME=kwargs['latname'],
+            TIMENAME=kwargs['timename'])
         #-- copy variables to spatial object
         self.data = data['data'].copy()
         if '_FillValue' in data['attributes']['data'].keys():
@@ -250,9 +253,11 @@ class spatial(object):
         kwargs.setdefault('timename','time')
         #-- read data from HDF5 file
         data = hdf5_read(self.filename, DATE=date,
-            COMPRESSION=kwargs['compression'], VERBOSE=kwargs['verbose'],
-            VARNAME=kwargs['varname'], LONNAME=kwargs['lonname'],
-            LATNAME=kwargs['latname'], TIMENAME=kwargs['timename'])
+            COMPRESSION=kwargs['compression'],
+            VARNAME=kwargs['varname'],
+            LONNAME=kwargs['lonname'],
+            LATNAME=kwargs['latname'],
+            TIMENAME=kwargs['timename'])
         #-- copy variables to spatial object
         self.data = data['data'].copy()
         if '_FillValue' in data['attributes']['data'].keys():
@@ -325,15 +330,15 @@ class spatial(object):
         s = []
         #-- for each file in the index
         for i,f in enumerate(file_list):
-            if (format == 'ascii'):
+            if (kwargs['format'] == 'ascii'):
                 #-- netcdf (.nc)
                 s.append(spatial().from_ascii(os.path.expanduser(f),
                     date=kwargs['date']))
-            elif (format == 'netCDF4'):
+            elif (kwargs['format'] == 'netCDF4'):
                 #-- netcdf (.nc)
                 s.append(spatial().from_netCDF4(os.path.expanduser(f),
                     date=kwargs['date']))
-            elif (format == 'HDF5'):
+            elif (kwargs['format'] == 'HDF5'):
                 #-- HDF5 (.H5)
                 s.append(spatial().from_HDF5(os.path.expanduser(f),
                     date=kwargs['date']))

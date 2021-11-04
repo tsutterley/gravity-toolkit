@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_read.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (11/2021)
 
 Reads spatial data from COARDS-compliant netCDF4 files
 
@@ -36,6 +36,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 11/2021: try to get more global attributes. use kwargs
     Updated 10/2021: using python logging for handling verbose output
     Updated 02/2021: prevent warnings with python3 compatible regex strings
     Updated 12/2020: try/except for getting variable unit attributes
@@ -81,8 +82,7 @@ import netCDF4
 import zipfile
 import numpy as np
 
-def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
-    LATNAME='lat', TIMENAME='time', COMPRESSION=None):
+def ncdf_read(filename, **kwargs):
     """
     Reads spatial data from COARDS-compliant netCDF4 files
 
@@ -111,13 +111,20 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     time: time value of dataset
     attributes: netCDF4 attributes
     """
+    #-- set default keyword arguments
+    kwargs.setdefault('DATE',False)
+    kwargs.setdefault('VARNAME','z')
+    kwargs.setdefault('LONNAME','lon')
+    kwargs.setdefault('LATNAME','lat')
+    kwargs.setdefault('TIMENAME','time')
+    kwargs.setdefault('COMPRESSION',None)
 
     #-- Open the NetCDF4 file for reading
-    if (COMPRESSION == 'gzip'):
+    if (kwargs['COMPRESSION'] == 'gzip'):
         #-- read as in-memory (diskless) netCDF4 dataset
         with gzip.open(os.path.expanduser(filename),'r') as f:
             fileID = netCDF4.Dataset(os.path.basename(filename),memory=f.read())
-    elif (COMPRESSION == 'zip'):
+    elif (kwargs['COMPRESSION'] == 'zip'):
         #-- read zipped file and extract file into in-memory file object
         fileBasename,_ = os.path.splitext(os.path.basename(filename))
         with zipfile.ZipFile(os.path.expanduser(filename)) as z:
@@ -129,7 +136,7 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
                 f,=[f for f in z.namelist() if re.search(r'\.nc(4)?$',f)]
             #-- read bytes from zipfile as in-memory (diskless) netCDF4 dataset
             fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=z.read(f))
-    elif (COMPRESSION == 'bytes'):
+    elif (kwargs['COMPRESSION'] == 'bytes'):
         #-- read as in-memory (diskless) netCDF4 dataset
         fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=filename.read())
     else:
@@ -145,10 +152,10 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
 
     #-- mapping between output keys and netCDF4 variable names
     keys = ['lon','lat','data']
-    nckeys = [LONNAME,LATNAME,VARNAME]
-    if DATE:
+    nckeys = [kwargs['LONNAME'],kwargs['LATNAME'],kwargs['VARNAME']]
+    if kwargs['DATE']:
         keys.append('time')
-        nckeys.append(TIMENAME)
+        nckeys.append(kwargs['TIMENAME'])
     #-- list of variable attributes
     attributes_list = ['description','units','long_name','calendar',
         'standard_name','_FillValue','missing_value']
@@ -171,12 +178,14 @@ def ncdf_read(filename, DATE=False, VERBOSE=False, VARNAME='z', LONNAME='lon',
     if (dinput['data'].ndim == 2) and (len(dinput['lon']) == sz[0]):
         dinput['data'] = dinput['data'].T
 
-    #-- Global attribute (title of dataset)
-    try:
-        title, = [st for st in dir(fileID) if re.match(r'TITLE',st,re.I)]
-        dinput['attributes']['title'] = fileID.getncattr(title)
-    except (ValueError, KeyError, AttributeError):
-        pass
+    #-- Global attributes
+    for att_name in ['title','description','reference']:
+        try:
+            ncattr, = [s for s in fileID.ncattrs()
+                if re.match(att_name,s,re.I)]
+            dinput['attributes'][att_name] = fileID.getncattr(ncattr)
+        except (ValueError, KeyError, AttributeError):
+            pass
     #-- Closing the NetCDF file
     fileID.close()
     #-- return the output variable

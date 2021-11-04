@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ncdf_write.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (11/2021)
 
 Writes spatial data to COARDS-compliant netCDF4 files
 
@@ -27,7 +27,6 @@ OPTIONS:
     TITLE: title attribute of dataset
     REFERENCE: reference attribute of dataset
     CLOBBER: will overwrite an existing netCDF4 file
-    VERBOSE: will print to screen the netCDF4 structure parameters
     DATE: data has date information
 
 PYTHON DEPENDENCIES:
@@ -36,6 +35,7 @@ PYTHON DEPENDENCIES:
          (https://unidata.github.io/netcdf4-python/netCDF4/index.html)
 
 UPDATE HISTORY:
+    Updated 11/2021: use remapped dictionary for filling netCDF4 variables
     Updated 10/2021: using python logging for handling verbose output
     Updated 12/2020: added REFERENCE option to set file attribute
     Updated 07/2020: added function docstrings
@@ -67,10 +67,7 @@ import logging
 import netCDF4
 import numpy as np
 
-def ncdf_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
-    LATNAME='lat', TIMENAME='time', UNITS=None, LONGNAME=None, FILL_VALUE=None,
-    TIME_UNITS=None, TIME_LONGNAME=None, TITLE=None, REFERENCE=None,
-    DATE=True, CLOBBER=True, VERBOSE=False):
+def ncdf_write(data, lon, lat, tim, **kwargs):
     """
     Writes spatial data to COARDS-compliant netCDF4 files
 
@@ -95,67 +92,78 @@ def ncdf_write(data, lon, lat, tim, FILENAME=None, VARNAME='z', LONNAME='lon',
     TITLE: title attribute of dataset
     REFERENCE: reference attribute of dataset
     CLOBBER: will overwrite an existing netCDF4 file
-    VERBOSE: will print to screen the netCDF4 structure parameters
     DATE: data has date information
     """
+    #-- set default keyword arguments
+    kwargs.setdefault('FILENAME',None)
+    kwargs.setdefault('VARNAME','z')
+    kwargs.setdefault('LONNAME','lon')
+    kwargs.setdefault('LATNAME','lat')
+    kwargs.setdefault('TIMENAME','time')
+    kwargs.setdefault('UNITS',None)
+    kwargs.setdefault('LONGNAME',None)
+    kwargs.setdefault('FILL_VALUE',None)
+    kwargs.setdefault('TIME_UNITS',None)
+    kwargs.setdefault('TIME_LONGNAME',None)
+    kwargs.setdefault('TITLE',None)
+    kwargs.setdefault('REFERENCE',None)
+    kwargs.setdefault('DATE',True)
+    kwargs.setdefault('CLOBBER',True)
 
     #-- setting NetCDF clobber attribute
-    clobber = 'w' if CLOBBER else 'a'
+    clobber = 'w' if kwargs['CLOBBER'] else 'a'
     #-- opening NetCDF file for writing
     #-- Create the NetCDF file
-    fileID = netCDF4.Dataset(FILENAME, clobber, format="NETCDF4")
+    fileID = netCDF4.Dataset(kwargs['FILENAME'], clobber, format="NETCDF4")
 
-    #-- Defining the NetCDF dimensions
-    n_time = len(np.atleast_1d(tim))
-    fileID.createDimension(LONNAME, len(lon))
-    fileID.createDimension(LATNAME, len(lat))
-    fileID.createDimension(TIMENAME, n_time)
+    #-- create output dictionary with key mapping
+    output = {}
+    output[kwargs['LONNAME']] = np.copy(lon)
+    output[kwargs['LATNAME']] = np.copy(lat)
+    output[kwargs['VARNAME']] = np.copy(data)
+    dimensions = [kwargs['LATNAME'],kwargs['LONNAME']]
+    #-- extend with date variables
+    if kwargs['DATE']:
+        output[kwargs['TIMENAME']] = np.atleast_1d(tim).astype('f')
+        dimensions.append(kwargs['TIMENAME'])
 
-    #-- defining the NetCDF variables
+    #-- defining the NetCDF dimensions and variables
     nc = {}
-    #-- lat and lon
-    nc[LONNAME] = fileID.createVariable(LONNAME, lon.dtype, (LONNAME,))
-    nc[LATNAME] = fileID.createVariable(LATNAME, lat.dtype, (LATNAME,))
-    #-- spatial data
-    if (n_time > 1):
-        nc[VARNAME] = fileID.createVariable(VARNAME, data.dtype,
-            (LATNAME,LONNAME,TIMENAME,), fill_value=FILL_VALUE, zlib=True)
-    else:
-        nc[VARNAME] = fileID.createVariable(VARNAME, data.dtype,
-            (LATNAME,LONNAME,), fill_value=FILL_VALUE, zlib=True)
-    #-- time
-    if DATE:
-        nc[TIMENAME] = fileID.createVariable(TIMENAME, 'f8', (TIMENAME,))
-
+    #-- NetCDF dimensions
+    for i,dim in enumerate(dimensions):
+        fileID.createDimension(dim, len(output[dim]))
+        nc[dim] = fileID.createVariable(dim, output[dim].dtype, (dim,))
+    #-- NetCDF spatial data
+    for key in [kwargs['VARNAME']]:
+        nc[key] = fileID.createVariable(key, output[key].dtype,
+            tuple(dimensions), fill_value=kwargs['FILL_VALUE'],
+            zlib=True)
     #-- filling NetCDF variables
-    nc[LONNAME][:] = lon
-    nc[LATNAME][:] = lat
-    nc[VARNAME][:,:] = data
-    if DATE:
-        nc[TIMENAME][:] = tim
+    for key,val in output.items():
+        nc[key][:] = val.copy()
 
     #-- Defining attributes for longitude and latitude
-    nc[LONNAME].long_name = 'longitude'
-    nc[LONNAME].units = 'degrees_east'
-    nc[LATNAME].long_name = 'latitude'
-    nc[LATNAME].units = 'degrees_north'
+    nc[kwargs['LONNAME']].long_name = 'longitude'
+    nc[kwargs['LONNAME']].units = 'degrees_east'
+    nc[kwargs['LATNAME']].long_name = 'latitude'
+    nc[kwargs['LATNAME']].units = 'degrees_north'
     #-- Defining attributes for dataset
-    nc[VARNAME].long_name = LONGNAME
-    nc[VARNAME].units = UNITS
+    nc[kwargs['VARNAME']].long_name = kwargs['LONGNAME']
+    nc[kwargs['VARNAME']].units = kwargs['UNITS']
     #-- Defining attributes for date if applicable
-    if DATE:
-        nc[TIMENAME].long_name = TIME_LONGNAME
-        nc[TIMENAME].units = TIME_UNITS
+    if kwargs['DATE']:
+        nc[kwargs['TIMENAME']].long_name = kwargs['TIME_LONGNAME']
+        nc[kwargs['TIMENAME']].units = kwargs['TIME_UNITS']
     #-- global variables of NetCDF file
-    if TITLE:
-        fileID.title = TITLE
-    if REFERENCE:
-        fileID.reference = REFERENCE
+    if kwargs['TITLE']:
+        fileID.title = kwargs['TITLE']
+    if kwargs['REFERENCE']:
+        fileID.reference = kwargs['REFERENCE']
     #-- date created
     fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
 
     #-- Output NetCDF structure information
-    logging.info(FILENAME)
+    logging.info(kwargs['FILENAME'])
     logging.info(list(fileID.variables.keys()))
 
     #-- Closing the NetCDF file
