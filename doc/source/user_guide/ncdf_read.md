@@ -15,7 +15,6 @@ file_inp = ncdf_read(filename, DATE=True, VERBOSE=False)
 
 #### Keyword arguments
 - `DATE`: netCDF4 file has date information
-- `VERBOSE`: will print to screen the netCDF4 structure parameters
 - `VARNAME`: z variable name in netCDF4 file
 - `LONNAME`: longitude variable name in netCDF4 file
 - `LATNAME`: latitude variable name in netCDF4 file

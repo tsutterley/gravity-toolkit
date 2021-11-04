@@ -15,7 +15,6 @@ file_inp = hdf5_read_stokes(filename, DATE=True, VERBOSE=False)
 
 #### Keyword arguments
 - `DATE`: HDF5 file has date information
-- `VERBOSE`: will print to screen the HDF5 structure parameters
 - `COMPRESSION`: netCDF4 file is compressed or streaming as bytes
     * `'gzip'`
     * `'zip'`
