@@ -35,7 +35,8 @@ jobs:
         SQLITE3_LIBS: "-L/usr/local/lib -lsqlite3"
       run: |
         sudo apt-get update
-        sudo apt-get install libgeos-dev libhdf5-dev libnetcdf-dev
+        sudo apt-get install gdal-bin libgdal-dev libgeos-dev
+        sudo apt-get install libhdf5-dev libnetcdf-dev
         sudo apt-get install libstdc++6 libxml2-dev libxslt1-dev libsqlite3-dev
         cd ${RUNNER_TEMP}
         wget -q https://download.osgeo.org/proj/proj-${PROJ_VERSION}.tar.gz
@@ -68,6 +69,7 @@ jobs:
       run: |
         brew install proj
         brew install geos
+        brew install gdal
         brew install hdf5
         brew install netcdf
         brew install libxml2
