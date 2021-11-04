@@ -2,8 +2,9 @@
 legendre.py
 ===========
 
-- Computes associated Legendre functions of degree l evaluated for elements x [Abramowitz1965]_ [Jacobs1987]_
-- l must be a scalar integer and x must contain real values ranging -1 <= x <= 1
+- Computes associated Legendre functions of degree ``l`` evaluated for elements ``x`` [Abramowitz1965]_ [Jacobs1987]_
+- ``l`` must be a scalar integer and ``x`` must contain real values ranging -1 <= ``x`` <= 1
+- Unnormalized associated Legendre function values will overflow for ``l`` > 150
 
 Calling Sequence
 ################
@@ -26,10 +27,12 @@ Arguments
 
 Keyword arguments
 #################
+
 - ``NORMALIZE``: output Fully Normalized Associated Legendre Functions
 
 Returns
 #######
+
 - ``Pl``: Legendre polynomials of degree ``l``
 
 References

@@ -2,7 +2,7 @@
 legendre_polynomials.py
 =======================
 
-- Computes fully normalized Legendre polynomials for an array of x values and their first derivative following [HofmannWellenhof2006]_
+- Computes fully normalized Legendre polynomials for an array of ``x`` values and their first derivative following [HofmannWellenhof2006]_
 - Calculates Legendre polynomials for zonal harmonics (order 0)
 
 Calling Sequence

@@ -2,7 +2,7 @@
 plm_holmes.py
 =============
 
-- Computes fully-normalized associated Legendre Polynomials and their first derivative for a vector of x values using the [Holmes2002]_ recursion relation
+- Computes fully-normalized associated Legendre Polynomials and their first derivative for a vector of ``x`` values using the [Holmes2002]_ recursion relation
 - Recursion relation is stable up to very high degree and order
 
 Calling Sequence
