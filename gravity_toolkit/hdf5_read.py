@@ -168,7 +168,7 @@ def hdf5_read(filename, **kwargs):
     #-- for each variable
     for key,h5key in zip(keys,h5keys):
         #-- Getting the data from each HDF5 variable
-        dinput[key] = fileID[h5key][:].copy()
+        dinput[key] = np.squeeze(fileID[h5key][:])
         #-- Getting attributes of included variables
         dinput['attributes'][key] = {}
         for attr in attributes_list:

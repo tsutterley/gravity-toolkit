@@ -121,12 +121,14 @@ def hdf5_write(data, lon, lat, tim, **kwargs):
     output = {}
     output[kwargs['LONNAME']] = np.copy(lon)
     output[kwargs['LATNAME']] = np.copy(lat)
-    output[kwargs['VARNAME']] = np.copy(data)
     dimensions = [kwargs['LATNAME'],kwargs['LONNAME']]
     #-- extend with date variables
     if kwargs['DATE']:
         output[kwargs['TIMENAME']] = np.array(tim,dtype='f')
+        output[kwargs['VARNAME']] = np.atleast_3d(data)
         dimensions.append(kwargs['TIMENAME'])
+    else:
+        output[kwargs['VARNAME']] = np.copy(data)
 
     #-- Defining the HDF5 dataset variables
     h5 = {}
