@@ -162,7 +162,7 @@ def ncdf_read(filename, **kwargs):
     #-- for each variable
     for key,nckey in zip(keys,nckeys):
         #-- Getting the data from each NetCDF variable
-        dinput[key] = fileID.variables[nckey][:].data
+        dinput[key] = np.squeeze(fileID.variables[nckey][:].data)
         #-- Getting attributes of included variables
         dinput['attributes'][key] = {}
         for attr in attributes_list:
