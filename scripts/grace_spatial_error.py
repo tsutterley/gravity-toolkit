@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_error.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (11/2021)
 
 Calculates the GRACE/GRACE-FO errors following Wahr et al. (2006)
 
@@ -121,6 +121,7 @@ REFERENCES:
         http://dx.doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 11/2021: add GSFC low-degree harmonics
     Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: simplified file imports using wrappers in harmonics
         remove choices for argparse processing centers
@@ -661,7 +662,7 @@ def main():
         type=str, default=None, choices=['CSR','GFZ','GSFC'],
         help='Replace C21 and S21 coefficients with SLR values')
     parser.add_argument('--slr-22',
-        type=str, default=None, choices=['CSR'],
+        type=str, default=None, choices=['CSR','GSFC'],
         help='Replace C22 and S22 coefficients with SLR values')
     parser.add_argument('--slr-c30',
         type=str, default=None, choices=['CSR','GFZ','GSFC','LARES'],

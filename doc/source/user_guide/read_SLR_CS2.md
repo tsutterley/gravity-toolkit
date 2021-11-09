@@ -15,7 +15,7 @@ SLR_CS2 = read_SLR_CS2(SLR_file)
     * CSR 2,1: `C21_S21_RL06.txt`
     * CSR 2,2: `C22_S22_RL06.txt`
     * GFZ: `GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat`
-    * GSFC: `GSFC_C21_S21.txt`
+    * GSFC: `gsfc_slr_5x5c61s61.txt`
 
 #### Keyword arguments
 - `HEADER`: file contains header text to be skipped

@@ -63,7 +63,7 @@ from gravity_toolkit.read_SLR_CS2 import read_SLR_CS2
 from gravity_toolkit.read_SLR_C30 import read_SLR_C30
 from gravity_toolkit.read_SLR_C50 import read_SLR_C50
 from gravity_toolkit.read_SLR_geocenter import read_SLR_geocenter
-from gravity_toolkit.read_SLR_monthly_6x1 import read_SLR_monthly_6x1
+from gravity_toolkit.read_SLR_harmonics import read_SLR_harmonics
 from gravity_toolkit.read_swenson_geocenter import read_swenson_geocenter
 from gravity_toolkit.read_tellus_geocenter import read_tellus_geocenter
 from gravity_toolkit.savitzky_golay import savitzky_golay

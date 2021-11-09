@@ -4,7 +4,6 @@ read_SLR_C30.py
 Written by Yara Mohajerani and Tyler Sutterley (09/2021)
 
 Reads monthly degree 3 zonal spherical harmonic data files from SLR
-    https://neptune.gsfc.nasa.gov/gngphys/index.php?section=519
 
 Dataset distributed by NASA PO.DAAC
     https://podaac-tools.jpl.nasa.gov/drive/files/GeodeticsGravity/gracefo/docs
@@ -44,7 +43,7 @@ PYTHON DEPENDENCIES:
 
 PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
-    read_SLR_monthly_6x1.py: reads monthly 5x5 spherical harmonic coefficients
+    read_SLR_harmonics.py: low-degree spherical harmonic coefficients from SLR
 
 REFERENCES:
     Loomis, Rachlin, and Luthcke, "Improved Earth Oblateness Rate Reveals
@@ -81,7 +80,7 @@ import os
 import re
 import numpy as np
 import gravity_toolkit.time
-from gravity_toolkit.read_SLR_monthly_6x1 import read_SLR_monthly_6x1
+import gravity_toolkit.read_SLR_harmonics
 
 #-- PURPOSE: read Degree 3 zonal data from Satellite Laser Ranging (SLR)
 def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
@@ -111,7 +110,7 @@ def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
     #-- output dictionary with input data
     dinput = {}
 
-    if bool(re.search(r'TN-(14)',SLR_file)):
+    if bool(re.search(r'TN-(14)',SLR_file,re.I)):
 
         #-- SLR C30 RL06 file from PO.DAAC produced by GSFC
         with open(os.path.expanduser(SLR_file),'r') as f:
@@ -172,7 +171,7 @@ def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
         #-- truncate variables if necessary
         for key,val in dinput.items():
             dinput[key] = val[:t]
-    elif bool(re.search(r'C30_LARES',SLR_file)):
+    elif bool(re.search(r'C30_LARES',SLR_file,re.I)):
         #-- read LARES filtered values
         LARES_input = np.loadtxt(SLR_file,skiprows=1)
         dinput['time'] = LARES_input[:,0].copy()
@@ -182,7 +181,7 @@ def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
         dinput['error'] = np.zeros_like(LARES_input[:,1])
         #-- calculate GRACE/GRACE-FO month
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
-    elif bool(re.search(r'GRAVIS-2B_GFZOP',SLR_file)):
+    elif bool(re.search(r'GRAVIS-2B_GFZOP',SLR_file,re.I)):
         #-- Combined GRACE/SLR solution file produced by GFZ
         #-- Column  1: MJD of BEGINNING of solution data span
         #-- Column  2: Year and fraction of year of BEGINNING of solution span
@@ -239,7 +238,7 @@ def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
             dinput[key] = val[:t]
     else:
         #-- CSR 5x5 + 6,1 file from CSR and extract C3,0 coefficients
-        Ylms = read_SLR_monthly_6x1(SLR_file, HEADER=True)
+        Ylms = gravity_toolkit.read_SLR_harmonics(SLR_file, HEADER=True)
         #-- extract dates, C30 harmonics and errors
         dinput['time'] = Ylms['time'].copy()
         dinput['data'] = Ylms['clm'][3,0,:].copy()

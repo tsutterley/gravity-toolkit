@@ -13,7 +13,7 @@ SLR_C50 = read_SLR_C50(SLR_file)
 #### Arguments
 - `SLR_file`: low degree zonal file from satellite laser ranging
     * CSR: `CSR_Monthly_5x5_Gravity_Harmonics.txt`
-    * GSFC: `GSFC_SLR_C20_C30_C50_GSM_replacement.txt`
+    * GSFC: `gsfc_slr_5x5c61s61.txt`
     * LARES: `C50_LARES_filtered.txt`
 
 #### Keyword arguments

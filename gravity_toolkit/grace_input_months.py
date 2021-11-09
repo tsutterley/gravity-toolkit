@@ -315,7 +315,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         elif (DREL == 'RL05'):
             SLR_file = os.path.join(base_dir,'TN-07_C20_SLR.txt')
         elif (DREL == 'RL06'):
-            SLR_file = os.path.join(base_dir,'TN-11_C20_SLR.txt')
+            # SLR_file = os.path.join(base_dir,'TN-11_C20_SLR.txt')
+            SLR_file = os.path.join(base_dir,'C20_RL06.txt')
         C20_input = read_SLR_C20(SLR_file)
         FLAGS.append('_wCSR_C20')
     elif (SLR_C20 == 'GFZ'):
@@ -340,8 +341,9 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         FLAGS.append('_wGFZ_21')
     elif (SLR_21 == 'GSFC'):
         #-- calculate monthly averages from 7-day arcs
-        SLR_file = os.path.join(base_dir,'GSFC_C21_S21.txt')
-        C21_input = read_SLR_CS2(SLR_file, DATE=grace_Ylms['time'])
+        # SLR_file = os.path.join(base_dir,'GSFC_C21_S21.txt')
+        SLR_file = os.path.join(base_dir,'gsfc_slr_5x5c61s61.txt')
+        C21_input = read_SLR_CS2(SLR_file, DATE=grace_Ylms['time'], ORDER=1)
         FLAGS.append('_wGSFC_21')
 
     #-- Replacing C2,2/S2,2 with SLR
@@ -350,6 +352,10 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         SLR_file = os.path.join(base_dir,'C22_S22_{0}.txt'.format(DREL))
         C22_input = read_SLR_CS2(SLR_file)
         FLAGS.append('_wCSR_22')
+    elif (SLR_22 == 'GSFC'):
+        SLR_file = os.path.join(base_dir,'gsfc_slr_5x5c61s61.txt')
+        C22_input = read_SLR_CS2(SLR_file, DATE=grace_Ylms['time'], ORDER=2)
+        FLAGS.append('_wGSFC_22')
 
     #-- Replacing C3,0 with SLR C3,0
     #-- Running function read_SLR_C30.py
@@ -382,8 +388,9 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         C50_input = read_SLR_C50(SLR_file)
         FLAGS.append('_wLARES_C50')
     elif (SLR_C50 == 'GSFC'):
-        SLR_file=os.path.join(base_dir,'GSFC_SLR_C20_C30_C50_GSM_replacement.txt')
-        C50_input = read_SLR_C50(SLR_file)
+        # SLR_file=os.path.join(base_dir,'GSFC_SLR_C20_C30_C50_GSM_replacement.txt')
+        SLR_file = os.path.join(base_dir,'gsfc_slr_5x5c61s61.txt')
+        C50_input = read_SLR_C50(SLR_file, DATE=grace_Ylms['time'])
         FLAGS.append('_wGSFC_C50')
 
     #-- Correcting for Degree 1 (geocenter variations)
@@ -491,7 +498,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
                 grace_Ylms['eslm'][2,1,i] = np.copy(C21_input['eS2m'][k])
 
     #-- Replace C22/S22 with SLR coefficients for single-accelerometer months
-    if SLR_22 in ('CSR',):
+    if SLR_22 in ('CSR','GSFC'):
         #-- verify that there are replacement C22/S22 months for specified range
         months_test = sorted(set(single_acc_months) - set(C22_input['month']))
         if months_test:

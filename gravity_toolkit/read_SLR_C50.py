@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C50.py
-Written by Yara Mohajerani and Tyler Sutterley (09/2021)
+Written by Yara Mohajerani and Tyler Sutterley (11/2021)
 
-This program reads in C50 spherical harmonic coefficients from SLR measurements
-    https://neptune.gsfc.nasa.gov/gngphys/index.php?section=519
+Reads monthly degree 5 zonal spherical harmonic data files from SLR
 
 Dataset distributed by NASA PO.DAAC
     https://podaac-tools.jpl.nasa.gov/drive/files/GeodeticsGravity/gracefo/docs
@@ -12,6 +11,8 @@ Dataset distributed by NASA PO.DAAC
         GSFC_SLR_C20_C30_C50_GSM_replacement.txt
     ftp://ftp.csr.utexas.edu/pub/slr/degree_5/
         CSR_Monthly_5x5_Gravity_Harmonics.txt
+Dataset distributed by GSFC
+    https://earth.gsfc.nasa.gov/geo/data/slr
 
 CALLING SEQUENCE:
     SLR_C50 = read_SLR_C50(SLR_file)
@@ -30,6 +31,7 @@ OUTPUTS:
 OPTIONS:
     HEADER: file contains header text to be skipped (default: True)
     C50_MEAN: mean C50 to add to LARES C50 anomalies
+    DATE: mid-point of monthly solution for calculating 28-day arc averages
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
@@ -40,9 +42,10 @@ PYTHON DEPENDENCIES:
 
 PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
-    read_SLR_monthly_6x1.py: reads monthly 5x5 spherical harmonic coefficients
+    read_SLR_harmonics.py: low-degree spherical harmonic coefficients from SLR
 
 UPDATE HISTORY:
+    Updated 11/2021: reader for new weekly 5x5+6,1 fields from NASA GSFC
     Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: simplified program similar to other SLR readers
         define int/float precision to prevent deprecation warning
@@ -55,10 +58,10 @@ import os
 import re
 import numpy as np
 import gravity_toolkit.time
-from gravity_toolkit.read_SLR_monthly_6x1 import read_SLR_monthly_6x1
+import gravity_toolkit.read_SLR_harmonics
 
 #-- PURPOSE: read Degree 5 zonal data from Satellite Laser Ranging (SLR)
-def read_SLR_C50(SLR_file, HEADER=True, C50_MEAN=0.):
+def read_SLR_C50(SLR_file, HEADER=True, C50_MEAN=0.0, DATE=None):
     """
     Reads C50 spherical harmonic coefficients from SLR measurements
 
@@ -70,6 +73,7 @@ def read_SLR_C50(SLR_file, HEADER=True, C50_MEAN=0.):
     -----------------
     HEADER: file contains header text to be skipped (default: True)
     C50_MEAN: mean C50 to add to LARES C50 anomalies
+    DATE: mid-point of monthly solution for calculating 28-day arc averages
 
     Returns
     -------
@@ -85,7 +89,7 @@ def read_SLR_C50(SLR_file, HEADER=True, C50_MEAN=0.):
     #-- output dictionary with input data
     dinput = {}
 
-    if bool(re.search(r'GSFC_SLR_C(20)_C(30)_C(50)',SLR_file)):
+    if bool(re.search(r'GSFC_SLR_C(20)_C(30)_C(50)',SLR_file,re.I)):
 
         #-- SLR C50 RL06 file from GSFC
         with open(os.path.expanduser(SLR_file),'r') as f:
@@ -145,7 +149,28 @@ def read_SLR_C50(SLR_file, HEADER=True, C50_MEAN=0.):
         #-- truncate variables if necessary
         for key,val in dinput.items():
             dinput[key] = val[:t]
-    elif bool(re.search(r'C50_LARES',SLR_file)):
+    elif bool(re.search(r'gsfc_slr_5x5c61s61',SLR_file,re.I)):
+        #-- read 5x5 + 6,1 file from GSFC and extract coefficients
+        Ylms = gravity_toolkit.read_SLR_harmonics(SLR_file, HEADER=True)
+        #-- duplicate time and harmonics
+        tdec = np.repeat(Ylms['time'],7)
+        c50 = np.repeat(Ylms['clm'][5,0],7)
+        #-- calculate daily dates to use in centered moving average
+        tdec += (np.mod(np.arange(len(tdec)),7) - 3.5)/365.25
+        #-- number of dates to use in average
+        n_neighbors = 28
+        #-- calculate 28-day moving-average solution from 7-day arcs
+        dinput['time'] = np.zeros_like(DATE)
+        dinput['data'] = np.zeros_like(DATE,dtype='f8')
+        #-- no estimated spherical harmonic errors
+        dinput['error'] = np.zeros_like(DATE,dtype='f8')
+        for i,D in enumerate(DATE):
+            isort = np.argsort((tdec - D)**2)[:n_neighbors]
+            dinput['time'][i] = np.mean(tdec[isort])
+            dinput['data'][i] = np.mean(c50[isort])
+        #-- GRACE/GRACE-FO month
+        dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
+    elif bool(re.search(r'C50_LARES',SLR_file,re.I)):
         #-- read LARES filtered values
         LARES_input = np.loadtxt(SLR_file,skiprows=1)
         dinput['time'] = LARES_input[:,0].copy()
@@ -156,8 +181,8 @@ def read_SLR_C50(SLR_file, HEADER=True, C50_MEAN=0.):
         #-- calculate GRACE/GRACE-FO month
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
     else:
-        #-- CSR 5x5 + 6,1 file from CSR and extract C5,0 coefficients
-        Ylms = read_SLR_monthly_6x1(SLR_file, HEADER=True)
+        #-- read 5x5 + 6,1 file from CSR and extract C5,0 coefficients
+        Ylms = gravity_toolkit.read_SLR_harmonics(SLR_file, HEADER=True)
         #-- extract dates, C50 harmonics and errors
         dinput['time'] = Ylms['time'].copy()
         dinput['data'] = Ylms['clm'][5,0,:].copy()

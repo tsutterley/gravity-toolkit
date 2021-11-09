@@ -19,7 +19,7 @@ A variation in mass at the Earth's surface will load and deform the solid Earth,
 which will induce density anomalies at depth [Wahr1998]_.
 To accurately assess the surface load from time-variable gravity,
 we need to compensate for the Earth's elastic yielding [Wahr1998]_.
-This program accounts for the elastic deformation of the solid Earth using load Love numbers
+These tools account for the elastic deformation of the solid Earth using load Love numbers
 with parameters from the Preliminary reference Earth model (PREM) [Farrell1972]_ [Dziewonski1981]_.
 In order to help estimate the uncertainty in elastic deformation,
 ``grace_spatial_maps.py`` can use different sets of load Love numbers by adjusting the
