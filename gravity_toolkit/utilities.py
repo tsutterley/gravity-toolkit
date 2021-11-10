@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (11/2021)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
     lxml: processing XML and HTML in Python (https://pypi.python.org/pypi/lxml)
 
 UPDATE HISTORY:
+    Updated 11/2021: add CSR satellite laser ranging oblateness file
     Updated 10/2021: using python logging for handling verbose output
     Updated 09/2021: added generic list from Apache http server
     Updated 07/2021: added unique filename opener for log files
@@ -863,6 +864,7 @@ def from_csr(directory,timeout=None,context=ssl.SSLContext(),
     FILES = []
     FILES.append([HOST,'pub','slr','degree_5',
         'CSR_Monthly_5x5_Gravity_Harmonics.txt'])
+    FILES.append([HOST,'pub','slr','degree_2','C20_RL06.txt'])
     FILES.append([HOST,'pub','slr','degree_2','C21_S21_RL06.txt'])
     FILES.append([HOST,'pub','slr','degree_2','C22_S22_RL06.txt'])
     #-- for each SLR file

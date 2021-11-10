@@ -1,17 +1,20 @@
 #!/usr/bin/env python
 u"""
-read_SLR_monthly_6x1.py
-Written by Tyler Sutterley (05/2021)
+read_SLR_harmonics.py
+Written by Tyler Sutterley (11/2021)
 
-Reads in monthly 5x5 spherical harmonic coefficients with 1
-    coefficient from degree 6 all calculated from SLR measurements
+Reads in low-degree spherical harmonic coefficients calculated from
+    Satellite Laser Ranging (SLR) measurements
 
 Dataset distributed by UTCSR
     ftp://ftp.csr.utexas.edu/outgoing/cheng/slrgeo.5d561_187_naod
     http://download.csr.utexas.edu/pub/slr/degree_5/
         CSR_Monthly_5x5_Gravity_Harmonics.txt
+Dataset distributed by GSFC
+    https://earth.gsfc.nasa.gov/geo/data/slr
 
 OPTIONS:
+    SCALE: scale factor for converting to fully-normalized spherical harmonics
     HEADER: file contains header text to be skipped (default: True)
 
 OUTPUTS:
@@ -23,9 +26,13 @@ OUTPUTS:
     time: output date in year-decimal
 
 REFERENCES:
-    Cheng, M., J. C.  Ries, and B. D. Tapley, 'Variations of the Earth's Figure
-    Axis from Satellite Laser Ranging and GRACE', J. Geophys. Res., 116, B01409,
-    2011, DOI:10.1029/2010JB000850.
+    Cheng, Ries, and Tapley, "Variations of the Earth's Figure Axis from
+        Satellite Laser Ranging and GRACE", Journal of Geophysical Research,
+        116, B01409, (2011). https://doi.org/10.1029/2010JB000850
+    Loomis, Rachlin, Wiese, Landerer, and Luthcke, "Replacing GRACE/GRACE‐FO
+        C30 with satellite laser ranging: Impacts on Antarctic Ice Sheet
+        mass change". Geophysical Research Letters, 47, (2020).
+        https://doi.org/10.1029/2019GL085488
 
 NOTES:
     Degree-1 variations are not included with the new 5x5 product
@@ -43,6 +50,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 11/2021: renamed module. added reader for GSFC weekly 5x5 fields
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: renamed module. new SLR 5x5 format from CSR (see notes)
         add file read checks (for mean harmonics header and arc number)
@@ -61,8 +69,17 @@ import re
 import numpy as np
 import gravity_toolkit.time
 
-#-- PURPOSE: read low degree harmonic data from Satellite Laser Ranging (SLR)
-def read_SLR_monthly_6x1(input_file, HEADER=True):
+#-- PURPOSE: wrapper function for calling individual readers
+def read_SLR_harmonics(input_file, **kwargs):
+    if bool(re.search(r'gsfc_slr_5x5c61s61',input_file,re.I)):
+        return read_GSFC_weekly_6x1(input_file, **kwargs)
+    elif bool(re.search(r'CSR_Monthly_5x5_Gravity_Harmonics',input_file,re.I)):
+        return read_CSR_monthly_6x1(input_file, **kwargs)
+    else:
+        raise Exception('Unknown SLR file format {0}'.format(input_file))
+
+#-- PURPOSE: read monthly degree harmonic data from Satellite Laser Ranging (SLR)
+def read_CSR_monthly_6x1(input_file, SCALE=1e-10, HEADER=True):
     """
     Reads in monthly low degree and order spherical harmonic coefficients
     from Satellite Laser Ranging (SLR) measurements
@@ -73,6 +90,7 @@ def read_SLR_monthly_6x1(input_file, HEADER=True):
 
     Keyword arguments
     -----------------
+    SCALE: scale factor for converting to fully-normalized spherical harmonics
     HEADER: file contains header text to be skipped
 
     Returns
@@ -177,11 +195,11 @@ def read_SLR_monthly_6x1(input_file, HEADER=True):
             #-- degree and order for the line
             l1 = np.int64(line[0])
             m1 = np.int64(line[1])
-            #-- fill anomaly field Ylms (variations and sigmas scaled by 1.0e10)
-            Ylm_anomalies['clm'][l1,m1,d] = np.float64(line[2])*1e-10
-            Ylm_anomalies['slm'][l1,m1,d] = np.float64(line[3])*1e-10
-            Ylm_anomaly_error['clm'][l1,m1,d] = np.float64(line[6])*1e-10
-            Ylm_anomaly_error['slm'][l1,m1,d] = np.float64(line[7])*1e-10
+            #-- fill anomaly field Ylms and rescale to output
+            Ylm_anomalies['clm'][l1,m1,d] = np.float64(line[2])*SCALE
+            Ylm_anomalies['slm'][l1,m1,d] = np.float64(line[3])*SCALE
+            Ylm_anomaly_error['clm'][l1,m1,d] = np.float64(line[6])*SCALE
+            Ylm_anomaly_error['slm'][l1,m1,d] = np.float64(line[7])*SCALE
             #-- add 1 to counter
             count += 1
 
@@ -192,6 +210,89 @@ def read_SLR_monthly_6x1(input_file, HEADER=True):
             mean_Ylm_error['clm'][:,:]**2)
         Ylms['error']['slm'][:,:,d]=np.sqrt(Ylm_anomaly_error['slm'][:,:,d]**2 +
             mean_Ylm_error['slm'][:,:]**2)
+
+    #-- return spherical harmonic fields and date information
+    return Ylms
+
+#-- PURPOSE: read weekly degree harmonic data from Satellite Laser Ranging (SLR)
+def read_GSFC_weekly_6x1(input_file, SCALE=1.0, HEADER=True):
+    """
+    Reads weekly 5x5 spherical harmonic coefficients with 1 coefficient from
+        degree 6 calculated from satellite laser ranging measurements
+
+    Arguments
+    ---------
+    input_file: input satellite laser ranging file from GSFC
+
+    Keyword arguments
+    -----------------
+    SCALE: scale factor for converting to fully-normalized spherical harmonics
+    HEADER: file contains header text to be skipped
+
+    Returns
+    -------
+    clm: Cosine spherical harmonic coefficients
+    slm: Sine spherical harmonic coefficients
+    MJD: output date as Modified Julian Day
+    time: output date in year-decimal
+    """
+    #-- check that SLR file exists
+    if not os.access(os.path.expanduser(input_file), os.F_OK):
+        raise FileNotFoundError('SLR file not found in file system')
+
+    #-- read the file and get contents
+    with open(os.path.expanduser(input_file),'r') as f:
+        file_contents = f.read().splitlines()
+    file_lines = len(file_contents)
+
+    #-- spherical harmonic degree range (5x5 with 6,1)
+    LMIN = 2
+    LMAX = 6
+    n_harm = (LMAX**2 + 3*LMAX - LMIN**2 - LMIN)//2 - 5
+
+    #-- counts the number of lines in the header
+    count = 0
+    #-- Reading over header text
+    while HEADER:
+        #-- file line at count
+        line = file_contents[count]
+        #-- find the final line within the header text
+        #-- to set HEADER flag to False when found
+        HEADER = not bool(re.search(r'Product:',line))
+        #-- add 1 to counter
+        count += 1
+
+    #-- number of dates within the file
+    n_dates = (file_lines - count)//(n_harm + 1)
+    #-- output spherical harmonic fields
+    Ylms = {}
+    Ylms['MJD'] = np.zeros((n_dates))
+    Ylms['time'] = np.zeros((n_dates))
+    Ylms['clm'] = np.zeros((LMAX+1,LMAX+1,n_dates))
+    Ylms['slm'] = np.zeros((LMAX+1,LMAX+1,n_dates))
+    #-- for each date
+    for d in range(n_dates):
+        #-- split the date line into individual components
+        line_contents = file_contents[count].split()
+        #-- modified Julian date of the beginning of the week
+        Ylms['MJD'][d] = np.float(line_contents[0])
+        #-- date of the mid-point of the arc given in years
+        Ylms['time'][d] = np.float(line_contents[1])
+        #-- add 1 to counter
+        count += 1
+
+        #-- read the spherical harmonic field
+        for i in range(n_harm):
+            #-- split the line into individual components
+            line_contents = file_contents[count].split()
+            #-- degree and order for the line
+            l1 = np.int(line_contents[0])
+            m1 = np.int(line_contents[1])
+            #-- Spherical Harmonic data rescaled to output
+            Ylms['clm'][l1,m1,d] = np.float(line_contents[2])*SCALE
+            Ylms['slm'][l1,m1,d] = np.float(line_contents[3])*SCALE
+            #-- add 1 to counter
+            count += 1
 
     #-- return spherical harmonic fields and date information
     return Ylms

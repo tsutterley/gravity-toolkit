@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_mascon.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (11/2021)
 
 Calculates a time-series of regional mass anomalies through a least-squares
     mascon procedure from GRACE/GRACE-FO time-variable gravity data
@@ -156,6 +156,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 11/2021: add GSFC low-degree harmonics
     Updated 10/2021: using python logging for handling verbose output
         fix choices for setting input format of the removed files
     Updated 08/2021: reorganize GRACE/GRACE-FO file import
@@ -905,7 +906,7 @@ def main():
         type=str, default=None, choices=['CSR','GFZ','GSFC'],
         help='Replace C21 and S21 coefficients with SLR values')
     parser.add_argument('--slr-22',
-        type=str, default=None, choices=['CSR'],
+        type=str, default=None, choices=['CSR','GSFC'],
         help='Replace C22 and S22 coefficients with SLR values')
     parser.add_argument('--slr-c30',
         type=str, default=None, choices=['CSR','GFZ','GSFC','LARES'],

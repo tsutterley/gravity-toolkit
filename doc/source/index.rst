@@ -72,7 +72,7 @@ missions
     user_guide/read_SLR_C30.md
     user_guide/read_SLR_C50.md
     user_guide/read_SLR_geocenter.md
-    user_guide/read_SLR_monthly_6x1.rst
+    user_guide/read_SLR_harmonics.rst
     user_guide/read_swenson_geocenter.rst
     user_guide/read_tellus_geocenter.rst
     user_guide/savitzky_golay.rst

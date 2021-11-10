@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 scale_grace_maps.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (11/2021)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly scaled spatial fields, estimated scaling errors,
@@ -159,6 +159,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 11/2021: add GSFC low-degree harmonics
     Updated 10/2021: using python logging for handling verbose output
         add more choices for setting input format of the removed files
     Updated 07/2021: switch from parameter files to argparse arguments
@@ -852,7 +853,7 @@ def main():
         type=str, default=None, choices=['CSR','GFZ','GSFC'],
         help='Replace C21 and S21 coefficients with SLR values')
     parser.add_argument('--slr-22',
-        type=str, default=None, choices=['CSR'],
+        type=str, default=None, choices=['CSR','GSFC'],
         help='Replace C22 and S22 coefficients with SLR values')
     parser.add_argument('--slr-c30',
         type=str, default=None, choices=['CSR','GFZ','GSFC','LARES'],

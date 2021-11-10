@@ -101,8 +101,6 @@ UPDATE HISTORY:
         Will use these marked (*) data to replace the GRACE C2,0
         ALSO converted the mon and slrdate inputs into options
     Updated 01/2012: Updated to feed in SLR file from outside
-        Update makes this program universal for each computer
-        Won't have to update file on each computer pointing to the SLR file
         Will accommodate upcoming GRACE RL05, which will use different SLR files
     Written 12/2011
 """
@@ -140,7 +138,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
     #-- output dictionary with data variables
     dinput = {}
     #-- determine if imported file is from PO.DAAC or CSR
-    if bool(re.search(r'C20_RL\d+',SLR_file)):
+    if bool(re.search(r'C20_RL\d+',SLR_file,re.I)):
         #-- SLR C20 file from CSR
         #-- Just for checking new months when TN series isn't up to date as the
         #-- SLR estimates always use the full set of days in each calendar month.
@@ -169,7 +167,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
         if AOD:
             #-- Removing AOD product that was restored in the solution
             dinput['data'] -= file_input['AOD']*1e-10
-    elif bool(re.search(r'GFZ_(RL\d+)_C20_SLR',SLR_file)):
+    elif bool(re.search(r'GFZ_(RL\d+)_C20_SLR',SLR_file,re.I)):
         #-- SLR C20 file from GFZ
         #-- Column 1: MJD of BEGINNING of solution span
         #-- Column 2: Year and fraction of year of BEGINNING of solution span
@@ -223,7 +221,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
         for key,val in dinput.items():
             dinput[key] = val[:t]
 
-    elif bool(re.search(r'GRAVIS-2B_GFZOP',SLR_file)):
+    elif bool(re.search(r'GRAVIS-2B_GFZOP',SLR_file,re.I)):
         #-- Combined GRACE/SLR solution file produced by GFZ
         #-- Column  1: MJD of BEGINNING of solution data span
         #-- Column  2: Year and fraction of year of BEGINNING of solution span
@@ -279,7 +277,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
         for key,val in dinput.items():
             dinput[key] = val[:t]
 
-    elif bool(re.search(r'TN-(11|14)',SLR_file)):
+    elif bool(re.search(r'TN-(11|14)',SLR_file,re.I)):
         #-- SLR C20 RL06 file from PO.DAAC
         with open(os.path.expanduser(SLR_file),'r') as f:
             file_contents = f.read().splitlines()

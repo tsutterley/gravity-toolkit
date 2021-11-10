@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_CS2.py
-Written by Hugo Lecomte and Tyler Sutterley (09/2021)
+Written by Hugo Lecomte and Tyler Sutterley (11/2021)
 
 Reads monthly degree 2,m (figure axis and azimuthal dependence)
     spherical harmonic data files from satellite laser ranging (SLR)
@@ -12,7 +12,8 @@ Dataset distributed by CSR
 Dataset distributed by GFZ
     ftp://isdcftp.gfz-potsdam.de/grace/GravIS/GFZ/Level-2B/aux_data/
         GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat
-Dataset from GSFC provided by Bryant Loomis
+Dataset distributed by GSFC
+    https://earth.gsfc.nasa.gov/geo/data/slr
 
 CALLING SEQUENCE:
     SLR_2m = read_SLR_CS2(SLR_file)
@@ -45,6 +46,7 @@ PYTHON DEPENDENCIES:
 
 PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
+    read_SLR_harmonics.py: low-degree spherical harmonic coefficients from SLR
 
 REFERENCES:
     Cheng et al., " Variations of the Earth's figure axis from satellite
@@ -63,6 +65,7 @@ REFERENCES:
         https://doi.org/10.1007/s00190-021-01492-x
 
 UPDATE HISTORY:
+    Updated 11/2021: reader for new weekly 5x5+6,1 fields from NASA GSFC
     Updated 09/2021: use functions for converting to and from GRACE months
     Updated 08/2021: output empty spherical harmonic errors for GSFC
     Updated 06/2021: added GSFC 7-day SLR figure axis solutions
@@ -74,9 +77,10 @@ import os
 import re
 import numpy as np
 import gravity_toolkit.time
+import gravity_toolkit.read_SLR_harmonics
 
 #-- PURPOSE: read Degree 2,m data from Satellite Laser Ranging (SLR)
-def read_SLR_CS2(SLR_file, HEADER=True, DATE=None):
+def read_SLR_CS2(SLR_file, ORDER=1, HEADER=True, DATE=None):
     """
     Reads CS2,m spherical harmonic coefficients from SLR measurements
 
@@ -86,6 +90,7 @@ def read_SLR_CS2(SLR_file, HEADER=True, DATE=None):
 
     Keyword arguments
     -----------------
+    ORDER: spherical harmonic order to extract from low-degree fields
     HEADER: file contains header text to be skipped
     DATE: mid-point of monthly solution for calculating 28-day arc averages
 
@@ -105,7 +110,7 @@ def read_SLR_CS2(SLR_file, HEADER=True, DATE=None):
     #-- output dictionary with input data
     dinput = {}
 
-    if bool(re.search(r'GSFC_C2(\d)_S2(\d)',SLR_file)):
+    if bool(re.search(r'GSFC_C2(\d)_S2(\d)',SLR_file,re.I)):
         #-- 7-day arc SLR file produced by GSFC
         #-- input variable names and types
         dtype = {}
@@ -138,7 +143,32 @@ def read_SLR_CS2(SLR_file, HEADER=True, DATE=None):
             dinput['S2m'][i] = np.mean(s2m[isort])
         #-- GRACE/GRACE-FO month
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
-    elif bool(re.search(r'C2(\d)_S2(\d)_(RL\d{2})',SLR_file)):
+    elif bool(re.search(r'gsfc_slr_5x5c61s61',SLR_file,re.I)):
+        #-- read 5x5 + 6,1 file from GSFC and extract coefficients
+        Ylms = gravity_toolkit.read_SLR_harmonics(SLR_file, HEADER=True)
+        #-- duplicate time and harmonics
+        tdec = np.repeat(Ylms['time'],7)
+        c2m = np.repeat(Ylms['clm'][2,ORDER],7)
+        s2m = np.repeat(Ylms['slm'][2,ORDER],7)
+        #-- calculate daily dates to use in centered moving average
+        tdec += (np.mod(np.arange(len(tdec)),7) - 3.5)/365.25
+        #-- number of dates to use in average
+        n_neighbors = 28
+        #-- calculate 28-day moving-average solution from 7-day arcs
+        dinput['time'] = np.zeros_like(DATE)
+        dinput['C2m'] = np.zeros_like(DATE,dtype='f8')
+        dinput['S2m'] = np.zeros_like(DATE,dtype='f8')
+        #-- no estimated spherical harmonic errors
+        dinput['eC2m'] = np.zeros_like(DATE,dtype='f8')
+        dinput['eS2m'] = np.zeros_like(DATE,dtype='f8')
+        for i,D in enumerate(DATE):
+            isort = np.argsort((tdec - D)**2)[:n_neighbors]
+            dinput['time'][i] = np.mean(tdec[isort])
+            dinput['C2m'][i] = np.mean(c2m[isort])
+            dinput['S2m'][i] = np.mean(s2m[isort])
+        #-- GRACE/GRACE-FO month
+        dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
+    elif bool(re.search(r'C2(\d)_S2(\d)_(RL\d{2})',SLR_file,re.I)):
         #-- SLR RL06 file produced by CSR
         #-- input variable names and types
         dtype = {}
@@ -165,7 +195,7 @@ def read_SLR_CS2(SLR_file, HEADER=True, DATE=None):
         #-- scale SLR solution sigmas
         dinput['eC2m'] = content['eC2']*10**-10
         dinput['eS2m'] = content['eS2']*10**-10
-    elif bool(re.search(r'GRAVIS-2B_GFZOP',SLR_file)):
+    elif bool(re.search(r'GRAVIS-2B_GFZOP',SLR_file,re.I)):
         #-- Combined GRACE/SLR solution file produced by GFZ
         #-- Column  1: MJD of BEGINNING of solution data span
         #-- Column  2: Year and fraction of year of BEGINNING of solution span

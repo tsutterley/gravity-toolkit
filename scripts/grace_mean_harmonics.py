@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_mean_harmonics.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (11/2021)
 
 Calculates the temporal mean of the GRACE/GRACE-FO spherical harmonics
     for a given date range from a set of parameters
@@ -73,6 +73,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 11/2021: add GSFC low-degree harmonics
     Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: simplified file exports using wrappers in harmonics
         added option to output in gravity field coefficients (gfc) format
@@ -389,7 +390,7 @@ def main():
         type=str, default=None, choices=['CSR','GFZ','GSFC'],
         help='Replace C21 and S21 coefficients with SLR values')
     parser.add_argument('--slr-22',
-        type=str, default=None, choices=['CSR'],
+        type=str, default=None, choices=['CSR','GSFC'],
         help='Replace C22 and S22 coefficients with SLR values')
     parser.add_argument('--slr-c30',
         type=str, default=None, choices=['CSR','GFZ','GSFC','LARES'],

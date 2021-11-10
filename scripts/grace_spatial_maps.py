@@ -151,6 +151,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 11/2021: add GSFC low-degree harmonics
     Updated 10/2021: using python logging for handling verbose output
         add more choices for setting input format of the removed files
     Updated 07/2021: simplified file imports using wrappers in harmonics
@@ -709,7 +710,7 @@ def main():
         type=str, default=None, choices=['CSR','GFZ','GSFC'],
         help='Replace C21 and S21 coefficients with SLR values')
     parser.add_argument('--slr-22',
-        type=str, default=None, choices=['CSR'],
+        type=str, default=None, choices=['CSR','GSFC'],
         help='Replace C22 and S22 coefficients with SLR values')
     parser.add_argument('--slr-c30',
         type=str, default=None, choices=['CSR','GFZ','GSFC','LARES'],
