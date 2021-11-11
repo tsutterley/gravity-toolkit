@@ -128,6 +128,19 @@ General Methods
         ``month``: calendar month
 
 
+.. method:: gravity_toolkit.time.calendar_to_julian(year_decimal)
+
+    Converts calendar dates to Julian days
+
+    Arguments
+
+        ``year_decimal``: calendar year
+
+    Returns
+
+        ``JD``: Julian Day (days since 01-01-4713 BCE at 12:00:00)
+
+
 .. method:: gravity_toolkit.time.calendar_days(year)
 
     Calculates the number of days per month for a given year

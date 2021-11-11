@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 aod1b_geocenter.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (11/2021)
 Contributions by Hugo Lecomte (03/2021)
 
 Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
@@ -34,6 +34,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATED HISTORY:
+    Updated 11/2021: use gravity_toolkit geocenter class for operations
     Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: can use default argument files to define options
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -193,9 +194,10 @@ def aod1b_geocenter(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
                 else:
                     fid = tar.extractfile(member)
                 #-- degree 1 spherical harmonics for day and hours
-                C10 = np.zeros((n_time))
-                C11 = np.zeros((n_time))
-                S11 = np.zeros((n_time))
+                DEG1 = geocenter()
+                DEG1.C10 = np.zeros((n_time))
+                DEG1.C11 = np.zeros((n_time))
+                DEG1.S11 = np.zeros((n_time))
                 hours = np.zeros((n_time),dtype=np.int64)
 
                 #-- create counter for hour in dataset
@@ -218,18 +220,18 @@ def aod1b_geocenter(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
                             l1 = np.int64(line_contents[0])
                             m1 = np.int64(line_contents[1])
                             if (l1 == 1) and (m1 == 0):
-                                C10[c] = np.float64(line_contents[2])
+                                DEG1.C10[c] = np.float64(line_contents[2])
                             elif (l1 == 1) and (m1 == 1):
-                                C11[c] = np.float64(line_contents[2])
-                                S11[c] = np.float64(line_contents[3])
+                                DEG1.C11[c] = np.float64(line_contents[2])
+                                DEG1.S11[c] = np.float64(line_contents[3])
                         #-- add 1 to hour counter
                         c += 1
                 #-- close the input file for day
                 fid.close()
                 #-- convert from spherical harmonics into geocenter
-                XYZ = geocenter(C10=C10, C11=C11, S11=S11)
+                DEG1.to_cartesian()
                 #-- write to file for each hour (iterates each 6-hour block)
-                for h,X,Y,Z in zip(hours,XYZ['x'],XYZ['y'],XYZ['z']):
+                for h,X,Y,Z in zip(hours,DEG1.X,DEG1.Y,DEG1.Z):
                     print(fstr.format(YY,MM,DD,h,X,Y,Z), file=f)
 
             #-- close the tar file

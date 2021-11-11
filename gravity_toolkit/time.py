@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 time.py
-Written by Tyler Sutterley (09/2021)
+Written by Tyler Sutterley (11/2021)
 Utilities for calculating time operations
 
 PYTHON DEPENDENCIES:
@@ -11,6 +11,7 @@ PYTHON DEPENDENCIES:
         https://dateutil.readthedocs.io/en/stable/
 
 UPDATE HISTORY:
+    Updated 11/2021: added function for calendar year (decimal) to Julian Day 
     Updated 09/2021: add functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: added adjust_months function to fix special months cases
@@ -183,6 +184,30 @@ def grace_to_calendar(grace_month):
     year = np.array(2002 + (grace_month-1)//12).astype(int)
     month = np.mod(grace_month-1,12) + 1
     return (year, month)
+
+#-- PURPOSE: convert calendar dates to Julian days
+def calendar_to_julian(year_decimal):
+    """
+    Converts calendar dates to Julian days
+
+    Arguments
+    ---------
+    year: calendar year
+
+    Returns
+    -------
+    JD: Julian Day (days since 01-01-4713 BCE at 12:00:00)
+    """
+    #-- calculate year
+    year = np.floor(year_decimal)
+    #-- calculation of day of the year
+    dpy = calendar_days(year).sum()
+    DofY = dpy*(year_decimal % 1)
+    #-- Calculation of the Julian date from year and DofY
+    JD = np.array(367.0*year - np.floor(7.0*year/4.0) -
+        np.floor(3.0*(np.floor((7.0*year - 1.0)/700.0) + 1.0)/4.0) +
+        DofY + 1721058.5, dtype=np.float64)
+    return JD
 
 #-- PURPOSE: gets the number of days per month for a given year
 def calendar_days(year):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_gravis_geocenter.py
-Written by Tyler Sutterley (09/2021)
+Written by Tyler Sutterley (11/2021)
 
 Reads monthly geocenter spherical harmonic data files from
     GFZ GravIS calculated using GRACE/GRACE-FO measurements
@@ -44,14 +44,13 @@ REFERENCES:
         http://doi.org/10.5880/GFZ.GRAVIS_06_L2B
 
 UPDATE HISTORY:
+    Updated 11/2021: function deprecated. merged with gravity_toolkit.geocenter
     Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Written 05/2021
 """
-import os
-import re
-import numpy as np
-import gravity_toolkit.time
+import warnings
+import gravity_toolkit.geocenter
 
 #-- PURPOSE: read geocenter data from GFZ GravIS SLR/GRACE solutions
 def read_gravis_geocenter(geocenter_file, HEADER=True):
@@ -76,92 +75,10 @@ def read_gravis_geocenter(geocenter_file, HEADER=True):
     month: GRACE/GRACE-FO month
     time: date of each month in year-decimal
     """
-
-    #-- check that geocenter file exists
-    if not os.access(os.path.expanduser(geocenter_file), os.F_OK):
-        raise FileNotFoundError('Geocenter file not found in file system')
-    #-- output dictionary with input data
-    dinput = {}
-
-    #-- Combined GRACE/SLR geocenter solution file produced by GFZ GravIS
-    #-- Column  1: MJD of BEGINNING of solution data span
-    #-- Column  2: Year and fraction of year of BEGINNING of solution data span
-    #-- Column  3: Coefficient C(1,0)
-    #-- Column  4: Coefficient C(1,0) - mean C(1,0) (1.0E-10)
-    #-- Column  5: C(1,0) uncertainty (1.0E-10)
-    #-- Column  6: Coefficient C(1,1)
-    #-- Column  7: Coefficient C(1,1) - mean C(1,1) (1.0E-10)
-    #-- Column  8: C(1,1) uncertainty (1.0E-10)
-    #-- Column  9: Coefficient S(1,1)
-    #-- Column 10: Coefficient S(1,1) - mean S(1,1) (1.0E-10)
-    #-- Column 11: S(1,1) uncertainty (1.0E-10)
-
-    with open(os.path.expanduser(geocenter_file),'r') as f:
-        file_contents = f.read().splitlines()
-    #-- number of lines contained in the file
-    file_lines = len(file_contents)
-
-    #-- counts the number of lines in the header
-    count = 0
-    #-- Reading over header text
-    while HEADER:
-        #-- file line at count
-        line = file_contents[count]
-        #-- find PRODUCT: within line to set HEADER flag to False when found
-        HEADER = not bool(re.match(r'PRODUCT:+',line))
-        #-- add 1 to counter
-        count += 1
-
-    #-- number of months within the file
-    n_mon = file_lines - count
-    #-- date and GRACE/GRACE-FO month
-    dinput['time'] = np.zeros((n_mon))
-    dinput['month'] = np.zeros((n_mon),dtype=int)
-    #-- monthly spherical harmonic replacement solutions
-    dinput['C10'] = np.zeros((n_mon))
-    dinput['C11'] = np.zeros((n_mon))
-    dinput['S11'] = np.zeros((n_mon))
-    #-- monthly spherical harmonic formal standard deviations
-    dinput['eC10'] = np.zeros((n_mon))
-    dinput['eC11'] = np.zeros((n_mon))
-    dinput['eS11'] = np.zeros((n_mon))
-    #-- time count
-    t = 0
-    #-- for every other line:
-    for line in file_contents[count:]:
-        #-- find numerical instances in line including exponents,
-        #-- decimal points and negatives
-        line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
-        count = len(line_contents)
-        #-- check for empty lines
-        if (count > 0):
-            #-- reading decimal year for start of span
-            dinput['time'][t] = np.float64(line_contents[1])
-            #-- Spherical Harmonic data for line
-            dinput['C10'][t] = np.float64(line_contents[2])
-            dinput['C11'][t] = np.float64(line_contents[5])
-            dinput['S11'][t] = np.float64(line_contents[8])
-            #-- monthly spherical harmonic formal standard deviations
-            dinput['eC10'][t] = np.float64(line_contents[4])*1e-10
-            dinput['eC11'][t] = np.float64(line_contents[7])*1e-10
-            dinput['eS11'][t] = np.float64(line_contents[10])*1e-10
-            #-- GRACE/GRACE-FO month of geocenter solutions
-            dinput['month'][t] = gravity_toolkit.time.calendar_to_grace(
-                dinput['time'][t], around=np.round)
-            #-- add to t count
-            t += 1
-    #-- truncate variables if necessary
-    for key,val in dinput.items():
-        dinput[key] = val[:t]
-
-    #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
-    #-- Accelerometer shutoffs make the relation between month number
-    #-- and date more complicated as days from other months are used
-    #-- For CSR and GFZ: Nov 2011 (119) is centered in Oct 2011 (118)
-    #-- For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
-    #-- For all: May 2015 (161) is centered in Apr 2015 (160)
-    #-- For GSFC: Oct 2018 (202) is centered in Nov 2018 (203)
-    dinput['month'] = gravity_toolkit.time.adjust_months(dinput['month'])
-
+    warnings.filterwarnings("always")
+    warnings.warn("Deprecated. Please use gravity_toolkit.geocenter instead",
+        DeprecationWarning)
+    # call renamed version to not break workflows
+    DEG1 = gravity_toolkit.geocenter().from_gravis(geocenter_file,header=HEADER)
     #-- return the GFZ GravIS geocenter solutions
-    return dinput
+    return DEG1.to_dict()

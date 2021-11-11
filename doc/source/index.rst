@@ -39,7 +39,7 @@ missions
     user_guide/gen_point_load.md
     user_guide/gen_spherical_cap.md
     user_guide/gen_stokes.md
-    user_guide/geocenter.md
+    user_guide/geocenter.rst
     user_guide/grace_date.md
     user_guide/grace_months_index.md
     user_guide/grace_find_months.md
@@ -65,16 +65,12 @@ missions
     user_guide/read_gfc_harmonics.rst
     user_guide/read_GIA_model.rst
     user_guide/read_GRACE_harmonics.rst
-    user_guide/read_gravis_geocenter.rst
     user_guide/read_love_numbers.rst
     user_guide/read_SLR_C20.md
     user_guide/read_SLR_CS2.md
     user_guide/read_SLR_C30.md
     user_guide/read_SLR_C50.md
-    user_guide/read_SLR_geocenter.md
     user_guide/read_SLR_harmonics.rst
-    user_guide/read_swenson_geocenter.rst
-    user_guide/read_tellus_geocenter.rst
     user_guide/savitzky_golay.rst
     user_guide/spatial.rst
     user_guide/time.rst

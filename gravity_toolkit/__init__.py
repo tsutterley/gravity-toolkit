@@ -15,6 +15,7 @@ the GRACE/GRACE-FO missions and to support their science applications
 
 Documentation is available at https://read-grace-harmonics.readthedocs.io
 """
+import gravity_toolkit.geocenter
 import gravity_toolkit.mascons
 import gravity_toolkit.time
 import gravity_toolkit.utilities
@@ -55,17 +56,13 @@ from gravity_toolkit.plm_mohlenkamp import plm_mohlenkamp
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
 from gravity_toolkit.read_GIA_model import read_GIA_model
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
-from gravity_toolkit.read_gravis_geocenter import read_gravis_geocenter
 from gravity_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 from gravity_toolkit.read_love_numbers import read_love_numbers
 from gravity_toolkit.read_SLR_C20 import read_SLR_C20
 from gravity_toolkit.read_SLR_CS2 import read_SLR_CS2
 from gravity_toolkit.read_SLR_C30 import read_SLR_C30
 from gravity_toolkit.read_SLR_C50 import read_SLR_C50
-from gravity_toolkit.read_SLR_geocenter import read_SLR_geocenter
 from gravity_toolkit.read_SLR_harmonics import read_SLR_harmonics
-from gravity_toolkit.read_swenson_geocenter import read_swenson_geocenter
-from gravity_toolkit.read_tellus_geocenter import read_tellus_geocenter
 from gravity_toolkit.savitzky_golay import savitzky_golay
 from gravity_toolkit.spatial import spatial
 from gravity_toolkit.tsamplitude import tsamplitude

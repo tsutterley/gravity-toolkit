@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 u"""
-test_download_and_read.py (09/2021)
+test_download_and_read.py (11/2021)
 Tests the read program to verify that coefficients are being extracted
 """
 import os
@@ -9,6 +9,7 @@ import shutil
 import inspect
 import warnings
 import posixpath
+import gravity_toolkit.geocenter
 import gravity_toolkit.utilities
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
@@ -124,8 +125,14 @@ def test_geocenter_read(PROC, DREL):
     args = (PROC,DREL,MODEL[DREL],'SLF_iter')
     FILE = '{0}_{1}_{2}_{3}.txt'.format(*args)
     #-- assert that file exists
-    assert os.access(os.path.join(filepath,'geocenter',FILE),os.F_OK)
+    geocenter_file = os.path.join(filepath,'geocenter',FILE)
+    assert os.access(geocenter_file, os.F_OK)
     #-- test geocenter read program
-    DEG1 = read_GRACE_geocenter(os.path.join(filepath,'geocenter',FILE))
+    DEG1 = read_GRACE_geocenter(geocenter_file)
     keys = ['time', 'JD', 'month', 'C10', 'C11', 'S11','header']
     assert all((key in DEG1.keys()) for key in keys)
+    #-- test geocenter class
+    DATA = gravity_toolkit.geocenter().from_UCI(geocenter_file)
+    for key in ['time', 'month', 'C10', 'C11', 'S11']:
+        val = getattr(DATA, key)
+        assert all(val == DEG1[key])

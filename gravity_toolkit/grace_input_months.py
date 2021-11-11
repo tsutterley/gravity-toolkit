@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (09/2021)
+Written by Tyler Sutterley (11/2021)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
@@ -100,14 +100,13 @@ PROGRAM DEPENDENCIES:
     grace_date.py: reads GRACE index file and calculates dates for each month
     read_SLR_C20.py: reads C20 files from satellite laser ranging (CSR or GSFC)
     read_SLR_C30.py: reads C30 files from satellite laser ranging (CSR or GSFC)
-    read_tellus_geocenter.py: reads degree 1 files from JPL Tellus
-    read_swenson_geocenter.py: reads degree 1 files from Sean Swenson
-    read_SLR_geocenter.py: reads degree 1 files from Satellite Laser Ranging
-    read_GRACE_geocenter.py: reads degree 1 files from Sutterley et al. (2019)
+    geocenter.py: data class for reading and processing geocenter data
     read_GRACE_harmonics.py: read spherical harmonic data from SHM files
     read_gfc_harmonics.py: reads spherical harmonic data from gfc files
 
 UPDATE HISTORY:
+    Updated 11/2021: add GSFC low-degree harmonics
+        use gravity_toolkit geocenter class for operations
     Updated 09/2021: added time-variable gravity data from GRAZ and Swarm
     Updated 08/2021: fix spherical harmonic errors for SLR C21,S21,C22,S22
     Updated 07/2021: fix inputs to AOD-corrected SLR geocenter coefficients
@@ -161,16 +160,12 @@ import re
 import gzip
 import copy
 import numpy as np
+import gravity_toolkit.geocenter
 from gravity_toolkit.grace_date import grace_date
 from gravity_toolkit.read_SLR_C20 import read_SLR_C20
 from gravity_toolkit.read_SLR_CS2 import read_SLR_CS2
 from gravity_toolkit.read_SLR_C30 import read_SLR_C30
 from gravity_toolkit.read_SLR_C50 import read_SLR_C50
-from gravity_toolkit.read_swenson_geocenter import read_swenson_geocenter
-from gravity_toolkit.read_tellus_geocenter import read_tellus_geocenter
-from gravity_toolkit.read_SLR_geocenter import aod_corrected_SLR_geocenter
-from gravity_toolkit.read_gravis_geocenter import read_gravis_geocenter
-from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
 
@@ -406,29 +401,32 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
                 'TN-13_GEOC_{0}_{1}.txt'.format(PROC,DREL))
             JPL = True
         #-- Running function read_tellus_geocenter.py
-        DEG1_input = read_tellus_geocenter(DEG1_file,JPL=JPL)
+        DEG1_input = gravity_toolkit.geocenter().from_tellus(DEG1_file,JPL=JPL)
         FLAGS.append('_w{0}_DEG1'.format(DEG1))
     elif (DEG1 == 'SLR'):
         #-- CSR Satellite Laser Ranging (SLR) degree 1
         # #-- SLR-derived degree-1 mass variations
         # #-- ftp://ftp.csr.utexas.edu/pub/slr/geocenter/
         # DEG1_file=os.path.join(base_dir,'geocenter','GCN_{0}.txt'.format(DREL))
-        # DEG1_input=aod_corrected_SLR_geocenter(DEG1_file,DREL,HEADER=16,
-        #     COLUMNS=['time','X','Y','Z','X_sigma','Y_sigma','Z_sigma'])
+        # COLUMNS = ['time','X','Y','Z','X_sigma','Y_sigma','Z_sigma']
+        # DEG1_input = gravity_toolkit.geocenter().from_SLR(DEG1_file,
+        #      AOD=True, release=DREL, header=16, COLUMNS=COLUMNS)
 
         # #-- new CF-CM file of degree-1 mass variations
         # #-- https://cddis.nasa.gov/lw20/docs/2016/papers/14-Ries_paper.pdf
         # #-- http://download.csr.utexas.edu/pub/slr/geocenter/GCN_L1_L2_30d_CF-CM.txt
         # DEG1_file = os.path.join(base_dir,'geocenter','GCN_L1_L2_30d_CF-CM.txt')
-        # DEG1_input = aod_corrected_SLR_geocenter(DEG1_file,DREL,HEADER=111,
-        #     COLUMNS=['time','X','Y','Z','X_sigma','Y_sigma','Z_sigma'])
+        # COLUMNS = ['time','X','Y','Z','X_sigma','Y_sigma','Z_sigma']
+        # DEG1_input = gravity_toolkit.geocenter().from_SLR(DEG1_file,
+        #     AOD=True, release=DREL, header=111, columns=COLUMNS)
 
         #-- new file of degree-1 mass variations from Minkang Cheng
         #-- http://download.csr.utexas.edu/outgoing/cheng/gct2est.220_5s
         DEG1_file = os.path.join(base_dir,'geocenter','gct2est.220_5s')
-        DEG1_input = aod_corrected_SLR_geocenter(DEG1_file,DREL,HEADER=15,
-            RADIUS=6.378136e9,COLUMNS=['MJD','time','X','Y','Z','XM','YM','ZM',
-            'X_sigma','Y_sigma','Z_sigma','XM_sigma','YM_sigma','ZM_sigma'])
+        COLUMNS = ['MJD','time','X','Y','Z','XM','YM','ZM',
+            'X_sigma','Y_sigma','Z_sigma','XM_sigma','YM_sigma','ZM_sigma']
+        DEG1_input = gravity_toolkit.geocenter(radius=6.378136e9).from_SLR(DEG1_file,
+            AOD=True,release=DREL,header=15,columns=COLUMNS)
         FLAGS.append('_w{0}_DEG1'.format(DEG1))
     elif (DEG1 == 'SLF'):
         #-- read iterated degree one files from Sutterley and Velicogna (2019)
@@ -438,14 +436,14 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         args = (PROC,DREL,MODEL[DREL],'SLF_iter',DEG1_GIA)
         DEG1_file = os.path.join(base_dir,'geocenter',
             '{0}_{1}_{2}_{3}{4}.txt'.format(*args))
-        DEG1_input = read_GRACE_geocenter(DEG1_file)
+        DEG1_input = gravity_toolkit.geocenter().from_UCI(DEG1_file)
         FLAGS.append('_w{0}_DEG1'.format(DEG1))
     elif (DEG1 == 'Swenson'):
         #-- degree 1 coefficients provided by Sean Swenson in mm w.e.
         DEG1_file = os.path.join(base_dir,'geocenter',
             'gad_gsm.{0}.txt'.format(DREL))
         #-- Running function read_swenson_geocenter.py
-        DEG1_input = read_swenson_geocenter(DEG1_file)
+        DEG1_input = gravity_toolkit.geocenter().from_swenson(DEG1_file)
         FLAGS.append('_w{0}_DEG1'.format(DEG1))
     elif (DEG1 == 'GFZ'):
         #-- degree 1 coefficients provided by GFZ GravIS
@@ -453,7 +451,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         DEG1_file = os.path.join(base_dir,'geocenter',
             'GRAVIS-2B_GFZOP_GEOCENTER_0002.dat')
         #-- Running function read_gravis_geocenter.py
-        DEG1_input = read_gravis_geocenter(DEG1_file)
+        DEG1_input = gravity_toolkit.geocenter().from_gravis(DEG1_file)
         FLAGS.append('_w{0}_DEG1'.format(DEG1))
 
     #-- atmospheric flag if correcting ECMWF "jumps" (using GAE/GAF/GAG files)
@@ -555,33 +553,32 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         if MODEL_DEG1:
             #-- least-squares modeling the degree 1 coefficients
             #-- fitting annual, semi-annual, linear and quadratic terms
-            C10_model = regress_model(DEG1_input['time'], DEG1_input['C10'],
+            C10_model = regress_model(DEG1_input.time, DEG1_input.C10,
                 grace_Ylms['time'], ORDER=2, CYCLES=[0.5,1.0], RELATIVE=2003.3)
-            C11_model = regress_model(DEG1_input['time'], DEG1_input['C11'],
+            C11_model = regress_model(DEG1_input.time, DEG1_input.C11,
                 grace_Ylms['time'], ORDER=2, CYCLES=[0.5,1.0], RELATIVE=2003.3)
-            S11_model = regress_model(DEG1_input['time'], DEG1_input['S11'],
+            S11_model = regress_model(DEG1_input.time, DEG1_input.S11,
                 grace_Ylms['time'], ORDER=2, CYCLES=[0.5,1.0], RELATIVE=2003.3)
         else:
             #-- check that all months are available for a given geocenter
-            months_test = sorted(set(months) - set(DEG1_input['month']))
+            months_test = sorted(set(months) - set(DEG1_input.month))
             if months_test:
                 gm = ','.join('{0:03d}'.format(gm) for gm in months_test)
                 raise IOError('No Matching Geocenter Months ({0})'.format(gm))
         #-- for each considered date
         for i,grace_month in enumerate(months):
-            k, = np.nonzero(DEG1_input['month'] == grace_month)
-            count = np.count_nonzero(DEG1_input['month'] == grace_month)
+            k, = np.nonzero(DEG1_input.month == grace_month)
+            count = np.count_nonzero(DEG1_input.month == grace_month)
             #-- Degree 1 is missing for particular month
             if (count == 0) and MODEL_DEG1:
-                #-- using least-squares modeled coefficients from
-                #-- lsq_model_degree_one.py
+                #-- using least-squares modeled coefficients from regress_model
                 grace_Ylms['clm'][1,0,i] = np.copy(C10_model[i])
                 grace_Ylms['clm'][1,1,i] = np.copy(C11_model[i])
                 grace_Ylms['slm'][1,1,i] = np.copy(S11_model[i])
             else:#-- using coefficients from data file
-                grace_Ylms['clm'][1,0,i] = np.copy(DEG1_input['C10'][k])
-                grace_Ylms['clm'][1,1,i] = np.copy(DEG1_input['C11'][k])
-                grace_Ylms['slm'][1,1,i] = np.copy(DEG1_input['S11'][k])
+                grace_Ylms['clm'][1,0,i] = np.copy(DEG1_input.C10[k])
+                grace_Ylms['clm'][1,1,i] = np.copy(DEG1_input.C11[k])
+                grace_Ylms['slm'][1,1,i] = np.copy(DEG1_input.S11[k])
 
     #-- read and add/remove the GAE and GAF atmospheric correction coefficients
     if ATM:
