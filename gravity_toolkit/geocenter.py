@@ -692,6 +692,41 @@ class geocenter(object):
                 pass
         return self
 
+    def from_harmonics(self, temp, **kwargs):
+        """
+        Convert a harmonics object to a geocenter object
+
+        Arguments
+        ---------
+        harmonics object to be converted
+
+        Keyword arguments
+        -----------------
+        fields: default keys in harmonics object
+        """
+        #-- reassign shape and ndim attributes
+        temp.update_dimensions()
+        #-- set default keyword arguments
+        kwargs.setdefault('fields',['time','month','filename'])
+        #-- try to assign variables to self
+        for key in kwargs['fields']:
+            try:
+                val = getattr(temp, key)
+                setattr(self, key, np.copy(val))
+            except AttributeError:
+                pass
+        #-- get spherical harmonic objects
+        if (temp.ndim == 2):
+            self.C10 = np.copy(temp.clm[1,0])
+            self.C11 = np.copy(temp.clm[1,1])
+            self.S11 = np.copy(temp.slm[1,1])
+        elif (temp.ndim == 3):
+            self.C10 = np.copy(temp.clm[1,0,:])
+            self.C11 = np.copy(temp.clm[1,1,:])
+            self.S11 = np.copy(temp.slm[1,1,:])
+        #-- return the geocenter object
+        return self
+
     def from_matrix(self, clm, slm):
         """
         Converts spherical harmonic matrices to a geocenter object
@@ -705,11 +740,10 @@ class geocenter(object):
         clm = np.atleast_3d(clm)
         slm = np.atleast_3d(slm)
         #-- output geocenter object
-        temp = geocenter()
-        temp.C10 = np.copy(clm[1,0,:])
-        temp.C11 = np.copy(clm[1,1,:])
-        temp.S11 = np.copy(slm[1,1,:])
-        return temp
+        self.C10 = np.copy(clm[1,0,:])
+        self.C11 = np.copy(clm[1,1,:])
+        self.S11 = np.copy(slm[1,1,:])
+        return self
 
     def to_dict(self, **kwargs):
         """
@@ -848,6 +882,7 @@ class geocenter(object):
     def mean(self, apply=False, indices=Ellipsis):
         """
         Compute mean gravitational field and remove from data if specified
+
         Keyword arguments
         -----------------
         apply: remove the mean field from the input harmonics
@@ -872,4 +907,89 @@ class geocenter(object):
             except:
                 continue
         #-- return the mean field
+        return temp
+
+    def add(self, temp):
+        """
+        Add two geocenter objects
+
+        Arguments
+        ---------
+        temp: geocenter object to be added
+        """
+        self.C10 += temp.C10
+        self.C11 += temp.C11
+        self.S11 += temp.S11
+        return self
+
+    def subtract(self, temp):
+        """
+        Subtract one geocenter object from another
+
+        Arguments
+        ---------
+        temp: geocenter object to be subtracted
+        """
+        self.C10 -= temp.C10
+        self.C11 -= temp.C11
+        self.S11 -= temp.S11
+        return self
+
+    def multiply(self, temp):
+        """
+        Multiply two geocenter objects
+        
+        Arguments
+        ---------
+        temp: geocenter object to be multiplied
+        """
+        self.C10 *= temp.C10
+        self.C11 *= temp.C11
+        self.S11 *= temp.S11
+        return self
+
+    def divide(self, temp):
+        """
+        Divide one geocenter object from another
+
+        Arguments
+        ---------
+        temp: geocenter object to be divided
+        """
+        self.C10 /= temp.C10
+        self.C11 /= temp.C11
+        self.S11 /= temp.S11
+        return self
+
+    def scale(self, var):
+        """
+        Multiply a geocenter object by a constant
+
+        Arguments
+        ---------
+        var: scalar value to which the geocenter object will be multiplied
+        """
+        temp = geocenter()
+        temp.time = np.copy(self.time)
+        temp.month = np.copy(self.month)
+        #-- multiply by a single constant or a time-variable scalar
+        temp.C10 = var*self.C10
+        temp.C11 = var*self.C11
+        temp.S11 = var*self.S11
+        return temp
+
+    def power(self, power):
+        """
+        Raise a geocenter object to a power
+        
+        Arguments
+        ---------
+        power: power to which the geocenter object will be raised
+        """
+        temp = geocenter()
+        temp.time = np.copy(self.time)
+        temp.month = np.copy(self.month)
+        temp.C10 = np.power(self.C10,power)
+        temp.C11 = np.power(self.C11,power)
+        temp.S11 = np.power(self.S11,power)
         return temp

@@ -175,6 +175,19 @@ General Attributes and Methods
             ``fields``: default keys in dictionary
 
 
+    .. method:: object.from_harmonics(temp, **kwargs):
+
+        Convert a harmonics object to a geocenter object
+
+        Arguments:
+
+            ``temp``: harmonics object to be converted
+
+        Keyword arguments:
+
+            ``fields``: default keys in harmonics object
+
+
     .. method:: object.from_matrix(clm, slm):
 
         Converts spherical harmonic matrices to a geocenter object
@@ -189,7 +202,6 @@ General Attributes and Methods
     .. method:: object.to_dict():
 
         Convert a geocenter object to a dictionary object
-
 
         Keyword arguments:
 
@@ -241,7 +253,7 @@ General Attributes and Methods
 
         Normalizes spherical harmonics from centimeters water equivalent (cmwe)
 
-         Keyword arguments:
+        Keyword arguments:
 
             ``kl``: gravitational load love number of degree 1
        
@@ -254,6 +266,7 @@ General Attributes and Methods
 
             ``kl``: gravitational load love number of degree 1
 
+
     .. method:: object.mean(apply=False, indices=Ellipsis)
 
         Compute mean gravitational field and remove from data if specified
@@ -263,6 +276,58 @@ General Attributes and Methods
             ``apply``: remove the mean field from the input harmonics
 
             ``indices``: of input harmonics object to compute mean
+
+
+    .. method:: object.add(self, temp):
+
+        Add two geocenter objects
+
+        Arguments:
+
+            ``temp``: geocenter object to be added
+
+    .. method:: object.subtract(self, temp):
+
+        Subtract one geocenter object from another
+
+        Arguments:
+        
+            ``temp``: geocenter object to be subtracted
+
+    .. method:: object.multiply(self, temp):
+
+        Multiply two geocenter objects
+
+        Arguments:
+        
+            ``temp``: geocenter object to be multiplied
+
+
+    .. method:: object.divide(self, temp):
+
+        Divide one geocenter object from another
+
+        Arguments:
+        
+            ``temp``: geocenter object to be divided
+
+
+    .. method:: object.scale(self, var):
+
+        Multiply a geocenter object by a constant
+
+        Arguments:
+        
+            ``var``: scalar value to which the geocenter object will be multiplied
+
+
+    .. method:: object.power(self, power):
+
+        Raise a geocenter object to a power
+
+        Arguments:
+        
+            ``power``: power to which the geocenter object will be raised
 
 
 References
