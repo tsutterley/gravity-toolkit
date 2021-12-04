@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 u"""
-gen_disc_load.py (01/2021)
+gen_disc_load.py (11/2021)
 Calculates gravitational spherical harmonic coefficients for a uniform disc load
 
 CALLING SEQUENCE:
@@ -21,7 +21,12 @@ OUTPUTS:
 OPTIONS:
     LMAX: Upper bound of Spherical Harmonic Degrees
     MMAX: Upper bound of Spherical Harmonic Orders
-    PLM: input Legendre polynomials (for improving computational time)
+    UNITS: input data units
+        1: cm of water thickness
+        2: Gigatonnes of mass
+        3: kg/m^2
+        list: custom unit conversion factor
+    PLM: input Legendre polynomials
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
 PYTHON DEPENDENCIES:
@@ -52,6 +57,7 @@ REFERENCES:
         https://doi.org/10.1007/s00190-011-0522-7
 
 UPDATE HISTORY:
+    Updated 11/2021: added UNITS option for converting from different inputs
     Updated 01/2021: use harmonics class for spherical harmonic operations
     Updated 07/2020: added function docstrings
     Updated 05/2020: vectorize calculation over degrees to improve compute time
@@ -69,7 +75,8 @@ import gravity_toolkit.harmonics
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.legendre_polynomials import legendre_polynomials
 
-def gen_disc_load(data,lon,lat,area,LMAX=60,MMAX=None,PLM=None,LOVE=None):
+def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
+    PLM=None, LOVE=None):
     """
     Calculates spherical harmonic coefficients for a uniform disc load
 
@@ -84,6 +91,11 @@ def gen_disc_load(data,lon,lat,area,LMAX=60,MMAX=None,PLM=None,LOVE=None):
     -----------------
     LMAX: Upper bound of Spherical Harmonic Degrees
     MMAX: Upper bound of Spherical Harmonic Orders
+    UNITS: input data units
+        1: cm of water thickness
+        2: Gigatonnes of mass
+        3: kg/m^2
+        list: custom unit conversion factor
     PLM: input Legendre polynomials
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
@@ -112,9 +124,24 @@ def gen_disc_load(data,lon,lat,area,LMAX=60,MMAX=None,PLM=None,LOVE=None):
     #-- alpha will be 1 - the ratio of the input area with the half sphere
     alpha = (1.0 - 1e10*area/(2.0*np.pi*rad_e**2))
 
-    #-- Input data is in gigatonnes (Gt)
-    #-- 1e15 converts from Gt to grams, 1e10 converts from km^2 to cm^2
-    unit_conv = 1e15/(1e10*area)
+    #-- Calculate factor to convert from input units into g/cm^2
+    if (UNITS == 1):
+        #-- Input data is in cm water equivalent (cmH2O)
+        unit_conv = 1.0
+    elif (UNITS == 2):
+        #-- Input data is in gigatonnes (Gt)
+        #-- 1e15 converts from Gt to grams, 1e10 converts from km^2 to cm^2
+        unit_conv = 1e15/(1e10*area)
+    elif (UNITS == 3):
+        #-- Input data is in kg/m^2
+        #-- 1 kg = 1000 g
+        #-- 1 m^2 = 100*100 cm^2 = 1e4 cm^2
+        unit_conv = 0.1
+    elif isinstance(UNITS,(list,np.ndarray)):
+        #-- custom units 
+        unit_conv = np.copy(UNITS)
+    else:
+        raise ValueError('Unknown units {0}'.format(UNITS))
 
     #-- Coefficient for calculating Stokes coefficients for a disc load
     #-- From Jacob et al (2012), Farrell (1972) and Longman (1962)

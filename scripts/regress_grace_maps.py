@@ -41,11 +41,17 @@ COMMAND LINE OPTIONS:
     -M X, --mode X: Permissions mode of the files created
 
 PYTHON DEPENDENCIES:
-    numpy: Scientific Computing Tools For Python (https://numpy.org)
-    scipy: Scientific Tools for Python (https://docs.scipy.org/doc/)
-    netCDF4: netCDF4: Python interface to the netCDF C library
-    h5py: Python interface for Hierarchal Data Format 5 (HDF5)
-        (https://h5py.org)
+    numpy: Scientific Computing Tools For Python
+        https://numpy.org
+        https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    scipy: Scientific Tools for Python
+        https://docs.scipy.org/doc/
+    dateutil: powerful extensions to datetime
+        https://dateutil.readthedocs.io/en/stable/
+    netCDF4: Python interface to the netCDF C library
+        https://unidata.github.io/netcdf4-python/netCDF4/index.html
+    h5py: Pythonic interface to the HDF5 binary data format.
+        https://www.h5py.org/
 
 PROGRAM DEPENDENCIES:
     tsregress.py: calculates trend coefficients using least-squares

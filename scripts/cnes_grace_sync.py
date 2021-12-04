@@ -25,7 +25,7 @@ OUTPUTS:
 COMMAND LINE OPTIONS:
     --help: list the command line options
     -D X, --directory: working data directory
-    -R X, --release X: CNES/GRGS data releases to sync
+    -r X, --release X: CNES/GRGS data releases to sync
     -t X, --timeout X: Timeout in seconds for blocking operations
     -C, --clobber: overwrite existing data in transfer
     -M X, --mode X: Local permissions mode of the directories and files synced

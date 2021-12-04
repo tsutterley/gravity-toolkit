@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 clenshaw_summation.py
-Written by Tyler Sutterley (06/2021)
+Written by Tyler Sutterley (11/2021)
 Calculates the spatial field for a series of spherical harmonics for a
     sequence of ungridded points
 
@@ -24,6 +24,7 @@ OPTIONS:
         4: microGal gravitational perturbation
         5: mbar equivalent surface pressure
         6: cm of viscoelastic crustal uplift (GIA) [See Wahr 1995 or Wahr 2000]
+        list: custom degree-dependent unit conversion factor
     LMAX: Upper bound of Spherical Harmonic Degrees
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
     ASTYPE: floating point precision for calculating Clenshaw summation
@@ -48,6 +49,7 @@ REFERENCES:
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 11/2021: added UNITS list option for converting to custom units
     Updated 09/2021: fix passing SCALE keyword argument to clenshaw_s_m
     Updated 06/2021: output equivalent pressure in pascals
     Updated 08/2020: parameterize float precision to improve computational time
@@ -85,6 +87,7 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
         4: microGal gravitational perturbation
         5: mbar equivalent surface pressure
         6: cm of viscoelastic crustal uplift (GIA)
+        list: custom degree-dependent unit conversion factor
     LMAX: Upper bound of Spherical Harmonic Degrees
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
@@ -139,8 +142,11 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
     elif (UNITS == 6):
         #-- 6: cmVCU, cm viscoelastic  crustal uplift (GIA ONLY)
         dfactor = factors.cmVCU
+    elif isinstance(UNITS,(list,np.ndarray)):
+        #-- custom units 
+        dfactor = np.copy(UNITS)
     else:
-        raise ValueError('Invalid units code {0:d}'.format(UNITS))
+        raise ValueError('Unknown units {0}'.format(UNITS))
 
     #-- calculate arrays for clenshaw summations over colatitudes
     s_m_c = np.zeros((npts,LMAX*2+2))

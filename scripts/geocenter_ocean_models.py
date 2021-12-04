@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter_ocean_models.py
-Written by Tyler Sutterley (11/2021)
+Written by Tyler Sutterley (12/2021)
 Plots the GRACE/GRACE-FO geocenter time series comparing results
     using different ocean bottom pressure estimates
 
@@ -11,14 +11,15 @@ CALLING SEQUENCE:
 
 COMMAND LINE OPTIONS:
     -D X, --directory X: working data directory with geocenter files
-    -C X, --center X: GRACE/GRACE-FO processing center
-    -R X, --release X: GRACE/GRACE-FO data release
+    -c X, --center X: GRACE/GRACE-FO processing center
+    -r X, --release X: GRACE/GRACE-FO data release
     -S X, --start X: starting GRACE month for time series
     -E X, --end X: ending GRACE month for time series
     -M X, --missing X: Missing GRACE months in time series
     -O X, --ocean X: ocean bottom pressure products to use
 
 UPDATE HISTORY:
+    Updated 12/2021: adjust minimum x limit based on starting GRACE month
     Updated 11/2021: use gravity_toolkit geocenter class for operations
     Updated 07/2021: iterate over each processing center
     Updated 02/2021: using argparse to set parameters
@@ -104,12 +105,13 @@ def geocenter_ocean_models(grace_dir,PROC,DREL,MODEL,START_MON,END_MON,MISSING):
             prop=dict(size=16,weight='bold'), frameon=False, loc=2))
         ax[j].set_xlabel('Time [Yr]', fontsize=14)
         #-- set ticks
+        xmin = 2002 + (START_MON + 1.0)//12.0
         xmax = 2002 + (END_MON + 1.0)/12.0
         major_ticks = np.arange(2005, xmax, 5)
         ax[j].xaxis.set_ticks(major_ticks)
-        minor_ticks = sorted(set(np.arange(2002, xmax, 1)) - set(major_ticks))
+        minor_ticks = sorted(set(np.arange(xmin, xmax, 1)) - set(major_ticks))
         ax[j].xaxis.set_ticks(minor_ticks, minor=True)
-        ax[j].set_xlim(2002, xmax)
+        ax[j].set_xlim(xmin, xmax)
         ax[j].set_ylim(-9.5,8.5)
         #-- axes tick adjustments
         ax[j].get_xaxis().set_tick_params(which='both', direction='in')
@@ -132,7 +134,7 @@ def geocenter_ocean_models(grace_dir,PROC,DREL,MODEL,START_MON,END_MON,MISSING):
     #-- adjust locations of subplots
     fig.subplots_adjust(left=0.06,right=0.98,bottom=0.12,top=0.94,wspace=0.05)
     #-- save figure to file
-    OUTPUT_FIGURE = 'SV19_{0}_{1}_MODELS.pdf'.format(PROC,DREL)
+    OUTPUT_FIGURE = 'SV19_{0}_{1}_ocean_models.pdf'.format(PROC,DREL)
     plt.savefig(os.path.join(grace_dir,OUTPUT_FIGURE), format='pdf', dpi=300)
     plt.clf()
 

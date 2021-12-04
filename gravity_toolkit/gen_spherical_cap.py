@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_spherical_cap.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (11/2021)
 Calculates gravitational spherical harmonic coefficients for a spherical cap
 
 Spherical cap derivation from Longman (1962), Farrell (1972), Pollack (1973)
@@ -35,6 +35,7 @@ OPTIONS:
         1: cm of water thickness (default)
         2: gigatonnes of mass
         3: kg/m^2
+        list: custom unit conversion factor
     PLM: input Legendre polynomials
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
@@ -66,6 +67,7 @@ REFERENCES:
         https://doi.org/10.1007/s00190-011-0522-7
 
 UPDATE HISTORY:
+    Updated 11/2021: added UNITS list option for converting from custom units
     Updated 07/2020: added function docstrings
     Updated 05/2020: vectorize calculation over degrees to improve compute time
     Updated 04/2020: reading load love numbers outside of this function
@@ -115,6 +117,7 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
         1: cm of water thickness (default)
         2: gigatonnes of mass
         3: kg/m^2
+        list: custom unit conversion factor
     PLM: input Legendre polynomials
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
@@ -178,8 +181,11 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
         #-- 1 kg = 1000 g
         #-- 1 m^2 = 100*100 cm^2 = 1e4 cm^2
         unit_conv = 0.1
+    elif isinstance(UNITS,(list,np.ndarray)):
+        #-- custom units 
+        unit_conv = np.copy(UNITS)
     else:
-        raise ValueError('UNITS (1: cmH2O, 2: Gt, 3: kg/m^2)')
+        raise ValueError('Unknown units {0}'.format(UNITS))
 
     #-- Coefficient for calculating Stokes coefficients for a spherical cap
     #-- From Jacob et al (2012), Farrell (1972) and Longman (1962)

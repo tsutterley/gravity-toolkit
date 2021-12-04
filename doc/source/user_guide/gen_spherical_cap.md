@@ -25,8 +25,9 @@ Ylms = gen_spherical_cap(data, lon, lat, UNITS=1, LMAX=LMAX, PLM=PLM, LOVE=(hl,k
 - `AREA`: spherical cap area (cm<sup>2</sup>)
 - `UNITS`: input data units
    * `1`: cm water equivalent thickness (cm w.e., g/cm<sup>2</sup>)
-   * `2` gigatonnes of mass (Gt)
-   * `3` mm water equivalent thickness (mm w.e., kg/m<sup>2</sup>)
+   * `2`: gigatonnes of mass (Gt)
+   * `3`: mm water equivalent thickness (mm w.e., kg/m<sup>2</sup>)
+   * `list`: custom unit conversion factor
 - `PLM`: input Legendre polynomials for spherical cap centers
 - `LOVE`: input load Love numbers up to degree of truncation
 

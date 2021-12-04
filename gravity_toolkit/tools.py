@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 tools.py
-Written by Tyler Sutterley (09/2021)
+Written by Tyler Sutterley (12/2021)
 Jupyter notebook, user interface and plotting tools
 
 PYTHON DEPENDENCIES:
@@ -21,6 +21,7 @@ PROGRAM DEPENDENCIES:
     grace_date.py: reads GRACE index file and calculates dates for each month
 
 UPDATE HISTORY:
+    Updated 12/2021: added custom colormap function for some common scales
     Written 09/2021
 """
 import os
@@ -28,6 +29,7 @@ import re
 import copy
 import colorsys
 import ipywidgets
+import numpy as np
 import IPython.display
 import tkinter.filedialog
 import matplotlib.cm as cm
@@ -702,6 +704,10 @@ def from_cpt(filename, use_extremes=True, **kwargs):
     Reads a GMT color palette table
     Can import HSV (hue-saturation-value) or RGB values
 
+    Arguments
+    ---------
+    filename: color palette table file
+
     Keyword Arguments
     -----------------
     use_extremes: use the under, over and bad values from the cpt file
@@ -797,5 +803,83 @@ def from_cpt(filename, use_extremes=True, **kwargs):
         cmap = cmap.with_extremes(**extremes)
     # register colormap to be recognizable by cm.get_cmap()
     cm.register_cmap(name=name, cmap=cmap)
+    # return the colormap
+    return cmap
+
+def custom_colormap(N, map_name, **kwargs):
+    """
+    Calculates custom colormaps
+
+    Arguments
+    ---------
+    N: number of slices in initial HSV color map
+    map_name: name of color map
+        Joughin: Joughin et al. (2018) standard velocity colormap
+            https://doi.org/10.5194/tc-12-2211-2018
+        Rignot: Rignot et al. (2011) standard velocity colormap
+            https://doi.org/10.1126/science.1208336
+        Seroussi: Seroussi et al. (2011) velocity divergence colormap
+            https://doi.org/10.1029/2011GL047338
+    """
+
+    # make sure map_name is properly formatted
+    map_name = map_name.capitalize()
+    if (map_name == 'Joughin'):
+        # calculate initial HSV for Ian Joughin's color map
+        h = np.linspace(0.1,1,N)
+        s = np.ones((N))
+        v = np.ones((N))
+        # calculate RGB color map from HSV
+        color_map = np.zeros((N,3))
+        for i in range(N):
+            color_map[i,:] = colorsys.hsv_to_rgb(h[i],s[i],v[i])
+    elif (map_name == 'Seroussi'):
+        # calculate initial HSV for Helene Seroussi's color map
+        h = np.linspace(0,1,N)
+        s = np.ones((N))
+        v = np.ones((N))
+        # calculate RGB color map from HSV
+        RGB = np.zeros((N,3))
+        for i in range(N):
+            RGB[i,:] = colorsys.hsv_to_rgb(h[i],s[i],v[i])
+        # reverse color order and trim to range
+        RGB = RGB[::-1,:]
+        RGB = RGB[1:np.floor(0.7*N).astype('i'),:]
+        # calculate HSV color map from RGB
+        HSV = np.zeros_like(RGB)
+        for i,val in enumerate(RGB):
+            HSV[i,:] = colorsys.rgb_to_hsv(val[0],val[1],val[2])
+        # calculate saturation as a function of hue
+        HSV[:,1] = np.clip(0.1 + HSV[:,0], 0, 1)
+        # calculate RGB color map from HSV
+        color_map = np.zeros_like(HSV)
+        for i,val in enumerate(HSV):
+            color_map[i,:] = colorsys.hsv_to_rgb(val[0],val[1],val[2])
+    elif (map_name == 'Rignot'):
+        # calculate initial HSV for Eric Rignot's color map
+        h = np.linspace(0,1,N)
+        s = np.clip(0.1 + h, 0, 1)
+        v = np.ones((N))
+        # calculate RGB color map from HSV
+        color_map = np.zeros((N,3))
+        for i in range(N):
+            color_map[i,:] = colorsys.hsv_to_rgb(h[i],s[i],v[i])
+    else:
+        raise ValueError('Incorrect color map specified ({0})'.format(map_name))
+
+    # output RGB lists containing normalized location and colors
+    Xnorm = len(color_map) - 1.0
+    cdict = dict(red=[None]*len(color_map),
+        green=[None]*len(color_map),
+        blue=[None]*len(color_map))
+    for i,rgb in enumerate(color_map):
+        cdict['red'][i] = [float(i)/Xnorm,rgb[0],rgb[0]]
+        cdict['green'][i] = [float(i)/Xnorm,rgb[1],rgb[1]]
+        cdict['blue'][i] = [float(i)/Xnorm,rgb[2],rgb[2]]
+
+    # create colormap for use in matplotlib
+    cmap = colors.LinearSegmentedColormap(map_name, cdict, **kwargs)
+    # register colormap to be recognizable by cm.get_cmap()
+    cm.register_cmap(name=map_name, cmap=cmap)
     # return the colormap
     return cmap

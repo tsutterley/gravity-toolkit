@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter.py
-Written by Tyler Sutterley (11/2021)
+Written by Tyler Sutterley (12/2021)
 Data class for reading and processing geocenter data
 
 PYTHON DEPENDENCIES:
@@ -9,10 +9,13 @@ PYTHON DEPENDENCIES:
         https://numpy.org
     dateutil: powerful extensions to datetime
         https://dateutil.readthedocs.io/en/stable/
+    netCDF4: Python interface to the netCDF C library
+        https://unidata.github.io/netcdf4-python/netCDF4/index.html
     PyYAML: YAML parser and emitter for Python
         https://github.com/yaml/pyyaml
 
 UPDATE HISTORY:
+    Updated 12/2021: added netCDF4 reader for UCI iteration files
     Updated 11/2021: converted to class with all data readers and converters
     Updated 07/2020: added function docstrings
     Updated 06/2019: added option RADIUS to manually set the Earth's radius
@@ -25,7 +28,10 @@ import os
 import re
 import io
 import copy
+import gzip
 import time
+import uuid
+import netCDF4
 import numpy as np
 import gravity_toolkit.time
 from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
@@ -646,6 +652,51 @@ class geocenter(object):
         #-- return the geocenter harmonics
         return self
 
+    def from_netCDF4(self, geocenter_file, **kwargs):
+        """
+        Reads geocenter file and extracts dates and spherical harmonic data
+        from a netCDF4 file
+
+        Arguments
+        ---------
+        geocenter_file: degree 1 netCDF4 file
+
+        Keyword arguments
+        -----------------
+        compression: netCDF4 file is compressed or streaming as bytes
+
+        References
+        ----------
+        T. C. Sutterley, and I. Velicogna, "Improved estimates of geocenter
+            variability from time-variable gravity and ocean model outputs,
+            Remote Sensing, 11(18), 2108, (2019).
+            doi:10.3390/rs11182108
+        """
+        kwargs.setdefault('compression',None)
+        #-- set filename
+        self.case_insensitive_filename(geocenter_file)
+        #-- Open the netCDF4 file for reading
+        if (kwargs['compression'] == 'gzip'):
+            #-- read gzipped file as in-memory (diskless) netCDF4 dataset
+            with gzip.open(self.filename,'r') as f:
+                fileID = netCDF4.Dataset(uuid.uuid4().hex,
+                    memory=f.read())
+        elif (kwargs['compression'] == 'bytes'):
+            #-- read as in-memory (diskless) netCDF4 dataset
+            fileID = netCDF4.Dataset(uuid.uuid4().hex,
+                memory=self.filename.read())
+        else:
+            fileID = netCDF4.Dataset(self.filename, 'r')
+        #-- Getting the data from each netCDF4 variable
+        DEG1 = {}
+        #-- converting netCDF4 objects into numpy arrays
+        for key,val in fileID.variables.items():
+            DEG1[key] = val[:].copy()
+        #-- close the netCDF4 file
+        fileID.close()
+        #-- return the geocenter harmonics
+        return self.from_dict(DEG1)
+
     def copy(self, **kwargs):
         """
         Copy a geocenter object to a new geocenter object
@@ -938,7 +989,7 @@ class geocenter(object):
     def multiply(self, temp):
         """
         Multiply two geocenter objects
-        
+
         Arguments
         ---------
         temp: geocenter object to be multiplied
@@ -981,7 +1032,7 @@ class geocenter(object):
     def power(self, power):
         """
         Raise a geocenter object to a power
-        
+
         Arguments
         ---------
         power: power to which the geocenter object will be raised
