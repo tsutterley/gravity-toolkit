@@ -27,8 +27,8 @@ OPTIONS:
 
 COMMAND LINE OPTIONS:
     -D X, --directory X: GRACE/GRACE-FO working data directory
-    -C X, --center X: GRACE/GRACE-FO Processing Center (CSR,GFZ,JPL)
-    -R X, --release X: GRACE/GRACE-FO data releases (RL04,RL05,RL06)
+    -c X, --center X: GRACE/GRACE-FO Processing Center (CSR,GFZ,JPL)
+    -r X, --release X: GRACE/GRACE-FO data releases (RL04,RL05,RL06)
     -V, --verbose: Track program progress
     -M X, --mode X: Permissions mode of output date files
 

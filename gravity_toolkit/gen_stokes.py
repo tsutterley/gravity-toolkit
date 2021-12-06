@@ -26,9 +26,10 @@ OPTIONS:
     MMAX: Upper bound of Spherical Harmonic Orders (default = LMAX)
     UNITS: input data units
         1: cm of water thickness (default)
-        2: Gtons of mass
+        2: Gigatonnes of mass
         3: kg/m^2
-    PLM: input Legendre polynomials (for improving computational time)
+        list: custom degree-dependent unit conversion factor
+    PLM: input Legendre polynomials
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
 PYTHON DEPENDENCIES:
@@ -46,6 +47,7 @@ PROGRAM DEPENDENCIES:
         hdf5_stokes.py: writes output spherical harmonic data to HDF5
 
 UPDATE HISTORY:
+    Updated 11/2021: added UNITS list option for converting from custom units
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 01/2021: use harmonics class for spherical harmonic operations
     Updated 07/2020: added function docstrings
@@ -90,8 +92,9 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     MMAX: Upper bound of Spherical Harmonic Orders
     UNITS: input data units
         1: cm of water thickness
-        2: Gtons of mass
+        2: Gigatonnes of mass
         3: kg/m^2
+        list: custom degree-dependent unit conversion factor
     PLM: input Legendre polynomials
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
@@ -155,10 +158,12 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
         #-- Input in kg/m^2 (mm w.e.)
         dfactor = factors.mmwe
         int_fact[:] = np.sin(th)*dphi*dth
-    else:
-        #-- default is cm w.e. (g/cm^2)
-        dfactor = factors.cmwe
+    elif isinstance(UNITS,(list,np.ndarray)):
+        #-- custom units 
+        dfactor = np.copy(UNITS)
         int_fact[:] = np.sin(th)*dphi*dth
+    else:
+        raise ValueError('Unknown units {0}'.format(UNITS))
 
     #-- Calculating cos/sin of phi arrays
     #-- output [m,phi]

@@ -21,6 +21,11 @@ Ylms = gen_disc_load(data, lon, lat, area, LMAX=LMAX, PLM=PLM, LOVE=(hl,kl,ll))
 #### Keyword arguments
 - `LMAX`:  maximum spherical harmonic degree of the output harmonics
 - `MMAX`: maximum spherical harmonic order of the output harmonics
+- `UNITS`: input data units
+   * `1` cm water equivalent thickness (cm w.e., g/cm<sup>2</sup>)
+   * `2` gigatonnes of mass (Gt)
+   * `3` mm water equivalent thickness (mm w.e., kg/m<sup>2</sup>)
+   * `list`: custom unit conversion factor
 - `PLM`: input Legendre polynomials for `cos(theta)` (disc center)
 - `LOVE`: input load Love numbers up to degree of truncation
 

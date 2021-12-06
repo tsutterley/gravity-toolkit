@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter_compare_tellus.py
-Written by Tyler Sutterley (11/2021)
+Written by Tyler Sutterley (12/2021)
 Plots the GRACE/GRACE-FO geocenter time series for different
     GRACE/GRACE-FO processing centers comparing with the
     JPL GRACE Tellus product
@@ -11,12 +11,13 @@ CALLING SEQUENCE:
 
 COMMAND LINE OPTIONS:
     -D X, --directory X: working data directory with geocenter files
-    -R X, --release X: GRACE/GRACE-FO data release
+    -r X, --release X: GRACE/GRACE-FO data release
     -S X, --start X: starting GRACE month for time series
     -E X, --end X: ending GRACE month for time series
     -M X, --missing X: Missing GRACE months in time series
 
 UPDATE HISTORY:
+    Updated 12/2021: adjust minimum x limit based on starting GRACE month
     Updated 11/2021: use gravity_toolkit geocenter class for operations
     Written 05/2021
 """
@@ -163,12 +164,13 @@ def geocenter_compare_tellus(grace_dir,DREL,START_MON,END_MON,MISSING):
                 prop=dict(size=16,weight='bold'), frameon=False, loc=2))
             ax[j].set_xlabel('Time [Yr]', fontsize=14)
             #-- set ticks
+            xmin = 2002 + (START_MON + 1.0)//12.0
             xmax = 2002 + (END_MON + 1.0)/12.0
             major_ticks = np.arange(2005, xmax, 5)
             ax[j].xaxis.set_ticks(major_ticks)
-            minor_ticks = sorted(set(np.arange(2002, xmax, 1)) - set(major_ticks))
+            minor_ticks = sorted(set(np.arange(xmin, xmax, 1)) - set(major_ticks))
             ax[j].xaxis.set_ticks(minor_ticks, minor=True)
-            ax[j].set_xlim(2002, xmax)
+            ax[j].set_xlim(xmin, xmax)
             ax[j].set_ylim(-9.5,8.5)
             #-- axes tick adjustments
             ax[j].get_xaxis().set_tick_params(which='both', direction='in')

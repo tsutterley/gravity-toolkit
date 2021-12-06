@@ -26,7 +26,7 @@ OUTPUTS:
 COMMAND LINE OPTIONS:
     --help: list the command line options
     -U X, --user X: username for NASA Earthdata Login
-    -P X, --password X: password for NASA Earthdata Login
+    -W X, --password X: password for NASA Earthdata Login
     -N X, --netrc X: path to .netrc file for authentication
     -A, --append: append .netrc file instead of printing
 

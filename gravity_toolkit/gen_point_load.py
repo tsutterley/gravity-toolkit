@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_point_load.py
-Written by Tyler Sutterley (01/2021)
+Written by Tyler Sutterley (11/2021)
 Calculates gravitational spherical harmonic coefficients for point masses
 
 CALLING SEQUENCE:
@@ -24,6 +24,7 @@ OPTIONS:
     UNITS: input data units
         1: grams of mass (default)
         2: gigatonnes of mass
+        list: custom degree-dependent unit conversion factor
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
 PYTHON DEPENDENCIES:
@@ -50,6 +51,7 @@ REFERENCES:
         https://doi.org/10.1029/JB078i011p01760
 
 UPDATE HISTORY:
+    Updated 11/2021: added UNITS list option for converting from custom units
     Updated 01/2021: use harmonics class for spherical harmonic operations
     Updated 07/2020: added function docstrings
     Written 05/2020
@@ -76,6 +78,7 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
     UNITS: input data units
         1: grams of mass (default)
         2: gigatonnes of mass
+        list: custom degree-dependent unit conversion factor
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
     Returns
@@ -109,6 +112,12 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
         #-- Input in gigatonnes (Gt)
         dfactor = factors.cmwe/(factors.rad_e**2)
         int_fact[:] = 1e15
+    elif isinstance(UNITS,(list,np.ndarray)):
+        #-- custom units 
+        dfactor = np.copy(UNITS)
+        int_fact[:] = 1.0
+    else:
+        raise ValueError('Unknown units {0}'.format(UNITS))
     #-- flattened form of data converted to units
     D = int_fact*data.flatten()
 

@@ -31,12 +31,13 @@ Keyword arguments
 - ``RAD``: Gaussian smoothing radius (km)
 - ``UNITS``: output data units
 
-   * ``1`` cm of water thickness
-   * ``2`` mm of geoid height
-   * ``3`` mm of elastic crustal deformation [Davis2004]_
-   * ``4`` microGal gravitational perturbation
-   * ``5`` millibar equivalent surface pressure
-   * ``6`` cm of viscoelastic crustal uplift (GIA) [Wahr2000]_
+   * ``1``: cm of water thickness
+   * ``2``: mm of geoid height
+   * ``3``: mm of elastic crustal deformation [Davis2004]_
+   * ``4``: microGal gravitational perturbation
+   * ``5``: millibar equivalent surface pressure
+   * ``6``: cm of viscoelastic crustal uplift (GIA) [Wahr2000]_
+   * ``list``: custom degree-dependent unit conversion factor
 - ``LMAX``: Upper bound of Spherical Harmonic Degrees
 - ``LOVE``: input load Love numbers up to degree of truncation (``hl``, ``kl``, ``ll``)
 - ``ASTYPE``: floating point precision for calculating Clenshaw summation

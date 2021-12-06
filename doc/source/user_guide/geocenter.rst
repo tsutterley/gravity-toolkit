@@ -64,7 +64,7 @@ General Attributes and Methods
             ``release``: GRACE/GRACE-FO/Swarm data release for dealiasing product
 
             ``calendar_year``: calendar year of data
-            
+
             ``calendar_month``: calendar month of data
 
 
@@ -133,17 +133,17 @@ General Attributes and Methods
     .. method:: object.from_tellus(geocenter_file, **kwargs)
 
         - Reads monthly geocenter spherical harmonic data files from `GRACE Tellus Technical Notes <https://podaac-tools.jpl.nasa.gov/drive/files/allData/tellus/L2/degree_1>`_
-  
+
         - Estimates calculated using GRACE measurements and Ocean Models of Degree 1 [Swenson2008]_ [Sun2016]_
 
         Arguments:
 
             ``geocenter_file``: degree 1 file
-            
+
                 * CSR: ``TN-13_GEOC_CSR_RL06.txt``
 
                 * GFZ: ``TN-13_GEOC_GFZ_RL06.txt``
-                
+
                 * JPL: ``TN-13_GEOC_JPL_RL06.txt``
 
         Keyword arguments:
@@ -151,6 +151,19 @@ General Attributes and Methods
             ``header``: file contains header text to be skipped
 
             ``JPL``: use JPL TN-13 geocenter files calculated following [Sun2016]_
+
+
+    .. method:: object.from_netCDF4(geocenter_file, **kwargs)
+
+        - Reads geocenter file and extracts dates and spherical harmonic data from a netCDF4 file [Sutterley2019]_
+
+        Arguments:
+
+            ``geocenter_file``: degree 1 netCDF4 file
+
+        Keyword arguments:
+
+            ``compression``: netCDF4 file is compressed or streaming as bytes
 
 
     .. method:: object.copy(**kwargs)
@@ -228,7 +241,7 @@ General Attributes and Methods
 
         Keyword arguments:
 
-            ``kl``: gravitational load love number of degree 1     
+            ``kl``: gravitational load love number of degree 1
 
 
     .. method:: object.to_mmwe(kl=0.0):
@@ -256,8 +269,8 @@ General Attributes and Methods
         Keyword arguments:
 
             ``kl``: gravitational load love number of degree 1
-       
-        
+
+
     .. method:: object.from_mmwe(kl=0.0):
 
         Normalizes spherical harmonics from millimeters water equivalent (mmwe)
@@ -291,7 +304,7 @@ General Attributes and Methods
         Subtract one geocenter object from another
 
         Arguments:
-        
+
             ``temp``: geocenter object to be subtracted
 
     .. method:: object.multiply(self, temp):
@@ -299,7 +312,7 @@ General Attributes and Methods
         Multiply two geocenter objects
 
         Arguments:
-        
+
             ``temp``: geocenter object to be multiplied
 
 
@@ -308,7 +321,7 @@ General Attributes and Methods
         Divide one geocenter object from another
 
         Arguments:
-        
+
             ``temp``: geocenter object to be divided
 
 
@@ -317,7 +330,7 @@ General Attributes and Methods
         Multiply a geocenter object by a constant
 
         Arguments:
-        
+
             ``var``: scalar value to which the geocenter object will be multiplied
 
 
@@ -326,7 +339,7 @@ General Attributes and Methods
         Raise a geocenter object to a power
 
         Arguments:
-        
+
             ``power``: power to which the geocenter object will be raised
 
 

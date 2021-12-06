@@ -24,7 +24,7 @@ Ylms = gen_harmonics(data, lon, lat, LMAX=LMAX, PLM=PLM)
 - `PLM`: input fully normalized associated Legendre polynomials or Fourier coefficients of Legendre polynomials
 - `METHOD`: conversion method for calculating harmonics
     * `'integration'`: for global grids
-    *  `'fourier'`: for regional or global grids
+    * `'fourier'`: for regional or global grids
 
 #### Returns
 - `clm`: Cosine spherical harmonic coefficients (4-pi normalized)
