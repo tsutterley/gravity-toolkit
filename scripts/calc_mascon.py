@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_mascon.py
-Written by Tyler Sutterley (11/2021)
+Written by Tyler Sutterley (12/2021)
 
 Calculates a time-series of regional mass anomalies through a least-squares
     mascon procedure from GRACE/GRACE-FO time-variable gravity data
@@ -156,6 +156,8 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 12/2021: can use variable loglevels for verbose output
+        option to specify a specific geocenter correction file
     Updated 11/2021: add GSFC low-degree harmonics
     Updated 10/2021: using python logging for handling verbose output
         fix choices for setting input format of the removed files
@@ -330,6 +332,8 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     ATM=False,
     POLE_TIDE=False,
     DEG1=None,
+    DEG1_FILE=None,
+    MODEL_DEG1=False,
     SLR_C20=None,
     SLR_21=None,
     SLR_22=None,
@@ -409,7 +413,8 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX,
         SLR_21=SLR_21, SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C50=SLR_C50,
-        MODEL_DEG1=True, ATM=ATM, POLE_TIDE=POLE_TIDE)
+        DEG1_FILE=DEG1_FILE, MODEL_DEG1=MODEL_DEG1, ATM=ATM,
+        POLE_TIDE=POLE_TIDE)
     #-- create harmonics object from GRACE/GRACE-FO data
     GRACE_Ylms = harmonics().from_dict(Ylms)
     #-- use a mean file for the static field to remove
@@ -898,6 +903,12 @@ def main():
         metavar='DEG1', type=str,
         choices=['Tellus','SLR','SLF','Swenson','GFZ'],
         help='Update Degree 1 coefficients with SLR or derived values')
+    parser.add_argument('--geocenter-file',
+        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        help='Specific geocenter file if not default')
+    parser.add_argument('--interpolate-geocenter',
+        default=False, action='store_true',
+        help='Least-squares model missing Degree 1 coefficients')
     #-- replace low degree harmonics with values from Satellite Laser Ranging
     parser.add_argument('--slr-c20',
         type=str, default=None, choices=['CSR','GFZ','GSFC'],
@@ -974,7 +985,7 @@ def main():
         help='Output log file for each job')
     #-- print information about processing run
     parser.add_argument('--verbose','-V',
-        default=False, action='store_true',
+        action='count', default=0,
         help='Verbose output of processing run')
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
@@ -983,8 +994,8 @@ def main():
     args,_ = parser.parse_known_args()
 
     #-- create logger
-    loglevel = logging.INFO if args.verbose else logging.CRITICAL
-    logging.basicConfig(level=loglevel)
+    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    logging.basicConfig(level=loglevels[args.verbose])
 
     #-- try to run the analysis with listed parameters
     try:
@@ -1010,6 +1021,8 @@ def main():
             ATM=args.atm_correction,
             POLE_TIDE=args.pole_tide,
             DEG1=args.geocenter,
+            DEG1_FILE=args.geocenter_file,
+            MODEL_DEG1=args.interpolate_geocenter,
             SLR_C20=args.slr_c20,
             SLR_21=args.slr_21,
             SLR_22=args.slr_22,

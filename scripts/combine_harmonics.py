@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 combine_harmonics.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (12/2021)
 Converts a file from the spherical harmonic domain into the spatial domain
 
 CALLING SEQUENCE:
@@ -76,6 +76,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
     Updated 09/2021: update grid attributes after allocating for data
     Updated 08/2021: fix spherical harmonic orders if not set
@@ -199,7 +200,6 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     LANDMASK=None,
     MEAN_FILE=None,
     DATAFORM=None,
-    VERBOSE=False,
     MODE=0o775):
 
     #-- verify that output directory exists
@@ -333,9 +333,6 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
         grid.data[:,:,t] = harmonic_summation(Ylms.clm, Ylms.slm,
             grid.lon, grid.lat, LMAX=LMAX, PLM=PLM).T
 
-    #-- if verbose output: print input and output file names
-    logging.info('{0}:'.format(os.path.basename(sys.argv[0])))
-    logging.info('{0} -->\n\t{1}\n'.format(INPUT_FILE,OUTPUT_FILE))
     #-- outputting data to file
     output_data(grid.squeeze(), FILENAME=OUTPUT_FILE,
         DATAFORM=DATAFORM, UNITS=UNITS)
@@ -440,7 +437,7 @@ def main():
         help='Input and output data format')
     #-- print information about each input and output file
     parser.add_argument('--verbose','-V',
-        default=False, action='store_true',
+        action='count', default=0,
         help='Verbose output of run')
     #-- permissions mode of the output files (octal)
     parser.add_argument('--mode','-M',
@@ -449,8 +446,8 @@ def main():
     args,_ = parser.parse_known_args()
 
     #-- create logger
-    loglevel = logging.INFO if args.verbose else logging.CRITICAL
-    logging.basicConfig(level=loglevel)
+    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    logging.basicConfig(level=loglevels[args.verbose])
 
     #-- run program with parameters
     try:
@@ -470,7 +467,6 @@ def main():
             LANDMASK=args.mask,
             MEAN_FILE=args.mean,
             DATAFORM=args.format,
-            VERBOSE=args.verbose,
             MODE=args.mode)
     except Exception as e:
         #-- if there has been an error exception

@@ -35,6 +35,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
     Updated 05/2021: added option for connection timeout (in seconds)
     Updated 12/2020: use argparse to set command line parameters
@@ -227,7 +228,7 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
             #-- outputting GRACE filenames to index
             with open(os.path.join(local_dir,'index.txt'),'w') as fid:
                 for fi in sorted(grace_files):
-                    print('{0}'.format(fi), file=fid)
+                    print(fi, file=fid)
             #-- change permissions of index file
             os.chmod(os.path.join(local_dir,'index.txt'), MODE)
 

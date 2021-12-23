@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 aod1b_oblateness.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (12/2021)
 Contributions by Hugo Lecomte (03/2021)
 
 Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
@@ -36,6 +36,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATED HISTORY:
+    Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: can use default argument files to define options
         Add 3-hour interval depending on Release
@@ -67,8 +68,11 @@ import numpy as np
 import gravity_toolkit.utilities as utilities
 
 #-- program module to read the C20 coefficients of the AOD1b data
-def aod1b_oblateness(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
-    VERBOSE=False):
+def aod1b_oblateness(base_dir,
+    DREL='',
+    DSET='',
+    CLOBBER=False,
+    MODE=0o775):
     """
     Creates monthly files of oblateness (C20) variations at 6-hour intervals
     from GRACE/GRACE-FO level-1b dealiasing data files
@@ -89,10 +93,6 @@ def aod1b_oblateness(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775,
     MODE: Permission mode of directories and files
     VERBOSE: Output information for each output file
     """
-
-    #-- create logger
-    loglevel = logging.INFO if VERBOSE else logging.CRITICAL
-    logging.basicConfig(level=loglevel)
 
     #-- compile regular expressions operators for file dates
     #-- will extract the year and month from the tar file (.tar.gz)
@@ -262,19 +262,26 @@ def main():
         help='Overwrite existing data')
     #-- verbose will output information about each output file
     parser.add_argument('--verbose','-V',
-        default=False, action='store_true',
-        help='Verbose output of run')
+        action='count', default=0,
+        help='Verbose output of processing run')
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='permissions mode of output files')
     args,_ = parser.parse_known_args()
 
+    #-- create logger
+    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    logging.basicConfig(level=loglevels[args.verbose])
+
     #-- for each entered AOD1B dataset
     for DSET in args.product:
         #-- run AOD1b oblateness program with parameters
-        aod1b_oblateness(args.directory,DREL=args.release,DSET=DSET,
-            CLOBBER=args.clobber,VERBOSE=args.verbose,MODE=args.mode)
+        aod1b_oblateness(args.directory,
+            DREL=args.release,
+            DSET=DSET,
+            CLOBBER=args.clobber,
+            MODE=args.mode)
 
 #-- run main program
 if __name__ == '__main__':

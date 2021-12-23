@@ -146,7 +146,7 @@ def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], RELEASE=None, TIMEOUT=None,
         with open(os.path.join(local_dir,'index.txt'),'w') as fid:
             #-- output GRACE/GRACE-FO/Swarm filenames to index
             for fi in sorted(grace_files):
-                print('{0}'.format(fi), file=fid)
+                print(fi, file=fid)
         #-- change permissions of index file
         os.chmod(os.path.join(local_dir,'index.txt'), MODE)
 

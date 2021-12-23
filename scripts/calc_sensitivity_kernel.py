@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_sensitivity_kernel.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (12/2021)
 
 Calculates spatial sensitivity kernels through a least-squares mascon procedure
 
@@ -83,6 +83,7 @@ REFERENCES:
         https://doi.org/10.1029/2009GL039401
 
 UPDATE HISTORY:
+    Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: simplified file imports using wrappers in harmonics
         added path to default land-sea mask for mass redistribution
@@ -599,7 +600,7 @@ def main():
         help='Output log file for each job')
     #-- print information about processing run
     parser.add_argument('--verbose','-V',
-        default=False, action='store_true',
+        action='count', default=0,
         help='Verbose output of processing run')
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
@@ -608,8 +609,8 @@ def main():
     args,_ = parser.parse_known_args()
 
     #-- create logger
-    loglevel = logging.INFO if args.verbose else logging.CRITICAL
-    logging.basicConfig(level=loglevel)
+    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    logging.basicConfig(level=loglevels[args.verbose])
 
     #-- try to run the analysis with listed parameters
     try:

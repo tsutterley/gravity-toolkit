@@ -183,7 +183,7 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC, DREL=[], MISSION=[], TIMEOUT=None,
                     #-- outputting GRACE/GRACE-FO filenames to index
                     with open(os.path.join(local_dir,'index.txt'),'w') as fid:
                         for fi in sorted(files):
-                            print('{0}'.format(fi), file=fid)
+                            print(fi, file=fid)
                     #-- change permissions of index file
                     os.chmod(os.path.join(local_dir,'index.txt'), MODE)
 
