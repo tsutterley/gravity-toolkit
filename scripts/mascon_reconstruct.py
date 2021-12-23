@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 mascon_reconstruct.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (12/2021)
 
 Calculates the equivalent spherical harmonics from a mascon time series
 
@@ -77,6 +77,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: switch from parameter files to argparse arguments
         added path to default land-sea mask for mass redistribution
@@ -433,7 +434,7 @@ def main():
         help='Land-sea mask for redistributing mascon mass')
     #-- print information about processing run
     parser.add_argument('--verbose','-V',
-        default=False, action='store_true',
+        action='count', default=0,
         help='Verbose output of processing run')
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
@@ -442,8 +443,8 @@ def main():
     args,_ = parser.parse_known_args()
 
     #-- create logger
-    loglevel = logging.INFO if args.verbose else logging.CRITICAL
-    logging.basicConfig(level=loglevel)
+    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    logging.basicConfig(level=loglevels[args.verbose])
 
     #-- try to run the analysis with listed parameters
     try:

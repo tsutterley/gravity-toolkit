@@ -130,7 +130,7 @@ def esa_costg_swarm_sync(DIRECTORY, RELEASE=None, TIMEOUT=None, LOG=False,
             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
             CHECKSUM=CHECKSUM, MODE=MODE)
         #-- output Swarm filenames to index
-        print('{0}'.format(colnames[i]), file=fid)
+        print(colnames[i], file=fid)
     #-- change permissions of index file
     os.chmod(os.path.join(local_dir,'index.txt'), MODE)
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_error.py
-Written by Tyler Sutterley (11/2021)
+Written by Tyler Sutterley (12/2021)
 
 Calculates the GRACE/GRACE-FO errors following Wahr et al. (2006)
 
@@ -121,6 +121,9 @@ REFERENCES:
         http://dx.doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 12/2021: can use variable loglevels for verbose output
+        option to specify a specific geocenter correction file
+        fix default file prefix to include center and release information
     Updated 11/2021: add GSFC low-degree harmonics
     Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: simplified file imports using wrappers in harmonics
@@ -255,6 +258,7 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     ATM=False,
     POLE_TIDE=False,
     DEG1=None,
+    DEG1_FILE=None,
     MODEL_DEG1=False,
     SLR_C20=None,
     SLR_21=None,
@@ -305,14 +309,12 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX,
         SLR_21=SLR_21, SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C50=SLR_C50,
-        MODEL_DEG1=MODEL_DEG1, ATM=ATM, POLE_TIDE=POLE_TIDE)
+        DEG1_FILE=DEG1_FILE, MODEL_DEG1=MODEL_DEG1, ATM=ATM,
+        POLE_TIDE=POLE_TIDE)
     #-- convert to harmonics object and remove mean if specified
     GRACE_Ylms = harmonics().from_dict(Ylms)
     #-- full path to directory for specific GRACE/GRACE-FO product
     GRACE_Ylms.directory = Ylms['directory']
-    #-- default file prefix
-    if not FILE_PREFIX:
-        FILE_PREFIX = Ylms['title']
     #-- use a mean file for the static field to remove
     if MEAN_FILE:
         #-- read data form for input mean file (ascii, netCDF4, HDF5, gfc)
@@ -323,6 +325,10 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
         GRACE_Ylms.mean(apply=True)
     #-- date information of GRACE/GRACE-FO coefficients
     nfiles = len(GRACE_Ylms.time)
+
+    #-- default file prefix
+    if not FILE_PREFIX:
+        FILE_PREFIX = '{0}_{1}_{2}{3}_'.format(PROC,DREL,DSET,Ylms['title'])
 
     #-- filter GRACE/GRACE-FO coefficients
     if DESTRIPE:
@@ -651,6 +657,9 @@ def main():
         metavar='DEG1', type=str,
         choices=['Tellus','SLR','SLF','Swenson','GFZ'],
         help='Update Degree 1 coefficients with SLR or derived values')
+    parser.add_argument('--geocenter-file',
+        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        help='Specific geocenter file if not default')
     parser.add_argument('--interpolate-geocenter',
         default=False, action='store_true',
         help='Least-squares model missing Degree 1 coefficients')
@@ -690,7 +699,7 @@ def main():
         help='Output log file for each job')
     #-- print information about each input and output file
     parser.add_argument('--verbose','-V',
-        default=False, action='store_true',
+        action='count', default=0,
         help='Verbose output of run')
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
@@ -699,8 +708,8 @@ def main():
     args,_ = parser.parse_known_args()
 
     #-- create logger
-    loglevel = logging.INFO if args.verbose else logging.CRITICAL
-    logging.basicConfig(level=loglevel)
+    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    logging.basicConfig(level=loglevels[args.verbose])
 
     #-- try to run the analysis with listed parameters
     try:
@@ -728,6 +737,7 @@ def main():
             ATM=args.atm_correction,
             POLE_TIDE=args.pole_tide,
             DEG1=args.geocenter,
+            DEG1_FILE=args.geocenter_file,
             MODEL_DEG1=args.interpolate_geocenter,
             SLR_C20=args.slr_c20,
             SLR_21=args.slr_21,

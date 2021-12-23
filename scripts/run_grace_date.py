@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 run_grace_date.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (12/2021)
 
 Wrapper program for running GRACE date and months programs
 
@@ -47,6 +47,7 @@ PROGRAM DEPENDENCIES:
     grace_months_index.py: creates a single file showing the GRACE dates
 
 UPDATE HISTORY:
+    Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
     Updated 09/2021: using verbose option to track program progress
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -75,8 +76,8 @@ from gravity_toolkit.grace_months_index import grace_months_index
 
 def run_grace_date(base_dir, PROC, DREL, VERBOSE=False, MODE=0o775):
     #-- create logger
-    loglevel = logging.INFO if VERBOSE else logging.CRITICAL
-    logging.basicConfig(level=loglevel)
+    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    logging.basicConfig(level=loglevels[VERBOSE])
 
     #-- allocate python dictionaries for each processing center
     DSET = {}
@@ -140,7 +141,7 @@ def main():
         help='GRACE/GRACE-FO Data Release')
     #-- print information about each input and output file
     parser.add_argument('--verbose','-V',
-        default=False, action='store_true',
+        action='count', default=0,
         help='Verbose output of run')
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',

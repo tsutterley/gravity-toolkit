@@ -16,6 +16,8 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 12/2021: added netCDF4 reader for UCI iteration files
+        add cartesian and surface mass density conversions for errors
+        logging case_insensitive_filename output for debugging
     Updated 11/2021: converted to class with all data readers and converters
     Updated 07/2020: added function docstrings
     Updated 06/2019: added option RADIUS to manually set the Earth's radius
@@ -31,6 +33,7 @@ import copy
 import gzip
 import time
 import uuid
+import logging
 import netCDF4
 import numpy as np
 import gravity_toolkit.time
@@ -85,6 +88,8 @@ class geocenter(object):
                     errmsg = '{0} not found in file system'.format(filename)
                     raise FileNotFoundError(errmsg)
                 self.filename = os.path.join(directory,f.pop())
+        #-- print filename
+        logging.debug(self.filename)
         return self
 
     #-- PURPOSE: read AOD1b geocenter for month and calculate the mean harmonics
@@ -734,7 +739,7 @@ class geocenter(object):
         #-- set default keyword arguments
         kwargs.setdefault('fields',['time','month',
             'C10','C11','S11','eC10','eC11','eS11',
-            'X','Y','Z'])
+            'X','Y','Z','X_sigma','Y_sigma','Z_sigma'])
         #-- assign dictionary variables to self
         for key in kwargs['fields']:
             try:
@@ -809,7 +814,7 @@ class geocenter(object):
         #-- set default keyword arguments
         kwargs.setdefault('fields',['time','month',
             'C10','C11','S11','eC10','eC11','eS11',
-            'X','Y','Z'])
+            'X','Y','Z','X_sigma','Y_sigma','Z_sigma'])
         #-- assign dictionary variables to self
         for key in kwargs['fields']:
             try:
@@ -844,10 +849,20 @@ class geocenter(object):
         -----------------
         kl: gravitational load love number of degree 1
         """
-        #-- Stokes Coefficients to geocenter
-        self.Z = self.C10*self.radius*np.sqrt(3.0)/(1.0 + kl)
-        self.X = self.C11*self.radius*np.sqrt(3.0)/(1.0 + kl)
-        self.Y = self.S11*self.radius*np.sqrt(3.0)/(1.0 + kl)
+        #-- Stokes Coefficients to cartesian geocenter
+        try:
+            self.Z = self.C10*self.radius*np.sqrt(3.0)/(1.0 + kl)
+            self.X = self.C11*self.radius*np.sqrt(3.0)/(1.0 + kl)
+            self.Y = self.S11*self.radius*np.sqrt(3.0)/(1.0 + kl)
+        except Exception as e:
+            pass
+        #-- convert errors to cartesian geocenter
+        try:
+            self.Z_sigma = self.eC10*self.radius*np.sqrt(3.0)/(1.0 + kl)
+            self.X_sigma = self.eC11*self.radius*np.sqrt(3.0)/(1.0 + kl)
+            self.Y_sigma = self.eS11*self.radius*np.sqrt(3.0)/(1.0 + kl)
+        except Exception as e:
+            pass
         return self
 
     def to_cmwe(self, kl=0.0):
@@ -866,6 +881,13 @@ class geocenter(object):
         self.C10 *= (rho_e*rad_e)/(1.0 + kl)
         self.C11 *= (rho_e*rad_e)/(1.0 + kl)
         self.S11 *= (rho_e*rad_e)/(1.0 + kl)
+        #-- convert errors to centimeters water equivalent
+        try:
+            self.eC10 *= (rho_e*rad_e)/(1.0 + kl)
+            self.eC11 *= (rho_e*rad_e)/(1.0 + kl)
+            self.eS11 *= (rho_e*rad_e)/(1.0 + kl)
+        except Exception as e:
+            pass
         return self
 
     def to_mmwe(self, kl=0.0):
@@ -881,6 +903,13 @@ class geocenter(object):
         self.C10 *= 10.0
         self.C11 *= 10.0
         self.S11 *= 10.0
+        #-- convert errors to millimeters water equivalent
+        try:
+            self.eC10 *= 10.0
+            self.eC11 *= 10.0
+            self.eS11 *= 10.0
+        except Exception as e:
+            pass
         return self
 
     def from_cartesian(self, kl=0.0):
@@ -891,10 +920,17 @@ class geocenter(object):
         -----------------
         kl: gravitational load love number of degree 1
         """
-        #-- geocenter to Stokes Coefficients
+        #-- cartesian geocenter to Stokes Coefficients
         self.C10 = (1.0 + kl)*self.Z/(self.radius*np.sqrt(3.0))
         self.C11 = (1.0 + kl)*self.X/(self.radius*np.sqrt(3.0))
         self.S11 = (1.0 + kl)*self.Y/(self.radius*np.sqrt(3.0))
+        #-- convert cartesian geocenter to stokes coefficients
+        try:
+            self.eC10 = (1.0 + kl)*self.Z_sigma/(self.radius*np.sqrt(3.0))
+            self.eC11 = (1.0 + kl)*self.X_sigma/(self.radius*np.sqrt(3.0))
+            self.eS11 = (1.0 + kl)*self.Y_sigma/(self.radius*np.sqrt(3.0))
+        except Exception as e:
+            pass
         return self
 
     def from_cmwe(self, kl=0.0):
@@ -913,6 +949,13 @@ class geocenter(object):
         self.C10 *= (1.0 + kl)/(rho_e*rad_e)
         self.C11 *= (1.0 + kl)/(rho_e*rad_e)
         self.S11 *= (1.0 + kl)/(rho_e*rad_e)
+        #-- convert errors from centimeters water equivalent
+        try:
+            self.eC10 *= (1.0 + kl)/(rho_e*rad_e)
+            self.eC11 *= (1.0 + kl)/(rho_e*rad_e)
+            self.eS11 *= (1.0 + kl)/(rho_e*rad_e)
+        except Exception as e:
+            pass
         return self
 
     def from_mmwe(self, kl=0.0):
@@ -928,6 +971,13 @@ class geocenter(object):
         self.C10 /= 10.0
         self.C11 /= 10.0
         self.S11 /= 10.0
+        #-- convert errors from centimeters water equivalent
+        try:
+            self.eC10 /= 10.0
+            self.eC11 /= 10.0
+            self.eS11 /= 10.0
+        except Exception as e:
+            pass
         return self
 
     def mean(self, apply=False, indices=Ellipsis):

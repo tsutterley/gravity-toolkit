@@ -76,6 +76,7 @@ Command Line Options
     * ``'SLF'``: Sutterley and Velicogna coefficients, Remote Sensing (2019)
     * ``'Swenson'``: GRACE-derived coefficients from Sean Swenson
     * ``'GFZ'``: GRACE/SLR derived coefficients from GFZ GravIS
+- ``--geocenter-file X``: Specific geocenter file if not default
 - ``--interpolate-geocenter``: Least-squares model missing Degree 1 coefficients
 - ``--slr-c20 X``: Replace *C*\ :sub:`20` coefficients with SLR values
 

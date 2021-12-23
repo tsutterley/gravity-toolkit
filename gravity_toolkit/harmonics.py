@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (11/2021)
+Written by Tyler Sutterley (12/2021)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -29,6 +29,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 12/2021: logging case_insensitive_filename output for debugging
     Updated 11/2021: kwargs to index, netCDF4 and HDF5 read functions
     Updated 10/2021: using python logging for handling verbose output
     Updated 09/2021: added time-variable gravity data from gfc format
@@ -120,6 +121,8 @@ class harmonics(object):
                     errmsg = '{0} not found in file system'.format(filename)
                     raise FileNotFoundError(errmsg)
                 self.filename = os.path.join(directory,f.pop())
+        #-- print filename
+        logging.debug(self.filename)
         return self
 
     def from_ascii(self, filename, **kwargs):

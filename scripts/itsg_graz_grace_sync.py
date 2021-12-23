@@ -155,7 +155,7 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
         #-- outputting GRACE filenames to index
         with open(os.path.join(local_dir,'index.txt'),'w') as fid:
             for fi in sorted(grace_files):
-                print('{0}'.format(fi), file=fid)
+                print(fi, file=fid)
         #-- change permissions of index file
         os.chmod(os.path.join(local_dir,'index.txt'), MODE)
 

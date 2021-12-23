@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_harmonics.py
-Written by Tyler Sutterley (11/2021)
+Written by Tyler Sutterley (12/2021)
 
 Reads in low-degree spherical harmonic coefficients calculated from
     Satellite Laser Ranging (SLR) measurements
@@ -50,6 +50,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 12/2021: added function for converting from 7-day arcs
     Updated 11/2021: renamed module. added reader for GSFC weekly 5x5 fields
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: renamed module. new SLR 5x5 format from CSR (see notes)
@@ -296,3 +297,46 @@ def read_GSFC_weekly_6x1(input_file, SCALE=1.0, HEADER=True):
 
     #-- return spherical harmonic fields and date information
     return Ylms
+
+#-- PURPOSE: interpolate harmonics from 7-day to monthly
+def convert_weekly(t_in, d_in, DATE=[], NEIGHBORS=28):
+    """
+    Interpolate harmonics from 7-day to 28-day
+
+    Arguments
+    ---------
+    t_in: weekly time
+    d_in: weekly harmonics
+
+    Keyword arguments
+    -----------------
+    DATE: output monthly time for central averages
+    NEIGHBORS: number of days to use in average
+
+    Returns
+    -------
+    time: output date in year-decimal
+    month: GRACE/GRACE-FO month
+    data: monthly spherical harmonic coefficients
+    """
+    #-- duplicate time and harmonics
+    tdec = np.repeat(t_in,7)
+    data = np.repeat(d_in,7)
+    #-- calculate daily dates to use in centered moving average
+    tdec += (np.mod(np.arange(len(tdec)),7) - 3.5)/365.25
+    #-- calculate moving-average solution from 7-day arcs
+    dinput = {}
+    dinput['time'] = np.zeros_like(DATE)
+    dinput['data'] = np.zeros_like(DATE,dtype='f8')
+    #-- for each output monthly date
+    for i,D in enumerate(DATE):
+        #-- find all dates within NEIGHBORS days of mid-point
+        isort = np.argsort((tdec - D)**2)[:NEIGHBORS]
+        #-- calculate monthly mean of date and data
+        dinput['time'][i] = np.mean(tdec[isort])
+        dinput['data'][i] = np.mean(data[isort])
+    #-- GRACE/GRACE-FO month
+    dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
+    dinput['month'] = gravity_toolkit.time.adjust_months(dinput['month'])
+    #-- return the moving averages
+    return dinput

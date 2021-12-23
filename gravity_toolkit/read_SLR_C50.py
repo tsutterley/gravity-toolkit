@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C50.py
-Written by Yara Mohajerani and Tyler Sutterley (11/2021)
+Written by Yara Mohajerani and Tyler Sutterley (12/2021)
 
 Reads monthly degree 5 zonal spherical harmonic data files from SLR
 
@@ -45,6 +45,7 @@ PROGRAM DEPENDENCIES:
     read_SLR_harmonics.py: low-degree spherical harmonic coefficients from SLR
 
 UPDATE HISTORY:
+    Updated 12/2021: use function for converting from 7-day arcs
     Updated 11/2021: reader for new weekly 5x5+6,1 fields from NASA GSFC
     Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: simplified program similar to other SLR readers
@@ -152,24 +153,11 @@ def read_SLR_C50(SLR_file, HEADER=True, C50_MEAN=0.0, DATE=None):
     elif bool(re.search(r'gsfc_slr_5x5c61s61',SLR_file,re.I)):
         #-- read 5x5 + 6,1 file from GSFC and extract coefficients
         Ylms = gravity_toolkit.read_SLR_harmonics(SLR_file, HEADER=True)
-        #-- duplicate time and harmonics
-        tdec = np.repeat(Ylms['time'],7)
-        c50 = np.repeat(Ylms['clm'][5,0],7)
-        #-- calculate daily dates to use in centered moving average
-        tdec += (np.mod(np.arange(len(tdec)),7) - 3.5)/365.25
-        #-- number of dates to use in average
-        n_neighbors = 28
         #-- calculate 28-day moving-average solution from 7-day arcs
-        dinput['time'] = np.zeros_like(DATE)
-        dinput['data'] = np.zeros_like(DATE,dtype='f8')
+        dinput.update(gravity_toolkit.convert_weekly(Ylms['time'],
+            Ylms['clm'][5,0,:], DATE=DATE, NEIGHBORS=28))
         #-- no estimated spherical harmonic errors
         dinput['error'] = np.zeros_like(DATE,dtype='f8')
-        for i,D in enumerate(DATE):
-            isort = np.argsort((tdec - D)**2)[:n_neighbors]
-            dinput['time'][i] = np.mean(tdec[isort])
-            dinput['data'][i] = np.mean(c50[isort])
-        #-- GRACE/GRACE-FO month
-        dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
     elif bool(re.search(r'C50_LARES',SLR_file,re.I)):
         #-- read LARES filtered values
         LARES_input = np.loadtxt(SLR_file,skiprows=1)

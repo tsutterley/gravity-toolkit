@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 dealiasing_monthly_mean.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (12/2021)
 
 Reads GRACE/GRACE-FO AOD1B datafiles for a specific product and outputs monthly
     the mean for a specific GRACE/GRACE-FO processing center and data release
@@ -52,6 +52,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATED HISTORY:
+    Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: can use default argument files to define options
         added option to output in spherical harmonic model (SHM) format
@@ -98,8 +99,8 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
     LMAX=None, DATAFORM=None, CLOBBER=False, VERBOSE=False, MODE=0o775):
 
     #-- create logger
-    loglevel = logging.INFO if VERBOSE else logging.CRITICAL
-    logging.basicConfig(level=loglevel)
+    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    logging.basicConfig(level=loglevels[VERBOSE])
 
     #-- output data suffix
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
@@ -355,7 +356,7 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
             os.chmod(os.path.join(grace_dir,DSET,FILE), MODE)
 
         elif not COMPLETE:
-            print('File {0} not output (incomplete)'.format(FILE))
+            logging.info('File {0} not output (incomplete)'.format(FILE))
 
     #-- if outputting as spherical harmonic model files
     if (DATAFORM == 'SHM'):
@@ -365,12 +366,12 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
         #-- outputting GRACE filenames to index
         with open(os.path.join(grace_dir,DSET,'index.txt'),'w') as fid:
             for fi in sorted(grace_files):
-                print('{0}'.format(fi), file=fid)
+                print(fi, file=fid)
         #-- change permissions of index file
         os.chmod(os.path.join(grace_dir,DSET,'index.txt'), MODE)
 
     #-- print completion flag
-    print('Complete: {0}/{1}/{2}'.format(PROC,DREL,DSET))
+    logging.info('Complete: {0}/{1}/{2}'.format(PROC,DREL,DSET))
     #-- close the output date file
     f_out.close()
 
@@ -412,7 +413,7 @@ class dealiasing(harmonics):
         self.filename = os.path.expanduser(filename)
         #-- set default verbosity
         kwargs.setdefault('verbose',False)
-        print(self.filename) if kwargs['verbose'] else None
+        logging.info(self.filename)
         #-- open the output file
         fid = gzip.open(self.filename, 'wt')
         #-- print the header informat
@@ -706,7 +707,7 @@ def main():
         help='Overwrite existing data')
     #-- verbose will output information about each output file
     parser.add_argument('--verbose','-V',
-        default=False, action='store_true',
+        action='count', default=0,
         help='Verbose output of run')
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',

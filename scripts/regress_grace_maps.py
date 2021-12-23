@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 regress_grace_maps.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (12/2021)
 
 Reads in GRACE/GRACE-FO spatial files from grace_spatial_maps.py and
     fits a regression model at each grid point
@@ -63,6 +63,7 @@ PROGRAM DEPENDENCIES:
         hdf5_write.py: writes output spatial data to HDF5
 
 UPDATE HISTORY:
+    Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
     Updated 06/2021: switch from parameter files to argparse arguments
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -526,7 +527,7 @@ def main():
         help='Output log file for each job')
     #-- print information about each input and output file
     parser.add_argument('--verbose','-V',
-        default=False, action='store_true',
+        action='count', default=0,
         help='Verbose output of run')
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
@@ -535,8 +536,8 @@ def main():
     args,_ = parser.parse_known_args()
 
     #-- create logger
-    loglevel = logging.INFO if args.verbose else logging.CRITICAL
-    logging.basicConfig(level=loglevel)
+    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    logging.basicConfig(level=loglevels[args.verbose])
 
     #-- try to run the analysis with listed parameters
     try:
