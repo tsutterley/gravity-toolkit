@@ -18,7 +18,7 @@ OPTIONS:
     TIDE: tide system of output gravity fields
         tide_free: no permanent direct and indirect tidal potentials
         mean_tide: permanent tidal potentials (direct and indirect)
-        zero_tide: permanent direct tidal potential
+        zero_tide: permanent direct tidal potential removed
     FLAG: string denoting data lines
 
 OUTPUTS:
@@ -40,7 +40,7 @@ OUTPUTS:
     tide_system: tide system of gravity model
         tide_free: no permanent direct and indirect tidal potentials
         mean_tide: permanent tidal potentials (direct and indirect)
-        zero_tide: permanent direct tidal potential
+        zero_tide: permanent direct tidal potential removed
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
@@ -84,7 +84,7 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
     TIDE: tide system of output gravity fields
         tide_free: no permanent direct and indirect tidal potentials
         mean_tide: permanent tidal potentials (direct and indirect)
-        zero_tide: permanent direct tidal potential
+        zero_tide: permanent direct tidal potential removed
     FLAG: string denoting data lines
 
     Returns

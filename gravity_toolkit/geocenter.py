@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter.py
-Written by Tyler Sutterley (12/2021)
+Written by Tyler Sutterley (03/2022)
 Data class for reading and processing geocenter data
 
 PYTHON DEPENDENCIES:
@@ -15,6 +15,7 @@ PYTHON DEPENDENCIES:
         https://github.com/yaml/pyyaml
 
 UPDATE HISTORY:
+    Updated 03/2022: add try/except for read_GRACE_geocenter
     Updated 12/2021: added netCDF4 reader for UCI iteration files
         add cartesian and surface mass density conversions for errors
         logging case_insensitive_filename output for debugging
@@ -35,9 +36,14 @@ import time
 import uuid
 import logging
 import netCDF4
+import warnings
 import numpy as np
 import gravity_toolkit.time
-from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
+try:
+    from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
+except ModuleNotFoundError:
+    warnings.filterwarnings("always")
+    warnings.warn("read_GRACE_geocenter not available")
 
 class geocenter(object):
     """

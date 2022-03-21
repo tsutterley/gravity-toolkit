@@ -29,7 +29,7 @@ Keyword arguments
 
     * ``'tide_free'``: no permanent direct and indirect tidal potentials
     * ``'mean_tide'``: permanent tidal potentials (direct and indirect)
-    * ``'zero_tide'``: permanent direct tidal potential
+    * ``'zero_tide'``: permanent direct tidal potential removed
 - ``FLAG``: string denoting data lines
 
 Returns
