@@ -150,7 +150,7 @@ def podaac_cumulus(client, DIRECTORY, PROC, DREL=[], MISSION=[], AOD1B=False,
                 os.makedirs(local_dir,MODE)
             #-- query CMR for dataset
             ids,urls,mtimes = gravity_toolkit.utilities.cmr(
-                mission='grace', center='AOD1B', release=rl,
+                mission='grace', level='L1B', center='GFZ', release=rl,
                 product='AOD1B', start_date='2002-01-01T00:00:00',
                 provider='POCLOUD', endpoint='s3')
             #-- for each model id and url

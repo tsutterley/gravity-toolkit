@@ -448,6 +448,10 @@ General Methods
 
         ``release``: GRACE/GRACE-FO data release
 
+    Keyword arguments:
+
+        ``level``: GRACE/GRACE-FO product level (``'L1A'``, ``'L1B'``, ``'L2'``)
+
 
 .. method:: gravity_toolkit.utilities.cmr_readable_granules(product, solution='BA01')
 
@@ -459,6 +463,8 @@ General Methods
 
     Keyword arguments:
 
+        ``level``: GRACE/GRACE-FO product level (``'L1A'``, ``'L1B'``, ``'L2'``)
+
         ``solution``: monthly gravity field solution for Release-06
 
             - ``BA01``: unconstrained monthly gravity field solution to d/o 60
@@ -466,7 +472,7 @@ General Methods
             - ``BC01``: computed monthly dealiasing solution to d/o 180
 
 
-.. method:: gravity_toolkit.utilities.cmr_filter_json(search_results,  endpoint='data')
+.. method:: gravity_toolkit.utilities.cmr_filter_json(search_results, endpoint='data')
 
     Filter the CMR json response for desired data files
 
@@ -487,7 +493,47 @@ General Methods
 
         ``granule_urls``: list of GRACE/GRACE-FO granule urls
 
-        ``granule_mtimes``: list of GRACE/GRACE-FO granule modified times
+        ``granule_mtimes``: list of GRACE/GRACE-FO granule modification times
+
+
+.. method:: gravity_toolkit.utilities.cmr(mission=None, center=None, release=None, level='L2', product=None, solution='BA01', start_date=None, end_date=None, provider='POCLOUD', endpoint='data', verbose=False, fid=sys.stdout)
+
+    Query the NASA Common Metadata Repository (CMR) for GRACE/GRACE-FO data
+
+    Keyword arguments:
+
+        ``mission``: GRACE (``'grace'``) or GRACE Follow-On (``'grace-fo'``)
+
+        ``center``: GRACE/GRACE-FO processing center
+
+        ``release``: GRACE/GRACE-FO data release
+
+        ``level``: GRACE/GRACE-FO product level (``'L1A'``, ``'L1B'``, ``'L2'``)
+
+        ``product``: GRACE/GRACE-FO data product
+
+        ``solution``: monthly gravity field solution for Release-06
+
+        ``start_date``: starting date for CMR product query
+
+        ``end_date``: ending date for CMR product query
+
+        ``endpoint``: url endpoint type
+
+            - ``data``: PO.DAAC https archive
+            - ``s3``: PO.DAAC Cumulus AWS S3 bucket
+
+        ``verbose``: print CMR query information
+
+        ``fid``: open file object to print if verbose
+
+    Returns:
+
+        ``granule_names``: list of GRACE/GRACE-FO granule names
+
+        ``granule_urls``: list of GRACE/GRACE-FO granule urls
+
+        ``granule_mtimes``: list of GRACE/GRACE-FO granule modification times
 
 
 .. method:: gravity_toolkit.utilities.from_figshare(directory,article='7388540',timeout=None,context=ssl.SSLContext(),chunk=16384,verbose=False,fid=sys.stdout,pattern='',mode=0o775)

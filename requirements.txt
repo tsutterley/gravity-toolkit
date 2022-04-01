@@ -1,3 +1,4 @@
+boto3
 cartopy --no-binary=cartopy
 future
 h5py

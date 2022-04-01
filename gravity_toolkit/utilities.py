@@ -903,7 +903,7 @@ def from_drive(HOST,username=None,password=None,build=True,timeout=None,
         return remote_buffer
 
 #-- PURPOSE: retrieve shortnames for GRACE/GRACE-FO products
-def cmr_product_shortname(mission, center, release):
+def cmr_product_shortname(mission, center, release, level='L2'):
     """
     Create a list of product shortnames for CMR queries
 
@@ -913,40 +913,64 @@ def cmr_product_shortname(mission, center, release):
     center: GRACE/GRACE-FO processing center
     release: GRACE/GRACE-FO data release
 
+    Keyword arguments
+    -----------------
+    level: GRACE/GRACE-FO product level
+
     Returns
     -------
     shortnames for CMR queries
     """
     #-- build dictionary for GRACE/GRACE-FO shortnames
-    shortname = {}
-    shortname['grace'] = dict(CSR={},GFZ={},JPL={},AOD1B={})
-    shortname['grace-fo'] = dict(CSR={},GFZ={},JPL={})
-    #-- format of GRACE shortnames
-    grace_format = 'GRACE_{0}_L2_GRAV_{1}_RL06'
+    cmr_shortname = {}
+    cmr_shortname['grace'] = {}
+    cmr_shortname['grace-fo'] = {}
+    #-- format of GRACE/GRACE-FO shortnames
+    grace_format = 'GRACE_{0}_{1}_GRAV_{2}_{3}'
+    gracefo_l2_format = 'GRACEFO_{0}_{1}_MONTHLY_0060'
+    #-- dictionary entries for each product level
+    cmr_shortname['grace']['L1B'] = dict(GFZ={},JPL={})
+    cmr_shortname['grace']['L2'] = dict(CSR={},GFZ={},JPL={})
+    cmr_shortname['grace-fo']['L1A'] = dict(JPL={})
+    cmr_shortname['grace-fo']['L1B'] = dict(JPL={})
+    cmr_shortname['grace-fo']['L2'] = dict(CSR={},GFZ={},JPL={})
     #-- Center for Space Research (CSR)
-    shortname['grace']['CSR']['RL06'] = []
+    cmr_shortname['grace']['L2']['CSR']['RL06'] = []
     #-- German Research Centre for Geosciences (GFZ)
-    shortname['grace']['GFZ']['RL06'] = []
+    cmr_shortname['grace']['L2']['GFZ']['RL06'] = []
     #-- NASA Jet Propulsion Laboratory (JPL)
-    shortname['grace']['JPL']['RL06'] = []
-    #-- create list of product shortnames
-    for p in ['GAC', 'GAD', 'GSM']:
-        shortname['grace']['CSR']['RL06'].append(grace_format.format(p,'CSR'))
-    for p in ['GAA', 'GAB', 'GAC', 'GAD', 'GSM']:
-        shortname['grace']['GFZ']['RL06'].append(grace_format.format(p,'GFZ'))
-        shortname['grace']['JPL']['RL06'].append(grace_format.format(p,'JPL'))
-    shortname['grace']['AOD1B']['RL06'] = ['GRACE_AOD1B_GRAV_GFZ_RL06']
-    #-- build dictionary entries for GRACE-FO Release
-    shortname['grace-fo']['CSR']['RL06'] = ['GRACEFO_L2_CSR_MONTHLY_0060']
-    shortname['grace-fo']['GFZ']['RL06'] = ['GRACEFO_L2_GFZ_MONTHLY_0060']
-    shortname['grace-fo']['JPL']['RL06'] = ['GRACEFO_L2_JPL_MONTHLY_0060']
+    cmr_shortname['grace']['L2']['JPL']['RL06'] = []
+    #-- create list of product shortnames for GRACE level-2 products
+    #-- for each L2 data processing center
+    for c in ['CSR','GFZ','JPL']:
+        #-- for each level-2 product
+        for p in ['GAA', 'GAB', 'GAC', 'GAD', 'GSM']:
+            #-- skip atmospheric and oceanic dealiasing products for CSR
+            if (c == 'CSR') and p in ('GAA','GAB'):
+                continue
+            #-- shortname for center and product
+            shortname = grace_format.format(p,'L2',c,'RL06')
+            cmr_shortname['grace']['L2'][c]['RL06'].append(shortname)
+    #-- dictionary entry for GRACE Level-1B deliasing products
+    cmr_shortname['grace']['L1B']['GFZ']['RL06'] = ['GRACE_AOD1B_GRAV_GFZ_RL06']
+    #-- dictionary entries for GRACE Level-1B ranging data products
+    cmr_shortname['grace']['L1B']['JPL']['RL02'] = ['GRACE_L1B_GRAV_JPL_RL02']
+    cmr_shortname['grace']['L1B']['JPL']['RL03'] = ['GRACE_L1B_GRAV_JPL_RL03']
+    #-- create list of product shortnames for GRACE-FO level-2 products
+    for c in ['CSR','GFZ','JPL']:
+        shortname = gracefo_l2_format.format('L2',c)
+        cmr_shortname['grace-fo']['L2'][c]['RL06'] = [shortname]
+    #-- dictionary entries for GRACE-FO Level-1 ranging data products
+    for l in ['L1A','L1B']:
+        shortname = gracefo_l2_format.format(l,'ASCII','JPL','RL04')
+        cmr_shortname['grace-fo'][l]['JPL']['RL04'] = [shortname]
     #-- try to retrieve the shortname for a given mission
     try:
-        return shortname[mission][center][release]
+        return cmr_shortname[mission][level][center][release]
     except Exception as e:
         raise Exception('NASA CMR shortname not found')
 
-def cmr_readable_granules(product, solution='BA01'):
+def cmr_readable_granules(product, level='L2', solution='BA01'):
     """
     Create readable granule names pattern for CMR queries
 
@@ -956,6 +980,7 @@ def cmr_readable_granules(product, solution='BA01'):
 
     Keyword arguments
     -----------------
+    level: GRACE/GRACE-FO product level
     solution: monthly gravity field solution for Release-06
         BA01: unconstrained monthly gravity field solution to d/o 60
         BB01: unconstrained monthly gravity field solution to d/o 96
@@ -965,14 +990,16 @@ def cmr_readable_granules(product, solution='BA01'):
     -------
     readable granule names pattern for CMR queries
     """
-    if (product == 'AOD1B'):
+    if (level == 'L1B') and (product == 'AOD1B'):
         pattern = 'AOD1B_*'
-    elif (product == 'GSM'):
+    elif (level == 'L2') and (product == 'GSM'):
         args = (product, solution)
         pattern = '{0}-2_???????-???????_????_?????_{1}_*'.format(*args)
-    else:
+    elif (level == 'L2'):
         args = (product, 'BC01')
         pattern = '{0}-2_???????-???????_????_?????_{1}_*'.format(*args)
+    else:
+        pattern = '*'
     #-- return readable granules pattern
     return pattern
 
@@ -995,7 +1022,7 @@ def cmr_filter_json(search_results, endpoint="data"):
     -------
     granule_names: list of GRACE/GRACE-FO granule names
     granule_urls: list of GRACE/GRACE-FO granule urls
-    granule_mtimes: list of GRACE/GRACE-FO granule modified times
+    granule_mtimes: list of GRACE/GRACE-FO granule modification times
     """
     #-- output list of granule ids, urls and modified times
     granule_names = []
@@ -1021,9 +1048,9 @@ def cmr_filter_json(search_results, endpoint="data"):
     return (granule_names,granule_urls,granule_mtimes)
 
 #-- PURPOSE: cmr queries for GRACE/GRACE-FO products
-def cmr(mission=None, center=None, release=None, product=None,
-    start_date=None, end_date=None, provider='POCLOUD', endpoint='data',
-    verbose=False, fid=sys.stdout):
+def cmr(mission=None, center=None, release=None, level='L2', product=None,
+    solution='BA01', start_date=None, end_date=None, provider='POCLOUD',
+    endpoint='data', verbose=False, fid=sys.stdout):
     """
     Query the NASA Common Metadata Repository (CMR) for GRACE/GRACE-FO data
 
@@ -1032,17 +1059,20 @@ def cmr(mission=None, center=None, release=None, product=None,
     mission: GRACE (grace) or GRACE Follow-On (grace-fo)
     center: GRACE/GRACE-FO processing center
     release: GRACE/GRACE-FO data release
+    level: GRACE/GRACE-FO product level
     product: GRACE/GRACE-FO data product
+    solution: monthly gravity field solution for Release-06
     start_date: starting date for CMR product query
     end_date: ending date for CMR product query
     endpoint: url endpoint type (data or s3)
-    verbose: print file transfer information
+    verbose: print CMR query information
     fid: open file object to print if verbose
 
     Returns
     -------
     granule_names: list of GRACE/GRACE-FO granule names
-    granule_urls: list of GRACE/GRACE-FO granule urls from PO.DAAC
+    granule_urls: list of GRACE/GRACE-FO granule urls
+    granule_mtimes: list of GRACE/GRACE-FO granule modification times
     """
     #-- create logger
     loglevel = logging.INFO if verbose else logging.CRITICAL
@@ -1069,7 +1099,8 @@ def cmr(mission=None, center=None, release=None, product=None,
     CMR_KEYS.append('&scroll=true')
     CMR_KEYS.append('&page_size={0}'.format(cmr_page_size))
     #-- dictionary of product shortnames
-    short_names = cmr_product_shortname(mission, center, release)
+    short_names = cmr_product_shortname(mission, center, release,
+        level=level)
     for short_name in short_names:
         CMR_KEYS.append('&short_name={0}'.format(short_name))
     #-- append keys for start and end time
@@ -1080,7 +1111,8 @@ def cmr(mission=None, center=None, release=None, product=None,
     #-- append keys for querying specific products
     CMR_KEYS.append("&options[readable_granule_name][pattern]=true")
     CMR_KEYS.append("&options[spatial][or]=true")
-    readable_granule = cmr_readable_granules(product)
+    readable_granule = cmr_readable_granules(product,
+        level=level, solution=solution)
     CMR_KEYS.append("&readable_granule_name[]={0}".format(readable_granule))
     #-- full CMR query url
     cmr_query_url = "".join([posixpath.join(*CMR_HOST),*CMR_KEYS])

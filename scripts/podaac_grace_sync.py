@@ -375,16 +375,14 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], MISSION=[], AOD1B=False,
             #-- print string of exact data product
             logging.info('{0}/{1}/{2}/{3}'.format('L1B','GFZ','AOD1B',rl))
             #-- remote and local directory for exact data product
-            PATH=[HOST,'drive','files','allData','grace','L1B','GFZ','AOD1B',rl]
-            remote_dir = posixpath.join(*PATH)
             local_dir = os.path.join(DIRECTORY,'AOD1B',rl)
             #-- check if AOD1B directory exists and recursively create if not
             os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
             #-- query CMR for dataset
             ids,urls,mtimes = gravity_toolkit.utilities.cmr(
-                mission='grace', center='AOD1B', release=rl,
+                mission='grace', level='L1B', center='GFZ', release=rl,
                 product='AOD1B', start_date='2002-01-01T00:00:00',
-                provider='PODAAC', endpoint='data')
+                provider='POCLOUD', endpoint='data')
             #-- for each id, url and modification time
             for id,url,mtime in zip(ids,urls,mtimes):
                 #-- retrieve GRACE/GRACE-FO files
@@ -412,7 +410,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], MISSION=[], AOD1B=False,
                     #-- query CMR for dataset
                     ids,urls,mtimes = gravity_toolkit.utilities.cmr(
                         mission=mi, center=pr, release=rl, product=ds,
-                        provider='PODAAC', endpoint='data')
+                        provider='POCLOUD', endpoint='data')
                     #-- for each id, url and modification time
                     for id,url,mtime in zip(ids,urls,mtimes):
                         #-- retrieve GRACE/GRACE-FO files
