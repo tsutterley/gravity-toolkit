@@ -303,7 +303,7 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     LANDMASK=None,
     OUTPUT_DIRECTORY=None,
     FILE_PREFIX=None,
-    VERBOSE=False,
+    VERBOSE=0,
     MODE=0o775):
 
     #-- recursively create output Directory if not currently existing

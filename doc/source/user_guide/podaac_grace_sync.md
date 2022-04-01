@@ -18,8 +18,11 @@ python podaac_grace_sync.py --user <username> --directory <path_to_grace_directo
 - `-W X`, `--webdav X`: WebDAV Password for JPL PO.DAAC Drive Login
 - `-N X`, `--netrc X`: Path to .netrc file for authentication
 - `-D X`, `--directory X`: Working Data Directory
-- `-c X`, `--center X`: GRACE Processing Center (CSR,GFZ,JPL)
-- `-r X`, `--release X`: GRACE/GRACE-FO Data Releases to sync (RL05,RL06)
+- `-m X`, `--mission X`: Mission to sync between GRACE and GRACE-FO
+   * `'grace'`
+   * `'grace-fo'`
+- `-c X`, `--center X`: GRACE/GRACE-FO Processing Center (CSR,GFZ,JPL)
+- `-r X`, `--release X`: GRACE/GRACE-FO Data Releases to sync (RL06)
 - `--newsletters`: Sync GRACE Newsletters
 - `-t X`, `--timeout X`: Timeout in seconds for blocking operations
 - `-L`, `--list`: Only print files that are to be transferred

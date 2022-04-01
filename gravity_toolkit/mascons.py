@@ -123,7 +123,7 @@ def to_jpl(gdata, lon, lat, lon_bound, lat_bound):
     #-- for that bin
     mascon_array = {}
     mascon_array['data'] = np.zeros((nmas))
-    mascon_array['mask'] = np.zeros((nmas),dtype=np.bool)
+    mascon_array['mask'] = np.zeros((nmas),dtype=bool)
     mascon_array['lon'] = np.zeros((nmas))
     mascon_array['lat'] = np.zeros((nmas))
     for k in range(0,nmas):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_grace_sync.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (03/2022)
 
 Syncs GRACE/GRACE-FO and auxiliary data from the NASA JPL PO.DAAC Drive Server
 Syncs CSR/GFZ/JPL files for RL04/RL05/RL06 GAA/GAB/GAC/GAD/GSM
@@ -41,7 +41,8 @@ COMMAND LINE OPTIONS:
     -W X, --webdav X: WebDAV password for JPL PO.DAAC Drive Login
     -N X, --netrc X: path to .netrc file for authentication
     -D X, --directory X: working data directory
-    -c X, --center X: GRACE Processing Center
+    -m X, --mission X: Sync GRACE (grace) or GRACE Follow-On (grace-fo) data
+    -c X, --center X: GRACE/GRACE-FO Processing Center
     -r X, --release X: GRACE/GRACE-FO Data Releases to sync (RL05,RL06)
     -a, --aod1b: sync GRACE/GRACE-FO Level-1B dealiasing products
     -n, --newsletters: sync GRACE/GRACE-FO newsletters
@@ -68,6 +69,8 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 03/2022: update regular expression pattern for finding files
+        use CMR queries for finding GRACE/GRACE-FO level-2 product urls
     Updated 10/2021: using python logging for handling verbose output
     Updated 05/2021: added option for connection timeout (in seconds)
         use try/except for retrieving netrc credentials
@@ -178,43 +181,43 @@ def compile_regex_pattern(PROC, DREL, DSET):
         #-- special order 30 datasets for the high-resonance months
         release, = re.findall(r'\d+', DREL)
         args = (DSET, int(release))
-        regex_pattern=r'{0}-2_\d+-\d+_\d+_UTCSR_0060_000{1:d}.gz$' .format(*args)
+        regex_pattern=r'{0}-2_\d+-\d+_\d+_UTCSR_0060_000{1:d}(\.gz)?$' .format(*args)
     elif ((DSET == 'GSM') and (PROC == 'CSR') and (DREL == 'RL06')):
         #-- CSR GSM RL06: only monthly degree 60 products
         release, = re.findall(r'\d+', DREL)
         args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
-        regex_pattern=r'{0}-2_\d+-\d+_{1}_UTCSR_{2}_0{3:d}00.gz$' .format(*args)
+        regex_pattern=r'{0}-2_\d+-\d+_{1}_UTCSR_{2}_0{3:d}00(\.gz)?$' .format(*args)
     elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL04')):
         #-- GFZ RL04: only unconstrained solutions (not GK2 products)
-        regex_pattern=r'{0}-2_\d+-\d+_\d+_EIGEN_G---_0004.gz$'.format(DSET)
+        regex_pattern=r'{0}-2_\d+-\d+_\d+_EIGEN_G---_0004(\.gz)?$'.format(DSET)
     elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL05')):
         #-- GFZ RL05: updated RL05a products which are less constrained to
         #-- the background model.  Allow regularized fields
-        regex_unconst=r'{0}-2_\d+-\d+_\d+_EIGEN_G---_005a.gz$'.format(DSET)
-        regex_regular=r'{0}-2_\d+-\d+_\d+_EIGEN_GK2-_005a.gz$'.format(DSET)
+        regex_unconst=r'{0}-2_\d+-\d+_\d+_EIGEN_G---_005a(\.gz)?$'.format(DSET)
+        regex_regular=r'{0}-2_\d+-\d+_\d+_EIGEN_GK2-_005a(\.gz)?$'.format(DSET)
         regex_pattern=r'{0}|{1}'.format(regex_unconst,regex_regular)
     elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL06')):
         #-- GFZ GSM RL06: only monthly degree 60 products
         release, = re.findall(r'\d+', DREL)
         args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
-        regex_pattern=r'{0}-2_\d+-\d+_{1}_GFZOP_{2}_0{3:d}00.gz$' .format(*args)
+        regex_pattern=r'{0}-2_\d+-\d+_{1}_GFZOP_{2}_0{3:d}00(\.gz)?$' .format(*args)
     elif (PROC == 'JPL') and DREL in ('RL04','RL05'):
         #-- JPL: RL04a and RL05a products (denoted by 0001)
         release, = re.findall(r'\d+', DREL)
         args = (DSET, int(release))
-        regex_pattern=r'{0}-2_\d+-\d+_\d+_JPLEM_0001_000{1:d}.gz$'.format(*args)
+        regex_pattern=r'{0}-2_\d+-\d+_\d+_JPLEM_0001_000{1:d}(\.gz)?$'.format(*args)
     elif ((DSET == 'GSM') and (PROC == 'JPL') and (DREL == 'RL06')):
         #-- JPL GSM RL06: only monthly degree 60 products
         release, = re.findall(r'\d+', DREL)
         args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
-        regex_pattern=r'{0}-2_\d+-\d+_{1}_JPLEM_{2}_0{3:d}00.gz$' .format(*args)
+        regex_pattern=r'{0}-2_\d+-\d+_{1}_JPLEM_{2}_0{3:d}00(\.gz)?$' .format(*args)
     else:
-        regex_pattern=r'{0}-2_(.*?).gz$'.format(DSET)
+        regex_pattern=r'{0}-2_(.*?)(\.gz)?$'.format(DSET)
     #-- return the compiled regular expression operator used to find files
     return re.compile(regex_pattern, re.VERBOSE)
 
 #-- PURPOSE: sync local GRACE/GRACE-FO files with JPL PO.DAAC drive server
-def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
+def podaac_grace_sync(DIRECTORY, PROC, DREL=[], MISSION=[], AOD1B=False,
     NEWSLETTERS=False, TIMEOUT=None, LOG=False, LIST=False,
     CLOBBER=False, CHECKSUM=False, MODE=None):
 
@@ -372,111 +375,60 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], AOD1B=False,
             #-- print string of exact data product
             logging.info('{0}/{1}/{2}/{3}'.format('L1B','GFZ','AOD1B',rl))
             #-- remote and local directory for exact data product
-            PATH=[HOST,'drive','files','allData','grace','L1B','GFZ','AOD1B',rl]
-            remote_dir = posixpath.join(*PATH)
             local_dir = os.path.join(DIRECTORY,'AOD1B',rl)
             #-- check if AOD1B directory exists and recursively create if not
             os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
-            #-- compile regular expression operator for remote files
-            R1 = re.compile(r'AOD1B_(20\d+)-(\d+)_\d+\.(tar\.gz|tgz)$', re.VERBOSE)
-            #-- open connection with PO.DAAC drive server at remote directory
-            files,mtimes = gravity_toolkit.utilities.drive_list(PATH,
-                timeout=TIMEOUT,build=False,parser=parser,pattern=R1,sort=True)
-            #-- for each file on the remote server
-            for colname,remote_mtime in zip(files,mtimes):
-                #-- remote and local versions of the file
-                remote_file = posixpath.join(remote_dir,colname)
-                local_file = os.path.join(local_dir,colname)
-                http_pull_file(remote_file, remote_mtime, local_file,
+            #-- query CMR for dataset
+            ids,urls,mtimes = gravity_toolkit.utilities.cmr(
+                mission='grace', level='L1B', center='GFZ', release=rl,
+                product='AOD1B', start_date='2002-01-01T00:00:00',
+                provider='POCLOUD', endpoint='data')
+            #-- for each id, url and modification time
+            for id,url,mtime in zip(ids,urls,mtimes):
+                #-- retrieve GRACE/GRACE-FO files
+                granule = gravity_toolkit.utilities.url_split(url)[-1]
+                http_pull_file(url, mtime, os.path.join(local_dir,granule),
                     TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
                     CHECKSUM=CHECKSUM, MODE=MODE)
 
-    #-- GRACE DATA
-    #-- PROCESSING CENTERS (CSR, GFZ, JPL)
+    #-- GRACE/GRACE-FO DATA
     logging.info('GRACE L2 Global Spherical Harmonics:')
-    for pr in PROC:
-        PATH = [HOST,'drive','files','allData','grace']
-        #-- DATA RELEASES (RL04, RL05, RL06)
-        for rl in DREL:
-            #-- modifiers for intermediate data releases
-            if (pr == 'JPL') and (rl in ('RL04','RL05')):
-                #-- JPL RELEASE 4 = RL04.1
-                #-- JPL RELEASE 5 = RL05.1 (11/2014)
-                drel_str = '{0}.1'.format(rl)
-            else:
-                drel_str = rl
-            #-- remote directory for data release
-            PATH.extend([retired[rl],'L2',pr,drel_str])
-            remote_dir = posixpath.join(*PATH)
-            #-- open connection with PO.DAAC drive server at remote directory
-            colnames,mtimes = gravity_toolkit.utilities.drive_list(PATH,
-                timeout=TIMEOUT,build=False,parser=parser,sort=True)
-            #-- DATA PRODUCTS (GAC, GAD, GSM, GAA, GAB)
-            for ds in DSET[pr]:
-                #-- print string of exact data product
-                logging.info('GRACE {0}/{1}/{2}'.format(pr, drel_str, ds))
-                #-- local directory for exact data product
-                local_dir = os.path.join(DIRECTORY, pr, rl, ds)
-                #-- check if directory exists and recursively create if not
-                if not os.path.exists(local_dir):
-                    os.makedirs(local_dir,MODE)
-                #-- compile regular expression operator to find GRACE files
-                R1 = re.compile(r'({0}-(.*?)(gz|txt|dif))'.format(ds),re.VERBOSE)
-                line = [i for i,f in enumerate(colnames) if R1.match(f)]
-                #-- for each file on the remote server
-                for i in line:
-                    #-- remote and local versions of the file
-                    remote_file = posixpath.join(remote_dir,colnames[i])
-                    local_file = os.path.join(local_dir,colnames[i])
-                    http_pull_file(remote_file, mtimes[i], local_file,
-                        TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
-                        CHECKSUM=CHECKSUM, MODE=MODE)
-
-    #-- GRACE-FO DATA
-    #-- PROCESSING CENTERS (CSR, GFZ, JPL)
-    #-- GRACE-FO data are stored separately for each year
-    logging.info('GRACE-FO L2 Global Spherical Harmonics:')
-    for pr in PROC:
-        PATH = [HOST,'drive','files','allData','gracefo']
-        #-- DATA RELEASES (RL06)
-        valid_gracefo_releases = [d for d in DREL if d not in ('RL04','RL05')]
-        for rl in valid_gracefo_releases:
-            #-- remote directory for data release
-            PATH.extend([retired[rl],'L2',pr,rl])
-            #-- open connection with PO.DAAC drive server at remote directory
-            R2 = re.compile(r'\d{4}',re.VERBOSE)
-            years,mtimes = gravity_toolkit.utilities.drive_list(PATH,
-                timeout=TIMEOUT,build=False,parser=parser,pattern=R2,sort=True)
-            for yr in years:
-                #-- add the year directory to the path
-                PATH.append(yr)
-                remote_dir = posixpath.join(*PATH)
-                #-- open connection with PO.DAAC drive server at remote directory
-                colnames,mtimes=gravity_toolkit.utilities.drive_list(PATH,
-                    timeout=TIMEOUT,build=False,parser=parser,sort=True)
+    for mi in MISSION:
+        #-- PROCESSING CENTERS (CSR, GFZ, JPL)
+        for pr in PROC:
+            #-- DATA RELEASES (RL04, RL05, RL06)
+            for rl in DREL:
                 #-- DATA PRODUCTS (GAC, GAD, GSM, GAA, GAB)
                 for ds in DSET[pr]:
                     #-- print string of exact data product
-                    args = (pr, rl, ds, yr)
-                    logging.info('GRACE-FO {0}/{1}/{2}/{3}'.format(*args))
+                    logging.info('{0} {1}/{2}/{3}'.format(mi, pr, rl, ds))
                     #-- local directory for exact data product
                     local_dir = os.path.join(DIRECTORY, pr, rl, ds)
                     #-- check if directory exists and recursively create if not
                     if not os.path.exists(local_dir):
                         os.makedirs(local_dir,MODE)
-                    #-- compile regular expression operator to find GRACE files
-                    R1 = re.compile(r'({0}-(.*?)(gz|txt|dif))'.format(ds))
-                    line = [i for i,f in enumerate(colnames) if R1.match(f)]
-                    #-- for each file on the remote server
-                    for i in line:
-                        #-- remote and local versions of the file
-                        remote_file = posixpath.join(remote_dir,colnames[i])
-                        local_file = os.path.join(local_dir,colnames[i])
-                        http_pull_file(remote_file, mtimes[i],
-                            local_file, TIMEOUT=TIMEOUT, LIST=LIST,
-                            CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
-                #-- remove the year directory to the path
-                PATH.remove(yr)
+                    #-- query CMR for dataset
+                    ids,urls,mtimes = gravity_toolkit.utilities.cmr(
+                        mission=mi, center=pr, release=rl, product=ds,
+                        provider='POCLOUD', endpoint='data')
+                    #-- for each id, url and modification time
+                    for id,url,mtime in zip(ids,urls,mtimes):
+                        #-- retrieve GRACE/GRACE-FO files
+                        granule = gravity_toolkit.utilities.url_split(url)[-1]
+                        http_pull_file(url, mtime, os.path.join(local_dir,granule),
+                            TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
+                            CHECKSUM=CHECKSUM, MODE=MODE)
+
+                    #-- regular expression operator for data product
+                    rx = compile_regex_pattern(pr, rl, ds)
+                    #-- find local GRACE/GRACE-FO files to create index
+                    grace_files=[fi for fi in os.listdir(local_dir) if rx.match(fi)]
+                    #-- outputting GRACE/GRACE-FO filenames to index
+                    with open(os.path.join(local_dir,'index.txt'),'w') as fid:
+                        for fi in sorted(grace_files):
+                            print('{0}'.format(fi), file=fid)
+                    #-- change permissions of index file
+                    os.chmod(os.path.join(local_dir,'index.txt'), MODE)
 
     #-- create index file for GRACE/GRACE-FO L2 Spherical Harmonic Data
     #-- PROCESSING CENTERS (CSR, GFZ, JPL)
@@ -597,6 +549,11 @@ def main():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
+    #-- mission (GRACE or GRACE Follow-On)
+    parser.add_argument('--mission','-m',
+        type=str, nargs='+',
+        default=['grace','grace-fo'], choices=['grace','grace-fo'],
+        help='Mission to sync between GRACE and GRACE-FO')
     #-- GRACE/GRACE-FO processing center
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, nargs='+',
@@ -661,11 +618,14 @@ def main():
 
     #-- check internet connection before attempting to run program
     #-- check JPL PO.DAAC Drive credentials before attempting to run program
-    if gravity_toolkit.utilities.check_credentials():
-        podaac_grace_sync(args.directory, args.center, DREL=args.release,
-            NEWSLETTERS=args.newsletters, AOD1B=args.aod1b, TIMEOUT=args.timeout,
-            LIST=args.list, LOG=args.log, CLOBBER=args.clobber,
-            CHECKSUM=args.checksum, MODE=args.mode)
+    DRIVE = 'https://{0}/drive/files'.format(HOST)
+    if gravity_toolkit.utilities.check_credentials(DRIVE):
+        podaac_grace_sync(args.directory, args.center,
+            DREL=args.release, MISSION=args.mission,
+            NEWSLETTERS=args.newsletters, AOD1B=args.aod1b,
+            TIMEOUT=args.timeout, LIST=args.list, LOG=args.log,
+            CLOBBER=args.clobber, CHECKSUM=args.checksum,
+            MODE=args.mode)
 
 #-- run main program
 if __name__ == '__main__':

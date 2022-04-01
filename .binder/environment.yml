@@ -2,6 +2,7 @@ name: read-GRACE-harmonics
 channels:
   - conda-forge
 dependencies:
+  - boto3
   - cartopy
   - future
   - h5py

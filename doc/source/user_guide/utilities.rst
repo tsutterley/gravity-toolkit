@@ -75,6 +75,15 @@ General Methods
         ``format``: format for input time string
 
 
+.. method:: gravity_toolkit.utilities.isoformat(time_string)
+
+    Reformat a date string to ISO formatting
+
+    Arguments:
+
+        ``time_string``: formatted time string to parse
+
+
 .. method:: gravity_toolkit.utilities.even(value)
 
     Rounds a number to an even number less than or equal to original
@@ -82,6 +91,15 @@ General Methods
     Arguments:
 
         ``value``: number to be rounded
+
+
+.. method:: gravity_toolkit.utilities.ceil(value)
+
+    Rounds a number upward to its nearest integer
+
+    Arguments:
+
+        ``value``: number to be rounded upward
 
 
 .. method:: gravity_toolkit.utilities.copy(source, destination, verbose=False, move=False)
@@ -256,6 +274,35 @@ General Methods
         ``remote_buffer``: BytesIO representation of file
 
 
+.. method:: gravity_toolkit.utilities.attempt_login(urs,context=ssl.SSLContext(),password_manager=False,get_ca_certs=False,redirect=False,authorization_header=True,username=None,password=None,retries=5,netrc=None)
+
+    attempt to build a urllib opener for NASA Earthdata
+
+    Arguments:
+
+        ``urs``: Earthdata login URS 3 host
+
+    Keyword arguments:
+
+        ``context``: SSL context for opener object
+
+        ``password_manager``: create password manager context using default realm
+
+        ``get_ca_certs``: get list of loaded “certification authority” certificates
+
+        ``redirect``: create redirect handler object
+
+        ``authorization_header``: add base64 encoded authorization header to opener
+
+        ``username``: NASA Earthdata username
+
+        ``password``: NASA Earthdata password
+
+        ``retries``: number of retry attempts
+
+        ``netrc``: path to .netrc file for authentication
+
+
 .. method:: gravity_toolkit.utilities.build_opener(username,password,context=ssl.SSLContext(),password_manager=False,get_ca_certs=False,redirect=False,authorization_header=True,urs=None)
 
     build urllib opener for NASA Earthdata or JPL PO.DAAC Drive with supplied credentials
@@ -281,7 +328,33 @@ General Methods
         ``urs``: Earthdata login URS 3 host
 
 
-.. method:: gravity_toolkit.utilities.check_credentials(HOST='https://podaac-tools.jpl.nasa.gov')
+.. method:: gravity_toolkit.utilities.s3_client(HOST,timeout=None,region_name='us-west-2')
+
+    get AWS s3 client for PO.DAAC Cumulus
+
+    Keyword arguments:
+
+        ``HOST``: PO.DAAC or ECCO AWS S3 credential host
+
+        ``timeout``: timeout in seconds for blocking operations
+
+        ``region_name``: AWS region name
+
+    Returns:
+
+        ``client``: AWS s3 client for PO.DAAC Cumulus
+
+
+.. method:: gravity_toolkit.utilities.s3_key(presigned_url)
+
+    get a s3 bucket key from a presigned url
+
+    Arguments:
+
+        ``presigned_url``: s3 presigned url
+
+
+.. method:: gravity_toolkit.utilities.check_credentials(HOST='https://podaac-tools.jpl.nasa.gov/drive/files')
 
     Check that entered `JPL PO.DAAC Drive`__ credentials are valid
 
@@ -361,6 +434,106 @@ General Methods
     Returns:
 
         ``remote_buffer``: BytesIO representation of file
+
+
+.. method:: gravity_toolkit.utilities.cmr_product_shortname(mission, center, release)
+
+    Create a list of product shortnames for CMR queries
+
+    Arguments:
+
+        ``mission``: GRACE (``'grace'``) or GRACE Follow-On (``'grace-fo'``)
+
+        ``center``: GRACE/GRACE-FO processing center
+
+        ``release``: GRACE/GRACE-FO data release
+
+    Keyword arguments:
+
+        ``level``: GRACE/GRACE-FO product level (``'L1A'``, ``'L1B'``, ``'L2'``)
+
+
+.. method:: gravity_toolkit.utilities.cmr_readable_granules(product, solution='BA01')
+
+    Create readable granule names pattern for CMR queries
+
+    Arguments:
+
+        ``product``: GRACE/GRACE-FO data product
+
+    Keyword arguments:
+
+        ``level``: GRACE/GRACE-FO product level (``'L1A'``, ``'L1B'``, ``'L2'``)
+
+        ``solution``: monthly gravity field solution for Release-06
+
+            - ``BA01``: unconstrained monthly gravity field solution to d/o 60
+            - ``BB01``: unconstrained monthly gravity field solution to d/o 96
+            - ``BC01``: computed monthly dealiasing solution to d/o 180
+
+
+.. method:: gravity_toolkit.utilities.cmr_filter_json(search_results, endpoint='data')
+
+    Filter the CMR json response for desired data files
+
+    Arguments:
+
+        ``search_results``: JSON response from CMR query
+
+    Keyword arguments:
+
+        ``endpoint``: url endpoint type
+
+            - ``data``: PO.DAAC https archive
+            - ``s3``: PO.DAAC Cumulus AWS S3 bucket
+
+    Returns:
+
+        ``granule_names``: list of GRACE/GRACE-FO granule names
+
+        ``granule_urls``: list of GRACE/GRACE-FO granule urls
+
+        ``granule_mtimes``: list of GRACE/GRACE-FO granule modification times
+
+
+.. method:: gravity_toolkit.utilities.cmr(mission=None, center=None, release=None, level='L2', product=None, solution='BA01', start_date=None, end_date=None, provider='POCLOUD', endpoint='data', verbose=False, fid=sys.stdout)
+
+    Query the NASA Common Metadata Repository (CMR) for GRACE/GRACE-FO data
+
+    Keyword arguments:
+
+        ``mission``: GRACE (``'grace'``) or GRACE Follow-On (``'grace-fo'``)
+
+        ``center``: GRACE/GRACE-FO processing center
+
+        ``release``: GRACE/GRACE-FO data release
+
+        ``level``: GRACE/GRACE-FO product level (``'L1A'``, ``'L1B'``, ``'L2'``)
+
+        ``product``: GRACE/GRACE-FO data product
+
+        ``solution``: monthly gravity field solution for Release-06
+
+        ``start_date``: starting date for CMR product query
+
+        ``end_date``: ending date for CMR product query
+
+        ``endpoint``: url endpoint type
+
+            - ``data``: PO.DAAC https archive
+            - ``s3``: PO.DAAC Cumulus AWS S3 bucket
+
+        ``verbose``: print CMR query information
+
+        ``fid``: open file object to print if verbose
+
+    Returns:
+
+        ``granule_names``: list of GRACE/GRACE-FO granule names
+
+        ``granule_urls``: list of GRACE/GRACE-FO granule urls
+
+        ``granule_mtimes``: list of GRACE/GRACE-FO granule modification times
 
 
 .. method:: gravity_toolkit.utilities.from_figshare(directory,article='7388540',timeout=None,context=ssl.SSLContext(),chunk=16384,verbose=False,fid=sys.stdout,pattern='',mode=0o775)

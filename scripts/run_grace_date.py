@@ -11,7 +11,7 @@ Data Products: [GAA, GAB, GAC, GAD, GSM]
     CSR: (GAC, GAD, GSM) only
 
 CALLING SEQUENCE:
-    run_grace_date(base_dir, PROC, DREL, VERBOSE=False)
+    run_grace_date(base_dir, PROC, DREL, VERBOSE=0)
 
 INPUTS:
     base_dir: working GRACE/GRACE-FO data directory
@@ -74,7 +74,7 @@ import argparse
 from gravity_toolkit.grace_date import grace_date
 from gravity_toolkit.grace_months_index import grace_months_index
 
-def run_grace_date(base_dir, PROC, DREL, VERBOSE=False, MODE=0o775):
+def run_grace_date(base_dir, PROC, DREL, VERBOSE=0, MODE=0o775):
     #-- create logger
     loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
     logging.basicConfig(level=loglevels[VERBOSE])
