@@ -127,7 +127,7 @@ def regress_grace_maps(LMAX, RAD,
     CYCLES=None,
     OUTPUT_DIRECTORY=None,
     FILE_PREFIX=None,
-    VERBOSE=False,
+    VERBOSE=0,
     MODE=0o775):
 
     #-- output filename suffix
@@ -385,7 +385,7 @@ def regress_grace_maps(LMAX, RAD,
 
 #-- PURPOSE: wrapper function for outputting data to file
 def output_data(data, FILENAME=None, KEY='data', DATAFORM=None,
-    UNITS=None, LONGNAME=None, TITLE=None, VERBOSE=False, MODE=0o775):
+    UNITS=None, LONGNAME=None, TITLE=None, VERBOSE=0, MODE=0o775):
     output = data.copy()
     setattr(output,'data',getattr(data,KEY))
     if (DATAFORM == 'ascii'):

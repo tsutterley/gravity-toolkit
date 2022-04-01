@@ -96,11 +96,7 @@ def calc_julian_day(YEAR, DAY_OF_YEAR):
 
 #-- PURPOSE: reads the AOD1B data and outputs a monthly mean
 def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
-    LMAX=None, DATAFORM=None, CLOBBER=False, VERBOSE=False, MODE=0o775):
-
-    #-- create logger
-    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
-    logging.basicConfig(level=loglevels[VERBOSE])
+    LMAX=None, DATAFORM=None, CLOBBER=False, MODE=0o775):
 
     #-- output data suffix
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
@@ -715,12 +711,20 @@ def main():
         help='permissions mode of output files')
     args,_ = parser.parse_known_args()
 
+    #-- create logger for verbosity level
+    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    logging.basicConfig(level=loglevels[args.verbose])
+
     for DSET in args.product:
         #-- run monthly mean AOD1b program with parameters
-        dealiasing_monthly_mean(args.directory, PROC=args.center,
-            DREL=args.release, DSET=DSET, LMAX=args.lmax,
-            DATAFORM=args.format, CLOBBER=args.clobber,
-            VERBOSE=args.verbose, MODE=args.mode)
+        dealiasing_monthly_mean(args.directory,
+            PROC=args.center,
+            DREL=args.release,
+            DSET=DSET,
+            LMAX=args.lmax,
+            DATAFORM=args.format,
+            CLOBBER=args.clobber,
+            MODE=args.mode)
 
 #-- run main program
 if __name__ == '__main__':

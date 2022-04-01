@@ -270,7 +270,7 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     MEANFORM=None,
     OUTPUT_DIRECTORY=None,
     FILE_PREFIX=None,
-    VERBOSE=False,
+    VERBOSE=0,
     MODE=0o775):
 
     #-- recursively create output directory if not currently existing

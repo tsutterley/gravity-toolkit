@@ -145,7 +145,7 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
     SLR_C50=None,
     MEAN_FILE=None,
     MEANFORM=None,
-    VERBOSE=False,
+    VERBOSE=0,
     MODE=0o775):
 
     #-- output string for both LMAX==MMAX and LMAX != MMAX cases
