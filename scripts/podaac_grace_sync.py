@@ -382,7 +382,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], MISSION=[], AOD1B=False,
             ids,urls,mtimes = gravity_toolkit.utilities.cmr(
                 mission='grace', level='L1B', center='GFZ', release=rl,
                 product='AOD1B', start_date='2002-01-01T00:00:00',
-                provider='POCLOUD', endpoint='data')
+                provider='PODAAC', endpoint='data')
             #-- for each id, url and modification time
             for id,url,mtime in zip(ids,urls,mtimes):
                 #-- retrieve GRACE/GRACE-FO files
@@ -410,7 +410,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], MISSION=[], AOD1B=False,
                     #-- query CMR for dataset
                     ids,urls,mtimes = gravity_toolkit.utilities.cmr(
                         mission=mi, center=pr, release=rl, product=ds,
-                        provider='POCLOUD', endpoint='data')
+                        provider='PODAAC', endpoint='data')
                     #-- for each id, url and modification time
                     for id,url,mtime in zip(ids,urls,mtimes):
                         #-- retrieve GRACE/GRACE-FO files

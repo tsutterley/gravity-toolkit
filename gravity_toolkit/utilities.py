@@ -927,6 +927,7 @@ def cmr_product_shortname(mission, center, release, level='L2'):
     cmr_shortname['grace-fo'] = {}
     #-- format of GRACE/GRACE-FO shortnames
     grace_format = 'GRACE_{0}_{1}_GRAV_{2}_{3}'
+    gracefo_l1_format = 'GRACEFO_{0}_{1}_GRAV_{2}_{3}'
     gracefo_l2_format = 'GRACEFO_{0}_{1}_MONTHLY_0060'
     #-- dictionary entries for each product level
     cmr_shortname['grace']['L1B'] = dict(GFZ={},JPL={})
@@ -962,7 +963,7 @@ def cmr_product_shortname(mission, center, release, level='L2'):
         cmr_shortname['grace-fo']['L2'][c]['RL06'] = [shortname]
     #-- dictionary entries for GRACE-FO Level-1 ranging data products
     for l in ['L1A','L1B']:
-        shortname = gracefo_l2_format.format(l,'ASCII','JPL','RL04')
+        shortname = gracefo_l1_format.format(l,'ASCII','JPL','RL04')
         cmr_shortname['grace-fo'][l]['JPL']['RL04'] = [shortname]
     #-- try to retrieve the shortname for a given mission
     try:
@@ -992,6 +993,8 @@ def cmr_readable_granules(product, level='L2', solution='BA01'):
     """
     if (level == 'L1B') and (product == 'AOD1B'):
         pattern = 'AOD1B_*'
+    elif (level == 'L1A') or (level == 'L1B'):
+        pattern = 'grace*'
     elif (level == 'L2') and (product == 'GSM'):
         args = (product, solution)
         pattern = '{0}-2_???????-???????_????_?????_{1}_*'.format(*args)
