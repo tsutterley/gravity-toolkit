@@ -34,96 +34,20 @@ Calculating the degree dependent factors for converting spatial units
 General Attributes and Methods
 ==============================
 
-.. attribute:: object.norm
-
-    fully normalized spherical harmonics
-
-.. attribute:: object.cmwe
-
-    centimeters water equivalent
-
-.. attribute:: object.mmwe
-
-    millimeters water equivalent
-
-.. attribute:: object.mmGH
-
-    millimeters geoid height
-
-.. attribute:: object.mmCU
-
-    millimeters elastic crustal deformation (uplift)
-
-.. attribute:: object.mmCH
-
-    millimeters elastic crustal deformation (horizontal)
-
-.. attribute:: object.cmVCU
-
-    centimeters viscoelastic crustal uplift from `Wahr et al. (2000)`__
-
-.. __: https://doi.org/10.1029/2000JB900113
-
-.. attribute:: object.mVCU
-
-    meters viscoelastic crustal uplift from `Wahr et al. (2000)`__
-
-.. __: https://doi.org/10.1029/2000JB900113
-
-.. attribute:: object.microGal
-
-    microGal gravity perturbations
-
-.. attribute:: object.mbar
-
-    millibar equivalent surface pressure
-
-.. attribute:: object.Pa
-
-    pascals equivalent surface pressure
-
-.. attribute:: object.a_axis
-
-    semi-major axis of the WGS84 ellipsoid in cm
-
-.. attribute:: object.flat
-
-    flattening of the WGS84 ellipsoid
-
-.. attribute:: object.b_axis
-
-    semi-minor axis of the WGS84 ellipsoid in cm
-
-.. attribute:: object.rad_e
-
-    average radius of the Earth having the same volume as WGS84 in cm
-
-.. attribute:: object.g_wmo
-
-    standard gravitational acceleration in cm/s\ :sup:`2`
-
-.. attribute:: object.rho_e
-
-    average density of the Earth in g/cm\ :sup:`3`
-
-.. method:: object.harmonic(hl, kl, ll)
-
-    Calculates degree dependent factors for converting harmonic units from [Wahr1998]_
-
-    Arguments:
-
-        ``hl``, ``kl``, ``ll`` load Love numbers to degree ``lmax``
-
-.. method:: object.spatial(hl, kl, ll)
-
-    Calculates degree dependent factors for converting spatial units from [Wahr1998]_
-
-    Arguments:
-
-        ``hl``, ``kl``, ``ll`` load Love numbers to degree ``lmax``
-
+.. autoclass:: gravity_toolkit.units
+   :members:
 
 References
-##########
-
-.. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan, "Time variability of the Earth's gravity field: Hydrological and oceanic effects and their possible detection using GRACE", *Journal of Geophysical Research*, 103(B12), 30205--30229, (1998). `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_
+----------
+.. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan,
+    "Time variability of the Earth's gravity field:
+    Hydrological and oceanic effects and their possible
+    detection using GRACE", *Journal of Geophysical Research*,
+    103(B12), 30205--30229, (1998).
+    `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_
+.. [Wahr2000] J. Wahr, D. Wingham, and C. Bentley,
+    "A method of combining ICESat and GRACE satellite data
+    to constrain Antarctic mass balance",
+    *Journal of Geophysical Research: Solid Earth*,
+    105(B7), 16279--16294, (2000).
+    `doi: 10.1029/2000JB900113 <https://doi.org/10.1029/2000JB900113>`_

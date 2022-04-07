@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 mascons.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (04/2022)
 Conversion routines for publicly available GRACE/GRACE-FO mascon solutions
 
 PYTHON DEPENDENCIES:
@@ -12,6 +12,7 @@ REFERENCES:
     mascon2grid.m written by Felix Landerer and David Wiese (JPL)
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 10/2021: publicly released version
     Updated 09/2019: check number of latitude points for using regional grids
     Updated 08/2018: add GSFC grid and mascon conversion routines
@@ -28,21 +29,40 @@ def to_gsfc(gdata, lon, lat, lon_center, lat_center, lon_span, lat_span):
     """
     Converts an input gridded field to an output GSFC mascon array
 
-    Arguments
-    ---------
-    gdata: (lat x lon) array of gridded map
-    lon: column vector of defined longitude points
-    lat: column vector of defined latitude points
-    lon_center: mascon longitudinal center points
-    lat_center: mascon latitudinal center points
-    lon_span: mascon longitudinal central angles
-    lat_span: mascon latitudinal central angles
+    Parameters
+    ----------
+    gdata: float
+        gridded data
+    lon: float
+        column vector of defined longitude points
+    lat: float
+        column vector of defined latitude points
+    lon_center: float
+        mascon longitudinal center points
+    lat_center: float
+        mascon latitudinal center points
+    lon_span: float
+        mascon longitudinal central angles
+    lat_span: float
+        mascon latitudinal central angles
 
     Returns
     -------
-    data: row vector of mascons
-    lat_center: row vector of latitude values for mascon centers
-    lon_center: row vector of longitude values for mascon centers
+    data: float
+        row vector of mascons
+    lat_center: float
+        row vector of latitude values for mascon centers
+    lon_center: float
+        row vector of longitude values for mascon centers
+
+    References
+    ----------
+    .. [Luthcke2013] S. B. Luthcke, T. J. Sabaka, B. D. Loomis,
+        A. A. Arendt, J. J. McCarthy, and J. Camp,
+        "Antarctica, Greenland and Gulf of Alaska land-ice evolution
+        from an iterated GRACE global mascon solution",
+        *Journal of Glaciology*, 59(216), (2013).
+        `doi: 10.3189/2013JoG12J147 <https://doi.org/10.3189/2013JoG12J147>`_
     """
     #-- number of mascons
     nmas = len(lon_center)
@@ -98,20 +118,37 @@ def to_jpl(gdata, lon, lat, lon_bound, lat_bound):
     """
     Converts an input gridded field to an output JPL mascon array
 
-    Arguments
-    ---------
-    gdata: (lat x lon) array of gridded map
-    lon: column vector of defined longitude points
-    lat: column vector of defined latitude points
-    lon_bound: mascon longitudinal bounds from coordinate file
-    lat_bound: mascon latitudinal bounds from coordinate file
+    Parameters
+    ----------
+    gdata: float
+        gridded data
+    lon: float
+        column vector of defined longitude points
+    lat: float
+        column vector of defined latitude points
+    lon_bound: float
+        mascon longitudinal bounds from coordinate file
+    lat_bound: float
+        mascon latitudinal bounds from coordinate file
 
     Returns
     -------
-    data: row vector of mascons
-    mask: row vector of mask values showing if mascon has no data
-    lat: row vector of latitude values for mascons
-    lon: row vector of longitude values for mascons
+    data: float
+        row vector of mascons
+    mask: float
+        row vector of mask values showing if mascon has no data
+    lat: float
+        row vector of latitude values for mascons
+    lon: float
+        row vector of longitude values for mascons
+
+    References
+    ----------
+    .. [Watkins2015] M. M. Watkins, D. N. Wiese, D.-N. Yuan, C. Boening,
+        and F. W. Landerer, "Improved methods for observing Earth's time
+        variable mass distribution with GRACE using spherical cap mascons".
+        *Journal of Geophysical Research: Solid Earth*, 120(4), 2648--2671,
+        (2015). `doi: 10.1002/2014JB011547 <https://doi.org/10.1002/2014JB011547>`_
     """
     #-- mascon dimensions
     nmas,nvar = lat_bound.shape
@@ -156,22 +193,36 @@ def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
     """
     Converts an input GSFC mascon array to an output gridded field
 
-    Arguments
-    ---------
-    mscdata: row vector of mascons
-    grid_spacing: spacing of the lat/lon grid
-    lon_center: mascon longitudinal center points
-    lat_center: mascon latitudinal center points
-    lon_span: mascon longitudinal central angles
-    lat_span: mascon latitudinal central angles
-
-    Keyword arguments
-    -----------------
-    TRANSPOSE: transpose output matrix (lon/lat)
+    Parameters
+    ----------
+    mscdata: float
+        row vector of mascons
+    grid_spacing: float
+        spacing of the lat/lon grid
+    lon_center: float
+        mascon longitudinal center points
+    lat_center: float
+        mascon latitudinal center points
+    lon_span: float
+        mascon longitudinal central angles
+    lat_span: float
+        mascon latitudinal central angles
+    TRANSPOSE: bool, default False
+        transpose output matrix (lon/lat)
 
     Returns
     -------
-    mdata: distributed mass grid
+    mdata: float
+        distributed mass grid
+
+    References
+    ----------
+    .. [Luthcke2013] S. B. Luthcke, T. J. Sabaka, B. D. Loomis,
+        A. A. Arendt, J. J. McCarthy, and J. Camp,
+        "Antarctica, Greenland and Gulf of Alaska land-ice evolution
+        from an iterated GRACE global mascon solution",
+        *Journal of Glaciology*, 59(216), (2013).
+        `doi: 10.3189/2013JoG12J147 <https://doi.org/10.3189/2013JoG12J147>`_
     """
     #-- number of mascons
     nmas = len(lon_center)
@@ -224,20 +275,31 @@ def from_jpl(mscdata, grid_spacing, lon_bound, lat_bound, TRANSPOSE=False):
     """
     Converts an input JPL mascon array to an output gridded field
 
-    Arguments
-    ---------
-    mscdata: row vector of mascons
-    grid_spacing: spacing of lat/lon grid
-    lon_bound: mascon longitudinal bounds from coordinate file
-    lat_bound: mascon latitudinal bounds from coordinate file
-
-    Keyword arguments
-    -----------------
-    TRANSPOSE: transpose output matrix (lon/lat)
+    Parameters
+    ----------
+    mscdata: float
+        row vector of mascons
+    grid_spacing: float
+        spacing of lat/lon grid
+    lon_bound: float
+        mascon longitudinal bounds from coordinate file
+    lat_bound: float
+        mascon latitudinal bounds from coordinate file
+    TRANSPOSE: bool, default False
+        transpose output matrix (lon/lat)
 
     Returns
     -------
-    mdata: distributed mass grid
+    mdata: float
+        distributed mass grid
+
+    References
+    ----------
+    .. [Watkins2015] M. M. Watkins, D. N. Wiese, D.-N. Yuan, C. Boening,
+        and F. W. Landerer, "Improved methods for observing Earth's time
+        variable mass distribution with GRACE using spherical cap mascons".
+        *Journal of Geophysical Research: Solid Earth*, 120(4), 2648--2671,
+        (2015). `doi: 10.1002/2014JB011547 <https://doi.org/10.1002/2014JB011547>`_
     """
     #-- mascon dimensions
     nmas,nvar = lat_bound.shape

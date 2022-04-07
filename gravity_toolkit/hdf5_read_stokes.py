@@ -68,17 +68,16 @@ import h5py
 import logging
 import zipfile
 import numpy as np
+import warnings
 
 def hdf5_read_stokes(filename, **kwargs):
     """
     Reads spherical harmonic data from HDF5 files
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     filename: HDF5 file to be opened and read
 
-    Keyword arguments
-    -----------------
     DATE: HDF5 file has date information
     VERBOSE: will print to screen the HDF5 structure parameters
     COMPRESSION: HDF5 file is compressed or streaming as bytes
@@ -99,6 +98,10 @@ def hdf5_read_stokes(filename, **kwargs):
     #-- set default keyword arguments
     kwargs.setdefault('DATE',True)
     kwargs.setdefault('COMPRESSION',None)
+    #-- set deprecation warning
+    warnings.filterwarnings("always")
+    warnings.warn("Deprecated. Please use harmonics.from_HDF5",
+        DeprecationWarning)
 
     #-- Open the HDF5 file for reading
     if (kwargs['COMPRESSION'] == 'gzip'):

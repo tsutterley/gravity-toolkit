@@ -1,0 +1,32 @@
+name: gravity-docs
+channels:
+  - conda-forge
+dependencies:
+  - boto3
+  - docutils<0.18
+  - fontconfig
+  - freetype
+  - future
+  - geos
+  - graphviz
+  - h5py
+  - lxml
+  - netCDF4
+  - notebook
+  - numpy
+  - numpydoc
+  - pip
+  - proj>=8.0
+  - python>=3.6
+  - python-dateutil
+  - pyyaml
+  - recommonmark
+  - scipy
+  - sphinx
+  - sphinx-markdown-tables
+  - sphinx_rtd_theme
+  - texlive-core
+  - pip:
+     - git+https://github.com/tsutterley/read-GRACE-geocenter.git
+     - git+https://github.com/tsutterley/geoid-toolkit.git
+     - ..

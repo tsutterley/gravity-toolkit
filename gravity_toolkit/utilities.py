@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (03/2022)
+Written by Tyler Sutterley (04/2022)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
@@ -9,6 +9,7 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/lxml
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 03/2022: add NASA Common Metadata Repository (CMR) queries
         added attempt login function to recursively check credentials
     Updated 11/2021: add CSR satellite laser ranging oblateness file
@@ -69,9 +70,10 @@ def get_data_path(relpath):
     """
     Get the absolute path within a package from a relative path
 
-    Arguments
-    ---------
-    relpath: relative path
+    Parameters
+    ----------
+    relpath: str,
+        relative path
     """
     #-- current file path
     filename = inspect.getframeinfo(inspect.currentframe()).filename
@@ -87,15 +89,15 @@ def get_hash(local, algorithm='MD5'):
     """
     Get the hash value from a local file or BytesIO object
 
-    Arguments
-    ---------
-    local: BytesIO object or path to file
+    Parameters
+    ----------
+    local: obj or str
+        BytesIO object or path to file
+    algorithm: str, default 'MD5'
+        hashing algorithm for checksum validation
 
-    Keyword Arguments
-    -----------------
-    algorithm: hashing algorithm for checksum validation
-        MD5: Message Digest
-        sha1: Secure Hash Algorithm
+            - ``'MD5'``: Message Digest
+            - ``'sha1'``: Secure Hash Algorithm
     """
     #-- check if open file object or if local file exists
     if isinstance(local, io.IOBase):
@@ -120,9 +122,10 @@ def url_split(s):
     """
     Recursively split a url path into a list
 
-    Arguments
-    ---------
-    s: url string
+    Parameters
+    ----------
+    s: str
+        url string
     """
     head, tail = posixpath.split(s)
     if head in ('http:','https:','ftp:','s3:'):
@@ -136,9 +139,10 @@ def convert_arg_line_to_args(arg_line):
     """
     Convert file lines to arguments
 
-    Arguments
-    ---------
-    arg_line: line string containing a single argument and/or comments
+    Parameters
+    ----------
+    arg_line: str
+        line string containing a single argument and/or comments
     """
     #-- remove commented lines and after argument comments
     for arg in re.sub(r'\#(.*?)$',r'',arg_line).split():
@@ -151,15 +155,13 @@ def get_unix_time(time_string, format='%Y-%m-%d %H:%M:%S'):
     """
     Get the Unix timestamp value for a formatted date string
 
-    Arguments
-    ---------
-    time_string: formatted time string to parse
-
-    Keyword arguments
-    -----------------
-    format: format for input time string
+    Parameters
+    ----------
+    time_string: str
+        formatted time string to parse
+    format: str, default '%Y-%m-%d %H:%M:%S'
+        format for input time string
     """
-    #-- try parsing using formatting string
     try:
         parsed_time = time.strptime(time_string.rstrip(), format)
     except (TypeError, ValueError):
@@ -179,9 +181,10 @@ def isoformat(time_string):
     """
     Reformat a date string to ISO formatting
 
-    Arguments
-    ---------
-    time_string: formatted time string to parse
+    Parameters
+    ----------
+    time_string: str
+        formatted time string to parse
     """
     #-- try parsing with dateutil
     try:
@@ -196,9 +199,10 @@ def even(value):
     """
     Rounds a number to an even number less than or equal to original
 
-    Arguments
-    ---------
-    value: number to be rounded
+    Parameters
+    ----------
+    value: float
+        number to be rounded
     """
     return 2*int(value//2)
 
@@ -207,26 +211,26 @@ def ceil(value):
     """
     Rounds a number upward to its nearest integer
 
-    Arguments
-    ---------
-    value: number to be rounded upward
+    Parameters
+    ----------
+    value: float
+        number to be rounded upward
     """
     return -int(-value//1)
 
 #-- PURPOSE: make a copy of a file with all system information
-def copy(source, destination, verbose=False, move=False):
+def copy(source, destination, move=False, **kwargs):
     """
     Copy or move a file with all system information
 
-    Arguments
-    ---------
-    source: source file
-    destination: copied destination file
-
-    Keyword arguments
-    -----------------
-    verbose: print file transfer information
-    move: remove the source file
+    Parameters
+    ----------
+    source: str
+        source file
+    destination: str
+        copied destination file
+    move: bool, default False
+        remove the source file
     """
     source = os.path.abspath(os.path.expanduser(source))
     destination = os.path.abspath(os.path.expanduser(destination))
@@ -242,9 +246,10 @@ def create_unique_file(filename):
     """
     Open a unique file adding a numerical instance if existing
 
-    Arguments
-    ---------
-    filename: full path to output file
+    Parameters
+    ----------
+    filename: str
+        full path to output file
     """
     #-- split filename into fileBasename and fileExtension
     fileBasename, fileExtension = os.path.splitext(filename)
@@ -263,18 +268,18 @@ def create_unique_file(filename):
         counter += 1
 
 #-- PURPOSE: check ftp connection
-def check_ftp_connection(HOST,username=None,password=None):
+def check_ftp_connection(HOST, username=None, password=None):
     """
     Check internet connection with ftp host
 
-    Arguments
-    ---------
-    HOST: remote ftp host
-
-    Keyword arguments
-    -----------------
-    username: ftp username
-    password: ftp password
+    Parameters
+    ----------
+    HOST: str
+        remote ftp host
+    username: str or NoneType
+        ftp username
+    password: str or NoneType
+        ftp password
     """
     #-- attempt to connect to ftp host
     try:
@@ -289,28 +294,34 @@ def check_ftp_connection(HOST,username=None,password=None):
         return True
 
 #-- PURPOSE: list a directory on a ftp host
-def ftp_list(HOST,username=None,password=None,timeout=None,
-    basename=False,pattern=None,sort=False):
+def ftp_list(HOST, username=None, password=None, timeout=None,
+    basename=False, pattern=None, sort=False):
     """
     List a directory on a ftp host
 
-    Arguments
-    ---------
-    HOST: remote ftp host path split as list
-
-    Keyword arguments
-    -----------------
-    username: ftp username
-    password: ftp password
-    timeout: timeout in seconds for blocking operations
-    basename: return the file or directory basename instead of the full path
-    pattern: regular expression pattern for reducing list
-    sort: sort output list
+    Parameters
+    ----------
+    HOST: str or list
+        remote ftp host path split as list
+    username: str or NoneType
+        ftp username
+    password: str or NoneType
+        ftp password
+    timeout: int or NoneType, default None
+        timeout in seconds for blocking operations
+    basename: bool, default False
+        return the file or directory basename instead of the full path
+    pattern: str or NoneType, default None
+        regular expression pattern for reducing list
+    sort: bool, default False
+        sort output list
 
     Returns
     -------
-    output: list of items in a directory
-    mtimes: list of last modification times for items in the directory
+    output: list
+        items in a directory
+    mtimes: list
+        last modification times for items in the directory
     """
     #-- verify inputs for remote ftp host
     if isinstance(HOST, str):
@@ -358,30 +369,39 @@ def ftp_list(HOST,username=None,password=None,timeout=None,
         return (output,mtimes)
 
 #-- PURPOSE: download a file from a ftp host
-def from_ftp(HOST,username=None,password=None,timeout=None,local=None,
-    hash='',chunk=8192,verbose=False,fid=sys.stdout,mode=0o775):
+def from_ftp(HOST, username=None, password=None, timeout=None,
+    local=None, hash='', chunk=8192, verbose=False, fid=sys.stdout,
+    mode=0o775):
     """
     Download a file from a ftp host
 
-    Arguments
-    ---------
-    HOST: remote ftp host path split as list
-
-    Keyword arguments
-    -----------------
-    username: ftp username
-    password: ftp password
-    timeout: timeout in seconds for blocking operations
-    local: path to local file
-    hash: MD5 hash of local file
-    chunk: chunk size for transfer encoding
-    verbose: print file transfer information
-    fid: open file object to print if verbose
-    mode: permissions mode of output local file
+    Parameters
+    ----------
+    HOST: str or list
+        remote ftp host path
+    username: str or NoneType
+        ftp username
+    password: str or NoneType
+        ftp password
+    timeout: int or NoneType, default None
+        timeout in seconds for blocking operations
+    local: str or NoneType, default None
+        path to local file
+    hash: str, default ''
+        MD5 hash of local file
+    chunk: int, default 8192
+        chunk size for transfer encoding
+    verbose: bool, default False
+        print file transfer information
+    fid: obj, default sys.stdout
+        open file object to print if verbose
+    mode: oct, default 0o775
+        permissions mode of output local file
 
     Returns
     -------
-    remote_buffer: BytesIO representation of file
+    remote_buffer: obj
+        BytesIO representation of file
     """
     #-- create logger
     loglevel = logging.INFO if verbose else logging.CRITICAL
@@ -440,9 +460,10 @@ def check_connection(HOST):
     """
     Check internet connection with http host
 
-    Arguments
-    ---------
-    HOST: remote http host
+    Parameters
+    ----------
+    HOST: str
+        remote http host
     """
     #-- attempt to connect to http host
     try:
@@ -453,29 +474,35 @@ def check_connection(HOST):
         return True
 
 #-- PURPOSE: list a directory on an Apache http Server
-def http_list(HOST,timeout=None,context=ssl.SSLContext(),
-    parser=lxml.etree.HTMLParser(),format='%Y-%m-%d %H:%M',
-    pattern='',sort=False):
+def http_list(HOST, timeout=None, context=ssl.SSLContext(),
+    parser=lxml.etree.HTMLParser(), format='%Y-%m-%d %H:%M',
+    pattern='', sort=False):
     """
     List a directory on an Apache http Server
 
-    Arguments
-    ---------
-    HOST: remote http host path split as list
-
-    Keyword arguments
-    -----------------
-    timeout: timeout in seconds for blocking operations
-    context: SSL context for url opener object
-    parser: HTML parser for lxml
-    format: format for input time string
-    pattern: regular expression pattern for reducing list
-    sort: sort output list
+    Parameters
+    ----------
+    HOST: str or list
+        remote http host path
+    timeout: int or NoneType, default None
+        timeout in seconds for blocking operations
+    context: obj, default ssl.SSLContext()
+        SSL context for url opener object
+    parser: obj, default lxml.etree.HTMLParser()
+        HTML parser for lxml
+    format: str, default '%Y-%m-%d %H:%M'
+        format for input time string
+    pattern: str, default ''
+        regular expression pattern for reducing list
+    sort: bool, default False
+        sort output list
 
     Returns
     -------
-    colnames: list of column names in a directory
-    collastmod: list of last modification times for items in the directory
+    colnames: list
+        column names in a directory
+    collastmod: list
+        last modification times for items in the directory
     """
     #-- verify inputs for remote http host
     if isinstance(HOST, str):
@@ -510,29 +537,39 @@ def http_list(HOST,timeout=None,context=ssl.SSLContext(),
         return (colnames,collastmod)
 
 #-- PURPOSE: download a file from a http host
-def from_http(HOST,timeout=None,context=ssl.SSLContext(),local=None,hash='',
-    chunk=16384,verbose=False,fid=sys.stdout,mode=0o775):
+def from_http(HOST, timeout=None, context=ssl.SSLContext(),
+    local=None, hash='', chunk=16384, verbose=False, fid=sys.stdout,
+    mode=0o775):
     """
     Download a file from a http host
 
-    Arguments
-    ---------
-    HOST: remote http host path split as list
-
-    Keyword arguments
-    -----------------
-    timeout: timeout in seconds for blocking operations
-    context: SSL context for url opener object
-    local: path to local file
-    hash: MD5 hash of local file
-    chunk: chunk size for transfer encoding
-    verbose: print file transfer information
-    fid: open file object to print if verbose
-    mode: permissions mode of output local file
+    Parameters
+    ----------
+    HOST: str or list
+        remote http host path split as list
+    timeout: int or NoneType, default None
+        timeout in seconds for blocking operations
+    context: obj, default ssl.SSLContext()
+        SSL context for url opener object
+    timeout: int or NoneType, default None
+        timeout in seconds for blocking operations
+    local: str or NoneType, default None
+        path to local file
+    hash: str, default ''
+        MD5 hash of local file
+    chunk: int, default 16384
+        chunk size for transfer encoding
+    verbose: bool, default False
+        print file transfer information
+    fid: obj, default sys.stdout
+        open file object to print if verbose
+    mode: oct, default 0o775
+        permissions mode of output local file
 
     Returns
     -------
-    remote_buffer: BytesIO representation of file
+    remote_buffer: obj
+        BytesIO representation of file
     """
     #-- create logger
     loglevel = logging.INFO if verbose else logging.CRITICAL
@@ -583,21 +620,33 @@ def attempt_login(urs, context=ssl.SSLContext(),
     """
     attempt to build a urllib opener for NASA Earthdata
 
-    Arguments
-    ---------
-    urs: Earthdata login URS 3 host
+    Parameters
+    ----------
+    urs: str
+        Earthdata login URS 3 host
+    context: obj, default ssl.SSLContext()
+        SSL context for url opener object
+    password_manager: bool, default True
+        Create password manager context using default realm
+    get_ca_certs: bool, default False
+        Get list of loaded “certification authority” certificates
+    redirect: bool, default False
+        Create redirect handler object
+    authorization_header: bool, default True
+        Add base64 encoded authorization header to opener
+    username: str, default from environmental variable
+        NASA Earthdata username
+    password: str, default from environmental variable
+        NASA Earthdata password
+    retries: int, default 5
+        number of retry attempts
+    netrc: str, default ~/.netrc
+        path to .netrc file for authentication
 
-    Keyword arguments
-    -----------------
-    context: SSL context for opener object
-    password_manager: create password manager context using default realm
-    get_ca_certs: get list of loaded “certification authority” certificates
-    redirect: create redirect handler object
-    authorization_header: add base64 encoded authorization header to opener
-    username: NASA Earthdata username
-    password: NASA Earthdata password
-    retries: number of retry attempts
-    netrc: path to .netrc file for authentication
+    Returns
+    -------
+    opener: obj
+        OpenerDirector instance
     """
     # set default keyword arguments
     kwargs.setdefault('username', os.environ.get('EARTHDATA_USERNAME'))
@@ -650,19 +699,29 @@ def build_opener(username, password, context=ssl.SSLContext(),
     """
     build urllib opener for NASA Earthdata with supplied credentials
 
-    Arguments
-    ---------
-    username: NASA Earthdata username
-    password: NASA Earthdata password
+    Parameters
+    ----------
+    username: str or NoneType, default None
+        NASA Earthdata username
+    password: str or NoneType, default None
+        NASA Earthdata password
+    context: obj, default ssl.SSLContext()
+        SSL context for url opener object
+    password_manager: bool, default False
+        Create password manager context using default realm
+    get_ca_certs: bool, default False
+        Get list of loaded “certification authority” certificates
+    redirect: bool, default False
+        Create redirect handler object
+    authorization_header: bool, default True
+        Add base64 encoded authorization header to opener
+    urs: str, default 'https://urs.earthdata.nasa.gov'
+        Earthdata login URS 3 host
 
-    Keyword arguments
-    -----------------
-    context: SSL context for opener object
-    password_manager: create password manager context using default realm
-    get_ca_certs: get list of loaded “certification authority” certificates
-    redirect: create redirect handler object
-    authorization_header: add base64 encoded authorization header to opener
-    urs: Earthdata login URS 3 host
+    Returns
+    -------
+    opener: obj
+        OpenerDirector instance
     """
     #-- https://docs.python.org/3/howto/urllib2.html#id5
     handler = []
@@ -703,15 +762,19 @@ def s3_client(HOST=None, timeout=None, region_name='us-west-2'):
     """
     Get AWS s3 client for PO.DAAC Cumulus
 
-    Keyword arguments
-    -----------------
-    HOST: PO.DAAC or ECCO AWS S3 credential host
-    timeout: timeout in seconds for blocking operations
-    region_name: AWS region name
+    Parameters
+    ----------
+    HOST: str
+        PO.DAAC or ECCO AWS S3 credential host
+    timeout: int or NoneType, default None
+        timeout in seconds for blocking operations
+    region_name: str, default 'us-west-2'
+        AWS region name
 
     Returns
     -------
-    client: AWS s3 client for PO.DAAC Cumulus
+    client: obj
+        AWS s3 client for PO.DAAC Cumulus
     """
     request = urllib2.Request(HOST)
     response = urllib2.urlopen(request, timeout=timeout)
@@ -730,9 +793,10 @@ def s3_key(presigned_url):
     """
     Get a s3 bucket key from a presigned url
 
-    Arguments
-    ---------
-    presigned_url: s3 presigned url
+    Parameters
+    ----------
+    presigned_url: str
+        s3 presigned url
     """
     host = url_split(presigned_url)
     return posixpath.join(*host[1:])
@@ -742,9 +806,8 @@ def check_credentials(HOST='https://podaac-tools.jpl.nasa.gov/drive/files'):
     """
     Check that entered NASA Earthdata credentials are valid
 
-    Keyword arguments
-    -----------------
-    HOST: full url to protected credential website
+    HOST: str
+        full url to protected credential website
     """
     try:
         request = urllib2.Request(HOST)
@@ -757,31 +820,41 @@ def check_credentials(HOST='https://podaac-tools.jpl.nasa.gov/drive/files'):
         return True
 
 #-- PURPOSE: list a directory on JPL PO.DAAC/ECCO Drive https server
-def drive_list(HOST,username=None,password=None,build=True,timeout=None,
-    urs='podaac-tools.jpl.nasa.gov',parser=lxml.etree.HTMLParser(),
-    pattern='',sort=False):
+def drive_list(HOST, username=None, password=None, build=True,
+    timeout=None, urs='podaac-tools.jpl.nasa.gov',
+    parser=lxml.etree.HTMLParser(), pattern='', sort=False):
     """
-    List a directory on JPL PO.DAAC or ECCO Drive
+    List a directory on
+    `JPL PO.DAAC <https://podaac-tools.jpl.nasa.gov/drive>`_ or
+    `ECCO Drive <https://ecco.jpl.nasa.gov/drive/>`_
 
-    Arguments
-    ---------
-    HOST: remote https host path split as list
-
-    Keyword arguments
-    -----------------
-    username: NASA Earthdata username
-    password: JPL PO.DAAC Drive WebDAV password
-    build: Build opener and check WebDAV credentials
-    timeout: timeout in seconds for blocking operations
-    urs: JPL PO.DAAC or ECCO login URS 3 host
-    parser: HTML parser for lxml
-    pattern: regular expression pattern for reducing list
-    sort: sort output list
+    Parameters
+    ----------
+    HOST: str or list
+        remote https host
+    username: str or NoneType, default None
+        NASA Earthdata username
+    password: str or NoneType, default None
+        JPL PO.DAAC Drive WebDAV password
+    build: bool, default True
+        Build opener and check WebDAV credentials
+    timeout: int or NoneType, default None
+        timeout in seconds for blocking operations
+    urs: str, default 'podaac-tools.jpl.nasa.gov'
+        JPL PO.DAAC or ECCO login URS 3 host
+    parser: obj, default lxml.etree.HTMLParser()
+        HTML parser for lxml
+    pattern: str, default ''
+        regular expression pattern for reducing list
+    sort: bool, default False
+        sort output list
 
     Returns
     -------
-    colnames: list of column names in a directory
-    collastmod: list of last modification times for items in the directory
+    colnames: list
+        column names in a directory
+    collastmod: list
+        last modification times for items in the directory
     """
     #-- use netrc credentials
     if build and not (username or password):
@@ -823,33 +896,45 @@ def drive_list(HOST,username=None,password=None,build=True,timeout=None,
         return (colnames,collastmod)
 
 #-- PURPOSE: download a file from a PO.DAAC/ECCO Drive https server
-def from_drive(HOST,username=None,password=None,build=True,timeout=None,
-    urs='podaac-tools.jpl.nasa.gov',local=None,hash='',chunk=16384,
-    verbose=False,fid=sys.stdout,mode=0o775):
+def from_drive(HOST, username=None, password=None, build=True,
+    timeout=None, urs='podaac-tools.jpl.nasa.gov', local=None,
+    hash='', chunk=16384, verbose=False, fid=sys.stdout, mode=0o775):
     """
-    Download a file from a JPL PO.DAAC or ECCO Drive https server
+    Download a file from a
+    `JPL PO.DAAC <https://podaac-tools.jpl.nasa.gov/drive>`_ or
+    `ECCO Drive <https://ecco.jpl.nasa.gov/drive/>`_ https server
 
-    Arguments
-    ---------
-    HOST: remote https host path split as list
-
-    Keyword arguments
-    -----------------
-    username: NASA Earthdata username
-    password: JPL PO.DAAC Drive WebDAV password
-    build: Build opener and check WebDAV credentials
-    timeout: timeout in seconds for blocking operations
-    urs: JPL PO.DAAC or ECCO login URS 3 host
-    local: path to local file
-    hash: MD5 hash of local file
-    chunk: chunk size for transfer encoding
-    verbose: print file transfer information
-    fid: open file object to print if verbose
-    mode: permissions mode of output local file
+    Parameters
+    ----------
+    HOST: str or list
+        remote https host
+    username: str or NoneType, default None
+        NASA Earthdata username
+    password: str or NoneType, default None
+        JPL PO.DAAC Drive WebDAV password
+    build: bool, default True
+        Build opener and check WebDAV credentials
+    timeout: int or NoneType, default None
+        timeout in seconds for blocking operations
+    urs: str, default 'podaac-tools.jpl.nasa.gov'
+        JPL PO.DAAC or ECCO login URS 3 host
+    local: str or NoneType, default None
+        path to local file
+    hash: str, default ''
+        MD5 hash of local file
+    chunk: int, default 16384
+        chunk size for transfer encoding
+    verbose: bool, default False
+        print file transfer information
+    fid: obj, default sys.stdout
+        open file object to print if verbose
+    mode: oct, default 0o775
+        permissions mode of output local file
 
     Returns
     -------
-    remote_buffer: BytesIO representation of file
+    remote_buffer: obj
+        BytesIO representation of file
     """
     #-- create logger
     loglevel = logging.INFO if verbose else logging.CRITICAL
@@ -907,19 +992,25 @@ def cmr_product_shortname(mission, center, release, level='L2'):
     """
     Create a list of product shortnames for CMR queries
 
-    Arguments
-    ---------
-    mission: GRACE (grace) or GRACE Follow-On (grace-fo)
-    center: GRACE/GRACE-FO processing center
-    release: GRACE/GRACE-FO data release
+    Parameters
+    ----------
+    mission: str
+        GRACE (grace) or GRACE Follow-On (grace-fo)
+    center: str
+        GRACE/GRACE-FO processing center
+    release: str
+        GRACE/GRACE-FO data release
+    level: str, default 'L2'
+        GRACE/GRACE-FO product level
 
-    Keyword arguments
-    -----------------
-    level: GRACE/GRACE-FO product level
+            - ``'L1A'``
+            - ``'L1B'``
+            - ``'L2'``
 
     Returns
     -------
-    shortnames for CMR queries
+    cmr_shortnames: list
+        shortnames for CMR queries
     """
     #-- build dictionary for GRACE/GRACE-FO shortnames
     cmr_shortname = {}
@@ -967,29 +1058,37 @@ def cmr_product_shortname(mission, center, release, level='L2'):
         cmr_shortname['grace-fo'][l]['JPL']['RL04'] = [shortname]
     #-- try to retrieve the shortname for a given mission
     try:
-        return cmr_shortname[mission][level][center][release]
+        cmr_shortnames = cmr_shortname[mission][level][center][release]
     except Exception as e:
         raise Exception('NASA CMR shortname not found')
+    else:
+        return cmr_shortnames
 
 def cmr_readable_granules(product, level='L2', solution='BA01'):
     """
     Create readable granule names pattern for CMR queries
 
-    Arguments
-    ---------
-    product: GRACE/GRACE-FO data product
+    Parameters
+    ----------
+    product: str
+        GRACE/GRACE-FO data product
+    level: str, default 'L2'
+        GRACE/GRACE-FO product level
 
-    Keyword arguments
-    -----------------
-    level: GRACE/GRACE-FO product level
-    solution: monthly gravity field solution for Release-06
-        BA01: unconstrained monthly gravity field solution to d/o 60
-        BB01: unconstrained monthly gravity field solution to d/o 96
-        BC01: computed monthly dealiasing solution to d/o 180
+            - ``'L1A'``
+            - ``'L1B'``
+            - ``'L2'``
+    solution: str, default 'BA01'
+        monthly gravity field solution for Release-06
+
+            - ``'BA01'``: unconstrained monthly gravity field solution to d/o 60
+            - ``'BB01'``: unconstrained monthly gravity field solution to d/o 96
+            - ``'BC01'``: computed monthly dealiasing solution to d/o 180
 
     Returns
     -------
-    readable granule names pattern for CMR queries
+    pattern: str
+        readable granule names pattern for CMR queries
     """
     if (level == 'L1B') and (product == 'AOD1B'):
         pattern = 'AOD1B_*'
@@ -1011,21 +1110,24 @@ def cmr_filter_json(search_results, endpoint="data"):
     """
     Filter the CMR json response for desired data files
 
-    Arguments
-    ---------
-    search_results: json response from CMR query
+    Parameters
+    ----------
+    search_results: dict
+        json response from CMR query
+    endpoint: str, default 'data'
+        url endpoint type
 
-    Keyword arguments
-    -----------------
-    endpoint: url endpoint type
-        data: PO.DAAC https archive
-        s3: PO.DAAC Cumulus AWS S3 bucket
+            - ``'data'``: PO.DAAC https archive
+            - ``'s3'``: PO.DAAC Cumulus AWS S3 bucket
 
     Returns
     -------
-    granule_names: list of GRACE/GRACE-FO granule names
-    granule_urls: list of GRACE/GRACE-FO granule urls
-    granule_mtimes: list of GRACE/GRACE-FO granule modification times
+    granule_names: list
+        GRACE/GRACE-FO granule names
+    granule_urls: list
+        GRACE/GRACE-FO granule urls
+    granule_mtimes: list
+        GRACE/GRACE-FO granule modification times
     """
     #-- output list of granule ids, urls and modified times
     granule_names = []
@@ -1057,25 +1159,47 @@ def cmr(mission=None, center=None, release=None, level='L2', product=None,
     """
     Query the NASA Common Metadata Repository (CMR) for GRACE/GRACE-FO data
 
-    Keyword arguments
-    -----------------
-    mission: GRACE (grace) or GRACE Follow-On (grace-fo)
-    center: GRACE/GRACE-FO processing center
-    release: GRACE/GRACE-FO data release
-    level: GRACE/GRACE-FO product level
-    product: GRACE/GRACE-FO data product
-    solution: monthly gravity field solution for Release-06
-    start_date: starting date for CMR product query
-    end_date: ending date for CMR product query
-    endpoint: url endpoint type (data or s3)
-    verbose: print CMR query information
-    fid: open file object to print if verbose
+    Parameters
+    ----------
+    mission: str or NoneType, default None
+        GRACE (``'grace'``) or GRACE Follow-On (``'grace-fo'``)
+    center: str or NoneType, default None
+        GRACE/GRACE-FO processing center
+    release: str or NoneType, default None
+        GRACE/GRACE-FO data release
+    level: str, default 'L2'
+        GRACE/GRACE-FO product level
+    product: str or NoneType, default None
+        GRACE/GRACE-FO data product
+    solution: str, default 'BA01'
+        monthly gravity field solution for Release-06
+    start_date: str or NoneType, default None
+        starting date for CMR product query
+    end_date: str or NoneType, default None
+        ending date for CMR product query
+    provider: str, default 'POCLOUD'
+        CMR data provider
+
+            - ``'PODAAC'``: PO.DAAC Drive
+            - ``'POCLOUD'``: PO.DAAC Cumulus
+    endpoint: str, default 'data'
+        url endpoint type
+
+            - ``'data'``: PO.DAAC https archive
+            - ``'s3'``: PO.DAAC Cumulus AWS S3 bucket
+    verbose: bool, default False
+        print CMR query information
+    fid: obj, default sys.stdout
+        open file object to print if verbose
 
     Returns
     -------
-    granule_names: list of GRACE/GRACE-FO granule names
-    granule_urls: list of GRACE/GRACE-FO granule urls
-    granule_mtimes: list of GRACE/GRACE-FO granule modification times
+    granule_names: list
+        GRACE/GRACE-FO granule names
+    granule_urls: list
+        GRACE/GRACE-FO granule urls
+    granule_mtimes: list
+        GRACE/GRACE-FO granule modification times
     """
     #-- create logger
     loglevel = logging.INFO if verbose else logging.CRITICAL
@@ -1153,21 +1277,36 @@ def from_figshare(directory,article='7388540',timeout=None,
     context=ssl.SSLContext(),chunk=16384,verbose=False,fid=sys.stdout,
     pattern=r'(CSR|GFZ|JPL)_(RL\d+)_(.*?)_SLF_iter.txt$',mode=0o775):
     """
-    Download Sutterley and Velicogna (2019) geocenter files from figshare
+    Download [Sutterley2019]_ geocenter files from
+    `figshare <https://doi.org/10.6084/m9.figshare.7388540>`_
 
-    Arguments
-    ---------
-    directory: download directory
+    Parameters
+    ----------
+    directory: str
+        download directory
+    article: str
+        figshare article number
+    timeout: int or NoneType, default None
+        timeout in seconds for blocking operations
+    context: obj, default ssl.SSLContext()
+        SSL context for url opener object
+    chunk: int, default 16384
+        chunk size for transfer encoding
+    verbose: bool, default False
+        print file transfer information
+    fid: obj, default sys.stdout
+        open file object to print if verbose
+    pattern: str, default '(CSR|GFZ|JPL)_(RL\d+)_(.*?)_SLF_iter.txt$'
+        regular expression pattern for reducing list
+    mode: oct, default 0o775
+        permissions mode of output local file
 
-    Keyword arguments
-    -----------------
-    article: figshare article number
-    timeout: timeout in seconds for blocking operations
-    chunk: chunk size for transfer encoding
-    verbose: print file transfer information
-    fid: open file object to print if verbose
-    pattern: regular expression pattern for reducing list
-    mode: permissions mode of output local file
+    References
+    ----------
+    .. [Sutterley2019] T. C. Sutterley and I. Velicogna,
+        "Improved Estimates of Geocenter Variability from Time-Variable Gravity
+        and Ocean Model Outputs", *Remote Sensing*, 11(18), 2108, (2019).
+        `doi: 10.3390/rs11182108 <https://doi.org/10.3390/rs11182108>`_
     """
     #-- figshare host
     HOST=['https://api.figshare.com','v2','articles',article]
@@ -1197,22 +1336,29 @@ def to_figshare(files,username=None,password=None,directory=None,
     timeout=None,context=ssl.SSLContext(ssl.PROTOCOL_TLS),
     get_ca_certs=False,verbose=False,chunk=8192):
     """
-    Send files to figshare using secure FTP uploader
+    Send files to figshare using secure `FTP uploader
+    <https://help.figshare.com/article/upload-large-datasets-and-bulk-upload-using-the-ftp-uploader-desktop-uploader-or-api>`_
 
-    Arguments
-    ---------
-    files: list of files to upload
-
-    Keyword arguments
-    -----------------
-    username: ftp username
-    password: ftp password
-    directory: figshare subdirectory for sending data
-    timeout: timeout in seconds for blocking operations
-    context: SSL context for ftp connection
-    get_ca_certs: get list of loaded “certification authority” certificates
-    verbose: print ftp transfer information
-    chunk: chunk size for transfer encoding
+    Parameters
+    ----------
+    files: list
+        files to upload
+    username: str or NoneType, default None
+        ftp username
+    password: str or NoneType, default None
+        ftp password
+    directory: str or NoneType, default None
+        figshare subdirectory for sending data
+    timeout: int or NoneType, default None
+        timeout in seconds for blocking operations
+    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
+        SSL context for url opener object
+    get_ca_certs: bool, default False
+        get list of loaded “certification authority” certificates
+    verbose: bool, default False
+        print ftp transfer information
+    chunk: int, default 8192
+        chunk size for transfer encoding
     """
     #-- SSL context handler
     if get_ca_certs:
@@ -1249,21 +1395,25 @@ def to_figshare(files,username=None,password=None,directory=None,
 def from_csr(directory,timeout=None,context=ssl.SSLContext(),
     chunk=16384,verbose=False,fid=sys.stdout,mode=0o775):
     """
-    Download satellite laser ranging (SLR) files from the
-        University of Texas Center for Space Research (UTCSR)
+    Download `satellite laser ranging (SLR) <http://download.csr.utexas.edu/pub/slr/>`_
+    files from the University of Texas Center for Space Research (UTCSR)
 
-    Arguments
-    ---------
-    directory: download directory
-
-    Keyword arguments
-    -----------------
-    timeout: timeout in seconds for blocking operations
-    context: SSL context for url opener object
-    chunk: chunk size for transfer encoding
-    verbose: print file transfer information
-    fid: open file object to print if verbose
-    mode: permissions mode of output local file
+    Parameters
+    ----------
+    directory: str
+        download directory
+    timeout: int or NoneType, default None
+        timeout in seconds for blocking operations
+    context: obj, default ssl.SSLContext()
+        SSL context for url opener object
+    chunk: int, default 16384
+        chunk size for transfer encoding
+    verbose: bool, default False
+        print file transfer information
+    fid: obj, default fid.stdout
+        open file object to print if verbose
+    mode: oct, default 0o775
+        permissions mode of output local file
     """
     #-- CSR download http server
     HOST = 'http://download.csr.utexas.edu'
@@ -1306,17 +1456,20 @@ def from_gfz(directory,timeout=None,chunk=8192,verbose=False,fid=sys.stdout,
     Download GravIS and satellite laser ranging (SLR) files from the
         German Research Centre for Geosciences (GeoForschungsZentrum, GFZ)
 
-    Arguments
-    ---------
-    directory: download directory
-
-    Keyword arguments
-    -----------------
-    timeout: timeout in seconds for blocking operations
-    chunk: chunk size for transfer encoding
-    verbose: print file transfer information
-    fid: open file object to print if verbose
-    mode: permissions mode of output local file
+    Parameters
+    ----------
+    directory: str
+        download directory
+    timeout: int or NoneType, default None
+        timeout in seconds for blocking operations
+    chunk: int, default 8192
+        chunk size for transfer encoding
+    verbose: bool, default False
+        print file transfer information
+    fid: obj, default sys.stdout
+        open file object to print if verbose
+    mode: oct, default 0o775
+        permissions mode of output local file
     """
     #-- recursively create directories if non-existent
     directory = os.path.abspath(os.path.expanduser(directory))
@@ -1346,17 +1499,22 @@ def icgem_list(host='http://icgem.gfz-potsdam.de/tom_longtime',timeout=None,
     parser=lxml.etree.HTMLParser()):
     """
     Parse the table of static gravity field models on the GFZ
-    International Centre for Global Earth Models (ICGEM) server
+    `International Centre for Global Earth Models (ICGEM) <http://icgem.gfz-potsdam.de/>`_
+    server
 
-    Keyword arguments
-    -----------------
-    host: url for the GFZ ICGEM gravity field table
-    timeout: timeout in seconds for blocking operations
-    parser: HTML parser for lxml
+    Parameters
+    ----------
+    host: str
+        url for the GFZ ICGEM gravity field table
+    timeout: int or NoneType
+        timeout in seconds for blocking operations
+    parser: obj, default lxml.etree.HTMLParser()
+        HTML parser for lxml
 
     Returns
     -------
-    colfiles: dictionary of static file urls mapped by field name
+    colfiles: dict
+        dictionary of static file urls mapped by field name
     """
     #-- try listing from https
     try:

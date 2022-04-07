@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_geocenter.py
-Written by Tyler Sutterley (11/2021)
+Written by Tyler Sutterley (04/2022)
 
 Reads monthly geocenter files from satellite laser ranging provided by CSR
     http://download.csr.utexas.edu/pub/slr/geocenter/
@@ -53,6 +53,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: function deprecated. merged with gravity_toolkit.geocenter
     Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -82,37 +83,47 @@ import gravity_toolkit.geocenter
 
 #-- PURPOSE: read geocenter data from Satellite Laser Ranging (SLR)
 def read_SLR_geocenter(geocenter_file, RADIUS=None, HEADER=0,
-    COLUMNS=['time','X','Y','Z','X_sigma','Y_sigma','Z_sigma']):
+    COLUMNS=['time', 'X', 'Y', 'Z', 'X_sigma', 'Y_sigma', 'Z_sigma']):
     """
     Reads monthly geocenter files from satellite laser ranging
 
-    Arguments
-    ---------
-    geocenter_file: Satellite Laser Ranging file
+    Parameters
+    ----------
+    geocenter_file: str
+        Satellite Laser Ranging file
+    RADIUS: float or NoneType, default None
+        Earth's radius for calculating spherical harmonics from SLR data
+    HEADER: int, default 0
+        Rows of data to skip when importing data
+    COLUMNS: list
+        Column names of ascii file
 
-    Keyword arguments
-    -----------------
-    RADIUS: Earth's radius for calculating spherical harmonics from SLR data
-    HEADER: rows of data to skip when importing data
-    COLUMNS: column names of ascii file
-        time: date in decimal-years
-        X: X-component of geocenter variation
-        Y: Y-component of geocenter variation
-        Z: Z-component of geocenter variation
-        X_sigma: X-component uncertainty
-        Y_sigma: Y-component uncertainty
-        Z_sigma: Z-component uncertainty
+            - ``'time'``: date in decimal-years
+            - ``'X'``: X-component of geocenter variation
+            - ``'Y'``: Y-component of geocenter variation
+            - ``'Z'``: Z-component of geocenter variation
+            - ``'X_sigma'``: X-component uncertainty
+            - ``'Y_sigma'``: Y-component uncertainty
+            - ``'Z_sigma'``: Z-component uncertainty
 
     Returns
     -------
-    C10: cosine d1/o0 spherical harmonic coefficients
-    C11: cosine d1/o1 spherical harmonic coefficients
-    S11: sine d1/o1 spherical harmonic coefficients
-    eC10: cosine d1/o0 spherical harmonic coefficient error
-    eC11: cosine d1/o1 spherical harmonic coefficient error
-    eS11: sine d1/o1 spherical harmonic coefficient error
-    month: GRACE/GRACE-FO month
-    time: date of each month in year-decimal
+    C10: float
+        cosine d1/o0 spherical harmonic coefficients
+    C11: float
+        cosine d1/o1 spherical harmonic coefficients
+    S11: float
+        sine d1/o1 spherical harmonic coefficients
+    eC10: float
+        cosine d1/o0 spherical harmonic coefficient error
+    eC11: float
+        cosine d1/o1 spherical harmonic coefficient error
+    eS11: float
+        sine d1/o1 spherical harmonic coefficient error
+    month: int
+        GRACE/GRACE-FO month
+    time: float
+        date of each month in year-decimal
     """
     warnings.filterwarnings("always")
     warnings.warn("Deprecated. Please use gravity_toolkit.harmonics instead",
@@ -132,13 +143,11 @@ def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, HEADER=0,
     Reads monthly geocenter files from satellite laser ranging corrected
     for non-tidal ocean and atmospheric variation
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     geocenter_file: Satellite Laser Ranging file
     DREL: GRACE/GRACE-FO/Swarm data release
 
-    Keyword arguments
-    -----------------
     RADIUS: Earth's radius for calculating spherical harmonics from SLR data
     HEADER: rows of data to skip when importing data
     COLUMNS: column names of ascii file

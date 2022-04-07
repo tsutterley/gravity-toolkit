@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter.py
-Written by Tyler Sutterley (03/2022)
+Written by Tyler Sutterley (04/2022)
 Data class for reading and processing geocenter data
 
 PYTHON DEPENDENCIES:
@@ -15,6 +15,7 @@ PYTHON DEPENDENCIES:
         https://github.com/yaml/pyyaml
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 03/2022: add try/except for read_GRACE_geocenter
     Updated 12/2021: added netCDF4 reader for UCI iteration files
         add cartesian and surface mass density conversions for errors
@@ -48,6 +49,27 @@ except ModuleNotFoundError:
 class geocenter(object):
     """
     Data class for reading and processing geocenter data
+
+    Attributes
+    ----------
+    C10: float
+        cosine spherical harmonics of degree 1 and order 0
+    C11: float
+        cosine spherical harmonics of degree 1 and order 1
+    S11: float
+        sine spherical harmonics of degree 1 and order 1
+    X: float
+        X-component of Cartesian geocenter coordinates
+    Y: float
+        Y-component of Cartesian geocenter coordinates
+    Z: float
+        Z-component of Cartesian geocenter coordinates
+    time: float
+        time variable of the spherical harmonics
+    month: int
+        GRACE/GRACE-FO months variable of the spherical harmonics
+    radius: float, default 6371000.790009159
+        Average Radius of the Earth [mm]
     """
     np.seterr(invalid='ignore')
     def __init__(self, **kwargs):
@@ -76,6 +98,11 @@ class geocenter(object):
     def case_insensitive_filename(self,filename):
         """
         Searches a directory for a filename without case dependence
+
+        Parameters
+        ----------
+        filename: str
+            input filename
         """
         #-- check if filename is open file object
         if isinstance(filename, io.IOBase):
@@ -104,11 +131,14 @@ class geocenter(object):
         """
         Reads monthly non-tidal ocean and atmospheric variation geocenter files
 
-        Arguments
-        ---------
-        release: GRACE/GRACE-FO/Swarm data release for dealiasing product
-        calendar_year: calendar year of data
-        calendar_month: calendar month of data
+        Parameters
+        ----------
+        release: str
+            GRACE/GRACE-FO/Swarm data release for dealiasing product
+        calendar_year: int
+            calendar year of data
+        calendar_month: int
+            calendar month of data
         """
 
         #-- full path to AOD geocenter for month (using glo coefficients)
@@ -144,26 +174,23 @@ class geocenter(object):
     def from_gravis(self, geocenter_file, **kwargs):
         """
         Reads monthly geocenter spherical harmonic data files from
-            GFZ GravIS calculated using GRACE/GRACE-FO measurements
-            and Ocean Models of degree 1
+        `GFZ GravIS calculated using GRACE/GRACE-FO measurements
+        and Ocean Models of degree 1 <ftp://isdcftp.gfz-potsdam.de/grace/GravIS/GFZ/Level-2B/aux_data/GRAVIS-2B_GFZOP_GEOCENTER_0002.dat>`_
 
-        ftp://isdcftp.gfz-potsdam.de/grace/GravIS/GFZ/Level-2B/aux_data/
-            GRAVIS-2B_GFZOP_GEOCENTER_0002.dat
 
-        Arguments
-        ---------
-        geocenter_file: degree 1 file
-
-        Keyword arguments
-        -----------------
-        header: file contains header text to be skipped
+        Parameters
+        ----------
+        geocenter_file: str
+            degree 1 file
+        header: bool, default True
+            file contains header text to be skipped
 
         References
         ----------
-        Dahle and Murboeck, "Post-processed GRACE/GRACE-FO Geopotential
-            GSM Coefficients GFZ RL06 (Level-2B Product)."
-            V. 0002. GFZ Data Services, (2019).
-            http://doi.org/10.5880/GFZ.GRAVIS_06_L2B
+        .. [Dahle2019] Dahle and Murboeck, "Post-processed GRACE/GRACE-FO
+            Geopotential GSM Coefficients GFZ RL06 (Level-2B Product)."
+            V. 0002. *GFZ Data Services*, (2019).
+            `doi: 10.5880/GFZ.GRAVIS_06_L2B <https://doi.org/10.5880/GFZ.GRAVIS_06_L2B>`_
         """
 
         #-- set filename
@@ -262,35 +289,40 @@ class geocenter(object):
         Reads monthly geocenter files from satellite laser ranging corrected
         for non-tidal ocean and atmospheric variation
 
-        Reads monthly geocenter files from satellite laser ranging provided by CSR
-            http://download.csr.utexas.edu/pub/slr/geocenter/
-            RL04: GCN_RL04.txt
-            RL05: GCN_RL05.txt
+        Reads monthly geocenter files from `satellite laser ranging
+        provided by CSR <http://download.csr.utexas.edu/pub/slr/geocenter/>`_
 
-        New CF-CM geocenter dataset to reflect the true degree-1 mass variations
-            http://download.csr.utexas.edu/pub/slr/geocenter/geocenter/README_L1_L2
-            http://download.csr.utexas.edu/pub/slr/geocenter/GCN_L1_L2_30d_CF-CM.txt
+            - `RL04`: GCN_RL04.txt
+            - `RL05`: GCN_RL05.txt
 
-        New geocenter solutions from Minkang Cheng
-            http://download.csr.utexas.edu/outgoing/cheng/gct2est.220_5s
+        `New CF-CM geocenter dataset
+        <http://download.csr.utexas.edu/pub/slr/geocenter/GCN_L1_L2_30d_CF-CM.txt>`_
+        to reflect the `true degree-1 mass variations
+        <http://download.csr.utexas.edu/pub/slr/geocenter/geocenter/README_L1_L2>`_
 
-        Arguments
-        ---------
-        geocenter_file: Satellite Laser Ranging file
+        `New geocenter solutions from Minkang Cheng
+        <http://download.csr.utexas.edu/outgoing/cheng/gct2est.220_5s>`_
 
-        Keyword arguments
-        -----------------
-        AOD: remove Atmospheric and Oceanic Dealiasing products
-        release: GRACE/GRACE-FO/Swarm data release for AOD
-        header: rows of data to skip when importing data
-        columns: column names of ascii file
-            time: date in decimal-years
-            X: X-component of geocenter variation
-            Y: Y-component of geocenter variation
-            Z: Z-component of geocenter variation
-            X_sigma: X-component uncertainty
-            Y_sigma: Y-component uncertainty
-            Z_sigma: Z-component uncertainty
+        Parameters
+        ----------
+        geocenter_file: str
+            Satellite Laser Ranging file
+        AOD: bool, default False
+            remove Atmospheric and Oceanic Dealiasing products
+        release: str or NoneType, default None
+            GRACE/GRACE-FO/Swarm data release for AOD
+        header: int, default 0
+            rows of data to skip when importing data
+        columns: list, default []
+            column names of ascii file
+
+                - ``'time'``: date in decimal-years
+                - ``'X'``: X-component of geocenter variation
+                - ``'Y'``: Y-component of geocenter variation
+                - ``'Z'``: Z-component of geocenter variation
+                - ``'X_sigma'``: X-component uncertainty
+                - ``'Y_sigma'``: Y-component uncertainty
+                - ``'Z_sigma'``: Z-component uncertainty
         """
 
         #-- set filename
@@ -400,21 +432,22 @@ class geocenter(object):
         """
         Reads geocenter file and extracts dates and spherical harmonic data
 
-        Arguments
-        ---------
-        geocenter_file: degree 1 file
+        Parameters
+        ----------
+        geocenter_file: str
+            degree 1 file
 
         References
         ----------
-        S. Swenson, D. Chambers, and J. Wahr, "Estimating geocenter variations
-            from a combination of GRACE and ocean model output",
-            Journal of Geophysical Research, 113(B08410), 2008.
-            doi:10.1029/2007JB005338
-
-        T. C. Sutterley, and I. Velicogna, "Improved estimates of geocenter
-            variability from time-variable gravity and ocean model outputs,
-            Remote Sensing, 11(18), 2108, (2019).
-            doi:10.3390/rs11182108
+        .. [Swenson2008] S. Swenson, D. Chambers, and J. Wahr,
+            "Estimating geocenter variations from a combination
+            of GRACE and ocean model output", *Journal of Geophysical
+            Research*, 113(B08410), (2008).
+            `doi: 10.1029/2007JB005338 <https://doi.org/10.1029/2007JB005338>`_
+        .. [Sutterley2019] T. C. Sutterley, and I. Velicogna, "Improved
+            estimates of geocenter variability from time-variable gravity
+            and ocean model outputs", *Remote Sensing*, 11(18), 2108, (2019).
+            `doi: 10.3390/rs11182108 <https://doi.org/10.3390/rs11182108>`_
         """
         #-- set filename
         self.case_insensitive_filename(geocenter_file)
@@ -423,23 +456,25 @@ class geocenter(object):
 
     def from_swenson(self, geocenter_file, **kwargs):
         """
-        Reads monthly geocenter files computed by Sean Swenson using
-        GRACE/GRACE-FO measurements and Ocean Models of degree 1
+        Reads `monthly geocenter coefficients
+        <https://github.com/swensosc/GRACE_Tiles/blob/master/ancillary_data/gad_gsm.rl05.txt>`_
+        computed by Sean Swenson using GRACE/GRACE-FO measurements
+        and Ocean Models of degree 1
 
-        Arguments
-        ---------
-        geocenter_file: degree 1 file
-
-        Keyword arguments
-        -----------------
-        header: file contains header text to be skipped
+        Parameters
+        ----------
+        geocenter_file: str
+            degree 1 file
+        header: bool, default True
+            file contains header text to be skipped
 
         References
         ----------
-        S. Swenson, D. Chambers, and J. Wahr, "Estimating geocenter variations
-            from a combination of GRACE and ocean model output",
-            Journal of Geophysical Research, 113(B08410), 2008.
-            doi:10.1029/2007JB005338
+        .. [Swenson2008] S. Swenson, D. Chambers, and J. Wahr,
+            "Estimating geocenter variations from a combination
+            of GRACE and ocean model output", *Journal of Geophysical
+            Research*, 113(B08410), (2008).
+            `doi: 10.1029/2007JB005338 <https://doi.org/10.1029/2007JB005338>`_
         """
         #-- set filename
         self.case_insensitive_filename(geocenter_file)
@@ -527,37 +562,40 @@ class geocenter(object):
         Technical Notes (TN-13) calculated using GRACE/GRACE-FO measurements and
         Ocean Models of Degree 1
 
-        Datasets distributed by NASA PO.DAAC
-        https://podaac-tools.jpl.nasa.gov/drive/files/allData/tellus/L2/degree_1
+        `Datasets distributed by NASA PO.DAAC
+        <https://podaac-tools.jpl.nasa.gov/drive/files/allData/tellus/L2/degree_1>`_
 
-        Arguments
-        ---------
-        geocenter_file: degree 1 file
-            * CSR: TN-13_GEOC_CSR_RL06.txt
-            * GFZ: TN-13_GEOC_GFZ_RL06.txt
-            * JPL: TN-13_GEOC_JPL_RL06.txt
+        Parameters
+        ----------
+        geocenter_file: str
+            degree 1 file
 
-        Keyword arguments
-        -----------------
-        header: file contains header text to be skipped
-        JPL: use JPL TN-13 geocenter files with self-attraction and loading
+                - ``CSR``: TN-13_GEOC_CSR_RL06.txt
+                - ``GFZ``: TN-13_GEOC_GFZ_RL06.txt
+                - ``JPL``: TN-13_GEOC_JPL_RL06.txt
+        header: bool, default True
+            file contains header text to be skipped
+        JPL: bool, default True
+            use JPL TN-13 geocenter files with self-attraction and loading
 
         References
         ----------
-        S. Swenson, D. Chambers, and J. Wahr, "Estimating geocenter variations
-            from a combination of GRACE and ocean model output",
-            Journal of Geophysical Research, 113(B08410), 2008.
-            doi:10.1029/2007JB005338
+        .. [Swenson2008] S. Swenson, D. Chambers, and J. Wahr,
+            "Estimating geocenter variations from a combination
+            of GRACE and ocean model output", *Journal of Geophysical
+            Research*, 113(B08410), (2008).
+            `doi: 10.1029/2007JB005338 <https://doi.org/10.1029/2007JB005338>`_
 
-        Y. Sun, R. Riva, and P. Ditmar, "Observed changes in the Earth's dynamic
-            oblateness from GRACE data and geophysical models",
-            Journal of Geodesy., 90(1), 81-89, 2016.
-            doi:10.1007/s00190-015-0852-y
+        .. [Sun2016a] Y. Sun, R. Riva, and P. Ditmar, "Observed changes
+            in the Earth's dynamic oblateness from GRACE data and
+            geophysical models", *Journal of Geodesy*, 90(1), 81-89, (2016).
+            `doi: 10.1007/s00190-015-0852-y <https://doi.org/10.1007/s00190-015-0852-y>`_
 
-        Y. Sun, R. Riva, and P. Ditmar, "Optimizing estimates of annual variations
-            and trends in geocenter motion and J2 from a combination of GRACE data
-            and geophysical models", Journal of Geophysical Research: Solid Earth,
-            121, 2016. doi:10.1002/2016JB013073
+        .. [Sun2016b] Y. Sun, R. Riva, and P. Ditmar, "Optimizing estimates of
+            annual variations and trends in geocenter motion and J2 from
+            a combination of GRACE data and geophysical models",
+            *Journal of Geophysical Research: Solid Earth*, 121, (2016).
+            `doi: 10.1002/2016JB013073 <https://doi.org/10.1002/2016JB013073>`_
         """
         #-- set filename
         self.case_insensitive_filename(geocenter_file)
@@ -668,20 +706,19 @@ class geocenter(object):
         Reads geocenter file and extracts dates and spherical harmonic data
         from a netCDF4 file
 
-        Arguments
-        ---------
-        geocenter_file: degree 1 netCDF4 file
-
-        Keyword arguments
-        -----------------
-        compression: netCDF4 file is compressed or streaming as bytes
+        Parameters
+        ----------
+        geocenter_file: str
+            degree 1 netCDF4 file
+        compression: str or NoneType, default None
+            file compression type
 
         References
         ----------
-        T. C. Sutterley, and I. Velicogna, "Improved estimates of geocenter
-            variability from time-variable gravity and ocean model outputs,
-            Remote Sensing, 11(18), 2108, (2019).
-            doi:10.3390/rs11182108
+        .. [Sutterley2019] T. C. Sutterley, and I. Velicogna, "Improved
+            estimates of geocenter variability from time-variable gravity
+            and ocean model outputs", *Remote Sensing*, 11(18), 2108, (2019).
+            `doi: 10.3390/rs11182108 <https://doi.org/10.3390/rs11182108>`_
         """
         kwargs.setdefault('compression',None)
         #-- set filename
@@ -712,9 +749,10 @@ class geocenter(object):
         """
         Copy a geocenter object to a new geocenter object
 
-        Keyword arguments
-        -----------------
-        fields: default keys in geocenter object
+        Parameters
+        ----------
+            fields: list
+                default keys in geocenter object
         """
         #-- set default keyword arguments
         kwargs.setdefault('fields',['time','month',
@@ -734,13 +772,12 @@ class geocenter(object):
         """
         Convert a dictionary object to a geocenter object
 
-        Arguments
-        ---------
-        dictionary object to be converted
-
-        Keyword arguments
-        -----------------
-        fields: default keys in dictionary
+        Parameters
+        ----------
+        temp: obj
+            dictionary object to be converted
+        fields: list
+            default keys in dictionary
         """
         #-- set default keyword arguments
         kwargs.setdefault('fields',['time','month',
@@ -758,13 +795,12 @@ class geocenter(object):
         """
         Convert a harmonics object to a geocenter object
 
-        Arguments
-        ---------
-        harmonics object to be converted
-
-        Keyword arguments
-        -----------------
-        fields: default keys in harmonics object
+        Parameters
+        ----------
+        temp: obj
+            harmonics object to be converted
+        fields: list
+            default keys in harmonics object
         """
         #-- reassign shape and ndim attributes
         temp.update_dimensions()
@@ -793,10 +829,12 @@ class geocenter(object):
         """
         Converts spherical harmonic matrices to a geocenter object
 
-        Arguments
-        ---------
-        clm: cosine spherical harmonics of degree 1
-        slm: sine spherical harmonics of degree 1
+        Parameters
+        ----------
+        clm: float
+            cosine spherical harmonics of degree 1
+        slm: float
+            sine spherical harmonics of degree 1
         """
         #-- verify dimensions
         clm = np.atleast_3d(clm)
@@ -811,9 +849,10 @@ class geocenter(object):
         """
         Convert a geocenter object to a dictionary object
 
-        Keyword arguments
-        -----------------
-        fields: default attributes in geocenter object
+        Parameters
+        ----------
+        fields: obj
+            default attributes in geocenter object
         """
         #-- output dictionary
         temp = {}
@@ -851,9 +890,10 @@ class geocenter(object):
         """
         Converts normalized spherical harmonics to cartesian geocenter variations
 
-        Keyword arguments
-        -----------------
-        kl: gravitational load love number of degree 1
+        Parameters
+        ----------
+        kl: float
+            gravitational load love number of degree 1
         """
         #-- Stokes Coefficients to cartesian geocenter
         try:
@@ -875,9 +915,10 @@ class geocenter(object):
         """
         Converts normalized spherical harmonics to centimeters water equivalent
 
-        Keyword arguments
-        -----------------
-        kl: gravitational load love number of degree 1
+        Parameters
+        ----------
+        kl: float
+            gravitational load love number of degree 1
         """
         #-- Average Density of the Earth [g/cm^3]
         rho_e = 5.517
@@ -900,9 +941,10 @@ class geocenter(object):
         """
         Converts normalized spherical harmonics to millimeters water equivalent
 
-        Keyword arguments
-        -----------------
-        kl: gravitational load love number of degree 1
+        Parameters
+        ----------
+        kl: float
+            gravitational load love number of degree 1
         """
         self.to_cmwe(kl=kl)
         #-- convert to millimeters water equivalent
@@ -922,9 +964,10 @@ class geocenter(object):
         """
         Converts cartesian geocenter variations to normalized spherical harmonics
 
-        Keyword arguments
-        -----------------
-        kl: gravitational load love number of degree 1
+        Parameters
+        ----------
+        kl: float
+            gravitational load love number of degree 1
         """
         #-- cartesian geocenter to Stokes Coefficients
         self.C10 = (1.0 + kl)*self.Z/(self.radius*np.sqrt(3.0))
@@ -943,9 +986,10 @@ class geocenter(object):
         """
         Normalizes spherical harmonics from centimeters water equivalent (cmwe)
 
-        Keyword arguments
-        -----------------
-        kl: gravitational load love number of degree 1
+        Parameters
+        ----------
+        kl: float
+            gravitational load love number of degree 1
         """
         #-- Average Density of the Earth [g/cm^3]
         rho_e = 5.517
@@ -968,9 +1012,10 @@ class geocenter(object):
         """
         Normalizes spherical harmonics from millimeters water equivalent (mmwe)
 
-        Keyword arguments
-        -----------------
-        kl: gravitational load love number of degree 1
+        Parameters
+        ----------
+        kl: float
+            gravitational load love number of degree 1
         """
         self.from_cmwe(kl=kl)
         #-- convert from millimeters water equivalent
@@ -990,10 +1035,12 @@ class geocenter(object):
         """
         Compute mean gravitational field and remove from data if specified
 
-        Keyword arguments
-        -----------------
-        apply: remove the mean field from the input harmonics
-        indices: of input harmonics object to compute mean
+        Parameters
+        ----------
+        apply: bool, default False
+            remove the mean field from the input harmonics
+        indices: int, default Ellipsis
+            indices of input harmonics object to compute mean
         """
         temp = geocenter()
         #-- calculate mean static field
@@ -1020,9 +1067,10 @@ class geocenter(object):
         """
         Add two geocenter objects
 
-        Arguments
-        ---------
-        temp: geocenter object to be added
+        Parameters
+        ----------
+        temp: obj
+            geocenter object to be added
         """
         self.C10 += temp.C10
         self.C11 += temp.C11
@@ -1033,9 +1081,10 @@ class geocenter(object):
         """
         Subtract one geocenter object from another
 
-        Arguments
-        ---------
-        temp: geocenter object to be subtracted
+        Parameters
+        ----------
+        temp: obj
+            geocenter object to be subtracted
         """
         self.C10 -= temp.C10
         self.C11 -= temp.C11
@@ -1046,9 +1095,10 @@ class geocenter(object):
         """
         Multiply two geocenter objects
 
-        Arguments
-        ---------
-        temp: geocenter object to be multiplied
+        Parameters
+        ----------
+        temp: obj
+            geocenter object to be multiplied
         """
         self.C10 *= temp.C10
         self.C11 *= temp.C11
@@ -1059,9 +1109,10 @@ class geocenter(object):
         """
         Divide one geocenter object from another
 
-        Arguments
-        ---------
-        temp: geocenter object to be divided
+        Parameters
+        ----------
+        temp: obj
+            geocenter object to be divided
         """
         self.C10 /= temp.C10
         self.C11 /= temp.C11
@@ -1072,9 +1123,10 @@ class geocenter(object):
         """
         Multiply a geocenter object by a constant
 
-        Arguments
-        ---------
-        var: scalar value to which the geocenter object will be multiplied
+        Parameters
+        ----------
+        var: float
+            scalar value to which the geocenter object will be multiplied
         """
         temp = geocenter()
         temp.time = np.copy(self.time)
@@ -1089,9 +1141,10 @@ class geocenter(object):
         """
         Raise a geocenter object to a power
 
-        Arguments
-        ---------
-        power: power to which the geocenter object will be raised
+        Parameters
+        ----------
+        power: float
+            power to which the geocenter object will be raised
         """
         temp = geocenter()
         temp.time = np.copy(self.time)

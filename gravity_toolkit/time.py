@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 time.py
-Written by Tyler Sutterley (11/2021)
+Written by Tyler Sutterley (04/2022)
 Utilities for calculating time operations
 
 PYTHON DEPENDENCIES:
@@ -11,7 +11,8 @@ PYTHON DEPENDENCIES:
         https://dateutil.readthedocs.io/en/stable/
 
 UPDATE HISTORY:
-    Updated 11/2021: added function for calendar year (decimal) to Julian Day 
+    Updated 04/2022: updated docstrings to numpy documentation format
+    Updated 11/2021: added function for calendar year (decimal) to Julian Day
     Updated 09/2021: add functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: added adjust_months function to fix special months cases
@@ -29,16 +30,22 @@ import dateutil.parser
 #-- PURPOSE: parse a date string into epoch and units scale
 def parse_date_string(date_string):
     """
-    parse a date string of the form time-units since yyyy-mm-dd hh:mm:ss
+    parse a date string of the form
 
-    Arguments
-    ---------
-    date_string: time-units since yyyy-mm-dd hh:mm:ss
+    - time-units since ``yyyy-mm-dd hh:mm:ss``
+    - ``yyyy-mm-dd hh:mm:ss`` for exact calendar dates
+
+    Parameters
+    ----------
+    date_string: str
+        time-units since yyyy-mm-dd hh:mm:ss
 
     Returns
     -------
-    epoch of delta time
-    multiplication factor to convert to seconds
+    epoch: list
+        epoch of delta time
+    conversion_factor: float
+        multiplication factor to convert to seconds
     """
     #-- try parsing the original date string as a date
     try:
@@ -69,9 +76,10 @@ def split_date_string(date_string):
     """
     split a date string into units and epoch
 
-    Arguments
-    ---------
-    date_string: time-units since yyyy-mm-dd hh:mm:ss
+    Parameters
+    ----------
+    date_string: str
+        time-units since yyyy-mm-dd hh:mm:ss
     """
     try:
         units,_,epoch = date_string.split(None,2)
@@ -83,11 +91,16 @@ def split_date_string(date_string):
 #-- PURPOSE: convert a datetime object into a list
 def datetime_to_list(date):
     """
-    convert a datetime object into a list [year,month,day,hour,minute,second]
+    convert a datetime object into a list
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     date: datetime object
+
+    Returns
+    -------
+    date: list
+        [year,month,day,hour,minute,second]
     """
     return [date.year,date.month,date.day,date.hour,date.minute,date.second]
 
@@ -96,16 +109,23 @@ def adjust_months(grace_month):
     """
     Adjust estimated GRACE/GRACE-FO months to fix "Special Cases"
 
-    Arguments
-    ---------
-    grace_month: GRACE/GRACE-FO months
+    Parameters
+    ----------
+    grace_month: int
+        GRACE/GRACE-FO months
 
+    Notes
+    -----
     The "Special Months" (Nov 2011, Dec 2011 and April 2012) with
     Accelerometer shutoffs make the relation between month number
-    and date more complicated as days from other months are used
+    and date more complicated as days from other months are used.
+
     For CSR and GFZ: Nov 2011 (119) is centered in Oct 2011 (118)
+
     For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
+
     For all: May 2015 (161) is centered in Apr 2015 (160)
+
     For GSFC: Oct 2018 (202) is centered in Nov 2018 (203)
     """
     #-- verify dimensions
@@ -151,18 +171,19 @@ def calendar_to_grace(year,month=1,around=np.floor):
     """
     Converts calendar dates to GRACE/GRACE-FO months
 
-    Arguments
-    ---------
-    year: calendar year
-
-    Keyword arguments
-    -----------------
-    month: calendar month
-    around: method of rounding to nearest method
+    Parameters
+    ----------
+    year: float
+        calendar year
+    month: int, default 1
+        calendar month
+    around: obj, default np.floor
+        method of rounding to nearest method
 
     Returns
     -------
-    grace_month: GRACE/GRACE-FO month
+    grace_month: int
+        GRACE/GRACE-FO month
     """
     grace_month = around(12.0*(year - 2002.0)) + month
     return np.array(grace_month,dtype=int)
@@ -172,14 +193,17 @@ def grace_to_calendar(grace_month):
     """
     Converts GRACE/GRACE-FO months to calendar dates
 
-    Arguments
-    ---------
-    grace_month: GRACE/GRACE-FO month
+    Parameters
+    ----------
+    grace_month: int
+        GRACE/GRACE-FO month
 
     Returns
     -------
-    year: calendar year
-    month: calendar month
+    year: int
+        calendar year
+    month: int
+        calendar month
     """
     year = np.array(2002 + (grace_month-1)//12).astype(int)
     month = np.mod(grace_month-1,12) + 1
@@ -190,13 +214,15 @@ def calendar_to_julian(year_decimal):
     """
     Converts calendar dates to Julian days
 
-    Arguments
-    ---------
-    year: calendar year
+    Parameters
+    ----------
+    year: float
+        calendar year
 
     Returns
     -------
-    JD: Julian Day (days since 01-01-4713 BCE at 12:00:00)
+    JD: float
+        Julian Day (days since 01-01-4713 BCE at 12:00:00)
     """
     #-- calculate year
     year = np.floor(year_decimal)
@@ -214,13 +240,15 @@ def calendar_days(year):
     """
     Calculates the number of days per month for a given year
 
-    Arguments
-    ---------
-    year: calendar year
+    Parameters
+    ----------
+    year: int
+        calendar year
 
     Returns
     -------
-    dpm: number of days for each month
+    dpm: float
+        number of days for each month
     """
     #-- days per month in a leap and a standard year
     #-- only difference is February (29 vs. 28)
@@ -248,15 +276,16 @@ def convert_delta_time(delta_time, epoch1=None, epoch2=None, scale=1.0):
     """
     Convert delta time from seconds since epoch1 to time since epoch2
 
-    Arguments
-    ---------
-    delta_time: seconds since epoch1
-
-    Keyword arguments
-    -----------------
-    epoch1: epoch for input delta_time
-    epoch2: epoch for output delta_time
-    scale: scaling factor for converting time to output units
+    Parameters
+    ----------
+    delta_time: float
+        seconds since epoch1
+    epoch1: tuple or NoneType, default None
+        epoch for input delta_time
+    epoch2: tuple or NoneType, default None
+        epoch for output delta_time
+    scale: float, default 1.0
+        scaling factor for converting time to output units
     """
     epoch1 = datetime.datetime(*epoch1)
     epoch2 = datetime.datetime(*epoch2)
@@ -271,23 +300,29 @@ def convert_calendar_dates(year, month, day, hour=0.0, minute=0.0, second=0.0,
     """
     Calculate the time in time units since epoch from calendar dates
 
-    Arguments
-    ---------
-    year: calendar month
-    month: month of the year
-    day: day of the month
-
-    Keyword arguments
-    -----------------
-    hour: hour of the day
-    minute: minute of the hour
-    second: second of the minute
-    epoch: epoch for output delta_time
-    scale: scaling factor for converting days to output units
+    Parameters
+    ----------
+    year: float
+        calendar year
+    month: float
+        month of the year
+    day: float
+        day of the month
+    hour: float, default 0.0
+        hour of the day
+    minute: float, default 0.0
+        minute of the hour
+    second: float, default 0.0
+        second of the minute
+    epoch: tuple, default (1992,1,1,0,0,0)
+        epoch for output delta_time
+    scale: float, default 1.0
+        scaling factor for converting time to output units
 
     Returns
     -------
-    delta_time: days since epoch
+    delta_time: float
+        days since epoch
     """
     #-- calculate date in Modified Julian Days (MJD) from calendar date
     #-- MJD: days since November 17, 1858 (1858-11-17T00:00:00)
@@ -308,25 +343,33 @@ def convert_calendar_decimal(year, month, day=None, hour=None, minute=None,
     Converts from calendar date into decimal years taking into
     account leap years
 
-    Dershowitz, N. and E.M. Reingold. 2008.  Calendrical Calculations.
-        Cambridge: Cambridge University Press.
-
-    Arguments
-    ---------
-    year: calendar year
-    month: calendar month
-
-    Keyword arguments
-    -----------------
-    day: day of the month
-    hour: hour of the day
-    minute: minute of the hour
-    second: second of the minute
-    DofY: day of the year (January 1 = 1)
+    Parameters
+    ----------
+    year: float
+        calendar year
+    month: float
+        calendar month
+    day: float or NoneType, default None
+        day of the month
+    hour: float or NoneType, default None
+        hour of the day
+    minute: float or NoneType, default None
+        minute of the hour
+    second: float or NoneType, default None
+        second of the minute
+    DofY: float or NoneType, default None
+        day of the year (January 1 = 1)
 
     Returns
     -------
-    t_date: date in decimal-year format
+    t_date: float
+        date in decimal-year format
+
+    References
+    ----------
+    .. [Dershowitz2008] Dershowitz, N. and E.M. Reingold.
+        *Calendrical Calculations*, (2008).
+        Cambridge: Cambridge University Press.
     """
 
     #-- number of dates
@@ -447,33 +490,43 @@ def convert_julian(JD, ASTYPE=None, FORMAT='dict'):
     """
     Converts from Julian day to calendar date and time
 
-    Translated from caldat in "Numerical Recipes in C", by William H. Press,
-        Brian P. Flannery, Saul A. Teukolsky, and William T. Vetterling.
-        Cambridge University Press, 1988 (second printing).
-    Hatcher, D. A., "Simple Formulae for Julian Day Numbers and Calendar Dates",
-        Quarterly Journal of the Royal Astronomical Society, 25(1), 1984.
+    Parameters
+    ----------
+    JD: float
+        Julian Day (days since 01-01-4713 BCE at 12:00:00)
+    ASTYPE: str or NoneType, default None
+        convert output to variable type
+    FORMAT: str, default 'dict'
+        format of output variables
 
-
-    Arguments
-    ---------
-    JD: Julian Day (days since 01-01-4713 BCE at 12:00:00)
-
-    Keyword arguments
-    -----------------
-    ASTYPE: convert output to variable type
-    FORMAT: format of output variables
-        'dict': dictionary with variable keys
-        'tuple': tuple with variable order YEAR,MONTH,DAY,HOUR,MINUTE,SECOND
-        'zip': aggregated variable sets
+            - ``'dict'``: dictionary with variable keys
+            - ``'tuple'``: tuple in most-to-least-significant order
+            - ``'zip'``: aggregated variable sets
 
     Returns
     -------
-    year: calendar year
-    month: calendar month
-    day: day of the month
-    hour: hour of the day
-    minute: minute of the hour
-    second: second of the minute
+    year: float
+        calendar year
+    month: float
+        calendar month
+    day: float
+        day of the month
+    hour: float
+        hour of the day
+    minute: float
+        minute of the hour
+    second: float
+        second of the minute
+
+    References
+    ----------
+
+    .. [Press1988] *Numerical Recipes in C*, William H. Press,
+        Brian P. Flannery, Saul A. Teukolsky, and William T. Vetterling.
+        Second Edition, Cambridge University Press, (1988).
+    .. [Hatcher1984] Hatcher, D. A., "Simple Formulae for Julian Day Numbers and
+        Calendar Dates", *Quarterly Journal of the Royal Astronomical
+        Society*, 25(1), (1984).
     """
 
     #-- convert to array if only a single value was imported

@@ -1,0 +1,19 @@
+=====================
+harmonic_summation.py
+=====================
+
+- Returns the spatial field for a series of spherical harmonics
+
+Calling Sequence
+################
+
+.. code-block:: python
+
+    from gravity_toolkit.harmonic_summation import harmonic_summation
+    spatial = harmonic_summation(clm,slm,lon,lat,LMAX=60)
+
+`Source code`__
+
+.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/harmonic_summation.py
+
+.. autofunction:: gravity_toolkit.harmonic_summation

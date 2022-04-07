@@ -2,7 +2,7 @@
 u"""
 gauss_weights.py
 Original IDL code gauss_weights.pro written by Sean Swenson
-Adapted by Tyler Sutterley (07/2020)
+Adapted by Tyler Sutterley (04/2022)
 
 Computes the Gaussian weights as a function of degree
 A normalized version of Jekeli's Gaussian averaging function
@@ -38,6 +38,7 @@ NOTES:
             alpha = alog(2.)/(1.-cos(rad/6371.))
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: added option for setting minimum value threshold
     Updated 07/2020: added function docstrings
     Updated 06/2015: adjusted threshold from 1e-9 to 1e-10
@@ -49,20 +50,28 @@ import numpy as np
 
 def gauss_weights(hw, LMAX, CUTOFF=1e-10):
     """
-    Computes the Gaussian weights as a function of degree
+    Computes the Gaussian weights as a function of degree using
+    a normalized form from [Jekeli1981]_
 
-    Arguments
-    ---------
-    hw: Gaussian smoothing radius in kilometers
-    LMAX: Maximum degree of spherical harmonic coefficients
-
-    Keyword Arguments
-    -----------------
-    CUTOFF: minimum value for tail of Gaussian averaging function
+    Parameters
+    ----------
+    hw: float
+        Gaussian smoothing radius in kilometers
+    LMAX: int
+        Maximum degree of spherical harmonic coefficients
+    CUTOFF: float, default 1e-10
+        minimum value for tail of Gaussian averaging function
 
     Returns
     -------
-    wl: degree dependent weighting function
+    wl: float
+        degree dependent weighting function
+
+    References
+    ----------
+    .. [Jekeli1981] C. Jekeli, "Alternative Methods to Smooth
+        the Earth's Gravity Field", NASA Grant No. NGR 36-008-161,
+        OSURF Proj. No. 783210, 48 pp., (1981).
     """
     #-- allocate for output weights
     wl = np.zeros((LMAX+1))

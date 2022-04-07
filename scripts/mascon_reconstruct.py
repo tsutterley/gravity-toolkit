@@ -67,12 +67,8 @@ PROGRAM DEPENDENCIES:
     ocean_stokes.py: reads a land-sea mask and converts to spherical harmonics
     gen_stokes.py: converts a spatial field into spherical harmonic coefficients
     harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
-        destripe_harmonics.py: calculates the decorrelation (destriping) filter
-            and filters the GRACE/GRACE-FO coefficients for striping errors
-        ncdf_read_stokes.py: reads spherical harmonic netcdf files
-        ncdf_stokes.py: writes output spherical harmonic data to netcdf
-        hdf5_read_stokes.py: reads spherical harmonic HDF5 files
-        hdf5_stokes.py: writes output spherical harmonic data to HDF5
+    destripe_harmonics.py: calculates the decorrelation (destriping) filter
+        and filters the GRACE/GRACE-FO coefficients for striping errors
     units.py: class for converting GRACE/GRACE-FO Level-2 data to specific units
     utilities.py: download and management utilities for files
 

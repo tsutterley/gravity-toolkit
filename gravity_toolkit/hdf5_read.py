@@ -75,17 +75,16 @@ import h5py
 import logging
 import zipfile
 import numpy as np
+import warnings
 
 def hdf5_read(filename, **kwargs):
     """
     Reads spatial data from HDF5 files
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     filename: HDF5 file to be opened and read
 
-    Keyword arguments
-    -----------------
     DATE: HDF5 file has date information
     VARNAME: z variable name in HDF5 file
     LONNAME: longitude variable name in HDF5 file
@@ -111,6 +110,10 @@ def hdf5_read(filename, **kwargs):
     kwargs.setdefault('LATNAME','lat')
     kwargs.setdefault('TIMENAME','time')
     kwargs.setdefault('COMPRESSION',None)
+    #-- set deprecation warning
+    warnings.filterwarnings("always")
+    warnings.warn("Deprecated. Please use spatial.from_HDF5",
+        DeprecationWarning)
 
     #-- Open the HDF5 file for reading
     if (kwargs['COMPRESSION'] == 'gzip'):

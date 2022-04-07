@@ -81,17 +81,16 @@ import logging
 import netCDF4
 import zipfile
 import numpy as np
+import warnings
 
 def ncdf_read(filename, **kwargs):
     """
     Reads spatial data from COARDS-compliant netCDF4 files
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     filename: netCDF4 file to be opened and read
 
-    Keyword arguments
-    -----------------
     DATE: netCDF4 file has date information
     VERBOSE: will print to screen the netCDF4 structure parameters
     VARNAME: z variable name in netCDF4 file
@@ -118,6 +117,10 @@ def ncdf_read(filename, **kwargs):
     kwargs.setdefault('LATNAME','lat')
     kwargs.setdefault('TIMENAME','time')
     kwargs.setdefault('COMPRESSION',None)
+    #-- set deprecation warning
+    warnings.filterwarnings("always")
+    warnings.warn("Deprecated. Please use spatial.from_netCDF4",
+        DeprecationWarning)
 
     #-- Open the NetCDF4 file for reading
     if (kwargs['COMPRESSION'] == 'gzip'):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 tssmooth.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (04/2022)
 
 Computes a moving average of a time-series using three possible routines:
     1) centered moving average
@@ -48,6 +48,7 @@ PYTHON DEPENDENCIES:
     scipy: Scientific Tools for Python (https://docs.scipy.org/doc/)
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 07/2020: added function docstrings
     Updated 10/2019: changing Y/N flags to True/False. output amplitudes
@@ -82,37 +83,62 @@ import scipy.special
 def tssmooth(t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0,
     STDEV=0, CONF=0):
     """
-    Solves sea level equation with option to include polar motion feedback
+    Computes the moving average of a time-series
 
-    Arguments
-    ---------
-    t_in: input time array
-    d_in: input data array
+        1) centered moving average
+        2) 13-month Loess filter [Velicogna2009]_
+        3) 13-month Loess filter weighted and outputs for all dates
 
-    Keyword arguments
-    -----------------
-    MOVING: calculates centered moving average using mean of window
+    Parameters
+    ----------
+    t_in: float
+        input time array
+    d_in: float
+        input data array
+    HFWTH: int
+        half-width of the moving average
+    MOVING: bool, default False
+        calculates centered moving average using mean of window
     WEIGHT: smoothing algorithm that backward models dates before
         half-width and forward models dates after half-width
-        0: use unweighted Loess filter
-        1: use linear weights with Loess filter
-        2: use gaussian weights with Loess filter
-    HFWTH: half-width of the moving average
-    DATA_ERR: input error for known and equal errors
-    STDEV: standard deviation of output error
-    CONF: confidence interval of output error
+
+            - ``0``: use unweighted Loess filter
+            - ``1``: use linear weights with Loess filter
+            - ``2``: use gaussian weights with Loess filter
+    DATA_ERR: float or list
+        input error for known and equal errors
+    STDEV: float, default 0
+        Standard deviation of output error
+    CONF: float, default 0
+        Confidence interval of output error
 
     Returns
     -------
-    time: time after removing start and end half-windows
-    data: smoothed time-series
-    season: seasonal component calculated by the Loess filter
-    annual: annual component calculated by the Loess filter
-    semiann: semi-annual component calculated by the Loess filter
-    trend: instantaneous trend calculated by the Loess filter
-    error: estimated error of the instantaneous trend
-    noise: noise component after removing the Loess trend and seasonal components
-    reduce: original time series after removing start and end half-windows
+    time: float
+        time after removing start and end half-windows
+    data: float
+        smoothed time-series
+    season: float
+        seasonal component calculated by the Loess filter
+    annual: float
+        annual component calculated by the Loess filter
+    semiann: float
+        semi-annual component calculated by the Loess filter
+    trend: float
+        instantaneous trend calculated by the Loess filter
+    error: float
+        estimated error of the instantaneous trend
+    noise: float
+        noise component after removing the Loess trend and seasonal components
+    reduce: float
+        original time series after removing start and end half-windows
+
+    References
+    ----------
+    .. [Velicogna2009] I. Velicogna, "Increasing rates of ice mass loss
+        from the Greenland and Antarctic ice sheets revealed by GRACE",
+        *Geophysical Research Letters*, 36(L19503),
+        `doi: 10.1029/2009GL040222 <https://doi.org/10.1029/2009GL040222>`_
     """
 
     #-- remove singleton dimensions

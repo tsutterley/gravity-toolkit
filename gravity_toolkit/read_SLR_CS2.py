@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_CS2.py
-Written by Hugo Lecomte and Tyler Sutterley (11/2021)
+Written by Hugo Lecomte and Tyler Sutterley (04/2022)
 
 Reads monthly degree 2,m (figure axis and azimuthal dependence)
     spherical harmonic data files from satellite laser ranging (SLR)
@@ -58,13 +58,14 @@ REFERENCES:
     Dahle and Murboeck, "Post-processed GRACE/GRACE-FO Geopotential
         GSM Coefficients GFZ RL06 (Level-2B Product)."
         V. 0002. GFZ Data Services, (2019).
-        http://doi.org/10.5880/GFZ.GRAVIS_06_L2B
+        https://doi.org/10.5880/GFZ.GRAVIS_06_L2B
     Chen el al., "Assessment of degree-2 order-1 gravitational changes
         from GRACE and GRACE Follow-on, Earth rotation, satellite laser
         ranging, and models", Journal of Geodesy, 95(38), (2021).
         https://doi.org/10.1007/s00190-021-01492-x
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: reader for new weekly 5x5+6,1 fields from NASA GSFC
     Updated 09/2021: use functions for converting to and from GRACE months
     Updated 08/2021: output empty spherical harmonic errors for GSFC
@@ -80,28 +81,35 @@ import gravity_toolkit.time
 import gravity_toolkit.read_SLR_harmonics
 
 #-- PURPOSE: read Degree 2,m data from Satellite Laser Ranging (SLR)
-def read_SLR_CS2(SLR_file, ORDER=1, HEADER=True, DATE=None):
+def read_SLR_CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
     """
     Reads CS2,m spherical harmonic coefficients from SLR measurements
 
-    Arguments
-    ---------
-    SLR_file: Satellite Laser Ranging file
-
-    Keyword arguments
-    -----------------
-    ORDER: spherical harmonic order to extract from low-degree fields
-    HEADER: file contains header text to be skipped
-    DATE: mid-point of monthly solution for calculating 28-day arc averages
+    Parameters
+    ----------
+    SLR_file: str
+        Satellite Laser Ranging file
+    ORDER: int, default 1
+        Spherical harmonic order to extract from low-degree fields
+    DATE: float or NoneType, default None
+        Mid-point of monthly solution for calculating 28-day arc averages
+    HEADER: bool, default True
+        File contains header text to be skipped
 
     Returns
     -------
-    C2m: SLR degree 2 order m cosine stokes coefficients
-    S2m: SLR degree 2 order m sine stokes coefficients
-    eC2m: SLR degree 2 order m cosine stokes coefficient error
-    eS2m: SLR degree 2 order m sine stokes coefficient error
-    month: GRACE/GRACE-FO month of measurement
-    time: date of SLR measurement
+    C2m: float
+        SLR degree 2 order m cosine stokes coefficients
+    S2m: float
+        SLR degree 2 order m sine stokes coefficients
+    eC2m: float
+        SLR degree 2 order m cosine stokes coefficient error
+    eS2m: float
+        SLR degree 2 order m sine stokes coefficient error
+    month: int
+        GRACE/GRACE-FO month of measurement
+    time: float
+        date of SLR measurement
     """
 
     #-- check that SLR file exists

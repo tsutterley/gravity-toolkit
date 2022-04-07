@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_months_index.py
-Written by Tyler Sutterley (09/2021)
+Written by Tyler Sutterley (04/2022)
 
 Creates a file with the start and end days for each dataset
 Shows the range of each month for (CSR/GFZ/JPL) (RL04/RL05/RL06)
@@ -40,6 +40,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 10/2020: use argparse to set command line parameters
@@ -68,17 +69,19 @@ from gravity_toolkit.time import grace_to_calendar
 def grace_months_index(base_dir, DREL=['RL06','v02.4'], MODE=None):
     """
     Creates a file with the start and end days for each dataset
-    Shows the range of each month for (CSR/GFZ/JPL) (RL04/RL05/RL06)
-    Shows which months are missing for each dataset as **missing**
 
-    Arguments
-    ---------
-    base_dir: Working data directory for GRACE/GRACE-FO data
+    Shows the range of each month for each data center and release
 
-    Keyword arguments
-    -----------------
-    DREL: GRACE/GRACE-FO/Swarm data release (RL04, RL05, RL06)
-    MODE: Permissions mode of output index file
+    Shows which months are missing for each dataset as \*\*missing\*\*
+
+    Parameters
+    ----------
+    base_dir: str
+        Working data directory for GRACE/GRACE-FO data
+    DREL: list
+        GRACE/GRACE-FO/Swarm data release
+    MODE: oct or NoneType, default None
+        Permissions mode of output index file
     """
     #-- Output GRACE months file
     grace_months_file = 'GRACE_months.txt'

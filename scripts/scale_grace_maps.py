@@ -130,17 +130,9 @@ PROGRAM DEPENDENCIES:
     harmonic_summation.py: calculates a spatial field from spherical harmonics
     tssmooth.py: smoothes a time-series using a 13-month Loess-type algorithm
     harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
-        destripe_harmonics.py: calculates the decorrelation (destriping) filter
-            and filters the GRACE/GRACE-FO coefficients for striping errors
-        ncdf_read_stokes.py: reads spherical harmonic netcdf files
-        ncdf_stokes.py: writes output spherical harmonic data to netcdf
-        hdf5_read_stokes.py: reads spherical harmonic HDF5 files
-        hdf5_stokes.py: writes output spherical harmonic data to HDF5
+    destripe_harmonics.py: calculates the decorrelation (destriping) filter
+        and filters the GRACE/GRACE-FO coefficients for striping errors
     spatial.py: spatial data class for reading, writing and processing data
-        ncdf_read.py: reads input spatial data from netCDF4 files
-        hdf5_read.py: reads input spatial data from HDF5 files
-        ncdf_write.py: writes output spatial data to netCDF4
-        hdf5_write.py: writes output spatial data to HDF5
     time.py: utilities for calculating time operations
     units.py: class for converting GRACE/GRACE-FO Level-2 data to specific units
     utilities.py: download and management utilities for files

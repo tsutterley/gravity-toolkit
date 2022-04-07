@@ -72,13 +72,14 @@ import time
 import h5py
 import logging
 import numpy as np
+import warnings
 
 def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
     """
     Writes spherical harmonic coefficients to HDF5 files
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     clm1: cosine spherical harmonic coefficients
     slm1: sine spherical harmonic coefficients
     linp: spherical harmonic degree (l)
@@ -86,8 +87,6 @@ def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
     tinp: date of measurement
     month: GRACE/GRACE-FO month
 
-    Keyword arguments
-    -----------------
     FILENAME: HDF5 filename
     UNITS: spherical harmonic units
     TIME_UNITS: time variable units
@@ -112,6 +111,10 @@ def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
     kwargs.setdefault('REFERENCE',None)
     kwargs.setdefault('DATE',True)
     kwargs.setdefault('CLOBBER',True)
+    #-- set deprecation warning
+    warnings.filterwarnings("always")
+    warnings.warn("Deprecated. Please use harmonics.to_HDF5",
+        DeprecationWarning)
 
     #-- setting HDF5 clobber attribute
     clobber = 'w' if kwargs['CLOBBER'] else 'w-'

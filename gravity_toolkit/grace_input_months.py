@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (12/2021)
+Written by Tyler Sutterley (04/2022)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
@@ -105,6 +105,7 @@ PROGRAM DEPENDENCIES:
     read_gfc_harmonics.py: reads spherical harmonic data from gfc files
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 12/2021: option to specify a specific geocenter correction file
     Updated 11/2021: add GSFC low-degree harmonics
         use gravity_toolkit geocenter class for operations
@@ -174,73 +175,159 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     missing, SLR_C20, DEG1, **kwargs):
     """
     Reads GRACE/GRACE-FO files for a spherical harmonic degree and order
-        and a date range
+    and a date range
+
     Can include geocenter values for degree 1 coefficients
+
     Can replace C20 with SLR values for all months
-    Can replace C21,S21,C22,S22,C30,C50 with SLR values for months 179+
+
+    Can replace low-degree harmonics with SLR values for months 179+
+
     Can correct for ECMWF atmospheric "jumps" using GAE/GAF/GAG files
+
     Can correct for Pole Tide drift following Wahr et al. (2015)
 
-    Arguments
-    ---------
-    base_dir: Working data directory for GRACE/GRACE-FO data
-    PROC: (CSR/CNES/JPL/GFZ) data processing center
-    DREL: (RL01/RL02/RL03/RL04/RL05/RL06) data release
-    DSET: (GAA/GAB/GAC/GAD/GSM) data product
-    LMAX: Upper bound of Spherical Harmonic Degrees
-    start_mon: starting month to consider in analysis
-    end_mon: ending month to consider in analysis
-    missing: missing months to not consider in analysis
-    SLR_C20: Replaces C20 with SLR values
-        N: use original values
-        CSR: use values from CSR (TN-07,TN-09,TN-11)
-        GFZ: use values from GFZ
-        GSFC: use values from GSFC (TN-14)
-    DEG1: Use Degree 1 coefficients
-        None: No degree 1
-        Tellus: GRACE/GRACE-FO TN-13 coefficients from PO.DAAC
-        SLR: satellite laser ranging coefficients from CSR
-        SLF: Sutterley and Velicogna coefficients, Remote Sensing (2019)
-        Swenson: GRACE-derived coefficients from Sean Swenson
-        GFZ: GRACE/GRACE-FO coefficients from GFZ GravIS
+    Parameters
+    ----------
+    base_dir: str
+        Working data directory for GRACE/GRACE-FO data
+    PROC: str
+        GRACE/GRACE-FO/Swarm data processing center
 
-    Keyword arguments
-    -----------------
-    MMAX: Upper bound of Spherical Harmonic Orders
-    SLR_21: replaces C21 and S21 with SLR values
-        None: use original values
-        CSR: use values from CSR
-        GFZ: use values from GFZ GravIS
-        GSFC: use values from GSFC
-    SLR_22: replaces C22 and S22 with SLR values
-        None: use original values
-        CSR: use values from CSR
-    SLR_C30: replaces C30 with SLR values
-        None: use original values
-        CSR: use values from CSR (5x5 with 6,1)
-        GFZ: use values from GFZ GravIS
-        GSFC: use values from GSFC (TN-14)
-    SLR_C50: replaces C50 with SLR values
-        None: use original values
-        CSR: use values from CSR (5x5 with 6,1)
-        GSFC: use values from GSFC
-    POLE_TIDE: correct GSM data with pole tides following Wahr et al (2015)
-    ATM: correct data with ECMWF "jump" corrections GAE, GAF and GAG
-    DEG1_FILE: full path to degree 1 coefficients file
-    MODEL_DEG1: least-squares model missing degree 1 coefficients
+            - ``'CSR'``: University of Texas Center for Space Research
+            - ``'GFZ'``: German Research Centre for Geosciences (GeoForschungsZentrum)
+            - ``'JPL'``: Jet Propulsion Laboratory
+            - ``'CNES'``: French Centre National D'Etudes Spatiales
+            - ``'GRAZ'``: Institute of Geodesy from GRAZ University of Technology
+            - ``'COSTG'``: Combination Service for Time-variable Gravity Fields
+            - ``'Swarm'``: Time-variable gravity data from Swarm satellites
+    DREL: str
+        GRACE/GRACE-FO/Swarm data release
+    DSET: str
+        GRACE/GRACE-FO/Swarm data product
+
+            - ``'GAA'``: non-tidal atmospheric correction
+            - ``'GAB'``: non-tidal oceanic correction
+            - ``'GAC'``: combined non-tidal atmospheric and oceanic correction
+            - ``'GAD'``: ocean bottom pressure product
+            - ``'GSM'``: corrected monthly static gravity field product
+    LMAX: int
+        Upper bound of Spherical Harmonic Degrees
+    start_mon: int
+        starting month to consider in analysis
+    end_mon: int
+        ending month to consider in analysis
+    missing: list
+        missing months to not consider in analysis
+    SLR_C20: str
+        Replaces C20 with SLR values
+
+            - ``'N'``: use original values
+            - ``'CSR'``: use values from CSR (TN-07, TN-09, TN-11)
+            - ``'GFZ'``: use values from GFZ
+            - ``'GSFC'``: use values from GSFC (TN-14)
+    DEG1: str
+        Use Degree 1 coefficients
+
+            - ``None``: No degree 1 replacement
+            - ``'Tellus'``: `GRACE/GRACE-FO TN-13 coefficients from PO.DAAC <https://grace.jpl.nasa.gov/data/get-data/geocenter/>`_ [Sun2016]_
+            - ``'SLR'``: `Satellite laser ranging coefficients from CSR <ftp://ftp.csr.utexas.edu/pub/slr/geocenter/>`_ [Cheng2013]_
+            - ``'SLF'``: `GRACE/GRACE-FO coefficients from Sutterley and Velicogna <https://doi.org/10.6084/m9.figshare.7388540>`_ [Sutterley2019]_
+            - ``'Swenson'``: GRACE-derived coefficients from Sean Swenson [Swenson2008]_
+            - ``'GFZ'``: `GRACE/GRACE-FO coefficients from GFZ GravIS <http://gravis.gfz-potsdam.de/corrections>`_
+    MMAX: int or NoneType, default None
+        Upper bound of Spherical Harmonic Orders
+    SLR_21: str or NoneType, default ''
+        Replace C21 and S21 with SLR values
+
+            - ``None``: use original values
+            - ``'CSR'``: use values from CSR
+            - ``'GFZ'``: use values from GFZ GravIS
+            - ``'GSFC'``: use values from GSFC
+    SLR_22: str or NoneType, default ''
+        Replace C22 and S22 with SLR values
+
+            - ``None``: use original values
+            - ``'CSR'``: use values from CSR
+            - ``'GSFC'``: use values from GSFC
+    SLR_C30: str or NoneType, default ''
+        Replace C30 with SLR values
+
+            - ``None``: use original values
+            - ``'CSR'``: use values from CSR (5x5 with 6,1)
+            - ``'GFZ'``: use values from GFZ GravIS
+            - ``'GSFC'``: use values from GSFC (TN-14)
+    SLR_C50: str or NoneType, default ''
+        Replace C50 with SLR values
+
+            - ``None``: use original values
+            - ``'CSR'``: use values from CSR (5x5 with 6,1)
+            - ``'GSFC'``: use values from GSFC
+    POLE_TIDE: bool, default False
+        Correct GSM data with pole tides following [Wahr2015]_
+    ATM: bool, default False
+        Correct data with ECMWF "jump" corrections following [Fagiolini2015]_
+    DEG1_FILE: str or NoneType, default None
+        full path to degree 1 coefficients file
+    MODEL_DEG1: bool, default False
+        least-squares model missing degree 1 coefficients
 
     Returns
     -------
-    clm: GRACE/GRACE-FO cosine spherical harmonics
-    slm: GRACE/GRACE-FO sine spherical harmonics
-    eclm: GRACE/GRACE-FO uncalibrated cosine spherical harmonic errors
-    eslm: GRACE/GRACE-FO uncalibrated sine spherical harmonic errors
-    time: time of each GRACE/GRACE-FO measurement (mid-month)
-    month: GRACE/GRACE-FO months of input datasets
-    l: spherical harmonic degree to LMAX
-    m: spherical harmonic order to MMAX
-    title: string denoting low degree zonals replacement, geocenter usage and corrections
-    directory: directory of exact GRACE/GRACE-FO product
+    clm: float
+        GRACE/GRACE-FO/Swarm cosine spherical harmonics to degree/order ``LMAX`` and ``MMAX``
+    slm: float
+        GRACE/GRACE-FO/Swarm sine spherical harmonics to degree/order ``LMAX`` and ``MMAX``
+    eclm: float
+        GRACE/GRACE-FO/Swarm uncalibrated cosine spherical harmonic errors
+    eslm: float
+        GRACE/GRACE-FO/Swarm uncalibrated sine spherical harmonic errors
+    time: float
+        time of each GRACE/GRACE-FO/Swarm measurement (mid-month)
+    month: int
+        GRACE/GRACE-FO months of input datasets
+    l: int
+        spherical harmonic degree to ``LMAX``
+    m: int
+        spherical harmonic order to ``MMAX``
+    title: str
+        Processing string denoting low degree zonals
+        replacement, geocenter usage and corrections
+    directory: str
+        Directory of exact GRACE/GRACE-FO/Swarm product
+
+    References
+    ----------
+    .. [Cheng2013] M. Cheng, "Geocenter Variations from Analysis of SLR Data",
+        *Reference Frames for Applications in Geosciences*, 19--25, (2013).
+        `doi: 10.1007/978-3-642-32998-2_4 <https://doi.org/10.1007/978-3-642-32998-2_4>`_
+
+    .. [Fagiolini2015] E. Fagiolini, F. Flechtner, M. Horwath, and H. Dobslaw,
+        "Correction of inconsistencies in ECMWF's operational analysis data
+        during de-aliasing of GRACE gravity models",
+        *Geophysical Journal International*, 202(3), 2150--2158, (2015).
+        `doi: 10.1093/gji/ggv276 <https://doi.org/10.1093/gji/ggv276>`_
+
+    .. [Sun2016] Y. Sun, P. Ditmar, and R. Riva, "Observed changes in the
+        Earth's dynamic oblateness from GRACE data and geophysical models",
+        *Journal of Geodesy*, 90(1), 81--89, (2016).
+        `doi: 10.1007/s00190-015-0852-y <https://doi.org/10.1007/s00190-015-0852-y>`_
+
+    .. [Sutterley2019] T. C. Sutterley and I. Velicogna, "Improved
+        Estimates of Geocenter Variability from Time-Variable Gravity
+        and Ocean Model Outputs", *Remote Sensing*, 11(18), 2108, (2019).
+        `doi: 10.3390/rs11182108 <https://doi.org/10.3390/rs11182108>`_
+
+    .. [Swenson2008] S. Swenson, D. Chambers, and J. Wahr, "Estimating geocenter
+        variations from a combination of GRACE and ocean model output",
+        *Journal of Geophysical Research: Solid Earth*, 113(B08410), (2008).
+        `doi: 10.1029/2007JB005338 <https://doi.org/10.1029/2007JB005338>`_
+
+    .. [Wahr2015] J. Wahr, R. S. Nerem, and S. V. Bettadpur, "The pole tide
+        and its effect on GRACE time‐variable gravity measurements:
+        Implications for estimates of surface mass variations".
+        *Journal of Geophysical Research: Solid Earth*, 120(6), 4597--4615, (2015).
+        `doi: 10.1002/2015JB011986 <https://doi.org/10.1002/2015JB011986>`_
     """
     #-- set default keyword arguments
     kwargs.setdefault('MMAX',LMAX)
@@ -623,22 +710,34 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
 #-- PURPOSE: read atmospheric jump corrections from Fagiolini et al. (2015)
 def read_ecmwf_corrections(base_dir, LMAX, months, MMAX=None):
     """
-    Read atmospheric jump corrections from Fagiolini et al. (2015)
+    Read atmospheric jump corrections from [Fagiolini2015]_
 
-    Arguments
-    ---------
-    base_dir: Working data directory for GRACE/GRACE-FO data
-    LMAX: Upper bound of Spherical Harmonic Degrees
-    months: list of GRACE/GRACE-FO months
-
-    Keyword arguments
-    -----------------
-    MMAX: Upper bound of Spherical Harmonic orders
+    Parameters
+    ----------
+    base_dir: str
+        Working data directory for GRACE/GRACE-FO data
+    LMAX: int
+        Upper bound of Spherical Harmonic Degrees
+    months: list
+        list of GRACE/GRACE-FO months
+    MMAX: int or NoneType, default None
+        Upper bound of Spherical Harmonic orders
 
     Returns
     -------
-    clm: atmospheric correction cosine spherical harmonics
-    slm: atmospheric correction sine spherical harmonics
+    clm: float
+        atmospheric correction cosine spherical harmonics
+    slm: float
+        atmospheric correction sine spherical harmonics
+
+    References
+    ----------
+    .. [Fagiolini2015] E. Fagiolini, F. Flechtner, M. Horwath, and H. Dobslaw,
+        "Correction of inconsistencies in ECMWF's operational analysis data
+        during de-aliasing of GRACE gravity models",
+        *Geophysical Journal International*, 202(3), 2150--2158, (2015).
+        `doi: 10.1093/gji/ggv276 <https://doi.org/10.1093/gji/ggv276>`_
+
     """
     #-- correction files
     corr_file = {}
@@ -699,21 +798,25 @@ def regress_model(t_in, d_in, t_out, ORDER=2, CYCLES=None, RELATIVE=0.0):
     """
     Calculates a regression model for extrapolating values
 
-    Arguments
-    ---------
-    t_in: input time array
-    d_in: input data array
-    t_out: time array for output regressed values
-
-    Keyword arguments
-    -----------------
-    ORDER: maximum polynomial order for regression model
-    CYCLES: list of cyclical terms to include in regression model
-    RELATIVE: relative time for polynomial coefficients in fit
+    Parameters
+    ----------
+    t_in: float
+        input time array
+    d_in: float
+        input data array
+    t_out: float
+        time array for output regressed values
+    ORDER: int, default 2
+        maximum polynomial order for regression model
+    CYCLES: list or NoneType, default None
+        list of cyclical terms to include in regression model
+    RELATIVE: float, default 0.0
+        relative time for polynomial coefficients in fit
 
     Returns
     -------
-    d_out: output regressed value data array
+    d_out: float
+        output regressed value data array
     """
 
     #-- remove singleton dimensions

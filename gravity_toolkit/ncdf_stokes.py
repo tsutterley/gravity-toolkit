@@ -73,13 +73,14 @@ import time
 import logging
 import netCDF4
 import numpy as np
+import warnings
 
 def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
     """
     Writes spherical harmonic coefficients to netCDF4 files
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     clm1: cosine spherical harmonic coefficients
     slm1: sine spherical harmonic coefficients
     linp: spherical harmonic degree (l)
@@ -87,8 +88,6 @@ def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
     tinp: date of measurement
     month: GRACE/GRACE-FO month
 
-    Keyword arguments
-    -----------------
     FILENAME: netCDF4 filename
     UNITS: spherical harmonic units
     TIME_UNITS: time variable units
@@ -113,6 +112,10 @@ def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
     kwargs.setdefault('REFERENCE',None)
     kwargs.setdefault('DATE',True)
     kwargs.setdefault('CLOBBER',True)
+    #-- set deprecation warning
+    warnings.filterwarnings("always")
+    warnings.warn("Deprecated. Please use harmonics.to_netCDF4",
+        DeprecationWarning)
 
     #-- setting NetCDF clobber attribute
     clobber = 'w' if kwargs['CLOBBER'] else 'a'

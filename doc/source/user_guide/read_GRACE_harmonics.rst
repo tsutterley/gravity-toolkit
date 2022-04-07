@@ -3,8 +3,8 @@ read_GRACE_harmonics.py
 =======================
 
 - Reads GRACE/GRACE-FO files and extracts spherical harmonic data and drift rates (RL04)
-- Adds drift rates to clm and slm for release 4 harmonics
-- Correct GSM data for drift in pole tide following [Wahr2015]_
+- Adds drift rates to clm and slm for Release-4 harmonics
+- Correct Release-5 GSM data for drift in pole tide
 - Extracts start and end date of GRACE/GRACE-FO files and calculates mean of range
 
 Calling Sequence
@@ -22,34 +22,4 @@ Calling Sequence
 
 .. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_GRACE_harmonics.py
 
-Arguments
-#########
-
-1. full path to input GRACE file
-2. spherical harmonic degree of truncation (``LMAX``)
-
-Keyword arguments
-#################
-
-- ``MMAX``: spherical harmonic order of truncation (default: ``LMAX``)
-- ``POLE_TIDE``: correct GSM data for pole tide drift [Wahr2015]_
-
-Returns
-#######
-
-- ``time``: mid-month date of GRACE file in year-decimal
-- ``start``: start date of range as Julian day
-- ``end``: end date of range as Julian day
-- ``l``: spherical harmonic degree to LMAX
-- ``m``: spherical harmonic order to MMAX
-- ``clm``: cosine spherical harmonics of input data
-- ``slm``: sine spherical harmonics of input data
-- ``eclm``: cosine spherical harmonic uncalibrated standard deviations
-- ``eslm``: sine spherical harmonic uncalibrated standard deviations
-- ``header``: text header of the GRACE file (will parse new YAML headers)
-
-References
-##########
-
-.. [Wahr2015] J. Wahr, R. S. Nerem, and S. V. Bettadpur, "The pole tide and its effect on GRACE time‐variable gravity measurements: Implications for estimates of surface mass variations". *Journal of Geophysical Research: Solid Earth*, 120(6), 4597--4615, (2015). `doi: 10.1002/2015JB011986 <https://doi.org/10.1002/2015JB011986>`_
-
+.. autofunction:: gravity_toolkit.read_GRACE_harmonics

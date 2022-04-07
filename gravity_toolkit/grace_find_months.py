@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_find_months.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (04/2022)
 
 Parses date index file from grace_date program
 Finds the months available for a GRACE/GRACE-FO/Swarm product
@@ -36,6 +36,7 @@ PROGRAM DEPENDENCIES:
     grace_date.py: reads GRACE index file and calculates dates for each month
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 07/2020: added function docstrings
     Updated 03/2020: check that GRACE/GRACE-FO date file exists
@@ -55,36 +56,50 @@ from gravity_toolkit.grace_date import grace_date
 
 def grace_find_months(base_dir, PROC, DREL, DSET='GSM'):
     """
-    Parses date index file from grace_date.py
-    Finds the months available for a GRACE/GRACE-FO product
+    Parses date index file
+
+    Finds the months available for a GRACE/GRACE-FO/Swarm product
+
     Finds the all months missing from the product
 
-    Arguments
-    ---------
-    base_dir: working data directory
-    PROC: GRACE data processing center
-        CSR: University of Texas Center for Space Research
-        GFZ: German Research Centre for Geosciences (GeoForschungsZentrum)
-        JPL: Jet Propulsion Laboratory
-        CNES: French Centre National D'Etudes Spatiales
-    DREL: GRACE/GRACE-FO/Swarm data release
+    Parameters
+    ----------
+    base_dir: str
+        working data directory
+    PROC: str
+        GRACE data processing center
 
-    Keyword arguments
-    -----------------
-    DSET: GRACE/GRACE-FO/Swarm dataset
-        GAA: non-tidal atmospheric correction
-        GAB: non-tidal oceanic correction
-        GAC: combined non-tidal atmospheric and oceanic correction
-        GAD: ocean bottom pressure product
-        GSM: corrected monthly static gravity field product
+            - ``'CSR'``: University of Texas Center for Space Research
+            - ``'GFZ'``: German Research Centre for Geosciences (GeoForschungsZentrum)
+            - ``'JPL'``: Jet Propulsion Laboratory
+            - ``'CNES'``: French Centre National D'Etudes Spatiales
+            - ``'GRAZ'``: Institute of Geodesy from GRAZ University of Technology
+            - ``'COSTG'``: Combination Service for Time-variable Gravity Fields
+            - ``'Swarm'``: Time-variable gravity data from Swarm satellites
+    DREL: str
+        GRACE/GRACE-FO/Swarm data release
+
+    DSET: str, default 'GSM'
+        GRACE/GRACE-FO/Swarm dataset
+
+            - ``'GAA'``: non-tidal atmospheric correction
+            - ``'GAB'``: non-tidal oceanic correction
+            - ``'GAC'``: combined non-tidal atmospheric and oceanic correction
+            - ``'GAD'``: ocean bottom pressure product
+            - ``'GSM'``: corrected monthly static gravity field product
 
     Returns
     -------
-    start: First month in a GRACE/GRACE-FO dataset
-    end: Last month in a GRACE/GRACE-FO dataset
-    missing: missing months in a GRACE/GRACE-FO dataset
-    months: all available months in a GRACE/GRACE-FO dataset
-    time: center dates of all available months in a GRACE/GRACE-FO dataset
+    start: int
+        First month in a GRACE/GRACE-FO dataset
+    end: int
+        Last month in a GRACE/GRACE-FO dataset
+    missing: list
+        missing months in a GRACE/GRACE-FO dataset
+    months: list
+        all available months in a GRACE/GRACE-FO dataset
+    time: list
+        center dates of all available months in a GRACE/GRACE-FO dataset
     """
 
     #--  Directory of exact product (using date index from GSM)

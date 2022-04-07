@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_harmonics.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (04/2022)
 Converts data from the spatial domain to spherical harmonic coefficients
 Does not compute the solid Earth elastic response or convert units
 
@@ -37,12 +37,8 @@ PROGRAM DEPENDENCIES:
     fourier_legendre.py: Computes the Fourier coefficients of the associated
         Legendre functions
     harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
-        destripe_harmonics.py: calculates the decorrelation (destriping) filter
-            and filters the GRACE/GRACE-FO coefficients for striping errors
-        ncdf_read_stokes.py: reads spherical harmonic netcdf files
-        ncdf_stokes.py: writes output spherical harmonic data to netcdf
-        hdf5_read_stokes.py: reads spherical harmonic HDF5 files
-        hdf5_stokes.py: writes output spherical harmonic data to HDF5
+    destripe_harmonics.py: calculates the decorrelation (destriping) filter
+        and filters the GRACE/GRACE-FO coefficients for striping errors
 
 REFERENCES:
     Holmes and Featherstone, "A Unified Approach to the Clenshaw Summation and
@@ -50,6 +46,7 @@ REFERENCES:
         Associated Legendre Functions", Journal of Geodesy (2002)
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: merged integration and fourier harmonics programs
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 01/2021: use harmonics class for spherical harmonic operations
@@ -70,27 +67,37 @@ def gen_harmonics(data, lon, lat, **kwargs):
     """
     Converts data from the spatial domain to spherical harmonic coefficients
 
-    Arguments
-    ---------
-    data: data magnitude
-    lon: longitude array
-    lat: latitude array
+    Parameters
+    ----------
+    data: float
+        data magnitude
+    lon: float
+        longitude array
+    lat: float
+        latitude array
+    LMAX: int, default 60
+        Upper bound of Spherical Harmonic Degrees
+    MMAX: int or NoneType, default None
+        Upper bound of Spherical Harmonic Orders
+    PLM: float, default 0
+        Fully normalized associated Legendre polynomials or
+        Fourier coefficients of Legendre polynomials
+    METHOD: str, default 'integration'
+        Conversion method for calculating harmonics
 
-    Keyword arguments
-    -----------------
-    LMAX: Upper bound of Spherical Harmonic Degrees
-    MMAX: Upper bound of Spherical Harmonic Orders
-    PLM: Legendre polynomials or Fourier coefficients of Legendre polynomials
-    METHOD: conversion method for calculating harmonics
-        integration: for global grids
-        fourier: for regional or global grids
+            - ``'integration'``: for global grids
+            - ``'fourier'``: for regional or global grids
 
     Returns
     -------
-    clm: cosine spherical harmonic coefficients
-    slm: sine spherical harmonic coefficients
-    l: spherical harmonic degree to LMAX
-    m: spherical harmonic order to MMAX
+    clm: float
+        cosine spherical harmonic coefficients (4-pi normalized)
+    slm: float
+        sine spherical harmonic coefficients (4-pi normalized)
+    l: int
+        spherical harmonic degree to LMAX
+    m: int
+        spherical harmonic order to MMAX
     """
     #-- set default keyword arguments
     kwargs.setdefault('LMAX',60)
@@ -118,24 +125,31 @@ def integration(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
     """
     Converts data from the spatial domain to spherical harmonic coefficients
 
-    Arguments
-    ---------
-    data: data magnitude
-    lon: longitude array
-    lat: latitude array
-
-    Keyword arguments
-    -----------------
-    LMAX: Upper bound of Spherical Harmonic Degrees
-    MMAX: Upper bound of Spherical Harmonic Orders
-    PLM: input Legendre polynomials
+    Parameters
+    ----------
+    data: float
+        data magnitude
+    lon: float
+        longitude array
+    lat: float
+        latitude array
+    LMAX: int, default 60
+        Upper bound of Spherical Harmonic Degrees
+    MMAX: int or NoneType, default None
+        Upper bound of Spherical Harmonic Orders
+    PLM: float, default 0
+        input Legendre polynomials
 
     Returns
     -------
-    clm: cosine spherical harmonic coefficients
-    slm: sine spherical harmonic coefficients
-    l: spherical harmonic degree to LMAX
-    m: spherical harmonic order to MMAX
+    clm: float
+        cosine spherical harmonic coefficients
+    slm: float
+        sine spherical harmonic coefficients
+    l: int
+        spherical harmonic degree to LMAX
+    m: int
+        spherical harmonic order to MMAX
     """
 
     #-- dimensions of the longitude and latitude arrays
@@ -210,24 +224,31 @@ def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
     """
     Computes the spherical harmonic coefficients of a spatial field
 
-    Arguments
-    ---------
-    data: data magnitude
-    lon: longitude array
-    lat: latitude array
-
-    Keyword arguments
-    -----------------
-    LMAX: Upper bound of Spherical Harmonic Degrees
-    MMAX: Upper bound of Spherical Harmonic Orders
-    PLM: input Fourier coefficients of Legendre polynomials
+    Parameters
+    ----------
+    data: float
+        data magnitude
+    lon: float
+        longitude array
+    lat: float
+        latitude array
+    LMAX: int, default 60
+        Upper bound of Spherical Harmonic Degrees
+    MMAX: int or NoneType, default None
+        Upper bound of Spherical Harmonic Orders
+    PLM: float, default 0
+        input Fourier coefficients of Legendre polynomials
 
     Returns
     -------
-    clm: cosine spherical harmonic coefficients
-    slm: sine spherical harmonic coefficients
-    l: spherical harmonic degree to LMAX
-    m: spherical harmonic order to MMAX
+    clm: float
+        cosine spherical harmonic coefficients
+    slm: float
+        sine spherical harmonic coefficients
+    l: int
+        spherical harmonic degree to LMAX
+    m: int
+        spherical harmonic order to MMAX
     """
 
     #-- dimensions of the longitude and latitude arrays

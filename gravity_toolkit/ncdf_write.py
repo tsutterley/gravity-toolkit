@@ -66,20 +66,19 @@ import time
 import logging
 import netCDF4
 import numpy as np
+import warnings
 
 def ncdf_write(data, lon, lat, tim, **kwargs):
     """
     Writes spatial data to COARDS-compliant netCDF4 files
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     data: z data
     lon: longitude array
     lat: latitude array
     tim: time array
 
-    Keyword arguments
-    -----------------
     FILENAME: netCDF4 filename
     VARNAME: z variable name in netCDF4 file
     LONNAME: longitude variable name in netCDF4 file
@@ -109,6 +108,10 @@ def ncdf_write(data, lon, lat, tim, **kwargs):
     kwargs.setdefault('REFERENCE',None)
     kwargs.setdefault('DATE',True)
     kwargs.setdefault('CLOBBER',True)
+    #-- set deprecation warning
+    warnings.filterwarnings("always")
+    warnings.warn("Deprecated. Please use spatial.to_netCDF4",
+        DeprecationWarning)
 
     #-- setting NetCDF clobber attribute
     clobber = 'w' if kwargs['CLOBBER'] else 'a'

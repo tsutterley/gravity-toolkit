@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 degree_amplitude.py
-Written Tyler Sutterley (07/2020)
+Written Tyler Sutterley (04/2022)
 
 Calculates the amplitude of each spherical harmonic degree
 
@@ -20,6 +20,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 07/2020: added function docstrings
     Updated 05/2020: add singleton dimension to calculate time series amplitudes
     Updated 05/2015: added parameter MMAX for MMAX != LMAX
@@ -31,19 +32,21 @@ def degree_amplitude(clm, slm, LMAX=None, MMAX=None):
     """
     Calculates the amplitude of each spherical harmonic degree
 
-    Arguments
-    ---------
-    clm: cosine spherical harmonic coefficients
-    slm: sine spherical harmonic coefficients
-
-    Keyword arguments
-    -----------------
-    LMAX: Upper bound of Spherical Harmonic Degrees
-    MMAX: Upper bound of Spherical Harmonic Orders
+    Parameters
+    ----------
+    clm: float
+        cosine spherical harmonic coefficients
+    slm: float
+        sine spherical harmonic coefficients
+    LMAX: int or NoneType, default None
+        Upper bound of Spherical Harmonic Degrees
+    MMAX: int or NoneType, default None
+        Upper bound of Spherical Harmonic Orders
 
     Returns
     -------
-    amp: degree amplitude
+    amp: float
+        degree amplitude
     """
     #-- add a singleton dimension to input harmonics
     if (np.ndim(clm) == 2):

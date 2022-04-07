@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_harmonics.py
-Written by Tyler Sutterley (12/2021)
+Written by Tyler Sutterley (04/2022)
 
 Reads in low-degree spherical harmonic coefficients calculated from
     Satellite Laser Ranging (SLR) measurements
@@ -50,6 +50,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 12/2021: added function for converting from 7-day arcs
     Updated 11/2021: renamed module. added reader for GSFC weekly 5x5 fields
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -72,6 +73,17 @@ import gravity_toolkit.time
 
 #-- PURPOSE: wrapper function for calling individual readers
 def read_SLR_harmonics(input_file, **kwargs):
+    """
+    Wrapper function for reading spherical harmonic coefficients
+    from Satellite Laser Ranging (SLR) measurements
+
+    Parameters
+    ----------
+    input_file: str
+        Satellite Laser Ranging file
+    **kwargs: dict
+        keyword arguments for input readers
+    """
     if bool(re.search(r'gsfc_slr_5x5c61s61',input_file,re.I)):
         return read_GSFC_weekly_6x1(input_file, **kwargs)
     elif bool(re.search(r'CSR_Monthly_5x5_Gravity_Harmonics',input_file,re.I)):
@@ -85,23 +97,36 @@ def read_CSR_monthly_6x1(input_file, SCALE=1e-10, HEADER=True):
     Reads in monthly low degree and order spherical harmonic coefficients
     from Satellite Laser Ranging (SLR) measurements
 
-    Arguments
-    ---------
-    input_file: input satellite laser ranging file from CSR
-
-    Keyword arguments
-    -----------------
-    SCALE: scale factor for converting to fully-normalized spherical harmonics
-    HEADER: file contains header text to be skipped
+    Parameters
+    ----------
+    input_file: str
+        Satellite Laser Ranging file from CSR
+    SCALE: float, default 1e-10
+        Scale factor for converting to fully-normalized spherical harmonics
+    HEADER: bool, default True
+        File contains header text to be skipped
 
     Returns
     -------
-    clm: Cosine spherical harmonic coefficients
-    slm: Sine spherical harmonic coefficients
-    error/clm: Cosine spherical harmonic coefficient uncertainty
-    error/slm: Sine spherical harmonic coefficients uncertainty
-    MJD: output date as Modified Julian Day
-    time: output date in year-decimal
+    clm: float
+        Cosine spherical harmonic coefficients
+    slm: float
+        Sine spherical harmonic coefficients
+    error/clm: float
+        Cosine spherical harmonic coefficient uncertainty
+    error/slm: float
+        Sine spherical harmonic coefficients uncertainty
+    MJD: float
+        output date as Modified Julian Day
+    time: float
+        output date in year-decimal
+
+    References
+    ----------
+    .. [Cheng2010] M. Cheng, J. C. Ries, and B. D. Tapley,
+        "Variations of the Earth's figure axis from satellite laser ranging
+        and GRACE", *Journal of Geophysical Research*, 116(B01409), (2010).
+        `doi: 10.1029/2010JB000850 <https://doi.org/10.1029/2010JB000850>`_
     """
     #-- check that SLR file exists
     if not os.access(os.path.expanduser(input_file), os.F_OK):
@@ -221,21 +246,33 @@ def read_GSFC_weekly_6x1(input_file, SCALE=1.0, HEADER=True):
     Reads weekly 5x5 spherical harmonic coefficients with 1 coefficient from
         degree 6 calculated from satellite laser ranging measurements
 
-    Arguments
-    ---------
-    input_file: input satellite laser ranging file from GSFC
-
-    Keyword arguments
-    -----------------
-    SCALE: scale factor for converting to fully-normalized spherical harmonics
-    HEADER: file contains header text to be skipped
+    Parameters
+    ----------
+    input_file: str
+        Satellite laser ranging file from GSFC
+    SCALE: float, default 1.0
+        Scale factor for converting to fully-normalized spherical harmonics
+    HEADER: bool, default True
+        File contains header text to be skipped
 
     Returns
     -------
-    clm: Cosine spherical harmonic coefficients
-    slm: Sine spherical harmonic coefficients
-    MJD: output date as Modified Julian Day
-    time: output date in year-decimal
+    clm: float
+        Cosine spherical harmonic coefficients
+    slm: float
+        Sine spherical harmonic coefficients
+    MJD: float
+        output date as Modified Julian Day
+    time: float
+        output date in year-decimal
+
+    References
+    ----------
+    .. [Loomis2020] B. D. Loomis, K. E. Rachlin, D. N. Wiese, F. W. Landerer,
+        and S. B. Luthcke, "Replacing GRACE/GRACE‐FO *C*\ :sub:`30` with
+        satellite laser ranging: Impacts on Antarctic Ice Sheet mass change".
+        *Geophysical Research Letters*, 47, (2020).
+        `doi: 10.1029/2019GL085488 <https://doi.org/10.1029/2019GL085488>`_
     """
     #-- check that SLR file exists
     if not os.access(os.path.expanduser(input_file), os.F_OK):
@@ -303,21 +340,25 @@ def convert_weekly(t_in, d_in, DATE=[], NEIGHBORS=28):
     """
     Interpolate harmonics from 7-day to 28-day
 
-    Arguments
-    ---------
-    t_in: weekly time
-    d_in: weekly harmonics
-
-    Keyword arguments
-    -----------------
-    DATE: output monthly time for central averages
-    NEIGHBORS: number of days to use in average
+    Parameters
+    ----------
+    t_in: float
+        Weekly time
+    d_in: float
+        Weekly harmonics
+    DATE: list, default []
+        Output monthly time for central averages
+    NEIGHBORS: int, default 28
+        Number of days to use in average
 
     Returns
     -------
-    time: output date in year-decimal
-    month: GRACE/GRACE-FO month
-    data: monthly spherical harmonic coefficients
+    time: float
+        output date in year-decimal
+    month: int
+        GRACE/GRACE-FO month
+    data: float
+        monthly spherical harmonic coefficients
     """
     #-- duplicate time and harmonics
     tdec = np.repeat(t_in,7)

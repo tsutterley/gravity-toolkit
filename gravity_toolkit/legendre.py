@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 legendre.py
-Written by Tyler Sutterley (11/2021)
+Written by Tyler Sutterley (04/2022)
 Computes associated Legendre functions of degree l evaluated for elements x
 l must be a scalar integer and x must contain real values ranging -1 <= x <= 1
 Parallels the MATLAB legendre function
@@ -30,6 +30,7 @@ REFERENCES:
     J. A. Jacobs, "Geomagnetism", Academic Press, 1987, Ch.4.
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: modify normalization to prevent high degree overflows
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: modify case with underflow
@@ -43,20 +44,31 @@ import numpy as np
 
 def legendre(l, x, NORMALIZE=False):
     """
-    Computes associated Legendre functions of degree l
+    Computes associated Legendre functions of degree ``l``
+    following [Abramowitz1965]_ and [Jacobs1987]_
 
-    Arguments
-    ---------
-    l: degree of Legrendre polynomials
-    x: elements ranging from -1 to 1
+    Parameters
+    ----------
+    l: int
+        degree of Legrendre polynomials
+    x: float
+        elements ranging from -1 to 1
 
-    Keyword arguments
-    -----------------
-    NORMALIZE: output Fully-normalized Associated Legendre Functions
+        Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
+    NORMALIZE: bool, default False
+        Fully-normalize the Legendre Functions
 
     Returns
     -------
-    Pl: legendre polynomials of degree l for orders 0 to l
+    Pl: legendre polynomials of degree ``l``
+
+    References
+    ----------
+    .. [Abramowitz1965] M. Abramowitz and I. A. Stegun,
+        *Handbook of Mathematical Functions*, 1046 pp., (1965).
+
+    .. [Jacobs1987] J. A. Jacobs, *Geomagnetism*,
+        Volume 1, 1st Edition, 832 pp., (1987).
     """
     #-- verify integer
     l = np.int64(l)

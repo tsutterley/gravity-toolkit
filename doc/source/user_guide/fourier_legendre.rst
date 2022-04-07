@@ -16,13 +16,4 @@ Calling Sequence
 
 .. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/fourier_legendre.py
 
-Arguments
-#########
-
-- ``lmax``: Upper bound of Spherical Harmonic Degrees
-- ``mmax``: Upper bound of Spherical Harmonic Orders
-
-Returns
-#######
-
-- ``plm``: Fourier coefficients
+.. autofunction:: gravity_toolkit.fourier_legendre

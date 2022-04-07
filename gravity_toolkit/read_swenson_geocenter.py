@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_swenson_geocenter.py
-Written by Tyler Sutterley (11/2021)
+Written by Tyler Sutterley (04/2022)
 
 Reads monthly geocenter coefficients from GRACE measurements and
     Ocean Models of Degree 1 provided by Sean Swenson in mm w.e.
@@ -37,6 +37,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: function deprecated. merged with gravity_toolkit.geocenter
     Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -66,21 +67,25 @@ def read_swenson_geocenter(geocenter_file, HEADER=True):
     Reads monthly geocenter files computed by Sean Swenson using
     GRACE/GRACE-FO measurements and Ocean Models of degree 1
 
-    Arguments
-    ---------
-    geocenter_file: degree 1 file
-
-    Keyword arguments
-    -----------------
-    HEADER: file contains header text to be skipped
+    Parameters
+    ----------
+    geocenter_file: str
+        degree 1 file
+    HEADER: bool, default True
+        file contains header text to be skipped
 
     Returns
     -------
-    C10: cosine d1/o0 spherical harmonic coefficients
-    C11: cosine d1/o1 spherical harmonic coefficients
-    S11: sine d1/o1 spherical harmonic coefficients
-    month: GRACE/GRACE-FO month
-    time: date of each month in year-decimal
+    C10: float
+        cosine d1/o0 spherical harmonic coefficients
+    C11: float
+        cosine d1/o1 spherical harmonic coefficients
+    S11: float
+        sine d1/o1 spherical harmonic coefficients
+    month: int
+        GRACE/GRACE-FO month
+    time: float
+        date of each month in year-decimal
     """
     warnings.filterwarnings("always")
     warnings.warn("Deprecated. Please use gravity_toolkit.geocenter instead",

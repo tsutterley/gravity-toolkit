@@ -2,7 +2,7 @@
 u"""
 fourier_legendre.py
 Original IDL code gen_plms.pro written by Sean Swenson
-Adapted by Tyler Sutterley (09/2021)
+Adapted by Tyler Sutterley (04/2022)
 
 Computes Fourier coefficients of the associated Legendre functions
 
@@ -20,6 +20,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: cleaned up program for public release
     Updated 07/2020: added function docstrings
     Updated 06/2019: using Python3 compatible division
@@ -28,18 +29,21 @@ UPDATE HISTORY:
 from __future__ import division
 import numpy as np
 
-def fourier_legendre(lmax,mmax):
+def fourier_legendre(lmax, mmax):
     """
     Computes Fourier coefficients of the associated Legendre functions
 
-    Arguments
-    ---------
-    lmax: Upper bound of Spherical Harmonic Degrees
-    mmax: Upper bound of Spherical Harmonic Orders
+    Parameters
+    ----------
+    lmax: int
+        Upper bound of Spherical Harmonic Degrees
+    mmax: int
+        Upper bound of Spherical Harmonic Orders
 
     Returns
     -------
-    plms: Fourier coefficients
+    plms: float
+        Fourier coefficients
     """
 
     #-- allocate for output fourier coefficients

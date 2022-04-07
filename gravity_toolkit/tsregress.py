@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 tsregress.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (04/2022)
 
 Fits a synthetic signal to data over a time period by ordinary or weighted
     least-squares
@@ -54,6 +54,7 @@ PYTHON DEPENDENCIES:
     scipy: Scientific Tools for Python (https://docs.scipy.org/doc/)
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 07/2020: added function docstrings
     Updated 10/2019: changing Y/N flags to True/False
@@ -100,56 +101,102 @@ import scipy.stats
 import scipy.special
 
 def tsregress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], DATA_ERR=0,
-    WEIGHT=False, RELATIVE=-1, STDEV=0, CONF=0, AICc=True):
+    WEIGHT=False, RELATIVE=Ellipsis, STDEV=0, CONF=0, AICc=True):
     """
     Fits a synthetic signal to data over a time period by
         ordinary or weighted least-squares
 
-    Arguments
-    ---------
-    t_in: input time array
-    d_in: input data array
+    Parameters
+    ----------
+    t_in: float
+        input time array
+    d_in: float
+        input data array
+    ORDER: int, default 1
+        maximum polynomial order in fit
 
-    Keyword arguments
-    -----------------
-    DATA_ERR: data precision
-        single value if equal
-        array if unequal for weighted least squares
-    WEIGHT: Set if measurement errors for use in weighted least squares
-    RELATIVE: relative period
-    ORDER: maximum polynomial order in fit
-    CYCLES: list of cyclical terms
-    STDEV: standard deviation of output error
-    CONF: confidence interval of output error
-    AICc: use second order AIC
+            * ``0``: constant
+            * ``1``: linear
+            * ``2``: quadratic
+    CYCLES: list, default [0.5, 1.0]
+        list of cyclical terms
+    DATA_ERR: float or list
+        Data precision
+
+            - single value if equal
+            - array if unequal for weighted least squares
+    WEIGHT: bool, default False
+        Use weighted least squares with measurement errors
+    RELATIVE: float or List, default Ellipsis
+        Epoch for calculating relative dates
+
+            - float: use exact value as epoch
+            - list: use mean from indices of available times
+            - ``Ellipsis``: use mean of all available times
+    STDEV: float, default 0
+        Standard deviation of output error
+    CONF: float, default 0
+        Confidence interval of output error
+    AICc: bool, default False
+        Use second order AIC for small sample sizes [Burnham2002]_
 
     Returns
     -------
-    beta: regressed coefficients array
-    error: regression fit error for each coefficient for an input deviation
-        STDEV: standard deviation of output error
-        CONF: confidence interval of output error
-    std_err: standard error for each coefficient
-    R2: coefficient of determination (r**2)
-    R2Adj: r**2 adjusted for the number of terms in the model
-    MSE: mean square error
-    WSSE: Weighted sum of squares error
-    NRMSE: normalized root mean square error
-    AIC: Akaike information criterion
-    BIC: Bayesian information criterion
-    model: modeled timeseries
-    simple: modeled timeseries without oscillating components
-    residual: model residual
-    DOF: degrees of freedom
-    N: number of terms used in fit
-    cov_mat: covariance matrix
+    beta: float
+        regressed coefficients array
+    error: float
+        regression fit error for each coefficient for an input deviation
+
+            - ``STDEV``: standard deviation of output error
+            - ``CONF``: confidence interval of output error
+    std_err: float
+        standard error for each coefficient
+    R2: float
+        coefficient of determination (r\ :sup:`2`)
+    R2Adj: float
+        r\ :sup:`2` adjusted for the number of terms in the model
+    MSE: float
+        mean square error
+    WSSE: float
+        Weighted sum of squares error
+    NRMSE: float
+        normalized root mean square error
+    AIC: float
+        Akaike information criterion
+    BIC: float
+        Bayesian information criterion (Schwarz criterion)
+    model: float
+        modeled timeseries
+    simple: float
+        modeled timeseries without oscillating components
+    residual: float
+        model residual
+    DOF: int
+        degrees of freedom
+    N: int
+        number of terms used in fit
+    cov_mat: float
+        covariance matrix
+
+    Reference
+    ---------
+    .. [Burnham2002] K. P. Burnham and D. R. Anderson,
+        *Model Selection and Multimodel Inference*,
+        2nd Edition, 488 pp., (2002).
+        `doi: 10.1007/b97636 <https://doi.org/10.1007/b97636>`_
     """
 
     #-- remove singleton dimensions
     t_in = np.squeeze(t_in)
     d_in = np.squeeze(d_in)
     nmax = len(t_in)
-    t_rel = t_in[0:nmax].mean() if (RELATIVE == -1) else RELATIVE
+    #-- calculate epoch for calculating relative times
+    if isinstance(RELATIVE, (list, np.ndarray)):
+        t_rel = t_in[RELATIVE].mean()
+    elif isinstance(RELATIVE, (float, int, np.float_, np.int_)):
+        t_rel = np.copy(RELATIVE)
+    elif (RELATIVE == Ellipsis):
+        t_rel = t_in[RELATIVE].mean()
 
     #-- create design matrix based on polynomial order and harmonics
     DMAT = []

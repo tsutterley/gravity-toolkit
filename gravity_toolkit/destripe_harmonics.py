@@ -3,7 +3,7 @@ u"""
 destripe_harmonics.py
 Original Fortran program remove_errors.f written by Isabella Velicogna
 Adapted by Chia-Wei Hsu (05/2018)
-Updated by Tyler Sutterley (05/2021)
+Updated by Tyler Sutterley (04/2022)
 
 Filters spherical harmonic coefficients for correlated "striping" errors
 
@@ -42,9 +42,10 @@ PYTHON DEPENDENCIES:
 REFERENCES:
     S C Swenson and J Wahr, "Post-processing removal of correlated errors in
         GRACE data", Geophysical Research Letters, 33(L08402), 2006
-        http://dx.doi.org/10.1029/2005GL025285
+        https://doi.org/10.1029/2005GL025285
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: replaced numpy bool to prevent deprecation warning
     Updated 07/2020: added function docstrings
@@ -62,23 +63,36 @@ def destripe_harmonics(clm1, slm1, LMIN=2, LMAX=60, MMAX=None,
     """
     Filters spherical harmonic coefficients for correlated striping errors
 
-    Arguments
-    ---------
-    clm1: cosine spherical harmonic coefficients
-    slm1: sine spherical harmonic coefficients
-
-    Keyword arguments
-    -----------------
-    LMIN: Lower bound of Spherical Harmonic Degrees
-    LMAX: Upper bound of Spherical Harmonic Degrees
-    MMAX: Upper bound of Spherical Harmonic Orders
-    ROUND: use round to find nearest even
-    NARROW: set harmonics to 0 if less than window size
+    Parameters
+    ----------
+    clm1: float
+        cosine spherical harmonic coefficients
+    slm1: float
+        sine spherical harmonic coefficients
+    LMIN: int, default 2
+        Lower bound of Spherical Harmonic Degrees
+    LMAX: int, default 60
+        Upper bound of Spherical Harmonic Degrees
+    MMAX: int or NoneType, default None
+        Upper bound of Spherical Harmonic Orders
+    ROUND: bool, default True
+        use round to find nearest even
+    NARROW: bool, default True
+        set harmonics to 0 if less than window size
 
     Returns
     -------
-    Wclm: filtered cosine spherical harmonic coefficients
-    Wslm: filtered sine spherical harmonic coefficients
+    clm: float
+        filtered cosine spherical harmonic coefficients
+    slm: float
+        filtered sine spherical harmonic coefficients
+
+    References
+    ----------
+    .. [Swenson2006] S. Swenson and J. Wahr,
+        "Post‐processing removal of correlated errors in GRACE data",
+        *Geophysical Research Letters*, 33(L08402), (2006).
+        `doi: 10.1029/2005GL025285 <https://doi.org/10.1029/2005GL025285>`_
     """
 
     #-- tests if spherical harmonics have been imported

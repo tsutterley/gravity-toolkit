@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_stokes.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (04/2022)
 
 Converts data from the spatial domain to spherical harmonic coefficients
 
@@ -39,14 +39,11 @@ PROGRAM DEPENDENCIES:
     plm_holmes.py: computes fully-normalized associated Legendre polynomials
     units.py: class for converting spherical harmonic data to specific units
     harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
-        destripe_harmonics.py: calculates the decorrelation (destriping) filter
-            and filters the GRACE/GRACE-FO coefficients for striping errors
-        ncdf_read_stokes.py: reads spherical harmonic netcdf files
-        ncdf_stokes.py: writes output spherical harmonic data to netcdf
-        hdf5_read_stokes.py: reads spherical harmonic HDF5 files
-        hdf5_stokes.py: writes output spherical harmonic data to HDF5
+    destripe_harmonics.py: calculates the decorrelation (destriping) filter
+        and filters the GRACE/GRACE-FO coefficients for striping errors
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: added UNITS list option for converting from custom units
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 01/2021: use harmonics class for spherical harmonic operations
@@ -79,31 +76,50 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     """
     Converts data from the spatial domain to spherical harmonic coefficients
 
-    Arguments
-    ---------
-    data: data matrix
-    lon: longitude array
-    lat: latitude array
+    Parameters
+    ----------
+    data: float
+        data matrix
+    lon: float
+        longitude array
+    lat: float
+        latitude array
+    LMIN: int, default 0
+        Lower bound of Spherical Harmonic Degrees
+    LMAX: int, default 60
+        Upper bound of Spherical Harmonic Degrees
+    MMAX: int or NoneType, default None
+        Upper bound of Spherical Harmonic Orders
+    UNITS: int, default 1
+        Input data units
 
-    Keyword arguments
-    -----------------
-    LMIN: Lower bound of Spherical Harmonic Degrees
-    LMAX: Upper bound of Spherical Harmonic Degrees
-    MMAX: Upper bound of Spherical Harmonic Orders
-    UNITS: input data units
-        1: cm of water thickness
-        2: Gigatonnes of mass
-        3: kg/m^2
-        list: custom degree-dependent unit conversion factor
-    PLM: input Legendre polynomials
-    LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
+            - ``1``: cm water equivalent thickness (cm w.e., g/cm\ :sup:`2`)
+            - ``2``: gigatonnes of mass (Gt)
+            - ``3``:  mm water equivalent thickness (mm w.e., kg/m\ :sup:`2`)
+            - list: custom degree-dependent unit conversion factor
+    PLM: float or NoneType, default None
+        Input Legendre polynomials
+    LOVE: tuple or NoneType, default None
+        Input load Love numbers up to degree LMAX (``hl``, ``kl``, ``ll``)
 
     Returns
     -------
-    clm: cosine spherical harmonic coefficients
-    slm: sine spherical harmonic coefficients
-    l: spherical harmonic degree to LMAX
-    m: spherical harmonic order to MMAX
+    clm: float
+        cosine spherical harmonic coefficients
+    slm: float
+        sine spherical harmonic coefficients
+    l: int
+        spherical harmonic degree to LMAX
+    m: int
+        spherical harmonic order to MMAX
+
+    References
+    ----------
+    .. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan, "Time
+        variabilityof the Earth's gravity field: Hydrological
+        and oceanic effects and their possible detection using GRACE",
+        *Journal of Geophysical Research*, 103(B12), 30205-30229, (1998).
+        `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_
     """
 
     #-- converting LMIN and LMAX to integer
@@ -159,7 +175,7 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
         dfactor = factors.mmwe
         int_fact[:] = np.sin(th)*dphi*dth
     elif isinstance(UNITS,(list,np.ndarray)):
-        #-- custom units 
+        #-- custom units
         dfactor = np.copy(UNITS)
         int_fact[:] = np.sin(th)*dphi*dth
     else:

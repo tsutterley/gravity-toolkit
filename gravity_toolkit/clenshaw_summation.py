@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 clenshaw_summation.py
-Written by Tyler Sutterley (11/2021)
+Written by Tyler Sutterley (04/2022)
 Calculates the spatial field for a series of spherical harmonics for a
     sequence of ungridded points
 
@@ -44,11 +44,12 @@ REFERENCES:
     Holmes and Featherstone, "A Unified Approach to the Clenshaw Summation and
         the Recursive Computation of Very High Degree and Order Normalised
         Associated Legendre Functions", Journal of Geodesy (2002)
-        http://dx.doi.org/10.1007/s00190-002-0216-2
+        https://doi.org/10.1007/s00190-002-0216-2
     Tscherning and Poder, "Some Geodetic Applications of Clenshaw Summation",
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: added UNITS list option for converting to custom units
     Updated 09/2021: fix passing SCALE keyword argument to clenshaw_s_m
     Updated 06/2021: output equivalent pressure in pascals
@@ -70,30 +71,64 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
     Calculates the spatial field for a series of spherical harmonics for a
     sequence of ungridded points
 
-    Arguments
-    ---------
-    clm: cosine spherical harmonic coefficients
-    slm: sine spherical harmonic coefficients
-    lon: longitude of points
-    lat: latitude of points
+    Parameters
+    ----------
+    clm: float
+        cosine spherical harmonic coefficients
+    slm: float
+        sine spherical harmonic coefficients
+    lon: float
+        longitude of points
+    lat: float
+        latitude of points
+    RAD: float, default 0.0
+        Gaussian smoothing radius (km)
+    UNITS: int, default 0
+        Output data units
 
-    Keyword arguments
-    -----------------
-    RAD: Gaussian smoothing radius (km)
-    UNITS: output data units
-        1: cm of water thickness
-        2: mm of geoid height
-        3: mm of elastic crustal deformation
-        4: microGal gravitational perturbation
-        5: mbar equivalent surface pressure
-        6: cm of viscoelastic crustal uplift (GIA)
-        list: custom degree-dependent unit conversion factor
-    LMAX: Upper bound of Spherical Harmonic Degrees
-    LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
+            - ``1``: cm water equivalent thickness (cm w.e., g/cm\ :sup:`2`)
+            - ``2``: mm geoid height
+            - ``3``: mm elastic crustal deformation
+            - ``4``: microGal gravitational perturbation
+            - ``5``: mbar equivalent surface pressure
+            - ``6``: cm viscoelastic crustal uplift (GIA)
+            - list: custom degree-dependent unit conversion factor
+    LMAX: int, default 0
+        Upper bound of Spherical Harmonic Degrees
+    LOVE: tuple or NoneType, default None
+        Load Love numbers up to degree LMAX (``hl``, ``kl``, ``ll``)
+    ASTYPE: obj, default np.float128
+        floating point precision for calculating Clenshaw summation
+    SCALE: float, default 1e-280
+        scaling factor to prevent underflow in Clenshaw summation
 
     Returns
     -------
-    spatial: calculated spatial field for latitude and longitude
+    spatial: float
+        calculated spatial field for latitude and longitude
+
+    References
+    ----------
+    .. [Davis2004] J. L. Davis et al.,
+        "Climate‐driven deformation of the solid Earth from GRACE and GPS",
+        *Geophysical Research Letters*, 31(L24605), (2004).
+        `doi: 10.1029/2004GL021435 <https://doi.org/10.1029/2004GL021435>`_
+
+    .. [Holmes2002] S. A. Holmes and W. E. Featherstone,
+        "A unified approach to the Clenshaw summation and the recursive
+        computation of very high degree and order normalised associated
+        Legendre functions", *Journal of Geodesy*, 76, 279--299, (2002).
+        `doi: 10.1007/s00190-002-0216-2 <https://doi.org/10.1007/s00190-002-0216-2>`_
+
+    .. [Tscherning1982] C. C. Tscherning and K. Poder,
+        "Some Geodetic Applications of Clenshaw Summation",
+        *Bollettino di Geodesia e Scienze*, 4, 349--375, (1982).
+
+    .. [Wahr2000] J. Wahr, D. Wingham, and C. Bentley,
+        "A method of combining ICESat and GRACE satellite data to constrain
+        Antarctic mass balance", *Journal of Geophysical Research: Solid Earth*,
+        105(B7), 16279--16294, (2000).
+        `doi: 10.1029/2000JB900113 <https://doi.org/10.1029/2000JB900113>`_
     """
 
     #-- check if lat and lon are the same size
@@ -143,7 +178,7 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
         #-- 6: cmVCU, cm viscoelastic  crustal uplift (GIA ONLY)
         dfactor = factors.cmVCU
     elif isinstance(UNITS,(list,np.ndarray)):
-        #-- custom units 
+        #-- custom units
         dfactor = np.copy(UNITS)
     else:
         raise ValueError('Unknown units {0}'.format(UNITS))
@@ -186,8 +221,8 @@ def clenshaw_s_m(t, f, m, clm1, slm1, lmax, ASTYPE=np.float128, SCALE=1e-280):
     Compute conditioned arrays for Clenshaw summation from the fully-normalized
     associated Legendre's function for an order m
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     t: elements ranging from -1 to 1, typically cos(th)
     f: degree dependent factors
     m: spherical harmonic order

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_gfc_harmonics.py
-Written by Tyler Sutterley (09/2021)
+Written by Tyler Sutterley (04/2022)
 Contributions by Hugo Lecomte
 
 Reads gfc files and extracts spherical harmonics for Swarm and
@@ -55,6 +55,7 @@ PROGRAM DEPENDENCIES:
     calculate_tidal_offset.py: calculates the C20 offset for a tidal system
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: forked from read_ICGEM_harmonics in geoid toolkit
         use gravity toolkit time modules and reorganize structure
     Updated 05/2021: Add GRAZ/Swarm/COST-G ICGEM file
@@ -73,38 +74,64 @@ from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 #-- PURPOSE: read spherical harmonic coefficients of a gravity model
 def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
     """
-    Extract gravity model spherical harmonics from gfc files
+    Extract gravity model spherical harmonics from Gravity
+    Field Coefficient (gfc) files
 
-    Arguments
-    ---------
-    input_file: full path to gfc spherical harmonic data file
+    Parameters
+    ----------
+    input_file: str
+        full path to gfc spherical harmonic data file
+    TIDE: string
+        Permanent tide system of output gravity fields [Losch2003]_
 
-    Keyword arguments
-    -----------------
-    TIDE: tide system of output gravity fields
-        tide_free: no permanent direct and indirect tidal potentials
-        mean_tide: permanent tidal potentials (direct and indirect)
-        zero_tide: permanent direct tidal potential removed
-    FLAG: string denoting data lines
+            - ``'tide_free'``: no permanent direct and indirect tidal potentials
+            - ``'mean_tide'``: permanent tidal potentials (direct and indirect)
+            - ``'zero_tide'``: permanent direct tidal potential removed
+    FLAG: str, default 'gfc'
+        Flag denoting data lines
 
     Returns
     -------
-    time: mid-month date in decimal form
-    start: Julian dates of the start date
-    end: Julian dates of the start date
-    l: spherical harmonic degree to maximum degree of data
-    m: spherical harmonic order to maximum degree of data
-    clm: cosine spherical harmonics of input data
-    slm: sine spherical harmonics of input data
-    eclm: cosine spherical harmonic standard deviations of type errors
-    eslm: sine spherical harmonic standard deviations of type errors
-    modelname: name of the gravity model
-    earth_gravity_constant: GM constant of the Earth for gravity model
-    radius: semi-major axis of the Earth for gravity model
-    max_degree: maximum degree and order for gravity model
-    errors: error type of the gravity model
-    norm: normalization of the spherical harmonics
-    tide_system: tide system of gravity model
+    time: float
+        mid-month date in decimal form
+    start: float
+        Julian dates of the start date
+    end: float
+        Julian dates of the start date
+    l: int
+        spherical harmonic degree to maximum degree of data
+    m: int
+        spherical harmonic order to maximum degree of data
+    clm: float
+        cosine spherical harmonics of input data
+    slm: float
+        sine spherical harmonics of input data
+    eclm: float
+        cosine spherical harmonic standard deviations of type errors
+    eslm: float
+        sine spherical harmonic standard deviations of type errors
+    modelname: str
+        name of the gravity model
+    earth_gravity_constant: str
+        GM constant of the Earth for gravity model
+    radius: str
+        semi-major axis of the Earth for gravity model
+    max_degree: str
+        maximum degree and order for gravity model
+    errors: str
+        error type of the gravity model
+    norm: str
+        normalization of the spherical harmonics
+    tide_system: str
+        Permanent tide system of gravity model (``'mean_tide'``, ``'zero_tide'``, ``'tide_free'``)
+
+    Reference
+    ---------
+    .. [Losch2003] M. Losch and V. Seufer,
+        "How to Compute Geoid Undulations (Geoid Height Relative
+        to a Given Reference Ellipsoid) from Spherical Harmonic
+        Coefficients for Satellite Altimetry Applications", (2003).
+        `eprint ID: 11802 <http://mitgcm.org/~mlosch/geoidcookbook.pdf>`_
     """
     #-- regular expression operators for ITSG data and models
     itsg_products = []

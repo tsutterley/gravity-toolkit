@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_date.py
-Written by Tyler Sutterley (09/2021)
+Written by Tyler Sutterley (04/2022)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
@@ -46,6 +46,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: adjust regular expression operators for Swarm and GRAZ
         use functions for converting to and from GRACE months
     Updated 07/2021: remove choices for argparse processing centers
@@ -105,9 +106,10 @@ def parse_file(input_file):
     """
     Extract parameters from filename
 
-    Arguments
-    ---------
-    input_file: GRACE/GRACE-FO Level-2 spherical harmonic data file
+    Parameters
+    ----------
+    input_file: str
+        GRACE/GRACE-FO Level-2 spherical harmonic data file
     """
     #-- reduce to basename of file
     file_basename = os.path.basename(input_file)
@@ -133,18 +135,23 @@ def parse_date(input_file, PROC, DSET):
     """
     Extract dates from GRAZ and Swarm filenames
 
-    Arguments
-    ---------
-    input_file: GRAZ or Swarm spherical harmonic data file
-    PROC: GRACE/GRACE-FO Processing Center or Satellite mission
-        GRAZ: Institute of Geodesy from GRAZ University of Technology
-        Swarm: Time-variable gravity data from Swarm satellites
-    DSET: GRACE/GRACE-FO/Swarm dataset
-        GAA: non-tidal atmospheric correction
-        GAB: non-tidal oceanic correction
-        GAC: combined non-tidal atmospheric and oceanic correction
-        GAD: ocean bottom pressure product
-        GSM: monthly static field product
+    Parameters
+    ----------
+    input_file: str
+        GRAZ or Swarm spherical harmonic data file
+    PROC: str
+        GRACE/GRACE-FO Processing Center or Satellite mission
+
+            - ``'GRAZ'``: Institute of Geodesy from GRAZ University of Technology
+            - ``'Swarm'``: Time-variable gravity data from Swarm satellites
+    DSET: str
+        GRACE/GRACE-FO/Swarm dataset
+
+            - ``'GAA'``: non-tidal atmospheric correction
+            - ``'GAB'``: non-tidal oceanic correction
+            - ``'GAC'``: combined non-tidal atmospheric and oceanic correction
+            - ``'GAD'``: ocean bottom pressure product
+            - ``'GSM'``: corrected monthly static gravity field product
     """
     #-- reduce to basename of file
     file_basename = os.path.basename(input_file)
@@ -199,37 +206,45 @@ def parse_date(input_file, PROC, DSET):
 #-- PURPOSE: parses GRACE/GRACE-FO data files and assigns month numbers
 def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     """
-    Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
+    Reads index file containing GRACE/GRACE-FO/Swarm data files
+
     Parses dates of each GRACE/GRACE-FO file and assigns the month number
+
     Creates an index of dates for GRACE/GRACE-FO files
 
-    Arguments
-    ---------
-    base_dir: working data directory
+    Parameters
+    ----------
+    base_dir: str
+        Working data directory
+    PROC: str, default ''
+        Data processing center or satellite mission
 
-    Keyword arguments
-    -----------------
-    PROC: Data processing center or satellite mission
-        CSR: University of Texas Center for Space Research
-        GFZ: German Research Centre for Geosciences (GeoForschungsZentrum)
-        JPL: Jet Propulsion Laboratory
-        CNES: French Centre National D'Etudes Spatiales
-        GRAZ: Institute of Geodesy from GRAZ University of Technology
-        COSTG: Combination Service for Time-variable Gravity Fields
-        Swarm: Time-variable gravity data from Swarm satellites
-    DREL: GRACE/GRACE-FO/Swarm data release
-    DSET: GRACE/GRACE-FO/Swarm dataset
-        GAA: non-tidal atmospheric correction
-        GAB: non-tidal oceanic correction
-        GAC: combined non-tidal atmospheric and oceanic correction
-        GAD: ocean bottom pressure product
-        GSM: corrected monthly static gravity field product
-    OUTPUT: create index file of dates for GRACE/GRACE-FO data
-    MODE: Permission mode of directories and files
+            - ``'CSR'``: University of Texas Center for Space Research
+            - ``'GFZ'``: German Research Centre for Geosciences (GeoForschungsZentrum)
+            - ``'JPL'``: Jet Propulsion Laboratory
+            - ``'CNES'``: French Centre National D'Etudes Spatiales
+            - ``'GRAZ'``: Institute of Geodesy from GRAZ University of Technology
+            - ``'COSTG'``: Combination Service for Time-variable Gravity Fields
+            - ``'Swarm'``: Time-variable gravity data from Swarm satellites
+    DREL: str, default ''
+        GRACE/GRACE-FO/Swarm data release
+    DSET: str, default ''
+        GRACE/GRACE-FO/Swarm dataset
+
+            - ``'GAA'``: non-tidal atmospheric correction
+            - ``'GAB'``: non-tidal oceanic correction
+            - ``'GAC'``: combined non-tidal atmospheric and oceanic correction
+            - ``'GAD'``: ocean bottom pressure product
+            - ``'GSM'``: corrected monthly static gravity field product
+    OUTPUT: bool, default True
+        create index file of dates for GRACE/GRACE-FO data
+    MODE: oct, default 0o775
+        Permission mode of directories and files
 
     Returns
     -------
-    output_files: dictionary of GRACE/GRACE-FO files indexed by month
+    output_files: dict
+        dictionary of GRACE/GRACE-FO files indexed by month
     """
 
     #--  Directory of exact product
