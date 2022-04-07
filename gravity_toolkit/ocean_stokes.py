@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ocean_stokes.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (04/2022)
 
 Reads a land-sea mask and converts to a series of spherical harmonics
 
@@ -47,6 +47,7 @@ REFERENCES:
     Earth and Space Science, 7, 2020. https://doi.org/10.1029/2019EA000860
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 01/2021: added option VARNAME to generalize input masks
     Updated 12/2020: added simplify function to remove isolated points
@@ -67,24 +68,31 @@ def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
     """
     Converts data from spherical harmonic coefficients to a spatial field
 
-    Arguments
-    ---------
-    LANDMASK: netCDF4 land mask file
-    LMAX: maximum spherical harmonic degree
-
-    Keyword arguments
-    -----------------
-    MMAX: maximum spherical harmonic order of the output harmonics
-    LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
-    VARNAME: variable name for mask in netCDF4 file
-    SIMPLIFY: simplify land mask by removing isolated points
+    Parameters
+    ----------
+    LANDMASK: str
+        netCDF4 land mask file
+    LMAX: int
+        maximum spherical harmonic degree
+    MMAX: int or NoneType, default None
+        maximum spherical harmonic order of the output harmonics
+    LOVE: tuple
+        Load Love numbers up to degree LMAX (``hl``, ``kl``, ``ll``)
+    VARNAME: str, default 'LSMASK'
+        variable name for mask in netCDF4 file
+    SIMPLIFY: bool, default False
+        simplify land mask by removing isolated points
 
     Returns
     -------
-    clm: cosine spherical harmonic coefficients
-    slm: sine spherical harmonic coefficients
-    l: spherical harmonic degree to LMAX
-    m: spherical harmonic order to MMAX
+    clm: float
+        cosine spherical harmonic coefficients
+    slm: float
+        sine spherical harmonic coefficients
+    l: int
+        spherical harmonic degree to LMAX
+    m: int
+        spherical harmonic order to MMAX
     """
     #-- maximum spherical harmonic order
     MMAX = np.copy(LMAX) if MMAX is None else MMAX

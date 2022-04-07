@@ -34,29 +34,21 @@ missions
     user_guide/fourier_legendre.rst
     user_guide/gauss_weights.rst
     user_guide/gen_averaging_kernel.rst
-    user_guide/gen_disc_load.md
-    user_guide/gen_harmonics.md
-    user_guide/gen_point_load.md
-    user_guide/gen_spherical_cap.md
-    user_guide/gen_stokes.md
+    user_guide/gen_disc_load.rst
+    user_guide/gen_harmonics.rst
+    user_guide/gen_point_load.rst
+    user_guide/gen_spherical_cap.rst
+    user_guide/gen_stokes.rst
     user_guide/geocenter.rst
-    user_guide/grace_date.md
-    user_guide/grace_months_index.md
-    user_guide/grace_find_months.md
-    user_guide/grace_input_months.md
+    user_guide/grace_date.rst
+    user_guide/grace_find_months.rst
+    user_guide/grace_input_months.rst
+    user_guide/grace_months_index.rst
     user_guide/harmonic_summation.md
     user_guide/harmonics.rst
-    user_guide/hdf5_read.md
-    user_guide/hdf5_read_stokes.md
-    user_guide/hdf5_stokes.md
-    user_guide/hdf5_write.md
     user_guide/legendre.rst
     user_guide/legendre_polynomials.rst
     user_guide/mascons.rst
-    user_guide/ncdf_read.md
-    user_guide/ncdf_read_stokes.md
-    user_guide/ncdf_stokes.md
-    user_guide/ncdf_write.md
     user_guide/ocean_stokes.rst
     user_guide/piecewise_regress.rst
     user_guide/plm_colombo.rst
@@ -72,6 +64,7 @@ missions
     user_guide/read_SLR_C50.md
     user_guide/read_SLR_harmonics.rst
     user_guide/savitzky_golay.rst
+    user_guide/sea_level_equation.rst
     user_guide/spatial.rst
     user_guide/time.rst
     user_guide/tools.rst

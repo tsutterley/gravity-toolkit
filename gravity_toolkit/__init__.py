@@ -64,6 +64,7 @@ from gravity_toolkit.read_SLR_C30 import read_SLR_C30
 from gravity_toolkit.read_SLR_C50 import read_SLR_C50
 from gravity_toolkit.read_SLR_harmonics import read_SLR_harmonics, convert_weekly
 from gravity_toolkit.savitzky_golay import savitzky_golay
+from gravity_toolkit.sea_level_equation import sea_level_equation
 from gravity_toolkit.spatial import spatial
 from gravity_toolkit.tsamplitude import tsamplitude
 from gravity_toolkit.tsregress import tsregress

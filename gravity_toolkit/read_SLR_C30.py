@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C30.py
-Written by Yara Mohajerani and Tyler Sutterley (09/2021)
+Written by Yara Mohajerani and Tyler Sutterley (04/2022)
 
 Reads monthly degree 3 zonal spherical harmonic data files from SLR
 
@@ -57,9 +57,10 @@ REFERENCES:
     Dahle and Murboeck, "Post-processed GRACE/GRACE-FO Geopotential
         GSM Coefficients GFZ RL06 (Level-2B Product)."
         V. 0002. GFZ Data Services, (2019).
-        http://doi.org/10.5880/GFZ.GRAVIS_06_L2B
+        https://doi.org/10.5880/GFZ.GRAVIS_06_L2B
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: added GFZ GravIS GRACE/SLR low degree solutions
         define int/float precision to prevent deprecation warning
@@ -83,25 +84,29 @@ import gravity_toolkit.time
 import gravity_toolkit.read_SLR_harmonics
 
 #-- PURPOSE: read Degree 3 zonal data from Satellite Laser Ranging (SLR)
-def read_SLR_C30(SLR_file, HEADER=True, C30_MEAN=9.5717395773300e-07):
+def read_SLR_C30(SLR_file, C30_MEAN=9.5717395773300e-07, HEADER=True):
     """
     Reads C30 spherical harmonic coefficients from SLR measurements
 
-    Arguments
-    ---------
-    SLR_file: Satellite Laser Ranging file
-
-    Keyword arguments
-    -----------------
-    HEADER: file contains header text to be skipped (default: True)
-    C30_MEAN: mean C30 to add to LARES C30 anomalies
+    Parameters
+    ----------
+    SLR_file: str
+        Satellite Laser Ranging file
+    C30_MEAN: float, default 9.5717395773300e-07
+        Mean C30 to add to LARES C30 anomalies
+    HEADER: bool, default True
+        File contains header text to be skipped
 
     Returns
     -------
-    data: SLR degree 3 order 0 cosine stokes coefficients
-    error: SLR degree 3 order 0 cosine stokes coefficient error
-    month: GRACE/GRACE-FO month of measurement
-    time: date of SLR measurement
+    data: float
+        SLR degree 3 order 0 cosine stokes coefficients
+    error: float
+        SLR degree 3 order 0 cosine stokes coefficient error
+    month: int
+        GRACE/GRACE-FO month of measurement
+    time: float
+        date of SLR measurement
     """
 
     #-- check that SLR file exists

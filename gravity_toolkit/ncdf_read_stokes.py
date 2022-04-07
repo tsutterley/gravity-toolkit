@@ -79,17 +79,17 @@ import logging
 import netCDF4
 import zipfile
 import numpy as np
+import warnings
+
 
 def ncdf_read_stokes(filename, **kwargs):
     """
     Reads spherical harmonic data from netCDF4 files
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     filename: netCDF4 file to be opened and read
 
-    Keyword arguments
-    -----------------
     DATE: netCDF4 file has date information
     COMPRESSION: netCDF4 file is compressed or streaming as bytes
         gzip
@@ -109,6 +109,10 @@ def ncdf_read_stokes(filename, **kwargs):
     #-- set default keyword arguments
     kwargs.setdefault('DATE',True)
     kwargs.setdefault('COMPRESSION',None)
+    #-- set deprecation warning
+    warnings.filterwarnings("always")
+    warnings.warn("Deprecated. Please use harmonics.from_netCDF4",
+        DeprecationWarning)
 
     #-- Open the NetCDF4 file for reading
     if (kwargs['COMPRESSION'] == 'gzip'):

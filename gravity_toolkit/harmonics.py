@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (12/2021)
+Written by Tyler Sutterley (04/2022)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -19,16 +19,13 @@ PYTHON DEPENDENCIES:
 
 PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
-    ncdf_stokes.py: writes output spherical harmonic data to netcdf
-    hdf5_stokes.py: writes output spherical harmonic data to HDF5
-    ncdf_read_stokes.py: reads spherical harmonic data from netcdf
-    hdf5_read_stokes.py: reads spherical harmonic data from HDF5
     read_GRACE_harmonics.py: read spherical harmonic data from SHM files
     read_gfc_harmonics.py: reads spherical harmonic data from gfc files
     read_ICGEM_harmonics.py: reads gravity model coefficients from GFZ ICGEM
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 12/2021: logging case_insensitive_filename output for debugging
     Updated 11/2021: kwargs to index, netCDF4 and HDF5 read functions
     Updated 10/2021: using python logging for handling verbose output
@@ -61,19 +58,21 @@ UPDATE HISTORY:
         add options to flatten and expand harmonics matrices or arrays
     Written 03/2020
 """
+from __future__ import print_function, division
+
 import os
 import re
 import io
 import copy
 import gzip
+import h5py
+import time
+import uuid
 import logging
+import netCDF4
 import zipfile
 import numpy as np
 from gravity_toolkit.time import adjust_months,calendar_to_grace
-from gravity_toolkit.ncdf_stokes import ncdf_stokes
-from gravity_toolkit.hdf5_stokes import hdf5_stokes
-from gravity_toolkit.ncdf_read_stokes import ncdf_read_stokes
-from gravity_toolkit.hdf5_read_stokes import hdf5_read_stokes
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
 from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
@@ -82,6 +81,29 @@ from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 class harmonics(object):
     """
     Data class for reading, writing and processing spherical harmonic data
+
+    Attributes
+    ----------
+    lmax: int
+        maximum degree of the spherical harmonic field
+    mmax: int
+        maximum order of the spherical harmonic field
+    clm: float
+        cosine spherical harmonics
+    slm: float
+        sine spherical harmonics
+    time: float
+        time variable of the spherical harmonics
+    month: int
+        GRACE/GRACE-FO months variable of the spherical harmonics
+    attributes: dict
+        attributes of harmonics variables
+    shape: tuple
+        dimensions of harmonics object
+    ndim: int
+        number of dimensions of harmonics object
+    filename: str
+        input or output filename
     """
     np.seterr(invalid='ignore')
     def __init__(self, **kwargs):
@@ -97,6 +119,7 @@ class harmonics(object):
         self.mmax=kwargs['mmax']
         self.l=np.arange(self.lmax+1) if self.lmax else None
         self.m=np.arange(self.mmax+1) if self.mmax else None
+        self.attributes=dict()
         self.shape=None
         self.ndim=None
         self.filename=None
@@ -104,6 +127,11 @@ class harmonics(object):
     def case_insensitive_filename(self,filename):
         """
         Searches a directory for a filename without case dependence
+
+        Parameters
+        ----------
+        filename: str
+            input filename
         """
         #-- check if filename is open file object
         if isinstance(filename, io.IOBase):
@@ -128,10 +156,21 @@ class harmonics(object):
     def from_ascii(self, filename, **kwargs):
         """
         Read a harmonics object from an ascii file
-        Inputs: full path of input ascii file
-        Options:
-            ascii file contains date information
-            keyword arguments for ascii input
+
+        Parameters
+        ----------
+        filename: str
+            full path of input ascii file
+        date: bool, default True
+            ascii file has date information
+        compression: str or NoneType, default None
+            file compression type
+
+                - ``'gzip'``
+                - ``'zip'``
+                - ``'bytes'``
+        verbose: bool, default False
+            print file and variable information
         """
         #-- set filename
         self.case_insensitive_filename(filename)
@@ -205,10 +244,21 @@ class harmonics(object):
     def from_netCDF4(self, filename, **kwargs):
         """
         Read a harmonics object from a netCDF4 file
-        Inputs: full path of input netCDF4 file
-        Options:
-            netCDF4 file contains date information
-            keyword arguments for netCDF4 reader
+
+        Parameters
+        ----------
+        filename: str
+            full path of input netCDF4 file
+        date: bool, default True
+            netCDF4 file has date information
+        compression: str or NoneType, default None
+            file compression type
+
+                - ``'gzip'``
+                - ``'zip'``
+                - ``'bytes'``
+        verbose: bool, default False
+            print file and variable information
         """
         #-- set filename
         self.case_insensitive_filename(filename)
@@ -216,21 +266,67 @@ class harmonics(object):
         kwargs.setdefault('date',True)
         kwargs.setdefault('verbose',False)
         kwargs.setdefault('compression',None)
-        #-- read data from netCDF4 file
-        Ylms = ncdf_read_stokes(self.filename,
-            DATE=kwargs['date'],
-            COMPRESSION=kwargs['compression'])
-        #-- copy variables to harmonics object
-        self.clm = Ylms['clm'].copy()
-        self.slm = Ylms['slm'].copy()
-        self.l = Ylms['l'].copy()
-        self.m = Ylms['m'].copy()
-        self.lmax = np.max(Ylms['l'])
-        self.mmax = np.max(Ylms['m'])
+        #-- Open the NetCDF4 file for reading
+        if (kwargs['compression'] == 'gzip'):
+            #-- read as in-memory (diskless) netCDF4 dataset
+            with gzip.open(os.path.expanduser(filename),'r') as f:
+                fileID = netCDF4.Dataset(os.path.basename(filename),memory=f.read())
+        elif (kwargs['compression'] == 'zip'):
+            #-- read zipped file and extract file into in-memory file object
+            fileBasename,_ = os.path.splitext(os.path.basename(filename))
+            with zipfile.ZipFile(os.path.expanduser(filename)) as z:
+                #-- first try finding a netCDF4 file with same base filename
+                #-- if none found simply try searching for a netCDF4 file
+                try:
+                    f,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
+                except:
+                    f,=[f for f in z.namelist() if re.search(r'\.nc(4)?$',f)]
+                #-- read bytes from zipfile as in-memory (diskless) netCDF4 dataset
+                fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=z.read(f))
+        elif (kwargs['compression'] == 'bytes'):
+            #-- read as in-memory (diskless) netCDF4 dataset
+            fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=filename.read())
+        else:
+            #-- read netCDF4 dataset
+            fileID = netCDF4.Dataset(os.path.expanduser(filename), 'r')
+        #-- Output NetCDF file information
+        logging.info(fileID.filepath())
+        logging.info(list(fileID.variables.keys()))
+        #-- read flattened spherical harmonics
+        temp = harmonics()
+        #-- Getting the data from each NetCDF variable
+        fields = ['l','m','clm','slm']
+        temp.l = fileID.variables['l'][:].copy()
+        temp.m = fileID.variables['m'][:].copy()
+        temp.clm = fileID.variables['clm'][:].copy()
+        temp.slm = fileID.variables['slm'][:].copy()
+        #-- read date variables if specified
         if kwargs['date']:
-            self.time = Ylms['time'].copy()
-            #-- adjust months to fix special cases if necessary
-            self.month = adjust_months(Ylms['month'])
+            fields.extend(['time','month'])
+            temp.time = fileID.variables['time'][:].copy()
+            temp.month = fileID.variables['month'][:].copy()
+        #-- expand the spherical harmonics to dimensions
+        self = temp.expand(date=kwargs['date'])
+        #-- adjust months to fix special cases if necessary
+        self.month = adjust_months(self.month)
+        #-- get attributes for the included variables
+        for key in fields:
+            try:
+                self.attributes[key] = [
+                    fileID.variables[key].units,
+                    fileID.variables[key].long_name
+                    ]
+            except (KeyError,ValueError,AttributeError):
+                pass
+        #-- Global attributes
+        for att_name in ['title','description','reference']:
+            try:
+                s, = [s for s in fileID.ncattrs() if re.match(att_name,s,re.I)]
+                self.attributes[att_name] = fileID.getncattr(s)
+            except (ValueError, KeyError, AttributeError):
+                pass
+        #-- Closing the NetCDF file
+        fileID.close()
         #-- assign shape and ndim attributes
         self.update_dimensions()
         return self
@@ -238,10 +334,21 @@ class harmonics(object):
     def from_HDF5(self, filename, **kwargs):
         """
         Read a harmonics object from a HDF5 file
-        Inputs: full path of input HDF5 file
-        Options:
-            HDF5 file contains date information
-            keyword arguments for HDF5 reader
+
+        Parameters
+        ----------
+        filename: str
+            full path of input HDF5 file
+        date: bool, default True
+            HDF5 file has date information
+        compression: str or NoneType, default None
+            file compression type
+
+                - ``'gzip'``
+                - ``'zip'``
+                - ``'bytes'``
+        verbose: bool, default False
+            print file and variable information
         """
         #-- set filename
         self.case_insensitive_filename(filename)
@@ -249,21 +356,79 @@ class harmonics(object):
         kwargs.setdefault('date',True)
         kwargs.setdefault('verbose',False)
         kwargs.setdefault('compression',None)
-        #-- read data from HDF5 file
-        Ylms = hdf5_read_stokes(self.filename,
-            DATE=kwargs['date'],
-            COMPRESSION=kwargs['compression'])
-        #-- copy variables to harmonics object
-        self.clm = Ylms['clm'].copy()
-        self.slm = Ylms['slm'].copy()
-        self.l = Ylms['l'].copy()
-        self.m = Ylms['m'].copy()
-        self.lmax = np.max(Ylms['l'])
-        self.mmax = np.max(Ylms['m'])
+        #-- Open the HDF5 file for reading
+        if (kwargs['compression'] == 'gzip'):
+            #-- read gzip compressed file and extract into in-memory file object
+            with gzip.open(os.path.expanduser(filename),'r') as f:
+                fid = io.BytesIO(f.read())
+            #-- set filename of BytesIO object
+            fid.filename = os.path.basename(filename)
+            #-- rewind to start of file
+            fid.seek(0)
+            #-- read as in-memory (diskless) HDF5 dataset from BytesIO object
+            fileID = h5py.File(fid, 'r')
+        elif (kwargs['compression'] == 'zip'):
+            #-- read zipped file and extract file into in-memory file object
+            fileBasename,_ = os.path.splitext(os.path.basename(filename))
+            with zipfile.ZipFile(os.path.expanduser(filename)) as z:
+                #-- first try finding a HDF5 file with same base filename
+                #-- if none found simply try searching for a HDF5 file
+                try:
+                    f,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
+                except:
+                    f,=[f for f in z.namelist() if re.search(r'\.H(DF)?5$',f,re.I)]
+                #-- read bytes from zipfile into in-memory BytesIO object
+                fid = io.BytesIO(z.read(f))
+            #-- set filename of BytesIO object
+            fid.filename = os.path.basename(filename)
+            #-- rewind to start of file
+            fid.seek(0)
+            #-- read as in-memory (diskless) HDF5 dataset from BytesIO object
+            fileID = h5py.File(fid, 'r')
+        elif (kwargs['compression'] == 'bytes'):
+            #-- read as in-memory (diskless) HDF5 dataset
+            fileID = h5py.File(filename, 'r')
+        else:
+            #-- read HDF5 dataset
+            fileID = h5py.File(os.path.expanduser(filename), 'r')
+        #-- Output HDF5 file information
+        logging.info(fileID.filename)
+        logging.info(list(fileID.keys()))
+        #-- read flattened spherical harmonics
+        temp = harmonics()
+        #-- Getting the data from each HDF5 variable
+        fields = ['l','m','clm','slm']
+        temp.l = fileID['l'][:].copy()
+        temp.m = fileID['m'][:].copy()
+        temp.clm = fileID['clm'][:].copy()
+        temp.slm = fileID['slm'][:].copy()
+        #-- read date variables if specified
         if kwargs['date']:
-            self.time = Ylms['time'].copy()
-            #-- adjust months to fix special cases if necessary
-            self.month = adjust_months(Ylms['month'])
+            fields.extend(['time','month'])
+            temp.time = fileID['time'][:].copy()
+            temp.month = fileID['month'][:].copy()
+        #-- expand the spherical harmonics to dimensions
+        self = temp.expand(date=kwargs['date'])
+        #-- adjust months to fix special cases if necessary
+        self.month = adjust_months(self.month)
+        #-- Getting attributes of clm/slm and included variables
+        #-- get attributes for the included variables
+        for key in fields:
+            try:
+                self.attributes[key] = [
+                    fileID[key].attrs['units'],
+                    fileID[key].attrs['long_name']
+                    ]
+            except (KeyError, AttributeError):
+                pass
+        #-- Global attributes
+        for att_name in ['title','description','reference']:
+            try:
+                self.attributes[att_name] = fileID.attrs[att_name]
+            except (ValueError, KeyError, AttributeError):
+                pass
+        #-- Closing the HDF5 file
+        fileID.close()
         #-- assign shape and ndim attributes
         self.update_dimensions()
         return self
@@ -271,9 +436,21 @@ class harmonics(object):
     def from_gfc(self, filename, **kwargs):
         """
         Read a harmonics object from a gfc gravity model file
-        Inputs: full path of input gfc file
-        Options:
-            keyword arguments for gfc input
+
+        Parameters
+        ----------
+        filename: str
+            full path of input gfc file
+        date: bool, default True
+            gfc file has date information
+        tide: str or NoneType, default None
+            permanent tide system of output gravity fields
+
+                - ``'tide_free'``: no permanent direct and indirect tidal potentials
+                - ``'mean_tide'``: permanent tidal potentials (direct and indirect)
+                - ``'zero_tide'``: permanent direct tidal potential removed
+        verbose: bool, default False
+            print file and variable information
         """
         #-- set filename
         self.case_insensitive_filename(filename)
@@ -314,9 +491,17 @@ class harmonics(object):
     def from_SHM(self, filename, **kwargs):
         """
         Read a harmonics object from a spherical harmonic model file
-        Inputs: full path of input SHM file
-        Options:
-            keyword arguments for SHM input
+
+        Parameters
+        ----------
+        filename: str
+            full path of input gfc file
+        MMAX: int or NoneType, default None
+            Maximum order of spherical harmonics
+        POLE_TIDE: bool, default False
+            correct GSM data for pole tide drift
+        verbose: bool, default False
+            print file and variable information
         """
         #-- set filename
         self.case_insensitive_filename(filename)
@@ -341,10 +526,20 @@ class harmonics(object):
     def from_index(self, filename, **kwargs):
         """
         Read a harmonics object from an index of ascii, netCDF4 or HDF5 files
-        Inputs: full path of index file to be read into a harmonics object
-        Options:
-            format of files in index (ascii, netCDF4 or HDF5)
-            ascii, netCDF4, or HDF5 contains date information
+
+        Parameters
+        ----------
+        filename: str
+            full path of index file
+        format: str or NoneType, default None
+            format of individual files within index
+
+                - ``'ascii'``
+                - ``'netCDF4'``
+                - ``'HDF5'``
+        date: bool, default True
+            files contains date information
+        sort: bool, default True
             sort harmonics objects by date information
         """
         #-- set default keyword arguments
@@ -382,10 +577,16 @@ class harmonics(object):
     def from_list(self, object_list, **kwargs):
         """
         Build a sorted harmonics object from a list of other harmonics objects
-        Inputs: list of harmonics object to be merged
-        Options:
-            harmonics objects contain date information
+
+        Parameters
+        ----------
+        object_list: list
+            list of harmonics objects to be merged
+        date: bool, default True
+            files contains date information
+        sort: bool, default True
             sort harmonics objects by date information
+        clear: bool, default True
             clear the harmonics list from memory
         """
         #-- set default keyword arguments
@@ -438,11 +639,25 @@ class harmonics(object):
     def from_file(self, filename, format=None, date=True, **kwargs):
         """
         Read a harmonics object from a specified format
-        Inputs: full path of input file
-        Options:
-        file format (ascii, netCDF4, HDF5, gfc)
-        file contains date information
-        **kwargs: keyword arguments for input readers
+
+        Parameters
+        ----------
+        filename: str
+            full path of input file
+        format: str or NoneType, default None
+            file format
+
+                - ``'ascii'``
+                - ``'netCDF4'``
+                - ``'HDF5'``
+                - ``'gfc'``
+                - ``'SHM'``
+        date: bool, default True
+            file contains date information
+        verbose: bool, default False
+            print file and variable information
+        **kwargs: dict
+            keyword arguments for input readers
         """
         #-- set filename
         self.case_insensitive_filename(filename)
@@ -468,7 +683,11 @@ class harmonics(object):
     def from_dict(self, d, **kwargs):
         """
         Convert a dict object to a harmonics object
-        Inputs: dictionary object to be converted
+
+        Parameters
+        ----------
+        d: dict
+            dictionary object to be converted
         """
         #-- assign dictionary variables to self
         for key in ['l','m','clm','slm','time','month']:
@@ -486,10 +705,15 @@ class harmonics(object):
     def to_ascii(self, filename, date=True, **kwargs):
         """
         Write a harmonics object to ascii file
-        Inputs: full path of output ascii file
-        Options:
+
+        Parameters
+        ----------
+        filename: str
+            full path of output ascii file
+        date: bool, default True
             harmonics objects contain date information
-            keyword arguments for ascii output
+        verbose: bool, default False
+            Output file and variable information
         """
         self.filename = os.path.expanduser(filename)
         #-- set default verbosity
@@ -509,59 +733,234 @@ class harmonics(object):
         #-- close the output file
         fid.close()
 
-    def to_netCDF4(self, filename, date=True, **kwargs):
+    def to_netCDF4(self, filename, **kwargs):
         """
         Write a harmonics object to netCDF4 file
-        Inputs: full path of output netCDF4 file
-        Options:
+
+        Parameters
+        ----------
+        filename: str
+            full path of output netCDF4 file
+        units: str, default: 'Geodesy_Normalization'
+            spherical harmonic units
+        time_units: str, default 'years'
+            time variable units
+        time_longname: str, default 'Date_in_Decimal_Years'
+            time variable description
+        months_name: str, default 'month'
+            name of months variable
+        months_units: str, default 'number'
+            months variable units
+        months_longname: str, default 'GRACE_month'
+            months variable description
+        title: str or NoneType, default None
+            title attribute of dataset
+        reference: str or NoneType, default None
+            reference attribute of dataset
+        date: bool, default True
             harmonics objects contain date information
-            keyword arguments for netCDF4 writer
+        clobber: bool, default True
+            Overwrite an existing netCDF4 file
+        verbose: bool, default False
+            Output file and variable information
         """
-        self.filename = os.path.expanduser(filename)
-        #-- set default verbosity and parameters
-        kwargs.setdefault('verbose',False)
+        #-- set default keyword arguments
         kwargs.setdefault('units','Geodesy_Normalization')
         kwargs.setdefault('time_units','years')
         kwargs.setdefault('time_longname','Date_in_Decimal_Years')
-        #-- copy keyword arguments to uppercase
-        KWARGS = {}
-        for key,val in kwargs.items():
-            KWARGS[key.upper()] = val
-        #-- write to netCDF4
-        ncdf_stokes(self.clm, self.slm, self.l, self.m, self.time,
-            self.month, FILENAME=self.filename, DATE=date, **KWARGS)
+        kwargs.setdefault('months_name','month')
+        kwargs.setdefault('months_units','number')
+        kwargs.setdefault('months_longname','GRACE_month')
+        kwargs.setdefault('title',None)
+        kwargs.setdefault('reference',None)
+        kwargs.setdefault('date',True)
+        kwargs.setdefault('clobber',True)
+        kwargs.setdefault('verbose',False)
+        #-- setting NetCDF clobber attribute
+        clobber = 'w' if kwargs['clobber'] else 'a'
+        #-- opening netCDF file for writing
+        self.filename = os.path.expanduser(filename)
+        fileID = netCDF4.Dataset(self.filename, clobber, format="NETCDF4")
+        #-- flatten harmonics
+        temp = self.flatten(date=kwargs['date'])
+        n_harm,n_time = np.shape(np.atleast_2d(temp.clm))
+        #-- Defining the netCDF dimensions
+        fileID.createDimension('lm', n_harm)
+        fields = ['l','m','clm','slm']
+        #-- defining netCDF temporal dimension
+        if kwargs['date']:
+            fields.extend('time','month')
+            fileID.createDimension('time', n_time)
+        #-- defining the netCDF variables
+        nc = {}
+        #-- degree and order
+        nc['l'] = fileID.createVariable('l', 'i', ('lm',))
+        nc['m'] = fileID.createVariable('m', 'i', ('lm',))
+        #-- spherical harmonics
+        if (kwargs['date'] and (n_time > 1)):
+            nc['clm'] = fileID.createVariable('clm', 'd', ('lm','time',))
+            nc['slm'] = fileID.createVariable('slm', 'd', ('lm','time',))
+        else:
+            nc['clm'] = fileID.createVariable('clm', 'd', ('lm',))
+            nc['slm'] = fileID.createVariable('slm', 'd', ('lm',))
+        if kwargs['date']:
+            #-- time (in decimal form)
+            nc['time'] = fileID.createVariable('time', 'd', ('time',))
+            #-- GRACE/GRACE-FO month (or integer date)
+            nc['month'] = fileID.createVariable(kwargs['months_name'],
+                'i', ('time',))
+        #-- filling netCDF variables
+        for key in fields:
+            nc[key][:] = getattr(temp,key)
+        #-- Defining attributes for degree and order
+        #-- SH degree long name
+        nc['l'].long_name = 'spherical_harmonic_degree'
+        #-- SH degree units
+        nc['l'].units = 'Wavenumber'
+        #-- SH order long name
+        nc['m'].long_name = 'spherical_harmonic_order'
+        #-- SH order units
+        nc['m'].units = 'Wavenumber'
+        #-- Defining attributes for harmonics
+        nc['clm'].long_name = 'cosine_spherical_harmonics'
+        nc['clm'].units = kwargs['units']
+        nc['slm'].long_name = 'sine_spherical_harmonics'
+        nc['slm'].units = kwargs['units']
+        if kwargs['date']:
+            #-- Defining attributes for date and month
+            nc['time'].long_name = kwargs['time_longname']
+            nc['time'].units = kwargs['time_units']
+            nc['month'].long_name = kwargs['months_longname']
+            nc['month'].units = kwargs['months_units']
+        #-- global variables of NetCDF file
+        if kwargs['title']:
+            fileID.title = kwargs['title']
+        if kwargs['reference']:
+            fileID.reference = kwargs['reference']
+        #-- date created
+        fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
+        #-- Output netCDF structure information
+        logging.info(self.filename)
+        logging.info(list(fileID.variables.keys()))
+        #-- Closing the netCDF file
+        fileID.close()
 
-    def to_HDF5(self, filename, date=True, **kwargs):
+    def to_HDF5(self, filename, **kwargs):
         """
         Write a harmonics object to HDF5 file
-        Inputs: full path of output HDF5 file
-        Options:
+
+        Parameters
+        ----------
+        filename: str
+            full path of output HDF5 file
+        units: str, default: 'Geodesy_Normalization'
+            spherical harmonic units
+        time_units: str, default 'years'
+            time variable units
+        time_longname: str, default 'Date_in_Decimal_Years'
+            time variable description
+        months_name: str, default 'month'
+            name of months variable
+        months_units: str, default 'number'
+            months variable units
+        months_longname: str, default 'GRACE_month'
+            months variable description
+        title: str or NoneType, default None
+            description attribute of dataset
+        reference: str or NoneType, default None
+            reference attribute of dataset
+        date: bool, default True
             harmonics objects contain date information
-            keyword arguments for HDF5 writer
+        clobber: bool, default True
+            Overwrite an existing HDF5 file
+        verbose: bool, default False
+            Output file and variable information
         """
-        self.filename = os.path.expanduser(filename)
-        #-- set default verbosity and parameters
-        kwargs.setdefault('verbose',False)
+        #-- set default keyword arguments
         kwargs.setdefault('units','Geodesy_Normalization')
         kwargs.setdefault('time_units','years')
         kwargs.setdefault('time_longname','Date_in_Decimal_Years')
-        #-- copy keyword arguments to uppercase
-        KWARGS = {}
-        for key,val in kwargs.items():
-            KWARGS[key.upper()] = val
-        #-- write to HDF5
-        hdf5_stokes(self.clm, self.slm, self.l, self.m, self.time,
-            self.month, FILENAME=self.filename, DATE=date, **KWARGS)
+        kwargs.setdefault('months_name','month')
+        kwargs.setdefault('months_units','number')
+        kwargs.setdefault('months_longname','GRACE_month')
+        kwargs.setdefault('title',None)
+        kwargs.setdefault('reference',None)
+        kwargs.setdefault('date',True)
+        kwargs.setdefault('clobber',True)
+        kwargs.setdefault('verbose',False)
+        #-- setting HDF5 clobber attribute
+        clobber = 'w' if kwargs['clobber'] else 'w-'
+        #-- opening HDF5 file for writing
+        self.filename = os.path.expanduser(filename)
+        fileID = h5py.File(self.filename, clobber)
+        #-- flatten harmonics
+        temp = self.flatten(date=kwargs['date'])
+        fields = ['l','m','clm','slm']
+        #-- defining netCDF temporal dimension
+        if kwargs['date']:
+            fields.extend('time','month')
+        #-- Defining the HDF5 dataset variables
+        h5 = {}
+        for key in fields:
+            val = getattr(temp, key)
+            h5[key] = fileID.create_dataset(key, val.shape,
+                data=val, dtype=val.dtype, compression='gzip')
+        #-- filling HDF5 dataset attributes
+        #-- Defining attributes for degree and order
+        #-- degree long name
+        h5['l'].attrs['long_name'] = 'spherical_harmonic_degree'
+        #-- SH degree units
+        h5['l'].attrs['units'] = 'Wavenumber'
+        #-- order long name
+        h5['m'].attrs['long_name'] = 'spherical_harmonic_order'
+        #-- SH order units
+        h5['m'].attrs['units'] = 'Wavenumber'
+        #-- Defining attributes for dataset
+        h5['clm'].attrs['long_name'] = 'cosine_spherical_harmonics'
+        h5['clm'].attrs['units'] = kwargs['units']
+        h5['slm'].attrs['long_name'] = 'sine_spherical_harmonics'
+        h5['slm'].attrs['units'] = kwargs['units']
+        if kwargs['date']:
+            #-- Defining attributes for date and month (or integer date)
+            h5['time'].attrs['long_name'] = kwargs['time_longname']
+            h5['time'].attrs['units'] = kwargs['time_units']
+            h5['month'].attrs['long_name'] = kwargs['months_longname']
+            h5['month'].attrs['units'] = kwargs['months_units']
+        #-- description of file
+        if kwargs['title']:
+            fileID.attrs['description'] = kwargs['title']
+        #-- reference of file
+        if kwargs['reference']:
+            fileID.attrs['reference'] = kwargs['reference']
+        #-- date created
+        fileID.attrs['date_created'] = time.strftime('%Y-%m-%d',time.localtime())
+        #-- Output HDF5 structure information
+        logging.info(kwargs['FILENAME'])
+        logging.info(list(fileID.keys()))
+        #-- Closing the HDF5 file
+        fileID.close()
 
     def to_index(self, filename, file_list, format=None, date=True, **kwargs):
         """
         Write a harmonics object to index of ascii, netCDF4 or HDF5 files
-        Inputs:
+
+        Parameters
+        ----------
+        filename: str
             full path of index file to be written
+        file_list: list
             list of filenames for each output file
-        Options:
-            format of files in index (ascii, netCDF4 or HDF5)
+        format: str or NoneType, default None
+            format of files in index
+
+                - ``'ascii'``
+                - ``'netCDF4'``
+                - ``'HDF5'``
+        date: bool, default True
             harmonics object contains date information
+        verbose: bool, default False
+            print file and variable information
+        kwargs: dict
             keyword arguments for output writers
         """
         #-- Write index file of output spherical harmonics
@@ -591,10 +990,22 @@ class harmonics(object):
     def to_file(self, filename, format=None, date=True, **kwargs):
         """
         Write a harmonics object to a specified format
-        Inputs: full path of output file
-        Options:
-            file format (ascii, netCDF4 or HDF5)
+
+        Parameters
+        ----------
+        filename: str
+            full path of output file
+        format: str or NoneType, default None
+            file format
+
+                - ``'ascii'``
+                - ``'netCDF4'``
+                - ``'HDF5'``
+        date: bool, default True
             harmonics object contains date information
+        verbose: bool, default False
+            print file and variable information
+        kwargs: dict
             keyword arguments for output writers
         """
         #-- set default verbosity
@@ -651,7 +1062,11 @@ class harmonics(object):
     def add(self, temp):
         """
         Add two harmonics objects
-        Inputs: harmonic object to be added
+
+        Parameters
+        ----------
+        temp: obj
+            harmonic object to be added
         """
         #-- reassign shape and ndim attributes
         self.update_dimensions()
@@ -673,7 +1088,11 @@ class harmonics(object):
     def subtract(self, temp):
         """
         Subtract one harmonics object from another
-        Inputs: harmonic object to be subtracted
+
+        Parameters
+        ----------
+        temp: obj
+            harmonic object to be subtracted
         """
         #-- reassign shape and ndim attributes
         self.update_dimensions()
@@ -695,7 +1114,11 @@ class harmonics(object):
     def multiply(self, temp):
         """
         Multiply two harmonics objects
-        Inputs: harmonic object to be multiplied
+
+        Parameters
+        ----------
+        temp: obj
+            harmonic object to be multiplied
         """
         #-- reassign shape and ndim attributes
         self.update_dimensions()
@@ -717,7 +1140,11 @@ class harmonics(object):
     def divide(self, temp):
         """
         Divide one harmonics object from another
-        Inputs: harmonic object to be divided
+
+        Parameters
+        ----------
+        temp: obj
+            harmonic object to be divided
         """
         #-- reassign shape and ndim attributes
         self.update_dimensions()
@@ -804,7 +1231,11 @@ class harmonics(object):
     def flatten(self, date=True):
         """
         Flatten harmonics matrices into arrays
-        Options: harmonics objects contain date information
+
+        Parameters
+        ----------
+        date: bool, default True
+            harmonics objects contain date information
         """
         n_harm = (self.lmax**2 + 3*self.lmax - (self.lmax-self.mmax)**2 -
             (self.lmax-self.mmax))//2 + 1
@@ -846,7 +1277,11 @@ class harmonics(object):
     def expand(self, date=True):
         """
         Expand flattened harmonics into matrices
-        Options: harmonics objects contain date information
+
+        Parameters
+        ----------
+        date: bool, default True
+            harmonics objects contain date information
         """
         n_harm = (self.lmax**2 + 3*self.lmax - (self.lmax-self.mmax)**2 -
             (self.lmax-self.mmax))//2 + 1
@@ -882,8 +1317,13 @@ class harmonics(object):
     def index(self, indice, date=True):
         """
         Subset a harmonics object to specific index
-        Inputs: indice in matrix to subset
-        Options: harmonics objects contain date information
+
+        Parameters
+        ----------
+        indice: int
+            index in matrix for subsetting
+        date: bool, default True
+            harmonics objects contain date information
         """
         #-- output harmonics object
         temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
@@ -908,7 +1348,11 @@ class harmonics(object):
     def subset(self, months):
         """
         Subset a harmonics object to specific GRACE/GRACE-FO months
-        Inputs: GRACE/GRACE-FO months
+
+        Parameters
+        ----------
+        months: int
+            GRACE/GRACE-FO to subset
         """
         #-- check if months is an array or a single value
         months = np.atleast_1d(months)
@@ -949,9 +1393,15 @@ class harmonics(object):
     def truncate(self, lmax, lmin=0, mmax=None):
         """
         Truncate or expand a harmonics object to a new degree and order
-        Inputs: lmax maximum degree of spherical harmonics
-        Options: lmin minimum degree of spherical harmonics
-            mmax maximum order of spherical harmonics
+
+        Parameters
+        ----------
+        lmax: int
+            maximum degree of spherical harmonics
+        lmin: int, default 0
+            minimum degree of spherical harmonics
+        mmax: int or NoneType, default None
+            maximum order of spherical harmonics
         """
         #-- output harmonics dimensions
         lmax = np.copy(self.lmax) if (lmax is None) else lmax
@@ -985,8 +1435,12 @@ class harmonics(object):
     def mean(self, apply=False, indices=Ellipsis):
         """
         Compute mean gravitational field and remove from data if specified
-        Options:
-            apply to remove the mean field from the input harmonics
+
+        Parameters
+        ----------
+        apply: bool, default False
+            remove the mean field from the input harmonics
+        indices: int, default Ellipsis
             indices of input harmonics object to compute mean
         """
         temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
@@ -1019,7 +1473,11 @@ class harmonics(object):
     def scale(self, var):
         """
         Multiply a harmonics object by a constant
-        Inputs: scalar value to which the harmonics object will be multiplied
+
+        Parameters
+        ----------
+        var: float
+            scalar value to which the harmonics object will be multiplied
         """
         #-- reassign shape and ndim attributes
         self.update_dimensions()
@@ -1047,7 +1505,11 @@ class harmonics(object):
     def power(self, power):
         """
         Raise a harmonics object to a power
-        Inputs: power to which the harmonics object will be raised
+
+        Parameters
+        ----------
+        var: float
+            power to which the harmonics object will be raised
         """
         #-- reassign shape and ndim attributes
         self.update_dimensions()
@@ -1064,7 +1526,11 @@ class harmonics(object):
     def convolve(self, var):
         """
         Convolve spherical harmonics with a degree-dependent array
-        Inputs: degree dependent array for convolution
+
+        Parameters
+        ----------
+        var: float
+            degree dependent array for convolution
         """
         #-- reassign shape and ndim attributes
         self.update_dimensions()
@@ -1083,8 +1549,20 @@ class harmonics(object):
 
     def destripe(self, **kwargs):
         """
-        Filters spherical harmonic coefficients for correlated "striping" errors
-        Options: keyword arguments for destripe_harmonics
+        Filters spherical harmonic coefficients for correlated "striping"
+        errors following [Swenson2006]_
+
+        Parameters
+        ----------
+        kwargs: dict
+            keyword arguments for destripe_harmonics
+
+        References
+        ----------
+        .. [Swenson2006] S. Swenson and J. Wahr,
+            "Post‐processing removal of correlated errors in GRACE data",
+            *Geophysical Research Letters*, 33(L08402), (2006).
+            `doi: 10.1029/2005GL025285 <https://doi.org/10.1029/2005GL025285>`_
         """
         #-- reassign shape and ndim attributes
         self.update_dimensions()
@@ -1114,7 +1592,11 @@ class harmonics(object):
     def amplitude(self, mmax=None):
         """
         Calculates the degree amplitude of a harmonics object
-        Options: mmax maximum order of spherical harmonics
+
+        Parameters
+        ----------
+        mmax: int or NoneType, default None
+            maximum order of spherical harmonics
         """
         #-- temporary matrix for squared harmonics
         temp = self.power(2)

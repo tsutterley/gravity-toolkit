@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 tools.py
-Written by Tyler Sutterley (12/2021)
+Written by Tyler Sutterley (04/2022)
 Jupyter notebook, user interface and plotting tools
 
 PYTHON DEPENDENCIES:
@@ -21,6 +21,7 @@ PROGRAM DEPENDENCIES:
     grace_date.py: reads GRACE index file and calculates dates for each month
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 12/2021: added custom colormap function for some common scales
     Written 09/2021
 """
@@ -38,8 +39,7 @@ from gravity_toolkit.grace_find_months import grace_find_months
 
 class widgets:
     def __init__(self, **kwargs):
-        """
-        Widgets for setting directory and updating local data repository
+        """Widgets and functions for running GRACE/GRACE-FO analyses
         """
         # set default keyword arguments
         kwargs.setdefault('directory', os.getcwd())
@@ -47,6 +47,24 @@ class widgets:
         kwargs.setdefault('style', {})
         # set style
         self.style = copy.copy(kwargs['style'])
+        # run directory
+        self.select_directory(**kwargs)
+
+    def select_directory(self, **kwargs):
+        """
+        Widgets for setting directory and updating local data repository
+
+        Attributes
+        ----------
+        directory: obj
+            Text widget for setting working data directory
+        directory_button: obj
+            Button widget for setting working data directory with
+            `Tkinter file dialog <https://docs.python.org/3/library/dialog.html>`_
+        update: obj
+            Checkbox widget for updating GRACE/GRACE-FO data in directory
+        """
+
         # set the directory with GRACE/GRACE-FO data
         self.directory = ipywidgets.Text(
             value=kwargs['directory'],
@@ -61,7 +79,7 @@ class widgets:
             width="30%",
         )
         # connect directory select button with action
-        self.directory_button.on_click(self.select_directory)
+        self.directory_button.on_click(self.set_directory)
         # update local data with PO.DAAC https servers
         self.update = ipywidgets.Checkbox(
             value=True,
@@ -72,7 +90,7 @@ class widgets:
         # default parameters
         self.defaults = copy.copy(kwargs['defaults'])
 
-    def select_directory(self, b):
+    def set_directory(self, b):
         """function for directory selection
         """
         IPython.display.clear_output()
@@ -85,6 +103,15 @@ class widgets:
     def select_product(self):
         """
         Widgets for setting specific data product and months
+
+        center: obj
+            Dropdown menu widget for setting processing center
+        release: obj
+            Dropdown menu widget for setting GRACE/GRACE-FO data release
+        product: obj
+            Dropdown menu widget for setting GRACE/GRACE-FO data product
+        months: obj
+            Selection widget for setting GRACE/GRACE-FO months
         """
         # dropdown menu for setting processing center
         # CSR: University of Texas Center for Space Research
@@ -190,6 +217,27 @@ class widgets:
     def select_options(self, **kwargs):
         """
         Widgets for setting data truncation and harmonic replacements
+
+        lmax: obj
+            Text entry widget for setting spherical harmonic degree
+        mmax: obj
+            Text entry widget for setting spherical harmonic order
+        geocenter: obj
+            Dropdown menu widget for setting geocenter data product
+        C20: obj
+            Dropdown menu widget for setting *C*\ :sub:`20` data product
+        CS21: obj
+            Dropdown menu widget for setting *C*\ :sub:`21` and *S*\ :sub:`21` data product
+        CS22: obj
+            Dropdown menu widget for setting *C*\ :sub:`22` and *S*\ :sub:`22` data product
+        C30: obj
+            Dropdown menu widget for setting *C*\ :sub:`30` data product
+        C50: obj
+            Dropdown menu widget for setting *C*\ :sub:`50` data product
+        pole_tide: obj
+            Checkbox widget for correcting for Pole Tide Drift [Wahr2015]_
+        atm: obj
+            Checkbox widget for correcting ECMWF Atmospheric Jumps [Fagiolini2015]_
         """
         # set default keyword arguments
 
@@ -349,6 +397,40 @@ class widgets:
     def select_corrections(self, **kwargs):
         """
         Widgets for setting data corrections and processing
+
+        Attributes
+        ----------
+        GIA_file: obj
+            Text entry widget for setting GIA correction file
+        GIA_button: obj
+            Button widget for setting GIA correction file with
+            `Tkinter file dialog <https://docs.python.org/3/library/dialog.html>`_
+        GIA: obj
+            Dropdown menu for setting GIA model file type
+        remove_file: obj
+            Text entry widget for setting spherical harmonic files to be removed
+        remove_button: obj
+            Button widget for setting remove files with
+            `Tkinter file dialog <https://docs.python.org/3/library/dialog.html>`_
+        remove_format: obj
+            Dropdown menu for setting remove file type
+        redistribute_removed: obj
+            Checkbox widget for redestributing removed file mass over the ocean
+        mask: obj
+            Text entry widget for setting land-sea mask file for ocean redistribution
+        mask_button: obj
+            Button widget for setting land-sea mask files with
+            `Tkinter file dialog <https://docs.python.org/3/library/dialog.html>`_
+        gaussian: obj
+            Text entry widget for setting Gaussian Smoothing Radius in kilometers
+        destripe: obj
+            Checkbox widget for destriping spherical harmonics [Swenson2006]_
+        spacing: obj
+            Text entry widget for setting output spatial degree spacing
+        interval: obj
+            Dropdown menu widget for setting output degree interval
+        units: obj
+            Dropdown menu widget for setting output units
         """
         # set default keyword arguments
         kwargs.setdefault('units', ['cmwe','mmGH','mmCU',u'\u03BCGal','mbar'])
@@ -564,6 +646,11 @@ class widgets:
     def select_output(self, **kwargs):
         """
         Widget for setting output data file format
+
+        Attributes
+        ----------
+        output_format: obj
+            Dropdown menu widget for setting output file format
         """
         # set default keyword arguments
         # dropdown menu for setting output data format
@@ -577,21 +664,44 @@ class widgets:
 
     @property
     def base_directory(self):
+        """Returns the data directory
+        """
         return os.path.expanduser(self.directory.value)
 
     @property
     def landmask(self):
+        """Returns the land-sea mask file
+        """
         return os.path.expanduser(self.mask.value)
 
     @property
     def unit_index(self):
+        """Returns the index for output spatial units
+        """
         return self.units.index + 1
 
     @property
     def format(self):
+        """Returns the output format string
+        """
         return self.output_format.value
 
 class colormap:
+    """
+    Widgets for setting matplotlib colormaps for visualization
+
+    Attributes
+    ----------
+    range: obj
+        Slider widget for setting output colormap normalization
+    step: obj
+        Slider widget for setting output colormap discretization
+    name
+        Dropdown widget for setting output
+        `colormap <https://matplotlib.org/stable/tutorials/colors/colormaps.html>`_
+    reverse
+        Checkbox widget for reversing the output colormap
+    """
     def __init__(self, **kwargs):
         # set default keyword arguments
         kwargs.setdefault('vmin', None)
@@ -678,39 +788,52 @@ class colormap:
 
     @property
     def _r(self):
+        """return string for reversed Matplotlib colormaps
+        """
         cmap_reverse_flag = '_r' if self.reverse.value else ''
         return cmap_reverse_flag
 
     @property
     def value(self):
+        """return string for Matplotlib colormaps
+        """
         return copy.copy(cm.get_cmap(self.name.value + self._r))
 
     @property
     def norm(self):
+        """return normalization for Matplotlib
+        """
         cmin,cmax = self.range.value
         return colors.Normalize(vmin=cmin,vmax=cmax)
 
     @property
     def levels(self):
+        """return tick steps for Matplotlib colorbars
+        """
         cmin,cmax = self.range.value
         return [l for l in range(cmin,cmax+self.step.value,self.step.value)]
 
     @property
     def label(self):
+        """return tick labels for Matplotlib colorbars
+        """
         return ['{0:0.0f}'.format(ct) for ct in self.levels]
 
 def from_cpt(filename, use_extremes=True, **kwargs):
     """
-    Reads a GMT color palette table
+    Reads GMT color palette table files and registers the
+    colormap to be recognizable by ``plt.cm.get_cmap()``
+
     Can import HSV (hue-saturation-value) or RGB values
 
-    Arguments
-    ---------
-    filename: color palette table file
-
-    Keyword Arguments
-    -----------------
-    use_extremes: use the under, over and bad values from the cpt file
+    Parameters
+    ----------
+    filename: str
+        color palette table file
+    use_extremes: bool, default True
+        use the under, over and bad values from the cpt file
+    **kwargs: dict
+        optional arguments for LinearSegmentedColormap
     """
 
     # read the cpt file and get contents
@@ -808,18 +931,21 @@ def from_cpt(filename, use_extremes=True, **kwargs):
 
 def custom_colormap(N, map_name, **kwargs):
     """
-    Calculates custom colormaps
+    Calculates a custom colormap and registers it
+    to be recognizable by ``plt.cm.get_cmap()``
 
-    Arguments
-    ---------
-    N: number of slices in initial HSV color map
-    map_name: name of color map
-        Joughin: Joughin et al. (2018) standard velocity colormap
-            https://doi.org/10.5194/tc-12-2211-2018
-        Rignot: Rignot et al. (2011) standard velocity colormap
-            https://doi.org/10.1126/science.1208336
-        Seroussi: Seroussi et al. (2011) velocity divergence colormap
-            https://doi.org/10.1029/2011GL047338
+    Parameters
+    ----------
+    N: int
+        number of slices in initial HSV color map
+    map_name: str
+        name of color map
+
+            - ``'Joughin'``: [Joughin2018]_ standard velocity colormap
+            - ``'Rignot'``: [Rignot2011]_ standard velocity colormap
+            - ``'Seroussi'``: [Seroussi2011]_ velocity divergence colormap
+    **kwargs: dict
+        optional arguments for LinearSegmentedColormap
     """
 
     # make sure map_name is properly formatted

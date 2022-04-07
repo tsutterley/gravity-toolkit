@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GRACE_harmonics.py
-Written by Tyler Sutterley (09/2021)
+Written by Tyler Sutterley (04/2022)
 Contributions by Hugo Lecomte
 
 Reads GRACE files and extracts spherical harmonic data and drift rates (RL04)
@@ -42,6 +42,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: added COST-G combined solutions from the GFZ ICGEM
         output spherical harmonic degree and order in dict
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -69,31 +70,48 @@ import gravity_toolkit.time
 def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
     """
     Extracts spherical harmonic coefficients from GRACE/GRACE-FO files
-    Adds drift rates to spherical harmonics for Release 4 data
-    Correct data prior to Release 6 for pole tide drift
-    Parses date of GRACE/GRACE-FO data from filename
 
-    Arguments
-    ---------
-    input_file: GRACE/GRACE-FO Level-2 spherical harmonic data file
-    LMAX: Maximum degree of spherical harmonics (degree of truncation)
-
-    Keyword arguments
-    -----------------
-    MMAX: Maximum order of spherical harmonics
-    POLE_TIDE: correct for pole tide drift following Wahr et al. (2015)
+    Parameters
+    ----------
+    input_file: str
+        GRACE/GRACE-FO Level-2 spherical harmonic data file
+    LMAX: int
+        Maximum degree of spherical harmonics (degree of truncation)
+    MMAX: int or NoneType, default None
+        Maximum order of spherical harmonics
+    POLE_TIDE: bool, default False
+        Correct for pole tide drift following [Wahr2015]_
 
     Returns
     -------
-    time: mid-month date in year-decimal
-    start: start date of range as Julian day
-    end: end date of range as Julian day
-    l: spherical harmonic degree to LMAX
-    m: spherical harmonic order to MMAX
-    clm: cosine spherical harmonics coefficients
-    slm: sine spherical harmonics coefficients
-    eclm: cosine spherical harmonic uncalibrated standard deviations
-    eslm: sine spherical harmonic uncalibrated standard deviations
+    time: float
+        mid-month date in year-decimal
+    start: float
+        start date of range as Julian day
+    end: float
+        end date of range as Julian day
+    l: int
+        spherical harmonic degree to LMAX
+    m: int
+        spherical harmonic order to MMAX
+    clm: float
+        cosine spherical harmonics coefficients
+    slm: float
+        sine spherical harmonics coefficients
+    eclm: float
+        cosine spherical harmonic uncalibrated standard deviations
+    eslm: float
+        sine spherical harmonic uncalibrated standard deviations
+    header: str
+        Header text from the GRACE file
+
+    References
+    ----------
+    .. [Wahr2015] J. Wahr, R. S. Nerem, and S. V. Bettadpur, "The pole tide
+        and its effect on GRACE time‐variable gravity measurements:
+        Implications for estimates of surface mass variations".
+        *Journal of Geophysical Research: Solid Earth*, 120(6), 4597--4615, (2015).
+        `doi: 10.1002/2015JB011986 <https://doi.org/10.1002/2015JB011986>`_
     """
 
     #-- parse filename
@@ -265,8 +283,8 @@ def parse_file(input_file):
     """
     Extract parameters from filename
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     input_file: GRACE/GRACE-FO Level-2 spherical harmonic data file
     """
     #-- compile numerical expression operator for parameters from files
@@ -292,8 +310,8 @@ def extract_file(input_file, compressed):
     """
     Read input file and extract contents
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     input_file: GRACE/GRACE-FO Level-2 spherical harmonic data file
     compressed: denotes if the file is compressed
     """

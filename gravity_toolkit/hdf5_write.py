@@ -67,20 +67,19 @@ import time
 import h5py
 import logging
 import numpy as np
+import warnings
 
 def hdf5_write(data, lon, lat, tim, **kwargs):
     """
     Writes spatial data to HDF5 files
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     data: z data
     lon: longitude array
     lat: latitude array
     tim: time array
 
-    Keyword arguments
-    -----------------
     FILENAME: HDF5 filename
     VARNAME: z variable name in HDF5 file
     LONNAME: longitude variable name in HDF5 file
@@ -110,6 +109,10 @@ def hdf5_write(data, lon, lat, tim, **kwargs):
     kwargs.setdefault('REFERENCE',None)
     kwargs.setdefault('DATE',True)
     kwargs.setdefault('CLOBBER',True)
+    #-- set deprecation warning
+    warnings.filterwarnings("always")
+    warnings.warn("Deprecated. Please use spatial.to_HDF5",
+        DeprecationWarning)
 
     #-- setting HDF5 clobber attribute
     clobber = 'w' if kwargs['CLOBBER'] else 'w-'

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_spherical_cap.py
-Written by Tyler Sutterley (11/2021)
+Written by Tyler Sutterley (04/2022)
 Calculates gravitational spherical harmonic coefficients for a spherical cap
 
 Spherical cap derivation from Longman (1962), Farrell (1972), Pollack (1973)
@@ -67,6 +67,7 @@ REFERENCES:
         https://doi.org/10.1007/s00190-011-0522-7
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: added UNITS list option for converting from custom units
     Updated 07/2020: added function docstrings
     Updated 05/2020: vectorize calculation over degrees to improve compute time
@@ -102,31 +103,64 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     """
     Calculates spherical harmonic coefficients for a spherical cap
 
-    Arguments
-    ---------
-    data: data magnitude
-    lon: longitude of spherical cap center
-    lat: latitude of spherical cap center
+    Parameters
+    ----------
+    data: float
+        data magnitude
+    lon: float
+        longitude of spherical cap center
+    lat: float
+        latitude of spherical cap center
+    LMAX: int, default 60
+        Upper bound of Spherical Harmonic Degrees
+    MMAX: int or NoneType, default None
+        Upper bound of Spherical Harmonic Orders
+    AREA: Float, default 0
+        Area of spherical cap (cm\ :sup:`2`)
+    UNITS: int, default 1
+        Input data units
 
-    Keyword arguments
-    -----------------
-    LMAX: Upper bound of Spherical Harmonic Degrees
-    MMAX: Upper bound of Spherical Harmonic Orders
-    AREA: spherical cap area in cm^2
-    UNITS: input data units
-        1: cm of water thickness (default)
-        2: gigatonnes of mass
-        3: kg/m^2
-        list: custom unit conversion factor
-    PLM: input Legendre polynomials
-    LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
+            - ``1``: cm water equivalent thickness (cm w.e., g/cm\ :sup:`2`)
+            - ``2``: gigatonnes of mass (Gt)
+            - ``3``: mm water equivalent thickness (mm w.e., kg/m\ :sup:`2`)
+            - list: custom unit conversion factor
+    PLM: float, default 0
+        Input Legendre polynomials
+    LOVE: tuple or NoneType, default None
+        Input load Love numbers up to degree LMAX (``hl``, ``kl``, ``ll``)
 
     Returns
     -------
-    clm: cosine spherical harmonic coefficients
-    slm: sine spherical harmonic coefficients
-    l: spherical harmonic degree to LMAX
-    m: spherical harmonic order to MMAX
+    clm: float
+        cosine spherical harmonic coefficients
+    slm: float
+        sine spherical harmonic coefficients
+    l: int
+        spherical harmonic degree to LMAX
+    m: int
+        spherical harmonic order to MMAX
+
+    References
+    ----------
+    .. [Holmes2002] S. A. Holmes and W. E. Featherstone,
+        "A unified approach to the Clenshaw summation and the recursive
+        computation of very high degree and order normalised associated
+        Legendre functions", *Journal of Geodesy*, 76, 279--299, (2002).
+        `doi: 10.1007/s00190-002-0216-2 <https://doi.org/10.1007/s00190-002-0216-2>`_
+    .. [Longman1962] I. M. Longman, "A Green's function for determining
+        the deformation of the Earth under surface mass loads: 1. Theory",
+        *Journal of Geophysical Research*, 67(2), (1962).
+        `doi: 10.1029/JZ067i002p00845 <https://doi.org/10.1029/JZ067i002p00845>`_
+    .. [Farrell1972] W. E. Farrell, "Deformation of the Earth by surface loads",
+        *Reviews of Geophysics and Space Physics*, 10(3), (1972).
+        `doi: 10.1029/RG010i003p00761 <https://doi.org/10.1029/RG010i003p00761>`_
+    .. [Pollack1973] H. N. Pollack, "Spherical harmonic representation of the
+        gravitational potential of a point mass, a spherical cap, and a
+        spherical rectangle", *Journal of Geophysical Research*, 78(11), (1973).
+        `doi: 10.1029/JB078i011p01760 <https://doi.org/10.1029/JB078i011p01760>`_
+    .. [Jacob2012] T. Jacob et al., "Estimating geoid height change in North America:
+        past, present and future", *Journal of Geodesy*, 86, 337-358, (2012).
+        `doi: 10.1007/s00190-011-0522-7 <https://doi.org/10.1007/s00190-011-0522-7>`_
     """
 
     #-- upper bound of spherical harmonic orders (default = LMAX)
@@ -182,7 +216,7 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
         #-- 1 m^2 = 100*100 cm^2 = 1e4 cm^2
         unit_conv = 0.1
     elif isinstance(UNITS,(list,np.ndarray)):
-        #-- custom units 
+        #-- custom units
         unit_conv = np.copy(UNITS)
     else:
         raise ValueError('Unknown units {0}'.format(UNITS))

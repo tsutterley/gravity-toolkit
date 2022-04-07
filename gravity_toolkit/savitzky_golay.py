@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 savitzky_golay.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (04/2022)
 Adapted from Numerical Recipes, Third Edition
 
 Smooth and optionally differentiate data of non-uniform sampling
@@ -43,10 +43,11 @@ NOTES:
         Data by Simplified Least Squares Procedures. Analytical
         Chemistry, 1964, 36 (8), pp 1627-1639.
     Numerical Recipes 3rd Edition: The Art of Scientific Computing
-        W.H. Press, S.A. Teukolsky, W.t_in. Vetterling, B.P. Flannery
-        Cambridge University Press ISBN-13:
+        W.H. Press, S.A. Teukolsky, W. T. Vetterling, B.P. Flannery
+        Cambridge University Press
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 07/2020: added function docstrings
     Updated 08/2019: importing factorial from scipy.special.factorial
     Updated 11/2018: using future division for python3 compatibility
@@ -61,27 +62,47 @@ import scipy.special
 def savitzky_golay(t_in, y_in, WINDOW=None, ORDER=2, DERIV=0,
     RATE=1, DATA_ERR=0):
     """
-    Smooth and optionally differentiate data with a Savitzky-Golay filter
+    Smooth and optionally differentiate data with a Savitzky-Golay
+    filter [Savitzky1964]_ [Press2007]_
 
-    Arguments
-    ---------
-    t_in: time array
-    y_in: data magnitude array
+    Parameters
+    ----------
+    t_in: float
+        time array
+    y_in: float
+        data magnitude array
+    WINDOW: int or NoneType, default None
+        Length of the window
 
-    Keyword arguments
-    -----------------
-    WINDOW: length of the window (must be an odd integer)
-    ORDER: order of the polynomial used in the filtering
-        must be less than (window_size - 1)
-    DERIV: order of the derivative to compute
-    RATE: scaling factor for output data and error
-    DATA_ERR: estimated data error of known and equal value
+        Must be an odd integer
+    ORDER: int, defualt 2
+        Order of the polynomial used in the filtering
+
+        Must be less than (window_size - 1)
+    DERIV: int, default 0
+        Order of the derivative to compute
+    RATE: float, default 1
+        Scaling factor for output data and error
+    DATA_ERR: float, default 0
+        Estimated data error of known and equal value
 
     Returns
     -------
-    data: smoothed signal (or n-th derivative)
-    error: estimated error at time points
-    time: time points for window
+    data: float
+        Smoothed signal (or n-th derivative)
+    error: float
+        Estimated error at time points
+    time: float
+        Time points for window
+
+    References
+    ----------
+    .. [Savitzky1964] A. Savitzky, M. J. E. Golay, "Smoothing and
+        Differentiation of Data by Simplified Least Squares Procedures".
+        *Analytical Chemistry*, 36(8), 1627--1639, (1964).
+    .. [Press2007] *Numerical Recipes 3rd Edition: The Art of Scientific
+        Computing*, W.H. Press, S.A. Teukolsky, W. T. Vetterling,
+        B.P. Flannery. Cambridge University Press, (2007).
     """
 
     #-- verify that WINDOW is positive, odd and greater than ORDER+1

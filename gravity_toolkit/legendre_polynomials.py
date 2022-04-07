@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 legendre_polynomials.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (04/2022)
 
 Computes fully normalized Legendre polynomials for an array of x values
     and their first derivative
@@ -33,6 +33,7 @@ REFERENCES:
         http://www.springerlink.com/content/978-3-211-33544-4
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 09/2020: verify dimensions of x variable
     Updated 08/2020: prevent zero divisions by changing u==0 to eps of data type
@@ -46,20 +47,31 @@ import numpy as np
 def legendre_polynomials(lmax,x,ASTYPE=np.float64):
     """
     Computes fully-normalized Legendre polynomials and their first derivative
+    following [HofmannWellenhof2006]_
 
-    Arguments
-    ---------
-    lmax: maximum degree of Legrendre polynomials
-    x: elements ranging from -1 to 1
+    Parameters
+    ----------
+    lmax: int
+        maximum degree of Legrendre polynomials
+    x: float
+        elements ranging from -1 to 1
 
-    Keyword arguments
-    -----------------
-    ASTYPE: output variable data type
+        Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
+    ASTYPE: obj, default np.float64
+        output variable data type
 
     Returns
     -------
-    pl: fully-normalized Legendre polynomials
-    dpl: first derivative of Legendre polynomials
+    pl: float
+        fully-normalized Legendre polynomials
+    dpl: float
+        first derivative of Legendre polynomials
+
+    References
+    ----------
+    .. [HofmannWellenhof2006] B. Hofmann-Wellenhof and H. Moritz,
+        *Physical Geodesy*, 2nd Edition, 403 pp., (2006).
+        `doi: 10.1007/978-3-211-33545-1 <https://doi.org/10.1007/978-3-211-33545-1>`_
     """
     #-- verify dimensions
     x = np.atleast_1d(x).flatten().astype(ASTYPE)

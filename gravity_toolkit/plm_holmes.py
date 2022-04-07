@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 plm_holmes.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (04/2022)
 
 Computes fully-normalized associated Legendre Polynomials
     for a vector of x values (can also be singular)
@@ -43,6 +43,7 @@ REFERENCES:
     Geoid Cookbook: http://mitgcm.org/~mlosch/geoidcookbook.pdf
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 09/2020: verify dimensions of input x variable
     Updated 08/2020: prevent zero divisions by changing u==0 to eps of data type
@@ -56,22 +57,40 @@ import numpy as np
 
 def plm_holmes(LMAX, x, ASTYPE=np.float64):
     """
-    Computes fully-normalized associated Legendre Polynomials and
-    their first derivative using Holmes and Featherstone relation
+    Computes fully-normalized associated Legendre Polynomials and their
+    first derivative using Holmes and Featherstone relation [Holmes2002]_
 
-    Arguments
-    ---------
-    LMAX: Upper bound of Spherical Harmonic Degrees
-    x: elements ranging from -1 to 1
+    Parameters
+    ----------
+    LMAX: int
+        maximum degree of Legrendre polynomials
+    x: float
+        elements ranging from -1 to 1
 
-    Keyword arguments
-    -----------------
-    ASTYPE: output variable data type
+        Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
+    ASTYPE: obj, default np.float64
+        output variable data type
 
     Returns
     -------
-    plms: fully-normalized Legendre polynomials
-    dplms: first differentials of Legendre polynomials
+    plms: float
+        fully-normalized Legendre polynomials
+    dplms: float
+        first derivative of Legendre polynomials
+
+    References
+    ----------
+    .. [Losch2003] M. Losch and V. Seufer,
+        "How to Compute Geoid Undulations (Geoid Height Relative
+        to a Given Reference Ellipsoid) from Spherical Harmonic
+        Coefficients for Satellite Altimetry Applications", (2003).
+        `eprint ID: 11802 <http://mitgcm.org/~mlosch/geoidcookbook.pdf>`_
+    .. [Holmes2002] S. A. Holmes and W. E. Featherstone,
+        "A unified approach to the Clenshaw summation and the
+        recursive computation of very high degree and order
+        normalised associated Legendre functions",
+        *Journal of Geodesy*, 76, 279--299, (2002).
+        `doi: 10.1007/s00190-002-0216-2 <https://doi.org/10.1007/s00190-002-0216-2>`_
     """
 
     #-- removing singleton dimensions of x

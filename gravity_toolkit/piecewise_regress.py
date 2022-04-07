@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 piecewise_regress.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (04/2022)
 
 Fits a synthetic signal to data over a time period by ordinary or weighted
     least-squares for breakpoint analysis
@@ -59,6 +59,7 @@ PYTHON DEPENDENCIES:
     scipy: Scientific Tools for Python (https://docs.scipy.org/doc/)
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 01/2021: added function docstrings
     Updated 10/2019: changing Y/N flags to True/False
@@ -92,49 +93,86 @@ import scipy.stats
 import scipy.special
 
 def piecewise_regress(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
-    CYCLES=[0.5,1.0], DATA_ERR=0, WEIGHT=False, STDEV=0, CONF=0, AICc=False):
+    CYCLES=[0.5,1.0], DATA_ERR=0, WEIGHT=False, STDEV=0, CONF=0,
+    AICc=False):
     """
     Fits a synthetic signal to data over a time period by ordinary or
-        weighted least-squares for breakpoint analysis
+    weighted least-squares for breakpoint analysis [Toms2003]_
 
-    Arguments
-    ---------
-    t_in: input time array
-    d_in: input data array
+    Parameters
+    ----------
+    t_in: float
+        input time array
+    d_in: float
+        input data array
+    BREAK_TIME: float or NoneType, default None
+        breakpoint time for piecewise regression
+    BREAKPOINT: int or NoneType, default None
+        breakpoint indice of piecewise regression
+    CYCLES: list, default [0.5, 1.0]
+        list of cyclical terms in fractions of year
+    DATA_ERR: float or list
+        data precision
 
-    Keyword arguments
-    -----------------
-    BREAK_TIME: breakpoint time for piecewise regression
-    BREAKPOINT: breakpoint indice of piecewise regression
-    DATA_ERR: data precision
-        single value if equal
-        array if unequal for weighted least squares
-    WEIGHT: Set if measurement errors for use in weighted least squares
-    CYCLES: list of cyclical terms (0.5=semi-annual, 1=annual)
-    STDEV: standard deviation of output error
-    CONF: confidence interval of output error
-    AICc: use second order AIC
+            - single value if equal
+            - array if unequal for weighted least squares
+    WEIGHT: bool, default False
+        Use weighted least squares with measurement errors
+    STDEV: float, default 0
+        Standard deviation of output error
+    CONF: float, default 0
+        Confidence interval of output error
+    AICc: bool, default False
+        Use second order AIC for small sample sizes [Burnham2002]_
 
     Returns
     -------
-    beta: regressed coefficients array
-    error: regression fit error for each coefficient for an input deviation
-        STDEV: standard deviation of output error
-        CONF: confidence interval of output error
-    std_err: standard error for each coefficient
-    R2: coefficient of determination (r**2)
-    R2Adj: r**2 adjusted for the number of terms in the model
-    MSE: mean square error
-    WSSE: Weighted sum of squares error
-    NRMSE: normalized root mean square error
-    AIC: Akaike information criterion
-    BIC: Bayesian information criterion
-    model: modeled timeseries
-    simple: modeled timeseries without oscillating components
-    residual: model residual
-    DOF: degrees of freedom
-    N: number of terms used in fit
-    cov_mat: covariance matrix
+    beta: float
+        regressed coefficients array
+    error: float
+        regression fit error for each coefficient for an input deviation
+
+            - ``STDEV``: standard deviation of output error
+            - ``CONF``: confidence interval of output error
+    std_err: float
+        standard error for each coefficient
+    R2: float
+        coefficient of determination (r\ :sup:`2`)
+    R2Adj: float
+        r\ :sup:`2` adjusted for the number of terms in the model
+    MSE: float
+        mean square error
+    WSSE: float
+        Weighted sum of squares error
+    NRMSE: float
+        normalized root mean square error
+    AIC: float
+        Akaike information criterion
+    BIC: float
+        Bayesian information criterion (Schwarz criterion)
+    model: float
+        modeled timeseries
+    simple: float
+        modeled timeseries without oscillating components
+    residual: float
+        model residual
+    DOF: int
+        degrees of freedom
+    N: int
+        number of terms used in fit
+    cov_mat: float
+        covariance matrix
+
+    References
+    ----------
+    .. [Toms2003] J. D. Toms and M. L. Lesperance,
+        "Piecewise Regression: A Tool For Identifying Ecological
+        Thresholds", *Ecology*, 84, 2034-2041, (2003).
+        `doi: 10.1890/02-0472 <https://doi.org/10.1890/02-0472>`_
+    .. [Burnham2002] K. P. Burnham and D. R. Anderson,
+        *Model Selection and Multimodel Inference*,
+        2nd Edition, 488 pp., (2002).
+        `doi: 10.1007/b97636 <https://doi.org/10.1007/b97636>`_
     """
 
     t_in = np.squeeze(t_in)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_point_load.py
-Written by Tyler Sutterley (11/2021)
+Written by Tyler Sutterley (04/2022)
 Calculates gravitational spherical harmonic coefficients for point masses
 
 CALLING SEQUENCE:
@@ -51,6 +51,7 @@ REFERENCES:
         https://doi.org/10.1029/JB078i011p01760
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: added UNITS list option for converting from custom units
     Updated 01/2021: use harmonics class for spherical harmonic operations
     Updated 07/2020: added function docstrings
@@ -65,28 +66,51 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
     """
     Calculates spherical harmonic coefficients for point masses
 
-    Arguments
-    ---------
-    data: data magnitude
-    lon: longitude of points
-    lat: latitude of points
+    Parameters
+    ----------
+    data: float
+        data magnitude
+    lon: float
+        longitude of points
+    lat: float
+        latitude of points
+    LMAX: int, default 60
+        Upper bound of Spherical Harmonic Degrees
+    MMAX: int or NoneType, default None
+        Upper bound of Spherical Harmonic Orders
+    UNITS: int, default 1
+        Input data units
 
-    Keyword arguments
-    -----------------
-    LMAX: Upper bound of Spherical Harmonic Degrees
-    MMAX: Upper bound of Spherical Harmonic Orders
-    UNITS: input data units
-        1: grams of mass (default)
-        2: gigatonnes of mass
-        list: custom degree-dependent unit conversion factor
-    LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
+            - ``1``: grams of mass (g)
+            - ``2``: gigatonnes of mass (Gt)
+            - list: custom degree-dependent unit conversion factor
+    LOVE: tuple or NoneType, default None
+        Input load Love numbers up to degree LMAX (``hl``, ``kl``, ``ll``)
 
     Returns
     -------
-    clm: cosine spherical harmonic coefficients
-    slm: sine spherical harmonic coefficients
-    l: spherical harmonic degree to LMAX
-    m: spherical harmonic order to MMAX
+    clm: float
+        cosine spherical harmonic coefficients
+    slm: float
+        sine spherical harmonic coefficients
+    l: int
+        spherical harmonic degree to LMAX
+    m: int
+        spherical harmonic order to MMAX
+
+    References
+    ----------
+    .. [Longman1962] I. M. Longman, "A Green's function for determining
+        the deformation of the Earth under surface mass loads: 1. Theory",
+        *Journal of Geophysical Research*, 67(2), (1962).
+        `doi: 10.1029/JZ067i002p00845 <https://doi.org/10.1029/JZ067i002p00845>`_
+    .. [Farrell1972] W. E. Farrell, "Deformation of the Earth by surface loads",
+        *Reviews of Geophysics and Space Physics*, 10(3), (1972).
+        `doi: 10.1029/RG010i003p00761 <https://doi.org/10.1029/RG010i003p00761>`_
+    .. [Pollack1973] H. N. Pollack, "Spherical harmonic representation of the
+        gravitational potential of a point mass, a spherical cap, and a
+        spherical rectangle", *Journal of Geophysical Research*, 78(11), (1973).
+        `doi: 10.1029/JB078i011p01760 <https://doi.org/10.1029/JB078i011p01760>`_
     """
 
     #-- upper bound of spherical harmonic orders (default == LMAX)
@@ -113,7 +137,7 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
         dfactor = factors.cmwe/(factors.rad_e**2)
         int_fact[:] = 1e15
     elif isinstance(UNITS,(list,np.ndarray)):
-        #-- custom units 
+        #-- custom units
         dfactor = np.copy(UNITS)
         int_fact[:] = 1.0
     else:
@@ -140,8 +164,8 @@ def spherical_harmonic_matrix(l,data,phi,theta,coeff):
     """
     Calculates spherical harmonics of degree l evaluated at coordinates
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     l: spherical harmonic degree
     data: data magnitude in grams
     phi: longitude of points in radians

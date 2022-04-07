@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonic_summation.py
-Written by Tyler Sutterley (07/2020)
+Written by Tyler Sutterley (04/2022)
 
 Returns the spatial field for a series of spherical harmonics
 
@@ -27,6 +27,7 @@ PROGRAM DEPENDENCIES:
     plm_holmes.py: Computes fully-normalized associated Legendre polynomials
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 07/2020: added function docstrings
     Updated 05/2015: added parameter MMAX for MMAX != LMAX.
     Written 05/2013
@@ -34,27 +35,34 @@ UPDATE HISTORY:
 import numpy as np
 from gravity_toolkit.plm_holmes import plm_holmes
 
-def harmonic_summation(clm1,slm1,lon,lat,LMIN=0,LMAX=0,MMAX=None,PLM=None):
+def harmonic_summation(clm1, slm1, lon, lat,
+    LMIN=0, LMAX=60, MMAX=None, PLM=None):
     """
     Converts data from spherical harmonic coefficients to a spatial field
 
-    Arguments
-    ---------
-    clm1: cosine spherical harmonic coefficients in output units
-    slm1: sine spherical harmonic coefficients in output units
-    lon: longitude array
-    lat: latitude array
-
-    Keyword arguments
-    -----------------
-    LMIN: Lower bound of Spherical Harmonic Degrees
-    LMAX: Upper bound of Spherical Harmonic Degrees
-    MMAX: Upper bound of Spherical Harmonic Orders
-    PLM: Fully-normalized associated Legendre polynomials
+    Parameters
+    ----------
+    clm1: float
+        cosine spherical harmonic coefficients in output units
+    slm1: float
+        sine spherical harmonic coefficients in output units
+    lon: float
+        longitude array
+    lat: float
+        latitude array
+    LMIN: int, default 0
+        Lower bound of Spherical Harmonic Degrees
+    LMAX: int, default 60
+        Upper bound of Spherical Harmonic Degrees
+    MMAX: int or NoneType, default None
+        Upper bound of Spherical Harmonic Orders
+    PLM: float or NoneType, default None
+        Fully-normalized associated Legendre polynomials
 
     Returns
     -------
-    spatial: spatial field
+    spatial: float
+        spatial field
     """
 
     #-- if LMAX is not specified, will use the size of the input harmonics

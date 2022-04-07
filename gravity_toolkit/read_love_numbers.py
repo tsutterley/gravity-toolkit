@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_love_numbers.py
-Written by Tyler Sutterley (07/2021)
+Written by Tyler Sutterley (04/2021)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
 Linearly interpolates load love numbers for missing degrees
@@ -53,6 +53,7 @@ REFERENCES:
         103(B12), 30205-30229, (1998)
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 07/2021: added check if needing to interpolate love numbers
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: use file not found exceptions
@@ -79,37 +80,61 @@ import numpy as np
 def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
     COLUMNS=['l','hl','kl','ll'], REFERENCE='CE', FORMAT='tuple'):
     """
-    Reads PREM load Love numbers file and applies isomorphic parameters
+    Reads PREM load Love numbers file and applies isomorphic
+    parameters [Dziewonski1981]_ [Blewett2003]_
 
-    Arguments
-    ---------
-    love_numbers_file: Elastic load Love numbers file
+    Parameters
+    ----------
+    love_numbers_file: str
+        Elastic load Love numbers file
+    LMAX: int or NoneType, default None
+        Truncate or interpolate to maximum spherical harmonic degree
+    HEADER: int, default 2
+        Number of header lines to be skipped
+    COLUMNS: list
+        Column names of ascii file
 
-    Keyword arguments
-    -----------------
-    LMAX: truncate or interpolate to maximum spherical harmonic degree
-    HEADER: number of header lines to be skipped
-    COLUMNS: column names of ascii file
-        l: spherical harmonic degree
-        hl: vertical displacement
-        kl: gravitational potential
-        ll: horizontal displacement
-    REFERENCE: Reference frame for calculating degree 1 love numbers
-        CF: Center of Surface Figure
-        CL: Center of Surface Lateral Figure
-        CH: Center of Surface Height Figure
-        CM: Center of Mass of Earth System
-        CE: Center of Mass of Solid Earth (default)
-    FORMAT: format of output variables
-        'dict': dictionary with variable keys as listed above
-        'tuple': tuple with variable order hl,kl,ll
-        'zip': aggregated variable sets
+            - ``'l'``: spherical harmonic degree
+            - ``'hl'``: vertical displacement
+            - ``'kl'``: gravitational potential
+            - ``'ll'``: horizontal displacement
+    REFERENCE: str, default 'CE'
+        Reference frame of degree 1 love numbers
+
+            - ``'CF'``: Center of Surface Figure
+            - ``'CL'``: Center of Surface Lateral Figure
+            - ``'CH'``: Center of Surface Height Figure
+            - ``'CM'``: Center of Mass of Earth System
+            - ``'CE'``: Center of Mass of Solid Earth
+    FORMAT: str, default 'tuple'
+        Format of output variables
+
+            - ``'dict'``: dictionary with variable keys as listed above
+            - ``'tuple'``: tuple with variable order (``hl``, ``kl``, ``ll``)
+            - ``'zip'``: aggregated variable sets
 
     Returns
     -------
-    kl: Love number of Gravitational Potential
-    hl: Love number of Vertical Displacement
-    ll: Love number of Horizontal Displacement
+    kl: float
+        Love number of Gravitational Potential
+    hl: float
+        Love number of Vertical Displacement
+    ll: float
+        Love number of Horizontal Displacement
+
+    References
+    ----------
+    .. [Blewett2003] G. Blewitt, "Self‐consistency in reference frames, geocenter definition, and surface loading of the solid Earth", *Journal of Geophysical Research: Solid Earth*, 108(B2), 2103, (2003). `doi: 10.1029/2002JB002082 <https://doi.org/10.1029/2002JB002082>`_
+
+    .. [Dziewonski1981] A. M. Dziewonski and D. L. Anderson, "Preliminary reference Earth model", *Physics of the Earth and Planetary Interiors*, 25(4), 297--356, (1981). `doi: 10.1016/0031-9201(81)90046-7 <https://doi.org/10.1016/0031-9201(81)90046-7>`_
+
+    .. [Gegout2010] P. Gegout, J. Boehm, and D. Wijaya, "Practical numerical computation of love numbers and applications", Workshop of the COST Action ES0701, (2010). `doi: 10.13140/RG.2.1.1866.7045 <https://doi.org/10.13140/RG.2.1.1866.7045>`_
+
+    .. [Han1995] D. Han and J. Wahr, "The viscoelastic relaxation of a realistically stratified earth, and a further analysis of postglacial rebound", *Geophysical Journal International*, 120(2), 287--311, (1995). `doi: 10.1111/j.1365-246X.1995.tb01819.x <https://doi.org/10.1111/j.1365-246X.1995.tb01819.x>`_
+
+    .. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan, "Time variability of the Earth's gravity field: Hydrological and oceanic effects and their possible detection using GRACE", *Journal of Geophysical Research*, 103(B12), 30205--30229, (1998). `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_
+
+    .. [Wang2012] H. Wang et al., "Load Love numbers and Green's functions for elastic Earth models PREM, iasp91, ak135, and modified models with refined crustal structure from Crust 2.0", *Computers & Geosciences*, 49, 190--199, (2012). `doi: 10.1016/j.cageo.2012.06.022 <https://doi.org/10.1016/j.cageo.2012.06.022>`_
     """
 
     #-- check that load love number data file is present in file system

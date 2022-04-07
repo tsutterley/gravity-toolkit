@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 plm_mohlenkamp.py
-Written by Tyler Sutterley (05/2021)
+Written by Tyler Sutterley (04/2022)
 
 Computes fully-normalized associated Legendre Polynomials
     for an array of x values
@@ -43,6 +43,7 @@ REFERENCES:
     http://www.ohiouniversityfaculty.com/mohlenka/research/uguide.pdf
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 09/2020: verify dimensions of input x variable
     Updated 07/2020: added function docstrings
@@ -54,20 +55,37 @@ import numpy as np
 def plm_mohlenkamp(LMAX, x, MMAX=None):
     """
     Computes fully-normalized associated Legendre Polynomials
-    using Martin Mohlenkamp's recursion relation
+    using Martin Mohlenkamp's recursion relation [Mohlenkamp2016]_
 
-    Arguments
-    ---------
-    LMAX: Upper bound of Spherical Harmonic Degrees
-    x: elements ranging from -1 to 1
+    Derived from [Szego1939]_ recurrence formula for Jacobi Polynomials
 
-    Keyword arguments
-    -----------------
-    MMAX: Upper bound of Spherical Harmonic Orders
+    Parameters
+    ----------
+    LMAX: int
+        maximum degree of Legrendre polynomials
+    x: float
+        elements ranging from -1 to 1
+
+        Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
+    MMAX: int or NoneType, default None
+        maximum order of Associated Legrendre polynomials
 
     Returns
     -------
-    plms: fully-normalized Legendre polynomials
+    plms: float
+        fully-normalized Legendre polynomials
+    dplms: float
+        first derivative of Legendre polynomials
+
+    References
+    ----------
+    .. [Mohlenkamp2016] M. J. Mohlenkamp,
+        "A User’s Guide to Spherical Harmonics", (2016).
+        `[pdf] <http://www.ohiouniversityfaculty.com/mohlenka/research/uguide.pdf>`_
+    .. [Szego1939] Gabor Szeg\ |ouml|\ , "Orthogonal Polynomials", 440 pp., (1939).
+        `[pdf] <https://people.math.osu.edu/nevai.1/AT/SZEGO/szego=szego1975=ops=OCR.pdf>`_
+
+    .. |ouml|    unicode:: U+00F6 .. LATIN SMALL LETTER O WITH DIAERESIS
     """
 
     #-- Verify LMAX as integer

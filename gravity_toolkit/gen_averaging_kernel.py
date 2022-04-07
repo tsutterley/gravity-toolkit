@@ -2,7 +2,7 @@
 u"""
 gen_averaging_kernel.py
 Original IDL code gen_wclms_me.pro written by Sean Swenson
-Adapted by Tyler Sutterley (08/2021)
+Adapted by Tyler Sutterley (04/2022)
 
 Generates averaging kernel coefficients which minimize the total error
 
@@ -43,6 +43,7 @@ REFERENCES:
         107(B9), (2002). https://doi.org/10.1029/2001JB000576
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 08/2021: using units module for Earth parameters
     Updated 04/2020: reading load love numbers outside of this function
     Updated 05/2015: added parameter MMAX for MMAX != LMAX
@@ -53,7 +54,58 @@ import gravity_toolkit.units
 
 def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
     LMAX=60, MMAX=None, UNITS=0, LOVE=None):
+    """
+    Generates averaging kernel coefficients which minimize the
+    total error following [Swenson2002]_
 
+    Uses a normalized form of the Gaussian averaging function
+    from [Jekeli1981]_
+
+    Parameters
+    ----------
+    gclm: float
+        cosine spherical harmonics of exact averaging kernel
+    gslm: float
+        sine spherical harmonics of exact averaging kernel
+    eclm: float
+        measurement error in the cosine harmonics
+    eslm: float
+        measurement error in the sine harmonics
+    sigma: float
+        variance of the surface mass signal
+    hw: float
+        Gaussian radius of the kernel in kilometers
+    LMAX: int, default 60
+        Upper bound of Spherical Harmonic Degrees
+    MMAX: int or NoneType, default None
+        Upper bound of Spherical Harmonic Orders
+    UNITS: int, default 0
+        Input data units
+
+            - ``0``: fully-normalized
+            - ``1``: mass coefficients (cm w.e., g/cm\ :sup:`2`)
+    LOVE: tuple or NoneType, default None
+        Load Love numbers up to degree LMAX (``hl``, ``kl``, ``ll``)
+
+    Returns
+    -------
+    clm: float
+        cosine coefficients of the averaging kernel
+    slm: float
+        sine coefficients of the averaging kernel
+
+    References
+    ----------
+    .. [Jekeli1981] C. Jekeli, "Alternative Methods to Smooth
+        the Earth's Gravity Field", NASA Grant No. NGR 36-008-161,
+        OSURF Proj. No. 783210, 48 pp., (1981).
+
+    .. [Swenson2002] S. Swenson and J. Wahr, "Methods for inferring regional
+        surface‐mass anomalies from Gravity Recovery and Climate Experiment
+        (GRACE) measurements of time‐variable gravity", *Journal of
+        Geophysical Research: Solid Earth*, 107(B9), 2193, (2002).
+        `doi: 10.1029/2001JB000576 <https://doi.org/10.1029/2001JB000576>`_
+    """
     #-- upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:
         MMAX = np.copy(LMAX)

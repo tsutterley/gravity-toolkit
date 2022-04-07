@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_C50.py
-Written by Yara Mohajerani and Tyler Sutterley (12/2021)
+Written by Yara Mohajerani and Tyler Sutterley (04/2022)
 
 Reads monthly degree 5 zonal spherical harmonic data files from SLR
 
@@ -45,6 +45,7 @@ PROGRAM DEPENDENCIES:
     read_SLR_harmonics.py: low-degree spherical harmonic coefficients from SLR
 
 UPDATE HISTORY:
+    Updated 04/2022: updated docstrings to numpy documentation format
     Updated 12/2021: use function for converting from 7-day arcs
     Updated 11/2021: reader for new weekly 5x5+6,1 fields from NASA GSFC
     Updated 09/2021: use functions for converting to and from GRACE months
@@ -62,26 +63,31 @@ import gravity_toolkit.time
 import gravity_toolkit.read_SLR_harmonics
 
 #-- PURPOSE: read Degree 5 zonal data from Satellite Laser Ranging (SLR)
-def read_SLR_C50(SLR_file, HEADER=True, C50_MEAN=0.0, DATE=None):
+def read_SLR_C50(SLR_file, C50_MEAN=0.0, DATE=None, HEADER=True):
     """
     Reads C50 spherical harmonic coefficients from SLR measurements
 
-    Arguments
-    ---------
-    SLR_file: Satellite Laser Ranging file
-
-    Keyword arguments
-    -----------------
-    HEADER: file contains header text to be skipped (default: True)
-    C50_MEAN: mean C50 to add to LARES C50 anomalies
-    DATE: mid-point of monthly solution for calculating 28-day arc averages
+    Parameters
+    ----------
+    SLR_file: str
+        Satellite Laser Ranging file
+    C50_MEAN: float, default 0.0
+        Mean C50 to add to LARES C50 anomalies
+    DATE: float or NoneType, default None
+        Mid-point of monthly solution for calculating 28-day arc averages
+    HEADER: bool, default True
+        File contains header text to be skipped
 
     Returns
     -------
-    data: SLR degree 5 order 0 cosine stokes coefficients
-    error: SLR degree 5 order 0 cosine stokes coefficient error
-    month: GRACE/GRACE-FO month of measurement
-    time: date of SLR measurement
+    data: float
+        SLR degree 5 order 0 cosine stokes coefficients
+    error: float
+        SLR degree 5 order 0 cosine stokes coefficient error
+    month: int
+        GRACE/GRACE-FO month of measurement
+    time: float
+        date of SLR measurement
     """
 
     #-- check that SLR file exists
