@@ -26,6 +26,8 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
+        using internal netCDF4 and HDF5 readers and writers
+        added function for converting to a python dictionary
     Updated 12/2021: logging case_insensitive_filename output for debugging
     Updated 11/2021: kwargs to index, netCDF4 and HDF5 read functions
     Updated 10/2021: using python logging for handling verbose output
@@ -300,6 +302,9 @@ class harmonics(object):
         temp.m = fileID.variables['m'][:].copy()
         temp.clm = fileID.variables['clm'][:].copy()
         temp.slm = fileID.variables['slm'][:].copy()
+        #-- calculate maximum degree and order
+        temp.lmax = np.max(temp.l)
+        temp.mmax = np.max(temp.m)
         #-- read date variables if specified
         if kwargs['date']:
             fields.extend(['time','month'])
@@ -402,6 +407,9 @@ class harmonics(object):
         temp.m = fileID['m'][:].copy()
         temp.clm = fileID['clm'][:].copy()
         temp.slm = fileID['slm'][:].copy()
+        #-- calculate maximum degree and order
+        temp.lmax = np.max(temp.l)
+        temp.mmax = np.max(temp.m)
         #-- read date variables if specified
         if kwargs['date']:
             fields.extend(['time','month'])
@@ -783,14 +791,18 @@ class harmonics(object):
         fileID = netCDF4.Dataset(self.filename, clobber, format="NETCDF4")
         #-- flatten harmonics
         temp = self.flatten(date=kwargs['date'])
-        n_harm,n_time = np.shape(np.atleast_2d(temp.clm))
         #-- Defining the netCDF dimensions
-        fileID.createDimension('lm', n_harm)
+        n_harm = len(temp.l)
         fields = ['l','m','clm','slm']
+        fileID.createDimension('lm', n_harm)
         #-- defining netCDF temporal dimension
         if kwargs['date']:
-            fields.extend('time','month')
+            n_time = len(np.atleast_1d(temp.time))
+            fields.extend(['time','month'])
             fileID.createDimension('time', n_time)
+            #-- convert time variables to arrays
+            temp.time = np.atleast_1d(temp.time)
+            temp.month = np.atleast_1d(temp.month)
         #-- defining the netCDF variables
         nc = {}
         #-- degree and order
@@ -898,7 +910,10 @@ class harmonics(object):
         fields = ['l','m','clm','slm']
         #-- defining netCDF temporal dimension
         if kwargs['date']:
-            fields.extend('time','month')
+            fields.extend(['time','month'])
+            #-- convert time variables to arrays
+            temp.time = np.atleast_1d(temp.time)
+            temp.month = np.atleast_1d(temp.month)
         #-- Defining the HDF5 dataset variables
         h5 = {}
         for key in fields:
@@ -935,7 +950,7 @@ class harmonics(object):
         #-- date created
         fileID.attrs['date_created'] = time.strftime('%Y-%m-%d',time.localtime())
         #-- Output HDF5 structure information
-        logging.info(kwargs['FILENAME'])
+        logging.info(self.filename)
         logging.info(list(fileID.keys()))
         #-- Closing the HDF5 file
         fileID.close()
@@ -1020,6 +1035,25 @@ class harmonics(object):
         elif (format == 'HDF5'):
             #-- HDF5 (.H5)
             self.to_HDF5(filename, date=date, **kwargs)
+
+    def to_dict(self):
+        """
+        Convert a harmonics object to a dict object
+
+        Returns
+        -------
+        d: dict
+            converted dictionary object
+        """
+        #-- assign dictionary variables from self
+        d = {}
+        for key in ['l','m','clm','slm','time','month']:
+            try:
+                d[key] = getattr(self, key)
+            except (AttributeError, KeyError):
+                pass
+        #-- return the dictionary object
+        return d
 
     def to_masked_array(self):
         """
@@ -1270,7 +1304,8 @@ class harmonics(object):
                 #-- add 1 to lm counter variable
                 lm += 1
         #-- assign ndim and shape attributes
-        temp.update_dimensions()
+        temp.ndim = temp.clm.ndim
+        temp.shape = temp.clm.shape
         #-- return the flattened arrays
         return temp
 

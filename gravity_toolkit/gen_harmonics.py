@@ -37,12 +37,8 @@ PROGRAM DEPENDENCIES:
     fourier_legendre.py: Computes the Fourier coefficients of the associated
         Legendre functions
     harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
-        destripe_harmonics.py: calculates the decorrelation (destriping) filter
-            and filters the GRACE/GRACE-FO coefficients for striping errors
-        ncdf_read_stokes.py: reads spherical harmonic netcdf files
-        ncdf_stokes.py: writes output spherical harmonic data to netcdf
-        hdf5_read_stokes.py: reads spherical harmonic HDF5 files
-        hdf5_stokes.py: writes output spherical harmonic data to HDF5
+    destripe_harmonics.py: calculates the decorrelation (destriping) filter
+        and filters the GRACE/GRACE-FO coefficients for striping errors
 
 REFERENCES:
     Holmes and Featherstone, "A Unified Approach to the Clenshaw Summation and

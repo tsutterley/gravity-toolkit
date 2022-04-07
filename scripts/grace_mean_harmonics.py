@@ -64,12 +64,8 @@ PROGRAM DEPENDENCIES:
         Includes degree 1 with with Swenson values (if specified)
         Replaces C20,C21,S21,C22,S22,C30 and C50 with SLR values (if specified)
     harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
-        destripe_harmonics.py: calculates the decorrelation (destriping) filter
-            and filters the GRACE/GRACE-FO coefficients for striping errors
-        ncdf_read_stokes.py: reads spherical harmonic netcdf files
-        ncdf_stokes.py: writes output spherical harmonic data to netcdf
-        hdf5_read_stokes.py: reads spherical harmonic HDF5 files
-        hdf5_stokes.py: writes output spherical harmonic data to HDF5
+    destripe_harmonics.py: calculates the decorrelation (destriping) filter
+        and filters the GRACE/GRACE-FO coefficients for striping errors
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:

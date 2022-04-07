@@ -36,10 +36,6 @@ PYTHON DEPENDENCIES:
 PROGRAM DEPENDENCIES
     gen_stokes.py: converts a spatial field into a series of spherical harmonics
     spatial.py: spatial data class for reading, writing and processing data
-    ncdf_read.py: reads input spatial data from netCDF4 files
-    hdf5_read.py: reads input spatial data from HDF5 files
-    ncdf_write.py: writes output spatial data to netCDF4
-    hdf5_write.py: writes output spatial data to HDF5
 
 REFERENCES:
     T. C. Sutterley, I. Velicogna, and C.-W. Hsu, "Self‐Consistent Ice Mass
@@ -71,7 +67,7 @@ def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
     Parameters
     ----------
     LANDMASK: str
-        netCDF4 land mask file
+        netCDF4 land-sea mask file
     LMAX: int
         maximum spherical harmonic degree
     MMAX: int or NoneType, default None
@@ -121,6 +117,16 @@ def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
 def find_isolated_points(mask):
     """
     Simplify mask by removing isolated points
+
+    Parameters
+    ----------
+    mask: int
+        land-sea mask
+
+    Returns
+    -------
+    isolated: int
+        simplified land-sea mask
     """
     nth,_ = mask.shape
     laplacian = -4.0*np.copy(mask)
@@ -133,5 +139,5 @@ def find_isolated_points(mask):
     temp[nth-1,:] = mask[nth-2,:]
     laplacian += mask*temp
     #-- create mask of isolated points
-    isolated = np.where(np.abs(laplacian) >= 3,1,0)
+    isolated = np.where(np.abs(laplacian) >= 3, 1, 0)
     return isolated

@@ -20,4 +20,6 @@ Calling Sequence
 
 .. autofunction:: gravity_toolkit.ocean_stokes
 
+.. autofunction:: gravity_toolkit.ocean_stokes.find_isolated_points
+
 .. [Sutterley2020] T. C. Sutterley, I. Velicogna, and C.-W. Hsu, "Self-Consistent Ice Mass Balance and Regional Sea Level From Time-Variable Gravity", *Earth and Space Science*, 7(3), (2020). `doi: 10.1029/2019EA000860 <https://doi.org/10.1029/2019EA000860>`_

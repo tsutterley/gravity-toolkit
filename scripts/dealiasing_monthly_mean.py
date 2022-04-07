@@ -43,12 +43,8 @@ PYTHON DEPENDENCIES:
 
 PROGRAM DEPENDENCIES:
     harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
-        destripe_harmonics.py: calculates the decorrelation (destriping) filter
-            and filters the GRACE/GRACE-FO coefficients for striping errors
-        ncdf_read_stokes.py: reads spherical harmonic netcdf files
-        ncdf_stokes.py: writes output spherical harmonic data to netcdf
-        hdf5_read_stokes.py: reads spherical harmonic HDF5 files
-        hdf5_stokes.py: writes output spherical harmonic data to HDF5
+    destripe_harmonics.py: calculates the decorrelation (destriping) filter
+        and filters the GRACE/GRACE-FO coefficients for striping errors
     time.py: utilities for calculating time operations
 
 UPDATED HISTORY:

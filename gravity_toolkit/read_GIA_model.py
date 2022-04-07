@@ -27,6 +27,7 @@ OPTIONS:
     MMAX: maximum order of spherical harmonics
     DATAFORM: Spherical harmonic data output format
         None: output only as variables
+        ascii: output to ascii format (.txt)
         netCDF4: output to netCDF4 format (.nc)
         HDF5: output to HDF5 format (.H5)
     MODE: permissions mode of output spherical harmonic files
@@ -46,10 +47,9 @@ PYTHON DEPENDENCIES:
         (https://www.h5py.org/)
 
 PROGRAM DEPENDENCIES:
-    ncdf_stokes.py: writes output spherical harmonic data to netcdf
-    hdf5_stokes.py: writes output spherical harmonic data to HDF5
-    ncdf_read_stokes.py: reads spherical harmonic data from netcdf
-    hdf5_read_stokes.py: reads spherical harmonic data from HDF5
+    harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
+    destripe_harmonics.py: calculates the decorrelation (destriping) filter
+        and filters the GRACE/GRACE-FO coefficients for striping errors
 
 REFERENCES:
     E. R. Ivins, T. S. James, J. Wahr, E. J. O. Schrama, F. W. Landerer, and
@@ -96,6 +96,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
+        use harmonics class to read/write ascii, netCDF4 and HDF5 files
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: use regular expressions to find ICE6G-D header positions
     Updated 08/2020: flake8 compatible regular expression strings
@@ -130,10 +131,7 @@ from __future__ import print_function
 import os
 import re
 import numpy as np
-from gravity_toolkit.ncdf_stokes import ncdf_stokes
-from gravity_toolkit.hdf5_stokes import hdf5_stokes
-from gravity_toolkit.ncdf_read_stokes import ncdf_read_stokes
-from gravity_toolkit.hdf5_read_stokes import hdf5_read_stokes
+import gravity_toolkit.harmonics
 
 def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
     DATAFORM=None, MODE=0o775):
@@ -166,6 +164,7 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
         Spherical harmonic data output format
 
             - ``None``: output only as variables
+            - ``'ascii'``: output to ascii format (.txt)
             - ``'netCDF4'``: output to netCDF4 format (.nc)
             - ``'HDF5'``: output to HDF5 format (.H5)
     MODE: oct, default 0o775
@@ -237,6 +236,8 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
     gia_Ylms = {}
     gia_Ylms['clm'] = np.zeros((LMAX+1,LMAX+1))
     gia_Ylms['slm'] = np.zeros((LMAX+1,LMAX+1))
+    #-- output spherical harmonic degree and order
+    gia_Ylms['l'],gia_Ylms['m'] = (np.arange(LMAX+1),np.arange(LMAX+1))
 
     if (GIA == 'IJ05-R2'):#-- Ivins R2 IJ05 Models
         prefix = 'IJ05_R2'
@@ -257,14 +258,10 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
         #file_pattern = r'Stokes_G_Rot_60_I6_A_(.*?)_L90'
         #-- regular expression file pattern for VM5
         file_pattern = r'Stokes_G_Rot_60_I6_A_(.*)'
-    elif (GIA == 'Wu10'):#-- Wu Global Isnversion
-        gia_Ylms['title'] = 'Wu_2010'
     elif (GIA == 'AW13-ICE6G'):#-- Geruo A ICE-6G model versions
         prefix = 'AW13'
         #-- regular expressions file pattern
         file_pattern = r'stokes\.(ice6g)[\.\_](.*?)(\.txt)?$'
-    elif (GIA == 'Caron'): #-- Caron et al. (2018) expected GIA rate
-        gia_Ylms['title'] = 'Caron_expt'
     elif (GIA == 'ICE6G-D'):#-- ICE-6G Version-D viscosity profile
         prefix = 'ICE6G-D'
         #-- regular expression file pattern for Version-D
@@ -274,7 +271,7 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
     rx = re.compile(r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?')
 
     #-- Header lines and scale factors for individual models
-    if GIA in ('IJ05-R2','ICE6G'):
+    if GIA in ('IJ05-R2', 'ICE6G'):
         #-- IJ05
         start = 0
         #-- scale factor for geodesy normalization
@@ -288,7 +285,7 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
         scale = 1.0
 
     #-- Reading GIA files (ICE-6G and Wu have more complex formats)
-    if GIA in ('IJ05-R2','W12a','SM09','AW13-ICE6G'):
+    if GIA in ('IJ05-R2', 'W12a', 'SM09', 'AW13-ICE6G'):
         #-- AW13, IJ05, W12a, SM09
         #-- AW13 notes: file headers
         #-- IJ05 notes: need to scale by 1e-11 for geodesy-normalization
@@ -457,82 +454,101 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
                     gia_Ylms['clm'][l1,m1] = np.float64(line[2])*scale
                     gia_Ylms['slm'][l1,m1] = np.float64(line[3])*scale
 
+
+    # ascii: reformatted GIA in ascii format
     elif (GIA == 'ascii'):
         #-- reading GIA data from reformatted (simplified) ascii files
-        dtype = {'names':('l','m','clm','slm'), 'formats':('i','i','f8','f8')}
-        Ylms = np.loadtxt(os.path.expanduser(input_file), dtype=dtype)
-        for ll,mm,clm,slm in zip(Ylms['l'],Ylms['m'],Ylms['clm'],Ylms['slm']):
-            #-- only using coefficients within the spherical harmonic range
-            if ((ll <= LMAX) and (mm <= LMAX)):
-                gia_Ylms['clm'][ll,mm] = clm.copy()
-                gia_Ylms['slm'][ll,mm] = slm.copy()
+        Ylms = gravity_toolkit.harmonics().from_ascii(input_file, date=False)
+        Ylms.truncate(LMAX)
+        gia_Ylms.update(Ylms.to_dict())
         #-- copy filename (without extension) for parameters
         gia_Ylms['title'] = os.path.basename(os.path.splitext(input_file)[0])
+        gia_Ylms['reference'] = None
 
-    elif (GIA == 'netCDF4'):
-        #-- reading GIA data from reformatted netCDF4 files
-        Ylms = ncdf_read_stokes(os.path.expanduser(input_file),DATE=False)
-        #-- truncate to degree and order LMAX
-        gia_Ylms['clm'][:,:] = Ylms['clm'][:LMAX+1,:LMAX+1]
-        gia_Ylms['slm'][:,:] = Ylms['slm'][:LMAX+1,:LMAX+1]
-        #-- copy title for parameters
-        gia_Ylms['title'] = Ylms['attributes']['title']
+    # netCDF4: reformatted GIA in netCDF4 format
+    # HDF5: reformatted GIA in HDF5 format
+    elif GIA in ('netCDF4','HDF5'):
+        #-- reading GIA data from reformatted netCDF4 and HDF5 files
+        Ylms = gravity_toolkit.harmonics().from_file(input_file,
+            format=GIA, date=False)
+        Ylms.truncate(LMAX)
+        gia_Ylms.update(Ylms.to_dict())
+        #-- copy title and reference for model
+        for att_name in ('title','reference'):
+            try:
+                gia_Ylms[att_name] = Ylms.attributes[att_name]
+            except:
+                gia_Ylms[att_name] = None
 
-    elif (GIA == 'HDF5'):
-        #-- reading GIA data from reformatted HDF5 files
-        Ylms = hdf5_read_stokes(os.path.expanduser(input_file),DATE=False)
-        #-- truncate to degree and order LMAX
-        gia_Ylms['clm'][:,:] = Ylms['clm'][:LMAX+1,:LMAX+1]
-        gia_Ylms['slm'][:,:] = Ylms['slm'][:LMAX+1,:LMAX+1]
-        #-- copy title for parameters
-        gia_Ylms['title'] = Ylms['attributes']['title']
-
+    #-- GIA model citations and references
     #-- extract rheology from the file name
-    if GIA in ('IJ05-R2','ICE6G'):
-        #-- for IJ05 and ICE-6G models:
+    if (GIA == 'IJ05-R2'):
+        #-- IJ05-R2: Ivins R2 GIA Models
+        gia_Ylms['citation'] = 'Ivins_et_al._(2013)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1002/jgrb.50208'
+        #-- adding file specific earth parameters
+        parameters, = re.findall(file_pattern,os.path.basename(input_file))
+        gia_Ylms['title'] = '{0}_{1}'.format(prefix,parameters)
+    elif (GIA == 'ICE6G'):
+        #-- ICE6G: ICE-6G GIA Models
+        gia_Ylms['citation'] = 'Peltier_et_al._(2015)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1002/2014JB011176'
         #-- adding file specific earth parameters
         parameters, = re.findall(file_pattern,os.path.basename(input_file))
         gia_Ylms['title'] = '{0}_{1}'.format(prefix,parameters)
     elif (GIA == 'W12a'):
+        #-- W12a: Whitehouse GIA Models
+        gia_Ylms['citation'] = 'Whitehouse_et_al._(2012)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1111/j.1365-246X.2012.05557.x'
         #-- for Whitehouse W12a (BEST, LOWER, UPPER):
         model = re.findall(file_pattern,os.path.basename(input_file)).pop()
         gia_Ylms['title'] = '{0}_{1}'.format(prefix,parameters[model])
     elif (GIA == 'SM09'):
-        #-- for SM09:
+        #-- SM09: Simpson/Milne GIA Models
+        gia_Ylms['citation'] = 'Simpson_et_al._(2009)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1016/j.quascirev.2009.03.004'
         #-- making parameters in the file similar to IJ05
         #-- split rheological parameters between lithospheric thickness,
         #-- upper mantle viscosity and lower mantle viscosity
         LTh,UMV,LMV=re.findall(file_pattern,os.path.basename(input_file)).pop()
         #-- formatting rheology parameters similar to IJ05 models
         gia_Ylms['title'] = '{0}_{1}_.{2}_{3}'.format(prefix,LTh,UMV,LMV)
+    elif (GIA == 'Wu10'):
+        #-- Wu10: Wu (2010) GIA Correction
+        gia_Ylms['citation'] = 'Wu_et_al._(2010)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1038/ngeo938'
+        gia_Ylms['title'] = 'Wu_2010'
+    elif (GIA == 'Caron'):
+        #-- Caron: Caron JPL GIA Assimilation
+        gia_Ylms['citation'] = 'Caron_et_al._(2018)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1002/2017GL076644'
+        gia_Ylms['title'] = 'Caron_expt'
     elif (GIA == 'ICE6G-D'):
-        #-- for ICE-6G Version-D models:
+        #-- ICE6G-D: ICE-6G Version-D GIA Models
+        gia_Ylms['citation'] = 'Peltier_et_al._(1018)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1002/2016JB013844'
         #-- adding file specific earth parameters
         m1,p1,p2 = re.findall(file_pattern,os.path.basename(input_file)).pop()
         gia_Ylms['title'] = '{0}_{1}{2}'.format(prefix,p1,p2)
     elif (GIA == 'AW13-ICE6G'):
-        #-- for Geruo ICE-6G cases
+        #-- AW13-ICE6G: Geruo A ICE-6G GIA Models
+        gia_Ylms['citation'] = 'A_et_al._(2013)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1093/gji/ggs030'
         #-- extract the ice history and case flags
         hist,case,sf=re.findall(file_pattern,os.path.basename(input_file)).pop()
         gia_Ylms['title'] = '{0}_{1}_{2}'.format(prefix,hist,case)
 
-    #-- output spherical harmonic degree and order
-    gia_Ylms['l'],gia_Ylms['m'] = (np.arange(LMAX+1),np.arange(LMAX+1))
-    #-- output harmonics to netCDF4 or HDF5 file
-    if (DATAFORM == 'netCDF4'):
-        #-- netcdf (.nc)
-        output_file = 'stokes_{0}_L{1:d}.nc'.format(gia_Ylms['title'],LMAX)
-        ncdf_stokes(gia_Ylms['clm'],gia_Ylms['slm'],gia_Ylms['l'],gia_Ylms['m'],
-            0,0,FILENAME=os.path.join(os.path.dirname(input_file),output_file),
-            TITLE=gia_Ylms['title'], VERBOSE=False, DATE=False)
-        #-- set permissions level of output file
-        os.chmod(os.path.join(os.path.dirname(input_file),output_file), MODE)
-    elif (DATAFORM == 'HDF5'):
-        #-- HDF5 (.H5)
-        output_file = 'stokes_{0}_L{1:d}.H5'.format(gia_Ylms['title'],LMAX)
-        hdf5_stokes(gia_Ylms['clm'],gia_Ylms['slm'],gia_Ylms['l'],gia_Ylms['m'],
-            0,0,FILENAME=os.path.join(os.path.dirname(input_file),output_file),
-            TITLE=gia_Ylms['title'], VERBOSE=False, DATE=False)
+    #-- output harmonics to ascii, netCDF4 or HDF5 file
+    if DATAFORM in ('ascii', 'netCDF4', 'HDF5'):
+        #-- convert dictionary to harmonics object
+        Ylms = gravity_toolkit.harmonics().from_dict(gia_Ylms)
+        #-- output harmonics to file
+        suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
+        args = (gia_Ylms['title'], LMAX, suffix[DATAFORM])
+        output_file = 'stokes_{0}_L{1:d}.{2}'.format(*args)
+        Ylms.to_file(os.path.join(os.path.dirname(input_file),output_file),
+            format=DATAFORM, title=gia_Ylms['title'],
+            reference=gia_Ylms['reference'], date=False)
         #-- set permissions level of output file
         os.chmod(os.path.join(os.path.dirname(input_file),output_file), MODE)
 

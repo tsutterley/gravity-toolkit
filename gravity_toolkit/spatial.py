@@ -25,6 +25,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
+        using internal netCDF4 and HDF5 readers and writers
     Updated 12/2021: logging case_insensitive_filename output for debugging
     Updated 11/2021: fix kwargs to index and hdf5 read functions
     Updated 10/2021: using python logging for handling verbose output
@@ -244,7 +245,7 @@ class spatial(object):
         self.update_mask()
         return self
 
-    def from_netCDF4(self, filename, date=True, **kwargs):
+    def from_netCDF4(self, filename, **kwargs):
         """
         Read a spatial object from a netCDF4 file
 
@@ -276,6 +277,7 @@ class spatial(object):
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- set default parameters
+        kwargs.setdefault('date',True)
         kwargs.setdefault('compression',None)
         kwargs.setdefault('varname','z')
         kwargs.setdefault('lonname','lon')
@@ -356,7 +358,7 @@ class spatial(object):
         else:
             self.mask = np.zeros(self.data.shape, dtype=bool)
         #-- set GRACE/GRACE-FO month if file has date variables
-        if date:
+        if kwargs['date']:
             self.month = calendar_to_grace(self.time)
             #-- adjust months to fix special cases if necessary
             self.month = adjust_months(self.month)
@@ -367,7 +369,7 @@ class spatial(object):
         self.update_mask()
         return self
 
-    def from_HDF5(self, filename, date=True, **kwargs):
+    def from_HDF5(self, filename, **kwargs):
         """
         Read a spatial object from a HDF5 file
 
@@ -399,13 +401,14 @@ class spatial(object):
         #-- set filename
         self.case_insensitive_filename(filename)
         #-- set default parameters
-        kwargs.setdefault('verbose',False)
+        kwargs.setdefault('date',True)
         kwargs.setdefault('compression',None)
         kwargs.setdefault('varname','z')
         kwargs.setdefault('lonname','lon')
         kwargs.setdefault('latname','lat')
         kwargs.setdefault('timename','time')
         kwargs.setdefault('field_mapping',{})
+        kwargs.setdefault('verbose',False)
         #-- Open the HDF5 file for reading
         if (kwargs['compression'] == 'gzip'):
             #-- read gzip compressed file and extract into in-memory file object
@@ -485,7 +488,7 @@ class spatial(object):
         else:
             self.mask = np.zeros(self.data.shape, dtype=bool)
         #-- set GRACE/GRACE-FO month if file has date variables
-        if date:
+        if kwargs['date']:
             self.month = calendar_to_grace(self.time)
             #-- adjust months to fix special cases if necessary
             self.month = adjust_months(self.month)
@@ -708,7 +711,7 @@ class spatial(object):
         #-- close the output file
         fid.close()
 
-    def to_netCDF4(self, filename,  **kwargs):
+    def to_netCDF4(self, filename, **kwargs):
         """
         Write a spatial object to netCDF4 file
 
@@ -724,6 +727,8 @@ class spatial(object):
             latitude variable name in netCDF4 file
         field_mapping: dict, default {}
             mapping between input variables and output netCDF4
+        attributes: dict, default {}
+            output netCDF4 variable attributes
         units: str or NoneType, default: None
             data variable units
         longname: str or NoneType, default: None
@@ -750,6 +755,7 @@ class spatial(object):
         kwargs.setdefault('latname','lat')
         kwargs.setdefault('timename','time')
         kwargs.setdefault('field_mapping',{})
+        kwargs.setdefault('attributes',{})
         kwargs.setdefault('units',None)
         kwargs.setdefault('longname',None)
         kwargs.setdefault('time_units','years')
@@ -771,6 +777,24 @@ class spatial(object):
             kwargs['field_mapping']['data'] = kwargs['varname']
             if kwargs['date']:
                 kwargs['field_mapping']['time'] = kwargs['timename']
+        #-- create attributes dictionary for output variables
+        if not kwargs['attributes']:
+            #-- Defining attributes for longitude and latitude
+            kwargs['attributes'][kwargs['field_mapping']['lon']] = {}
+            kwargs['attributes'][kwargs['field_mapping']['lon']]['long_name'] = 'longitude'
+            kwargs['attributes'][kwargs['field_mapping']['lon']]['units'] = 'degrees_east'
+            kwargs['attributes'][kwargs['field_mapping']['lat']] = {}
+            kwargs['attributes'][kwargs['field_mapping']['lat']]['long_name'] = 'longitude'
+            kwargs['attributes'][kwargs['field_mapping']['lat']]['units'] = 'degrees_north'
+            #-- Defining attributes for dataset
+            kwargs['attributes'][kwargs['field_mapping']['lat']] = {}
+            kwargs['attributes'][kwargs['field_mapping']['data']]['long_name'] = kwargs['longname']
+            kwargs['attributes'][kwargs['field_mapping']['data']]['units'] = kwargs['units']
+            #-- Defining attributes for date if applicable
+            if kwargs['date']:
+                kwargs['attributes'][kwargs['field_mapping']['time']] = {}
+                kwargs['attributes'][kwargs['field_mapping']['time']]['long_name'] = kwargs['time_longname']
+                kwargs['attributes'][kwargs['field_mapping']['time']]['units'] = kwargs['time_units']
         #-- netCDF4 dimension variables
         dimensions = []
         dimensions.append('lat')
@@ -798,19 +822,11 @@ class spatial(object):
         #-- filling NetCDF variables
         for field,key in kwargs['field_mapping'].items():
             nc[key][:] = getattr(self,field)
-        #-- Defining attributes for longitude and latitude
-        nc[kwargs['field_mapping']['lon']].long_name = 'longitude'
-        nc[kwargs['field_mapping']['lon']].units = 'degrees_east'
-        nc[kwargs['field_mapping']['lat']].long_name = 'latitude'
-        nc[kwargs['field_mapping']['lon']].units = 'degrees_north'
-        #-- Defining attributes for dataset
-        nc[kwargs['field_mapping']['data']].long_name = kwargs['longname']
-        nc[kwargs['field_mapping']['data']].units = kwargs['units']
-        #-- Defining attributes for date if applicable
-        if kwargs['date']:
-            nc[kwargs['field_mapping']['time']].long_name = kwargs['time_longname']
-            nc[kwargs['field_mapping']['time']].units = kwargs['time_units']
-        #-- global variables of NetCDF file
+            #-- filling netCDF dataset attributes
+            for att_name,att_val in kwargs['attributes'][key].items():
+                if att_name not in ('DIMENSION_LIST','CLASS','NAME','_FillValue'):
+                    nc[key].setncattr(att_name, att_val)
+        #-- filling global netCDF attributes
         if kwargs['title']:
             fileID.title = kwargs['title']
         if kwargs['reference']:
@@ -839,6 +855,8 @@ class spatial(object):
             latitude variable name in HDF5 file
         field_mapping: dict, default {}
             mapping between input variables and output HDF5
+        attributes: dict, default {}
+            output netCDF4 variable attributes
         units: str or NoneType, default: None
             data variable units
         longname: str or NoneType, default: None
@@ -865,6 +883,7 @@ class spatial(object):
         kwargs.setdefault('latname','lat')
         kwargs.setdefault('timename','time')
         kwargs.setdefault('field_mapping',{})
+        kwargs.setdefault('attributes',{})
         kwargs.setdefault('units',None)
         kwargs.setdefault('longname',None)
         kwargs.setdefault('time_units','years')
@@ -886,6 +905,24 @@ class spatial(object):
             kwargs['field_mapping']['data'] = kwargs['varname']
             if kwargs['date']:
                 kwargs['field_mapping']['time'] = kwargs['timename']
+        #-- create attributes dictionary for output variables
+        if not kwargs['attributes']:
+            #-- Defining attributes for longitude and latitude
+            kwargs['attributes'][kwargs['field_mapping']['lon']] = {}
+            kwargs['attributes'][kwargs['field_mapping']['lon']]['long_name'] = 'longitude'
+            kwargs['attributes'][kwargs['field_mapping']['lon']]['units'] = 'degrees_east'
+            kwargs['attributes'][kwargs['field_mapping']['lat']] = {}
+            kwargs['attributes'][kwargs['field_mapping']['lat']]['long_name'] = 'longitude'
+            kwargs['attributes'][kwargs['field_mapping']['lat']]['units'] = 'degrees_north'
+            #-- Defining attributes for dataset
+            kwargs['attributes'][kwargs['field_mapping']['lat']] = {}
+            kwargs['attributes'][kwargs['field_mapping']['data']]['long_name'] = kwargs['longname']
+            kwargs['attributes'][kwargs['field_mapping']['data']]['units'] = kwargs['units']
+            #-- Defining attributes for date if applicable
+            if kwargs['date']:
+                kwargs['attributes'][kwargs['field_mapping']['time']] = {}
+                kwargs['attributes'][kwargs['field_mapping']['time']]['long_name'] = kwargs['time_longname']
+                kwargs['attributes'][kwargs['field_mapping']['time']]['units'] = kwargs['time_units']
         #-- HDF5 dimension variables
         dimensions = []
         dimensions.append('lat')
@@ -902,26 +939,21 @@ class spatial(object):
             key = kwargs['field_mapping'][field]
             h5[key] = fileID.create_dataset(key, temp.shape,
                 data=temp, dtype=temp.dtype, compression='gzip')
+            #-- filling HDF5 dataset attributes
+            for att_name,att_val in kwargs['attributes'][key].items():
+                if att_name not in ('DIMENSION_LIST','CLASS','NAME'):
+                    h5[key].attrs[att_name] = att_val
         #-- add dimensions
-        for i,dim in enumerate(dims):
-            h5[kwargs['field_mapping']['data']].dims[i].label = dim
-            h5[kwargs['field_mapping']['data']].dims[i].attach_scale(h5[dim])
-        #-- filling HDF5 dataset attributes
-        #-- Defining attributes for longitude and latitude
-        h5[kwargs['field_mapping']['lon']].attrs['long_name'] = 'longitude'
-        h5[kwargs['field_mapping']['lon']].attrs['units'] = 'degrees_east'
-        h5[kwargs['field_mapping']['lat']].attrs['long_name'] = 'latitude'
-        h5[kwargs['field_mapping']['lat']].attrs['units'] = 'degrees_north'
-        #-- Defining attributes for dataset
-        h5[kwargs['field_mapping']['data']].attrs['long_name'] = kwargs['longname']
-        h5[kwargs['field_mapping']['data']].attrs['units'] = kwargs['units']
-        #-- Dataset contains missing values
-        if (self.fill_value is not None):
-            h5[kwargs['field_mapping']['data']].attrs['_FillValue'] = self.fill_value
-        #-- Defining attributes for date
-        if kwargs['date']:
-            h5[kwargs['field_mapping']['time']].attrs['long_name'] = kwargs['time_longname']
-            h5[kwargs['field_mapping']['time']].attrs['units'] = kwargs['time_units']
+        variables = set(kwargs['field_mapping'].keys()) - set(dimensions)
+        for field in sorted(variables):
+            key = kwargs['field_mapping'][field]
+            for i,dim in enumerate(dims):
+                h5[key].dims[i].label = dim
+                h5[key].dims[i].attach_scale(h5[dim])
+            #-- Dataset contains missing values
+            if (self.fill_value is not None):
+                h5[key].attrs['_FillValue'] = self.fill_value
+        #-- filling global HDF5 attributes
         #-- description of file
         if kwargs['title']:
             fileID.attrs['description'] = kwargs['title']
@@ -931,7 +963,7 @@ class spatial(object):
         #-- date created
         fileID.attrs['date_created'] = time.strftime('%Y-%m-%d',time.localtime())
         #-- Output HDF5 structure information
-        logging.info(kwargs['FILENAME'])
+        logging.info(self.filename)
         logging.info(list(fileID.keys()))
         #-- Closing the NetCDF file
         fileID.close()
