@@ -15,6 +15,7 @@ dependencies:
   - numpy
   - numpydoc
   - pip
+  - proj>=8.0
   - python>=3.6
   - python-dateutil
   - pyyaml
