@@ -856,7 +856,7 @@ class spatial(object):
         field_mapping: dict, default {}
             mapping between input variables and output HDF5
         attributes: dict, default {}
-            output netCDF4 variable attributes
+            output HDF5 variable attributes
         units: str or NoneType, default: None
             data variable units
         longname: str or NoneType, default: None
