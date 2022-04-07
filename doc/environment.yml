@@ -7,7 +7,6 @@ dependencies:
   - fontconfig
   - freetype
   - future
-  - gdal
   - geos
   - graphviz
   - h5py
