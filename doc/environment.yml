@@ -11,6 +11,7 @@ dependencies:
   - graphviz
   - h5py
   - lxml
+  - markupsafe==2.0.1
   - netCDF4
   - notebook
   - numpy
