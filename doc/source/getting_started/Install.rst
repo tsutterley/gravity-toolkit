@@ -31,4 +31,4 @@ Alternatively can install the ``gravity_toolkit`` utilities directly from GitHub
 
 Executable versions of this repository can also be tested using
 `Binder <https://mybinder.org/v2/gh/tsutterley/read-GRACE-harmonics/main>`_ or
-`Pangeo <https://binder.pangeo.io/v2/gh/tsutterley/read-GRACE-harmonics/main>`_.
+`Pangeo <https://aws-uswest2-binder.pangeo.io/v2/gh/tsutterley/read-GRACE-harmonics/main?urlpath=lab>`_.
