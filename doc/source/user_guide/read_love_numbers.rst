@@ -22,3 +22,5 @@ Calling Sequence
 .. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_love_numbers.py
 
 .. autofunction:: gravity_toolkit.read_love_numbers
+
+.. autofunction:: gravity_toolkit.read_love_numbers.from_file

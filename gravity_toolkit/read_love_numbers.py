@@ -38,6 +38,9 @@ OPTIONS:
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
+PROGRAM DEPENDENCIES:
+    utilities.py: download and management utilities for files
+
 REFERENCES:
     G. Blewitt, "Self‐consistency in reference frames, geocenter definition,
         and surface loading of the solid Earth",
@@ -54,6 +57,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
+        added wrapper function for reading load Love numbers from file
     Updated 07/2021: added check if needing to interpolate love numbers
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: use file not found exceptions
@@ -75,6 +79,7 @@ UPDATE HISTORY:
 import os
 import re
 import numpy as np
+from gravity_toolkit.utilities import get_data_path
 
 #-- PURPOSE: read load love numbers from PREM
 def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
@@ -124,17 +129,37 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
 
     References
     ----------
-    .. [Blewett2003] G. Blewitt, "Self‐consistency in reference frames, geocenter definition, and surface loading of the solid Earth", *Journal of Geophysical Research: Solid Earth*, 108(B2), 2103, (2003). `doi: 10.1029/2002JB002082 <https://doi.org/10.1029/2002JB002082>`_
+    .. [Blewett2003] G. Blewitt, "Self‐consistency in reference frames, geocenter
+        definition, and surface loading of the solid Earth",
+        *Journal of Geophysical Research: Solid Earth*, 108(B2), 2103, (2003).
+        `doi: 10.1029/2002JB002082 <https://doi.org/10.1029/2002JB002082>`_
 
-    .. [Dziewonski1981] A. M. Dziewonski and D. L. Anderson, "Preliminary reference Earth model", *Physics of the Earth and Planetary Interiors*, 25(4), 297--356, (1981). `doi: 10.1016/0031-9201(81)90046-7 <https://doi.org/10.1016/0031-9201(81)90046-7>`_
+    .. [Dziewonski1981] A. M. Dziewonski and D. L. Anderson,
+        "Preliminary reference Earth model",
+        *Physics of the Earth and Planetary Interiors*, 25(4), 297--356, (1981).
+        `doi: 10.1016/0031-9201(81)90046-7 <https://doi.org/10.1016/0031-9201(81)90046-7>`_
 
-    .. [Gegout2010] P. Gegout, J. Boehm, and D. Wijaya, "Practical numerical computation of love numbers and applications", Workshop of the COST Action ES0701, (2010). `doi: 10.13140/RG.2.1.1866.7045 <https://doi.org/10.13140/RG.2.1.1866.7045>`_
+    .. [Gegout2010] P. Gegout, J. Boehm, and D. Wijaya,
+        "Practical numerical computation of love numbers and applications",
+        Workshop of the COST Action ES0701, (2010).
+        `doi: 10.13140/RG.2.1.1866.7045 <https://doi.org/10.13140/RG.2.1.1866.7045>`_
 
-    .. [Han1995] D. Han and J. Wahr, "The viscoelastic relaxation of a realistically stratified earth, and a further analysis of postglacial rebound", *Geophysical Journal International*, 120(2), 287--311, (1995). `doi: 10.1111/j.1365-246X.1995.tb01819.x <https://doi.org/10.1111/j.1365-246X.1995.tb01819.x>`_
+    .. [Han1995] D. Han and J. Wahr, "The viscoelastic relaxation of a
+        realistically stratified earth, and a further analysis of postglacial
+        rebound", *Geophysical Journal International*, 120(2), 287--311, (1995).
+        `doi: 10.1111/j.1365-246X.1995.tb01819.x <https://doi.org/10.1111/j.1365-246X.1995.tb01819.x>`_
 
-    .. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan, "Time variability of the Earth's gravity field: Hydrological and oceanic effects and their possible detection using GRACE", *Journal of Geophysical Research*, 103(B12), 30205--30229, (1998). `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_
+    .. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan,
+        "Time variability of the Earth's gravity field: Hydrological and
+        oceanic effects and their possible detection using GRACE",
+        *Journal of Geophysical Research*, 103(B12), 30205--30229, (1998).
+        `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_
 
-    .. [Wang2012] H. Wang et al., "Load Love numbers and Green's functions for elastic Earth models PREM, iasp91, ak135, and modified models with refined crustal structure from Crust 2.0", *Computers & Geosciences*, 49, 190--199, (2012). `doi: 10.1016/j.cageo.2012.06.022 <https://doi.org/10.1016/j.cageo.2012.06.022>`_
+    .. [Wang2012] H. Wang et al., "Load Love numbers and Green's
+        functions for elastic Earth models PREM, iasp91, ak135, and
+        modified models with refined crustal structure from Crust 2.0",
+        *Computers & Geosciences*, 49, 190--199, (2012).
+        `doi: 10.1016/j.cageo.2012.06.022 <https://doi.org/10.1016/j.cageo.2012.06.022>`_
     """
 
     #-- check that load love number data file is present in file system
@@ -228,3 +253,92 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
         return (love['hl'], love['kl'], love['ll'])
     elif (FORMAT == 'zip'):
         return zip(love['hl'], love['kl'], love['ll'])
+
+#-- PURPOSE: read load love numbers for a range of spherical harmonic degrees
+def from_file(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
+    """
+    Wrapper function for reading PREM load Love numbers for a
+    range of spherical harmonic degrees and applying
+    isomorphic parameters [Blewett2003]_
+
+    Parameters
+    ----------
+    LMAX: int
+        maximum spherical harmonic degree
+    LOVE_NUMBERS: int, default 0
+        Treatment of the Load Love numbers
+
+            - ``0``: [Han1995]_ values from PREM
+            - ``1``: [Gegout2010]_ values from PREM
+            - ``2``: [Wang2012]_ values from PREM
+    REFERENCE: str
+        Reference frame for calculating degree 1 love numbers [Blewett2003]_
+
+            - ``'CF'``: Center of Surface Figure (default)
+            - ``'CM'``: Center of Mass of Earth System
+            - ``'CE'``: Center of Mass of Solid Earth
+    FORMAT: str, default 'tuple'
+        Format of output variables
+
+            - ``'dict'``: dictionary with variable keys as listed above
+            - ``'tuple'``: tuple with variable order (``hl``, ``kl``, ``ll``)
+            - ``'zip'``: aggregated variable sets
+
+    Returns
+    -------
+    kl: float
+        Love number of Gravitational Potential
+    hl: float
+        Love number of Vertical Displacement
+    ll: float
+        Love number of Horizontal Displacement
+
+    References
+    ----------
+    .. [Blewett2003] G. Blewitt, "Self‐consistency in reference frames, geocenter
+        definition, and surface loading of the solid Earth",
+        *Journal of Geophysical Research: Solid Earth*, 108(B2), 2103, (2003).
+        `doi: 10.1029/2002JB002082 <https://doi.org/10.1029/2002JB002082>`_
+
+    .. [Gegout2010] P. Gegout, J. Boehm, and D. Wijaya,
+        "Practical numerical computation of love numbers and applications",
+        Workshop of the COST Action ES0701, (2010).
+        `doi: 10.13140/RG.2.1.1866.7045 <https://doi.org/10.13140/RG.2.1.1866.7045>`_
+
+    .. [Han1995] D. Han and J. Wahr, "The viscoelastic relaxation of a
+        realistically stratified earth, and a further analysis of postglacial
+        rebound", *Geophysical Journal International*, 120(2), 287--311, (1995).
+        `doi: 10.1111/j.1365-246X.1995.tb01819.x <https://doi.org/10.1111/j.1365-246X.1995.tb01819.x>`_
+
+    .. [Wang2012] H. Wang et al., "Load Love numbers and Green's
+        functions for elastic Earth models PREM, iasp91, ak135, and
+        modified models with refined crustal structure from Crust 2.0",
+        *Computers & Geosciences*, 49, 190--199, (2012).
+        `doi: 10.1016/j.cageo.2012.06.022 <https://doi.org/10.1016/j.cageo.2012.06.022>`_
+    """
+    #-- load love numbers file
+    if (LOVE_NUMBERS == 0):
+        #-- PREM outputs from Han and Wahr (1995)
+        #-- https://doi.org/10.1111/j.1365-246X.1995.tb01819.x
+        love_numbers_file = get_data_path(['data','love_numbers'])
+        header = 2
+        columns = ['l','hl','kl','ll']
+    elif (LOVE_NUMBERS == 1):
+        #-- PREM outputs from Gegout (2005)
+        #-- http://gemini.gsfc.nasa.gov/aplo/
+        love_numbers_file = get_data_path(['data','Load_Love2_CE.dat'])
+        header = 3
+        columns = ['l','hl','ll','kl']
+    elif (LOVE_NUMBERS == 2):
+        #-- PREM outputs from Wang et al. (2012)
+        #-- https://doi.org/10.1016/j.cageo.2012.06.022
+        love_numbers_file = get_data_path(['data','PREM-LLNs-truncated.dat'])
+        header = 1
+        columns = ['l','hl','ll','kl','nl','nk']
+    #-- LMAX of load love numbers from Han and Wahr (1995) is 696.
+    #-- from Wahr (2007) linearly interpolating kl works
+    #-- however, as we are linearly extrapolating out, do not make
+    #-- LMAX too much larger than 696
+    #-- read arrays of kl, hl, and ll Love Numbers
+    return read_love_numbers(love_numbers_file, LMAX=LMAX, HEADER=header,
+        COLUMNS=columns, REFERENCE=REFERENCE, FORMAT=FORMAT)
