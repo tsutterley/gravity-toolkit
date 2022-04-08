@@ -152,7 +152,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
-    Updated 04/2022: moved Load love number wrapper function to within read
+    Updated 04/2022: use wrapper function for reading load Love numbers
     Updated 12/2021: can use variable loglevels for verbose output
         option to specify a specific geocenter correction file
     Updated 11/2021: add GSFC low-degree harmonics
@@ -240,7 +240,7 @@ from gravity_toolkit.grace_input_months import grace_input_months
 from gravity_toolkit.harmonics import harmonics
 from gravity_toolkit.units import units
 from gravity_toolkit.read_GIA_model import read_GIA_model
-from gravity_toolkit.read_love_numbers import read_love_numbers
+from gravity_toolkit.read_love_numbers import load_love_numbers
 from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.ocean_stokes import ocean_stokes
 from gravity_toolkit.tssmooth import tssmooth
@@ -308,8 +308,8 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     parser = re.compile(r'^(?!\#|\%|$)', re.VERBOSE)
 
     #-- read arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = read_love_numbers.from_file(LMAX,
-        LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE=REFERENCE)
+    hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+        REFERENCE=REFERENCE)
 
     #-- Earth Parameters
     factors = units(lmax=LMAX).harmonic(hl,kl,ll)

@@ -73,7 +73,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
-    Updated 04/2022: moved Load love number wrapper function to within read
+    Updated 04/2022: use wrapper function for reading load Love numbers
     Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: switch from parameter files to argparse arguments
@@ -116,7 +116,7 @@ import traceback
 
 import gravity_toolkit.utilities as utilities
 from gravity_toolkit.read_GIA_model import read_GIA_model
-from gravity_toolkit.read_love_numbers import read_love_numbers
+from gravity_toolkit.read_love_numbers import load_love_numbers
 from gravity_toolkit.ocean_stokes import ocean_stokes
 from gravity_toolkit.harmonics import harmonics
 from gravity_toolkit.units import units
@@ -181,8 +181,8 @@ def mascon_reconstruct(DSET, LMAX, RAD,
     file_format = '{0}{1}{2}{3}{4}_L{5:d}{6}{7}{8}_{9:03d}-{10:03d}.{11}'
 
     #-- read load love numbers
-    hl,kl,ll = read_love_numbers.from_file(LMAX,
-        LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE=REFERENCE)
+    hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+        REFERENCE=REFERENCE)
     #-- Earth Parameters
     factors = units(lmax=LMAX).harmonic(hl,kl,ll)
     #-- Average Density of the Earth [g/cm^3]

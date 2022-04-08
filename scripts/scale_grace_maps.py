@@ -151,7 +151,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
-    Updated 04/2022: moved Load love number wrapper function to within read
+    Updated 04/2022: use wrapper function for reading load Love numbers
     Updated 12/2021: can use variable loglevels for verbose output
         option to specify a specific geocenter correction file
         fix default file prefix to include center and release information
@@ -183,7 +183,7 @@ from gravity_toolkit.harmonics import harmonics
 from gravity_toolkit.spatial import spatial
 from gravity_toolkit.units import units
 from gravity_toolkit.read_GIA_model import read_GIA_model
-from gravity_toolkit.read_love_numbers import read_love_numbers
+from gravity_toolkit.read_love_numbers import load_love_numbers
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.ocean_stokes import ocean_stokes
@@ -198,6 +198,7 @@ def info(args):
     if hasattr(os, 'getppid'):
         logging.info('parent process: {0:d}'.format(os.getppid()))
     logging.info('process id: {0:d}'.format(os.getpid()))
+
 
 #-- PURPOSE: import GRACE/GRACE-FO files for a given months range
 #-- Calculates monthly scaled spatial maps from GRACE/GRACE-FO
@@ -253,8 +254,8 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     file_format = '{0}{1}{2}_L{3:d}{4}{5}{6}_{7:03d}-{8:03d}.{9}'
 
     #-- read arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = read_love_numbers.from_file(LMAX,
-        LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE=REFERENCE)
+    hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+        REFERENCE=REFERENCE)
 
     #-- atmospheric ECMWF "jump" flag (if ATM)
     atm_str = '_wATM' if ATM else ''

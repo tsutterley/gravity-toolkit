@@ -255,7 +255,7 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
         return zip(love['hl'], love['kl'], love['ll'])
 
 #-- PURPOSE: read load love numbers for a range of spherical harmonic degrees
-def from_file(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
+def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
     """
     Wrapper function for reading PREM load Love numbers for a
     range of spherical harmonic degrees and applying

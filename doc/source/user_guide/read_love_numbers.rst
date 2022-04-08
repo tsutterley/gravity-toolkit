@@ -23,4 +23,4 @@ Calling Sequence
 
 .. autofunction:: gravity_toolkit.read_love_numbers
 
-.. autofunction:: gravity_toolkit.read_love_numbers.from_file
+.. autofunction:: gravity_toolkit.read_love_numbers.load_love_numbers

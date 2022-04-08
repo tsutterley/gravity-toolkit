@@ -17,3 +17,5 @@ Calling Sequence
 .. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/gen_point_load.py
 
 .. autofunction:: gravity_toolkit.gen_point_load
+
+.. autofunction:: gravity_toolkit.gen_point_load.spherical_harmonic_matrix
