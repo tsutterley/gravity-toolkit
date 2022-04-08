@@ -108,4 +108,5 @@ missions
     user_guide/mascon_reconstruct.rst
     user_guide/regress_grace_maps.rst
     user_guide/run_grace_date.md
+    user_guide/run_sea_level_equation.rst
     user_guide/scale_grace_maps.rst

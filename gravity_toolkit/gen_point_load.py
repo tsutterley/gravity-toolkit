@@ -162,15 +162,21 @@ def spherical_harmonic_matrix(l,data,phi,theta,coeff):
 
     Parameters
     ----------
-    l: spherical harmonic degree
-    data: data magnitude in grams
-    phi: longitude of points in radians
-    theta: colatitude of points in radians
-    coeff: degree-dependent factor for converting units
+    l: int
+        spherical harmonic degree
+    data: float
+        data magnitude in grams
+    phi: float
+        longitude of points in radians
+    theta: float
+        colatitude of points in radians
+    coeff: float
+        degree-dependent factor for converting units
 
     Returns
     -------
-    Ylms: spherical harmonic coefficients in Eulerian form
+    Ylms: float
+        spherical harmonic coefficients in Eulerian form
     """
     #-- calculate normalized legendre polynomials (points, order)
     Pl = legendre(l, np.cos(theta), NORMALIZE=True).T

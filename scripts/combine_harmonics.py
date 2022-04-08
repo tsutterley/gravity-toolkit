@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 combine_harmonics.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (12/2021)
 Converts a file from the spherical harmonic domain into the spatial domain
 
 CALLING SEQUENCE:
@@ -68,7 +68,6 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
-    Updated 04/2022: moved Load love number wrapper function to within read
     Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
     Updated 09/2021: update grid attributes after allocating for data
@@ -100,7 +99,7 @@ import traceback
 import numpy as np
 
 import gravity_toolkit.utilities as utilities
-from gravity_toolkit.read_love_numbers import read_love_numbers
+from gravity_toolkit.read_love_numbers import load_love_numbers
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.ocean_stokes import ocean_stokes
@@ -171,8 +170,8 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
         input_Ylms.subtract(mean_Ylms)
 
     #-- read arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = read_love_numbers.from_file(LMAX,
-        LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE=REFERENCE)
+    hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+        REFERENCE=REFERENCE)
 
     #-- distribute total mass uniformly over the ocean
     if REDISTRIBUTE:

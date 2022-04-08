@@ -20,3 +20,7 @@ Calling Sequence
 .. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/gen_harmonics.py
 
 .. autofunction:: gravity_toolkit.gen_harmonics
+
+.. autofunction:: gravity_toolkit.gen_harmonics.integration
+
+.. autofunction:: gravity_toolkit.gen_harmonics.fourier

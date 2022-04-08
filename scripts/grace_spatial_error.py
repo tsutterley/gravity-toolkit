@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_error.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (12/2021)
 
 Calculates the GRACE/GRACE-FO errors following Wahr et al. (2006)
 
@@ -113,7 +113,6 @@ REFERENCES:
         http://dx.doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
-    Updated 04/2022: moved Load love number wrapper function to within read
     Updated 12/2021: can use variable loglevels for verbose output
         option to specify a specific geocenter correction file
         fix default file prefix to include center and release information
@@ -157,7 +156,7 @@ import traceback
 
 import gravity_toolkit.utilities as utilities
 from gravity_toolkit.grace_input_months import grace_input_months
-from gravity_toolkit.read_love_numbers import read_love_numbers
+from gravity_toolkit.read_love_numbers import load_love_numbers
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.harmonics import harmonics
@@ -218,8 +217,8 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
 
     #-- read arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = read_love_numbers.from_file(LMAX,
-        LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE=REFERENCE)
+    hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+        REFERENCE=REFERENCE)
 
     #-- Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):

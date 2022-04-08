@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 convert_harmonics.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (12/2021)
 Converts a file from the spatial domain into the spherical harmonic domain
 
 CALLING SEQUENCE:
@@ -59,7 +59,6 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
-    Updated 04/2022: moved Load love number wrapper function to within read
     Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
     Updated 09/2021: fix to use fill values for input ascii files
@@ -85,7 +84,7 @@ import traceback
 import numpy as np
 
 import gravity_toolkit.utilities as utilities
-from gravity_toolkit.read_love_numbers import read_love_numbers
+from gravity_toolkit.read_love_numbers import load_love_numbers
 from gravity_toolkit.gen_stokes import gen_stokes
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.harmonics import harmonics
@@ -149,8 +148,8 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     nlat,nlon,nt = input_spatial.shape
 
     #-- read arrays of kl, hl, and ll Love Numbers
-    LOVE = read_love_numbers.from_file(LMAX,
-        LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE=REFERENCE)
+    LOVE = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+        REFERENCE=REFERENCE)
 
     #-- upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:
