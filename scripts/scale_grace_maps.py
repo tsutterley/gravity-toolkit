@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 scale_grace_maps.py
-Written by Tyler Sutterley (12/2021)
+Written by Tyler Sutterley (04/2022)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly scaled spatial fields, estimated scaling errors,
@@ -151,6 +151,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 04/2022: use wrapper function for reading load Love numbers
     Updated 12/2021: can use variable loglevels for verbose output
         option to specify a specific geocenter correction file
         fix default file prefix to include center and release information
