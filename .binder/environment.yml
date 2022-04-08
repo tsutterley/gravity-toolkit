@@ -6,7 +6,10 @@ dependencies:
   - cartopy
   - future
   - h5py
-  - ipywidgets
+  - ipywidgets>=7.6,<8.0
+  - ipympl
+  - jupyterlab=3
+  - jupyterlab_widgets
   - lxml
   - markupsafe==2.0.1
   - matplotlib
