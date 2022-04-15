@@ -29,7 +29,7 @@ OUTPUT:
     dplms: first differentials of Legendre polynomials of x
 
 OPTIONS:
-    ASTYPE: output variable type (e.g. np.float128).  Default is np.float64
+    ASTYPE: output variable type (e.g. np.longdouble).  Default is np.float64
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
@@ -115,8 +115,8 @@ def plm_holmes(LMAX, x, ASTYPE=np.float64):
     k = 2#-- k = l*(l+1)/2 + m
     for l in range(2, LMAX+1):
         k += 1
-        f1[k] = np.sqrt(2.0*l-1.0)*np.sqrt(2.0*l+1.0)/np.float128(l)
-        f2[k] = np.float128(l-1.0)*np.sqrt(2.0*l+1.0)/(np.sqrt(2.0*l-3.0)*np.float128(l))
+        f1[k] = np.sqrt(2.0*l-1.0)*np.sqrt(2.0*l+1.0)/np.longdouble(l)
+        f2[k] = np.longdouble(l-1.0)*np.sqrt(2.0*l+1.0)/(np.sqrt(2.0*l-3.0)*np.longdouble(l))
         for m in range(1, l-1):
             k += 1
             f1[k] = np.sqrt(2.0*l+1.0)*np.sqrt(2.0*l-1.0)/(np.sqrt(l+m)*np.sqrt(l-m))
@@ -172,7 +172,7 @@ def plm_holmes(LMAX, x, ASTYPE=np.float64):
             plm[l,m,:] = p[lm,:]
             #-- calculate first derivatives
             if (l == m):
-                dplm[l,m,:] = np.float128(m)*(x/u)*plm[l,m,:]
+                dplm[l,m,:] = np.longdouble(m)*(x/u)*plm[l,m,:]
             else:
                 flm = np.sqrt(((l**2.0 - m**2.0)*(2.0*l + 1.0))/(2.0*l - 1.0))
                 dplm[l,m,:]= (1.0/u)*(l*x*plm[l,m,:] - flm*plm[l-1,m,:])

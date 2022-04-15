@@ -47,6 +47,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
+        include utf-8 encoding in reads to be windows compliant
     Updated 09/2021: adjust regular expression operators for Swarm and GRAZ
         use functions for converting to and from GRACE months
     Updated 07/2021: remove choices for argparse processing centers
@@ -250,7 +251,8 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     #--  Directory of exact product
     grace_dir = os.path.join(base_dir, PROC, DREL, DSET)
     #-- input index file containing GRACE data filenames
-    with open(os.path.join(grace_dir, 'index.txt'),'r') as f:
+    index_file = os.path.join(grace_dir, 'index.txt')
+    with open(index_file, mode='r', encoding='utf8') as f:
         input_files = f.read().splitlines()
 
     #--  number of lines in input_files

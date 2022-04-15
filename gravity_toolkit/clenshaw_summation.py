@@ -66,7 +66,7 @@ from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.units import units
 
 def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
-    ASTYPE=np.float128, SCALE=1e-280):
+    ASTYPE=np.longdouble, SCALE=1e-280):
     """
     Calculates the spatial field for a series of spherical harmonics for a
     sequence of ungridded points
@@ -97,7 +97,7 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
         Upper bound of Spherical Harmonic Degrees
     LOVE: tuple or NoneType, default None
         Load Love numbers up to degree LMAX (``hl``, ``kl``, ``ll``)
-    ASTYPE: obj, default np.float128
+    ASTYPE: obj, default np.longdouble
         floating point precision for calculating Clenshaw summation
     SCALE: float, default 1e-280
         scaling factor to prevent underflow in Clenshaw summation
@@ -216,7 +216,7 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
 
 #-- PURPOSE: compute conditioned arrays for Clenshaw summation from the
 #-- fully-normalized associated Legendre's function for an order m
-def clenshaw_s_m(t, f, m, clm1, slm1, lmax, ASTYPE=np.float128, SCALE=1e-280):
+def clenshaw_s_m(t, f, m, clm1, slm1, lmax, ASTYPE=np.longdouble, SCALE=1e-280):
     """
     Compute conditioned arrays for Clenshaw summation from the fully-normalized
     associated Legendre's function for an order m

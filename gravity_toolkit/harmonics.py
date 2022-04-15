@@ -28,6 +28,7 @@ UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
         using internal netCDF4 and HDF5 readers and writers
         added function for converting to a python dictionary
+        include utf-8 encoding in reads to be windows compliant
     Updated 12/2021: logging case_insensitive_filename output for debugging
     Updated 11/2021: kwargs to index, netCDF4 and HDF5 read functions
     Updated 10/2021: using python logging for handling verbose output
@@ -196,7 +197,7 @@ class harmonics(object):
             file_contents = self.filename.read().splitlines()
         else:
             #-- read input ascii file (.txt, .asc) and split lines
-            with open(self.filename,'r') as f:
+            with open(self.filename, mode='r', encoding='utf8') as f:
                 file_contents = f.read().splitlines()
         #-- compile regular expression operator for extracting numerical values
         #-- from input ascii files of spherical harmonics
@@ -561,7 +562,7 @@ class harmonics(object):
         #-- removes empty lines (if there are extra empty lines)
         parser = re.compile(r'^(?!\#|\%|$)', re.VERBOSE)
         #-- Read index file of input spherical harmonics
-        with open(self.filename,'r') as f:
+        with open(self.filename, mode='r', encoding='utf8') as f:
             file_list = [l for l in f.read().splitlines() if parser.match(l)]
         #-- create a list of harmonic objects
         h = []

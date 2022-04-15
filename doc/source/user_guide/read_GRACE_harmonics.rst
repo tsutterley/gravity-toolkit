@@ -23,3 +23,7 @@ Calling Sequence
 .. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_GRACE_harmonics.py
 
 .. autofunction:: gravity_toolkit.read_GRACE_harmonics
+
+.. autofunction:: gravity_toolkit.read_GRACE_harmonics.parse_file
+
+.. autofunction:: gravity_toolkit.read_GRACE_harmonics.extract_file

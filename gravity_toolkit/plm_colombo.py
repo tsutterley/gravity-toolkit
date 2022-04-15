@@ -127,7 +127,7 @@ def plm_colombo(LMAX, x, ASTYPE=np.float64):
         #-- starting with P00 and P11 (outside the loop)
         plm[l,l,:] = u*np.sqrt((2.0*l+1.0)/(2.0*l))*np.squeeze(plm[l-1,l-1,:])
         #-- calculate first derivatives for sectorial harmonics
-        dplm[l,l,:] = np.float128(l)*(x/u)*plm[l,l,:]
+        dplm[l,l,:] = np.longdouble(l)*(x/u)*plm[l,l,:]
 
     #-- return the legendre polynomials and their first derivative
     return plm,dplm

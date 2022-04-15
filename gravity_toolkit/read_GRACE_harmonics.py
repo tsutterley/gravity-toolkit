@@ -43,6 +43,8 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
+        include utf-8 encoding in reads to be windows compliant
+        check if GRACE/GRACE-FO data file is present in file-system
     Updated 09/2021: added COST-G combined solutions from the GFZ ICGEM
         output spherical harmonic degree and order in dict
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -285,7 +287,8 @@ def parse_file(input_file):
 
     Parameters
     ----------
-    input_file: GRACE/GRACE-FO Level-2 spherical harmonic data file
+    input_file: str
+        GRACE/GRACE-FO Level-2 spherical harmonic data file
     """
     #-- compile numerical expression operator for parameters from files
     #-- UTCSR: The University of Texas at Austin Center for Space Research
@@ -312,12 +315,17 @@ def extract_file(input_file, compressed):
 
     Parameters
     ----------
-    input_file: GRACE/GRACE-FO Level-2 spherical harmonic data file
-    compressed: denotes if the file is compressed
+    input_file: str
+        GRACE/GRACE-FO Level-2 spherical harmonic data file
+    compressed: bool
+        denotes if the file is compressed
     """
     #-- tilde expansion of input file if not byteIO object
     if not isinstance(input_file, io.IOBase):
         input_file = os.path.expanduser(input_file)
+        #-- check that data file is present in file system
+        if not os.access(input_file, os.F_OK):
+            raise FileNotFoundError('{0} not found'.format(input_file))
     #-- check if file is uncompressed byteIO object
     if isinstance(input_file, io.IOBase) and not compressed:
         #-- extract spherical harmonic coefficients
@@ -326,5 +334,5 @@ def extract_file(input_file, compressed):
         #-- check if file is compressed (read with gzip if gz)
         file_opener = gzip.open if compressed else open
         #-- opening data file to extract spherical harmonic coefficients
-        with file_opener(input_file,'rb') as f:
+        with file_opener(input_file, 'rb') as f:
             return f.read().decode('ISO-8859-1').splitlines()

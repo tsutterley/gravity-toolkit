@@ -61,6 +61,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
+        include utf-8 encoding in reads to be windows compliant
     Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: added GFZ GravIS GRACE/SLR low degree solutions
         define int/float precision to prevent deprecation warning
@@ -118,7 +119,7 @@ def read_SLR_C30(SLR_file, C30_MEAN=9.5717395773300e-07, HEADER=True):
     if bool(re.search(r'TN-(14)',SLR_file,re.I)):
 
         #-- SLR C30 RL06 file from PO.DAAC produced by GSFC
-        with open(os.path.expanduser(SLR_file),'r') as f:
+        with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         #-- number of lines contained in the file
         file_lines = len(file_contents)
@@ -193,7 +194,7 @@ def read_SLR_C30(SLR_file, C30_MEAN=9.5717395773300e-07, HEADER=True):
         #-- Column  6: Replacement C(3,0)
         #-- Column  7: Replacement C(3,0) - mean C(3,0) (1.0E-10)
         #-- Column  8: C(3,0) formal standard deviation (1.0E-12)
-        with open(os.path.expanduser(SLR_file),'r') as f:
+        with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         #-- number of lines contained in the file
         file_lines = len(file_contents)

@@ -74,6 +74,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 04/2022: use wrapper function for reading load Love numbers
+        include utf-8 encoding in reads to be windows compliant
     Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: switch from parameter files to argparse arguments
@@ -199,7 +200,7 @@ def mascon_reconstruct(DSET, LMAX, RAD,
         ocean_str = ''
 
     #-- input mascon spherical harmonic datafiles
-    with open(MASCON_FILE,'r') as f:
+    with open(MASCON_FILE, mode='r', encoding='utf8') as f:
         mascon_files = [l for l in f.read().splitlines() if parser.match(l)]
     for k,fi in enumerate(mascon_files):
         #-- read mascon spherical harmonics
