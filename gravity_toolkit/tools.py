@@ -8,6 +8,10 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
         https://numpy.org
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    scipy: Scientific Tools for Python
+        https://docs.scipy.org/doc/
+    netCDF4: Python interface to the netCDF C library
+         https://unidata.github.io/netcdf4-python/netCDF4/index.html
     tkinter: Python interface to the Tcl/Tk GUI toolkit
         https://docs.python.org/3/library/tkinter.html
     ipywidgets: interactive HTML widgets for Jupyter notebooks and IPython
@@ -19,6 +23,8 @@ PYTHON DEPENDENCIES:
 PROGRAM DEPENDENCIES:
     grace_find_months.py: finds available months for a GRACE/GRACE-FO dataset
     grace_date.py: reads GRACE index file and calculates dates for each month
+    spatial.py: spatial data class for reading, writing and processing data
+    utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -32,9 +38,12 @@ import colorsys
 import ipywidgets
 import numpy as np
 import IPython.display
+import scipy.interpolate
 import tkinter.filedialog
 import matplotlib.cm as cm
 import matplotlib.colors as colors
+from gravity_toolkit.spatial import spatial
+from gravity_toolkit.utilities import get_data_path
 from gravity_toolkit.grace_find_months import grace_find_months
 
 class widgets:
@@ -1009,3 +1018,160 @@ def custom_colormap(N, map_name, **kwargs):
     cm.register_cmap(name=map_name, cmap=cmap)
     # return the colormap
     return cmap
+
+# PURPOSE: parallels the matplotlib basemap shiftgrid function
+def shift_grid(lon0, data, lon, CYCLIC=360.0):
+    """
+    Shift global grid east or west to a new base longitude
+
+    Parallels the ``mpl_toolkits.basemap.shiftgrid`` function
+
+    Parameters
+    ----------
+    lon0: float
+        Starting longitude for shifted grid
+        lon0 (_type_): _description_
+    data: float
+        data grid to be shifted
+    lon: float
+        longitude array to be shifted
+    CYCLIC: float, default 360.0
+        width of periodic domain
+
+    Returns
+    -------
+    shift_data: float
+        shifted data grid
+    shift_lon: float
+        shifted longitude array
+    """
+    start_idx = 0 if (np.fabs(lon[-1]-lon[0]-CYCLIC) > 1.e-4) else 1
+    i0 = np.argmin(np.fabs(lon-lon0))
+    # shift longitudinal values
+    if np.ma.isMA(lon):
+        shift_lon = np.ma.zeros(lon.shape,lon.dtype)
+    else:
+        shift_lon = np.zeros(lon.shape,lon.dtype)
+    shift_lon[0:-i0] = lon[i0:] - CYCLIC
+    shift_lon[-i0:] = lon[start_idx:i0+start_idx]
+    # shift data values
+    if np.ma.isMA(data):
+        shift_data = np.ma.zeros(data.shape,data.dtype)
+    else:
+        shift_data = np.zeros(data.shape,data.dtype)
+    shift_data[:,:-i0] = data[:,i0:]
+    shift_data[:,-i0:] = data[:,start_idx:i0+start_idx]
+    # return the shifted values
+    return (shift_data, shift_lon)
+
+# PURPOSE: parallels the matplotlib basemap interp function with scipy splines
+def interp_grid(data, xin, yin, xout, yout, order=0):
+    """
+    Interpolate gridded data to a new grid
+
+    Parallels the ``mpl_toolkits.basemap.interp`` function
+
+    Parameters
+    ----------
+    datain: float
+        input data grid to be interpolated
+    xin: float
+        input x-coordinate array (monotonically increasing)
+    yin: float
+        input y-coordinate array (monotonically increasing)
+    xout: float
+        output x-coordinate array
+    yout: float
+        output y-coordinate array
+    order: int, default 0
+        interpolation order
+
+            - ``0``: nearest-neighbor interpolation
+            - ``k``: bivariate spline interpolation of degree k
+
+    Returns
+    -------
+    interp_data: float
+        interpolated data grid
+    """
+    if (order == 0):
+        # interpolate with nearest-neighbors
+        xcoords = (len(xin)-1)*(xout-xin[0])/(xin[-1]-xin[0])
+        ycoords = (len(yin)-1)*(yout-yin[0])/(yin[-1]-yin[0])
+        xcoords = np.clip(xcoords,0,len(xin)-1)
+        ycoords = np.clip(ycoords,0,len(yin)-1)
+        xcoordsi = np.around(xcoords).astype(np.int32)
+        ycoordsi = np.around(ycoords).astype(np.int32)
+        interp_data = data[ycoordsi,xcoordsi]
+    else:
+        # interpolate with bivariate spline approximations
+        spl = scipy.interpolate.RectBivariateSpline(xin, yin,
+            data.T, kx=order, ky=order)
+        interp_data = spl.ev(xout,yout)
+    # return the interpolated data on the output grid
+    return interp_data
+
+# PURPOSE: parallels the matplotlib basemap maskoceans function but with
+# updated Greenland coastlines (G250) and Rignot (2017) Antarctic grounded ice
+def mask_oceans(datain, xin, yin, order=0, lakes=False,
+    iceshelves=True, resolution='qd'):
+    """
+    Mask a data grid over global ocean and water points
+
+    Parallels the ``mpl_toolkits.basemap.maskoceans`` function
+
+    Parameters
+    ----------
+    datain: float
+        input data grid to be interpolated
+    xin: float
+        input x-coordinate array (monotonically increasing)
+    yin: float
+        input y-coordinate array (monotonically increasing)
+    order: int, default 0
+        interpolation order
+
+            - ``0``: nearest-neighbor interpolation
+            - ``k``: bivariate spline interpolation of degree k
+    lakes: bool, default False
+        Mask inland water points
+    iceshelves: bool, default True
+        Mask Greenland and Antarctic ice shelves
+    resolution: str, default 'qd'
+        Resolution of the land-sea mask
+
+            - ``'1d'``: 1-degree spacing
+            - ``'hd'``: 0.5-degree spacing
+            - ``'qd'``: 0.25-degree spacing
+
+    Returns
+    -------
+    datain: float
+        masked data grid
+    """
+    # read in land/sea mask
+    lsmask = get_data_path(['data','landsea_{0}.nc'.format(resolution)])
+    #-- Land-Sea Mask with Antarctica from Rignot (2017) and Greenland from GEUS
+    #-- 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
+    #-- Open the land-sea NetCDF file for reading
+    landsea = spatial().from_netCDF4(lsmask, date=False, varname='LSMASK')
+    #-- create land function
+    nth,nphi = landsea.shape
+    land_function = np.zeros((nth,nphi),dtype=bool)
+    #-- extract land function from file
+    #-- find land values (1)
+    land_function |= (landsea.data == 1)
+    #-- find lake values (2)
+    if lakes:
+        land_function |= (landsea.data == 2)
+    #-- find small island values (3)
+    land_function |= (landsea.data == 3)
+    #-- find Greenland and Antarctic ice shelf values (4)
+    if iceshelves:
+        land_function |= (landsea.data == 4)
+    # interpolation to output grid
+    datain.mask |= interp_grid(land_function.astype(np.int32),
+        landsea.lon, landsea.lat, xin, yin, order).astype(bool)
+    # replace data with updated mask
+    datain.data[datain.mask] = datain.fill_value
+    return datain

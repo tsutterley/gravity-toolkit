@@ -66,6 +66,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
+        include utf-8 encoding in reads to be windows compliant
     Updated 11/2021: reader for new weekly 5x5+6,1 fields from NASA GSFC
     Updated 09/2021: use functions for converting to and from GRACE months
     Updated 08/2021: output empty spherical harmonic errors for GSFC
@@ -213,7 +214,7 @@ def read_SLR_CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
         #-- Column 12: Replacement S(2,1)
         #-- Column 13: Replacement S(2,1) - mean S(2,1) (1.0E-10)
         #-- Column 14: S(2,1) formal standard deviation (1.0E-12)
-        with open(os.path.expanduser(SLR_file),'r') as f:
+        with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         #-- number of lines contained in the file
         file_lines = len(file_contents)

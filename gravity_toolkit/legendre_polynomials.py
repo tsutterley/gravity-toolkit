@@ -20,7 +20,7 @@ OUTPUT:
     dpl: first derivative of Legendre polynomials
 
 OPTIONS:
-    ASTYPE: output variable type (e.g. np.float128).  Default is np.float64
+    ASTYPE: output variable type.  Default is np.float64
 
 NOTES:
     ptemp is a dummy array of length (0:lmax) storing unnormalized pl values

@@ -16,6 +16,7 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
+        include utf-8 encoding in reads to be windows compliant
     Updated 03/2022: add try/except for read_GRACE_geocenter
     Updated 12/2021: added netCDF4 reader for UCI iteration files
         add cartesian and surface mass density conversions for errors
@@ -149,7 +150,7 @@ class geocenter(object):
             errmsg = 'AOD1B File {0} not in File System'.format(AOD1B_file)
             raise FileNotFoundError(errmsg)
         #-- read AOD1b geocenter skipping over commented header text
-        with open(os.path.join(self.directory,AOD1B_file), 'r') as f:
+        with open(os.path.join(self.directory,AOD1B_file), mode='r', encoding='utf8') as f:
             file_contents=[i for i in f.read().splitlines() if not re.match(r'#',i)]
         #-- extract X,Y,Z from each line in the file
         n_lines = len(file_contents)
@@ -211,7 +212,7 @@ class geocenter(object):
         #-- Column 10: Coefficient S(1,1) - mean S(1,1) (1.0E-10)
         #-- Column 11: S(1,1) uncertainty (1.0E-10)
 
-        with open(self.filename,'r') as f:
+        with open(self.filename, mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         #-- number of lines contained in the file
         file_lines = len(file_contents)
@@ -347,7 +348,7 @@ class geocenter(object):
             raise FileNotFoundError(errmsg)
 
         #-- Input geocenter file and split lines
-        with open(os.path.expanduser(geocenter_file),'r') as f:
+        with open(os.path.expanduser(geocenter_file), mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         ndate = len(file_contents) - HEADER
 
@@ -482,7 +483,7 @@ class geocenter(object):
         kwargs.setdefault('header',True)
 
         #-- read degree 1 file and get contents
-        with open(self.filename,'r') as f:
+        with open(self.filename, mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         #-- number of lines contained in the file
         file_lines = len(file_contents)
@@ -604,7 +605,7 @@ class geocenter(object):
         kwargs.setdefault('JPL',True)
 
         #-- read degree 1 file and get contents
-        with open(self.filename,'r') as f:
+        with open(self.filename, mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         #-- number of lines contained in the file
         file_lines = len(file_contents)

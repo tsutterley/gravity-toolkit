@@ -66,6 +66,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
+        include utf-8 encoding in reads to be windows compliant
     Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: added GFZ SLR and GravIS oblateness solutions
         define int/float precision to prevent deprecation warning
@@ -180,7 +181,7 @@ def read_SLR_C20(SLR_file, AOD=True, HEADER=True):
         #-- Column 3: Replacement C(2,0)
         #-- Column 4: Replacement C(2,0) - mean C(2,0) (1.0E-10)
         #-- Column 5: C(2,0) formal error (1.0E-10)
-        with open(os.path.expanduser(SLR_file),'r') as f:
+        with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         #-- number of lines contained in the file
         file_lines = len(file_contents)
@@ -234,7 +235,7 @@ def read_SLR_C20(SLR_file, AOD=True, HEADER=True):
         #-- Column  3: Replacement C(2,0)
         #-- Column  4: Replacement C(2,0) - mean C(2,0) (1.0E-10)
         #-- Column  5: C(2,0) formal standard deviation (1.0E-12)
-        with open(os.path.expanduser(SLR_file),'r') as f:
+        with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         #-- number of lines contained in the file
         file_lines = len(file_contents)
@@ -285,7 +286,7 @@ def read_SLR_C20(SLR_file, AOD=True, HEADER=True):
 
     elif bool(re.search(r'TN-(11|14)',SLR_file,re.I)):
         #-- SLR C20 RL06 file from PO.DAAC
-        with open(os.path.expanduser(SLR_file),'r') as f:
+        with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         #-- number of lines contained in the file
         file_lines = len(file_contents)
@@ -344,7 +345,7 @@ def read_SLR_C20(SLR_file, AOD=True, HEADER=True):
             dinput[key] = val[:t]
     else:
         #-- SLR C20 file from PO.DAAC
-        with open(os.path.expanduser(SLR_file),'r') as f:
+        with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         #-- number of lines contained in the file
         file_lines = len(file_contents)

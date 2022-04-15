@@ -97,6 +97,8 @@ REFERENCES:
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
         use harmonics class to read/write ascii, netCDF4 and HDF5 files
+        check if GIA data file is present in file-system
+        include utf-8 encoding in reads to be windows compliant
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: use regular expressions to find ICE6G-D header positions
     Updated 08/2020: flake8 compatible regular expression strings
@@ -291,8 +293,13 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
         #-- IJ05 notes: need to scale by 1e-11 for geodesy-normalization
         #-- exponents are denoted with D for double
 
+        #-- check that GIA data file is present in file system
+        input_file = os.path.expanduser(input_file)
+        if not os.access(input_file, os.F_OK):
+            raise FileNotFoundError('{0} not found'.format(input_file))
+
         #-- opening gia data file and read contents
-        with open(os.path.expanduser(input_file),'r') as f:
+        with open(input_file, mode='r', encoding='utf8') as f:
             gia_data = f.read().splitlines()
         #-- number of lines in file
         gia_lines = len(gia_data)
@@ -320,8 +327,13 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
         #-- spherical harmonic degrees listed only on order 0
         #-- spherical harmonic order is not listed in file
 
+        #-- check that GIA data file is present in file system
+        input_file = os.path.expanduser(input_file)
+        if not os.access(input_file, os.F_OK):
+            raise FileNotFoundError('{0} not found'.format(input_file))
+
         #-- opening gia data file and read contents
-        with open(os.path.expanduser(input_file),'r') as f:
+        with open(input_file, mode='r', encoding='utf8') as f:
             gia_data = f.read().splitlines()
 
         #-- counter variable
@@ -353,10 +365,14 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
         #-- Wu (2010) notes:
         #-- Need to convert from mm geoid to fully normalized
         rad_e = 6.371e9#-- Average Radius of the Earth [mm]
+
+        #-- check that GIA data file is present in file system
+        input_file = os.path.expanduser(input_file)
+        if not os.access(input_file, os.F_OK):
+            raise FileNotFoundError('{0} not found'.format(input_file))
         #-- The file starts with a header.
         #-- converting to numerical array (note 64 bit floating point)
-        gia_data = np.loadtxt(os.path.expanduser(input_file),
-            skiprows=1, dtype='f8')
+        gia_data = np.loadtxt(input_file, skiprows=1, dtype='f8')
 
         #-- counter variable to upwrap gia file
         ii = 0
@@ -382,10 +398,16 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
 
     elif (GIA == 'Caron'):
         #-- Caron et al. (2018)
+
+        #-- check that GIA data file is present in file system
+        input_file = os.path.expanduser(input_file)
+        if not os.access(input_file, os.F_OK):
+            raise FileNotFoundError('{0} not found'.format(input_file))
+
         #-- The file starts with a header.
         #-- converting to numerical array (note 64 bit floating point)
-        gia_data=np.loadtxt(os.path.expanduser(input_file),skiprows=4,
-            dtype={'names':('l','m','Ylms'),'formats':('i','i','f8')})
+        dtype = {'names':('l','m','Ylms'),'formats':('i','i','f8')}
+        gia_data=np.loadtxt(input_file, skiprows=4, dtype=dtype)
         #-- Order of harmonics in the file
         #--    0    0   c
         #--    1    1   s
@@ -405,8 +427,14 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
 
     #-- Reading ICE-6G Version-D  GIA files
     elif (GIA == 'ICE6G-D'):
+
+        #-- check that GIA data file is present in file system
+        input_file = os.path.expanduser(input_file)
+        if not os.access(input_file, os.F_OK):
+            raise FileNotFoundError('{0} not found'.format(input_file))
+
         #-- opening gia data file and read contents
-        with open(os.path.expanduser(input_file),'r') as f:
+        with open(input_file, mode='r', encoding='utf8') as f:
             gia_data = f.read().splitlines()
         #-- number of lines in file
         gia_lines = len(gia_data)

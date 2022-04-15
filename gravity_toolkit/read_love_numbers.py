@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_love_numbers.py
-Written by Tyler Sutterley (04/2021)
+Written by Tyler Sutterley (04/2022)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
 Linearly interpolates load love numbers for missing degrees
@@ -58,6 +58,8 @@ REFERENCES:
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
         added wrapper function for reading load Love numbers from file
+        added function for checking if BytesIO object and extracting contents
+        include utf-8 encoding in reads to be windows compliant
     Updated 07/2021: added check if needing to interpolate love numbers
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: use file not found exceptions
@@ -77,6 +79,7 @@ UPDATE HISTORY:
     Written 01/2012
 """
 import os
+import io
 import re
 import numpy as np
 from gravity_toolkit.utilities import get_data_path
@@ -161,15 +164,8 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
         *Computers & Geosciences*, 49, 190--199, (2012).
         `doi: 10.1016/j.cageo.2012.06.022 <https://doi.org/10.1016/j.cageo.2012.06.022>`_
     """
-
-    #-- check that load love number data file is present in file system
-    if not os.access(os.path.expanduser(love_numbers_file), os.F_OK):
-        #-- raise error if love_numbers file is not found in path
-        raise FileNotFoundError('{0} not found'.format(love_numbers_file))
-
     #-- Input load love number data file and read contents
-    with open(os.path.expanduser(love_numbers_file),'r') as f:
-        file_contents = f.read().splitlines()
+    file_contents = extract_love_numbers(love_numbers_file)
 
     #-- compile regular expression operator to find numerical instances
     regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
@@ -253,6 +249,30 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
         return (love['hl'], love['kl'], love['ll'])
     elif (FORMAT == 'zip'):
         return zip(love['hl'], love['kl'], love['ll'])
+
+#-- PURPOSE: read input file and extract contents
+def extract_love_numbers(love_numbers_file):
+    """
+    Read load love number file and extract contents
+
+    Parameters
+    ----------
+    love_numbers_file: str
+        Elastic load Love numbers file
+    """
+    #-- check if input love numbers are a string or bytesIO object
+    if isinstance(love_numbers_file, str):
+        #-- tilde expansion of load love number data file
+        love_numbers_file = os.path.expanduser(love_numbers_file)
+        #-- check that load love number data file is present in file system
+        if not os.access(love_numbers_file, os.F_OK):
+            raise FileNotFoundError('{0} not found'.format(love_numbers_file))
+        #-- Input load love number data file and read contents
+        with open(love_numbers_file, mode='r', encoding='utf8') as f:
+            return f.read().splitlines()
+    elif isinstance(love_numbers_file, io.IOBase):
+        #-- read contents from load love number data
+        return love_numbers_file.read().decode('utf8').splitlines()
 
 #-- PURPOSE: read load love numbers for a range of spherical harmonic degrees
 def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):

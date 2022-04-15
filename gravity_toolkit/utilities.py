@@ -1259,7 +1259,7 @@ def cmr(mission=None, center=None, release=None, level='L2', product=None,
             headers = {k.lower():v for k,v in dict(response.info()).items()}
             cmr_scroll_id = headers['cmr-scroll-id']
         #-- read the CMR search as JSON
-        search_page = json.loads(response.read().decode('utf-8'))
+        search_page = json.loads(response.read().decode('utf8'))
         ids,urls,mtimes = cmr_filter_json(search_page, endpoint=endpoint)
         if not urls:
             break
@@ -1514,7 +1514,7 @@ def icgem_list(host='http://icgem.gfz-potsdam.de/tom_longtime',timeout=None,
     Returns
     -------
     colfiles: dict
-        dictionary of static file urls mapped by field name
+        Static gravity field file urls mapped by field name
     """
     #-- try listing from https
     try:

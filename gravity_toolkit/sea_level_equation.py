@@ -125,7 +125,7 @@ from gravity_toolkit.units import units
 #-- PURPOSE: Computes Sea Level Fingerprints including polar motion feedback
 def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     LOVE=None, BODY_TIDE_LOVE=0, FLUID_LOVE=0, POLAR=True, ITERATIONS=6,
-    PLM=None, FILL_VALUE=0, ASTYPE=np.float128, SCALE=1e-280, **kwargs):
+    PLM=None, FILL_VALUE=0, ASTYPE=np.longdouble, SCALE=1e-280, **kwargs):
     """
     Solves the sea level equation with the option of including
     polar motion feedback [Farrell1976]_ [Kendall2005]_ [Mitrovica2003]_
@@ -171,7 +171,7 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
         Legendre polynomials
     FILL_VALUE: float, default 0
         Invalid value used over land points
-    ASTYPE: obj, default np.float128
+    ASTYPE: obj, default np.longdouble
         Floating point precision for calculating Clenshaw summation
     SCALE: float, default 1e-280
         Scaling factor to prevent underflow in Clenshaw summation
@@ -441,7 +441,7 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
 
 #-- PURPOSE: compute Clenshaw summation of the fully normalized associated
 #-- Legendre's function for constant order m
-def clenshaw_s_m(t, m, clm1, slm1, lmax, ASTYPE=np.float128, SCALE=1e-280):
+def clenshaw_s_m(t, m, clm1, slm1, lmax, ASTYPE=np.longdouble, SCALE=1e-280):
     #-- allocate for output matrix
     N = len(t)
     s_m = np.zeros((N,2),dtype=ASTYPE)

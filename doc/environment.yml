@@ -12,6 +12,7 @@ dependencies:
   - h5py
   - lxml
   - markupsafe==2.0.1
+  - matplotlib
   - netCDF4
   - notebook
   - numpy

@@ -21,6 +21,13 @@ General Attributes and Methods
 
 .. autofunction:: gravity_toolkit.tools.custom_colormap
 
+.. autofunction:: gravity_toolkit.tools.shift_grid
+
+.. autofunction:: gravity_toolkit.tools.interp_grid
+
+.. autofunction:: gravity_toolkit.tools.mask_oceans
+
+
 References
 ##########
 

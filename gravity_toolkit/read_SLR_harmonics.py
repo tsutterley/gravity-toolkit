@@ -51,6 +51,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
+        include utf-8 encoding in reads to be windows compliant
     Updated 12/2021: added function for converting from 7-day arcs
     Updated 11/2021: renamed module. added reader for GSFC weekly 5x5 fields
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -72,34 +73,34 @@ import numpy as np
 import gravity_toolkit.time
 
 #-- PURPOSE: wrapper function for calling individual readers
-def read_SLR_harmonics(input_file, **kwargs):
+def read_SLR_harmonics(SLR_file, **kwargs):
     """
     Wrapper function for reading spherical harmonic coefficients
     from Satellite Laser Ranging (SLR) measurements
 
     Parameters
     ----------
-    input_file: str
+    SLR_file: str
         Satellite Laser Ranging file
     **kwargs: dict
         keyword arguments for input readers
     """
-    if bool(re.search(r'gsfc_slr_5x5c61s61',input_file,re.I)):
-        return read_GSFC_weekly_6x1(input_file, **kwargs)
-    elif bool(re.search(r'CSR_Monthly_5x5_Gravity_Harmonics',input_file,re.I)):
-        return read_CSR_monthly_6x1(input_file, **kwargs)
+    if bool(re.search(r'gsfc_slr_5x5c61s61',SLR_file,re.I)):
+        return read_GSFC_weekly_6x1(SLR_file, **kwargs)
+    elif bool(re.search(r'CSR_Monthly_5x5_Gravity_Harmonics',SLR_file,re.I)):
+        return read_CSR_monthly_6x1(SLR_file, **kwargs)
     else:
-        raise Exception('Unknown SLR file format {0}'.format(input_file))
+        raise Exception('Unknown SLR file format {0}'.format(SLR_file))
 
 #-- PURPOSE: read monthly degree harmonic data from Satellite Laser Ranging (SLR)
-def read_CSR_monthly_6x1(input_file, SCALE=1e-10, HEADER=True):
+def read_CSR_monthly_6x1(SLR_file, SCALE=1e-10, HEADER=True):
     """
     Reads in monthly low degree and order spherical harmonic coefficients
     from Satellite Laser Ranging (SLR) measurements
 
     Parameters
     ----------
-    input_file: str
+    SLR_file: str
         Satellite Laser Ranging file from CSR
     SCALE: float, default 1e-10
         Scale factor for converting to fully-normalized spherical harmonics
@@ -129,11 +130,11 @@ def read_CSR_monthly_6x1(input_file, SCALE=1e-10, HEADER=True):
         `doi: 10.1029/2010JB000850 <https://doi.org/10.1029/2010JB000850>`_
     """
     #-- check that SLR file exists
-    if not os.access(os.path.expanduser(input_file), os.F_OK):
+    if not os.access(os.path.expanduser(SLR_file), os.F_OK):
         raise FileNotFoundError('SLR file not found in file system')
 
     #-- read the file and get contents
-    with open(os.path.expanduser(input_file),'r') as f:
+    with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
         file_contents = f.read().splitlines()
     file_lines = len(file_contents)
 
@@ -241,14 +242,14 @@ def read_CSR_monthly_6x1(input_file, SCALE=1e-10, HEADER=True):
     return Ylms
 
 #-- PURPOSE: read weekly degree harmonic data from Satellite Laser Ranging (SLR)
-def read_GSFC_weekly_6x1(input_file, SCALE=1.0, HEADER=True):
+def read_GSFC_weekly_6x1(SLR_file, SCALE=1.0, HEADER=True):
     """
     Reads weekly 5x5 spherical harmonic coefficients with 1 coefficient from
         degree 6 calculated from satellite laser ranging measurements
 
     Parameters
     ----------
-    input_file: str
+    SLR_file: str
         Satellite laser ranging file from GSFC
     SCALE: float, default 1.0
         Scale factor for converting to fully-normalized spherical harmonics
@@ -275,11 +276,11 @@ def read_GSFC_weekly_6x1(input_file, SCALE=1.0, HEADER=True):
         `doi: 10.1029/2019GL085488 <https://doi.org/10.1029/2019GL085488>`_
     """
     #-- check that SLR file exists
-    if not os.access(os.path.expanduser(input_file), os.F_OK):
+    if not os.access(os.path.expanduser(SLR_file), os.F_OK):
         raise FileNotFoundError('SLR file not found in file system')
 
     #-- read the file and get contents
-    with open(os.path.expanduser(input_file),'r') as f:
+    with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
         file_contents = f.read().splitlines()
     file_lines = len(file_contents)
 
@@ -361,8 +362,8 @@ def convert_weekly(t_in, d_in, DATE=[], NEIGHBORS=28):
         monthly spherical harmonic coefficients
     """
     #-- duplicate time and harmonics
-    tdec = np.repeat(t_in,7)
-    data = np.repeat(d_in,7)
+    tdec = np.repeat(t_in, 7)
+    data = np.repeat(d_in, 7)
     #-- calculate daily dates to use in centered moving average
     tdec += (np.mod(np.arange(len(tdec)),7) - 3.5)/365.25
     #-- calculate moving-average solution from 7-day arcs

@@ -46,6 +46,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
+        include utf-8 encoding in reads to be windows compliant
     Updated 12/2021: use function for converting from 7-day arcs
     Updated 11/2021: reader for new weekly 5x5+6,1 fields from NASA GSFC
     Updated 09/2021: use functions for converting to and from GRACE months
@@ -99,7 +100,7 @@ def read_SLR_C50(SLR_file, C50_MEAN=0.0, DATE=None, HEADER=True):
     if bool(re.search(r'GSFC_SLR_C(20)_C(30)_C(50)',SLR_file,re.I)):
 
         #-- SLR C50 RL06 file from GSFC
-        with open(os.path.expanduser(SLR_file),'r') as f:
+        with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         #-- number of lines contained in the file
         file_lines = len(file_contents)
