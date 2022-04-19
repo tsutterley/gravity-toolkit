@@ -411,6 +411,9 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         #-- Running function read_gravis_geocenter.py
         DEG1_input = read_gravis_geocenter(DEG1_file)
         FLAGS.append('_w{0}_DEG1'.format(DEG1))
+    elif (DEG1 == 'NoneCNES'):
+        #-- degree 1 coefficients set to None for CNES
+        FLAGS.append('_w{0}_DEG1'.format(DEG1))
 
     #-- atmospheric flag if correcting ECMWF "jumps" (using GAE/GAF/GAG files)
     if ATM:
@@ -548,6 +551,11 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
                 grace_clm[1,0,i] = DEG1_input['C10'][k]
                 grace_clm[1,1,i] = DEG1_input['C11'][k]
                 grace_slm[1,1,i] = DEG1_input['S11'][k]
+
+    if DEG1 == 'NoneCNES':
+        grace_clm[1, 0] = 0
+        grace_clm[1, 1] = 0
+        grace_slm[1, 1] = 0
 
     #-- read and add/remove the GAE and GAF atmospheric correction coefficients
     if ATM:

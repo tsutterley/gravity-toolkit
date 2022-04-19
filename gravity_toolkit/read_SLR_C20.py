@@ -108,7 +108,7 @@ UPDATE HISTORY:
 import os
 import re
 import numpy as np
-import gravity_toolkit.time
+import gravity_toolkit.time as time
 
 #-- PURPOSE: read oblateness data from Satellite Laser Ranging (SLR)
 def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
@@ -319,10 +319,10 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
                 #-- modified julian date for line
                 MJD = np.float64(line_contents[0])
                 #-- converting from MJD into month, day and year
-                YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
+                YY,MM,DD,hh,mm,ss = time.convert_julian(
                     MJD+2400000.5, FORMAT='tuple')
                 #-- converting from month, day, year into decimal year
-                dinput['time'][t] = gravity_toolkit.time.convert_calendar_decimal(
+                dinput['time'][t] = time.convert_calendar_decimal(
                     YY, MM, day=DD, hour=hh)
                 #-- Spherical Harmonic data for line
                 dinput['data'][t] = np.float64(line_contents[2])
@@ -378,10 +378,10 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
                 #-- modified julian date for line
                 MJD = np.float64(line_contents[0])
                 #-- converting from MJD into month, day and year
-                YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
+                YY,MM,DD,hh,mm,ss = time.convert_julian(
                     MJD+2400000.5, FORMAT='tuple')
                 #-- converting from month, day, year into decimal year
-                date_conv[t] = gravity_toolkit.time.convert_calendar_decimal(
+                date_conv[t] = time.convert_calendar_decimal(
                     YY, MM, day=DD, hour=hh)
                 #-- Spherical Harmonic data for line
                 C20_input[t] = np.float64(line_contents[2])
@@ -434,7 +434,7 @@ def read_SLR_C20(SLR_file, HEADER=True, AOD=True):
     #-- For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
     #-- For all: May 2015 (161) is centered in Apr 2015 (160)
     #-- For GSFC: Oct 2018 (202) is centered in Nov 2018 (203)
-    dinput['month'] = gravity_toolkit.time.adjust_months(dinput['month'])
+    dinput['month'] = time.adjust_months(dinput['month'])
 
     #-- return the SLR-derived oblateness solutions
     return dinput
