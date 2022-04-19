@@ -102,7 +102,7 @@ def compile_regex_pattern(PROC, DREL, DSET):
         args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
         regex_pattern=r'{0}-2_\d+-\d+_{1}_JPLEM_{2}_0{3:d}00(\.gz)?$' .format(*args)
     else:
-        regex_pattern=r'{0}-2_(.*?)(\.gz)?$'.format(DSET)
+        regex_pattern=r'{0}-2_([a-zA-Z0-9_\-]+)(\.gz)?$'.format(DSET)
     #-- return the compiled regular expression operator used to find files
     return re.compile(regex_pattern, re.VERBOSE)
 

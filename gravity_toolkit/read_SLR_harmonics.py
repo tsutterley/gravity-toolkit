@@ -314,9 +314,9 @@ def read_GSFC_weekly_6x1(SLR_file, SCALE=1.0, HEADER=True):
         #-- split the date line into individual components
         line_contents = file_contents[count].split()
         #-- modified Julian date of the beginning of the week
-        Ylms['MJD'][d] = np.float(line_contents[0])
+        Ylms['MJD'][d] = np.float64(line_contents[0])
         #-- date of the mid-point of the arc given in years
-        Ylms['time'][d] = np.float(line_contents[1])
+        Ylms['time'][d] = np.float64(line_contents[1])
         #-- add 1 to counter
         count += 1
 
@@ -325,11 +325,11 @@ def read_GSFC_weekly_6x1(SLR_file, SCALE=1.0, HEADER=True):
             #-- split the line into individual components
             line_contents = file_contents[count].split()
             #-- degree and order for the line
-            l1 = np.int(line_contents[0])
-            m1 = np.int(line_contents[1])
+            l1 = np.int64(line_contents[0])
+            m1 = np.int64(line_contents[1])
             #-- Spherical Harmonic data rescaled to output
-            Ylms['clm'][l1,m1,d] = np.float(line_contents[2])*SCALE
-            Ylms['slm'][l1,m1,d] = np.float(line_contents[3])*SCALE
+            Ylms['clm'][l1,m1,d] = np.float64(line_contents[2])*SCALE
+            Ylms['slm'][l1,m1,d] = np.float64(line_contents[3])*SCALE
             #-- add 1 to counter
             count += 1
 

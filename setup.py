@@ -6,7 +6,7 @@ description = ('Python tools for obtaining and working with spherical harmonic'
     'coefficients from the NASA/DLR GRACE and NASA/GFZ GRACE Follow-on missions')
 keywords = 'GRACE, GRACE-FO, Gravity, satellite geodesy, spherical harmonics'
 # get long_description from README.rst
-with open("README.rst", "r", encoding='utf8') as fh:
+with open("README.rst", mode="r", encoding='utf8') as fh:
     long_description = fh.read()
 long_description_content_type = "text/x-rst"
 

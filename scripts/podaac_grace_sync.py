@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_grace_sync.py
-Written by Tyler Sutterley (03/2022)
+Written by Tyler Sutterley (04/2022)
 
 Syncs GRACE/GRACE-FO and auxiliary data from the NASA JPL PO.DAAC Drive Server
 Syncs CSR/GFZ/JPL files for RL04/RL05/RL06 GAA/GAB/GAC/GAD/GSM
@@ -69,6 +69,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 04/2022: only sync newsletters for mission of interest
     Updated 03/2022: update regular expression pattern for finding files
         use CMR queries for finding GRACE/GRACE-FO level-2 product urls
     Updated 10/2021: using python logging for handling verbose output
@@ -212,7 +213,7 @@ def compile_regex_pattern(PROC, DREL, DSET):
         args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
         regex_pattern=r'{0}-2_\d+-\d+_{1}_JPLEM_{2}_0{3:d}00(\.gz)?$' .format(*args)
     else:
-        regex_pattern=r'{0}-2_(.*?)(\.gz)?$'.format(DSET)
+        regex_pattern=r'{0}-2_([a-zA-Z0-9_\-]+)(\.gz)?$'.format(DSET)
     #-- return the compiled regular expression operator used to find files
     return re.compile(regex_pattern, re.VERBOSE)
 
@@ -236,10 +237,10 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], MISSION=[], AOD1B=False,
     DSET['CSR'] = ['GAC', 'GAD', 'GSM']
     DSET['GFZ'] = ['GAA', 'GAB', 'GAC', 'GAD', 'GSM']
     DSET['JPL'] = ['GAA', 'GAB', 'GAC', 'GAD', 'GSM']
-    #-- remote subdirectories for newsletters (note capital for gracefo)
+    #-- remote subdirectories for newsletters (note capital for grace-fo)
     newsletter_sub = {}
     newsletter_sub['grace'] = ['grace','docs','newsletters']
-    newsletter_sub['gracefo'] = ['gracefo','docs','Newsletters']
+    newsletter_sub['grace-fo'] = ['gracefo','docs','Newsletters']
     #-- compile HTML parser for lxml
     parser = lxml.etree.HTMLParser()
 
@@ -347,11 +348,12 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], MISSION=[], AOD1B=False,
         #-- check if newsletters directory exists and recursively create if not
         os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
         #-- for each mission
-        for MISSION,NAME in zip(['grace','gracefo'],['GRACE','GRACE_FO']):
-            logging.info('{0} Newsletters:'.format(NAME.replace('_','-')))
-            PATH = [HOST,'drive','files','allData',*newsletter_sub[MISSION]]
+        for mi in MISSION:
+            logging.info('{0} Newsletters:'.format(mi))
+            PATH = [HOST,'drive','files','allData',*newsletter_sub[mi]]
             remote_dir = posixpath.join(*PATH)
             #-- compile regular expression operator for remote files
+            NAME = mi.upper().replace('-','_')
             R1 = re.compile(r'{0}_SDS_NL_(\d+).pdf'.format(NAME), re.VERBOSE)
             #-- open connection with PO.DAAC drive server at remote directory
             files,mtimes = gravity_toolkit.utilities.drive_list(PATH,
