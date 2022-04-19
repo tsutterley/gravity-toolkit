@@ -727,19 +727,19 @@ class harmonics(object):
         # set default verbosity
         kwargs.setdefault('verbose',False)
         # read from file
-        if (format == 'ascii'):
+        if format == 'ascii':
             # ascii (.txt)
             return harmonics().from_ascii(filename, date=date, **kwargs)
-        elif (format == 'netCDF4'):
+        elif format == 'netCDF4':
             # netcdf (.nc)
             return harmonics().from_netCDF4(filename, date=date, **kwargs)
-        elif (format == 'HDF5'):
+        elif format == 'HDF5':
             # HDF5 (.H5)
             return harmonics().from_HDF5(filename, date=date, **kwargs)
-        elif (format == 'gfc'):
+        elif format == 'gfc':
             # ICGEM gravity model (.gfc)
             return harmonics().from_gfc(filename, **kwargs)
-        elif (format == 'SHM'):
+        elif format == 'SHM':
             # spherical harmonic model
             return harmonics().from_SHM(filename, self.lmax, **kwargs)
 
@@ -1109,13 +1109,13 @@ class harmonics(object):
             # index harmonics object at i
             h = self.index(i, date=date)
             # write to file
-            if (format == 'ascii'):
+            if format == 'ascii':
                 # ascii (.txt)
                 h.to_ascii(f, date=date, **kwargs)
-            elif (format == 'netCDF4'):
+            elif format == 'netCDF4':
                 # netcdf (.nc)
                 h.to_netCDF4(f, date=date, **kwargs)
-            elif (format == 'HDF5'):
+            elif format == 'HDF5':
                 # HDF5 (.H5)
                 h.to_HDF5(f, date=date, **kwargs)
         # close the index file
@@ -1145,13 +1145,13 @@ class harmonics(object):
         # set default verbosity
         kwargs.setdefault('verbose',False)
         # write to file
-        if (format == 'ascii'):
+        if format == 'ascii':
             # ascii (.txt)
             self.to_ascii(filename, date=date, **kwargs)
-        elif (format == 'netCDF4'):
+        elif format == 'netCDF4':
             # netcdf (.nc)
             self.to_netCDF4(filename, date=date, **kwargs)
-        elif (format == 'HDF5'):
+        elif format == 'HDF5':
             # HDF5 (.H5)
             self.to_HDF5(filename, date=date, **kwargs)
 
@@ -1190,14 +1190,14 @@ class harmonics(object):
         for m in range(-self.mmax,self.mmax+1):
             mm = np.abs(m)
             for l in range(mm,self.lmax+1):
-                if (m < 0):
+                if m < 0:
                     Ylms.data[l,self.lmax+m,:] = self.slm[l,mm,:]
                     Ylms.mask[l,self.lmax+m,:] = False
                 else:
                     Ylms.data[l,self.lmax+m,:] = self.clm[l,mm,:]
                     Ylms.mask[l,self.lmax+m,:] = False
         # reshape to previous
-        if (self.ndim != ndim_prev):
+        if self.ndim != ndim_prev:
             self.squeeze()
         # return the triangular matrix
         return Ylms
@@ -1233,8 +1233,24 @@ class harmonics(object):
                 self.clm[:l1,:m1,i] += temp.clm[:l1,:m1]
                 self.slm[:l1,:m1,i] += temp.slm[:l1,:m1]
         else:
-            self.clm[:l1,:m1,:] += temp.clm[:l1,:m1,:]
-            self.slm[:l1,:m1,:] += temp.slm[:l1,:m1,:]
+            old_month = self.month
+            exclude1 = set(self.month) - set(temp.month)
+
+            self.month = np.array(list(sorted(set(self.month) - exclude1)))
+            self.time = np.array([self.time[i] for i in range(len(self.time)) if not (old_month[i] in exclude1)])
+
+            for i in range(len(old_month)):
+                for j in range(len(temp.month)):
+                    if old_month[i] == temp.month[j]:
+                        self.clm[:l1,:m1,i] += temp.clm[:l1,:m1,j]
+                        self.slm[:l1,:m1,i] += temp.slm[:l1,:m1,j]
+
+            to_keep = []
+            for i in range(len(old_month)):
+                if not(old_month[i] in exclude1):
+                    to_keep.append(i)
+            self.clm = self.clm[:,:,to_keep]
+            self.slm = self.slm[:, :, to_keep]
         return self
 
     def subtract(self, temp):
@@ -1259,8 +1275,24 @@ class harmonics(object):
                 self.clm[:l1,:m1,i] -= temp.clm[:l1,:m1]
                 self.slm[:l1,:m1,i] -= temp.slm[:l1,:m1]
         else:
-            self.clm[:l1,:m1,:] -= temp.clm[:l1,:m1,:]
-            self.slm[:l1,:m1,:] -= temp.slm[:l1,:m1,:]
+            old_month = self.month
+            exclude1 = set(self.month) - set(temp.month)
+
+            self.month = np.array(list(sorted(set(self.month) - exclude1)))
+            self.time = np.array([self.time[i] for i in range(len(self.time)) if not (old_month[i] in exclude1)])
+
+            for i in range(len(old_month)):
+                for j in range(len(temp.month)):
+                    if old_month[i] == temp.month[j]:
+                        self.clm[:l1,:m1,i] -= temp.clm[:l1,:m1,j]
+                        self.slm[:l1,:m1,i] -= temp.slm[:l1,:m1,j]
+
+            to_keep = []
+            for i in range(len(old_month)):
+                if not(old_month[i] in exclude1):
+                    to_keep.append(i)
+            self.clm = self.clm[:,:,to_keep]
+            self.slm = self.slm[:, :, to_keep]
         return self
 
     def multiply(self, temp):
@@ -1285,8 +1317,24 @@ class harmonics(object):
                 self.clm[:l1,:m1,i] *= temp.clm[:l1,:m1]
                 self.slm[:l1,:m1,i] *= temp.slm[:l1,:m1]
         else:
-            self.clm[:l1,:m1,:] *= temp.clm[:l1,:m1,:]
-            self.slm[:l1,:m1,:] *= temp.slm[:l1,:m1,:]
+            old_month = self.month
+            exclude1 = set(self.month) - set(temp.month)
+
+            self.month = np.array(list(sorted(set(self.month) - exclude1)))
+            self.time = np.array([self.time[i] for i in range(len(self.time)) if not (old_month[i] in exclude1)])
+
+            for i in range(len(old_month)):
+                for j in range(len(temp.month)):
+                    if old_month[i] == temp.month[j]:
+                        self.clm[:l1, :m1, i] *= temp.clm[:l1, :m1, j]
+                        self.slm[:l1, :m1, i] *= temp.slm[:l1, :m1, j]
+
+            to_keep = []
+            for i in range(len(old_month)):
+                if not (old_month[i] in exclude1):
+                    to_keep.append(i)
+            self.clm = self.clm[:, :, to_keep]
+            self.slm = self.slm[:, :, to_keep]
         return self
 
     def divide(self, temp):
@@ -1316,8 +1364,24 @@ class harmonics(object):
                 self.clm[lc,mc,i] /= temp.clm[lc,mc]
                 self.slm[ls,ms,i] /= temp.slm[ls,ms]
         else:
-            self.clm[lc,mc,:] /= temp.clm[lc,mc,:]
-            self.slm[ls,ms,:] /= temp.slm[ls,ms,:]
+            old_month = self.month
+            exclude1 = set(self.month) - set(temp.month)
+
+            self.month = np.array(list(sorted(set(self.month) - exclude1)))
+            self.time = np.array([self.time[i] for i in range(len(self.time)) if not (old_month[i] in exclude1)])
+
+            for i in range(len(old_month)):
+                for j in range(len(temp.month)):
+                    if old_month[i] == temp.month[j]:
+                        self.clm[:l1, :m1, i] /= temp.clm[:l1, :m1, j]
+                        self.slm[:l1, :m1, i] /= temp.slm[:l1, :m1, j]
+
+            to_keep = []
+            for i in range(len(old_month)):
+                if not (old_month[i] in exclude1):
+                    to_keep.append(i)
+            self.clm = self.clm[:, :, to_keep]
+            self.slm = self.slm[:, :, to_keep]
         return self
 
     def copy(self):
@@ -1904,6 +1968,7 @@ class harmonics(object):
         self.__index__ = 0
         return self
 
+
     def __next__(self):
         """Get the next month of data
         """
@@ -1925,10 +1990,12 @@ class harmonics(object):
         self.__index__ += 1
         return temp
 
-    def gap_fill(self, apply=False):
+    def gap_fill(self, apply=False, interpolate=1):
         """
         Fill the missing months with a linear interpolation, the interpolation is made on month number, it's imprecise
-        Options: apply to the object if True, else return a new instance
+        Options:
+            apply: apply to the object if True, else return a new instance
+            interpolate: 0 = fill gap with 0, 1 = linear interpolation
         """
         temp = self.copy()
         missing_month = self.month[-1] - self.month[0] - len(self.month) + 1
@@ -1953,12 +2020,18 @@ class harmonics(object):
                 # y(t) = (y2 - y1)/(x2 - x1)*t + y1
                 temp.time[index] = (self.time[index - cmp + 1] - self.time[index - cmp]) / (
                             self.month[index - cmp + 1] - self.month[index - cmp]) * cmp_miss_mon + self.time[index - cmp]
-                temp.clm[:, :, index] = (self.clm[:, :, index - cmp + 1] - self.clm[:, :, index - cmp]) / \
-                                        (self.month[index - cmp + 1] - self.month[index - cmp]) * cmp_miss_mon \
-                                        + self.clm[:, :, index - cmp]
-                temp.slm[:, :, index] = (self.slm[:, :, index - cmp + 1] - self.slm[:, :, index - cmp]) / \
-                                        (self.month[index - cmp + 1] - self.month[index - cmp]) * cmp_miss_mon \
-                                        + self.slm[:, :, index - cmp]
+
+                if interpolate == 1:
+                    temp.clm[:, :, index] = (self.clm[:, :, index - cmp + 1] - self.clm[:, :, index - cmp]) / \
+                                            (self.month[index - cmp + 1] - self.month[index - cmp]) * cmp_miss_mon \
+                                            + self.clm[:, :, index - cmp]
+                    temp.slm[:, :, index] = (self.slm[:, :, index - cmp + 1] - self.slm[:, :, index - cmp]) / \
+                                            (self.month[index - cmp + 1] - self.month[index - cmp]) * cmp_miss_mon \
+                                            + self.slm[:, :, index - cmp]
+
+                elif interpolate == 0:
+                    temp.clm[:, :, index] = 0
+                    temp.clm[:, :, index] = 0
 
             index += 1
 
@@ -2077,7 +2150,7 @@ class harmonics(object):
         if m:
             #-- figure for Sl,m
             plt.figure()
-            plt.title("Normalized spherical harmonics coefficient $S_{" + str(l) + "," + str(m) + "}$")
+            plt.title("Normalized spherical harmonic coefficient $S_{" + str(l) + "," + str(m) + "}$")
             if len(ylms):
                 plt.plot(self.time, self.slm[l, m, :], label=label[0])
             else:
@@ -2121,7 +2194,7 @@ class harmonics(object):
 
         # -- figure for Cl,m and Sl,m
         plt.figure()
-        plt.title("Fourier transform of the normalized spherical harmonics coefficients $C_{" + str(l) + "," + str(
+        plt.title("Fourier transform of the normalized spherical harmonic coefficients $C_{" + str(l) + "," + str(
             m) + "}$ et $S_{" + str(
             l) + "," + str(m) + "}$")
         plt.plot(xf, 2.0 / N * np.abs(cf[0:N // 2]), label="$C_{" + str(l) + "," + str(m) + "}$")
