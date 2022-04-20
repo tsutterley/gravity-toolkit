@@ -7,8 +7,10 @@ python-dateutil
 pyyaml
 scipy
 
-datetime~=4.3
-cartopy~=0.18.0
-ipython~=7.19.0
-yaml~=0.2.5
-setuptools~=50.3.0
+matplotlib
+python-dateutil
+cartopy --no-binary=cartopy
+datetime
+cartopy
+ipython
+setuptools
