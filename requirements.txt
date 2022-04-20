@@ -1,16 +1,14 @@
-numpy~=1.19.2
-scipy~=1.5.2
-pyyaml~=5.3.1
-lxml~=4.6.1
+numpy
+scipy
+pyyaml
+lxml
 future
-matplotlib~=3.3.2
-python-dateutil~=2.8.1
+matplotlib
+python-dateutil
 cartopy --no-binary=cartopy
 netCDF4
 h5py
-
-datetime~=4.3
-cartopy~=0.18.0
-ipython~=7.19.0
-yaml~=0.2.5
-setuptools~=50.3.0
+datetime
+cartopy
+ipython
+setuptools
