@@ -788,7 +788,7 @@ class spatial(object):
             kwargs['attributes'][kwargs['field_mapping']['lat']]['long_name'] = 'longitude'
             kwargs['attributes'][kwargs['field_mapping']['lat']]['units'] = 'degrees_north'
             #-- Defining attributes for dataset
-            kwargs['attributes'][kwargs['field_mapping']['lat']] = {}
+            kwargs['attributes'][kwargs['field_mapping']['data']] = {}
             kwargs['attributes'][kwargs['field_mapping']['data']]['long_name'] = kwargs['longname']
             kwargs['attributes'][kwargs['field_mapping']['data']]['units'] = kwargs['units']
             #-- Defining attributes for date if applicable
@@ -916,7 +916,7 @@ class spatial(object):
             kwargs['attributes'][kwargs['field_mapping']['lat']]['long_name'] = 'longitude'
             kwargs['attributes'][kwargs['field_mapping']['lat']]['units'] = 'degrees_north'
             #-- Defining attributes for dataset
-            kwargs['attributes'][kwargs['field_mapping']['lat']] = {}
+            kwargs['attributes'][kwargs['field_mapping']['data']] = {}
             kwargs['attributes'][kwargs['field_mapping']['data']]['long_name'] = kwargs['longname']
             kwargs['attributes'][kwargs['field_mapping']['data']]['units'] = kwargs['units']
             #-- Defining attributes for date if applicable

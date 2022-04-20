@@ -177,6 +177,7 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     #-- allocate for pseudo-spectral sea level equation solver
     sea_level = spatial(nlon=nphi, nlat=nth)
     sea_level.data = np.zeros((nth,nphi,nt))
+    sea_level.mask = np.zeros((nth,nphi,nt), dtype=bool)
     for i in range(nt):
         #-- print iteration if running a series
         if (nt > 1):
@@ -189,6 +190,7 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
             LOVE=(hl,kl,ll), BODY_TIDE_LOVE=BODY_TIDE_LOVE,
             FLUID_LOVE=FLUID_LOVE, POLAR=POLAR, PLM=PLM,
             ITERATIONS=ITERATIONS, FILL_VALUE=0).T
+        sea_level.mask[:,:,i] = (sea_level.data[:,:,i] == 0)
     #-- copy dimensions
     sea_level.lon = np.copy(landsea.lon)
     sea_level.lat = np.copy(landsea.lat)
