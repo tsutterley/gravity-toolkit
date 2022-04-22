@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_grace_ftp.py
-Written by Tyler Sutterley (03/2022)
+Written by Tyler Sutterley (04/2022)
 Syncs GRACE/GRACE-FO data from the GFZ Information System and Data Center (ISDC)
 Syncs CSR/GFZ/JPL files for RL06 GAA/GAB/GAC/GAD/GSM
     GAA and GAB are GFZ/JPL only
@@ -19,7 +19,8 @@ COMMAND LINE OPTIONS:
     -D X, --directory X: working data directory
     -m X, --mission X: Sync GRACE (grace) or GRACE Follow-On (grace-fo) data
     -c X, --center X: GRACE/GRACE-FO Processing Center
-    -r X, --release X: GRACE/GRACE-FO data releases to sync (RL05,RL06)
+    -r X, --release X: GRACE/GRACE-FO data releases to sync
+    -v X, --version X: GRACE/GRACE-FO Level-2 data version to sync
     -t X, --timeout X: Timeout in seconds for blocking operations
     -L, --list: print files to be transferred, but do not execute transfer
     -l, --log: output log of files downloaded
@@ -37,6 +38,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 04/2022: added option for GRACE/GRACE-FO Level-2 data version
     Updated 03/2022: update regular expression pattern for finding files
     Updated 10/2021: using python logging for handling verbose output
     Updated 05/2021: added option for connection timeout (in seconds)
@@ -64,7 +66,7 @@ import posixpath
 import gravity_toolkit.utilities
 
 #-- PURPOSE: create and compile regular expression operator to find GRACE files
-def compile_regex_pattern(PROC, DREL, DSET):
+def compile_regex_pattern(PROC, DREL, DSET, version='0'):
     if ((DSET == 'GSM') and (PROC == 'CSR') and (DREL in ('RL04','RL05'))):
         #-- CSR GSM: only monthly degree 60 products
         #-- not the longterm degree 180, degree 96 dataset or the
@@ -75,8 +77,8 @@ def compile_regex_pattern(PROC, DREL, DSET):
     elif ((DSET == 'GSM') and (PROC == 'CSR') and (DREL == 'RL06')):
         #-- CSR GSM RL06: only monthly degree 60 products
         release, = re.findall(r'\d+', DREL)
-        args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
-        regex_pattern=r'{0}-2_\d+-\d+_{1}_UTCSR_{2}_0{3:d}00(\.gz)?$' .format(*args)
+        args = (DSET, '(GRAC|GRFO)', 'BA01', release.zfill(2), version.zfill(2))
+        regex_pattern=r'{0}-2_\d+-\d+_{1}_UTCSR_{2}_{3}{4}(\.gz)?$' .format(*args)
     elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL04')):
         #-- GFZ RL04: only unconstrained solutions (not GK2 products)
         regex_pattern=r'{0}-2_\d+-\d+_\d+_EIGEN_G---_0004(\.gz)?$'.format(DSET)
@@ -89,8 +91,8 @@ def compile_regex_pattern(PROC, DREL, DSET):
     elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL06')):
         #-- GFZ GSM RL06: only monthly degree 60 products
         release, = re.findall(r'\d+', DREL)
-        args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
-        regex_pattern=r'{0}-2_\d+-\d+_{1}_GFZOP_{2}_0{3:d}00(\.gz)?$' .format(*args)
+        args = (DSET, '(GRAC|GRFO)', 'BA01', release.zfill(2), version.zfill(2))
+        regex_pattern=r'{0}-2_\d+-\d+_{1}_GFZOP_{2}_{3}{4}(\.gz)?$' .format(*args)
     elif (PROC == 'JPL') and DREL in ('RL04','RL05'):
         #-- JPL: RL04a and RL05a products (denoted by 0001)
         release, = re.findall(r'\d+', DREL)
@@ -99,16 +101,17 @@ def compile_regex_pattern(PROC, DREL, DSET):
     elif ((DSET == 'GSM') and (PROC == 'JPL') and (DREL == 'RL06')):
         #-- JPL GSM RL06: only monthly degree 60 products
         release, = re.findall(r'\d+', DREL)
-        args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
-        regex_pattern=r'{0}-2_\d+-\d+_{1}_JPLEM_{2}_0{3:d}00(\.gz)?$' .format(*args)
+        args = (DSET, '(GRAC|GRFO)', 'BA01', release.zfill(2), version.zfill(2))
+        regex_pattern=r'{0}-2_\d+-\d+_{1}_JPLEM_{2}_{3}{4}(\.gz)?$' .format(*args)
     else:
         regex_pattern=r'{0}-2_([a-zA-Z0-9_\-]+)(\.gz)?$'.format(DSET)
     #-- return the compiled regular expression operator used to find files
     return re.compile(regex_pattern, re.VERBOSE)
 
 #-- PURPOSE: sync local GRACE/GRACE-FO files with GFZ ISDC server
-def gfz_isdc_grace_ftp(DIRECTORY, PROC, DREL=[], MISSION=[], TIMEOUT=None,
-    LOG=False, LIST=False, CLOBBER=False, CHECKSUM=False, MODE=None):
+def gfz_isdc_grace_ftp(DIRECTORY, MISSION=[], PROC=[], DREL=[],
+    VERSION=None, TIMEOUT=None, LOG=False, LIST=False, CLOBBER=False,
+    CHECKSUM=False, MODE=None):
 
     #-- connect and login to GFZ ISDC ftp server
     ftp = ftplib.FTP('isdcftp.gfz-potsdam.de', timeout=TIMEOUT)
@@ -178,7 +181,7 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC, DREL=[], MISSION=[], TIMEOUT=None,
 
                     #-- Create an index file for each GRACE/GRACE-FO product
                     #-- finding all dataset files *.gz in directory
-                    rx = compile_regex_pattern(pr, rl, ds)
+                    rx = compile_regex_pattern(pr, rl, ds, version=VERSION)
                     #-- find local GRACE/GRACE-FO files to create index
                     files = [fi for fi in os.listdir(local_dir) if rx.match(fi)]
                     #-- outputting GRACE/GRACE-FO filenames to index
@@ -279,6 +282,11 @@ def main():
         metavar='DREL', type=str, nargs='+',
         default=['RL06'], choices=['RL04','RL05','RL06'],
         help='GRACE/GRACE-FO data release')
+    #-- GRACE/GRACE-FO data version
+    parser.add_argument('--version','-v',
+        metavar='VERSION', type=str,
+        default='0', choices=['0','1','2'],
+        help='GRACE/GRACE-FO Level-2 data version')
     #-- connection timeout
     parser.add_argument('--timeout','-t',
         type=int, default=360,
@@ -307,10 +315,10 @@ def main():
     #-- check internet connection before attempting to run program
     HOST = 'isdcftp.gfz-potsdam.de'
     if gravity_toolkit.utilities.check_ftp_connection(HOST):
-        gfz_isdc_grace_ftp(args.directory, args.center, DREL=args.release,
-            MISSION=args.mission, TIMEOUT=args.timeout, LIST=args.list,
-            LOG=args.log, CLOBBER=args.clobber, CHECKSUM=args.checksum,
-            MODE=args.mode)
+        gfz_isdc_grace_ftp(args.directory, MISSION=args.mission,
+            PROC=args.center, DREL=args.release, VERSION=args.version,
+            TIMEOUT=args.timeout, LIST=args.list, LOG=args.log,
+            CLOBBER=args.clobber, CHECKSUM=args.checksum, MODE=args.mode)
     else:
         raise RuntimeError('Check internet connection')
 

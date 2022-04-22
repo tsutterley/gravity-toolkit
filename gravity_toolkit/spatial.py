@@ -1151,7 +1151,11 @@ class spatial(object):
         #-- output spatial with a third dimension
         if (np.ndim(self.data) == 2):
             self.data = self.data[:,:,None]
+        #-- try expanding mask variable
+        try:
             self.mask = self.mask[:,:,None]
+        except Exception as e:
+            pass
         #-- get spacing and dimensions
         self.update_spacing()
         self.update_extents()
@@ -1167,7 +1171,11 @@ class spatial(object):
         self.time = np.squeeze(self.time)
         self.month = np.squeeze(self.month)
         self.data = np.squeeze(self.data)
-        self.mask = np.squeeze(self.mask)
+        #-- try squeezing mask variable
+        try:
+            self.mask = np.squeeze(self.mask)
+        except Exception as e:
+            pass
         #-- get spacing and dimensions
         self.update_spacing()
         self.update_extents()

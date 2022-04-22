@@ -29,6 +29,7 @@ UPDATE HISTORY:
         using internal netCDF4 and HDF5 readers and writers
         added function for converting to a python dictionary
         include utf-8 encoding in reads to be windows compliant
+        added GIA model reader and drift functions
     Updated 12/2021: logging case_insensitive_filename output for debugging
     Updated 11/2021: kwargs to index, netCDF4 and HDF5 read functions
     Updated 10/2021: using python logging for handling verbose output
@@ -80,6 +81,7 @@ from gravity_toolkit.destripe_harmonics import destripe_harmonics
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
 from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
+from gravity_toolkit.read_GIA_model import read_GIA_model
 
 class harmonics(object):
     """
@@ -504,7 +506,7 @@ class harmonics(object):
         Parameters
         ----------
         filename: str
-            full path of input gfc file
+            full path of input spherical harmonic model file
         MMAX: int or NoneType, default None
             Maximum order of spherical harmonics
         POLE_TIDE: bool, default False
@@ -514,7 +516,7 @@ class harmonics(object):
         """
         #-- set filename
         self.case_insensitive_filename(filename)
-        #-- set default verbosity
+        #-- set default keyword arguments
         kwargs.setdefault('verbose',False)
         #-- read data from SHM file
         Ylms = read_GRACE_harmonics(self.filename, self.lmax, **kwargs)
@@ -528,6 +530,59 @@ class harmonics(object):
         self.month = np.int64(calendar_to_grace(self.time))
         #-- copy header information for gravity model
         self.header = Ylms['header']
+        #-- assign shape and ndim attributes
+        self.update_dimensions()
+        return self
+
+    def from_GIA(self, filename, **kwargs):
+        """
+        Read a harmonics object from a GIA model file
+
+        Parameters
+        ----------
+        filename: str
+            full path of input GIA file
+        GIA: str or NoneType, default None
+            GIA model type to read and output
+
+            - ``'IJ05-R2'``: Ivins R2 GIA Models
+            - ``'W12a'``: Whitehouse GIA Models
+            - ``'SM09'``: Simpson/Milne GIA Models
+            - ``'ICE6G'``: ICE-6G GIA Models
+            - ``'Wu10'``: Wu (2010) GIA Correction
+            - ``'AW13-ICE6G'``: Geruo A ICE-6G GIA Models
+            - ``'Caron'``: Caron JPL GIA Assimilation
+            - ``'ICE6G-D'``: ICE-6G Version-D GIA Models
+            - ``'ascii'``: reformatted GIA in ascii format
+            - ``'netCDF4'``: reformatted GIA in netCDF4 format
+            - ``'HDF5'``: reformatted GIA in HDF5 format
+        MMAX: int or NoneType, default None
+            Maximum order of spherical harmonics
+        verbose: bool, default False
+            print file and variable information
+        """
+        #-- set filename
+        self.case_insensitive_filename(filename)
+        #-- set default keyword arguments
+        kwargs.setdefault('GIA',None)
+        kwargs.setdefault('MMAX',None)
+        kwargs.setdefault('verbose',False)
+        #-- read data from GIA file
+        Ylms = read_GIA_model(self.filename, GIA=kwargs['GIA'],
+            LMAX=self.lmax, MMAX=kwargs['MMAX'])
+        #-- Output file information
+        logging.info(self.filename)
+        logging.info(list(Ylms.keys()))
+        #-- copy variables for GIA model
+        self.clm = Ylms['clm'].copy()
+        self.slm = Ylms['slm'].copy()
+        #-- copy dimensions for GIA model
+        self.lmax = np.max(Ylms['l'])
+        self.mmax = np.max(Ylms['m'])
+        #-- copy information for GIA model
+        self.title = Ylms['title']
+        self.citation = Ylms['citation']
+        self.reference = Ylms['reference']
         #-- assign shape and ndim attributes
         self.update_dimensions()
         return self
@@ -1555,6 +1610,32 @@ class harmonics(object):
         for key in ['clm','slm']:
             val = getattr(self, key)
             setattr(temp, key, np.power(val,power))
+        #-- assign ndim and shape attributes
+        temp.update_dimensions()
+        return temp
+
+    def drift(self, t, epoch=2003.3):
+        """
+        Integrate a harmonics rate field over time to calculate drift
+
+        Parameters
+        ----------
+        t: float
+            times for calculating drift
+        epoch: float
+            reference epoch for times
+        """
+        #-- reassign shape and ndim attributes
+        self.update_dimensions()
+        temp = harmonics(lmax=self.lmax, mmax=self.mmax)
+        temp.time = np.copy(t)
+        temp.month = np.int64(calendar_to_grace(self.time))
+        #-- adjust months to fix special cases if necessary
+        temp.month = adjust_months(temp.month)
+        #-- calculate drift
+        for i,ti in enumerate(t):
+            temp.clm[:,:,i] = self.clm*(ti - epoch)
+            temp.slm[:,:,i] = self.slm*(ti - epoch)
         #-- assign ndim and shape attributes
         temp.update_dimensions()
         return temp

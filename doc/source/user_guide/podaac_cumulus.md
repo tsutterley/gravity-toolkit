@@ -21,6 +21,7 @@ python podaac_cumulus.py --user <username> --directory <path_to_grace_directory>
    * `'grace-fo'`
 - `-c X`, `--center X`: GRACE/GRACE-FO Processing Center (CSR,GFZ,JPL)
 - `-r X`, `--release X`: GRACE/GRACE-FO Data Releases to sync (RL06)
+- `-v X`, `--version X`: GRACE/GRACE-FO Level-2 Data Version to sync (0,1)
 - `-t X`, `--timeout X`: Timeout in seconds for blocking operations
 - `-C`, `--clobber`: Overwrite existing data in transfer
 - `-M X`, `--mode X`: Permission mode of directories and files synced

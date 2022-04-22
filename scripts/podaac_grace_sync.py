@@ -43,7 +43,8 @@ COMMAND LINE OPTIONS:
     -D X, --directory X: working data directory
     -m X, --mission X: Sync GRACE (grace) or GRACE Follow-On (grace-fo) data
     -c X, --center X: GRACE/GRACE-FO Processing Center
-    -r X, --release X: GRACE/GRACE-FO Data Releases to sync (RL05,RL06)
+    -r X, --release X: GRACE/GRACE-FO Data Releases to sync
+    -v X, --version X: GRACE/GRACE-FO Level-2 Data Version to sync
     -a, --aod1b: sync GRACE/GRACE-FO Level-1B dealiasing products
     -n, --newsletters: sync GRACE/GRACE-FO newsletters
     -t X, --timeout X: Timeout in seconds for blocking operations
@@ -70,6 +71,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 04/2022: only sync newsletters for mission of interest
+        added option for GRACE/GRACE-FO Level-2 data version
     Updated 03/2022: update regular expression pattern for finding files
         use CMR queries for finding GRACE/GRACE-FO level-2 product urls
     Updated 10/2021: using python logging for handling verbose output
@@ -175,7 +177,7 @@ import lxml.etree
 import gravity_toolkit.utilities
 
 #-- PURPOSE: create and compile regular expression operator to find GRACE files
-def compile_regex_pattern(PROC, DREL, DSET):
+def compile_regex_pattern(PROC, DREL, DSET, version='0'):
     if ((DSET == 'GSM') and (PROC == 'CSR') and (DREL in ('RL04','RL05'))):
         #-- CSR GSM: only monthly degree 60 products
         #-- not the longterm degree 180, degree 96 dataset or the
@@ -186,8 +188,8 @@ def compile_regex_pattern(PROC, DREL, DSET):
     elif ((DSET == 'GSM') and (PROC == 'CSR') and (DREL == 'RL06')):
         #-- CSR GSM RL06: only monthly degree 60 products
         release, = re.findall(r'\d+', DREL)
-        args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
-        regex_pattern=r'{0}-2_\d+-\d+_{1}_UTCSR_{2}_0{3:d}00(\.gz)?$' .format(*args)
+        args = (DSET, '(GRAC|GRFO)', 'BA01', release.zfill(2), version.zfill(2))
+        regex_pattern=r'{0}-2_\d+-\d+_{1}_UTCSR_{2}_{3}{4}(\.gz)?$' .format(*args)
     elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL04')):
         #-- GFZ RL04: only unconstrained solutions (not GK2 products)
         regex_pattern=r'{0}-2_\d+-\d+_\d+_EIGEN_G---_0004(\.gz)?$'.format(DSET)
@@ -200,8 +202,8 @@ def compile_regex_pattern(PROC, DREL, DSET):
     elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL06')):
         #-- GFZ GSM RL06: only monthly degree 60 products
         release, = re.findall(r'\d+', DREL)
-        args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
-        regex_pattern=r'{0}-2_\d+-\d+_{1}_GFZOP_{2}_0{3:d}00(\.gz)?$' .format(*args)
+        args = (DSET, '(GRAC|GRFO)', 'BA01', release.zfill(2), version.zfill(2))
+        regex_pattern=r'{0}-2_\d+-\d+_{1}_GFZOP_{2}_{3}{4}(\.gz)?$' .format(*args)
     elif (PROC == 'JPL') and DREL in ('RL04','RL05'):
         #-- JPL: RL04a and RL05a products (denoted by 0001)
         release, = re.findall(r'\d+', DREL)
@@ -210,16 +212,16 @@ def compile_regex_pattern(PROC, DREL, DSET):
     elif ((DSET == 'GSM') and (PROC == 'JPL') and (DREL == 'RL06')):
         #-- JPL GSM RL06: only monthly degree 60 products
         release, = re.findall(r'\d+', DREL)
-        args = (DSET, '(GRAC|GRFO)', 'BA01', int(release))
-        regex_pattern=r'{0}-2_\d+-\d+_{1}_JPLEM_{2}_0{3:d}00(\.gz)?$' .format(*args)
+        args = (DSET, '(GRAC|GRFO)', 'BA01', release.zfill(2), version.zfill(2))
+        regex_pattern=r'{0}-2_\d+-\d+_{1}_JPLEM_{2}_{3}{4}(\.gz)?$' .format(*args)
     else:
         regex_pattern=r'{0}-2_([a-zA-Z0-9_\-]+)(\.gz)?$'.format(DSET)
     #-- return the compiled regular expression operator used to find files
     return re.compile(regex_pattern, re.VERBOSE)
 
 #-- PURPOSE: sync local GRACE/GRACE-FO files with JPL PO.DAAC drive server
-def podaac_grace_sync(DIRECTORY, PROC, DREL=[], MISSION=[], AOD1B=False,
-    NEWSLETTERS=False, TIMEOUT=None, LOG=False, LIST=False,
+def podaac_grace_sync(DIRECTORY, MISSION=[], PROC=[], DREL=[], VERSION=None,
+    AOD1B=False, NEWSLETTERS=False, TIMEOUT=None, LOG=False, LIST=False,
     CLOBBER=False, CHECKSUM=False, MODE=None):
 
     #-- check if directory exists and recursively create if not
@@ -412,7 +414,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], MISSION=[], AOD1B=False,
                     #-- query CMR for dataset
                     ids,urls,mtimes = gravity_toolkit.utilities.cmr(
                         mission=mi, center=pr, release=rl, product=ds,
-                        provider='PODAAC', endpoint='data')
+                        version=VERSION, provider='PODAAC', endpoint='data')
                     #-- for each id, url and modification time
                     for id,url,mtime in zip(ids,urls,mtimes):
                         #-- retrieve GRACE/GRACE-FO files
@@ -422,7 +424,7 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], MISSION=[], AOD1B=False,
                             CHECKSUM=CHECKSUM, MODE=MODE)
 
                     #-- regular expression operator for data product
-                    rx = compile_regex_pattern(pr, rl, ds)
+                    rx = compile_regex_pattern(pr, rl, ds, version=VERSION)
                     #-- find local GRACE/GRACE-FO files to create index
                     grace_files=[fi for fi in os.listdir(local_dir) if rx.match(fi)]
                     #-- outputting GRACE/GRACE-FO filenames to index
@@ -431,27 +433,6 @@ def podaac_grace_sync(DIRECTORY, PROC, DREL=[], MISSION=[], AOD1B=False,
                             print('{0}'.format(fi), file=fid)
                     #-- change permissions of index file
                     os.chmod(os.path.join(local_dir,'index.txt'), MODE)
-
-    #-- create index file for GRACE/GRACE-FO L2 Spherical Harmonic Data
-    #-- PROCESSING CENTERS (CSR, GFZ, JPL)
-    for pr in PROC:
-        #-- DATA RELEASES (RL04, RL05, RL06)
-        for rl in DREL:
-            #-- DATA PRODUCTS (GAC, GAD, GSM, GAA, GAB)
-            for ds in DSET[pr]:
-                #-- local directory for exact data product
-                local_dir = os.path.join(DIRECTORY, pr, rl, ds)
-                #-- Create an index file for each GRACE product
-                #-- finding all dataset files *.gz in directory
-                rx = compile_regex_pattern(pr, rl, ds)
-                #-- find local GRACE files to create index
-                grace_files=[fi for fi in os.listdir(local_dir) if rx.match(fi)]
-                #-- outputting GRACE filenames to index
-                with open(os.path.join(local_dir,'index.txt'),'w') as fid:
-                    for fi in sorted(grace_files):
-                        print('{0}'.format(fi), file=fid)
-                #-- change permissions of index file
-                os.chmod(os.path.join(local_dir,'index.txt'), MODE)
 
     #-- close log file and set permissions level to MODE
     if LOG:
@@ -566,6 +547,11 @@ def main():
         metavar='DREL', type=str, nargs='+',
         default=['RL06'], choices=['RL04','RL05','RL06'],
         help='GRACE/GRACE-FO data release')
+    #-- GRACE/GRACE-FO data version
+    parser.add_argument('--version','-v',
+        metavar='VERSION', type=str,
+        default='0', choices=['0','1','2'],
+        help='GRACE/GRACE-FO Level-2 data version')
     #-- GRACE/GRACE-FO dealiasing products
     parser.add_argument('--aod1b','-a',
         default=False, action='store_true',
@@ -622,8 +608,8 @@ def main():
     #-- check JPL PO.DAAC Drive credentials before attempting to run program
     DRIVE = 'https://{0}/drive/files'.format(HOST)
     if gravity_toolkit.utilities.check_credentials(DRIVE):
-        podaac_grace_sync(args.directory, args.center,
-            DREL=args.release, MISSION=args.mission,
+        podaac_grace_sync(args.directory, MISSION=args.mission,
+            PROC=args.center, DREL=args.release, VERSION=args.version,
             NEWSLETTERS=args.newsletters, AOD1B=args.aod1b,
             TIMEOUT=args.timeout, LIST=args.list, LOG=args.log,
             CLOBBER=args.clobber, CHECKSUM=args.checksum,

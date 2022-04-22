@@ -18,6 +18,7 @@ python gfz_isdc_grace_ftp.py --directory <path_to_grace_directory> --release RL0
    * `'grace-fo'`
 - `-c X`, `--center X`: GRACE/GRACE-FO Processing Center (CSR,GFZ,JPL)
 - `-r X`, `--release X`: GRACE/GRACE-FO Data Releases to sync (RL05,RL06)
+- `-v X`, `--version X`: GRACE/GRACE-FO Level-2 Data Version to sync (0,1)
 - `--newsletters`: Sync GRACE Newsletters
 - `-t X`, `--timeout X`: Timeout in seconds for blocking operations
 - `-L`, `--list`: Only print files that are to be transferred
