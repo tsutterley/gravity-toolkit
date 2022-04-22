@@ -187,7 +187,7 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     citation: str
         citation for GIA model
     reference: str
-        refernence for GIA model
+        reference for GIA model
 
     References
     ----------
