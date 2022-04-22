@@ -135,8 +135,7 @@ import re
 import numpy as np
 import gravity_toolkit.harmonics
 
-def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
-    DATAFORM=None, MODE=0o775):
+def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     """
     Reads Glacial Isostatic Adjustment (GIA) data files
 
@@ -158,7 +157,7 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
             - ``'ascii'``: reformatted GIA in ascii format
             - ``'netCDF4'``: reformatted GIA in netCDF4 format
             - ``'HDF5'``: reformatted GIA in HDF5 format
-    LMAX: int, default 60
+    LMAX: int or NoneType, default from model
         maximum degree of spherical harmonics
     MMAX: int or NoneType, default None
         maximum order of spherical harmonics
@@ -184,6 +183,10 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
         spherical harmonic order
     title: str
         parameters of GIA model
+    citation: str
+        citation for GIA model
+    reference: str
+        refernence for GIA model
 
     References
     ----------
@@ -231,43 +234,83 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
         glacial isostatic adjustment", *Nature Geoscience*, 3(9), 642-646 (2010).
         `https://doi.org/10.1038/ngeo938 <https://doi.org/10.1038/ngeo938>`_
     """
-
+    #-- default keyword arguments
+    kwargs.setdefault('LMAX', None)
+    kwargs.setdefault('MODE', 0o775)
     #-- allocate for output Ylms
-    #-- initially read for spherical harmonic degree up to LMAX
-    #-- will truncate to MMAX before exiting program
     gia_Ylms = {}
-    gia_Ylms['clm'] = np.zeros((LMAX+1,LMAX+1))
-    gia_Ylms['slm'] = np.zeros((LMAX+1,LMAX+1))
-    #-- output spherical harmonic degree and order
-    gia_Ylms['l'],gia_Ylms['m'] = (np.arange(LMAX+1),np.arange(LMAX+1))
 
-    if (GIA == 'IJ05-R2'):#-- Ivins R2 IJ05 Models
+    #-- GIA model citations and references
+    if (GIA == 'IJ05-R2'):
+        #-- IJ05-R2: Ivins R2 GIA Models
         prefix = 'IJ05_R2'
+        gia_Ylms['citation'] = 'Ivins_et_al._(2013)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1002/jgrb.50208'
         #-- regular expression file pattern
         file_pattern = r'Stokes.R2_(.*?)_L120'
-    elif (GIA == 'W12a'):#-- Whitehouse W12a
-        prefix = 'W12a'
-        parameters = dict(B='Best', L='Lower', U='Upper')
-        #-- regular expression file pattern
-        file_pattern = r'grate_(B|L|U).clm'
-    elif (GIA == 'SM09'):#-- Simpson Milne SM09
-        prefix = 'SM09_Huy2'
-        #-- regular expression file pattern
-        file_pattern = r'grate_(\d+)p(\d)(\d+).clm'
-    elif (GIA == 'ICE6G'):#-- ICE-6G VM5 viscosity profile
+        #-- default degree of truncation
+        LMAX = 120 if not kwargs['LMAX'] else kwargs['LMAX']
+    elif (GIA == 'ICE6G'):
+        #-- ICE6G: ICE-6G VM5 GIA Models
         prefix = 'ICE6G'
+        gia_Ylms['citation'] = 'Peltier_et_al._(2015)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1002/2014JB011176'
         #-- regular expression file pattern for test cases
         #file_pattern = r'Stokes_G_Rot_60_I6_A_(.*?)_L90'
         #-- regular expression file pattern for VM5
         file_pattern = r'Stokes_G_Rot_60_I6_A_(.*)'
-    elif (GIA == 'AW13-ICE6G'):#-- Geruo A ICE-6G model versions
-        prefix = 'AW13'
-        #-- regular expressions file pattern
-        file_pattern = r'stokes\.(ice6g)[\.\_](.*?)(\.txt)?$'
-    elif (GIA == 'ICE6G-D'):#-- ICE-6G Version-D viscosity profile
+        #-- default degree of truncation
+        LMAX = 60 if not kwargs['LMAX'] else kwargs['LMAX']
+    elif (GIA == 'W12a'):
+        #-- W12a: Whitehouse GIA Models
+        prefix = 'W12a'
+        gia_Ylms['citation'] = 'Whitehouse_et_al._(2012)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1111/j.1365-246X.2012.05557.x'
+        #-- for Whitehouse W12a (BEST, LOWER, UPPER):
+        parameters = dict(B='Best', L='Lower', U='Upper')
+        #-- regular expression file pattern
+        file_pattern = r'grate_(B|L|U).clm'
+        #-- default degree of truncation
+        LMAX = 120 if not kwargs['LMAX'] else kwargs['LMAX']
+    elif (GIA == 'SM09'):
+        #-- SM09: Simpson/Milne GIA Models
+        prefix = 'SM09_Huy2'
+        gia_Ylms['citation'] = 'Simpson_et_al._(2009)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1016/j.quascirev.2009.03.004'
+        #-- regular expression file pattern
+        file_pattern = r'grate_(\d+)p(\d)(\d+).clm'
+        #-- default degree of truncation
+        LMAX = 120 if not kwargs['LMAX'] else kwargs['LMAX']
+    elif (GIA == 'Wu10'):
+        #-- Wu10: Wu (2010) GIA Correction
+        gia_Ylms['citation'] = 'Wu_et_al._(2010)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1038/ngeo938'
+        #-- default degree of truncation
+        LMAX = 60 if not kwargs['LMAX'] else kwargs['LMAX']
+    elif (GIA == 'Caron'):
+        #-- Caron: Caron JPL GIA Assimilation
+        gia_Ylms['citation'] = 'Caron_et_al._(2018)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1002/2017GL076644'
+        #-- default degree of truncation
+        LMAX = 89 if not kwargs['LMAX'] else kwargs['LMAX']
+    elif (GIA == 'ICE6G-D'):
+        #-- ICE6G-D: ICE-6G Version-D GIA Models
         prefix = 'ICE6G-D'
+        gia_Ylms['citation'] = 'Peltier_et_al._(1018)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1002/2016JB013844'
         #-- regular expression file pattern for Version-D
         file_pattern = r'(ICE-6G_)?(.*?)[_]?Stokes_trend[_]?(.*?)\.txt$'
+        #-- default degree of truncation
+        LMAX = 256 if not kwargs['LMAX'] else kwargs['LMAX']
+    elif (GIA == 'AW13-ICE6G'):
+        #-- AW13-ICE6G: Geruo A ICE-6G GIA Models
+        prefix = 'AW13'
+        gia_Ylms['citation'] = 'A_et_al._(2013)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1093/gji/ggs030'
+        #-- regular expressions file pattern
+        file_pattern = r'stokes\.(ice6g)[\.\_](.*?)(\.txt)?$'
+        #-- default degree of truncation
+        LMAX = 100 if not kwargs['LMAX'] else kwargs['LMAX']
 
     #-- compile numerical expression operator
     rx = re.compile(r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?')
@@ -285,6 +328,13 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
     else:
         start = 0
         scale = 1.0
+
+    #-- initially read for spherical harmonic degree up to LMAX
+    #-- will truncate to MMAX before exiting program
+    gia_Ylms['clm'] = np.zeros((LMAX+1,LMAX+1))
+    gia_Ylms['slm'] = np.zeros((LMAX+1,LMAX+1))
+    #-- output spherical harmonic degree and order
+    gia_Ylms['l'],gia_Ylms['m'] = (np.arange(LMAX+1),np.arange(LMAX+1))
 
     #-- Reading GIA files (ICE-6G and Wu have more complex formats)
     if GIA in ('IJ05-R2', 'W12a', 'SM09', 'AW13-ICE6G'):
@@ -508,33 +558,25 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
             except:
                 gia_Ylms[att_name] = None
 
-    #-- GIA model citations and references
+    #-- GIA model parameter strings
     #-- extract rheology from the file name
     if (GIA == 'IJ05-R2'):
         #-- IJ05-R2: Ivins R2 GIA Models
-        gia_Ylms['citation'] = 'Ivins_et_al._(2013)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1002/jgrb.50208'
         #-- adding file specific earth parameters
         parameters, = re.findall(file_pattern,os.path.basename(input_file))
         gia_Ylms['title'] = '{0}_{1}'.format(prefix,parameters)
     elif (GIA == 'ICE6G'):
         #-- ICE6G: ICE-6G GIA Models
-        gia_Ylms['citation'] = 'Peltier_et_al._(2015)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1002/2014JB011176'
         #-- adding file specific earth parameters
         parameters, = re.findall(file_pattern,os.path.basename(input_file))
         gia_Ylms['title'] = '{0}_{1}'.format(prefix,parameters)
     elif (GIA == 'W12a'):
         #-- W12a: Whitehouse GIA Models
-        gia_Ylms['citation'] = 'Whitehouse_et_al._(2012)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1111/j.1365-246X.2012.05557.x'
         #-- for Whitehouse W12a (BEST, LOWER, UPPER):
         model = re.findall(file_pattern,os.path.basename(input_file)).pop()
         gia_Ylms['title'] = '{0}_{1}'.format(prefix,parameters[model])
     elif (GIA == 'SM09'):
         #-- SM09: Simpson/Milne GIA Models
-        gia_Ylms['citation'] = 'Simpson_et_al._(2009)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1016/j.quascirev.2009.03.004'
         #-- making parameters in the file similar to IJ05
         #-- split rheological parameters between lithospheric thickness,
         #-- upper mantle viscosity and lower mantle viscosity
@@ -543,25 +585,17 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
         gia_Ylms['title'] = '{0}_{1}_.{2}_{3}'.format(prefix,LTh,UMV,LMV)
     elif (GIA == 'Wu10'):
         #-- Wu10: Wu (2010) GIA Correction
-        gia_Ylms['citation'] = 'Wu_et_al._(2010)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1038/ngeo938'
         gia_Ylms['title'] = 'Wu_2010'
     elif (GIA == 'Caron'):
         #-- Caron: Caron JPL GIA Assimilation
-        gia_Ylms['citation'] = 'Caron_et_al._(2018)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1002/2017GL076644'
         gia_Ylms['title'] = 'Caron_expt'
     elif (GIA == 'ICE6G-D'):
         #-- ICE6G-D: ICE-6G Version-D GIA Models
-        gia_Ylms['citation'] = 'Peltier_et_al._(1018)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1002/2016JB013844'
         #-- adding file specific earth parameters
         m1,p1,p2 = re.findall(file_pattern,os.path.basename(input_file)).pop()
         gia_Ylms['title'] = '{0}_{1}{2}'.format(prefix,p1,p2)
     elif (GIA == 'AW13-ICE6G'):
         #-- AW13-ICE6G: Geruo A ICE-6G GIA Models
-        gia_Ylms['citation'] = 'A_et_al._(2013)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1093/gji/ggs030'
         #-- extract the ice history and case flags
         hist,case,sf=re.findall(file_pattern,os.path.basename(input_file)).pop()
         gia_Ylms['title'] = '{0}_{1}_{2}'.format(prefix,hist,case)
@@ -578,7 +612,8 @@ def read_GIA_model(input_file, GIA=None, LMAX=60, MMAX=None,
             format=DATAFORM, title=gia_Ylms['title'],
             reference=gia_Ylms['reference'], date=False)
         #-- set permissions level of output file
-        os.chmod(os.path.join(os.path.dirname(input_file),output_file), MODE)
+        os.chmod(os.path.join(os.path.dirname(input_file),output_file),
+            mode=kwargs['MODE'])
 
     #-- truncate to MMAX if specified
     if MMAX is not None:
