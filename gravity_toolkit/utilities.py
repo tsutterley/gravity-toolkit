@@ -10,6 +10,7 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
+        update CMR queries to prepare for version 1 of RL06
     Updated 03/2022: add NASA Common Metadata Repository (CMR) queries
         added attempt login function to recursively check credentials
     Updated 11/2021: add CSR satellite laser ranging oblateness file

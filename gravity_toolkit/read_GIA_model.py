@@ -99,6 +99,7 @@ UPDATE HISTORY:
         use harmonics class to read/write ascii, netCDF4 and HDF5 files
         check if GIA data file is present in file-system
         include utf-8 encoding in reads to be windows compliant
+        use the maximum degree within the GIA model as the default LMAX
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: use regular expressions to find ICE6G-D header positions
     Updated 08/2020: flake8 compatible regular expression strings

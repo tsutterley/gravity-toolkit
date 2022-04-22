@@ -29,6 +29,7 @@ UPDATE HISTORY:
         using internal netCDF4 and HDF5 readers and writers
         added function for converting to a python dictionary
         include utf-8 encoding in reads to be windows compliant
+        added GIA model reader and drift functions
     Updated 12/2021: logging case_insensitive_filename output for debugging
     Updated 11/2021: kwargs to index, netCDF4 and HDF5 read functions
     Updated 10/2021: using python logging for handling verbose output
