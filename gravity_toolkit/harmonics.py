@@ -30,6 +30,7 @@ UPDATE HISTORY:
         added function for converting to a python dictionary
         include utf-8 encoding in reads to be windows compliant
         added GIA model reader and drift functions
+        include filename attribute when modifying harmonic objects
     Updated 12/2021: logging case_insensitive_filename output for debugging
     Updated 11/2021: kwargs to index, netCDF4 and HDF5 read functions
     Updated 10/2021: using python logging for handling verbose output
@@ -274,12 +275,12 @@ class harmonics(object):
         #-- Open the NetCDF4 file for reading
         if (kwargs['compression'] == 'gzip'):
             #-- read as in-memory (diskless) netCDF4 dataset
-            with gzip.open(os.path.expanduser(filename),'r') as f:
-                fileID = netCDF4.Dataset(os.path.basename(filename),memory=f.read())
+            with gzip.open(self.filename,'r') as f:
+                fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=f.read())
         elif (kwargs['compression'] == 'zip'):
             #-- read zipped file and extract file into in-memory file object
             fileBasename,_ = os.path.splitext(os.path.basename(filename))
-            with zipfile.ZipFile(os.path.expanduser(filename)) as z:
+            with zipfile.ZipFile(self.filename) as z:
                 #-- first try finding a netCDF4 file with same base filename
                 #-- if none found simply try searching for a netCDF4 file
                 try:
@@ -293,26 +294,24 @@ class harmonics(object):
             fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=filename.read())
         else:
             #-- read netCDF4 dataset
-            fileID = netCDF4.Dataset(os.path.expanduser(filename), 'r')
+            fileID = netCDF4.Dataset(self.filename, 'r')
         #-- Output NetCDF file information
         logging.info(fileID.filepath())
         logging.info(list(fileID.variables.keys()))
         #-- read flattened spherical harmonics
         temp = harmonics()
-        #-- Getting the data from each NetCDF variable
+        temp.filename = copy.copy(self.filename)
+        #-- create list of variables to retrieve
         fields = ['l','m','clm','slm']
-        temp.l = fileID.variables['l'][:].copy()
-        temp.m = fileID.variables['m'][:].copy()
-        temp.clm = fileID.variables['clm'][:].copy()
-        temp.slm = fileID.variables['slm'][:].copy()
+        #-- retrieve date variables if specified
+        if kwargs['date']:
+            fields.extend(['time','month'])
+        #-- Getting the data from each NetCDF variable
+        for field in fields:
+            setattr(temp, field, fileID.variables[field][:].copy())
         #-- calculate maximum degree and order
         temp.lmax = np.max(temp.l)
         temp.mmax = np.max(temp.m)
-        #-- read date variables if specified
-        if kwargs['date']:
-            fields.extend(['time','month'])
-            temp.time = fileID.variables['time'][:].copy()
-            temp.month = fileID.variables['month'][:].copy()
         #-- expand the spherical harmonics to dimensions
         self = temp.expand(date=kwargs['date'])
         #-- adjust months to fix special cases if necessary
@@ -367,7 +366,7 @@ class harmonics(object):
         #-- Open the HDF5 file for reading
         if (kwargs['compression'] == 'gzip'):
             #-- read gzip compressed file and extract into in-memory file object
-            with gzip.open(os.path.expanduser(filename),'r') as f:
+            with gzip.open(self.filename,'r') as f:
                 fid = io.BytesIO(f.read())
             #-- set filename of BytesIO object
             fid.filename = os.path.basename(filename)
@@ -378,7 +377,7 @@ class harmonics(object):
         elif (kwargs['compression'] == 'zip'):
             #-- read zipped file and extract file into in-memory file object
             fileBasename,_ = os.path.splitext(os.path.basename(filename))
-            with zipfile.ZipFile(os.path.expanduser(filename)) as z:
+            with zipfile.ZipFile(self.filename) as z:
                 #-- first try finding a HDF5 file with same base filename
                 #-- if none found simply try searching for a HDF5 file
                 try:
@@ -395,29 +394,27 @@ class harmonics(object):
             fileID = h5py.File(fid, 'r')
         elif (kwargs['compression'] == 'bytes'):
             #-- read as in-memory (diskless) HDF5 dataset
-            fileID = h5py.File(filename, 'r')
+            fileID = h5py.File(self.filename, 'r')
         else:
             #-- read HDF5 dataset
-            fileID = h5py.File(os.path.expanduser(filename), 'r')
+            fileID = h5py.File(self.filename, 'r')
         #-- Output HDF5 file information
         logging.info(fileID.filename)
         logging.info(list(fileID.keys()))
         #-- read flattened spherical harmonics
         temp = harmonics()
-        #-- Getting the data from each HDF5 variable
+        temp.filename = copy.copy(self.filename)
+        #-- create list of variables to retrieve
         fields = ['l','m','clm','slm']
-        temp.l = fileID['l'][:].copy()
-        temp.m = fileID['m'][:].copy()
-        temp.clm = fileID['clm'][:].copy()
-        temp.slm = fileID['slm'][:].copy()
+        #-- retrieve date variables if specified
+        if kwargs['date']:
+            fields.extend(['time','month'])
+        #-- Getting the data from each HDF5 variable
+        for field in fields:
+            setattr(temp, field, fileID[field][:].copy())
         #-- calculate maximum degree and order
         temp.lmax = np.max(temp.l)
         temp.mmax = np.max(temp.m)
-        #-- read date variables if specified
-        if kwargs['date']:
-            fields.extend(['time','month'])
-            temp.time = fileID['time'][:].copy()
-            temp.month = fileID['month'][:].copy()
         #-- expand the spherical harmonics to dimensions
         self = temp.expand(date=kwargs['date'])
         #-- adjust months to fix special cases if necessary
@@ -1333,6 +1330,9 @@ class harmonics(object):
         temp = harmonics(lmax=self.lmax, mmax=self.mmax)
         temp.l = np.zeros((n_harm,), dtype=np.int32)
         temp.m = np.zeros((n_harm,), dtype=np.int32)
+        #-- get filenames if applicable
+        if getattr(self, 'filename'):
+            temp.filename = copy.copy(self.filename)
         #-- copy date variables if applicable
         if date:
             temp.time = np.copy(self.time)
@@ -1378,6 +1378,9 @@ class harmonics(object):
             (self.lmax-self.mmax))//2 + 1
         #-- restructured degree and order
         temp = harmonics(lmax=self.lmax, mmax=self.mmax)
+        #-- get filenames if applicable
+        if getattr(self, 'filename'):
+            temp.filename = copy.copy(self.filename)
         #-- copy date variables if applicable
         if date:
             temp.time = np.copy(self.time)
@@ -1575,6 +1578,9 @@ class harmonics(object):
         temp = harmonics(lmax=self.lmax, mmax=self.mmax)
         temp.time = np.copy(self.time)
         temp.month = np.copy(self.month)
+        #-- get filenames if applicable
+        if getattr(self, 'filename'):
+            temp.filename = copy.copy(self.filename)
         #-- multiply by a single constant or a time-variable scalar
         if (np.ndim(var) == 0):
             temp.clm = var*self.clm
@@ -1607,6 +1613,9 @@ class harmonics(object):
         temp = harmonics(lmax=self.lmax, mmax=self.mmax)
         temp.time = np.copy(self.time)
         temp.month = np.copy(self.month)
+        #-- get filenames if applicable
+        if getattr(self, 'filename'):
+            temp.filename = copy.copy(self.filename)
         for key in ['clm','slm']:
             val = getattr(self, key)
             setattr(temp, key, np.power(val,power))
@@ -1632,6 +1641,9 @@ class harmonics(object):
         temp.month = np.int64(calendar_to_grace(self.time))
         #-- adjust months to fix special cases if necessary
         temp.month = adjust_months(temp.month)
+        #-- get filenames if applicable
+        if getattr(self, 'filename'):
+            temp.filename = copy.copy(self.filename)
         #-- calculate drift
         for i,ti in enumerate(t):
             temp.clm[:,:,i] = self.clm*(ti - epoch)
@@ -1686,6 +1698,9 @@ class harmonics(object):
         temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
         temp.time = np.copy(self.time)
         temp.month = np.copy(self.month)
+        #-- get filenames if applicable
+        if getattr(self, 'filename'):
+            temp.filename = copy.copy(self.filename)
         #-- check if a single field or a temporal field
         if (self.ndim == 2):
             Ylms = destripe_harmonics(self.clm, self.slm,
