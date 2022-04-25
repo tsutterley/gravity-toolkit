@@ -27,6 +27,7 @@ UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format
         using internal netCDF4 and HDF5 readers and writers
         include utf-8 encoding in reads to be windows compliant
+        include filename attribute when copying spatial objects
     Updated 12/2021: logging case_insensitive_filename output for debugging
     Updated 11/2021: fix kwargs to index and hdf5 read functions
     Updated 10/2021: using python logging for handling verbose output
@@ -1105,7 +1106,7 @@ class spatial(object):
         elif isinstance(self.attributes,dict):
             temp.attributes.update(self.attributes)
         #-- assign variables to self
-        var = ['lon','lat','data','mask','error','time','month']
+        var = ['lon','lat','data','mask','error','time','month','filename']
         for key in var:
             try:
                 val = getattr(self, key)
