@@ -40,6 +40,7 @@ COMMAND LINE OPTIONS:
         ICE6G: ICE-6G GIA Models
         Wu10: Wu (2010) GIA Correction
         AW13-ICE6G: Geruo A ICE-6G GIA Models
+        AW13-IJ05: Geruo A IJ05-R2 GIA Models
         Caron: Caron JPL GIA Assimilation
         ICE6G-D: ICE-6G Version-D GIA Models
         ascii: reformatted GIA in ascii format
@@ -806,6 +807,7 @@ def main():
     models['ICE6G'] = 'ICE-6G GIA Models'
     models['Wu10'] = 'Wu (2010) GIA Correction'
     models['AW13-ICE6G'] = 'Geruo A ICE-6G GIA Models'
+    models['AW13-IJ05'] = 'Geruo A IJ05-R2 GIA Models'
     models['Caron'] = 'Caron JPL GIA Assimilation'
     models['ICE6G-D'] = 'ICE-6G Version-D GIA Models'
     models['ascii'] = 'reformatted GIA in ascii format'

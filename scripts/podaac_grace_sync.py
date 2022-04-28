@@ -41,7 +41,6 @@ COMMAND LINE OPTIONS:
     -W X, --webdav X: WebDAV password for JPL PO.DAAC Drive Login
     -N X, --netrc X: path to .netrc file for authentication
     -D X, --directory X: working data directory
-    -m X, --mission X: Sync GRACE (grace) or GRACE Follow-On (grace-fo) data
     -c X, --center X: GRACE/GRACE-FO Processing Center
     -r X, --release X: GRACE/GRACE-FO Data Releases to sync
     -v X, --version X: GRACE/GRACE-FO Level-2 Data Version to sync
@@ -70,8 +69,9 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
-    Updated 04/2022: only sync newsletters for mission of interest
-        added option for GRACE/GRACE-FO Level-2 data version
+    Updated 04/2022: added option for GRACE/GRACE-FO Level-2 data version
+        refactor to always try syncing from both grace and grace-fo missions
+        use granule identifiers from CMR query to build output file index
     Updated 03/2022: update regular expression pattern for finding files
         use CMR queries for finding GRACE/GRACE-FO level-2 product urls
     Updated 10/2021: using python logging for handling verbose output
@@ -220,7 +220,7 @@ def compile_regex_pattern(PROC, DREL, DSET, version='0'):
     return re.compile(regex_pattern, re.VERBOSE)
 
 #-- PURPOSE: sync local GRACE/GRACE-FO files with JPL PO.DAAC drive server
-def podaac_grace_sync(DIRECTORY, MISSION=[], PROC=[], DREL=[], VERSION=None,
+def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     AOD1B=False, NEWSLETTERS=False, TIMEOUT=None, LOG=False, LIST=False,
     CLOBBER=False, CHECKSUM=False, MODE=None):
 
@@ -260,7 +260,7 @@ def podaac_grace_sync(DIRECTORY, MISSION=[], PROC=[], DREL=[], VERSION=None,
         #-- standard output (terminal output)
         logging.basicConfig(level=logging.INFO)
 
-    #-- DEGREE 1 COEFFICIENTS
+    #-- Degree 1 (geocenter) coefficients
     logging.info('Degree 1 Coefficients:')
     PATH = [HOST,'drive','files','allData','tellus','L2','degree_1']
     remote_dir = posixpath.join(*PATH)
@@ -282,7 +282,7 @@ def podaac_grace_sync(DIRECTORY, MISSION=[], PROC=[], DREL=[], VERSION=None,
             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
             CHECKSUM=CHECKSUM, MODE=MODE)
 
-    #-- SLR C2,0 COEFFICIENTS
+    #-- SLR C2,0 coefficients
     logging.info('C2,0 Coefficients:')
     PATH = [HOST,'drive','files','allData','grace','docs']
     remote_dir = posixpath.join(*PATH)
@@ -301,7 +301,7 @@ def podaac_grace_sync(DIRECTORY, MISSION=[], PROC=[], DREL=[], VERSION=None,
             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
             CHECKSUM=CHECKSUM, MODE=MODE)
 
-    #-- SLR C3,0 COEFFICIENTS
+    #-- SLR C3,0 coefficients
     logging.info('C3,0 Coefficients:')
     PATH = [HOST,'drive','files','allData','gracefo','docs']
     remote_dir = posixpath.join(*PATH)
@@ -343,14 +343,14 @@ def podaac_grace_sync(DIRECTORY, MISSION=[], PROC=[], DREL=[], VERSION=None,
             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
             CHECKSUM=CHECKSUM, MODE=MODE)
 
-    #-- GRACE and GRACE-FO Newsletters
+    #-- GRACE and GRACE-FO newsletters
     if NEWSLETTERS:
         #-- local newsletter directory (place GRACE and GRACE-FO together)
         local_dir = os.path.join(DIRECTORY,'newsletters')
         #-- check if newsletters directory exists and recursively create if not
         os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
-        #-- for each mission
-        for mi in MISSION:
+        #-- for each satellite mission (grace, grace-fo)
+        for i,mi in enumerate(['grace','grace-fo']):
             logging.info('{0} Newsletters:'.format(mi))
             PATH = [HOST,'drive','files','allData',*newsletter_sub[mi]]
             remote_dir = posixpath.join(*PATH)
@@ -369,12 +369,10 @@ def podaac_grace_sync(DIRECTORY, MISSION=[], PROC=[], DREL=[], VERSION=None,
                     TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
                     CHECKSUM=CHECKSUM, MODE=MODE)
 
-    #-- GRACE/GRACE-FO AOD1B DEALIASING PRODUCTS
-    #-- PROCESSING CENTER (GFZ)
-    #-- DATA RELEASES (RL04, RL05, RL06)
+    #-- GRACE/GRACE-FO AOD1B dealiasing products
     if AOD1B:
-        logging.info('GRACE L1B Dealiasing Product:')
-        #-- for each data release
+        logging.info('GRACE L1B Dealiasing Products:')
+        #-- for each data release (RL04, RL05, RL06)
         for rl in DREL:
             #-- print string of exact data product
             logging.info('{0}/{1}/{2}/{3}'.format('L1B','GFZ','AOD1B',rl))
@@ -395,26 +393,31 @@ def podaac_grace_sync(DIRECTORY, MISSION=[], PROC=[], DREL=[], VERSION=None,
                     TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
                     CHECKSUM=CHECKSUM, MODE=MODE)
 
-    #-- GRACE/GRACE-FO DATA
-    logging.info('GRACE L2 Global Spherical Harmonics:')
-    for mi in MISSION:
-        #-- PROCESSING CENTERS (CSR, GFZ, JPL)
-        for pr in PROC:
-            #-- DATA RELEASES (RL04, RL05, RL06)
-            for rl in DREL:
-                #-- DATA PRODUCTS (GAC, GAD, GSM, GAA, GAB)
-                for ds in DSET[pr]:
+    #-- GRACE/GRACE-FO level-2 spherical harmonic products
+    logging.info('GRACE/GRACE-FO L2 Global Spherical Harmonics:')
+    #-- for each processing center (CSR, GFZ, JPL)
+    for pr in PROC:
+        #-- for each data release (RL04, RL05, RL06)
+        for rl in DREL:
+            #-- for each level-2 product (GAC, GAD, GSM, GAA, GAB)
+            for ds in DSET[pr]:
+                #-- local directory for exact data product
+                local_dir = os.path.join(DIRECTORY, pr, rl, ds)
+                #-- check if directory exists and recursively create if not
+                if not os.path.exists(local_dir):
+                    os.makedirs(local_dir,MODE)
+                #-- list of GRACE/GRACE-FO files for index
+                grace_files = []
+                #-- for each satellite mission (grace, grace-fo)
+                for i,mi in enumerate(['grace','grace-fo']):
                     #-- print string of exact data product
                     logging.info('{0} {1}/{2}/{3}'.format(mi, pr, rl, ds))
-                    #-- local directory for exact data product
-                    local_dir = os.path.join(DIRECTORY, pr, rl, ds)
-                    #-- check if directory exists and recursively create if not
-                    if not os.path.exists(local_dir):
-                        os.makedirs(local_dir,MODE)
                     #-- query CMR for dataset
                     ids,urls,mtimes = gravity_toolkit.utilities.cmr(
                         mission=mi, center=pr, release=rl, product=ds,
-                        version=VERSION, provider='PODAAC', endpoint='data')
+                        version=VERSION[i], provider='PODAAC', endpoint='data')
+                    #-- regular expression operator for data product
+                    rx = compile_regex_pattern(pr, rl, ds, version=VERSION[i])
                     #-- for each id, url and modification time
                     for id,url,mtime in zip(ids,urls,mtimes):
                         #-- retrieve GRACE/GRACE-FO files
@@ -422,17 +425,15 @@ def podaac_grace_sync(DIRECTORY, MISSION=[], PROC=[], DREL=[], VERSION=None,
                         http_pull_file(url, mtime, os.path.join(local_dir,granule),
                             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
                             CHECKSUM=CHECKSUM, MODE=MODE)
+                        #-- extend list of GRACE/GRACE-FO files with granule
+                        grace_files.append(granule) if rx.match(granule) else None
 
-                    #-- regular expression operator for data product
-                    rx = compile_regex_pattern(pr, rl, ds, version=VERSION)
-                    #-- find local GRACE/GRACE-FO files to create index
-                    grace_files=[fi for fi in os.listdir(local_dir) if rx.match(fi)]
-                    #-- outputting GRACE/GRACE-FO filenames to index
-                    with open(os.path.join(local_dir,'index.txt'),'w') as fid:
-                        for fi in sorted(grace_files):
-                            print('{0}'.format(fi), file=fid)
-                    #-- change permissions of index file
-                    os.chmod(os.path.join(local_dir,'index.txt'), MODE)
+                #-- outputting GRACE/GRACE-FO filenames to index
+                with open(os.path.join(local_dir,'index.txt'),'w') as fid:
+                    for fi in sorted(grace_files):
+                        print('{0}'.format(fi), file=fid)
+                #-- change permissions of index file
+                os.chmod(os.path.join(local_dir,'index.txt'), MODE)
 
     #-- close log file and set permissions level to MODE
     if LOG:
@@ -532,11 +533,6 @@ def main():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
-    #-- mission (GRACE or GRACE Follow-On)
-    parser.add_argument('--mission','-m',
-        type=str, nargs='+',
-        default=['grace','grace-fo'], choices=['grace','grace-fo'],
-        help='Mission to sync between GRACE and GRACE-FO')
     #-- GRACE/GRACE-FO processing center
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, nargs='+',
@@ -545,12 +541,12 @@ def main():
     #-- GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
         metavar='DREL', type=str, nargs='+',
-        default=['RL06'], choices=['RL04','RL05','RL06'],
+        default=['RL06'], choices=['RL06'],
         help='GRACE/GRACE-FO data release')
     #-- GRACE/GRACE-FO data version
     parser.add_argument('--version','-v',
-        metavar='VERSION', type=str,
-        default='0', choices=['0','1','2'],
+        metavar='VERSION', type=str, nargs='+',
+        default=['0','1'], choices=['0','1','2','3'],
         help='GRACE/GRACE-FO Level-2 data version')
     #-- GRACE/GRACE-FO dealiasing products
     parser.add_argument('--aod1b','-a',
@@ -608,8 +604,8 @@ def main():
     #-- check JPL PO.DAAC Drive credentials before attempting to run program
     DRIVE = 'https://{0}/drive/files'.format(HOST)
     if gravity_toolkit.utilities.check_credentials(DRIVE):
-        podaac_grace_sync(args.directory, MISSION=args.mission,
-            PROC=args.center, DREL=args.release, VERSION=args.version,
+        podaac_grace_sync(args.directory, PROC=args.center,
+            DREL=args.release, VERSION=args.version,
             NEWSLETTERS=args.newsletters, AOD1B=args.aod1b,
             TIMEOUT=args.timeout, LIST=args.list, LOG=args.log,
             CLOBBER=args.clobber, CHECKSUM=args.checksum,

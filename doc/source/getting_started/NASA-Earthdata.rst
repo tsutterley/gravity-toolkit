@@ -16,8 +16,12 @@ NASA Earthdata uses `OAuth2 <https://wiki.earthdata.nasa.gov/pages/viewpage.acti
 
 PO.DAAC
 #######
-The `Physical Oceanography Distributed Active Archive Center (PO.DAAC) <https://podaac.jpl.nasa.gov/>`_ provides data and related information pertaining to the physical processes and conditions of the global oceans, including measurements of ocean winds, temperature, topography, salinity, circulation and currents, and sea ice.
-If any problems contact JPL PO.DAAC support at `podaac@podaac.jpl.nasa.gov <mailto:podaac@podaac.jpl.nasa.gov>`_ or the NASA EOSDIS support team `support@earthdata.nasa.gov <mailto:support@earthdata.nasa.gov>`_.
+The `Physical Oceanography Distributed Active Archive Center (PO.DAAC) <https://podaac.jpl.nasa.gov/>`_
+provides data and related information pertaining to the physical processes and conditions of the global oceans,
+including measurements of ocean winds, temperature, topography, salinity, circulation and currents, and sea ice.
+PO.DAAC hosts
+If any problems contact JPL PO.DAAC support at `podaac@podaac.jpl.nasa.gov <mailto:podaac@podaac.jpl.nasa.gov>`_
+or the NASA EOSDIS support team `support@earthdata.nasa.gov <mailto:support@earthdata.nasa.gov>`_.
 
 WebDAV
 ------
@@ -50,6 +54,25 @@ Or set environmental variables for your NASA Earthdata and JPL WebDAV credential
     export EARTHDATA_USERNAME=<uid>
     export EARTHDATA_PASSWORD=<password>
     export PODAAC_PASSWORD=<webdav>
+
+NASA Common Metadata Repository
+###############################
+
+The NASA Common Metadata Repository (CMR) is a catalog of all data
+and service metadata records contained as part of NASA's Earth
+Observing System Data and Information System (EOSDIS).
+Querying the CMR system is a way of quickly performing a search
+through the NASA Earthdata archive.
+Basic queries for the granule names, PO.DAAC URLs and modification times
+of GRACE/GRACE-FO data are available through the ``cmr`` routine in the
+``utilities`` module.
+For AWS instances in ``us-west-2``, CMR queries can access urls for S3 endpoints.
+
+.. code-block:: python
+
+   ids,urls,mtimes = gravity_toolkit.utilities.cmr(mission='grace-fo',
+      center='JPL', release='RL06', level='L2', product='GSM',
+      solution='BA01', provider='POCLOUD', endpoint='s3', verbose=False)
 
 Other Data Access Examples
 ##########################

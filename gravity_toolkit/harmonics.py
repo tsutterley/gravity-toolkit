@@ -31,6 +31,7 @@ UPDATE HISTORY:
         include utf-8 encoding in reads to be windows compliant
         added GIA model reader and drift functions
         include filename attribute when modifying harmonic objects
+        allow input ascii files to have additional columns
     Updated 12/2021: logging case_insensitive_filename output for debugging
     Updated 11/2021: kwargs to index, netCDF4 and HDF5 read functions
     Updated 10/2021: using python logging for handling verbose output
@@ -211,10 +212,7 @@ class harmonics(object):
         self.mmax = 0
         #-- for each line in the file
         for line in file_contents:
-            if kwargs['date']:
-                l1,m1,clm1,slm1,time = rx.findall(line)
-            else:
-                l1,m1,clm1,slm1 = rx.findall(line)
+            l1,m1,clm1,slm1,*aux = rx.findall(line)
             #-- convert line degree and order to integers
             l1,m1 = np.array([l1,m1],dtype=np.int64)
             self.lmax = np.copy(l1) if (l1 > self.lmax) else self.lmax
@@ -227,17 +225,14 @@ class harmonics(object):
         self.slm = np.zeros((self.lmax+1,self.mmax+1))
         #-- if the ascii file contains date variables
         if kwargs['date']:
-            self.time = np.float64(time)
+            self.time = np.float64(aux[0])
             self.month = np.int64(calendar_to_grace(self.time))
             #-- adjust months to fix special cases if necessary
             self.month = adjust_months(self.month)
         #-- extract harmonics and convert to matrix
         #-- for each line in the file
         for line in file_contents:
-            if kwargs['date']:
-                l1,m1,clm1,slm1,time = rx.findall(line)
-            else:
-                l1,m1,clm1,slm1 = rx.findall(line)
+            l1,m1,clm1,slm1,*aux = rx.findall(line)
             #-- convert line degree and order to integers
             ll,mm = np.array([l1,m1],dtype=np.int64)
             #-- convert fortran exponentials if applicable
@@ -548,6 +543,7 @@ class harmonics(object):
             - ``'ICE6G'``: ICE-6G GIA Models
             - ``'Wu10'``: Wu (2010) GIA Correction
             - ``'AW13-ICE6G'``: Geruo A ICE-6G GIA Models
+            - ``'AW13-IJ05'``: Geruo A IJ05-R2 GIA Models
             - ``'Caron'``: Caron JPL GIA Assimilation
             - ``'ICE6G-D'``: ICE-6G Version-D GIA Models
             - ``'ascii'``: reformatted GIA in ascii format

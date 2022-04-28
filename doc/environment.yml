@@ -10,6 +10,10 @@ dependencies:
   - geos
   - graphviz
   - h5py
+  - ipywidgets>=7.6,<8.0
+  - ipympl
+  - jupyterlab=3
+  - jupyterlab_widgets
   - lxml
   - markupsafe==2.0.1
   - matplotlib
@@ -28,6 +32,7 @@ dependencies:
   - sphinx-markdown-tables
   - sphinx_rtd_theme
   - texlive-core
+  - tk
   - pip:
      - git+https://github.com/tsutterley/read-GRACE-geocenter.git
      - git+https://github.com/tsutterley/geoid-toolkit.git

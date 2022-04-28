@@ -2,7 +2,7 @@ podaac_cumulus.py
 =================
 
 - Syncs GRACE/GRACE-FO data from [NASA JPL PO.DAAC Cumulus AWS S3 bucket](https://podaac.jpl.nasa.gov/cloud-datasets/about)
-- S3 Cumulus syncs are only available in AWS instances in us-west-2
+- S3 Cumulus syncs are only available in AWS instances in `us-west-2`
 - Creates an index file for each data product
 
 #### Calling Sequence
@@ -16,9 +16,6 @@ python podaac_cumulus.py --user <username> --directory <path_to_grace_directory>
 - `-W X`, `--password X`: Password for NASA Earthdata Login
 - `-N X`, `--netrc X`: Path to .netrc file for authentication
 - `-D X`, `--directory X`: Working Data Directory
-- `-m X`, `--mission X`: Mission to sync between GRACE and GRACE-FO
-   * `'grace'`
-   * `'grace-fo'`
 - `-c X`, `--center X`: GRACE/GRACE-FO Processing Center (CSR,GFZ,JPL)
 - `-r X`, `--release X`: GRACE/GRACE-FO Data Releases to sync (RL06)
 - `-v X`, `--version X`: GRACE/GRACE-FO Level-2 Data Version to sync (0,1)
