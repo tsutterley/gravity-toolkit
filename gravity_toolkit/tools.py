@@ -467,13 +467,14 @@ class widgets:
         # ICE6G: ICE-6G GIA Models
         # Wu10: Wu (2010) GIA Correction
         # AW13-ICE6G: Geruo A ICE-6G GIA Models
+        # AW13-IJ05: Geruo A IJ05-R2 GIA Models
         # Caron: Caron JPL GIA Assimilation
         # ICE6G-D: ICE-6G Version-D GIA Models
         # ascii: GIA reformatted to ascii
         # netCDF4: GIA reformatted to netCDF4
         # HDF5: GIA reformatted to HDF5
         gia_list = ['[None]','IJ05-R2','W12a','SM09','ICE6G',
-            'Wu10','AW13-ICE6G','Caron','ICE6G-D',
+            'Wu10','AW13-ICE6G','AW13-IJ05','Caron','ICE6G-D',
             'ascii','netCDF4','HDF5']
         self.GIA = ipywidgets.Dropdown(
             options=gia_list,

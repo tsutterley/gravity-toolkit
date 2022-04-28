@@ -3,6 +3,8 @@ gfz_isdc_grace_ftp.py
 
 - Syncs GRACE/GRACE-FO and auxiliary data from the [GFZ Information System and Data Center (ISDC)](http://isdc.gfz-potsdam.de/grace-isdc/)
 - Syncs CSR/GFZ/JPL files for RL04/RL05/RL06 GAA/GAB/GAC/GAD/GSM (GAA and GAB are GFZ/JPL only)
+- Gets the latest technical note (TN) files
+- Gets the monthly GRACE/GRACE-FO newsletters
 - Creates an index file for each data product
 
 #### Calling Sequence
@@ -13,9 +15,6 @@ python gfz_isdc_grace_ftp.py --directory <path_to_grace_directory> --release RL0
 
 #### Command Line Options
 - `-D X`, `--directory X`: Working Data Directory
-- `-m X`, `--mission X`: Mission to sync between GRACE and GRACE-FO
-   * `'grace'`
-   * `'grace-fo'`
 - `-c X`, `--center X`: GRACE/GRACE-FO Processing Center (CSR,GFZ,JPL)
 - `-r X`, `--release X`: GRACE/GRACE-FO Data Releases to sync (RL05,RL06)
 - `-v X`, `--version X`: GRACE/GRACE-FO Level-2 Data Version to sync (0,1)

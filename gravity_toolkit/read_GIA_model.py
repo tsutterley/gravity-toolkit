@@ -18,6 +18,7 @@ OPTIONS:
         ICE6G: ICE-6G GIA Models
         Wu10: Wu (2010) GIA Correction
         AW13-ICE6G: Geruo A ICE-6G GIA Models
+        AW13-IJ05: Geruo A IJ05-R2 GIA Models
         Caron: Caron JPL GIA Assimilation
         ICE6G-D: ICE-6G Version-D GIA Models
         ascii: reformatted GIA in ascii format
@@ -100,6 +101,7 @@ UPDATE HISTORY:
         check if GIA data file is present in file-system
         include utf-8 encoding in reads to be windows compliant
         use the maximum degree within the GIA model as the default LMAX
+        added AW13 models using IJ05-R2 ice history
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 04/2021: use regular expressions to find ICE6G-D header positions
     Updated 08/2020: flake8 compatible regular expression strings
@@ -153,6 +155,7 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
             - ``'ICE6G'``: ICE-6G GIA Models [Peltier2015]_
             - ``'Wu10'``: Wu (2010) GIA Correction [Wu2010]_
             - ``'AW13-ICE6G'``: Geruo A ICE-6G GIA Models [A2013]_
+            - ``'AW13-IJ05'``: Geruo A IJ05-R2 GIA Models [A2013]_
             - ``'Caron'``: Caron JPL GIA Assimilation [Caron2018]_
             - ``'ICE6G-D'``: ICE-6G Version-D GIA Models [Peltier2018]_
             - ``'ascii'``: reformatted GIA in ascii format
@@ -312,6 +315,15 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         file_pattern = r'stokes\.(ice6g)[\.\_](.*?)(\.txt)?$'
         #-- default degree of truncation
         LMAX = 100 if not kwargs['LMAX'] else kwargs['LMAX']
+    elif (GIA == 'AW13-IJ05'):
+        #-- AW13-IJ05: Geruo A IJ05-R2 GIA Models
+        prefix = 'AW13_IJ05'
+        gia_Ylms['citation'] = 'A_et_al._(2013)'
+        gia_Ylms['reference'] = 'https://doi.org/10.1093/gji/ggs030'
+        #-- regular expressions file pattern
+        file_pattern = r'stokes\.(R2)_(.*?)(\_ANT)?$'
+        #-- default degree of truncation
+        LMAX = 256 if not kwargs['LMAX'] else kwargs['LMAX']
     else:
         #-- return empty GIA harmonics to degree and order
         LMAX = 60 if not kwargs['LMAX'] else kwargs['LMAX']
@@ -341,7 +353,7 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     gia_Ylms['l'],gia_Ylms['m'] = (np.arange(LMAX+1),np.arange(LMAX+1))
 
     #-- Reading GIA files (ICE-6G and Wu have more complex formats)
-    if GIA in ('IJ05-R2', 'W12a', 'SM09', 'AW13-ICE6G'):
+    if GIA in ('IJ05-R2', 'W12a', 'SM09', 'AW13-ICE6G', 'AW13-IJ05'):
         #-- AW13, IJ05, W12a, SM09
         #-- AW13 notes: file headers
         #-- IJ05 notes: need to scale by 1e-11 for geodesy-normalization
@@ -603,6 +615,11 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         #-- extract the ice history and case flags
         hist,case,sf=re.findall(file_pattern,os.path.basename(input_file)).pop()
         gia_Ylms['title'] = '{0}_{1}_{2}'.format(prefix,hist,case)
+    elif (GIA == 'AW13-IJ05'):
+        #-- AW13-IJ05: Geruo A IJ05-R2 GIA Models
+        #-- adding file specific earth parameters
+        vrs,param,aux=re.findall(file_pattern,os.path.basename(input_file)).pop()
+        gia_Ylms['title'] = '{0}_{1}_{2}'.format(prefix,vrs,param)
 
     #-- output harmonics to ascii, netCDF4 or HDF5 file
     if DATAFORM in ('ascii', 'netCDF4', 'HDF5'):

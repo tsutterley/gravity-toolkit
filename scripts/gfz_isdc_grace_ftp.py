@@ -5,9 +5,11 @@ Written by Tyler Sutterley (04/2022)
 Syncs GRACE/GRACE-FO data from the GFZ Information System and Data Center (ISDC)
 Syncs CSR/GFZ/JPL files for RL06 GAA/GAB/GAC/GAD/GSM
     GAA and GAB are GFZ/JPL only
+Gets the latest technical note (TN) files
+Gets the monthly GRACE/GRACE-FO newsletters
 
 CALLING SEQUENCE:
-    python gfz_isdc_grace_ftp.py --mission grace grace-fo
+    python gfz_isdc_grace_ftp.py
 
 OUTPUTS:
     CSR RL06: GAC/GAD/GSM
@@ -17,10 +19,10 @@ OUTPUTS:
 COMMAND LINE OPTIONS:
     --help: list the command line options
     -D X, --directory X: working data directory
-    -m X, --mission X: Sync GRACE (grace) or GRACE Follow-On (grace-fo) data
     -c X, --center X: GRACE/GRACE-FO Processing Center
     -r X, --release X: GRACE/GRACE-FO data releases to sync
     -v X, --version X: GRACE/GRACE-FO Level-2 data version to sync
+    -n, --newsletters: sync GRACE/GRACE-FO newsletters
     -t X, --timeout X: Timeout in seconds for blocking operations
     -L, --list: print files to be transferred, but do not execute transfer
     -l, --log: output log of files downloaded
@@ -39,6 +41,8 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 04/2022: added option for GRACE/GRACE-FO Level-2 data version
+        sync GRACE/GRACE-FO technical notes and newsletters
+        refactor to always try syncing from both grace and grace-fo missions
     Updated 03/2022: update regular expression pattern for finding files
     Updated 10/2021: using python logging for handling verbose output
     Updated 05/2021: added option for connection timeout (in seconds)
@@ -47,7 +51,7 @@ UPDATE HISTORY:
     Updated 08/2020: flake8 compatible regular expression strings
     Updated 03/2020 for public release
     Updated 03/2020: new GFZ ISDC ftp server website
-    Updated 09/2019: added checksum option to not overwrite existing data files
+    Updated 09/2019: checksum option to not overwrite existing data files
         added GRACE Follow-On data sync
     Written 08/2018
 """
@@ -56,6 +60,7 @@ from __future__ import print_function
 import sys
 import os
 import re
+import copy
 import time
 import ftplib
 import shutil
@@ -109,9 +114,9 @@ def compile_regex_pattern(PROC, DREL, DSET, version='0'):
     return re.compile(regex_pattern, re.VERBOSE)
 
 #-- PURPOSE: sync local GRACE/GRACE-FO files with GFZ ISDC server
-def gfz_isdc_grace_ftp(DIRECTORY, MISSION=[], PROC=[], DREL=[],
-    VERSION=None, TIMEOUT=None, LOG=False, LIST=False, CLOBBER=False,
-    CHECKSUM=False, MODE=None):
+def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
+    NEWSLETTERS=False, TIMEOUT=None, LOG=False, LIST=False,
+    CLOBBER=False, CHECKSUM=False, MODE=None):
 
     #-- connect and login to GFZ ISDC ftp server
     ftp = ftplib.FTP('isdcftp.gfz-potsdam.de', timeout=TIMEOUT)
@@ -140,26 +145,140 @@ def gfz_isdc_grace_ftp(DIRECTORY, MISSION=[], PROC=[], DREL=[],
         #-- standard output (terminal output)
         logging.basicConfig(level=logging.INFO)
 
-    #-- GRACE/GRACE-FO DATA
-    for mi in MISSION:
-        #-- PROCESSING CENTERS (CSR, GFZ, JPL)
-        logging.info('{0} L2 Global Spherical Harmonics:'.format(mi.upper()))
-        for pr in PROC:
-            #-- DATA RELEASES (RL04, RL05, RL06)
-            for rl in DREL:
-                #-- modifiers for intermediate data releases
-                if (pr == 'JPL') and (rl == 'RL04'):
-                    #-- JPL RELEASE 4 = RL4.1
-                    drel_str = '{0}.1'.format(rl)
-                elif (pr == 'JPL') and (rl == 'RL05'):
-                    #-- JPL RELEASE 5 = RL05.1 (11/2014)
-                    drel_str = '{0}.1'.format(rl)
-                else:
-                    drel_str = rl
-                #-- DATA PRODUCTS (GAC GAD GSM GAA GAB)
-                for ds in DSET[pr]:
+    #-- Degree 1 (geocenter) coefficients
+    logging.info('Degree 1 Coefficients:')
+    local_dir = os.path.join(DIRECTORY,'geocenter')
+    #-- check if geocenter directory exists and recursively create if not
+    os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
+    #-- TN-13 JPL degree 1 files
+    #-- compile regular expression operator for remote files
+    R1 = re.compile(r'TN-13_GEOC_(CSR|GFZ|JPL)_(.*?).txt$', re.VERBOSE)
+    #-- get filenames from remote directory
+    remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
+        [ftp.host,'grace-fo','DOCUMENTS','TECHNICAL_NOTES'], timeout=TIMEOUT,
+        basename=True, pattern=R1, sort=True)
+    #-- for each file on the remote server
+    for fi,remote_mtime in zip(remote_files,remote_mtimes):
+        #-- extract filename from regex object
+        remote_path = [ftp.host,'grace-fo','DOCUMENTS','TECHNICAL_NOTES',fi]
+        local_file = os.path.join(local_dir,fi)
+        ftp_mirror_file(ftp, remote_path, remote_mtime,
+            local_file, TIMEOUT=TIMEOUT, LIST=LIST,
+            CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
+
+    #-- SLR C2,0 coefficients
+    logging.info('C2,0 Coefficients:')
+    local_dir = os.path.expanduser(DIRECTORY)
+    #-- compile regular expression operator for remote files
+    R1 = re.compile(r'TN-(05|07|11)_C20_SLR_RL(.*?).txt$', re.VERBOSE)
+    #-- get filenames from remote directory
+    remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
+        [ftp.host,'grace','DOCUMENTS','TECHNICAL_NOTES'], timeout=TIMEOUT,
+        basename=True, pattern=R1, sort=True)
+    #-- for each file on the remote server
+    for fi,remote_mtime in zip(remote_files,remote_mtimes):
+        #-- extract filename from regex object
+        remote_path = [ftp.host,'grace','DOCUMENTS','TECHNICAL_NOTES',fi]
+        local_file = os.path.join(local_dir,re.sub(r'(_RL.*?).txt','.txt',fi))
+        ftp_mirror_file(ftp, remote_path, remote_mtime,
+            local_file, TIMEOUT=TIMEOUT, LIST=LIST,
+            CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
+
+    #-- SLR C3,0 coefficients
+    logging.info('C3,0 Coefficients:')
+    local_dir = os.path.expanduser(DIRECTORY)
+    #-- compile regular expression operator for remote files
+    R1 = re.compile(r'TN-(14)_C30_C20_SLR_GSFC.txt$', re.VERBOSE)
+    #-- get filenames from remote directory
+    remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
+        [ftp.host,'grace-fo','DOCUMENTS','TECHNICAL_NOTES'], timeout=TIMEOUT,
+        basename=True, pattern=R1, sort=True)
+    #-- for each file on the remote server
+    for fi,remote_mtime in zip(remote_files,remote_mtimes):
+        #-- extract filename from regex object
+        remote_path = [ftp.host,'grace-fo','DOCUMENTS','TECHNICAL_NOTES',fi]
+        local_file = os.path.join(local_dir,re.sub(r'(SLR_GSFC)','GSFC_SLR',fi))
+        ftp_mirror_file(ftp, remote_path, remote_mtime,
+            local_file, TIMEOUT=TIMEOUT, LIST=LIST,
+            CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
+
+    #-- TN-08 GAE, TN-09 GAF and TN-10 GAG ECMWF atmosphere correction products
+    logging.info('TN-08 GAE, TN-09 GAF and TN-10 GAG products:')
+    local_dir = os.path.expanduser(DIRECTORY)
+    ECMWF_files = []
+    ECMWF_files.append('TN-08_GAE-2_2006032-2010031_0000_EIGEN_G---_0005.gz')
+    ECMWF_files.append('TN-09_GAF-2_2010032-2015131_0000_EIGEN_G---_0005.gz')
+    ECMWF_files.append('TN-10_GAG-2_2015132-2099001_0000_EIGEN_G---_0005.gz')
+    #-- compile regular expression operator for remote files
+    R1 = re.compile(r'({0}|{1}|{2})'.format(*ECMWF_files), re.VERBOSE)
+    #-- get filenames from remote directory
+    remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
+        [ftp.host,'grace','DOCUMENTS','TECHNICAL_NOTES'], timeout=TIMEOUT,
+        basename=True, pattern=R1, sort=True)
+    #-- for each file on the remote server
+    for fi,remote_mtime in zip(remote_files,remote_mtimes):
+        #-- extract filename from regex object
+        remote_path = [ftp.host,'grace','DOCUMENTS','TECHNICAL_NOTES',fi]
+        local_file = os.path.join(local_dir,fi)
+        ftp_mirror_file(ftp, remote_path, remote_mtime,
+            local_file, TIMEOUT=TIMEOUT, LIST=LIST,
+            CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
+
+    #-- GRACE and GRACE-FO newsletters
+    if NEWSLETTERS:
+        #-- local newsletter directory (place GRACE and GRACE-FO together)
+        local_dir = os.path.join(DIRECTORY,'newsletters')
+        #-- check if newsletters directory exists and recursively create if not
+        os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
+        #-- for each satellite mission (grace, grace-fo)
+        for i,mi in enumerate(['grace','grace-fo']):
+            logging.info('{0} Newsletters:'.format(mi))
+            #-- compile regular expression operator for remote files
+            NAME = mi.upper().replace('-','_')
+            R1 = re.compile(r'{0}_SDS_NL_(\d+).pdf'.format(NAME), re.VERBOSE)
+            #-- find years for GRACE/GRACE-FO newsletters
+            years,_  = gravity_toolkit.utilities.ftp_list(
+                [ftp.host,mi,'DOCUMENTS','NEWSLETTER'], timeout=TIMEOUT,
+                basename=True, pattern=r'\d+', sort=True)
+            #-- for each year of GRACE/GRACE-FO newsletters
+            for Y in years:
+                #-- find GRACE/GRACE-FO newsletters
+                remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
+                    [ftp.host,mi,'DOCUMENTS','NEWSLETTER',Y], timeout=TIMEOUT,
+                    basename=True, pattern=R1, sort=True)
+                #-- for each file on the remote server
+                for fi,remote_mtime in zip(remote_files,remote_mtimes):
+                    #-- extract filename from regex object
+                    remote_path = [ftp.host,mi,'DOCUMENTS','NEWSLETTER',Y,fi]
+                    local_file = os.path.join(local_dir,fi)
+                    ftp_mirror_file(ftp, remote_path, remote_mtime,
+                        local_file, TIMEOUT=TIMEOUT, LIST=LIST,
+                        CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
+
+    #-- GRACE/GRACE-FO level-2 spherical harmonic products
+    logging.info('GRACE/GRACE-FO L2 Global Spherical Harmonics:')
+    #-- for each processing center (CSR, GFZ, JPL)
+    for pr in PROC:
+        #-- for each data release (RL04, RL05, RL06)
+        for rl in DREL:
+            #-- for each level-2 product (GAC, GAD, GSM, GAA, GAB)
+            for ds in DSET[pr]:
+                #-- local directory for exact data product
+                local_dir = os.path.join(DIRECTORY, pr, rl, ds)
+                #-- check if directory exists and recursively create if not
+                if not os.path.exists(local_dir):
+                    os.makedirs(local_dir,MODE)
+                #-- list of GRACE/GRACE-FO files for index
+                grace_files = []
+                #-- for each satellite mission (grace, grace-fo)
+                for i,mi in enumerate(['grace','grace-fo']):
+                    #-- modifiers for intermediate data releases
+                    if (int(VERSION) > 0):
+                        drel_str = '{0}.{1}'.format(rl,VERSION[i])
+                    else:
+                        drel_str = copy.copy(rl)
                     #-- print string of exact data product
-                    logging.info('{0}/{1}/{2}'.format(pr, drel_str, ds))
+                    logging.info('{0}/{1}/{2}/{3}'.format(mi, pr, drel_str, ds))
                     #-- local directory for exact data product
                     local_dir = os.path.join(DIRECTORY, pr, rl, ds)
                     #-- check if directory exists and recursively create if not
@@ -178,18 +297,19 @@ def gfz_isdc_grace_ftp(DIRECTORY, MISSION=[], PROC=[], DREL=[],
                         ftp_mirror_file(ftp, remote_path, remote_mtime,
                             local_file, TIMEOUT=TIMEOUT, LIST=LIST,
                             CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
-
-                    #-- Create an index file for each GRACE/GRACE-FO product
-                    #-- finding all dataset files *.gz in directory
-                    rx = compile_regex_pattern(pr, rl, ds, version=VERSION)
+                    #-- regular expression operator for data product
+                    rx = compile_regex_pattern(pr, rl, ds, version=VERSION[i])
                     #-- find local GRACE/GRACE-FO files to create index
                     files = [fi for fi in os.listdir(local_dir) if rx.match(fi)]
-                    #-- outputting GRACE/GRACE-FO filenames to index
-                    with open(os.path.join(local_dir,'index.txt'),'w') as fid:
-                        for fi in sorted(files):
-                            print(fi, file=fid)
-                    #-- change permissions of index file
-                    os.chmod(os.path.join(local_dir,'index.txt'), MODE)
+                    #-- extend list of GRACE/GRACE-FO files
+                    grace_files.extend(files)
+
+                #-- outputting GRACE/GRACE-FO filenames to index
+                with open(os.path.join(local_dir,'index.txt'),'w') as fid:
+                    for fi in sorted(grace_files):
+                        print('{0}'.format(fi), file=fid)
+                #-- change permissions of index file
+                os.chmod(os.path.join(local_dir,'index.txt'), MODE)
 
     #-- close the ftp connection
     ftp.quit()
@@ -267,11 +387,6 @@ def main():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
-    #-- mission (GRACE or GRACE Follow-On)
-    parser.add_argument('--mission','-m',
-        type=str, nargs='+',
-        default=['grace','grace-fo'], choices=['grace','grace-fo'],
-        help='Mission to sync between GRACE and GRACE-FO')
     #-- GRACE/GRACE-FO processing center
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, nargs='+',
@@ -284,9 +399,13 @@ def main():
         help='GRACE/GRACE-FO data release')
     #-- GRACE/GRACE-FO data version
     parser.add_argument('--version','-v',
-        metavar='VERSION', type=str,
-        default='0', choices=['0','1','2'],
+        metavar='VERSION', type=str, nargs='+',
+        default=['0','1'], choices=['0','1','2','3'],
         help='GRACE/GRACE-FO Level-2 data version')
+    #-- GRACE/GRACE-FO newsletters
+    parser.add_argument('--newsletters','-n',
+        default=False, action='store_true',
+        help='Sync GRACE/GRACE-FO Newsletters')
     #-- connection timeout
     parser.add_argument('--timeout','-t',
         type=int, default=360,
@@ -315,10 +434,11 @@ def main():
     #-- check internet connection before attempting to run program
     HOST = 'isdcftp.gfz-potsdam.de'
     if gravity_toolkit.utilities.check_ftp_connection(HOST):
-        gfz_isdc_grace_ftp(args.directory, MISSION=args.mission,
-            PROC=args.center, DREL=args.release, VERSION=args.version,
-            TIMEOUT=args.timeout, LIST=args.list, LOG=args.log,
-            CLOBBER=args.clobber, CHECKSUM=args.checksum, MODE=args.mode)
+        gfz_isdc_grace_ftp(args.directory, PROC=args.center,
+            DREL=args.release, VERSION=args.version,
+            NEWSLETTERS=args.newsletters, TIMEOUT=args.timeout,
+            LIST=args.list, LOG=args.log, CLOBBER=args.clobber,
+            CHECKSUM=args.checksum, MODE=args.mode)
     else:
         raise RuntimeError('Check internet connection')
 
