@@ -16,7 +16,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: ../scripts/gfz_isdc_grace_ftp.py
+    :filename: ../../scripts/gfz_isdc_grace_ftp.py
     :func: arguments
     :prog: gfz_isdc_grace_ftp.py
     :nodescription:

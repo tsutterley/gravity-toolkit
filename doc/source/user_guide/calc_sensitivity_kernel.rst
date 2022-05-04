@@ -12,7 +12,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: ../scripts/calc_sensitivity_kernel.py
+    :filename: ../../scripts/calc_sensitivity_kernel.py
     :func: arguments
     :prog: calc_sensitivity_kernel.py
     :nodescription:

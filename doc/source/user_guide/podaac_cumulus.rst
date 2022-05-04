@@ -14,7 +14,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: ../scripts/podaac_cumulus.py
+    :filename: ../../scripts/podaac_cumulus.py
     :func: arguments
     :prog: podaac_cumulus.py
     :nodescription:

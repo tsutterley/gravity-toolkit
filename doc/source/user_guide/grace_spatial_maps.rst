@@ -15,7 +15,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: ../scripts/grace_spatial_maps.py
+    :filename: ../../scripts/grace_spatial_maps.py
     :func: arguments
     :prog: grace_spatial_maps.py
     :nodescription:

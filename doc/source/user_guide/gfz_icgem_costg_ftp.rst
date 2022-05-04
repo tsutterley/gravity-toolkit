@@ -13,7 +13,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: ../scripts/gfz_icgem_costg_ftp.py
+    :filename: ../../scripts/gfz_icgem_costg_ftp.py
     :func: arguments
     :prog: gfz_icgem_costg_ftp.py
     :nodescription:

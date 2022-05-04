@@ -16,7 +16,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: ../scripts/podaac_grace_sync.py
+    :filename: ../../scripts/podaac_grace_sync.py
     :func: arguments
     :prog: podaac_grace_sync.py
     :nodescription:

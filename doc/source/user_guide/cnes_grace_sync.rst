@@ -13,7 +13,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: ../scripts/cnes_grace_sync.py
+    :filename: ../../scripts/cnes_grace_sync.py
     :func: arguments
     :prog: cnes_grace_sync.py
     :nodescription:
