@@ -5,52 +5,43 @@ run_sea_level_equation.py
 - Solves the sea level equation with the option of including polar motion feedback [Farrell1976]_ [Kendall2005]_ [Mitrovica2003]_
 - Uses a Clenshaw summation to calculate the spherical harmonic summation [Holmes2002]_ [Tscherning1982]_
 
-Calling Sequence
-################
-
-.. code-block:: bash
-
-     python run_sea_level_equation --format netCDF4 --lmax 512 input_file output_file
-
 `Source code`__
 
 .. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/run_sea_level_equation.py
 
-Command Line Options
-####################
 
-- ``--mask X``: input land-sea function (netCDF4) with variable ``LSMASK`` as mask
-- ``-l X``, ``--lmax X``: Maximum spherical harmonic degree
-- ``-n X``, ``--love X``: Treatment of the Love Love numbers
+Calling Sequence
+################
 
-     * ``0``: Han and Wahr (1995) values from PREM [Han1995]_
-     * ``1``: Gegout (2005) values from PREM [Gegout2010]_
-     * ``2``: Wang et al. (2012) values from PREM [Wang2012]_
-- ``-b X``, ``--body X``: Treatment of the body tide Love number
+.. argparse::
+    :filename: ../scripts/run_sea_level_equation.py
+    :func: arguments
+    :prog: run_sea_level_equation.py
+    :nodescription:
+    :nodefault:
 
-        - ``0``: [Wahr1981]_ and [Wahr1985]_ values from PREM
-        - ``1``: [Farrell1972]_ values from Gutenberg-Bullen oceanic mantle model
-- ``-f X``, ``--fluid X:`` Treatment of the fluid Love number
+    --love -n : @after
+        * ``0``: Han and Wahr (1995) values from PREM [Han1995]_
+        * ``1``: Gegout (2005) values from PREM [Gegout2010]_
+        * ``2``: Wang et al. (2012) values from PREM [Wang2012]_
 
-        - ``0``: [Han1989]_ fluid love number
-        - ``1``: [Munk1960]_ secular love number
-        - ``2``: [Munk1960]_ fluid love number
-        - ``3``: [Lambeck1980]_ fluid love number
-- ``--polar-feedback:`` Include polar feedback [Wahr1985]_
-- ``--reference X``: Reference frame for load love numbers [Blewett2003]_
+    --body -b : @after
+        * ``0``: [Wahr1981]_ and [Wahr1985]_ values from PREM
+        * ``1``: [Farrell1972]_ values from Gutenberg-Bullen oceanic mantle model
 
-     * ``'CF'``: Center of Surface Figure (default)
-     * ``'CM'``: Center of Mass of Earth System
-     * ``'CE'``: Center of Mass of Solid Earth
-- ``-I X``, ``--iterations X``: maximum number of iterations for the solver
-- ``-F X``, ``--format X``: input and output data format
+    --fluid -f : @after
+        * ``0``: [Han1989]_ fluid love number
+        * ``1``: [Munk1960]_ secular love number
+        * ``2``: [Munk1960]_ fluid love number
+        * ``3``: [Lambeck1980]_ fluid love number
 
-     * ``'ascii'``
-     * ``'netCDF4'``
-     * ``'HDF5'``
-- ``-V``, ``--verbose``: verbose output of processing run
-- ``-M X``, ``--mode X``: Permissions mode of the files created
--
+    --polar-feedback : @replace
+        Include polar feedback [Wahr1985]_
+
+    --reference : @after
+        * ``'CF'``: Center of Surface Figure
+        * ``'CM'``: Center of Mass of Earth System
+        * ``'CE'``: Center of Mass of Solid Earth
 
 References
 ##########

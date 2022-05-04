@@ -9,133 +9,98 @@ scale_grace_maps.py
 - Scales the spatial fields following [Landerer2012]_
 - Calculates the scaled spatial error field following [Wahr2006]_
 
-Calling Sequence
-################
-
-.. code-block:: bash
-
-     python scale_grace_maps.py @default_arguments_file
-
 `Source code`__
 
 .. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/scale_grace_maps.py
 
-Command Line Options
-####################
+Calling Sequence
+################
 
-- ``-D X``, ``--directory X``: Working data directory
-- ``-O X``, ``--output-directory X``: output directory for spatial files
-- ``-P X``, ``--file-prefix X``: prefix string for input and output files
-- ``-c X``, ``--center X``: GRACE/GRACE-FO processing center
-- ``-r X``, ``--release X``: GRACE/GRACE-FO data release
-- ``-p X``, ``--product X``: GRACE/GRACE-FO Level-2 data product
-- ``-S X``, ``--start X``: starting GRACE/GRACE-FO month
-- ``-E X``, ``--end X``: ending GRACE/GRACE-FO month
-- ``-N X``, ``--missing X``: Missing GRACE/GRACE-FO months
-- ``--lmin X``: minimum spherical harmonic degree
-- ``-l X``, ``--lmax X``: maximum spherical harmonic degree
-- ``-m X``, ``--mmax X``: maximum spherical harmonic order
-- ``-R X``, ``--radius X``: Gaussian smoothing radius (km)
-- ``-d``, ``--destripe``: use decorrelation filter (destriping filter)
-- ``-n X``, ``--love X``: Load Love numbers dataset
+.. argparse::
+    :filename: ../scripts/scale_grace_maps.py
+    :func: arguments
+    :prog: scale_grace_maps.py
+    :nodescription:
+    :nodefault:
 
-     * ``0``: Han and Wahr (1995) values from PREM [Han1995]_
-     * ``1``: Gegout (2005) values from PREM [Gegout2010]_
-     * ``2``: Wang et al. (2012) values from PREM [Wang2012]_
-- ``--reference X``: Reference frame for load love numbers
+    --love -n : @after
+        * ``0``: Han and Wahr (1995) values from PREM [Han1995]_
+        * ``1``: Gegout (2005) values from PREM [Gegout2010]_
+        * ``2``: Wang et al. (2012) values from PREM [Wang2012]_
 
-     * ``'CF'``: Center of Surface Figure (default)
-     * ``'CM'``: Center of Mass of Earth System
-     * ``'CE'``: Center of Mass of Solid Earth
-- ``-F X``, ``--format X``: input/output data format
+    --reference : @after
+        * ``'CF'``: Center of Surface Figure
+        * ``'CM'``: Center of Mass of Earth System
+        * ``'CE'``: Center of Mass of Solid Earth
 
-     * ``'ascii'``
-     * ``'netCDF4'``
-     * ``'HDF5'``
-- ``-G X``, ``--gia X``: GIA model type to read
+    --gia -G : @after
+        * ``'IJ05-R2'``: `Ivins R2 GIA Models <https://doi.org/10.1002/jgrb.50208>`_
+        * ``'W12a'``: `Whitehouse GIA Models <https://doi.org/10.1111/j.1365-246X.2012.05557.x>`_
+        * ``'SM09'``: `Simpson/Milne GIA Models <https://doi.org/10.1029/2010JB007776>`_
+        * ``'ICE6G'``: `ICE-6G GIA Models <https://doi.org/10.1002/2014JB011176>`_
+        * ``'Wu10'``: `Wu (2010) GIA Correction <https://doi.org/10.1038/ngeo938>`_
+        * ``'AW13-ICE6G'``: `Geruo A ICE-6G GIA Models <https://doi.org/10.1093/gji/ggs030>`_
+        * ``'AW13-IJ05'``: `Geruo A IJ05-R2 GIA Models <https://doi.org/10.1093/gji/ggs030>`_
+        * ``'Caron'``: `Caron JPL GIA Assimilation <https://doi.org/10.1002/2017GL076644>`_
+        * ``'ICE6G-D'``: `ICE-6G Version-D GIA Models <https://doi.org/10.1002/2016JB013844>`_
+        * ``'ascii'``: reformatted GIA in ascii format
+        * ``'netCDF4'``: reformatted GIA in netCDF4 format
+        * ``'HDF5'``: reformatted GIA in HDF5 format
 
-    * ``'IJ05-R2'``: `Ivins R2 GIA Models <https://doi.org/10.1002/jgrb.50208>`_
-    * ``'W12a'``: `Whitehouse GIA Models <https://doi.org/10.1111/j.1365-246X.2012.05557.x>`_
-    * ``'SM09'``: `Simpson/Milne GIA Models <https://doi.org/10.1029/2010JB007776>`_
-    * ``'ICE6G'``: `ICE-6G GIA Models <https://doi.org/10.1002/2014JB011176>`_
-    * ``'Wu10'``: `Wu (2010) GIA Correction <https://doi.org/10.1038/ngeo938>`_
-    * ``'AW13-ICE6G'``: `Geruo A ICE-6G GIA Models <https://doi.org/10.1093/gji/ggs030>`_
-    * ``'AW13-IJ05'``: `Geruo A IJ05-R2 GIA Models <https://doi.org/10.1093/gji/ggs030>`_
-    * ``'Caron'``: `Caron JPL GIA Assimilation <https://doi.org/10.1002/2017GL076644>`_
-    * ``'ICE6G-D'``: `ICE-6G Version-D GIA Models <https://doi.org/10.1002/2016JB013844>`_
-    * ``'ascii'``: reformatted GIA in ascii format
-    * ``'netCDF4'``: reformatted GIA in netCDF4 format
-    * ``'HDF5'``: reformatted GIA in HDF5 format
-- ``--gia-file X``: GIA file to read
-- ``--atm-correction``: Apply atmospheric jump correction coefficients
-- ``--pole-tide``: Correct for pole tide drift
-- ``--geocenter X``: Update Degree 1 coefficients with SLR or derived values
+    --geocenter : @after
+        * ``None``
+        * ``'Tellus'``: GRACE/GRACE-FO TN-13 coefficients from PO.DAAC
+        * ``'SLR'``: satellite laser ranging coefficients from CSR
+        * ``'SLF'``: Sutterley and Velicogna coefficients, Remote Sensing (2019)
+        * ``'Swenson'``: GRACE-derived coefficients from Sean Swenson
+        * ``'GFZ'``: GRACE/SLR derived coefficients from GFZ GravIS
 
-    * ``None``
-    * ``'Tellus'``: GRACE/GRACE-FO TN-13 coefficients from PO.DAAC
-    * ``'SLR'``: satellite laser ranging coefficients from CSR
-    * ``'SLF'``: Sutterley and Velicogna coefficients, Remote Sensing (2019)
-    * ``'Swenson'``: GRACE-derived coefficients from Sean Swenson
-    * ``'GFZ'``: GRACE/SLR derived coefficients from GFZ GravIS
-- ``--geocenter-file X``: Specific geocenter file if not default
-- ``--interpolate-geocenter``: Least-squares model missing Degree 1 coefficients
-- ``--slr-c20 X``: Replace *C*\ :sub:`20` coefficients with SLR values
+    --slr-c20 : @replace
+        Replace *C*\ :sub:`20` coefficients with SLR values
 
-    * ``None``: use original values
-    * ``'CSR'``: use values from CSR (TN-07, TN-09, TN-11)
-    * ``'GFZ'``: use values from GFZ
-    * ``'GSFC'``: use values from GSFC (TN-14)
-- ``--slr-21 X``: Replace *C*\ :sub:`21` and *S*\ :sub:`21` coefficients with SLR values
+        * ``None``: use original values
+        * ``'CSR'``: use values from CSR (TN-07, TN-09, TN-11)
+        * ``'GFZ'``: use values from GFZ
+        * ``'GSFC'``: use values from GSFC (TN-14)
 
-    * ``None``: use original values
-    * ``'CSR'``: use values from CSR
-    * ``'GFZ'``: use values from GFZ GravIS
-- ``--slr-22 X``: Replace *C*\ :sub:`22` and *S*\ :sub:`22` coefficients with SLR values
+    --slr-21 X : @replace
+        Replace *C*\ :sub:`21` and *S*\ :sub:`21` coefficients with SLR values
 
-    * ``None``: use original values
-    * ``'CSR'``: use values from CSR
-- ``--slr-c30 X``: Replace *C*\ :sub:`30` coefficients with SLR values
+        * ``None``: use original values
+        * ``'CSR'``: use values from CSR
+        * ``'GFZ'``: use values from GFZ GravIS
+        * ``'GSFC'``: use values from GSFC
 
-    * ``None``: use original values
-    * ``'CSR'``: use values from CSR (5x5 with 6,1)
-    * ``'GFZ'``: use values from GFZ GravIS
-    * ``'GSFC'``: use values from GSFC (TN-14)
-    * ``'LARES'``: use filtered values from CSR
-- ``--slr-c50 X``: Replace *C*\ :sub:`50` coefficients with SLR values
+    --slr-22 : @replace
+        Replace *C*\ :sub:`22` and *S*\ :sub:`22` coefficients with SLR values
 
-    * ``None``: use original values
-    * ``'CSR'``: use values from CSR (5x5 with 6,1)
-    * ``'GSFC'``: use values from GSFC
-    * ``'LARES'``: use filtered values from CSR
-- ``--spacing X``: spatial resolution of output data (dlon,dlat)
-- ``--interval X``: output grid interval
+        * ``None``: use original values
+        * ``'CSR'``: use values from CSR
+        * ``'GSFC'``: use values from GSFC
 
-    * ``1``: (0:360, 90:-90)
-    * ``2``: (degree spacing/2)
-- ``--mean-file X``: GRACE/GRACE-FO mean file to remove from the harmonic data
-- ``--mean-format X``: Input data format for GRACE/GRACE-FO mean file
+    --slr-c30 : @replace
+        Replace *C*\ :sub:`30` coefficients with SLR values
 
-    * ``'ascii'``
-    * ``'netCDF4'``
-    * ``'HDF5'``
-    * ``'gfc'``
-- ``--mask X``: Land-sea mask for redistributing land water flux
-- ``--remove-file X``: Monthly files to be removed from the GRACE/GRACE-FO data
-- ``--remove-format X``: Input data format for files to be removed
+        * ``None``: use original values
+        * ``'CSR'``: use values from CSR (5x5 with 6,1)
+        * ``'GFZ'``: use values from GFZ GravIS
+        * ``'GSFC'``: use values from GSFC (TN-14)
+        * ``'LARES'``: use filtered values from CSR
 
-    * ``'ascii'``
-    * ``'netCDF4'``
-    * ``'HDF5'``
-    * ``'index-ascii'``
-    * ``'index-netCDF4'``
-    * ``'index-HDF5'``
-- ``--redistribute-removed``: redistribute removed mass fields over the ocean
-- ``--scale-file X``: scaling factor file
-- ``--error-file X``: scaling factor error file
-- ``--power-file X``: scaling factor power file
-- ``--log``: Output log file for job
-- ``-V``, ``--verbose``: verbose output of processing run
-- ``-M X``, ``--mode X``: Permissions mode of the files created
+    --slr-c50 : @replace
+        Replace *C*\ :sub:`50` coefficients with SLR values
+
+        * ``None``: use original values
+        * ``'CSR'``: use values from CSR (5x5 with 6,1)
+        * ``'GSFC'``: use values from GSFC
+        * ``'LARES'``: use filtered values from CSR
+
+    --interval : @replace
+        Output grid interval
+
+        * ``1``: (0:360, 90:-90)
+        * ``2``: (degree spacing/2)
+        * ``3``: non-global grid (set with defined bounds)
 
 References
 ##########

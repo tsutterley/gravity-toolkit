@@ -6,24 +6,19 @@ calc_harmonic_resolution.py
 - Default method uses the smallest half-wavelength that can be resolved
 - Secondary method calculates the smallest possible bump that can be resolved
 
-Calling Sequence
-################
-
-.. code-block:: bash
-
-     python calc_harmonic_resolution --lmax 60 --cap
-
 `Source code`__
 
 .. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/calc_harmonic_resolution.py
 
-Command Line Options
-####################
+Calling Sequence
+################
 
-- ``--help``: list the command line options
-- ``-l X``, ``--lmax X``: maximum spherical harmonic degree
-- ``-R X``, ``--radius X``: Average radius of the Earth (km)
-- ``-C``, ``--cap``: Calculate the smallest possible bump that can be resolved
+.. argparse::
+    :filename: ../scripts/calc_harmonic_resolution.py
+    :func: arguments
+    :prog: calc_harmonic_resolution.py
+    :nodescription:
+    :nodefault:
 
 References
 ##########

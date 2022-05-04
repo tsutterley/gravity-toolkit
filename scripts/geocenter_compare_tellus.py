@@ -197,7 +197,7 @@ def geocenter_compare_tellus(grace_dir,DREL,START_MON,END_MON,MISSING):
         plt.savefig(os.path.join(grace_dir,OUTPUT_FIGURE), format='pdf', dpi=300)
         plt.clf()
 
-#-- This is the main part of the program that calls the individual modules
+#-- This is the main part of the program that calls the individual functions
 def main():
     #-- Read the system arguments listed after the program
     parser = argparse.ArgumentParser(

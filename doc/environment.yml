@@ -26,10 +26,9 @@ dependencies:
   - python>=3.6
   - python-dateutil
   - pyyaml
-  - recommonmark
   - scipy
   - sphinx
-  - sphinx-markdown-tables
+  - sphinx-argparse
   - sphinx_rtd_theme
   - texlive-core
   - tk

@@ -69,6 +69,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 04/2022: use wrapper function for reading load Love numbers
+        use argparse descriptions within sphinx documentation
     Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
     Updated 09/2021: update grid attributes after allocating for data
@@ -292,9 +293,8 @@ def output_data(data, FILENAME=None, DATAFORM=None, UNITS=None):
         data.to_HDF5(FILENAME, units=unit_short[UNITS-1],
             longname=unit_name[UNITS-1])
 
-#-- This is the main part of the program that calls the individual modules
-def main():
-    #-- Read the system arguments listed after the program
+#-- PURPOSE: create argument parser
+def arguments():
     parser = argparse.ArgumentParser(
         description="""Converts a file from the spherical harmonic
             domain into the spatial domain
@@ -376,7 +376,14 @@ def main():
     #-- permissions mode of the output files (octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
-        help='permissions mode of output files')
+        help='Permissions mode of output files')
+    #-- return the parser
+    return parser
+
+#-- This is the main part of the program that calls the individual functions
+def main():
+    #-- Read the system arguments listed after the program
+    parser = arguments()
     args,_ = parser.parse_known_args()
 
     #-- create logger

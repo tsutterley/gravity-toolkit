@@ -43,6 +43,7 @@ UPDATE HISTORY:
     Updated 04/2022: added option for GRACE/GRACE-FO Level-2 data version
         sync GRACE/GRACE-FO technical notes and newsletters
         refactor to always try syncing from both grace and grace-fo missions
+        use argparse descriptions within sphinx documentation
     Updated 03/2022: update regular expression pattern for finding files
     Updated 10/2021: using python logging for handling verbose output
     Updated 05/2021: added option for connection timeout (in seconds)
@@ -373,9 +374,8 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
             os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
             os.chmod(local_file, MODE)
 
-#-- Main program that calls gfz_isdc_grace_ftp()
-def main():
-    #-- Read the system arguments listed after the program
+#-- PURPOSE: create argument parser
+def arguments():
     parser = argparse.ArgumentParser(
         description="""Syncs GRACE/GRACE-FO data from the GFZ
             Information System and Data Center (ISDC)
@@ -429,6 +429,13 @@ def main():
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permission mode of directories and files synced')
+    #-- return the parser
+    return parser
+
+#-- This is the main part of the program that calls the individual functions
+def main():
+    #-- Read the system arguments listed after the program
+    parser = arguments()
     args,_ = parser.parse_known_args()
 
     #-- check internet connection before attempting to run program

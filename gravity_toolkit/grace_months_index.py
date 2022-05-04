@@ -189,7 +189,7 @@ def grace_months_index(base_dir, DREL=['RL06','v02.4'], MODE=None):
     #-- set the permissions level of the output file
     os.chmod(os.path.join(base_dir,grace_months_file), MODE)
 
-#-- This is the main part of the program that calls the individual modules
+#-- This is the main part of the program that calls the individual functions
 def main():
     #-- Read the system arguments listed after the program
     parser = argparse.ArgumentParser(
