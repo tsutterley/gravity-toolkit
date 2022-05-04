@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 dealiasing_monthly_mean.py
-Written by Tyler Sutterley (12/2021)
+Written by Tyler Sutterley (04/2022)
 
 Reads GRACE/GRACE-FO AOD1B datafiles for a specific product and outputs monthly
     the mean for a specific GRACE/GRACE-FO processing center and data release
@@ -48,6 +48,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATED HISTORY:
+    Updated 04/2022: use argparse descriptions within documentation
     Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: can use default argument files to define options
@@ -654,10 +655,8 @@ class dealiasing(harmonics):
         #-- end of header
         fid.write('\n\n# End of YAML header\n')
 
-#-- Main program that calls dealiasing_monthly_mean()
-def main():
-    #-- command line parameters
-    #-- Read the system arguments listed after the program
+#-- PURPOSE: create argument parser
+def arguments():
     parser = argparse.ArgumentParser(
         description="""Reads GRACE/GRACE-FO AOD1B datafiles for a
             specific product and outputs monthly mean for a specific
@@ -666,6 +665,7 @@ def main():
         fromfile_prefix_chars="@"
     )
     parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
+    #-- command line parameters
     #-- working data directory
     parser.add_argument('--directory','-D',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
@@ -704,7 +704,14 @@ def main():
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
-        help='permissions mode of output files')
+        help='Permissions mode of output files')
+    #-- return the parser
+    return parser
+
+#-- This is the main part of the program that calls the individual functions
+def main():
+    #-- Read the system arguments listed after the program
+    parser = arguments()
     args,_ = parser.parse_known_args()
 
     #-- create logger for verbosity level

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 aod1b_oblateness.py
-Written by Tyler Sutterley (12/2021)
+Written by Tyler Sutterley (04/2022)
 Contributions by Hugo Lecomte (03/2021)
 
 Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
@@ -36,6 +36,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATED HISTORY:
+    Updated 04/2022: use argparse descriptions within documentation
     Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: can use default argument files to define options
@@ -231,9 +232,8 @@ def aod1b_oblateness(base_dir,
             #-- set the permissions mode of the output file
             os.chmod(os.path.join(output_dir,FILE), MODE)
 
-#-- Main program that calls aod1b_oblateness()
-def main():
-    #-- Read the system arguments listed after the program
+#-- PURPOSE: create argument parser
+def arguments():
     parser = argparse.ArgumentParser(
         description="""Creates monthly files of oblateness (C20)
             variations at 3 or 6-hour intervals
@@ -267,7 +267,14 @@ def main():
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
-        help='permissions mode of output files')
+        help='Permissions mode of output files')
+    #-- return the parser
+    return parser
+
+#-- Main program that calls aod1b_oblateness()
+def main():
+    #-- Read the system arguments listed after the program
+    parser = arguments()
     args,_ = parser.parse_known_args()
 
     #-- create logger

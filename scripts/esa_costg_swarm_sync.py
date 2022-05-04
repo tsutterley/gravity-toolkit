@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 esa_costg_swarm_sync.py
-Written by Tyler Sutterley (10/2021)
+Written by Tyler Sutterley (04/2022)
 Syncs Swarm gravity field products from the ESA Swarm Science Server
     https://earth.esa.int/eogateway/missions/swarm/data
     https://www.esa.int/Applications/Observing_the_Earth/Swarm
@@ -29,6 +29,7 @@ PYTHON DEPENDENCIES:
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
 
 UPDATE HISTORY:
+    Updated 04/2022: use argparse descriptions within documentation
     Updated 10/2021: using python logging for handling verbose output
     Written 09/2021
 """
@@ -204,9 +205,8 @@ def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
             os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
             os.chmod(local_file, MODE)
 
-#-- Main program that calls esa_costg_swarm_sync()
-def main():
-    #-- Read the system arguments listed after the program
+#-- PURPOSE: create argument parser
+def arguments():
     parser = argparse.ArgumentParser(
         description="""Syncs Swarm gravity field products from the
             ESA Swarm Science Server
@@ -245,6 +245,13 @@ def main():
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permission mode of directories and files synced')
+    #-- return the parser
+    return parser
+
+#-- This is the main part of the program that calls the individual functions
+def main():
+    #-- Read the system arguments listed after the program
+    parser = arguments()
     args = parser.parse_args()
 
     #-- check internet connection before attempting to run program

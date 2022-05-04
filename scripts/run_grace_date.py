@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 run_grace_date.py
-Written by Tyler Sutterley (12/2021)
+Written by Tyler Sutterley (04/2022)
 
 Wrapper program for running GRACE date and months programs
 
@@ -47,6 +47,7 @@ PROGRAM DEPENDENCIES:
     grace_months_index.py: creates a single file showing the GRACE dates
 
 UPDATE HISTORY:
+    Updated 04/2022: use argparse descriptions within documentation
     Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
     Updated 09/2021: using verbose option to track program progress
@@ -114,15 +115,14 @@ def run_grace_date(base_dir, PROC, DREL, VERBOSE=0, MODE=0o775):
     grace_months_index(base_dir, DREL=DREL, MODE=MODE)
 
 
-#-- PURPOSE: program that calls run_grace_date() with set parameters
-def main():
-    #-- command line parameters
-    #-- Read the system arguments listed after the program
+#-- PURPOSE: create argument parser
+def arguments():
     parser = argparse.ArgumentParser(
         description="""Wrapper program for running GRACE date and
             months programs
             """
     )
+    #-- command line parameters
     #-- working data directory
     parser.add_argument('--directory','-D',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
@@ -146,7 +146,14 @@ def main():
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
-        help='permissions mode of output files')
+        help='Permissions mode of output files')
+    #-- return the parser
+    return parser
+
+#-- This is the main part of the program that calls the individual functions
+def main():
+    #-- Read the system arguments listed after the program
+    parser = arguments()
     args,_ = parser.parse_known_args()
 
     #-- run GRACE preliminary date program

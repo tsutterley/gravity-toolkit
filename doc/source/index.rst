@@ -29,7 +29,7 @@ missions
     :caption: User Guide
 
     user_guide/clenshaw_summation.rst
-    user_guide/degree_amplitude.md
+    user_guide/degree_amplitude.rst
     user_guide/destripe_harmonics.rst
     user_guide/fourier_legendre.rst
     user_guide/gauss_weights.rst
@@ -44,7 +44,7 @@ missions
     user_guide/grace_find_months.rst
     user_guide/grace_input_months.rst
     user_guide/grace_months_index.rst
-    user_guide/harmonic_summation.md
+    user_guide/harmonic_summation.rst
     user_guide/harmonics.rst
     user_guide/legendre.rst
     user_guide/legendre_polynomials.rst
@@ -58,17 +58,17 @@ missions
     user_guide/read_GIA_model.rst
     user_guide/read_GRACE_harmonics.rst
     user_guide/read_love_numbers.rst
-    user_guide/read_SLR_C20.md
-    user_guide/read_SLR_CS2.md
-    user_guide/read_SLR_C30.md
-    user_guide/read_SLR_C50.md
+    user_guide/read_SLR_C20.rst
+    user_guide/read_SLR_CS2.rst
+    user_guide/read_SLR_C30.rst
+    user_guide/read_SLR_C50.rst
     user_guide/read_SLR_harmonics.rst
     user_guide/savitzky_golay.rst
     user_guide/sea_level_equation.rst
     user_guide/spatial.rst
     user_guide/time.rst
     user_guide/tools.rst
-    user_guide/tsamplitude.md
+    user_guide/tsamplitude.rst
     user_guide/tsregress.rst
     user_guide/tssmooth.rst
     user_guide/units.rst
@@ -79,34 +79,34 @@ missions
     :hidden:
     :caption: Utilities
 
-    user_guide/cnes_grace_sync.md
-    user_guide/esa_costg_swarm_sync.md
-    user_guide/gfz_icgem_costg_ftp.md
-    user_guide/gfz_isdc_dealiasing_ftp.md
-    user_guide/gfz_isdc_grace_ftp.md
-    user_guide/itsg_graz_grace_sync.md
-    user_guide/podaac_cumulus.md
-    user_guide/podaac_grace_sync.md
-    user_guide/podaac_webdav.md
+    user_guide/cnes_grace_sync.rst
+    user_guide/esa_costg_swarm_sync.rst
+    user_guide/gfz_icgem_costg_ftp.rst
+    user_guide/gfz_isdc_dealiasing_ftp.rst
+    user_guide/gfz_isdc_grace_ftp.rst
+    user_guide/itsg_graz_grace_sync.rst
+    user_guide/podaac_cumulus.rst
+    user_guide/podaac_grace_sync.rst
+    user_guide/podaac_webdav.rst
 
 .. toctree::
     :maxdepth: 1
     :hidden:
     :caption: Use Cases
 
-    user_guide/aod1b_geocenter.md
-    user_guide/aod1b_oblateness.md
+    user_guide/aod1b_geocenter.rst
+    user_guide/aod1b_oblateness.rst
     user_guide/calc_mascon.rst
     user_guide/calc_harmonic_resolution.rst
     user_guide/calc_sensitivity_kernel.rst
     user_guide/combine_harmonics.rst
     user_guide/convert_harmonics.rst
-    user_guide/dealiasing_monthly_mean.md
+    user_guide/dealiasing_monthly_mean.rst
     user_guide/grace_mean_harmonics.rst
     user_guide/grace_spatial_error.rst
     user_guide/grace_spatial_maps.rst
     user_guide/mascon_reconstruct.rst
     user_guide/regress_grace_maps.rst
-    user_guide/run_grace_date.md
+    user_guide/run_grace_date.rst
     user_guide/run_sea_level_equation.rst
     user_guide/scale_grace_maps.rst

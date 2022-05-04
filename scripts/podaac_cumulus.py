@@ -52,6 +52,7 @@ UPDATE HISTORY:
     Updated 04/2022: added option for GRACE/GRACE-FO Level-2 data version
         refactor to always try syncing from both grace and grace-fo missions
         use granule identifiers from CMR query to build output file index
+        use argparse descriptions within sphinx documentation
     Written 03/2022 with release of PO.DAAC Cumulus
 """
 from __future__ import print_function
@@ -243,9 +244,8 @@ def s3_pull_file(response, remote_mtime, local_file, CLOBBER=False, MODE=0o775):
         os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
         os.chmod(local_file, MODE)
 
-#-- Main program that calls podaac_cumulus()
-def main():
-    #-- Read the system arguments listed after the program
+#-- PURPOSE: create argument parser
+def arguments():
     parser = argparse.ArgumentParser(
         description="""Syncs GRACE/GRACE-FO and auxiliary data from the
             NASA JPL PO.DAAC Cumulus AWS bucket.
@@ -304,6 +304,13 @@ def main():
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permission mode of directories and files synced')
+    #-- return the parser
+    return parser
+
+#-- This is the main part of the program that calls the individual functions
+def main():
+    #-- Read the system arguments listed after the program
+    parser = arguments()
     args,_ = parser.parse_known_args()
 
     #-- NASA Earthdata hostname

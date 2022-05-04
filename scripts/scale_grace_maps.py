@@ -153,6 +153,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 04/2022: use wrapper function for reading load Love numbers
+        use argparse descriptions within sphinx documentation
     Updated 12/2021: can use variable loglevels for verbose output
         option to specify a specific geocenter correction file
         fix default file prefix to include center and release information
@@ -658,9 +659,8 @@ def output_error_log_file(arguments):
     #-- close the log file
     fid.close()
 
-#-- This is the main part of the program that calls the individual modules
-def main():
-    #-- Read the system arguments listed after the program
+#-- PURPOSE: create argument parser
+def arguments():
     parser = argparse.ArgumentParser(
         description="""Calculates scaled spatial maps from
             GRACE/GRACE-FO spherical harmonic coefficients
@@ -863,7 +863,14 @@ def main():
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
-        help='permissions mode of output files')
+        help='Permissions mode of output files')
+    #-- return the parser
+    return parser
+
+#-- This is the main part of the program that calls the individual functions
+def main():
+    #-- Read the system arguments listed after the program
+    parser = arguments()
     args,_ = parser.parse_known_args()
 
     #-- create logger

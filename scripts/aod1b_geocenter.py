@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 aod1b_geocenter.py
-Written by Tyler Sutterley (12/2021)
+Written by Tyler Sutterley (04/2022)
 Contributions by Hugo Lecomte (03/2021)
 
 Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
@@ -34,6 +34,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATED HISTORY:
+    Updated 04/2022: use argparse descriptions within documentation
     Updated 12/2021: can use variable loglevels for verbose output
     Updated 11/2021: use gravity_toolkit geocenter class for operations
     Updated 10/2021: using python logging for handling verbose output
@@ -240,9 +241,8 @@ def aod1b_geocenter(base_dir,
             #-- set the permissions mode of the output file
             os.chmod(os.path.join(output_dir,FILE), MODE)
 
-#-- Main program that calls aod1b_geocenter()
-def main():
-    #-- Read the system arguments listed after the program
+#-- PURPOSE: create argument parser
+def arguments():
     parser = argparse.ArgumentParser(
         description="""Creates monthly files of geocenter variations
             at 3 or 6-hour intervals
@@ -276,9 +276,15 @@ def main():
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
-        help='permissions mode of output files')
-    args,_ = parser.parse_known_args()
+        help='Permissions mode of output files')
+    #-- return the parser
+    return parser
 
+#-- Main program that calls aod1b_geocenter()
+def main():
+    #-- Read the system arguments listed after the program
+    parser = arguments()
+    args,_ = parser.parse_known_args()
     #-- create logger
     loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])

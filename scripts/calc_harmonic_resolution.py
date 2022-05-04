@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_harmonic_resolution.py
-Written by Tyler Sutterley (09/2020)
+Written by Tyler Sutterley (04/2022)
 
 Calculates the spatial resolution that can be resolved
     by the spherical harmonics of a certain degree
@@ -29,6 +29,7 @@ REFERENCES:
         http://icgem.gfz-potsdam.de/str-0902-revised.pdf
 
 UPDATE HISTORY:
+    Updated 04/2022: use argparse descriptions within documentation
     Updated 09/2020: using argparse to set parameters
     Updated 10/2019: changing Y/N flags to True/False
     Updated 02/2014: minor update to if statement
@@ -45,7 +46,7 @@ def calc_harmonic_resolution(LMAX, RADIUS=6371.0008, SPH_CAP=False):
     """
     Calculates minimum spatial resolution that can be resolved from
         spherical harmonics of a maximum degree
-        
+
     Arguments
     ---------
     LMAX: maximum spherical harmonic degree
@@ -67,9 +68,8 @@ def calc_harmonic_resolution(LMAX, RADIUS=6371.0008, SPH_CAP=False):
         psi_min = np.pi*RADIUS/LMAX
     return psi_min
 
-# Main program that calls calc_harmonic_resolution()
-def main():
-    # Read the system arguments listed after the program
+# PURPOSE: create argument parser
+def arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--lmax','-l', metavar='LMAX',
         type=int, nargs='+',
@@ -80,6 +80,13 @@ def main():
     parser.add_argument('--cap','-C',
         default=False, action='store_true',
         help='Calculate smallest possible bump that can be resolved')
+    # return the parser
+    return parser
+
+# Main program that calls calc_harmonic_resolution()
+def main():
+    # Read the system arguments listed after the program
+    parser = arguments()
     args,_ = parser.parse_known_args()
     # for each entered spherical harmonic degree
     for LMAX in args.lmax:
