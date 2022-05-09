@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter_processing_centers.py
-Written by Tyler Sutterley (12/2021)
+Written by Tyler Sutterley (05/2022)
 Plots the GRACE/GRACE-FO geocenter time series for different
     GRACE/GRACE-FO processing centers
 
@@ -17,6 +17,7 @@ COMMAND LINE OPTIONS:
     -M X, --missing X: Missing GRACE months in time series
 
 UPDATE HISTORY:
+    Updated 05/2022: use argparse descriptions within documentation
     Updated 12/2021: adjust minimum x limit based on starting GRACE month
         make the list of processing centers an option
     Updated 11/2021: use gravity_toolkit geocenter class for operations
@@ -154,9 +155,8 @@ def geocenter_processing_centers(grace_dir,PROC,DREL,START_MON,END_MON,MISSING):
     plt.savefig(os.path.join(grace_dir,OUTPUT_FIGURE), format='pdf', dpi=300)
     plt.clf()
 
-#-- This is the main part of the program that calls the individual functions
-def main():
-    #-- Read the system arguments listed after the program
+#-- PURPOSE: create argument parser
+def arguments():
     parser = argparse.ArgumentParser(
         description="""Plots the GRACE/GRACE-FO geocenter time series for
             different GRACE/GRACE-FO processing centers
@@ -189,6 +189,13 @@ def main():
     parser.add_argument('--missing','-M',
         metavar='MISSING', type=int, nargs='+', default=MISSING,
         help='Missing GRACE/GRACE-FO months in time series')
+    #-- return the parser
+    return parser
+
+#-- This is the main part of the program that calls the individual functions
+def main():
+    #-- Read the system arguments listed after the program
+    parser = arguments()
     args,_ = parser.parse_known_args()
 
     #-- run program with parameters

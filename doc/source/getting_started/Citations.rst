@@ -4,6 +4,7 @@ Citation Information
 
 References
 ##########
+
 The programs included in this software have contributed
 most recently to the following work:
 
@@ -21,6 +22,11 @@ most recently to the following work:
     from time-variable gravity and ocean model outputs", *Remote Sensing*, 11(18),
     2108, (2019). `doi:10.3390/rs11182108 <https://doi.org/10.3390/rs11182108>`_
 
+Some of the text within this documentation are modifications from these
+original works, which is allowed under the
+`publisher's permissions policies for authors <https://www.agu.org/Publish-with-AGU/Publish/Author-Resources/Policies/Permission-policy>`_
+or through the `Creative Commons licensing <http://creativecommons.org/licenses/by/4.0/>`_ of the work.
+
 Contributors
 ############
 
@@ -35,8 +41,10 @@ Please see the `Contribution Guidelines <./Contributing.html>`_ for more informa
 
 Problem Reports
 ###############
-If you have found a problem in these programs, or you would like to suggest an improvement or modification,
-please submit a `GitHub issue <https://github.com/tsutterley/read-GRACE-harmonics/issues>`_ and we will get back to you.
+If you have found a problem in these programs, or you would like to suggest
+an improvement or modification, please submit a
+`GitHub issue <https://github.com/tsutterley/read-GRACE-harhmonics/issues>`_
+and we will get back to you.
 
 Dependencies
 ############
@@ -72,6 +80,7 @@ This product includes software developed at:
 
 Acknowledgements
 ################
-Much of this software stems from the work of the late `John Wahr (1951--2015) <http://www.johnwahr.com/>`_, who made immeasurable contributions towards time-variable gravity research and was an inspiration.
+Much of this software stems from the work of the late `John Wahr (1951--2015) <http://www.johnwahr.com/>`_,
+who made immeasurable contributions towards time-variable gravity research and was an inspiration.
 
 .. |euml|    unicode:: U+00EB .. LATIN SMALL LETTER E WITH DIAERESIS

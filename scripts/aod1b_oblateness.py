@@ -271,7 +271,7 @@ def arguments():
     #-- return the parser
     return parser
 
-#-- Main program that calls aod1b_oblateness()
+#-- This is the main part of the program that calls the individual functions
 def main():
     #-- Read the system arguments listed after the program
     parser = arguments()

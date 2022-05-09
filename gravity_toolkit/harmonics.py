@@ -576,6 +576,7 @@ class harmonics(object):
         self.title = Ylms['title']
         self.citation = Ylms['citation']
         self.reference = Ylms['reference']
+        self.url = Ylms['url']
         #-- assign shape and ndim attributes
         self.update_dimensions()
         return self

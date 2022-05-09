@@ -19,6 +19,7 @@ missions
     getting_started/GRACE-Data-File-Formats.rst
     getting_started/Spatial-Maps.rst
     getting_started/Time-Series-Analysis.rst
+    getting_started/Geocenter-Variations.rst
     getting_started/Contributing.rst
     getting_started/Resources.rst
     getting_started/Citations.rst
@@ -96,6 +97,7 @@ missions
 
     user_guide/aod1b_geocenter.rst
     user_guide/aod1b_oblateness.rst
+    user_guide/calc_degree_one.rst
     user_guide/calc_mascon.rst
     user_guide/calc_harmonic_resolution.rst
     user_guide/calc_sensitivity_kernel.rst
@@ -106,6 +108,7 @@ missions
     user_guide/grace_spatial_error.rst
     user_guide/grace_spatial_maps.rst
     user_guide/mascon_reconstruct.rst
+    user_guide/monte_carlo_degree_one.rst
     user_guide/regress_grace_maps.rst
     user_guide/run_grace_date.rst
     user_guide/run_sea_level_equation.rst

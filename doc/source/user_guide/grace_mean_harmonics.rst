@@ -54,7 +54,7 @@ Calling Sequence
         Replace *C*\ :sub:`30` coefficients with SLR values
 
         * ``None``: use original values
-        * ``'CSR'``: use values from CSR (5x5 with 6,1)
+        * ``'CSR'``: use values from CSR (5\ |times|\ 5 with 6,1)
         * ``'GFZ'``: use values from GFZ GravIS
         * ``'GSFC'``: use values from GSFC (TN-14)
         * ``'LARES'``: use filtered values from CSR
@@ -63,6 +63,8 @@ Calling Sequence
         Replace *C*\ :sub:`50` coefficients with SLR values
 
         * ``None``: use original values
-        * ``'CSR'``: use values from CSR (5x5 with 6,1)
+        * ``'CSR'``: use values from CSR (5\ |times|\ 5 with 6,1)
         * ``'GSFC'``: use values from GSFC
         * ``'LARES'``: use filtered values from CSR
+
+.. |times|      unicode:: U+00D7 .. MULTIPLICATION SIGN
