@@ -79,11 +79,11 @@ Character Description
 Summary
 #######
 
-- **GSM:** Geopotential coefficients of the static gravity field estimated from GRACE satellite data (produced by all centers).
+- **GSM:** Geopotential coefficients of the static gravity field estimated from GRACE satellite data (produced by CSR, GFZ \& JPL).
 - **GAA:** Non-tidal atmosphere geopotential coefficients averaged over certain time period (produced by GFZ \& JPL).
-- **GAB:** Non-tidal ocean geopotential coefficients averaged over certai n time period (produced by GFZ \& JPL).
+- **GAB:** Non-tidal ocean geopotential coefficients averaged over certain time period (produced by GFZ \& JPL).
 - **GAC:** Combination of non-tidal atmosphere and ocean averaged over certain time period (produced by all centers).
-- **GAD:** Ocean bottom pressure product.  Combination of surface pressure and ocean pressure over the oceans, zero over the land (produced by all centers).
+- **GAD:** Ocean bottom pressure product.  Combination of surface pressure and ocean pressure over the oceans, zero over the land (produced by CSR, GFZ \& JPL).
 
 References
 ##########
