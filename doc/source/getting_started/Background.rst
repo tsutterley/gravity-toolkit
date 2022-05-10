@@ -86,11 +86,10 @@ estimates of the Earth's gravitational field.
 The Earth's gravitational field varies in time as masses on and within the
 Earth move and are exchanged between components of the Earth system [Wahr1998]_.
 The instantaneous shape of the Earth's gravitational field can be described
-in terms of an equipotential surface, a surface of constant potential energy.
+in terms of an equipotential surface, a surface of constant potential energy
+where the gravitational potential is constant [HofmannWellenhof2006]_.
 The Earth's geoid is the equipotential surface that coincides with global mean
 sea level if the oceans were at rest [HofmannWellenhof2006]_ [Wahr1998]_.
-An equipotential surface is a surface where the gravitational
-potential is constant [HofmannWellenhof2006]_.
 The distance between the geoid and an Earth reference ellipsoid is the
 geoid height (:math:`N`), or the geoidal undulation [HofmannWellenhof2006]_.
 
