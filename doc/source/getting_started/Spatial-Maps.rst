@@ -19,9 +19,15 @@ A variation in mass at the Earth's surface will load and deform the solid Earth,
 which will induce density anomalies at depth [Wahr1998]_.
 To accurately assess the surface load from time-variable gravity,
 we need to compensate for the Earth's elastic yielding [Wahr1998]_.
-These tools account for the elastic deformation of the solid Earth using load Love numbers
-with parameters from the Preliminary reference Earth model (PREM) [Farrell1972]_ [Dziewonski1981]_.
+The elastic deformation of the solid Earth induced by a change in surface load
+can be estimated using load Love numbers.
+Using load Love numbers to calculate the elastic yielding assumes that
+all other time-variable solid Earth contributions have been independently
+removed from the spherical harmonic coefficients [Wahr1998]_.
+Here, we use load Love numbers with parameters calculated from
+the Preliminary Reference Earth model (PREM) [Farrell1972]_ [Dziewonski1981]_.
 In order to help estimate the uncertainty in elastic deformation,
+
 ``grace_spatial_maps.py`` can use different sets of load Love numbers by adjusting the
 ``--love`` command line option.
 
@@ -36,6 +42,7 @@ such as from oceanic processes or terrestrial water storage change, are not nece
 Applications set in a center of figure (CF) reference frame,
 such as the recovery of mass variations of the oceans, hydrosphere and cryosphere,
 require the inclusion of degree one terms to be fully accurate [Swenson2008]_.
+
 ``grace_spatial_maps.py`` has geocenter options to select the degree one product to
 include with the GRACE/GRACE-FO derived harmonics.
 There are options for using measurements from satellite laser ranging [Cheng2013]_ and
@@ -65,21 +72,21 @@ independent methods to spatiotemporally transplant the accelerometer data retrie
 from GRACE-A to GRACE-B and from GF1 to GF2 [Bandikova2019]_.
 These single-accelerometer months for both GRACE and GRACE-FO contain significantly
 more noise, particularly the low-degree zonal harmonics
-(predominantly *C*\ :sub:`20` and *C*\ :sub:`30` but possibly *C*\ :sub:`40` and *C*\ :sub:`50`).
-*C*\ :sub:`20` has also been difficult for GRACE and GRACE-FO to independently measure
+(predominantly :math:`C_{20}` and :math:`C_{30}` but possibly :math:`C_{40}` and :math:`C_{50}`).
+:math:`C_{20}` has also been difficult for GRACE and GRACE-FO to independently measure
 throughout both missions.
-The figure axis harmonics (*C*\ :sub:`21` and *S*\ :sub:`21`) may also be contaminated
+The figure axis harmonics (:math:`C_{21}` and :math:`S_{21}`) may also be contaminated
 by noise during the single-accelerometer months in the GFZ products [Dahle2019]_.
 Measurements from satellite laser ranging (SLR) can provide an independent assessment
 for some low degree and order spherical harmonics.
 ``grace_spatial_maps.py`` has options for replacing
-*C*\ :sub:`20`,
-*C*\ :sub:`21`,
-*S*\ :sub:`21`,
-*C*\ :sub:`22`,
-*S*\ :sub:`22`,
-*C*\ :sub:`30`,
-and *C*\ :sub:`50` with
+:math:`C_{20}`,
+:math:`C_{21}`,
+:math:`S_{21}`,
+:math:`C_{22}`,
+:math:`S_{22}`,
+:math:`C_{30}`,
+and :math:`C_{50}` with
 SLR low degree harmonic products [Cheng2011]_ [Cheng2018]_ [Koenig2019]_ [Loomis2019]_ [Loomis2020]_.
 
 Corrections
@@ -87,7 +94,7 @@ Corrections
 
 Prior to GRACE/GRACE-FO Release-6, corrections needed to be applied to compensate
 for long-period signals in the pole tide that were contaminating the
-*C*\ :sub:`21` and *S*\ :sub:`21` harmonics [Wahr2015]_,
+:math:`C_{21}` and :math:`S_{21}` harmonics [Wahr2015]_,
 as well as for discontinuities in the atmospheric de-aliasing product that were
 introduced with upgrades in the ECMWF weather prediction model [Fagiolini2015]_.
 The Pole Tide and Atmospheric corrections do not need to be applied to the Release-6 data.
@@ -159,8 +166,6 @@ References
 .. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan, "Time variability of the Earth's gravity field: Hydrological and oceanic effects and their possible detection using GRACE", *Journal of Geophysical Research*, 103(B12), 30205--30229, (1998). `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_
 
 .. [Wahr2015] J. Wahr, R. S. Nerem, and S. V. Bettadpur, "The pole tide and its effect on GRACE time‐variable gravity measurements: Implications for estimates of surface mass variations". *Journal of Geophysical Research: Solid Earth*, 120(6), 4597--4615, (2015). `doi: 10.1002/2015JB011986 <https://doi.org/10.1002/2015JB011986>`_
-
-
 
 .. |beta|    unicode:: U+03B2 .. GREEK SMALL LETTER BETA
 .. |mu|      unicode:: U+03BC .. GREEK SMALL LETTER MU

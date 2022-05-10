@@ -83,7 +83,7 @@ def arguments():
     # return the parser
     return parser
 
-# Main program that calls calc_harmonic_resolution()
+# This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()

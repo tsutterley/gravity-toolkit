@@ -1,24 +1,21 @@
-==============
-calc_mascon.py
-==============
+=========================
+monte_carlo_degree_one.py
+=========================
 
-- Reads in GRACE/GRACE-FO spherical harmonic coefficients
-- Correct spherical harmonics with the specified GIA model group
-- Filters and smooths data with specified processing algorithms [Jekeli1981]_ [Swenson2006]_
-- Calculates a time-series of regional mass anomalies through a least-squares mascon procedure following [Tiwari2009]_ [Jacob2012]_
-- Calculates the regional mascon errors following [Wahr2006]_
+- Estimates uncertainties in degree 1 using GRACE/GRACE-FO coefficients of degree 2 and greater, and modeled ocean bottom pressure variations in a Monte Carlo scheme [Swenson2008]_ [Sutterley2019]_.
+- Calculates the estimated spherical harmonic errors following [Wahr2006]_
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/calc_mascon.py
+.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/monte_carlo_degree_one.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: ../../scripts/calc_mascon.py
+    :filename: ../../scripts/monte_carlo_degree_one.py
     :func: arguments
-    :prog: calc_mascon.py
+    :prog: monte_carlo_degree_one.py
     :nodescription:
     :nodefault:
 
@@ -27,10 +24,8 @@ Calling Sequence
         * ``1``: Gegout (2005) values from PREM [Gegout2010]_
         * ``2``: Wang et al. (2012) values from PREM [Wang2012]_
 
-    --reference : @after
-        * ``'CF'``: Center of Surface Figure
-        * ``'CM'``: Center of Mass of Earth System
-        * ``'CE'``: Center of Mass of Solid Earth
+    --kl -k : @after
+        * ``None``: use derived values from [Trupin1992]_ [Blewett2003]_.
 
     --gia -G : @after
         * ``'IJ05-R2'``: `Ivins R2 GIA Models <https://doi.org/10.1002/jgrb.50208>`_
@@ -45,14 +40,6 @@ Calling Sequence
         * ``'ascii'``: reformatted GIA in ascii format
         * ``'netCDF4'``: reformatted GIA in netCDF4 format
         * ``'HDF5'``: reformatted GIA in HDF5 format
-
-    --geocenter : @after
-        * ``None``
-        * ``'Tellus'``: GRACE/GRACE-FO TN-13 coefficients from PO.DAAC
-        * ``'SLR'``: satellite laser ranging coefficients from CSR
-        * ``'SLF'``: Sutterley and Velicogna coefficients, Remote Sensing (2019)
-        * ``'Swenson'``: GRACE-derived coefficients from Sean Swenson
-        * ``'GFZ'``: GRACE/SLR derived coefficients from GFZ GravIS
 
     --slr-c20 : @replace
         Replace *C*\ :sub:`20` coefficients with SLR values
@@ -94,24 +81,20 @@ Calling Sequence
         * ``'GSFC'``: use values from GSFC
         * ``'LARES'``: use filtered values from CSR
 
-    --fit-method : @after
-        * ``1``: mass coefficients
-        * ``2``: geoid coefficients
-
 References
 ##########
+
+.. [Blewett2003] G. Blewitt, "Self‐consistency in reference frames, geocenter definition, and surface loading of the solid Earth", *Journal of Geophysical Research: Solid Earth*, 108(B2), 2103, (2003). `doi: 10.1029/2002JB002082 <https://doi.org/10.1029/2002JB002082>`_
 
 .. [Gegout2010] P. Gegout, J. Boehm, and D. Wijaya, "Practical numerical computation of love numbers and applications", Workshop of the COST Action ES0701, (2010). `doi: 10.13140/RG.2.1.1866.7045 <https://doi.org/10.13140/RG.2.1.1866.7045>`_
 
 .. [Han1995] D. Han and J. Wahr, "The viscoelastic relaxation of a realistically stratified earth, and a further analysis of postglacial rebound", *Geophysical Journal International*, 120(2), 287--311, (1995). `doi: 10.1111/j.1365-246X.1995.tb01819.x <https://doi.org/10.1111/j.1365-246X.1995.tb01819.x>`_
 
-.. [Jacob2012] T. Jacob, J. Wahr, W. T. Pfeffer, and S. Swenson, "Recent contributions of glaciers and ice caps to sea level rise", *Nature*, 482, 514--518, (2012). `doi: 10.1038/nature10847 <https://doi.org/10.1038/nature10847>`_
+.. [Sutterley2019] T. C. Sutterley and I. Velicogna, "Improved Estimates of Geocenter Variability from Time-Variable Gravity and Ocean Model Outputs", *Remote Sensing*, 11(18), 2108, (2019). `doi: 10.3390/rs11182108 <https://doi.org/10.3390/rs11182108>`_
 
-.. [Jekeli1981] C. Jekeli, "Alternative Methods to Smooth the Earth's Gravity Field", NASA Grant No. NGR 36-008-161, OSURF Proj. No. 783210, 48 pp., (1981).
+.. [Swenson2008] S. Swenson, D. Chambers, and J. Wahr, "Estimating geocenter variations from a combination of GRACE and ocean model output", *Journal of Geophysical Research: Solid Earth*, 113(B08410), (2008). `doi: 10.1029/2007JB005338 <https://doi.org/10.1029/2007JB005338>`_
 
-.. [Swenson2006] S. Swenson and J. Wahr, "Post‐processing removal of correlated errors in GRACE data", *Geophysical Research Letters*, 33(L08402), (2006). `doi: 10.1029/2005GL025285 <https://doi.org/10.1029/2005GL025285>`_
-
-.. [Tiwari2009] V. M. Tiwari, J. Wahr, and S. Swenson, "Dwindling groundwater resources in northern India, from satellite gravity observations", *Geophysical Research Letters*, 36(L18401), (2009). `doi: 10.1029/2009GL039401 <https://doi.org/10.1029/2009GL039401>`_
+.. [Trupin1992] A. S. Trupin, M. F. Meier, and J. Wahr, "Effect of melting glaciers on the Earth's rotation and gravitational field: 1965--1984", *Geophysical Journal International*, 108(1), (1992). `doi: 10.1111/j.1365-246X.1992.tb00835.x <https://doi.org/10.1111/j.1365-246X.1992.tb00835.x>`_
 
 .. [Wahr2006] J. Wahr, S. Swenson, and I. Velicogna, "Accuracy of GRACE mass estimates", Geophysical Research Letters, 33(L06401), (2006). `doi: 10.1029/2005GL025305 <https://doi.org/10.1029/2005GL025305>`_
 

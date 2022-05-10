@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_date.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (05/2022)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
@@ -46,6 +46,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 05/2022: use argparse descriptions within documentation
     Updated 04/2022: updated docstrings to numpy documentation format
         include utf-8 encoding in reads to be windows compliant
     Updated 09/2021: adjust regular expression operators for Swarm and GRAZ
@@ -370,10 +371,8 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     #-- return the python dictionary that maps GRACE months with GRACE files
     return grace_files
 
-#-- PURPOSE: program that calls grace_date() with set parameters
-def main():
-    #-- command line parameters
-    #-- Read the system arguments listed after the program
+#-- PURPOSE: create argument parser
+def arguments():
     parser = argparse.ArgumentParser(
         description="""Parses dates of each GRACE/GRACE-FO file and
             assigns the month number.
@@ -408,7 +407,14 @@ def main():
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
-        help='permissions mode of output files')
+        help='Permissions mode of output files')
+    #-- return the parser
+    return parser
+
+#-- This is the main part of the program that calls the individual functions
+def main():
+    #-- Read the system arguments listed after the program
+    parser = arguments()
     args,_ = parser.parse_known_args()
 
     #-- run GRACE/GRACE-FO date program

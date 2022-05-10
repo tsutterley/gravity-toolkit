@@ -114,7 +114,6 @@ def run_grace_date(base_dir, PROC, DREL, VERBOSE=0, MODE=0o775):
     logging.info('GRACE Months Program')
     grace_months_index(base_dir, DREL=DREL, MODE=MODE)
 
-
 #-- PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(

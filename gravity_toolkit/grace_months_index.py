@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_months_index.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (05/2022)
 
 Creates a file with the start and end days for each dataset
 Shows the range of each month for (CSR/GFZ/JPL) (RL04/RL05/RL06)
@@ -40,6 +40,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 05/2022: use argparse descriptions within documentation
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -189,9 +190,8 @@ def grace_months_index(base_dir, DREL=['RL06','v02.4'], MODE=None):
     #-- set the permissions level of the output file
     os.chmod(os.path.join(base_dir,grace_months_file), MODE)
 
-#-- This is the main part of the program that calls the individual functions
-def main():
-    #-- Read the system arguments listed after the program
+#-- PURPOSE: create argument parser
+def arguments():
     parser = argparse.ArgumentParser(
         description="""Creates a file with the start and end days for
             each month of GRACE/GRACE-FO data
@@ -211,7 +211,14 @@ def main():
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
-        help='permissions mode of output files')
+        help='Permissions mode of output files')
+    #-- return the parser
+    return parser
+
+#-- This is the main part of the program that calls the individual functions
+def main():
+    #-- Read the system arguments listed after the program
+    parser = arguments()
     args,_ = parser.parse_known_args()
 
     #-- run GRACE/GRACE-FO months program

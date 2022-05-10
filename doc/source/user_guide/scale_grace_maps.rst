@@ -82,7 +82,7 @@ Calling Sequence
         Replace *C*\ :sub:`30` coefficients with SLR values
 
         * ``None``: use original values
-        * ``'CSR'``: use values from CSR (5x5 with 6,1)
+        * ``'CSR'``: use values from CSR (5\ |times|\ 5 with 6,1)
         * ``'GFZ'``: use values from GFZ GravIS
         * ``'GSFC'``: use values from GSFC (TN-14)
         * ``'LARES'``: use filtered values from CSR
@@ -91,7 +91,7 @@ Calling Sequence
         Replace *C*\ :sub:`50` coefficients with SLR values
 
         * ``None``: use original values
-        * ``'CSR'``: use values from CSR (5x5 with 6,1)
+        * ``'CSR'``: use values from CSR (5\ |times|\ 5 with 6,1)
         * ``'GSFC'``: use values from GSFC
         * ``'LARES'``: use filtered values from CSR
 
@@ -120,3 +120,5 @@ References
 .. [Wahr2006] J. Wahr, S. Swenson, and I. Velicogna, "Accuracy of GRACE mass estimates", Geophysical Research Letters, 33(L06401), (2006). `doi: 10.1029/2005GL025305 <https://doi.org/10.1029/2005GL025305>`_
 
 .. [Wang2012] H. Wang et al., "Load Love numbers and Green's functions for elastic Earth models PREM, iasp91, ak135, and modified models with refined crustal structure from Crust 2.0", *Computers & Geosciences*, 49, 190--199, (2012). `doi: 10.1016/j.cageo.2012.06.022 <https://doi.org/10.1016/j.cageo.2012.06.022>`_
+
+.. |times|      unicode:: U+00D7 .. MULTIPLICATION SIGN

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GIA_model.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (05/2022)
 
 Reads GIA data files that can come in various formats depending on the group
 Outputs spherical harmonics for the GIA rates and the GIA model parameters
@@ -96,6 +96,7 @@ REFERENCES:
     https://doi.org/10.1002/2016JB013844
 
 UPDATE HISTORY:
+    Updated 05/2022: output full citation for each GIA model group
     Updated 04/2022: updated docstrings to numpy documentation format
         use harmonics class to read/write ascii, netCDF4 and HDF5 files
         check if GIA data file is present in file-system
@@ -188,9 +189,11 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     title: str
         parameters of GIA model
     citation: str
-        citation for GIA model
+        abbreviated citation for GIA model
     reference: str
-        reference for GIA model
+        full citation for GIA model
+    url: str
+        url for GIA model reference
 
     References
     ----------
@@ -249,7 +252,12 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         #-- IJ05-R2: Ivins R2 GIA Models
         prefix = 'IJ05_R2'
         gia_Ylms['citation'] = 'Ivins_et_al._(2013)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1002/jgrb.50208'
+        gia_Ylms['reference'] = ('E. R. Ivins, T. S. James, J. Wahr, '
+            'E. J. O. Schrama, F. W. Landerer, and K. M. Simon, "Antarctic '
+            'contribution to sea level rise observed by GRACE with improved '
+            'GIA correction", Journal of Geophysical Research: Solid Earth, '
+            '118(6), 3126-3141, (2013). https://doi.org/10.1002/jgrb.50208')
+        gia_Ylms['url'] = 'https://doi.org/10.1002/jgrb.50208'
         #-- regular expression file pattern
         file_pattern = r'Stokes.R2_(.*?)_L120'
         #-- default degree of truncation
@@ -258,7 +266,12 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         #-- ICE6G: ICE-6G VM5 GIA Models
         prefix = 'ICE6G'
         gia_Ylms['citation'] = 'Peltier_et_al._(2015)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1002/2014JB011176'
+        gia_Ylms['reference'] = ('W. R. Peltier, D. F. Argus, and R. Drummond, '
+            '"Space geodesy constrains ice age terminal deglaciation: The '
+            'global ICE-6G_C (VM5a) model", Journal of Geophysical Research: '
+            'Solid Earth, 120(1), 450-487, (2015). '
+            'https://doi.org/10.1002/2014JB011176')
+        gia_Ylms['url'] = 'https://doi.org/10.1002/2014JB011176'
         #-- regular expression file pattern for test cases
         #file_pattern = r'Stokes_G_Rot_60_I6_A_(.*?)_L90'
         #-- regular expression file pattern for VM5
@@ -269,7 +282,13 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         #-- W12a: Whitehouse GIA Models
         prefix = 'W12a'
         gia_Ylms['citation'] = 'Whitehouse_et_al._(2012)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1111/j.1365-246X.2012.05557.x'
+        gia_Ylms['reference'] = ('P. L. Whitehouse, M. J. Bentley, G. A. Milne, '
+            'M. A. King, I. D. Thomas, "A new glacial isostatic adjustment '
+            'model for Antarctica: calibrated and tested using observations '
+            'of relative sea-level change and present-day uplift rates", '
+            'Geophysical Journal International, 190(3), 1464-1482, (2012). '
+            'https://doi.org/10.1111/j.1365-246X.2012.05557.x')
+        gia_Ylms['url'] = 'https://doi.org/10.1111/j.1365-246X.2012.05557.x'
         #-- for Whitehouse W12a (BEST, LOWER, UPPER):
         parameters = dict(B='Best', L='Lower', U='Upper')
         #-- regular expression file pattern
@@ -280,7 +299,13 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         #-- SM09: Simpson/Milne GIA Models
         prefix = 'SM09_Huy2'
         gia_Ylms['citation'] = 'Simpson_et_al._(2009)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1016/j.quascirev.2009.03.004'
+        gia_Ylms['reference'] = ('M. J. R. Simpson, G. A. Milne, P. Huybrechts, '
+            'A. J. Long, "Calibrating a glaciological model of the Greenland '
+            'ice sheet from the Last Glacial Maximum to present-day using '
+            'field observations of relative sea level and ice extent", '
+            'Quaternary Science Reviews, 28(17-18), 1631-1657, (2009). '
+            'https://doi.org/10.1016/j.quascirev.2009.03.004')
+        gia_Ylms['url'] = 'https://doi.org/10.1016/j.quascirev.2009.03.004'
         #-- regular expression file pattern
         file_pattern = r'grate_(\d+)p(\d)(\d+).clm'
         #-- default degree of truncation
@@ -288,20 +313,35 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     elif (GIA == 'Wu10'):
         #-- Wu10: Wu (2010) GIA Correction
         gia_Ylms['citation'] = 'Wu_et_al._(2010)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1038/ngeo938'
+        gia_Ylms['reference'] = ('X. Wu, M. B. Heflin, H. Schotman, B. L. A. '
+            'Vermeersen, D. Dong, R. S. Gross, E. R. Ivins, A. W. Moore, S. E. '
+            'Owen, "Simultaneous estimation of global present-day water '
+            'transport and glacial isostatic adjustment", Nature Geoscience, '
+            '3(9), 642-646, (2010). https://doi.org/10.1038/ngeo938')
+        gia_Ylms['url'] = 'https://doi.org/10.1038/ngeo938'
         #-- default degree of truncation
         LMAX = 60 if not kwargs['LMAX'] else kwargs['LMAX']
     elif (GIA == 'Caron'):
         #-- Caron: Caron JPL GIA Assimilation
         gia_Ylms['citation'] = 'Caron_et_al._(2018)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1002/2017GL076644'
+        gia_Ylms['reference'] = ('L. Caron, E. R. Ivins, E. Larour, S. Adhikari, '
+            'J. Nilsson and G. Blewitt, "GIA Model Statistics for GRACE '
+            'Hydrology, Cryosphere, and Ocean Science", Geophysical Research '
+            'Letters, 45(5), 2203-2212, (2018). '
+            'https://doi.org/10.1002/2017GL076644')
+        gia_Ylms['url'] = 'https://doi.org/10.1002/2017GL076644'
         #-- default degree of truncation
         LMAX = 89 if not kwargs['LMAX'] else kwargs['LMAX']
     elif (GIA == 'ICE6G-D'):
         #-- ICE6G-D: ICE-6G Version-D GIA Models
         prefix = 'ICE6G-D'
         gia_Ylms['citation'] = 'Peltier_et_al._(1018)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1002/2016JB013844'
+        gia_Ylms['reference'] = ('W. R. Peltier, D. F. Argus, and R. Drummond, '
+            '"Comment on "An assessment of the ICE-6G_C (VM5a) glacial '
+            'isostatic adjustment model" by Purcell et al.", Journal of '
+            'Geophysical Research: Solid Earth, 123(2), 2019-2028, (2018). '
+            'https://doi.org/10.1002/2016JB013844')
+        gia_Ylms['url'] = 'https://doi.org/10.1002/2016JB013844'
         #-- regular expression file pattern for Version-D
         file_pattern = r'(ICE-6G_)?(.*?)[_]?Stokes_trend[_]?(.*?)\.txt$'
         #-- default degree of truncation
@@ -310,7 +350,12 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         #-- AW13-ICE6G: Geruo A ICE-6G GIA Models
         prefix = 'AW13'
         gia_Ylms['citation'] = 'A_et_al._(2013)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1093/gji/ggs030'
+        gia_Ylms['reference'] = ('G. A, J. Wahr, and S. Zhong, "Computations of '
+            'the viscoelastic response of a 3-D compressible Earth to surface '
+            'loading; an application to Glacial Isostatic Adjustment in '
+            'Antarctica and Canada", Geophysical Journal International, '
+            '192(2), 557-572, (2013). https://doi.org/10.1093/gji/ggs030')
+        gia_Ylms['url'] = 'https://doi.org/10.1093/gji/ggs030'
         #-- regular expressions file pattern
         file_pattern = r'stokes\.(ice6g)[\.\_](.*?)(\.txt)?$'
         #-- default degree of truncation
@@ -319,7 +364,12 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         #-- AW13-IJ05: Geruo A IJ05-R2 GIA Models
         prefix = 'AW13_IJ05'
         gia_Ylms['citation'] = 'A_et_al._(2013)'
-        gia_Ylms['reference'] = 'https://doi.org/10.1093/gji/ggs030'
+        gia_Ylms['reference'] = ('G. A, J. Wahr, and S. Zhong, "Computations of '
+            'the viscoelastic response of a 3-D compressible Earth to surface '
+            'loading; an application to Glacial Isostatic Adjustment in '
+            'Antarctica and Canada", Geophysical Journal International, '
+            '192(2), 557-572, (2013). https://doi.org/10.1093/gji/ggs030')
+        gia_Ylms['url'] = 'https://doi.org/10.1093/gji/ggs030'
         #-- regular expressions file pattern
         file_pattern = r'stokes\.(R2)_(.*?)(\_ANT)?$'
         #-- default degree of truncation
@@ -557,7 +607,9 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         gia_Ylms.update(Ylms.to_dict())
         #-- copy filename (without extension) for parameters
         gia_Ylms['title'] = os.path.basename(os.path.splitext(input_file)[0])
+        gia_Ylms['citation'] = None
         gia_Ylms['reference'] = None
+        gia_Ylms['url'] = None
 
     # netCDF4: reformatted GIA in netCDF4 format
     # HDF5: reformatted GIA in HDF5 format
@@ -568,7 +620,7 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         Ylms.truncate(LMAX)
         gia_Ylms.update(Ylms.to_dict())
         #-- copy title and reference for model
-        for att_name in ('title','reference'):
+        for att_name in ('title','citation','reference','url'):
             try:
                 gia_Ylms[att_name] = Ylms.attributes[att_name]
             except:
