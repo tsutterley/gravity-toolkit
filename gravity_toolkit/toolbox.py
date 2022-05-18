@@ -28,7 +28,7 @@ def create_grid(Ylms, lmax=None, rad=0, destripe=False, unit='cmwe', dlon=0.5, d
     lmax : maximum degree of spherical harmonics used
     rad : radius of the gaussian filter. If set to 0, no gaussian filter is apply
     destripe : boolean to apply or not the destripe method of harmonics
-    unit : unit of the grid in ['cmwe', 'geoid', 'cmwe_ne', 'microGal']
+    unit : unit of the grid in ['cmwe', 'cmweEl', 'geoid', 'cmwe_ne', 'microGal']
     dlon : output longitude spacing
     dlat : output latitude spacing
     bounds : list with [lon_max, lon_min, lat_max, lat_min]
@@ -73,6 +73,8 @@ def create_grid(Ylms, lmax=None, rad=0, destripe=False, unit='cmwe', dlon=0.5, d
 
     if unit == 'cmwe':
         dfactor = units(lmax=Ylms.lmax).harmonic(hl, kl, ll).cmwe
+    elif unit == 'cmweEl':
+        dfactor = units(lmax=Ylms.lmax).harmonic(hl, kl, ll).cmweEL
     elif unit == 'geoid':
         dfactor = units(lmax=Ylms.lmax).harmonic(hl, kl, ll).mmGH
     elif unit == 'cmwe_ne':
@@ -80,7 +82,7 @@ def create_grid(Ylms, lmax=None, rad=0, destripe=False, unit='cmwe', dlon=0.5, d
     elif unit == 'microGal':
         dfactor = units(lmax=Ylms.lmax).harmonic(hl, kl, ll).microGal
     else:
-        raise ValueError("Unit not accepted, should be either 'cmwe' or 'cmwe_ne' or 'geoid' or 'microGal'")
+        raise ValueError("Unit not accepted, should be either 'cmwe' pr 'cmweEl' or 'cmwe_ne' or 'geoid' or 'microGal'")
 
     # converting harmonics to truncated, smoothed coefficients in units
     # combining harmonics to calculate output spatial fields
