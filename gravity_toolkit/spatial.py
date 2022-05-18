@@ -99,6 +99,11 @@ except (ImportError, ModuleNotFoundError) as exc:
     warnings.warn("netCDF4 not available", ImportWarning)
 # ignore warnings
 warnings.filterwarnings("ignore")
+import scipy as sc
+import matplotlib.pyplot as plt
+import matplotlib
+import cartopy.crs as ccrs
+
 
 class spatial(object):
     """
@@ -2008,3 +2013,122 @@ class scaling_factors(spatial):
             if getattr(self, 'magnitude') is not None:
                 self.magnitude[self.mask] = self.fill_value
         return self
+
+    def plot_eof(self, number, path_folder, cmap='viridis', mode='full', unit='cmwe', mask=None, normalize=False, weight=False):
+        import gravity_toolkit.toolbox as tb
+        mat_svd = np.copy(self.data)
+        if mask is None:
+            mat_svd = np.reshape(mat_svd, (self.lat.shape[0] * self.lon.shape[0], self.time.shape[0]))
+            lat = self.lat.repeat(self.lon.shape[0])
+        else:
+            mat_svd = np.reshape(mat_svd[mask], (np.sum(mask), self.time.shape[0]))
+            lat = self.lat.repeat(np.sum(mask, axis=0))
+
+        mat_svd_original = np.copy(mat_svd)
+        if normalize:
+            mat_svd = (mat_svd - np.mean(mat_svd, axis = 1).repeat(self.time.shape[0]).reshape(mat_svd.shape)) / np.std(mat_svd, axis=1).repeat(self.time.shape[0]).reshape(mat_svd.shape)
+        if weight:
+            mat_svd = mat_svd*np.cos(np.radians(lat).repeat(self.time.shape[0]).reshape(mat_svd.shape))
+
+
+        c_svd = mat_svd.T@mat_svd/(mat_svd.shape[0] - 1)
+        w, v = sc.linalg.eigh(c_svd)
+
+        v = v[:, ::-1]
+        w = w[::-1]
+        s = np.sqrt(w*(mat_svd.shape[0] - 1))
+        us = mat_svd_original@v
+
+        eof_grid = spatial()
+        eof_grid.lat, eof_grid.lon = self.lat, self.lon
+        eof_grid.time = np.array([0])
+
+        if not os.path.isdir(path_folder):
+            os.mkdir(path_folder)
+
+        if mode == 'ts':
+            plt.figure()
+            plt.xlabel('Time (year)')
+
+        for k in number:
+            power = s[k]**2/np.nansum(s**2)
+            eof = us[:, k]/np.sqrt(mat_svd.shape[1] - 1)
+            sort_eof = np.sort(eof)
+            scale_eof = 2*eof/(sort_eof[-int(len(sort_eof)*0.01)] - sort_eof[int(len(sort_eof)*0.01)])
+
+            pc = v.T[k] * np.sqrt(mat_svd.shape[1] - 1) /2*(sort_eof[-int(len(sort_eof)*0.01)] - sort_eof[int(len(sort_eof)*0.01)])
+
+            if mask is None:
+                eof_grid.data = np.reshape(scale_eof, (self.lat.shape[0], self.lon.shape[0], 1))
+            else:
+                eof_grid.data = np.zeros((self.lat.shape[0], self.lon.shape[0], 1))
+                eof_grid.data[mask] = scale_eof
+                eof_grid.data[np.logical_not(mask)] = None
+
+            if mode == 'map':
+                tb.plot_rms_map(eof_grid, path=os.path.join(path_folder, 'map_eof_'+str(k)+'.png'), unit=unit, mask=mask)
+
+            elif mode == 'full':
+                npow2 = 1 if len(self.time) == 0 else 2 ** (len(self.time) - 1).bit_length()
+                f = np.fft.fft(pc, npow2)
+                xf = np.fft.fftfreq(npow2, d=np.mean(self.time[1:] - self.time[:-1]))
+
+                fig = plt.figure(constrained_layout=True, figsize=(12, 6), dpi=200)
+                spec = matplotlib.gridspec.GridSpec(ncols=4, nrows=12, wspace=0.03, width_ratios=[8, 1, 1, 1])
+                axmap = fig.add_subplot(spec[:, 0], projection=ccrs.PlateCarree())
+
+                cmap = plt.cm.get_cmap(cmap)
+
+                immap = axmap.imshow(eof_grid.data, cmap=cmap, transform=ccrs.PlateCarree(), extent=self.extent,
+                                     origin='upper', vmin=-1.15, vmax=1.15)
+                axmap.coastlines('50m')
+                # stronger linewidth on frame
+                axmap.spines['geo'].set_linewidth(2.0)
+                axmap.spines['geo'].set_capstyle('projecting')
+
+                cbar = plt.colorbar(immap, ax=axmap, extend='both', extendfrac=0.0375,
+                                    orientation='horizontal', pad=0.025, shrink=0.85,
+                                    aspect=22, drawedges=False)
+
+                # ticks lines all the way across
+                cbar.ax.tick_params(which='both', width=1, length=24, labelsize=18,
+                                    direction='in')
+
+                power_str = '\nPower: '+str("%1.2f"%power)
+                cbar.ax.set_xlabel(power_str, labelpad=10, fontsize=18)
+
+                axplot = fig.add_subplot(spec[1:5, 1:], box_aspect=0.5)
+                axplot.plot(self.time, pc)
+                axplot.yaxis.tick_right()
+                axplot.yaxis.set_label_position("right")
+                axplot.set_xlabel('Time (year)')
+
+                if unit == "cmwe":
+                    axplot.set_ylabel('Equivalent Water\nThickness\ncm', labelpad=50, fontsize=12, rotation='horizontal')
+                elif unit == "cmwe_ne":
+                    axplot.set_ylabel('Non elastic\n Equivalent Water\nThickness\ncm', labelpad=50, fontsize=12, rotation='horizontal')
+                elif unit == "mmwe":
+                    axplot.set_ylabel('Equivalent Water\n Thickness\nmm', labelpad=50, fontsize=12, rotation='horizontal')
+                elif unit == "geoid":
+                    axplot.set_ylabel('Geoid Height\nmm', labelpad=45, fontsize=12, rotation='horizontal')
+                elif unit == "microGal":
+                    axplot.set_ylabel('Acceleration\n$\mu Gal$', labelpad=40, fontsize=12, rotation='horizontal')
+                elif unit == "secacc":
+                    axplot.set_ylabel('Secular\n Acceleration\n$nT.y^{-2}$', labelpad=40, fontsize=12, rotation='horizontal')
+
+                axfft = fig.add_subplot(spec[6:10, 1:], box_aspect=0.5)
+                plt.plot(1/xf[:len(xf)//2][1/xf[:len(xf)//2] < 10], 2.0/len(self.time) * np.abs(f[:len(xf)//2][1/xf[:len(xf)//2] < 10]))
+                axfft.yaxis.tick_right()
+                axfft.set_xlim(0, 10)
+                axfft.set_ylim(0,)
+                axfft.set_xlabel('Period (year)')
+
+                plt.savefig(os.path.join(path_folder, 'eof_pc_'+str(k)+'.png'), bbox_inches='tight')
+                plt.close()
+
+            elif mode == 'ts':
+                plt.plot(self.time, pc, label=str(k))
+
+        if mode == 'ts':
+            plt.savefig(os.path.join(path_folder, 'pc_'+'-'.join([str(i) for i in number])+'.png'))
+            plt.legend()
