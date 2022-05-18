@@ -354,6 +354,7 @@ def filt_grid(grid, f_cut=0.5):
 
     return filtered_grid
 
+
 def save_gif(grid, path, unit='cmwe', bound=None, mask=None, color='viridis'):
     """
     Create a gif of the spatial object
@@ -466,6 +467,7 @@ def save_gif(grid, path, unit='cmwe', bound=None, mask=None, color='viridis'):
     HTML(anim.to_jshtml())
 
     anim.save(path, writer='imagemagick', fps=10)
+    plt.clf()
 
 
 def plot_rms_map(grid, path=False, proj=ccrs.PlateCarree(), unit='cmwe', bound=None, mask=None, color='viridis'):
@@ -498,15 +500,6 @@ def plot_rms_map(grid, path=False, proj=ccrs.PlateCarree(), unit='cmwe', bound=N
     else:
         vmin, vmax = bound
 
-    if vmax - vmin >= 3:
-        levels = np.arange(vmin, vmax, max(1, int((vmax - vmin) / 10)))
-    elif vmax - vmin >= 0.3:
-        levels = np.arange(vmin, vmax, max(0.1, float('%.1f' % ((vmax - vmin) / 10))))
-    elif vmax - vmin >= 0.03:
-        levels = np.arange(vmin, vmax, max(0.1, float('%.2f' % ((vmax - vmin) / 10))))
-    else:
-        raise ValueError("The range of data to plot is too small")
-
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
     cmap = plt.cm.get_cmap(color)
     im = ax1.imshow(data_to_set, interpolation='nearest',
@@ -528,32 +521,25 @@ def plot_rms_map(grid, path=False, proj=ccrs.PlateCarree(), unit='cmwe', bound=N
     # Add label to the colorbar
     if unit == "cmwe":
         cbar.ax.set_xlabel('Equivalent Water Thickness', labelpad=10, fontsize=24)
-        cbar.ax.set_ylabel('cm', fontsize=24, rotation=0)
+        cbar.ax.set_ylabel('cm', fontsize=24, rotation=0, labelpad=10)
     elif unit == "cmwe_ne":
         cbar.ax.set_xlabel('Non elastic Equivalent Water Thickness', labelpad=10, fontsize=24)
-        cbar.ax.set_ylabel('cm', fontsize=24, rotation=0)
+        cbar.ax.set_ylabel('cm', fontsize=24, rotation=0, labelpad=10)
     elif unit == "mmwe":
         cbar.ax.set_xlabel('Equivalent Water Thickness', labelpad=10, fontsize=24)
-        cbar.ax.set_ylabel('mm', fontsize=24, rotation=0)
+        cbar.ax.set_ylabel('mm', fontsize=24, rotation=0, labelpad=10)
     elif unit == "geoid":
         cbar.ax.set_xlabel('Geoid Height', labelpad=10, fontsize=24)
-        cbar.ax.set_ylabel('mm', fontsize=24, rotation=0)
+        cbar.ax.set_ylabel('mm', fontsize=24, rotation=0, labelpad=10)
     elif unit == "microGal":
         cbar.ax.set_xlabel('Acceleration', labelpad=10, fontsize=24)
-        cbar.ax.set_ylabel('$\mu Gal$', fontsize=24, rotation=0)
+        cbar.ax.set_ylabel('$\mu Gal$', fontsize=24, rotation=0, labelpad=10)
     elif unit == "secacc":
         cbar.ax.set_xlabel('Secular Acceleration', labelpad=10, fontsize=24)
-        cbar.ax.set_ylabel('$nT.y^{-2}$', fontsize=24, rotation=0)
+        cbar.ax.set_ylabel('$nT.y^{-2}$', fontsize=24, rotation=0, labelpad=10)
 
-    cbar.ax.yaxis.set_label_coords(1.045, 0.1)
+    cbar.ax.yaxis.set_label_coords(1.1, -0.4)
     # Set the tick levels for the colorbar
-    cbar.set_ticks(levels)
-    if vmax - vmin >= 3:
-        cbar.set_ticklabels(['{0:d}'.format(ct) for ct in levels])
-    elif vmax - vmin >= 0.3:
-        cbar.set_ticklabels(['{.1f}'.format(ct) for ct in levels])
-    elif vmax - vmin >= 0.03:
-        cbar.set_ticklabels(['{.2f}'.format(ct) for ct in levels])
     # ticks lines all the way across
     cbar.ax.tick_params(which='both', width=1, length=26, labelsize=24,
                         direction='in')
@@ -585,7 +571,7 @@ def calc_rms_grid(grid, mask=None):
     rms : rms of the grid
 
     """
-    if mask in None:
+    if mask is None:
         rms = np.sqrt(np.sum(
             [np.sum(np.cos(lat * np.pi / 180) ** 2 * line ** 2) for lat, line in zip(grid.lat, grid.data)]) / np.sum(
             [np.sum(np.cos(lat * np.pi / 180) ** 2 * line.size) for lat, line in zip(grid.lat, grid.data)]))
@@ -600,34 +586,46 @@ def calc_rms_grid(grid, mask=None):
     return rms
 
 
-def plot_rms_grid(grid, path=False, mask=None, unit='cmwe'):
+def plot_rms_grid(grid, path=False, labels=None, mask=None, unit='cmwe'):
     """
     Create a figure with rms of the grid spatial object in function of time
 
     Parameters
     ----------
-    grid : spatial object
+    grid : spatial object or list of spatial object
     path : path to save the figure if needed
     mask : mask to apply on data if needed
     unit : unit of the grid
     """
-    l_rms = []
-    for i in range(len(grid.time)):
-        if mask is None:
-            rms = np.sqrt(np.sum([np.sum(np.cos(lat * np.pi / 180) ** 2 * line ** 2) for lat, line in
-                                  zip(grid.lat, grid.data[:, :, i])]) / np.sum(
-                [np.sum(np.cos(lat * np.pi / 180) ** 2 * line.size) for lat, line in
-                 zip(grid.lat, grid.data[:, :, i])]))
-        else:
-            rms = np.sqrt(np.sum([np.sum(np.cos(lat * np.pi / 180) ** 2 * (line * line_mask) ** 2)
-                                  for lat, line, line_mask in zip(grid.lat, grid.data[:, :, i], mask)])
-                          / np.sum([np.sum(np.cos(lat * np.pi / 180) ** 2 * line_mask)
-                                    for lat, line_mask in zip(grid.lat, mask)]))
+    if type(grid) != list:
+        grid = [grid]
 
-        l_rms.append(rms)
+    plot_rms = []
+    for g in grid:
+        l_rms = []
+        for i in range(len(g.time)):
+            if mask is None:
+                rms = np.sqrt(np.sum([np.sum(np.cos(lat * np.pi / 180) ** 2 * line ** 2) for lat, line in
+                                      zip(g.lat, g.data[:, :, i])]) / np.sum(
+                    [np.sum(np.cos(lat * np.pi / 180) ** 2 * line.size) for lat, line in
+                     zip(g.lat, g.data[:, :, i])]))
+            else:
+                rms = np.sqrt(np.sum([np.sum(np.cos(lat * np.pi / 180) ** 2 * (line * line_mask) ** 2)
+                                      for lat, line, line_mask in zip(g.lat, g.data[:, :, i], mask)])
+                              / np.sum([np.sum(np.cos(lat * np.pi / 180) ** 2 * line_mask)
+                                        for lat, line_mask in zip(g.lat, mask)]))
+
+            l_rms.append(rms)
+        plot_rms.append(l_rms)
 
     plt.figure()
-    plt.plot(grid.time, l_rms)
+    if not(type(labels) == list):
+        for g, rms in zip(grid, plot_rms):
+            plt.plot(g.time, rms)
+    else:
+        for g, rms, l in zip(grid, plot_rms, labels):
+            plt.plot(g.time, rms, label=l)
+
     plt.xlabel('Time (y)')
     if unit == "cmwe":
         plt.ylabel('cm EWH')
@@ -642,6 +640,9 @@ def plot_rms_grid(grid, path=False, mask=None, unit='cmwe'):
     elif unit == "secacc":
         plt.ylabel('$nT.y^{-2}$')
     plt.ylabel('Power (cm EWH)')
+
+    if type(labels) == list:
+        plt.legend()
 
     if path:
         plt.savefig(path, bbox_inches='tight')
