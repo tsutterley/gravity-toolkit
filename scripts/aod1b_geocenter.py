@@ -33,7 +33,7 @@ PROGRAM DEPENDENCIES:
     geocenter.py: converts degree 1 spherical harmonics to geocenter variations
     utilities.py: download and management utilities for files
 
-UPDATED HISTORY:
+UPDATE HISTORY:
     Updated 04/2022: use argparse descriptions within documentation
     Updated 12/2021: can use variable loglevels for verbose output
     Updated 11/2021: use gravity_toolkit geocenter class for operations

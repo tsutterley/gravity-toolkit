@@ -55,6 +55,8 @@ General Methods
 
 .. autofunction:: gravity_toolkit.utilities.s3_client
 
+.. autofunction:: gravity_toolkit.utilities.s3_bucket
+
 .. autofunction:: gravity_toolkit.utilities.s3_key
 
 .. autofunction:: gravity_toolkit.utilities.check_credentials

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (05/2022)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
@@ -9,6 +9,7 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/lxml
 
 UPDATE HISTORY:
+    Updated 05/2022: function for extracting bucket name from presigned url
     Updated 04/2022: updated docstrings to numpy documentation format
         update CMR queries to prepare for version 1 of RL06
     Updated 03/2022: add NASA Common Metadata Repository (CMR) queries
@@ -789,6 +790,25 @@ def s3_client(HOST=None, timeout=None, region_name='us-west-2'):
     #-- return the AWS client for region
     return client
 
+#-- PURPOSE: get a s3 bucket name from a presigned url
+def s3_bucket(presigned_url):
+    """
+    Get a s3 bucket name from a presigned url
+
+    Parameters
+    ----------
+    presigned_url: str
+        s3 presigned url
+
+    Returns
+    -------
+    bucket: str
+        s3 bucket name
+    """
+    host = url_split(presigned_url)
+    bucket = re.sub(r's3:\/\/', r'', host[0], re.IGNORECASE)
+    return bucket
+
 #-- PURPOSE: get a s3 bucket key from a presigned url
 def s3_key(presigned_url):
     """
@@ -798,9 +818,15 @@ def s3_key(presigned_url):
     ----------
     presigned_url: str
         s3 presigned url
+
+    Returns
+    -------
+    key: str
+        s3 bucket key for object
     """
     host = url_split(presigned_url)
-    return posixpath.join(*host[1:])
+    key = posixpath.join(*host[1:])
+    return key
 
 #-- PURPOSE: check that entered NASA Earthdata credentials are valid
 def check_credentials(HOST='https://podaac-tools.jpl.nasa.gov/drive/files'):

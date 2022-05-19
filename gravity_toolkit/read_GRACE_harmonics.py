@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GRACE_harmonics.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (05/2022)
 Contributions by Hugo Lecomte
 
 Reads GRACE files and extracts spherical harmonic data and drift rates (RL04)
@@ -42,6 +42,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 05/2022: updated comments
     Updated 04/2022: updated docstrings to numpy documentation format
         include utf-8 encoding in reads to be windows compliant
         check if GRACE/GRACE-FO data file is present in file-system
@@ -105,7 +106,7 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
     eslm: float
         sine spherical harmonic uncalibrated standard deviations
     header: str
-        Header text from the GRACE file
+        Header text from the GRACE/GRACE-FO file
 
     References
     ----------
@@ -118,9 +119,12 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
 
     #-- parse filename
     PFX,SY,SD,EY,ED,N,PRC,F1,DRL,F2,SFX = parse_file(input_file)
-    file_contents = extract_file(input_file, (SFX=='.gz'))
+    #-- check if file is compressed
+    compressed = (SFX == '.gz')
+    #-- extract file contents
+    file_contents = extract_file(input_file, compressed)
 
-    #-- JPL Mascon solutions
+    #-- JPL mascon solutions in spherical harmonic form
     if PRC in ('JPLMSC',):
         DSET = 'GSM'
         DREL = np.int64(DRL)
@@ -134,18 +138,18 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
     #-- COST-G unfiltered combination solutions
     #-- https://doi.org/10.5880/ICGEM.COST-G.001
     elif PRC in ('COSTG',):
-        DSET, = re.findall('GSM|GAC',PFX)
+        DSET, = re.findall(r'GSM|GAC',PFX)
         DREL = np.int64(DRL)
         FLAG = r'gfc'
-    #-- Standard GRACE solutions
+    #-- Standard GRACE/GRACE-FO Level-2 solutions
     else:
         DSET = PFX
         DREL = np.int64(DRL)
         FLAG = r'GRCOF2'
 
-    #-- output python dictionary with GRACE data and date information
+    #-- output python dictionary with GRACE/GRACE-FO data and metadata
     grace_L2_input = {}
-    #-- extract GRACE date information from input file name
+    #-- extract GRACE/GRACE-FO date information from input file name
     start_yr = np.float64(SY)
     end_yr = np.float64(EY)
     start_day = np.float64(SD)
@@ -230,10 +234,9 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
     #-- if drift rates exist at any time, will add to harmonics
     #-- Will convert the secular rates into a stokes contribution
     #-- Currently removes 2003.3 to get the temporal average close to 0.
-    #-- note: += means grace_xlm = grace_xlm + drift_x
     if ((DREL == 4) and (DSET == 'GSM')):
         #-- time since 2003.3
-        dt = (grace_L2_input['time']-2003.3)
+        dt = (grace_L2_input['time'] - 2003.3)
         grace_L2_input['clm'][:,:] += dt*drift_c[:,:]
         grace_L2_input['slm'][:,:] += dt*drift_s[:,:]
 
@@ -261,8 +264,7 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
             #-- before computing their harmonic solutions
             C21_PT = -1.551e-9*(m1 - 0.62e-3*dt) - 0.012e-9*(m2 + 3.48e-3*dt)
             S21_PT = 0.021e-9*(m1 - 0.62e-3*dt) - 1.505e-9*(m2 + 3.48e-3*dt)
-            #-- correct GRACE spherical harmonics for pole tide
-            #-- note: -= means grace_xlm = grace_xlm - PT
+            #-- correct GRACE/GRACE-FO spherical harmonics for pole tide
             grace_L2_input['clm'][2,1] -= C21_PT
             grace_L2_input['slm'][2,1] -= S21_PT
         #-- GFZ Pole Tide Correction
@@ -271,13 +273,13 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
             #-- GFZ removes only a constant pole position
             C21_PT = -1.551e-9*(-0.62e-3*dt) - 0.012e-9*(3.48e-3*dt)
             S21_PT = 0.021e-9*(-0.62e-3*dt) - 1.505e-9*(3.48e-3*dt)
-            #-- correct GRACE spherical harmonics for pole tide
-            #-- note: -= means grace_xlm = grace_xlm - PT
+            #-- correct GRACE/GRACE-FO spherical harmonics for pole tide
             grace_L2_input['clm'][2,1] -= C21_PT
             grace_L2_input['slm'][2,1] -= S21_PT
 
-    #-- return the GRACE data, GRACE date (mid-month in decimal), and the
-    #-- start and end days as Julian dates
+    #-- return the header data, GRACE/GRACE-FO data
+    #-- GRACE/GRACE-FO date (mid-month in decimal)
+    #-- and the start and end days as Julian dates
     return grace_L2_input
 
 #-- PURPOSE: extract parameters from filename
