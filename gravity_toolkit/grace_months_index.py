@@ -41,6 +41,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 05/2022: use argparse descriptions within documentation
+        use new GSFC release 6 version 2 mascons as the default
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: use functions for converting to and from GRACE months
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -67,7 +68,7 @@ import calendar
 import numpy as np
 from gravity_toolkit.time import grace_to_calendar
 
-def grace_months_index(base_dir, DREL=['RL06','v02.4'], MODE=None):
+def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
     """
     Creates a file with the start and end days for each dataset
 
@@ -206,7 +207,7 @@ def arguments():
     #-- GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
         metavar='DREL', type=str, nargs='+',
-        default=['RL06','v02.4'],
+        default=['RL06','rl06v2.0'],
         help='GRACE/GRACE-FO Data Release')
     #-- permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',

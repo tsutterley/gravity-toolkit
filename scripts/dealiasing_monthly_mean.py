@@ -47,7 +47,7 @@ PROGRAM DEPENDENCIES:
         and filters the GRACE/GRACE-FO coefficients for striping errors
     time.py: utilities for calculating time operations
 
-UPDATED HISTORY:
+UPDATE HISTORY:
     Updated 04/2022: use argparse descriptions within documentation
     Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
