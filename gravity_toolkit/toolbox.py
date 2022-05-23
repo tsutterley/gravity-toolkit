@@ -1,3 +1,5 @@
+import os.path
+
 from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.gen_stokes import gen_stokes
 from gravity_toolkit.harmonics import harmonics
@@ -74,7 +76,7 @@ def create_grid(Ylms, lmax=None, rad=0, destripe=False, unit='cmwe', dlon=0.5, d
     if unit == 'cmwe':
         dfactor = units(lmax=Ylms.lmax).harmonic(hl, kl, ll).cmwe
     elif unit == 'cmweEl':
-        dfactor = units(lmax=Ylms.lmax).harmonic(hl, kl, ll).cmweEL
+        dfactor = units(lmax=Ylms.lmax).harmonic(hl, kl, ll).cmweEl
     elif unit == 'geoid':
         dfactor = units(lmax=Ylms.lmax).harmonic(hl, kl, ll).mmGH
     elif unit == 'cmwe_ne':
@@ -498,7 +500,7 @@ def plot_rms_map(grid, path=False, proj=ccrs.PlateCarree(), unit='cmwe', bound=N
                             subplot_kw=dict(projection=proj))
 
     if bound is None:
-        vmin, vmax = int(np.min(data_to_set)), int(np.ceil(np.max(data_to_set)))
+        vmin, vmax = np.floor(np.min(data_to_set)), np.ceil(np.max(data_to_set))
     else:
         vmin, vmax = bound
 
@@ -521,7 +523,7 @@ def plot_rms_map(grid, path=False, proj=ccrs.PlateCarree(), unit='cmwe', bound=N
     # rasterized colorbar to remove lines
     cbar.solids.set_rasterized(True)
     # Add label to the colorbar
-    if unit == "cmwe":
+    if unit == "cmwe" or unit == "cmweEl":
         cbar.ax.set_xlabel('Equivalent Water Thickness', labelpad=10, fontsize=24)
         cbar.ax.set_ylabel('cm', fontsize=24, rotation=0, labelpad=10)
     elif unit == "cmwe_ne":
@@ -552,11 +554,11 @@ def plot_rms_map(grid, path=False, proj=ccrs.PlateCarree(), unit='cmwe', bound=N
     # adjust subplot within figure
     fig.subplots_adjust(left=0.02, right=0.98, bottom=0.05, top=0.98)
 
-    if path:
+    if path and os.path.isdir(os.path.dirname(str(path))):
         plt.savefig(path, bbox_inches='tight')
+        plt.close()
     else:
         plt.show()
-    plt.close()
 
 
 def calc_rms_grid(grid, mask=None):
@@ -629,7 +631,7 @@ def plot_rms_grid(grid, path=False, labels=None, mask=None, unit='cmwe'):
             plt.plot(g.time, rms, label=l)
 
     plt.xlabel('Time (y)')
-    if unit == "cmwe":
+    if unit == "cmwe" or unit == "cmweEl":
         plt.ylabel('cm EWH')
     elif unit == "cmwe_ne":
         plt.ylabel('Non elastic cm EWH')
@@ -651,3 +653,40 @@ def plot_rms_grid(grid, path=False, labels=None, mask=None, unit='cmwe'):
     else:
         plt.show()
     plt.close()
+
+
+def hs_to_grid_amp(amplitude, l, m, unit='cmwe', map=False):
+    """
+    Create a grid corresponding to a particular spherical harmonic coefficient in a unit.
+    Return the amplitude of the grid create by this coefficient in the given unit and the map signal
+
+    Parameters
+    ----------
+    amplitude : amplitude of the Spherical harmonic coefficient
+    l : degree
+    m : order
+    unit : unit of the grid
+    map : Default to False, True to print a map of the coefficent and give a path to save the map
+
+    Returns
+    -------
+    max, min : bound value of the grid create with the given amplitude in the asked unit
+    """
+    ylms = harmonics(lmax=l, mmax=np.abs(m))
+    ylms.time = np.array([0])
+    ylms.month = np.array([0])
+
+    ylms.clm = np.zeros((l + 1, l + 1))
+    ylms.slm = np.zeros((l + 1, l + 1))
+    if m >= 0:
+        ylms.clm[l, np.abs(m)] = amplitude
+    else:
+        ylms.slm[l, np.abs(m)] = amplitude
+
+    grid = create_grid(ylms, l, unit=unit)
+
+    if map:
+        grid.data = grid.data[:, :, np.newaxis]
+        plot_rms_map(grid, path=map, unit=unit)
+
+    return np.max(grid.data), np.min(grid.data)
