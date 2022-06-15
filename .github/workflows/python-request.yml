@@ -33,6 +33,7 @@ jobs:
     - name: Create conda Test Environment
       run: |
         conda install flake8 pytest pytest-cov cython
+        pip install git+https://github.com/tsutterley/read-GRACE-geocenter.git
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
