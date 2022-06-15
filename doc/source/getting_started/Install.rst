@@ -29,6 +29,11 @@ Alternatively can install the ``gravity_toolkit`` utilities directly from GitHub
 
     python3 -m pip install --user git+https://github.com/tsutterley/read-GRACE-harmonics.git
 
-Executable versions of this repository can also be tested using
-`Binder <https://mybinder.org/v2/gh/tsutterley/read-GRACE-harmonics/main>`_ or
-`Pangeo <https://aws-uswest2-binder.pangeo.io/v2/gh/tsutterley/read-GRACE-harmonics/main?urlpath=lab>`_.
+| This repository can be also tested using `BinderHub <https://github.com/jupyterhub/binderhub>`_ platforms:
+| |Binder| |Pangeo|
+
+.. |Binder| image:: https://mybinder.org/badge_logo.svg
+   :target: https://mybinder.org/v2/gh/tsutterley/read-GRACE-harmonics/main
+
+.. |Pangeo| image:: https://img.shields.io/static/v1.svg?logo=Jupyter&label=PangeoBinderAWS&message=us-west-2&color=orange
+   :target: https://aws-uswest2-binder.pangeo.io/v2/gh/tsutterley/read-GRACE-harmonics/main?urlpath=lab

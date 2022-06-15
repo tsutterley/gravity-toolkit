@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 tools.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (05/2022)
 Jupyter notebook, user interface and plotting tools
 
 PYTHON DEPENDENCIES:
@@ -27,6 +27,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 05/2022: adjusted mask oceans function to be able to output mask
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 12/2021: added custom colormap function for some common scales
     Written 09/2021
@@ -1114,7 +1115,7 @@ def interp_grid(data, xin, yin, xout, yout, order=0):
 
 # PURPOSE: parallels the matplotlib basemap maskoceans function but with
 # updated Greenland coastlines (G250) and Rignot (2017) Antarctic grounded ice
-def mask_oceans(datain, xin, yin, order=0, lakes=False,
+def mask_oceans(xin, yin, data=None, order=0, lakes=False,
     iceshelves=True, resolution='qd'):
     """
     Mask a data grid over global ocean and water points
@@ -1123,12 +1124,12 @@ def mask_oceans(datain, xin, yin, order=0, lakes=False,
 
     Parameters
     ----------
-    datain: float
-        input data grid to be interpolated
     xin: float
         input x-coordinate array (monotonically increasing)
     yin: float
         input y-coordinate array (monotonically increasing)
+    data: float or NoneType
+        input data grid to be masked
     order: int, default 0
         interpolation order
 
@@ -1147,6 +1148,8 @@ def mask_oceans(datain, xin, yin, order=0, lakes=False,
 
     Returns
     -------
+    mask: bool
+        mask grid
     datain: float
         masked data grid
     """
@@ -1170,9 +1173,15 @@ def mask_oceans(datain, xin, yin, order=0, lakes=False,
     #-- find Greenland and Antarctic ice shelf values (4)
     if iceshelves:
         land_function |= (landsea.data == 4)
-    # interpolation to output grid
-    datain.mask |= interp_grid(land_function.astype(np.int32),
-        landsea.lon, landsea.lat, xin, yin, order).astype(bool)
-    # replace data with updated mask
-    datain.data[datain.mask] = datain.fill_value
-    return datain
+    #-- interpolate to output grid
+    mask = interp_grid(land_function.astype(np.int32),
+        landsea.lon, landsea.lat, xin, yin, order)
+    #-- mask input data or return the interpolated mask
+    if data is not None:
+        # update data mask with interpolated mask
+        data.mask |= mask.astype(bool)
+        # replace data with fill values where invalid
+        data.data[data.mask] = data.fill_value
+        return data
+    else:
+        return mask.astype(bool)

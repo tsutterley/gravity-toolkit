@@ -33,6 +33,5 @@ dependencies:
   - texlive-core
   - tk
   - pip:
-     - git+https://github.com/tsutterley/read-GRACE-geocenter.git
      - git+https://github.com/tsutterley/geoid-toolkit.git
      - ..

@@ -34,7 +34,6 @@ RUN pip3 install --no-cache-dir --no-binary=cartopy \
         python-dateutil \
         pyyaml \
         scipy && \
-    pip3 install --no-cache-dir --no-deps git+https://github.com/tsutterley/read-GRACE-geocenter.git && \
     pip3 install --no-cache-dir --no-deps git+https://github.com/tsutterley/geoid-toolkit.git
 
 COPY . .

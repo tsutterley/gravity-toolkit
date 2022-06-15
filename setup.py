@@ -13,9 +13,6 @@ long_description_content_type = "text/x-rst"
 # get install requirements
 with open('requirements.txt', encoding='utf8') as fh:
     install_requires = [line.split().pop(0) for line in fh.read().splitlines()]
-# dependency links
-dependency_links = ['https://github.com/tsutterley/read-GRACE-geocenter/tarball/main',
-    'https://github.com/tsutterley/geoid-toolkit/tarball/tarball/main']
 
 # get version
 with open('version.txt', encoding='utf8') as fh:
@@ -50,7 +47,6 @@ setup(
     keywords=keywords,
     packages=find_packages(),
     install_requires=install_requires,
-    dependency_links=dependency_links,
     scripts=scripts,
     include_package_data=True,
 )

@@ -1,4 +1,4 @@
-name: read-GRACE-harmonics
+name: gravity_toolkit 
 channels:
   - conda-forge
 dependencies:
@@ -23,5 +23,4 @@ dependencies:
   - tk
   - pip
   - pip:
-     - git+https://github.com/tsutterley/read-GRACE-geocenter.git
      - git+https://github.com/tsutterley/geoid-toolkit.git
