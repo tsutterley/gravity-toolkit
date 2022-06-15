@@ -15,6 +15,9 @@ read-GRACE-harmonics
 .. |License| image:: https://img.shields.io/github/license/tsutterley/read-grace-harmonics
    :target: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/LICENSE
 
+.. |PyPI Version| image:: https://img.shields.io/pypi/v/gravity-toolkit.svg
+   :target: https://pypi.python.org/pypi/gravity-toolkit/
+
 .. |Documentation Status| image:: https://readthedocs.org/projects/read-grace-harmonics/badge/?version=latest
    :target: https://read-grace-harmonics.readthedocs.io/en/latest/?badge=latest
 

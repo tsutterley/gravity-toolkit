@@ -2,7 +2,8 @@
 Installation
 ============
 
-Presently ``read-GRACE-harmonics`` is only available for use as a `GitHub repository <https://github.com/tsutterley/read-GRACE-harmonics>`_.
+``read-GRACE-harmonics`` is available for download from the `GitHub repository <https://github.com/tsutterley/read-GRACE-harmonics>`_,
+and the `Python Package Index (pypi) <https://pypi.org/project/gravity-toolkit/>`_,
 The contents of the repository can be download as a `zipped file <https://github.com/tsutterley/read-GRACE-harmonics/archive/main.zip>`_  or cloned.
 
 To use this repository, please fork into your own account and then clone onto your system:
