@@ -1,6 +1,7 @@
 boto3
 cartopy --no-binary=cartopy
 future
+geoid-toolkit
 h5py
 lxml
 matplotlib

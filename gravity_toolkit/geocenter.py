@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (06/2022)
 Data class for reading and processing geocenter data
 
 PYTHON DEPENDENCIES:
@@ -15,6 +15,7 @@ PYTHON DEPENDENCIES:
         https://github.com/yaml/pyyaml
 
 UPDATE HISTORY:
+    Updated 06/2022: drop external reader dependency for UCI format
     Updated 04/2022: updated docstrings to numpy documentation format
         include utf-8 encoding in reads to be windows compliant
     Updated 03/2022: add try/except for read_GRACE_geocenter
@@ -36,16 +37,11 @@ import copy
 import gzip
 import time
 import uuid
+import yaml
 import logging
 import netCDF4
-import warnings
 import numpy as np
 import gravity_toolkit.time
-try:
-    from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
-except ModuleNotFoundError:
-    warnings.filterwarnings("always")
-    warnings.warn("read_GRACE_geocenter not available")
 
 class geocenter(object):
     """
@@ -176,7 +172,8 @@ class geocenter(object):
         """
         Reads monthly geocenter spherical harmonic data files from
         `GFZ GravIS calculated using GRACE/GRACE-FO measurements
-        and Ocean Models of degree 1 <ftp://isdcftp.gfz-potsdam.de/grace/GravIS/GFZ/Level-2B/aux_data/GRAVIS-2B_GFZOP_GEOCENTER_0002.dat>`_
+        and Ocean Models of degree 1
+        <ftp://isdcftp.gfz-potsdam.de/grace/GravIS/GFZ/Level-2B/aux_data/GRAVIS-2B_GFZOP_GEOCENTER_0002.dat>`_
 
 
         Parameters
@@ -431,12 +428,13 @@ class geocenter(object):
 
     def from_UCI(self, geocenter_file, **kwargs):
         """
-        Reads geocenter file and extracts dates and spherical harmonic data
+        Reads monthly geocenter files computed using GRACE/GRACE-FO
+        measurements and ocean models [Swenson2008]_ [Sutterley2019]_
 
         Parameters
         ----------
         geocenter_file: str
-            degree 1 file
+            input datafile with geocenter coefficients
 
         References
         ----------
@@ -452,7 +450,78 @@ class geocenter(object):
         """
         #-- set filename
         self.case_insensitive_filename(geocenter_file)
-        DEG1 = read_GRACE_geocenter(self.filename)
+        #-- read geocenter file and get contents
+        with open(os.path.expanduser(geocenter_file), mode='r', encoding='utf8') as f:
+            file_contents = f.read().splitlines()
+        #-- number of lines contained in the file
+        file_lines = len(file_contents)
+
+        #-- counts the number of lines in the header
+        HEADER = False
+        count = 0
+        #-- Reading over header text
+        while (HEADER is False) and (count < file_lines):
+            #-- file line at count
+            line = file_contents[count]
+            #--if End of YAML Header is found: set HEADER flag
+            HEADER = bool(re.search("\# End of YAML header",line))
+            #-- add 1 to counter
+            count += 1
+
+        #-- verify HEADER flag was set
+        if not HEADER:
+            raise IOError('Data not found in file:\n\t{0}'.format(geocenter_file))
+
+        #-- number of months within the file
+        n_mon = np.int64(file_lines - count)
+        #-- output time variables
+        DEG1 = {}
+        DEG1['time'] = np.zeros((n_mon))
+        DEG1['JD'] = np.zeros((n_mon))
+        DEG1['month'] = np.zeros((n_mon), dtype=np.int64)
+        #-- parse the YAML header (specifying yaml loader)
+        DEG1.update(yaml.load('\n'.join(file_contents[:count]),
+            Loader=yaml.BaseLoader))
+
+        #-- compile numerical expression operator
+        regex_pattern = '[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
+        rx = re.compile(regex_pattern, re.VERBOSE)
+
+        #-- get names and columns of input variables
+        variables = copy.copy(DEG1['header']['variables'])
+        variables.pop('mid-epoch_time')
+        variables.pop('month')
+        columns = {}
+        #-- for each output data variable
+        for key in variables:
+            DEG1[key] = np.zeros((n_mon))
+            comment_text, = rx.findall(variables[key]['comment'])
+            columns[key] = int(comment_text) - 1
+
+        #-- for every other line:
+        for t, line in enumerate(file_contents[count:]):
+            #-- find numerical instances in line including integers, exponents,
+            #-- decimal points and negatives
+            line_contents = rx.findall(line)
+            #-- extacting mid-date time and GRACE/GRACE-FO "month"
+            DEG1['time'][t] = np.float64(line_contents[0])
+            DEG1['month'][t] = np.int64(line_contents[-1])
+            #-- calculate mid-date as Julian dates
+            #-- calendar year of date
+            year = np.floor(DEG1['time'][t])
+            #-- check if year is a leap year
+            days_per_year = np.sum(gravity_toolkit.time.calendar_days(year))
+            #-- calculation of day of the year
+            day_of_the_year = days_per_year*(DEG1['time'][t] % 1)
+            #-- calculate Julian day
+            DEG1['JD'][t] = np.float64(367.0*year - np.floor(7.0*(year)/4.0) -
+                np.floor(3.0*(np.floor((year - 8.0/7.0)/100.0) + 1.0)/4.0) +
+                np.floor(275.0/9.0) + day_of_the_year + 1721028.5)
+            #-- extract fully-normalized degree one spherical harmonics
+            for key,val in columns.items():
+                DEG1[key][t] = np.float64(line_contents[val])
+
+        #-- return the geocenter harmonics
         return self.from_dict(DEG1)
 
     def from_swenson(self, geocenter_file, **kwargs):

@@ -30,12 +30,16 @@
 .Rhistory
 __pycache__
 build/
-run/
+dist/
 develop-eggs/
+run/
 wheels/
+.eggs/
 *.egg-info/
 .installed.cfg
 *.egg
+.pytest_cache
+pythonenv*/
 # OS generated files #
 ######################
 .DS_Store
@@ -77,6 +81,7 @@ Thumbs.db
 *.sw*
 *.hidden
 None*.png
+*.gfc
 # Jupyter Checkpoints #
 #######################
 .ipynb_checkpoints

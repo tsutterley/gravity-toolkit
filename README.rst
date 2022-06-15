@@ -15,6 +15,9 @@ read-GRACE-harmonics
 .. |License| image:: https://img.shields.io/github/license/tsutterley/read-grace-harmonics
    :target: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/LICENSE
 
+.. |PyPI Version| image:: https://img.shields.io/pypi/v/gravity-toolkit.svg
+   :target: https://pypi.python.org/pypi/gravity-toolkit/
+
 .. |Documentation Status| image:: https://readthedocs.org/projects/read-grace-harmonics/badge/?version=latest
    :target: https://read-grace-harmonics.readthedocs.io/en/latest/?badge=latest
 
@@ -53,7 +56,6 @@ Dependencies
 - `cartopy: Python package designed for geospatial data processing <https://scitools.org.uk/cartopy/docs/latest/>`_
 - `netCDF4: Python interface to the netCDF C library <https://unidata.github.io/netcdf4-python/>`_
 - `h5py: Python interface for Hierarchal Data Format 5 (HDF5) <https://www.h5py.org/>`_
-- `read-GRACE-geocenter: Python reader for GRACE/GRACE-FO geocenter data <https://github.com/tsutterley/read-GRACE-geocenter/>`_
 - `geoid-toolkit: Python utilities for calculating geoid heights from static gravity field coefficients <https://github.com/tsutterley/geoid-toolkit/>`_
 
 References
