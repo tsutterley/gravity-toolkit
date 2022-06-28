@@ -26,6 +26,7 @@ WORKDIR /home/gravity
 RUN pip3 install --no-cache-dir --no-binary=cartopy \
         cartopy \
         future \
+        geoid-toolkit \
         h5py \
         lxml \
         matplotlib \
@@ -33,8 +34,7 @@ RUN pip3 install --no-cache-dir --no-binary=cartopy \
         numpy \
         python-dateutil \
         pyyaml \
-        scipy && \
-    pip3 install --no-cache-dir --no-deps git+https://github.com/tsutterley/geoid-toolkit.git
+        scipy
 
 COPY . .
 
