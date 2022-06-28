@@ -28,7 +28,7 @@ jobs:
       with:
         auto-update-conda: true
         python-version: ${{ matrix.python-version }}
-        activate-environment: read-GRACE-harmonics
+        activate-environment: gravity_toolkit
         environment-file: .binder/environment.yml
     - name: Create conda Test Environment
       run: |

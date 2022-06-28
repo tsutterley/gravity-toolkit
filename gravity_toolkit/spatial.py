@@ -1152,11 +1152,11 @@ class spatial(object):
         #-- output spatial with a third dimension
         if (np.ndim(self.data) == 2):
             self.data = self.data[:,:,None]
-        #-- try expanding mask variable
-        try:
-            self.mask = self.mask[:,:,None]
-        except Exception as e:
-            pass
+            #-- try expanding mask variable
+            try:
+                self.mask = self.mask[:,:,None]
+            except Exception as e:
+                pass
         #-- get spacing and dimensions
         self.update_spacing()
         self.update_extents()
