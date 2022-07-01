@@ -54,10 +54,10 @@ except (ImportError, ModuleNotFoundError) as e:
     warnings.warn("ipywidgets not available")
     warnings.warn("Some functions will throw an exception if called")
 try:
-    from tkinter import filedialog
+    from tkinter import Tk, filedialog
 except (ImportError, ModuleNotFoundError) as e:
     warnings.filterwarnings("always")
-    warnings.warn("filedialog not available")
+    warnings.warn("tkinter.filedialog not available")
     warnings.warn("Some functions will throw an exception if called")
     filedialog = None
 try:
@@ -136,7 +136,7 @@ class widgets:
         """function for directory selection
         """
         IPython.display.clear_output()
-        root = tkinter.Tk()
+        root = Tk()
         root.withdraw()
         root.call('wm', 'attributes', '.', '-topmost', True)
         b.directory = filedialog.askdirectory()
@@ -654,7 +654,7 @@ class widgets:
         """function for GIA file selection
         """
         IPython.display.clear_output()
-        root = tkinter.Tk()
+        root = Tk()
         root.withdraw()
         root.call('wm', 'attributes', '.', '-topmost', True)
         filetypes = (("All Files", "*.*"))
@@ -667,7 +667,7 @@ class widgets:
         """function for removed file selection
         """
         IPython.display.clear_output()
-        root = tkinter.Tk()
+        root = Tk()
         root.withdraw()
         root.call('wm', 'attributes', '.', '-topmost', True)
         filetypes = (("ascii file", "*.txt"),
@@ -698,7 +698,7 @@ class widgets:
         """function for mask file selection
         """
         IPython.display.clear_output()
-        root = tkinter.Tk()
+        root = Tk()
         root.withdraw()
         root.call('wm', 'attributes', '.', '-topmost', True)
         filetypes = (("netCDF file", "*.nc"),
