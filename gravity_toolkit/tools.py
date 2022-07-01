@@ -89,7 +89,7 @@ class widgets:
 
         Attributes
         ----------
-        directory: obj
+        directory_label: obj
             Text widget for setting working data directory
         directory_button: obj
             Button widget for setting working data directory with
@@ -442,14 +442,14 @@ class widgets:
 
         Attributes
         ----------
-        GIA_file: obj
+        GIA_label: obj
             Text entry widget for setting GIA correction file
         GIA_button: obj
             Button widget for setting GIA correction file with
             `Tkinter file dialog <https://docs.python.org/3/library/dialog.html>`_
         GIA: obj
             Dropdown menu for setting GIA model file type
-        remove_file: obj
+        remove_label: obj
             Text entry widget for setting spherical harmonic files to be removed
         remove_button: obj
             Button widget for setting remove files with
@@ -458,7 +458,7 @@ class widgets:
             Dropdown menu for setting remove file type
         redistribute_removed: obj
             Checkbox widget for redestributing removed file mass over the ocean
-        mask: obj
+        mask_label: obj
             Text entry widget for setting land-sea mask file for ocean redistribution
         mask_button: obj
             Button widget for setting land-sea mask files with
@@ -735,10 +735,16 @@ class widgets:
         return os.path.expanduser(self.directory_label.value)
 
     @property
+    def GIA_model(self):
+        """Returns the GIA model file
+        """
+        return os.path.expanduser(self.GIA_label.value)
+
+    @property
     def landmask(self):
         """Returns the land-sea mask file
         """
-        return os.path.expanduser(self.mask.value)
+        return os.path.expanduser(self.mask_label.value)
 
     @property
     def unit_index(self):
