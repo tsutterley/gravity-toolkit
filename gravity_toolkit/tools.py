@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 tools.py
-Written by Tyler Sutterley (05/2022)
+Written by Tyler Sutterley (06/2022)
 Jupyter notebook, user interface and plotting tools
 
 PYTHON DEPENDENCIES:
@@ -27,6 +27,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 06/2022: place ipython and tkinter imports within try/except
     Updated 05/2022: adjusted mask oceans function to be able to output mask
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 12/2021: added custom colormap function for some common scales
@@ -36,17 +37,39 @@ import os
 import re
 import copy
 import colorsys
-import ipywidgets
+import warnings
 import numpy as np
-import IPython.display
 import scipy.interpolate
-import tkinter.filedialog
 import matplotlib.cm as cm
 import matplotlib.colors as colors
 from gravity_toolkit.spatial import spatial
 from gravity_toolkit.utilities import get_data_path
 from gravity_toolkit.grace_find_months import grace_find_months
 
+# imports with warnings if not present
+try:
+    import ipywidgets
+except (ImportError, ModuleNotFoundError) as e:
+    warnings.filterwarnings("always")
+    warnings.warn("ipywidgets not available")
+    warnings.warn("Some functions will throw an exception if called")
+try:
+    from tkinter import Tk, filedialog
+except (ImportError, ModuleNotFoundError) as e:
+    warnings.filterwarnings("always")
+    warnings.warn("tkinter.filedialog not available")
+    warnings.warn("Some functions will throw an exception if called")
+    filedialog = None
+try:
+    import IPython.display
+except (ImportError, ModuleNotFoundError) as e:
+    warnings.filterwarnings("always")
+    warnings.warn("IPython.display not available")
+    warnings.warn("Some functions will throw an exception if called")
+# ignore warnings
+warnings.filterwarnings('ignore')
+
+# widgets for Jupyter notebooks
 class widgets:
     def __init__(self, **kwargs):
         """Widgets and functions for running GRACE/GRACE-FO analyses
@@ -66,7 +89,7 @@ class widgets:
 
         Attributes
         ----------
-        directory: obj
+        directory_label: obj
             Text widget for setting working data directory
         directory_button: obj
             Button widget for setting working data directory with
@@ -76,7 +99,7 @@ class widgets:
         """
 
         # set the directory with GRACE/GRACE-FO data
-        self.directory = ipywidgets.Text(
+        self.directory_label = ipywidgets.Text(
             value=kwargs['directory'],
             description='Directory:',
             disabled=False,
@@ -88,8 +111,17 @@ class widgets:
             mustexist="False",
             width="30%",
         )
+        # create hbox of directory selection
+        if os.environ.get("DISPLAY") and (filedialog is not None):
+            self.directory = ipywidgets.HBox([
+                self.directory_label,
+                self.directory_button
+            ])
+        else:
+            self.directory = copy.copy(self.directory_label)
         # connect directory select button with action
         self.directory_button.on_click(self.set_directory)
+
         # update local data with PO.DAAC https servers
         self.update = ipywidgets.Checkbox(
             value=True,
@@ -104,11 +136,11 @@ class widgets:
         """function for directory selection
         """
         IPython.display.clear_output()
-        root = tkinter.Tk()
+        root = Tk()
         root.withdraw()
         root.call('wm', 'attributes', '.', '-topmost', True)
-        b.directory = tkinter.filedialog.askdirectory()
-        self.directory.value = copy.copy(b.directory)
+        b.directory = filedialog.askdirectory()
+        self.directory_label.value = copy.copy(b.directory)
 
     def select_product(self):
         """
@@ -410,14 +442,14 @@ class widgets:
 
         Attributes
         ----------
-        GIA_file: obj
+        GIA_label: obj
             Text entry widget for setting GIA correction file
         GIA_button: obj
             Button widget for setting GIA correction file with
             `Tkinter file dialog <https://docs.python.org/3/library/dialog.html>`_
         GIA: obj
             Dropdown menu for setting GIA model file type
-        remove_file: obj
+        remove_label: obj
             Text entry widget for setting spherical harmonic files to be removed
         remove_button: obj
             Button widget for setting remove files with
@@ -426,7 +458,7 @@ class widgets:
             Dropdown menu for setting remove file type
         redistribute_removed: obj
             Checkbox widget for redestributing removed file mass over the ocean
-        mask: obj
+        mask_label: obj
             Text entry widget for setting land-sea mask file for ocean redistribution
         mask_button: obj
             Button widget for setting land-sea mask files with
@@ -447,7 +479,7 @@ class widgets:
 
         # set the GIA file
         # files come in different formats depending on the group
-        self.GIA_file = ipywidgets.Text(
+        self.GIA_label = ipywidgets.Text(
             value='',
             description='GIA File:',
             disabled=False,
@@ -458,6 +490,14 @@ class widgets:
             description="File select",
             width="30%",
         )
+        # create hbox of GIA file selection
+        if os.environ.get("DISPLAY") and (filedialog is not None):
+            self.GIA_file = ipywidgets.HBox([
+                self.GIA_label,
+                self.GIA_button
+            ])
+        else:
+            self.GIA_file = copy.copy(self.GIA_label)
         # connect fileselect button with action
         self.GIA_button.on_click(self.select_GIA_file)
 
@@ -487,20 +527,27 @@ class widgets:
 
         # set the files to be removed
         self.remove_files = []
-        self.remove_file = ipywidgets.Text(
+        self.remove_label = ipywidgets.Text(
             value='',
             description='Rem. Files:',
             disabled=False,
             style=self.style,
         )
-
         # button and label for input file selection
         self.remove_button = ipywidgets.Button(
             description="File select",
         )
+        # create hbox of remove file selection
+        if os.environ.get("DISPLAY") and (filedialog is not None):
+            self.remove_file = ipywidgets.HBox([
+                self.remove_label,
+                self.remove_button
+            ])
+        else:
+            self.remove_file = copy.copy(self.remove_label)
         # connect fileselect button with action
         self.remove_button.on_click(self.select_remove_file)
-        self.remove_file.observe(self.set_removefile)
+        self.remove_label.observe(self.set_removefile)
 
         # dropdown menu for setting remove file type
         # netCDF4: single netCDF4 file
@@ -527,7 +574,7 @@ class widgets:
         )
 
         # path to land-sea mask for ocean redistribution
-        self.mask = ipywidgets.Text(
+        self.mask_label = ipywidgets.Text(
             value='',
             description='Mask File:',
             disabled=False,
@@ -538,6 +585,14 @@ class widgets:
             description="File select",
             width="30%",
         )
+        # create hbox of remove file selection
+        if os.environ.get("DISPLAY") and (filedialog is not None):
+            self.mask = ipywidgets.HBox([
+                self.mask_label,
+                self.mask_button
+            ])
+        else:
+            self.mask = copy.copy(self.mask_label)
         # connect fileselect button with action
         self.mask_button.on_click(self.select_mask_file)
 
@@ -599,27 +654,27 @@ class widgets:
         """function for GIA file selection
         """
         IPython.display.clear_output()
-        root = tkinter.Tk()
+        root = Tk()
         root.withdraw()
         root.call('wm', 'attributes', '.', '-topmost', True)
         filetypes = (("All Files", "*.*"))
-        b.files = tkinter.filedialog.askopenfilename(
+        b.files = filedialog.askopenfilename(
             filetypes=filetypes,
             multiple=False)
-        self.GIA_file.value = copy.copy(b.files)
+        self.GIA_label.value = copy.copy(b.files)
 
     def select_remove_file(self, b):
         """function for removed file selection
         """
         IPython.display.clear_output()
-        root = tkinter.Tk()
+        root = Tk()
         root.withdraw()
         root.call('wm', 'attributes', '.', '-topmost', True)
         filetypes = (("ascii file", "*.txt"),
             ("HDF5 file", "*.h5"),
             ("netCDF file", "*.nc"),
             ("All Files", "*.*"))
-        b.files = tkinter.filedialog.askopenfilename(
+        b.files = filedialog.askopenfilename(
             defaultextension='nc',
             filetypes=filetypes,
             multiple=True)
@@ -630,29 +685,29 @@ class widgets:
         """function for updating removed file list
         """
         if self.remove_file.value:
-            self.remove_files = self.remove_file.value.split(',')
+            self.remove_files = self.remove_label.value.split(',')
         else:
             self.remove_files = []
 
     def set_removelabel(self):
         """function for updating removed file label
         """
-        self.remove_file.value = ','.join(self.remove_files)
+        self.remove_label.value = ','.join(self.remove_files)
 
     def select_mask_file(self, b):
         """function for mask file selection
         """
         IPython.display.clear_output()
-        root = tkinter.Tk()
+        root = Tk()
         root.withdraw()
         root.call('wm', 'attributes', '.', '-topmost', True)
         filetypes = (("netCDF file", "*.nc"),
             ("All Files", "*.*"))
-        b.files = tkinter.filedialog.askopenfilename(
+        b.files = filedialog.askopenfilename(
             defaultextension='nc',
             filetypes=filetypes,
             multiple=False)
-        self.mask.value = copy.copy(b.files)
+        self.mask_label.value = copy.copy(b.files)
 
     def select_output(self, **kwargs):
         """
@@ -677,13 +732,19 @@ class widgets:
     def base_directory(self):
         """Returns the data directory
         """
-        return os.path.expanduser(self.directory.value)
+        return os.path.expanduser(self.directory_label.value)
+
+    @property
+    def GIA_model(self):
+        """Returns the GIA model file
+        """
+        return os.path.expanduser(self.GIA_label.value)
 
     @property
     def landmask(self):
         """Returns the land-sea mask file
         """
-        return os.path.expanduser(self.mask.value)
+        return os.path.expanduser(self.mask_label.value)
 
     @property
     def unit_index(self):
