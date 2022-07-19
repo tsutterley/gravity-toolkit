@@ -64,7 +64,7 @@ Continuous Integration
 ^^^^^^^^^^^^^^^^^^^^^^
 We use `GitHub Actions <https://github.com/tsutterley/read-GRACE-harmonics/actions>`_ continuous integration (CI) services to build and test the project on Linux (Ubuntu) and Mac Operating Systems.
 The configuration files for this service are in `.github/workflows <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/.github/workflows>`_.
-The workflows rely on the `requirements.txt <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/requirements.txt>`_ and `test requirements.txt <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/test/requirements.txt>`_ files to install the required dependencies.
+The workflows rely on the `environment.yml <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/.binder/environment.yml>`_ and test `requirements.txt <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/test/requirements.txt>`_ files to install the required dependencies.
 
 The GitHub Actions jobs include:
 
