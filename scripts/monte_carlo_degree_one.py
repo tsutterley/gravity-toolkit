@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 monte_carlo_degree_one.py
-Written by Tyler Sutterley (05/2022)
+Written by Tyler Sutterley (07/2022)
 
 Calculates degree 1 errors using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from OMCT/MPIOM in a Monte Carlo scheme
@@ -143,6 +143,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 07/2022: set plot tick formatter to not use offsets
     Updated 05/2022: use argparse descriptions within documentation
         use GIA reference and citation output from GIA read program
         use command line option to set degree 1 gravitational love number
@@ -192,7 +193,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.offsetbox import AnchoredText
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+from matplotlib.ticker import MultipleLocator
 import gravity_toolkit.utilities as utilities
 from gravity_toolkit.grace_input_months import grace_input_months, \
     read_ecmwf_corrections
@@ -803,7 +804,7 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
         ax[2].set_xlabel('Grace Month', fontsize=14)
         ax[2].set_xlim(np.floor(months[0]/10.)*10.,np.ceil(months[-1]/10.)*10.)
         ax[2].xaxis.set_minor_locator(MultipleLocator(5))
-        ax[2].xaxis.set_major_formatter(FormatStrFormatter('%0.0f'))
+        ax[2].xaxis.get_major_formatter().set_useOffset(False)
         #-- add axis labels and adjust font sizes for axis ticks
         for i,lbl in enumerate(['C10','C11','S11']):
             #-- axis label

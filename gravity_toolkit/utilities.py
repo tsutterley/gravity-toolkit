@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (05/2022)
+Written by Tyler Sutterley (07/2022)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
@@ -9,6 +9,7 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/lxml
 
 UPDATE HISTORY:
+    Updated 07/2022: add s3 endpoints and buckets for Earthdata Cumulus
     Updated 05/2022: function for extracting bucket name from presigned url
     Updated 04/2022: updated docstrings to numpy documentation format
         update CMR queries to prepare for version 1 of RL06
@@ -759,8 +760,29 @@ def build_opener(username, password, context=ssl.SSLContext(),
     #-- HTTPPasswordMgrWithDefaultRealm will be confused.
     return opener
 
+# NASA Cumulus AWS S3 credential endpoints
+_s3_endpoints = {
+    'gesdisc': 'https://data.gesdisc.earthdata.nasa.gov/s3credentials',
+    'ghrcdaac': 'https://data.ghrc.earthdata.nasa.gov/s3credentials',
+    'lpdaac': 'https://data.lpdaac.earthdatacloud.nasa.gov/s3credentials',
+    'nsidc': 'https://data.nsidc.earthdatacloud.nasa.gov/s3credentials',
+    'ornldaac': 'https://data.ornldaac.earthdata.nasa.gov/s3credentials',
+    'podaac': 'https://archive.podaac.earthdata.nasa.gov/s3credentials'
+}
+
+# NASA Cumulus AWS S3 buckets
+_s3_buckets = {
+    'gesdisc': 'gesdisc-cumulus-prod-protected',
+    'ghrcdaac': 'ghrc-cumulus-dev',
+    'lpdaac': 'lp-prod-protected',
+    'nsidc': 'nsidc-cumulus-prod-protected',
+    'ornldaac': 'ornl-cumulus-prod-protected',
+    'podaac': 'podaac-ops-cumulus-protected'
+}
+
 #-- PURPOSE: get AWS s3 client for PO.DAAC Cumulus
-def s3_client(HOST=None, timeout=None, region_name='us-west-2'):
+def s3_client(HOST=_s3_endpoints['podaac'], timeout=None,
+    region_name='us-west-2'):
     """
     Get AWS s3 client for PO.DAAC Cumulus
 

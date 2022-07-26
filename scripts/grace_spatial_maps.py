@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_maps.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (07/2022)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly spatial fields
@@ -144,6 +144,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 07/2022: create mask for output gridded variables
     Updated 04/2022: use wrapper function for reading load Love numbers
         use argparse descriptions within sphinx documentation
     Updated 12/2021: can use variable loglevels for verbose output
@@ -437,6 +438,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         grid.data = harmonic_summation(Ylms.clm, Ylms.slm,
             grid.lon, grid.lat, LMIN=LMIN, LMAX=LMAX,
             MMAX=MMAX, PLM=PLM).T
+        grid.mask = np.zeros_like(grid.data, dtype=bool)
         #-- copy time variables for month
         grid.time = np.copy(Ylms.time)
         grid.month = np.copy(Ylms.month)
