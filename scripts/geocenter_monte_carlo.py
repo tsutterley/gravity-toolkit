@@ -28,9 +28,7 @@ import matplotlib
 import matplotlib.font_manager
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-import matplotlib.colors as colors
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
-from matplotlib.offsetbox import AnchoredText,AnchoredOffsetbox,TextArea,VPacker
+from matplotlib.offsetbox import AnchoredText
 from gravity_toolkit.time import convert_calendar_decimal
 import gravity_toolkit.geocenter as geocenter
 

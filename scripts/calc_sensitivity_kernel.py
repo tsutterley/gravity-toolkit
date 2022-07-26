@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_sensitivity_kernel.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (07/2022)
 
 Calculates spatial sensitivity kernels through a least-squares mascon procedure
 
@@ -75,6 +75,7 @@ REFERENCES:
         https://doi.org/10.1029/2009GL039401
 
 UPDATE HISTORY:
+    Updated 07/2022: create mask for output gridded variables
     Updated 04/2022: use wrapper function for reading load Love numbers
         include utf-8 encoding in reads to be windows compliant
         use argparse descriptions within sphinx documentation
@@ -385,6 +386,7 @@ def calc_sensitivity_kernel(LMAX, RAD,
         #-- convert spherical harmonics to output spatial grid
         grid.data = harmonic_summation(kern_Ylms.clm, kern_Ylms.slm,
             grid.lon, grid.lat, LMAX=LMAX, MMAX=MMAX, PLM=PLM).T
+        grid.mask = np.zeros_like(grid.data, dtype=bool)
         grid.time = total_area[k]
 
         #-- output names for sensitivity kernel Ylm and spatial files

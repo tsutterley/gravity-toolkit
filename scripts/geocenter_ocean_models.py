@@ -39,8 +39,7 @@ import matplotlib
 matplotlib.rcParams['font.family'] = 'sans-serif'
 matplotlib.rcParams['font.sans-serif'] = ['Helvetica']
 matplotlib.rcParams['mathtext.default'] = 'regular'
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
-from matplotlib.offsetbox import AnchoredText,AnchoredOffsetbox,TextArea,VPacker
+from matplotlib.offsetbox import AnchoredText
 import gravity_toolkit.geocenter as geocenter
 
 #-- PURPOSE: plots the GRACE/GRACE-FO geocenter time series

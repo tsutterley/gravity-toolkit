@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 combine_harmonics.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (07/2022)
 Converts a file from the spherical harmonic domain into the spatial domain
 
 CALLING SEQUENCE:
@@ -68,6 +68,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 07/2022: create mask for output gridded variables
     Updated 04/2022: use wrapper function for reading load Love numbers
         use argparse descriptions within sphinx documentation
     Updated 12/2021: can use variable loglevels for verbose output
@@ -230,6 +231,7 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
         nlat = len(grid.lat)
     #-- output spatial grid
     grid.data = np.zeros((nlat,nlon,nt))
+    grid.mask = np.zeros((nlat,nlon,nt), dtype=bool)
     #-- update attributes
     grid.update_spacing()
     grid.update_extents()
