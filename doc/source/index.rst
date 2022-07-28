@@ -14,7 +14,6 @@ missions
     getting_started/Install.rst
     getting_started/Background.rst
     getting_started/Getting-Started.rst
-    getting_started/Examples.rst
     getting_started/NASA-Earthdata.rst
     getting_started/GRACE-Data-File-Formats.rst
     getting_started/Spatial-Maps.rst
@@ -29,87 +28,94 @@ missions
     :hidden:
     :caption: User Guide
 
-    user_guide/clenshaw_summation.rst
-    user_guide/degree_amplitude.rst
-    user_guide/destripe_harmonics.rst
-    user_guide/fourier_legendre.rst
-    user_guide/gauss_weights.rst
-    user_guide/gen_averaging_kernel.rst
-    user_guide/gen_disc_load.rst
-    user_guide/gen_harmonics.rst
-    user_guide/gen_point_load.rst
-    user_guide/gen_spherical_cap.rst
-    user_guide/gen_stokes.rst
-    user_guide/geocenter.rst
-    user_guide/grace_date.rst
-    user_guide/grace_find_months.rst
-    user_guide/grace_input_months.rst
-    user_guide/grace_months_index.rst
-    user_guide/harmonic_summation.rst
-    user_guide/harmonics.rst
-    user_guide/legendre.rst
-    user_guide/legendre_polynomials.rst
-    user_guide/mascons.rst
-    user_guide/ocean_stokes.rst
-    user_guide/piecewise_regress.rst
-    user_guide/plm_colombo.rst
-    user_guide/plm_holmes.rst
-    user_guide/plm_mohlenkamp.rst
-    user_guide/read_gfc_harmonics.rst
-    user_guide/read_GIA_model.rst
-    user_guide/read_GRACE_harmonics.rst
-    user_guide/read_love_numbers.rst
-    user_guide/read_SLR_C20.rst
-    user_guide/read_SLR_CS2.rst
-    user_guide/read_SLR_C30.rst
-    user_guide/read_SLR_C50.rst
-    user_guide/read_SLR_harmonics.rst
-    user_guide/savitzky_golay.rst
-    user_guide/sea_level_equation.rst
-    user_guide/spatial.rst
-    user_guide/time.rst
-    user_guide/tools.rst
-    user_guide/tsamplitude.rst
-    user_guide/tsregress.rst
-    user_guide/tssmooth.rst
-    user_guide/units.rst
-    user_guide/utilities.rst
+    user_guide/Examples.rst
+
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+    :caption: API Reference
+
+    api_reference/clenshaw_summation.rst
+    api_reference/degree_amplitude.rst
+    api_reference/destripe_harmonics.rst
+    api_reference/fourier_legendre.rst
+    api_reference/gauss_weights.rst
+    api_reference/gen_averaging_kernel.rst
+    api_reference/gen_disc_load.rst
+    api_reference/gen_harmonics.rst
+    api_reference/gen_point_load.rst
+    api_reference/gen_spherical_cap.rst
+    api_reference/gen_stokes.rst
+    api_reference/geocenter.rst
+    api_reference/grace_date.rst
+    api_reference/grace_find_months.rst
+    api_reference/grace_input_months.rst
+    api_reference/grace_months_index.rst
+    api_reference/harmonic_summation.rst
+    api_reference/harmonics.rst
+    api_reference/legendre.rst
+    api_reference/legendre_polynomials.rst
+    api_reference/mascons.rst
+    api_reference/ocean_stokes.rst
+    api_reference/piecewise_regress.rst
+    api_reference/plm_colombo.rst
+    api_reference/plm_holmes.rst
+    api_reference/plm_mohlenkamp.rst
+    api_reference/read_gfc_harmonics.rst
+    api_reference/read_GIA_model.rst
+    api_reference/read_GRACE_harmonics.rst
+    api_reference/read_love_numbers.rst
+    api_reference/read_SLR_C20.rst
+    api_reference/read_SLR_CS2.rst
+    api_reference/read_SLR_C30.rst
+    api_reference/read_SLR_C50.rst
+    api_reference/read_SLR_harmonics.rst
+    api_reference/savitzky_golay.rst
+    api_reference/sea_level_equation.rst
+    api_reference/spatial.rst
+    api_reference/time.rst
+    api_reference/tools.rst
+    api_reference/tsamplitude.rst
+    api_reference/tsregress.rst
+    api_reference/tssmooth.rst
+    api_reference/units.rst
+    api_reference/utilities.rst
 
 .. toctree::
     :maxdepth: 1
     :hidden:
     :caption: Utilities
 
-    user_guide/cnes_grace_sync.rst
-    user_guide/esa_costg_swarm_sync.rst
-    user_guide/gfz_icgem_costg_ftp.rst
-    user_guide/gfz_isdc_dealiasing_ftp.rst
-    user_guide/gfz_isdc_grace_ftp.rst
-    user_guide/itsg_graz_grace_sync.rst
-    user_guide/podaac_cumulus.rst
-    user_guide/podaac_grace_sync.rst
-    user_guide/podaac_webdav.rst
+    api_reference/cnes_grace_sync.rst
+    api_reference/esa_costg_swarm_sync.rst
+    api_reference/gfz_icgem_costg_ftp.rst
+    api_reference/gfz_isdc_dealiasing_ftp.rst
+    api_reference/gfz_isdc_grace_ftp.rst
+    api_reference/itsg_graz_grace_sync.rst
+    api_reference/podaac_cumulus.rst
+    api_reference/podaac_grace_sync.rst
+    api_reference/podaac_webdav.rst
 
 .. toctree::
     :maxdepth: 1
     :hidden:
     :caption: Use Cases
 
-    user_guide/aod1b_geocenter.rst
-    user_guide/aod1b_oblateness.rst
-    user_guide/calc_degree_one.rst
-    user_guide/calc_mascon.rst
-    user_guide/calc_harmonic_resolution.rst
-    user_guide/calc_sensitivity_kernel.rst
-    user_guide/combine_harmonics.rst
-    user_guide/convert_harmonics.rst
-    user_guide/dealiasing_monthly_mean.rst
-    user_guide/grace_mean_harmonics.rst
-    user_guide/grace_spatial_error.rst
-    user_guide/grace_spatial_maps.rst
-    user_guide/mascon_reconstruct.rst
-    user_guide/monte_carlo_degree_one.rst
-    user_guide/regress_grace_maps.rst
-    user_guide/run_grace_date.rst
-    user_guide/run_sea_level_equation.rst
-    user_guide/scale_grace_maps.rst
+    api_reference/aod1b_geocenter.rst
+    api_reference/aod1b_oblateness.rst
+    api_reference/calc_degree_one.rst
+    api_reference/calc_mascon.rst
+    api_reference/calc_harmonic_resolution.rst
+    api_reference/calc_sensitivity_kernel.rst
+    api_reference/combine_harmonics.rst
+    api_reference/convert_harmonics.rst
+    api_reference/dealiasing_monthly_mean.rst
+    api_reference/grace_mean_harmonics.rst
+    api_reference/grace_spatial_error.rst
+    api_reference/grace_spatial_maps.rst
+    api_reference/mascon_reconstruct.rst
+    api_reference/monte_carlo_degree_one.rst
+    api_reference/regress_grace_maps.rst
+    api_reference/run_grace_date.rst
+    api_reference/run_sea_level_equation.rst
+    api_reference/scale_grace_maps.rst
