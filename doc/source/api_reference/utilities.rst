@@ -73,6 +73,8 @@ General Methods
 
 .. autofunction:: gravity_toolkit.utilities.cmr
 
+.. autofunction:: gravity_toolkit.utilities.compile_regex_pattern
+
 .. autofunction:: gravity_toolkit.utilities.from_figshare
 
 .. autofunction:: gravity_toolkit.utilities.to_figshare

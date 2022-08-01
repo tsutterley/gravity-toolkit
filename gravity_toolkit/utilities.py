@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (07/2022)
+Written by Tyler Sutterley (08/2022)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
@@ -9,6 +9,7 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/lxml
 
 UPDATE HISTORY:
+    Updated 08/2022: add regular expression function for finding files
     Updated 07/2022: add s3 endpoints and buckets for Earthdata Cumulus
     Updated 05/2022: function for extracting bucket name from presigned url
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -1344,6 +1345,101 @@ def cmr(mission=None, center=None, release=None, level='L2', product=None,
         granule_mtimes.extend(mtimes)
     #-- return the list of granule ids, urls and modification times
     return (granule_names, granule_urls, granule_mtimes)
+
+#-- PURPOSE: create and compile regular expression operator to find GRACE files
+def compile_regex_pattern(PROC, DREL, DSET, mission=None,
+    solution='BA01', version='0'):
+    """
+    Compile regular expressor operators for finding a specified
+    subset of GRACE/GRACE-FO level-2 spherical harmonic files
+
+    Parameters
+    ----------
+    PROC: str
+        GRACE/GRACE-FO data processing center
+
+            - ``'CNES'``: French Centre National D'Etudes Spatiales
+            - ``'CSR'``: University of Texas Center for Space Research
+            - ``'GFZ'``: German Research Centre for Geosciences (GeoForschungsZentrum)
+            - ``'JPL'``: Jet Propulsion Laboratory
+    DREL: str
+        GRACE/GRACE-FO data release
+    DSET: str
+        GRACE/GRACE-FO data product
+
+            - ``'GAA'``: non-tidal atmospheric correction
+            - ``'GAB'``: non-tidal oceanic correction
+            - ``'GAC'``: combined non-tidal atmospheric and oceanic correction
+            - ``'GAD'``: ocean bottom pressure product
+            - ``'GSM'``: corrected monthly static gravity field product
+    mission: str or NoneType, default None
+        GRACE/GRACE-FO mission shortname
+
+            - ``'GRAC'``: GRACE
+            - ``'GRFO'``: GRACE-FO
+    solution: str, default 'BA01'
+        monthly gravity field solution for Release-06
+
+            - ``'BA01'``: unconstrained monthly gravity field solution to d/o 60
+            - ``'BB01'``: unconstrained monthly gravity field solution to d/o 96
+            - ``'BC01'``: computed monthly dealiasing solution to d/o 180
+    version: str, default '0'
+        GRACE/GRACE-FO Level-2 data version
+    """
+    #-- verify inputs
+    if mission and mission not in ('GRAC','GRFO'):
+        raise ValueError('Unknown mission {0}'.format(mission))
+    if PROC not in ('CNES','CSR','GFZ','JPL'):
+        raise ValueError('Unknown processing center {0}'.format(PROC))
+    if DSET not in ('GAA','GAB','GAC','GAD','GSM'):
+        raise ValueError('Unknown Level-2 product {0}'.format(DSET))
+    #-- compile regular expression operator for inputs
+    if ((DSET == 'GSM') and (PROC == 'CSR') and (DREL in ('RL04','RL05'))):
+        #-- CSR GSM: only monthly degree 60 products
+        #-- not the longterm degree 180, degree 96 dataset or the
+        #-- special order 30 datasets for the high-resonance months
+        release, = re.findall(r'\d+', DREL)
+        args = (DSET, int(release))
+        pattern = r'{0}-2_\d+-\d+_\d+_UTCSR_0060_000{1:d}(\.gz)?$'
+    elif ((DSET == 'GSM') and (PROC == 'CSR') and (DREL == 'RL06')):
+        #-- CSR GSM RL06: monthly products for mission and solution
+        release, = re.findall(r'\d+', DREL)
+        args = (DSET, mission, solution, release.zfill(2), version.zfill(2))
+        pattern = r'{0}-2_\d+-\d+_{1}_UTCSR_{2}_{3}{4}(\.gz)?$'
+    elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL04')):
+        #-- GFZ RL04: only unconstrained solutions (not GK2 products)
+        args = (DSET,)
+        pattern = r'{0}-2_\d+-\d+_\d+_EIGEN_G---_0004(\.gz)?$'
+    elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL05')):
+        #-- GFZ RL05: updated RL05a products which are less constrained to
+        #-- the background model.  Allow regularized fields
+        args = (DSET, r'(G---|GK2-)')
+        pattern = r'{0}-2_\d+-\d+_\d+_EIGEN_{1}_005a(\.gz)?$'
+    elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL06')):
+        #-- GFZ GSM RL06: monthly products for mission and solution
+        release, = re.findall(r'\d+', DREL)
+        args = (DSET, mission, solution, release.zfill(2), version.zfill(2))
+        pattern = r'{0}-2_\d+-\d+_{1}_GFZOP_{2}_{3}{4}(\.gz)?$'
+    elif (PROC == 'JPL') and DREL in ('RL04','RL05'):
+        #-- JPL: RL04a and RL05a products (denoted by 0001)
+        release, = re.findall(r'\d+', DREL)
+        args = (DSET, int(release))
+        pattern = r'{0}-2_\d+-\d+_\d+_JPLEM_0001_000{1:d}(\.gz)?$'
+    elif ((DSET == 'GSM') and (PROC == 'JPL') and (DREL == 'RL06')):
+        #-- JPL GSM RL06: monthly products for mission and solution
+        release, = re.findall(r'\d+', DREL)
+        args = (DSET, mission, solution, release.zfill(2), version.zfill(2))
+        pattern = r'{0}-2_\d+-\d+_{1}_JPLEM_{2}_{3}{4}(\.gz)?$'
+    elif (PROC == 'CNES'):
+        #-- CNES: use products in standard format
+        args = (DSET,)
+        pattern = r'{0}-2_\d+-\d+_\d+_GRGS_([a-zA-Z0-9_\-]+)(\.txt)?(\.gz)?$'
+    else:
+        #-- deliasing products: use products in standard format
+        args = (DSET,)
+        pattern = r'{0}-2_([a-zA-Z0-9_\-]+)(\.gz)?$'.format(DSET)
+    #-- return the compiled regular expression operator
+    return re.compile(pattern.format(*args), re.VERBOSE)
 
 #-- PURPOSE: download geocenter files from Sutterley and Velicogna (2019)
 #-- https://doi.org/10.3390/rs11182108

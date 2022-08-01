@@ -30,6 +30,13 @@ COMMAND LINE OPTIONS:
     --fit-method X: method for fitting sensitivity kernel to harmonics
         1: mass coefficients
         2: geoid coefficients
+    -s, --spatial: Output spatial grid file for each mascon
+    -S X, --spacing X: spatial resolution of output data (dlon,dlat)
+    -I X, --interval X: Output grid interval
+        1: global
+        2: centered global
+        3: non-global
+    -B X, --bounds X: non-global grid bounding box (minlon,maxlon,minlat,maxlat)
     --log: Output log of files created for each job
     -V, --verbose: Verbose output of processing run
     -M X, --mode X: Permissions mode of the files created
@@ -76,6 +83,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 07/2022: create mask for output gridded variables
+        made creating the spatial outputs optional to improve compute time
     Updated 04/2022: use wrapper function for reading load Love numbers
         include utf-8 encoding in reads to be windows compliant
         use argparse descriptions within sphinx documentation
@@ -162,13 +170,15 @@ def calc_sensitivity_kernel(LMAX, RAD,
     REDISTRIBUTE_MASCONS=False,
     FIT_METHOD=0,
     LANDMASK=None,
+    SPATIAL=False,
     DDEG=None,
     INTERVAL=None,
+    BOUNDS=None,
     OUTPUT_DIRECTORY=None,
     MODE=0o775):
 
     #-- file information
-    suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
+    suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')[DATAFORM]
     #-- file parser for reading index files
     #-- removes commented lines (can comment out files in the index)
     #-- removes empty lines (if there are extra empty lines)
@@ -255,28 +265,6 @@ def calc_sensitivity_kernel(LMAX, RAD,
     #-- create single harmonics object from list
     mascon_Ylms = harmonics().from_list(mascon_list, date=False)
 
-    #-- Output spatial data object
-    grid = spatial()
-    #-- Output Degree Spacing
-    dlon,dlat = (DDEG[0],DDEG[0]) if (len(DDEG) == 1) else (DDEG[0],DDEG[1])
-    #-- Output Degree Interval
-    if (INTERVAL == 1):
-        #-- (-180:180,90:-90)
-        n_lon = np.int64((360.0/dlon)+1.0)
-        n_lat = np.int64((180.0/dlat)+1.0)
-        grid.lon = -180 + dlon*np.arange(0,n_lon)
-        grid.lat = 90.0 - dlat*np.arange(0,n_lat)
-    elif (INTERVAL == 2):
-        #-- (Degree spacing)/2
-        grid.lon = np.arange(-180+dlon/2.0,180+dlon/2.0,dlon)
-        grid.lat = np.arange(90.0-dlat/2.0,-90.0-dlat/2.0,-dlat)
-        n_lon = len(grid.lon)
-        n_lat = len(grid.lat)
-
-    #-- Computing plms for converting to spatial domain
-    theta = (90.0-grid.lat)*np.pi/180.0
-    PLM,dPLM = plm_holmes(LMAX,np.cos(theta))
-
     #-- Calculating the number of cos and sin harmonics between LMIN and LMAX
     #-- taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
     n_harm=np.int64(LMAX**2 - LMIN**2 + 2*LMAX + 1 - (LMAX-MMAX)**2 - (LMAX-MMAX))
@@ -351,71 +339,103 @@ def calc_sensitivity_kernel(LMAX, RAD,
         #-- spherical harmonics solution for the
         #-- mascon sensitivity kernels
         #-- Least Squares Solutions: Inv(X'.X).(X'.Y)
-        kern_lm = np.linalg.lstsq(MA_lm,kern_i,rcond=-1)[0]
+        kern_lm = np.linalg.lstsq(MA_lm, kern_i, rcond=-1)[0]
         for k in range(n_mas):
             A_lm[i,k] = kern_lm[k]*total_area[k]
+    #-- free up larger variables
+    del M_lm, MA_lm, wt_lm, fact, fact_inv, fit_factor
+
+    #-- reshaping harmonics of sensitivity kernel to LMAX+1,MMAX+1
+    #-- calculating the spatial sensitivity kernel of each mascon
+    #-- kernel calculated as outlined in Tiwari (2009) and Jacobs (2012)
+    #-- Initializing output sensitivity kernel (both spatial and Ylms)
+    kern_Ylms = harmonics(lmax=LMAX, mmax=MMAX)
+    kern_Ylms.clm = np.zeros((LMAX+1,MMAX+1,n_mas))
+    kern_Ylms.slm = np.zeros((LMAX+1,MMAX+1,n_mas))
+    kern_Ylms.time = np.copy(total_area)
+    #-- counter variable for deconstructing the mascon column arrays
+    ii = 0
+    #-- Switching between Cosine and Sine Stokes
+    for cs,csharm in enumerate(['clm','slm']):
+        #-- for each spherical harmonic degree
+        #-- +1 to include LMAX
+        for l in range(LMIN,LMAX+1):
+            #-- for each spherical harmonic order
+            #-- Sine Stokes for (m=0) = 0
+            mm = np.min([MMAX,l])
+            #-- +1 to include l or MMAX (whichever is smaller)
+            for m in range(cs,mm+1):
+                #-- inv_fit_factor: normalize from mass harmonics
+                temp = getattr(kern_Ylms, csharm)
+                temp[l,m,:] = inv_fit_factor[ii]*A_lm[ii,:]
+                #-- add 1 to counter
+                ii += 1
+    #-- free up larger variables
+    del A_lm, inv_fit_factor
 
     #-- for each mascon
     for k in range(n_mas):
-        #-- reshaping harmonics of sensitivity kernel to LMAX+1,MMAX+1
-        #-- calculating the spatial sensitivity kernel of each mascon
-        #-- kernel calculated as outlined in Tiwari (2009) and Jacobs (2012)
-        #-- Initializing output sensitivity kernel (both spatial and Ylms)
-        kern_Ylms = harmonics(lmax=LMAX, mmax=MMAX)
-        kern_Ylms.clm = np.zeros((LMAX+1,MMAX+1))
-        kern_Ylms.slm = np.zeros((LMAX+1,MMAX+1))
-        kern_Ylms.time = total_area[k]
-        #-- counter variable for deconstructing the mascon column arrays
-        ii = 0
-        #-- Switching between Cosine and Sine Stokes
-        for cs,csharm in enumerate(['clm','slm']):
-            #-- for each spherical harmonic degree
-            #-- +1 to include LMAX
-            for l in range(LMIN,LMAX+1):
-                #-- for each spherical harmonic order
-                #-- Sine Stokes for (m=0) = 0
-                mm = np.min([MMAX,l])
-                #-- +1 to include l or MMAX (whichever is smaller)
-                for m in range(cs,mm+1):
-                    #-- inv_fit_factor: normalize from mass harmonics
-                    temp = getattr(kern_Ylms, csharm)
-                    temp[l,m] = inv_fit_factor[ii]*A_lm[ii,k]
-                    #-- add 1 to counter
-                    ii += 1
-
-        #-- convert spherical harmonics to output spatial grid
-        grid.data = harmonic_summation(kern_Ylms.clm, kern_Ylms.slm,
-            grid.lon, grid.lat, LMAX=LMAX, MMAX=MMAX, PLM=PLM).T
-        grid.mask = np.zeros_like(grid.data, dtype=bool)
-        grid.time = total_area[k]
-
-        #-- output names for sensitivity kernel Ylm and spatial files
-        #-- for both LMAX==MMAX and LMAX != MMAX cases
-        args = (mascon_name[k],ocean_str,LMAX,order_str,gw_str,suffix[DATAFORM])
-        FILE1 = '{0}_SKERNEL_CLM{1}_L{2:d}{3}{4}.{5}'.format(*args)
-        FILE2 = '{0}_SKERNEL{1}_L{2:d}{3}{4}.{5}'.format(*args)
+        #-- get harmonics for mascon
+        Ylms = kern_Ylms.index(k, date=False)
         #-- output sensitivity kernel to file
-        if (DATAFORM == 'ascii'):
-            #-- ascii (.txt)
-            kern_Ylms.to_ascii(os.path.join(OUTPUT_DIRECTORY,FILE1),date=False)
-            grid.to_ascii(os.path.join(OUTPUT_DIRECTORY,FILE2),date=False,
-                units='unitless',longname='Sensitivity_Kernel')
-        elif (DATAFORM == 'netCDF4'):
-            #-- netCDF4 (.nc)
-            kern_Ylms.to_netCDF4(os.path.join(OUTPUT_DIRECTORY,FILE1),date=False)
-            grid.to_netCDF4(os.path.join(OUTPUT_DIRECTORY,FILE2),date=False,
-                units='unitless',longname='Sensitivity_Kernel')
-        elif (DATAFORM == 'HDF5'):
-            #-- netcdf (.H5)
-            kern_Ylms.to_HDF5(os.path.join(OUTPUT_DIRECTORY,FILE1),date=False)
-            grid.to_HDF5(os.path.join(OUTPUT_DIRECTORY,FILE2),date=False,
-                units='unitless',longname='Sensitivity_Kernel')
+        args = (mascon_name[k],ocean_str,LMAX,order_str,gw_str,suffix)
+        FILE1 = '{0}_SKERNEL_CLM{1}_L{2:d}{3}{4}.{5}'.format(*args)
+        Ylms.to_file(os.path.join(OUTPUT_DIRECTORY, FILE1),
+            format=DATAFORM, date=False)
         #-- change the permissions mode
         os.chmod(os.path.join(OUTPUT_DIRECTORY,FILE1),MODE)
-        os.chmod(os.path.join(OUTPUT_DIRECTORY,FILE2),MODE)
         #-- add output files to list object
         output_files.append(os.path.join(OUTPUT_DIRECTORY,FILE1))
-        output_files.append(os.path.join(OUTPUT_DIRECTORY,FILE2))
+
+    #-- if outputting spatial grids
+    if SPATIAL:
+        #-- Output spatial data object
+        grid = spatial()
+        #-- Output Degree Spacing
+        dlon,dlat = (DDEG[0],DDEG[0]) if (len(DDEG) == 1) else (DDEG[0],DDEG[1])
+        #-- Output Degree Interval
+        if (INTERVAL == 1):
+            #-- (-180:180,90:-90)
+            n_lon = np.int64((360.0/dlon)+1.0)
+            n_lat = np.int64((180.0/dlat)+1.0)
+            grid.lon = -180 + dlon*np.arange(0,n_lon)
+            grid.lat = 90.0 - dlat*np.arange(0,n_lat)
+        elif (INTERVAL == 2):
+            #-- (Degree spacing)/2
+            grid.lon = np.arange(-180+dlon/2.0,180+dlon/2.0,dlon)
+            grid.lat = np.arange(90.0-dlat/2.0,-90.0-dlat/2.0,-dlat)
+            n_lon = len(grid.lon)
+            n_lat = len(grid.lat)
+        elif (INTERVAL == 3):
+            #-- non-global grid set with BOUNDS parameter
+            minlon,maxlon,minlat,maxlat = BOUNDS.copy()
+            grid.lon = np.arange(minlon+dlon/2.0,maxlon+dlon/2.0,dlon)
+            grid.lat = np.arange(maxlat-dlat/2.0,minlat-dlat/2.0,-dlat)
+            nlon = len(grid.lon)
+            nlat = len(grid.lat)
+
+        #-- Computing plms for converting to spatial domain
+        theta = (90.0-grid.lat)*np.pi/180.0
+        PLM,dPLM = plm_holmes(LMAX,np.cos(theta))
+
+        #-- for each mascon
+        for k in range(n_mas):
+            #-- get harmonics for mascon
+            Ylms = kern_Ylms.index(k, date=False)
+            #-- convert spherical harmonics to output spatial grid
+            grid.data = harmonic_summation(Ylms.clm, Ylms.slm,
+                grid.lon, grid.lat, LMAX=LMAX, MMAX=MMAX, PLM=PLM).T
+            grid.mask = np.zeros_like(grid.data, dtype=bool)
+            #-- output sensitivity kernel to file
+            args = (mascon_name[k],ocean_str,LMAX,order_str,gw_str,suffix)
+            FILE2 = '{0}_SKERNEL{1}_L{2:d}{3}{4}.{5}'.format(*args)
+            grid.to_file(os.path.join(OUTPUT_DIRECTORY,FILE2),
+                format=DATAFORM, date=False,
+                units='unitless', longname='Sensitivity_Kernel')
+            #-- change the permissions mode
+            os.chmod(os.path.join(OUTPUT_DIRECTORY,FILE2),MODE)
+            #-- add output files to list object
+            output_files.append(os.path.join(OUTPUT_DIRECTORY,FILE2))
 
     #-- return the list of output files
     return output_files
@@ -521,6 +541,10 @@ def arguments():
     parser.add_argument('--mask',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
         help='Land-sea mask for redistributing mascon mass')
+    #-- output spatial grid
+    parser.add_argument('--spatial','-s',
+        default=False, action='store_true',
+        help='Output spatial grid file for each mascon')
     #-- output grid parameters
     parser.add_argument('--spacing','-S',
         type=float, nargs='+', default=[0.5,0.5], metavar=('dlon','dlat'),
@@ -529,6 +553,9 @@ def arguments():
         type=int, default=2, choices=[1,2,3],
         help=('Output grid interval '
             '(1: global, 2: centered global, 3: non-global)'))
+    parser.add_argument('--bounds','-B',
+        type=float, nargs=4, metavar=('lon_min','lon_max','lat_min','lat_max'),
+        help='Bounding box for non-global grid')
     #-- Output log file for each job in forms
     #-- calc_skernel_run_2002-04-01_PID-00000.log
     #-- calc_skernel_failed_run_2002-04-01_PID-00000.log
@@ -572,8 +599,10 @@ def main():
             REDISTRIBUTE_MASCONS=args.redistribute_mascons,
             FIT_METHOD=args.fit_method,
             LANDMASK=args.mask,
+            SPATIAL=args.spatial,
             DDEG=args.spacing,
             INTERVAL=args.interval,
+            BOUNDS=args.bounds,
             OUTPUT_DIRECTORY=args.output_directory,
             MODE=args.mode)
     except Exception as e:
