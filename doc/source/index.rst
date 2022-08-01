@@ -92,6 +92,7 @@ missions
     api_reference/gfz_isdc_dealiasing_ftp.rst
     api_reference/gfz_isdc_grace_ftp.rst
     api_reference/itsg_graz_grace_sync.rst
+    api_reference/make_grace_index.rst
     api_reference/podaac_cumulus.rst
     api_reference/podaac_grace_sync.rst
     api_reference/podaac_webdav.rst

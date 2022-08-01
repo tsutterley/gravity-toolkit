@@ -18,10 +18,6 @@ PYTHON DEPENDENCIES:
 
 PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
-    ncdf_write.py: writes output spatial data to COARDS-compliant netCDF4
-    hdf5_write.py: writes output spatial data to HDF5
-    ncdf_read.py: reads spatial data from COARDS-compliant netCDF4
-    hdf5_read.py: reads spatial data from HDF5
 
 UPDATE HISTORY:
     Updated 04/2022: updated docstrings to numpy documentation format

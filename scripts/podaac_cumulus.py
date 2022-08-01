@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_cumulus.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (08/2022)
 
 Syncs GRACE/GRACE-FO data from NASA JPL PO.DAAC Cumulus AWS S3 bucket
 S3 Cumulus syncs are only available in AWS instances in us-west-2
@@ -49,6 +49,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 08/2022: moved regular expression function to utilities
     Updated 04/2022: added option for GRACE/GRACE-FO Level-2 data version
         refactor to always try syncing from both grace and grace-fo missions
         use granule identifiers from CMR query to build output file index
@@ -66,49 +67,6 @@ import logging
 import argparse
 import gravity_toolkit.utilities
 
-#-- PURPOSE: create and compile regular expression operator to find GRACE files
-def compile_regex_pattern(PROC, DREL, DSET, version='0'):
-    if ((DSET == 'GSM') and (PROC == 'CSR') and (DREL in ('RL04','RL05'))):
-        #-- CSR GSM: only monthly degree 60 products
-        #-- not the longterm degree 180, degree 96 dataset or the
-        #-- special order 30 datasets for the high-resonance months
-        release, = re.findall(r'\d+', DREL)
-        args = (DSET, int(release))
-        regex_pattern=r'{0}-2_\d+-\d+_\d+_UTCSR_0060_000{1:d}(\.gz)?$' .format(*args)
-    elif ((DSET == 'GSM') and (PROC == 'CSR') and (DREL == 'RL06')):
-        #-- CSR GSM RL06: only monthly degree 60 products
-        release, = re.findall(r'\d+', DREL)
-        args = (DSET, '(GRAC|GRFO)', 'BA01', release.zfill(2), version.zfill(2))
-        regex_pattern=r'{0}-2_\d+-\d+_{1}_UTCSR_{2}_{3}{4}(\.gz)?$' .format(*args)
-    elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL04')):
-        #-- GFZ RL04: only unconstrained solutions (not GK2 products)
-        regex_pattern=r'{0}-2_\d+-\d+_\d+_EIGEN_G---_0004(\.gz)?$'.format(DSET)
-    elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL05')):
-        #-- GFZ RL05: updated RL05a products which are less constrained to
-        #-- the background model.  Allow regularized fields
-        regex_unconst=r'{0}-2_\d+-\d+_\d+_EIGEN_G---_005a(\.gz)?$'.format(DSET)
-        regex_regular=r'{0}-2_\d+-\d+_\d+_EIGEN_GK2-_005a(\.gz)?$'.format(DSET)
-        regex_pattern=r'{0}|{1}'.format(regex_unconst,regex_regular)
-    elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL06')):
-        #-- GFZ GSM RL06: only monthly degree 60 products
-        release, = re.findall(r'\d+', DREL)
-        args = (DSET, '(GRAC|GRFO)', 'BA01', release.zfill(2), version.zfill(2))
-        regex_pattern=r'{0}-2_\d+-\d+_{1}_GFZOP_{2}_{3}{4}(\.gz)?$' .format(*args)
-    elif (PROC == 'JPL') and DREL in ('RL04','RL05'):
-        #-- JPL: RL04a and RL05a products (denoted by 0001)
-        release, = re.findall(r'\d+', DREL)
-        args = (DSET, int(release))
-        regex_pattern=r'{0}-2_\d+-\d+_\d+_JPLEM_0001_000{1:d}(\.gz)?$'.format(*args)
-    elif ((DSET == 'GSM') and (PROC == 'JPL') and (DREL == 'RL06')):
-        #-- JPL GSM RL06: only monthly degree 60 products
-        release, = re.findall(r'\d+', DREL)
-        args = (DSET, '(GRAC|GRFO)', 'BA01', release.zfill(2), version.zfill(2))
-        regex_pattern=r'{0}-2_\d+-\d+_{1}_JPLEM_{2}_{3}{4}(\.gz)?$' .format(*args)
-    else:
-        regex_pattern=r'{0}-2_([a-zA-Z0-9_\-]+)(\.gz)?$'.format(DSET)
-    #-- return the compiled regular expression operator used to find files
-    return re.compile(regex_pattern, re.VERBOSE)
-
 #-- PURPOSE: sync local GRACE/GRACE-FO files with JPL PO.DAAC AWS S3 bucket
 def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
     AOD1B=False, LOG=False, CLOBBER=False, MODE=None):
@@ -118,6 +76,8 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
 
     #-- PO.DAAC cumulus bucket
     bucket = 'podaac-ops-cumulus-protected'
+    #-- mission shortnames
+    shortname = {'grace':'GRAC', 'grace-fo':'GRFO'}
     #-- datasets for each processing center
     DSET = {}
     DSET['CSR'] = ['GAC', 'GAD', 'GSM']
@@ -189,7 +149,8 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                         mission=mi, center=pr, release=rl, product=ds,
                         version=VERSION[i], provider='POCLOUD', endpoint='s3')
                     #-- regular expression operator for data product
-                    rx = compile_regex_pattern(pr, rl, ds, version=VERSION[i])
+                    rx = gravity_toolkit.utilities.compile_regex_pattern(
+                        pr, rl, ds, mission=shortname[mi], version=VERSION[i])
                     #-- for each model id and url
                     for id,url,mtime in zip(ids,urls,mtimes):
                         #-- retrieve GRACE/GRACE-FO files
@@ -280,7 +241,7 @@ def arguments():
         help='GRACE/GRACE-FO data release')
     #-- GRACE/GRACE-FO data version
     parser.add_argument('--version','-v',
-        metavar='VERSION', type=str, nargs='+',
+        metavar='VERSION', type=str, nargs=2,
         default=['0','1'], choices=['0','1','2','3'],
         help='GRACE/GRACE-FO Level-2 data version')
     #-- GRACE/GRACE-FO dealiasing products
