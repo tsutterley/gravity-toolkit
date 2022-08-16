@@ -619,16 +619,13 @@ class harmonics(object):
         for i,f in enumerate(file_list):
             if (kwargs['format'] == 'ascii'):
                 #-- ascii (.txt)
-                h.append(harmonics().from_ascii(os.path.expanduser(f),
-                    date=kwargs['date']))
+                h.append(harmonics().from_ascii(f, date=kwargs['date']))
             elif (kwargs['format'] == 'netCDF4'):
                 #-- netcdf (.nc)
-                h.append(harmonics().from_netCDF4(os.path.expanduser(f),
-                    date=kwargs['date']))
+                h.append(harmonics().from_netCDF4(f, date=kwargs['date']))
             elif (kwargs['format'] == 'HDF5'):
                 #-- HDF5 (.H5)
-                h.append(harmonics().from_HDF5(os.path.expanduser(f),
-                    date=kwargs['date']))
+                h.append(harmonics().from_HDF5(f, date=kwargs['date']))
         #-- create a single harmonic object from the list
         return self.from_list(h,date=kwargs['date'],sort=kwargs['sort'])
 

@@ -41,6 +41,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 08/2022: moved regular expression function to utilities
+        Dynamically select newest version of granules for index
     Updated 04/2022: added option for GRACE/GRACE-FO Level-2 data version
         sync GRACE/GRACE-FO technical notes and newsletters
         refactor to always try syncing from both grace and grace-fo missions
@@ -70,6 +71,7 @@ import hashlib
 import logging
 import argparse
 import posixpath
+import gravity_toolkit.time
 import gravity_toolkit.utilities
 
 #-- PURPOSE: sync local GRACE/GRACE-FO files with GFZ ISDC server
@@ -260,11 +262,13 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
                             CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
                     #-- regular expression operator for data product
                     rx = gravity_toolkit.utilities.compile_regex_pattern(
-                        pr, rl, ds, mission=shortname[mi], version=VERSION[i])
+                        pr, rl, ds, mission=shortname[mi])
                     #-- find local GRACE/GRACE-FO files to create index
-                    files = [fi for fi in os.listdir(local_dir) if rx.match(fi)]
-                    #-- extend list of GRACE/GRACE-FO files
-                    grace_files.extend(files)
+                    granules = [f for f in os.listdir(local_dir) if rx.match(f)]
+                    #-- reduce list of GRACE/GRACE-FO files to unique dates
+                    granules = gravity_toolkit.time.reduce_by_date(granules)
+                    #-- extend list of GRACE/GRACE-FO files with granules
+                    grace_files.extend(granules)
 
                 #-- outputting GRACE/GRACE-FO filenames to index
                 with open(os.path.join(local_dir,'index.txt'),'w') as fid:

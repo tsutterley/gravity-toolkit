@@ -12,7 +12,9 @@ COMMAND LINE OPTIONS:
     -D X, --directory X: working data directory
     -c X, --center X: GRACE/GRACE-FO Processing Center
     -r X, --release X: GRACE/GRACE-FO Data Releases to run
+    -p X, --product X: GRACE/GRACE-FO Data Products to run
     -v X, --version X: GRACE/GRACE-FO Level-2 Data Version to run
+    -V, --verbose: Output information for each output file
     -M X, --mode X: Local permissions mode of the files created
 
 PYTHON DEPENDENCIES:
@@ -21,6 +23,7 @@ PYTHON DEPENDENCIES:
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
 
 UPDATE HISTORY:
+    Updated 08/2022: make the data product optional
     Written 08/2022
 """
 from __future__ import print_function
@@ -32,26 +35,24 @@ import argparse
 from gravity_toolkit.utilities import compile_regex_pattern
 
 #-- PURPOSE: Creates index files of GRACE/GRACE-FO data
-def make_grace_index(DIRECTORY, PROC=[], DREL=[], VERSION=[], MODE=None):
+def make_grace_index(DIRECTORY, PROC=[], DREL=[], DSET=[],
+    VERSION=[], MODE=None):
 
     #-- mission shortnames
     shortname = {'grace':'GRAC', 'grace-fo':'GRFO'}
-    #-- datasets for each processing center
-    DSET = {}
-    DSET['CSR'] = ['GAC', 'GAD', 'GSM']
-    DSET['GFZ'] = ['GAA', 'GAB', 'GAC', 'GAD', 'GSM']
-    DSET['JPL'] = ['GAA', 'GAB', 'GAC', 'GAD', 'GSM']
-
     #-- GRACE/GRACE-FO level-2 spherical harmonic products
     logging.info('GRACE/GRACE-FO L2 Global Spherical Harmonics:')
     #-- for each processing center (CSR, GFZ, JPL)
     for pr in PROC:
         #-- for each data release (RL04, RL05, RL06)
         for rl in DREL:
-            #-- for each level-2 product (GAC, GAD, GSM, GAA, GAB)
-            for ds in DSET[pr]:
+            #-- for each level-2 product
+            for ds in DSET:
                 #-- local directory for exact data product
                 local_dir = os.path.join(DIRECTORY, pr, rl, ds)
+                #-- check if local directory exists
+                if not os.access(local_dir, os.F_OK):
+                    continue
                 #-- list of GRACE/GRACE-FO files for index
                 grace_files = []
                 #-- for each satellite mission (grace, grace-fo)
@@ -62,9 +63,9 @@ def make_grace_index(DIRECTORY, PROC=[], DREL=[], VERSION=[], MODE=None):
                     rx = compile_regex_pattern(pr, rl, ds,
                         mission=shortname[mi], version=VERSION[i])
                     #-- find local GRACE/GRACE-FO files to create index
-                    files = [fi for fi in os.listdir(local_dir) if rx.match(fi)]
+                    granules = [f for f in os.listdir(local_dir) if rx.match(f)]
                     #-- extend list of GRACE/GRACE-FO files
-                    grace_files.extend(files)
+                    grace_files.extend(granules)
 
                 #-- outputting GRACE/GRACE-FO filenames to index
                 with open(os.path.join(local_dir,'index.txt'),'w') as fid:
@@ -96,11 +97,20 @@ def arguments():
         metavar='DREL', type=str, nargs='+',
         default=['RL06'], choices=['RL06'],
         help='GRACE/GRACE-FO data release')
+    #-- GRACE/GRACE-FO data product
+    parser.add_argument('--product','-p',
+        metavar='DSET', type=str.upper, nargs='+',
+        default=['GSM'], choices=['GAA','GAB','GAC','GAD','GSM'],
+        help='GRACE/GRACE-FO Level-2 data product')
     #-- GRACE/GRACE-FO data version
     parser.add_argument('--version','-v',
         metavar='VERSION', type=str, nargs=2,
         default=['0','1'], choices=['0','1','2','3'],
         help='GRACE/GRACE-FO Level-2 data version')
+    #-- verbose will output information about each output file
+    parser.add_argument('--verbose','-V',
+        action='count', default=0,
+        help='Verbose output of processing run')
     #-- permissions mode of the directories and files synced (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
@@ -114,10 +124,14 @@ def main():
     parser = arguments()
     args,_ = parser.parse_known_args()
 
+    #-- create logger
+    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    logging.basicConfig(level=loglevels[args.verbose])
+
     #-- run program with parameters
     make_grace_index(args.directory, PROC=args.center,
-        DREL=args.release, VERSION=args.version,
-        MODE=args.mode)
+        DREL=args.release, DSET=args.product,
+        VERSION=args.version, MODE=args.mode)
 
 #-- run main program
 if __name__ == '__main__':
