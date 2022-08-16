@@ -66,10 +66,12 @@ PYTHON DEPENDENCIES:
         https://python-future.org/
 
 PROGRAM DEPENDENCIES:
+    time.py: utilities for calculating time operations
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
     Updated 08/2022: moved regular expression function to utilities
+        Dynamically select newest version of granules for index
     Updated 04/2022: added option for GRACE/GRACE-FO Level-2 data version
         refactor to always try syncing from both grace and grace-fo missions
         use granule identifiers from CMR query to build output file index
@@ -176,6 +178,7 @@ import argparse
 import builtins
 import posixpath
 import lxml.etree
+import gravity_toolkit.time
 import gravity_toolkit.utilities
 
 #-- PURPOSE: sync local GRACE/GRACE-FO files with JPL PO.DAAC drive server
@@ -379,7 +382,7 @@ def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
                         version=VERSION[i], provider='PODAAC', endpoint='data')
                     #-- regular expression operator for data product
                     rx = gravity_toolkit.utilities.compile_regex_pattern(
-                        pr, rl, ds, mission=shortname[mi], version=VERSION[i])
+                        pr, rl, ds, mission=shortname[mi])
                     #-- for each id, url and modification time
                     for id,url,mtime in zip(ids,urls,mtimes):
                         #-- retrieve GRACE/GRACE-FO files
@@ -387,8 +390,12 @@ def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
                         http_pull_file(url, mtime, os.path.join(local_dir,granule),
                             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
                             CHECKSUM=CHECKSUM, MODE=MODE)
-                        #-- extend list of GRACE/GRACE-FO files with granule
-                        grace_files.append(granule) if rx.match(granule) else None
+                    #-- find local GRACE/GRACE-FO files to create index
+                    granules = [f for f in os.listdir(local_dir) if rx.match(f)]
+                    #-- reduce list of GRACE/GRACE-FO files to unique dates
+                    granules = gravity_toolkit.time.reduce_by_date(granules)
+                    #-- extend list of GRACE/GRACE-FO files with granules
+                    grace_files.extend(granules)
 
                 #-- outputting GRACE/GRACE-FO filenames to index
                 with open(os.path.join(local_dir,'index.txt'),'w') as fid:
@@ -574,7 +581,7 @@ def main():
     if gravity_toolkit.utilities.check_credentials(DRIVE):
         podaac_grace_sync(args.directory, PROC=args.center,
             DREL=args.release, VERSION=args.version,
-            NEWSLETTERS=args.newsletters, AOD1B=args.aod1b,
+            AOD1B=args.aod1b, NEWSLETTERS=args.newsletters,
             TIMEOUT=args.timeout, LIST=args.list, LOG=args.log,
             CLOBBER=args.clobber, CHECKSUM=args.checksum,
             MODE=args.mode)

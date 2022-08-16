@@ -286,12 +286,12 @@ class spatial(object):
         #-- Open the NetCDF4 file for reading
         if (kwargs['compression'] == 'gzip'):
             #-- read as in-memory (diskless) netCDF4 dataset
-            with gzip.open(os.path.expanduser(filename),'r') as f:
-                fileID = netCDF4.Dataset(os.path.basename(filename),memory=f.read())
+            with gzip.open(self.filename, mode='r') as f:
+                fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=f.read())
         elif (kwargs['compression'] == 'zip'):
             #-- read zipped file and extract file into in-memory file object
             fileBasename,_ = os.path.splitext(os.path.basename(filename))
-            with zipfile.ZipFile(os.path.expanduser(filename)) as z:
+            with zipfile.ZipFile(self.filename) as z:
                 #-- first try finding a netCDF4 file with same base filename
                 #-- if none found simply try searching for a netCDF4 file
                 try:
@@ -305,7 +305,7 @@ class spatial(object):
             fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=filename.read())
         else:
             #-- read netCDF4 dataset
-            fileID = netCDF4.Dataset(os.path.expanduser(filename), 'r')
+            fileID = netCDF4.Dataset(self.filename, 'r')
         #-- Output NetCDF file information
         logging.info(fileID.filepath())
         logging.info(list(fileID.variables.keys()))
@@ -410,7 +410,7 @@ class spatial(object):
         #-- Open the HDF5 file for reading
         if (kwargs['compression'] == 'gzip'):
             #-- read gzip compressed file and extract into in-memory file object
-            with gzip.open(os.path.expanduser(filename),'r') as f:
+            with gzip.open(self.filename, mode='r') as f:
                 fid = io.BytesIO(f.read())
             #-- set filename of BytesIO object
             fid.filename = os.path.basename(filename)
@@ -421,7 +421,7 @@ class spatial(object):
         elif (kwargs['compression'] == 'zip'):
             #-- read zipped file and extract file into in-memory file object
             fileBasename,_ = os.path.splitext(os.path.basename(filename))
-            with zipfile.ZipFile(os.path.expanduser(filename)) as z:
+            with zipfile.ZipFile(self.filename) as z:
                 #-- first try finding a HDF5 file with same base filename
                 #-- if none found simply try searching for a HDF5 file
                 try:
@@ -435,13 +435,13 @@ class spatial(object):
             #-- rewind to start of file
             fid.seek(0)
             #-- read as in-memory (diskless) HDF5 dataset from BytesIO object
-            fileID = h5py.File(fid, 'r')
+            fileID = h5py.File(fid, mode='r')
         elif (kwargs['compression'] == 'bytes'):
             #-- read as in-memory (diskless) HDF5 dataset
-            fileID = h5py.File(filename, 'r')
+            fileID = h5py.File(filename, mode='r')
         else:
             #-- read HDF5 dataset
-            fileID = h5py.File(os.path.expanduser(filename), 'r')
+            fileID = h5py.File(self.filename, 'r')
         #-- Output HDF5 file information
         logging.info(fileID.filename)
         logging.info(list(fileID.keys()))
@@ -537,16 +537,13 @@ class spatial(object):
         for i,f in enumerate(file_list):
             if (kwargs['format'] == 'ascii'):
                 #-- netcdf (.nc)
-                s.append(spatial().from_ascii(os.path.expanduser(f),
-                    **kwargs))
+                s.append(spatial().from_ascii(f, **kwargs))
             elif (kwargs['format'] == 'netCDF4'):
                 #-- netcdf (.nc)
-                s.append(spatial().from_netCDF4(os.path.expanduser(f),
-                    **kwargs))
+                s.append(spatial().from_netCDF4(f, **kwargs))
             elif (kwargs['format'] == 'HDF5'):
                 #-- HDF5 (.H5)
-                s.append(spatial().from_HDF5(os.path.expanduser(f),
-                    **kwargs))
+                s.append(spatial().from_HDF5(f, **kwargs))
         #-- create a single spatial object from the list
         return self.from_list(s,date=kwargs['date'],sort=kwargs['sort'])
 

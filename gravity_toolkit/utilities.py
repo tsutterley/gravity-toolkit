@@ -1348,7 +1348,7 @@ def cmr(mission=None, center=None, release=None, level='L2', product=None,
 
 #-- PURPOSE: create and compile regular expression operator to find GRACE files
 def compile_regex_pattern(PROC, DREL, DSET, mission=None,
-    solution='BA01', version='0'):
+    solution=r'BA01', version=r'\d+'):
     """
     Compile regular expressor operators for finding a specified
     subset of GRACE/GRACE-FO level-2 spherical harmonic files
@@ -1393,6 +1393,8 @@ def compile_regex_pattern(PROC, DREL, DSET, mission=None,
         raise ValueError('Unknown processing center {0}'.format(PROC))
     if DSET not in ('GAA','GAB','GAC','GAD','GSM'):
         raise ValueError('Unknown Level-2 product {0}'.format(DSET))
+    if isinstance(version, int):
+        version = str(version).zfill(2)
     #-- compile regular expression operator for inputs
     if ((DSET == 'GSM') and (PROC == 'CSR') and (DREL in ('RL04','RL05'))):
         #-- CSR GSM: only monthly degree 60 products
@@ -1434,10 +1436,14 @@ def compile_regex_pattern(PROC, DREL, DSET, mission=None,
         #-- CNES: use products in standard format
         args = (DSET,)
         pattern = r'{0}-2_\d+-\d+_\d+_GRGS_([a-zA-Z0-9_\-]+)(\.txt)?(\.gz)?$'
+    elif mission is not None:
+        #-- deliasing products with mission listed
+        args = (DSET, mission)
+        pattern = r'{0}-2_([a-zA-Z0-9_\-]+)_{1}_([a-zA-Z0-9_\-]+)(\.gz)?$'
     else:
         #-- deliasing products: use products in standard format
         args = (DSET,)
-        pattern = r'{0}-2_([a-zA-Z0-9_\-]+)(\.gz)?$'.format(DSET)
+        pattern = r'{0}-2_([a-zA-Z0-9_\-]+)(\.gz)?$'
     #-- return the compiled regular expression operator
     return re.compile(pattern.format(*args), re.VERBOSE)
 
