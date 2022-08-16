@@ -367,7 +367,7 @@ def main():
     HOST = 'https://archive.podaac.earthdata.nasa.gov/s3credentials'
     #-- get aws s3 client object
     client = gravity_toolkit.utilities.s3_client(HOST, args.timeout)
-    print(client)
+
     #-- retrieve data objects from s3 client
     podaac_cumulus(client, args.directory, PROC=args.center,
         DREL=args.release, VERSION=args.version, AOD1B=args.aod1b,
