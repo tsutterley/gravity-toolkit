@@ -57,6 +57,12 @@ General Methods
 
 .. autofunction:: gravity_toolkit.time.datetime_to_list
 
+.. autofunction:: gravity_toolkit.time.parse_grace_file
+
+.. autofunction:: gravity_toolkit.time.parse_gfc_file
+
+.. autofunction:: gravity_toolkit.time.reduce_by_date
+
 .. autofunction:: gravity_toolkit.time.adjust_months
 
 .. autofunction:: gravity_toolkit.time.calendar_to_grace

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (08/2022)
 
 Data class for reading, writing and processing spatial data
 
@@ -20,6 +20,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 08/2022: fix output latitude HDF5 and netCDF4 attributes
     Updated 04/2022: updated docstrings to numpy documentation format
         using internal netCDF4 and HDF5 readers and writers
         include utf-8 encoding in reads to be windows compliant
@@ -779,7 +780,7 @@ class spatial(object):
             kwargs['attributes'][kwargs['field_mapping']['lon']]['long_name'] = 'longitude'
             kwargs['attributes'][kwargs['field_mapping']['lon']]['units'] = 'degrees_east'
             kwargs['attributes'][kwargs['field_mapping']['lat']] = {}
-            kwargs['attributes'][kwargs['field_mapping']['lat']]['long_name'] = 'longitude'
+            kwargs['attributes'][kwargs['field_mapping']['lat']]['long_name'] = 'latitude'
             kwargs['attributes'][kwargs['field_mapping']['lat']]['units'] = 'degrees_north'
             #-- Defining attributes for dataset
             kwargs['attributes'][kwargs['field_mapping']['data']] = {}
@@ -907,7 +908,7 @@ class spatial(object):
             kwargs['attributes'][kwargs['field_mapping']['lon']]['long_name'] = 'longitude'
             kwargs['attributes'][kwargs['field_mapping']['lon']]['units'] = 'degrees_east'
             kwargs['attributes'][kwargs['field_mapping']['lat']] = {}
-            kwargs['attributes'][kwargs['field_mapping']['lat']]['long_name'] = 'longitude'
+            kwargs['attributes'][kwargs['field_mapping']['lat']]['long_name'] = 'latitude'
             kwargs['attributes'][kwargs['field_mapping']['lat']]['units'] = 'degrees_north'
             #-- Defining attributes for dataset
             kwargs['attributes'][kwargs['field_mapping']['data']] = {}

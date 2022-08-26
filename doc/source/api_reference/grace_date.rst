@@ -20,6 +20,3 @@ Calling Sequence
 
 .. autofunction:: gravity_toolkit.grace_date
 
-.. autofunction:: gravity_toolkit.grace_date.parse_file
-
-.. autofunction:: gravity_toolkit.grace_date.parse_date
