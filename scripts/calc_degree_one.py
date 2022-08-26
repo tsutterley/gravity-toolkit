@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_degree_one.py
-Written by Tyler Sutterley (07/2022)
+Written by Tyler Sutterley (08/2022)
 
 Calculates degree 1 variations using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from ECCO and OMCT/MPIOM
@@ -153,6 +153,7 @@ REFERENCES:
         https://doi.org/10.1029/2007JB005338
 
 UPDATE HISTORY:
+    Updated 08/2022: set default land-sea mask file in arguments
     Updated 07/2022: set plot tick formatter to not use offsets
     Updated 05/2022: use argparse descriptions within documentation
         use GIA reference and citation output from GIA read program
@@ -1401,8 +1402,10 @@ def arguments():
         type=int, default=240,
         help='Spherical harmonic expansion for sea level fingerprints')
     #-- land-sea mask for calculating ocean mass and land water flux
+    land_mask_file = utilities.get_data_path(['data','land_fcn_300km.nc'])
     parser.add_argument('--mask',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        default=land_mask_file,
         help='Land-sea mask for calculating ocean mass and land water flux')
     #-- create output plots
     parser.add_argument('--plot','-p',
