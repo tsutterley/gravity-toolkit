@@ -83,7 +83,7 @@ def harmonic_summation(clm1, slm1, lon, lat,
     d_sin = np.zeros((MMAX+1,thmax))#-- [m,th]
     if PLM is None:
         #-- if plms are not pre-computed: calculate Legendre polynomials
-        PLM,dPLM = plm_holmes(LMAX,np.cos(th))
+        PLM, dPLM = plm_holmes(LMAX, np.cos(th))
 
     #-- Truncating harmonics to degree and order LMAX
     #-- removing coefficients below LMIN and above MMAX

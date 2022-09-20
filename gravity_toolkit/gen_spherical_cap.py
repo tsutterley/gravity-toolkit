@@ -258,7 +258,7 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     #-- this would be the plm for the center of the spherical cap
     #-- used to rotate the spherical cap to point lat/lon
     if PLM is None:
-        plmout,dplm = plm_holmes(LMAX,np.cos(th))
+        plmout,dplm = plm_holmes(LMAX, np.cos(th))
         #-- truncate precomputed plms to order
         plmout = np.squeeze(plmout[:,:MMAX+1,:])
     else:

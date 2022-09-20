@@ -12,7 +12,7 @@ Calling Sequence
 
     from gravity_toolkit.gen_harmonics import gen_harmonics
     from gravity_toolkit.plm_holmes import plm_holmes
-    PLM,dPLM = plm_holmes(LMAX, np.cos(th))
+    PLM, dPLM = plm_holmes(LMAX, np.cos(th))
     Ylms = gen_harmonics(data, lon, lat, LMAX=LMAX, PLM=PLM)
 
 `Source code`__

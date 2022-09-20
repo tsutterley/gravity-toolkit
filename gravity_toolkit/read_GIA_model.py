@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GIA_model.py
-Written by Tyler Sutterley (05/2022)
+Written by Tyler Sutterley (09/2022)
 
 Reads GIA data files that can come in various formats depending on the group
 Outputs spherical harmonics for the GIA rates and the GIA model parameters
@@ -96,6 +96,7 @@ REFERENCES:
     https://doi.org/10.1002/2016JB013844
 
 UPDATE HISTORY:
+    Updated 09/2022: use logging for debugging level verbose output
     Updated 05/2022: output full citation for each GIA model group
     Updated 04/2022: updated docstrings to numpy documentation format
         use harmonics class to read/write ascii, netCDF4 and HDF5 files
@@ -136,6 +137,7 @@ from __future__ import print_function
 
 import os
 import re
+import logging
 import numpy as np
 import gravity_toolkit.harmonics
 
@@ -413,7 +415,8 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         input_file = os.path.expanduser(input_file)
         if not os.access(input_file, os.F_OK):
             raise FileNotFoundError('{0} not found'.format(input_file))
-
+        #-- log GIA file if debugging
+        logging.debug('Reading GIA file: {0}'.format(input_file))
         #-- opening gia data file and read contents
         with open(input_file, mode='r', encoding='utf8') as f:
             gia_data = f.read().splitlines()
@@ -447,7 +450,8 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         input_file = os.path.expanduser(input_file)
         if not os.access(input_file, os.F_OK):
             raise FileNotFoundError('{0} not found'.format(input_file))
-
+        #-- log GIA file if debugging
+        logging.debug('Reading GIA file: {0}'.format(input_file))
         #-- opening gia data file and read contents
         with open(input_file, mode='r', encoding='utf8') as f:
             gia_data = f.read().splitlines()
@@ -486,6 +490,8 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         input_file = os.path.expanduser(input_file)
         if not os.access(input_file, os.F_OK):
             raise FileNotFoundError('{0} not found'.format(input_file))
+        #-- log GIA file if debugging
+        logging.debug('Reading GIA file: {0}'.format(input_file))
         #-- The file starts with a header.
         #-- converting to numerical array (note 64 bit floating point)
         gia_data = np.loadtxt(input_file, skiprows=1, dtype='f8')
@@ -519,7 +525,8 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         input_file = os.path.expanduser(input_file)
         if not os.access(input_file, os.F_OK):
             raise FileNotFoundError('{0} not found'.format(input_file))
-
+        #-- log GIA file if debugging
+        logging.debug('Reading GIA file: {0}'.format(input_file))
         #-- The file starts with a header.
         #-- converting to numerical array (note 64 bit floating point)
         dtype = {'names':('l','m','Ylms'),'formats':('i','i','f8')}
@@ -548,7 +555,8 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         input_file = os.path.expanduser(input_file)
         if not os.access(input_file, os.F_OK):
             raise FileNotFoundError('{0} not found'.format(input_file))
-
+        #-- log GIA file if debugging
+        logging.debug('Reading GIA file: {0}'.format(input_file))
         #-- opening gia data file and read contents
         with open(input_file, mode='r', encoding='utf8') as f:
             gia_data = f.read().splitlines()
@@ -601,6 +609,8 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
 
     # ascii: reformatted GIA in ascii format
     elif (GIA == 'ascii'):
+        #-- log GIA file if debugging
+        logging.debug('Reading GIA file: {0}'.format(input_file))
         #-- reading GIA data from reformatted (simplified) ascii files
         Ylms = gravity_toolkit.harmonics().from_ascii(input_file, date=False)
         Ylms.truncate(LMAX)
@@ -614,6 +624,8 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     # netCDF4: reformatted GIA in netCDF4 format
     # HDF5: reformatted GIA in HDF5 format
     elif GIA in ('netCDF4','HDF5'):
+        #-- log GIA file if debugging
+        logging.debug('Reading GIA file: {0}'.format(input_file))
         #-- reading GIA data from reformatted netCDF4 and HDF5 files
         Ylms = gravity_toolkit.harmonics().from_file(input_file,
             format=GIA, date=False)
@@ -623,7 +635,7 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         for att_name in ('title','citation','reference','url'):
             try:
                 gia_Ylms[att_name] = Ylms.attributes[att_name]
-            except:
+            except Exception as e:
                 gia_Ylms[att_name] = None
 
     #-- GIA model parameter strings

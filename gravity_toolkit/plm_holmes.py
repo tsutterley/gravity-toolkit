@@ -17,7 +17,7 @@ and then iterating up to P_l,m divided by P_m,m and the scale factor 1e280.
 Eventually, the result is multiplied again with these to terms.
 
 CALLING SEQUENCE:
-    plm,dplm = plm_holmes(LMAX, np.cos(theta))
+    plm, dplm = plm_holmes(LMAX, np.cos(theta))
 
 INPUTS:
     LMAX: Upper bound of Spherical Harmonic Degrees
@@ -178,4 +178,4 @@ def plm_holmes(LMAX, x, ASTYPE=np.float64):
                 dplm[l,m,:]= (1.0/u)*(l*x*plm[l,m,:] - flm*plm[l-1,m,:])
 
     #-- return the legendre polynomials and their first derivative
-    return plm,dplm
+    return plm, dplm

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_love_numbers.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (09/2022)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
 Linearly interpolates load love numbers for missing degrees
@@ -56,6 +56,7 @@ REFERENCES:
         103(B12), 30205-30229, (1998)
 
 UPDATE HISTORY:
+    Updated 09/2022: use logging for debugging level verbose output
     Updated 04/2022: updated docstrings to numpy documentation format
         added wrapper function for reading load Love numbers from file
         added function for checking if BytesIO object and extracting contents
@@ -81,6 +82,7 @@ UPDATE HISTORY:
 import os
 import io
 import re
+import logging
 import numpy as np
 from gravity_toolkit.utilities import get_data_path
 
@@ -355,6 +357,8 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
         love_numbers_file = get_data_path(['data','PREM-LLNs-truncated.dat'])
         header = 1
         columns = ['l','hl','ll','kl','nl','nk']
+    #-- log load love numbers file if debugging
+    logging.debug('Reading Love numbers file: {0}'.format(love_numbers_file))
     #-- LMAX of load love numbers from Han and Wahr (1995) is 696.
     #-- from Wahr (2007) linearly interpolating kl works
     #-- however, as we are linearly extrapolating out, do not make

@@ -393,7 +393,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
 
     #-- Computing plms for converting to spatial domain
     theta = (90.0-grid.lat)*np.pi/180.0
-    PLM,dPLM = plm_holmes(LMAX,np.cos(theta))
+    PLM, dPLM = plm_holmes(LMAX, np.cos(theta))
 
     #-- Earth Parameters
     #-- output spatial units

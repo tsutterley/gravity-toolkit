@@ -11,7 +11,7 @@ Calling Sequence
 
     from gravity_toolkit.gen_stokes import gen_stokes
     from gravity_toolkit.plm_holmes import plm_holmes
-    PLM,dPLM = plm_holmes(LMAX, np.cos(th))
+    PLM, dPLM = plm_holmes(LMAX, np.cos(th))
     Ylms = gen_stokes(data, lon, lat, UNITS=1, LMAX=LMAX, PLM=PLM, LOVE=(hl,kl,ll))
 
 `Source code`__

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_date.py
-Written by Tyler Sutterley (08/2022)
+Written by Tyler Sutterley (09/2022)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
@@ -46,6 +46,8 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 09/2022: raise exception if index file cannot be found
+        use logging for debugging level verbose output
     Updated 08/2022: moved file parsing functions to time module
     Updated 05/2022: use argparse descriptions within documentation
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -99,6 +101,7 @@ UPDATE HISTORY:
 from __future__ import print_function
 
 import os
+import logging
 import argparse
 import numpy as np
 import gravity_toolkit.time
@@ -149,8 +152,14 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
 
     #--  Directory of exact product
     grace_dir = os.path.join(base_dir, PROC, DREL, DSET)
-    #-- input index file containing GRACE data filenames
+    #-- index file containing GRACE/GRACE-FO data filenames
     index_file = os.path.join(grace_dir, 'index.txt')
+    #-- check that index file exists
+    if not os.access(index_file, os.F_OK):
+        raise FileNotFoundError('{0} not found'.format(index_file))
+    #-- log index file if debugging
+    logging.debug('Reading index file: {0}'.format(index_file))
+    #-- read index file for GRACE/GRACE-FO filenames
     with open(index_file, mode='r', encoding='utf8') as f:
         input_files = f.read().splitlines()
 

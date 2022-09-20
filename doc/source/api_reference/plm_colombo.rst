@@ -10,7 +10,7 @@ Calling Sequence
 .. code-block:: python
 
     from gravity_toolkit.plm_colombo import plm_colombo
-    plm,dplm = plm_colombo(LMAX, x)
+    PLM, dPLM = plm_colombo(LMAX, x)
 
 `Source code`__
 

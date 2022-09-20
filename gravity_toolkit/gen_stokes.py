@@ -193,7 +193,7 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     #-- added option to precompute plms to improve computational speed
     if PLM is None:
         #-- if plms are not pre-computed: calculate Legendre polynomials
-        PLM,dPLM = plm_holmes(LMAX,np.cos(th))
+        PLM, dPLM = plm_holmes(LMAX, np.cos(th))
 
     #-- Multiplying by integration factors [sin(theta)*dtheta*dphi]
     #-- truncate legendre polynomials to spherical harmonic order MMAX

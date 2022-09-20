@@ -173,7 +173,7 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     l1,m1,nt = load_Ylms.shape
 
     #-- calculate the legendre functions using Holmes and Featherstone relation
-    PLM,dPLM = plm_holmes(LMAX, np.cos(th))
+    PLM, dPLM = plm_holmes(LMAX, np.cos(th))
 
     #-- allocate for pseudo-spectral sea level equation solver
     sea_level = spatial(nlon=nphi, nlat=nth)

@@ -12,7 +12,7 @@ Uses the Colombo (1981) recursion relation
 This is a Standard forward column method
 
 CALLING SEQUENCE:
-    plm,dplm = plm_colombo(LMAX, np.cos(theta))
+    plm, dplm = plm_colombo(LMAX, np.cos(theta))
 
 INPUTS:
     LMAX: Upper bound of Spherical Harmonic Degrees
@@ -130,4 +130,4 @@ def plm_colombo(LMAX, x, ASTYPE=np.float64):
         dplm[l,l,:] = np.longdouble(l)*(x/u)*plm[l,l,:]
 
     #-- return the legendre polynomials and their first derivative
-    return plm,dplm
+    return plm, dplm
