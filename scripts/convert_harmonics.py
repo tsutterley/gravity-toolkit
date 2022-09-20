@@ -159,7 +159,7 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
 
     #-- calculate associated Legendre polynomials
     th = (90.0 - input_spatial.lat)*np.pi/180.0
-    PLM,dPLM = plm_holmes(LMAX,np.cos(th))
+    PLM, dPLM = plm_holmes(LMAX, np.cos(th))
 
     #-- create list of harmonics objects
     Ylms_list = []

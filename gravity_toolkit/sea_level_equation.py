@@ -324,7 +324,7 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     #-- added option to precompute plms to improve computational speed
     if PLM is None:
         #-- calculate Legendre polynomials using Holmes and Featherstone relation
-        PLM,dPLM = plm_holmes(LMAX,np.cos(th))
+        PLM, dPLM = plm_holmes(LMAX, np.cos(th))
     #-- calculate sin of colatitudes
     gth,gphi = np.meshgrid(th, phi)
     u = np.sin(gth[ii,jj])

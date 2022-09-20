@@ -383,7 +383,7 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     #-- Computing plms for converting to spatial domain
     phi = delta.lon[np.newaxis,:]*np.pi/180.0
     theta = (90.0-delta.lat)*np.pi/180.0
-    PLM,dPLM = plm_holmes(LMAX,np.cos(theta))
+    PLM, dPLM = plm_holmes(LMAX, np.cos(theta))
     #-- square of legendre polynomials truncated to order MMAX
     mm = np.arange(0,MMAX+1)
     PLM2 = PLM[:,mm,:]**2

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (09/2022)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
@@ -105,6 +105,7 @@ PROGRAM DEPENDENCIES:
     read_gfc_harmonics.py: reads spherical harmonic data from gfc files
 
 UPDATE HISTORY:
+    Updated 09/2022: use logging for debugging level verbose output
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 12/2021: option to specify a specific geocenter correction file
     Updated 11/2021: add GSFC low-degree harmonics
@@ -161,6 +162,7 @@ import os
 import re
 import gzip
 import copy
+import logging
 import numpy as np
 import gravity_toolkit.geocenter
 from gravity_toolkit.grace_date import grace_date
@@ -340,9 +342,9 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     kwargs.setdefault('ATM',False)
     kwargs.setdefault('POLE_TIDE',False)
 
-    #-- Directory of exact GRACE product
+    #-- directory of exact GRACE/GRACE-FO product
     grace_dir = os.path.join(base_dir, PROC, DREL, DSET)
-    #-- test if GRACE product directory exists
+    #-- check that GRACE/GRACE-FO product directory exists
     if not os.access(grace_dir, os.F_OK):
         raise FileNotFoundError(grace_dir)
 
@@ -376,6 +378,9 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     for i,grace_month in enumerate(months):
         #-- read spherical harmonic data products
         infile = grace_files[grace_month]
+        #-- log input file if debugging
+        logging.debug('Reading file {0:d}: {1}'.format(i, infile))
+        #-- read GRACE/GRACE-FO/Swarm file
         if PROC in ('GRAZ','Swarm'):
             #-- Degree 2 zonals will be converted to a tide free state
             Ylms = read_gfc_harmonics(infile, TIDE='tide_free')
@@ -409,14 +414,23 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         elif (DREL == 'RL06'):
             # SLR_file = os.path.join(base_dir,'TN-11_C20_SLR.txt')
             SLR_file = os.path.join(base_dir,'C20_RL06.txt')
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C20 file: {0}'.format(SLR_file))
+        #-- read SLR file
         C20_input = read_SLR_C20(SLR_file)
         FLAGS.append('_wCSR_C20')
     elif (SLR_C20 == 'GFZ'):
-        SLR_file=os.path.join(base_dir,'GFZ_{0}_C20_SLR.dat'.format(DREL))
+        SLR_file = os.path.join(base_dir,'GFZ_{0}_C20_SLR.dat'.format(DREL))
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C20 file: {0}'.format(SLR_file))
+        #-- read SLR file
         C20_input = read_SLR_C20(SLR_file)
         FLAGS.append('_wGFZ_C20')
     elif (SLR_C20 == 'GSFC'):
-        SLR_file=os.path.join(base_dir,'TN-14_C30_C20_GSFC_SLR.txt')
+        SLR_file = os.path.join(base_dir,'TN-14_C30_C20_GSFC_SLR.txt')
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C20 file: {0}'.format(SLR_file))
+        #-- read SLR file
         C20_input = read_SLR_C20(SLR_file)
         FLAGS.append('_wGSFC_C20')
 
@@ -424,17 +438,26 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     #-- Running function read_SLR_CS2.py
     if (kwargs['SLR_21'] == 'CSR'):
         SLR_file = os.path.join(base_dir,'C21_S21_{0}.txt'.format(DREL))
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C21/S21 file: {0}'.format(SLR_file))
+        #-- read SLR file
         C21_input = read_SLR_CS2(SLR_file)
         FLAGS.append('_wCSR_21')
     elif (kwargs['SLR_21'] == 'GFZ'):
         GravIS_file = 'GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat'
         SLR_file = os.path.join(base_dir,GravIS_file)
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C21/S21 file: {0}'.format(SLR_file))
+        #-- read SLR file
         C21_input = read_SLR_CS2(SLR_file)
         FLAGS.append('_wGFZ_21')
     elif (kwargs['SLR_21'] == 'GSFC'):
         #-- calculate monthly averages from 7-day arcs
         # SLR_file = os.path.join(base_dir,'GSFC_C21_S21.txt')
         SLR_file = os.path.join(base_dir,'gsfc_slr_5x5c61s61.txt')
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C21/S21 file: {0}'.format(SLR_file))
+        #-- read SLR file
         C21_input = read_SLR_CS2(SLR_file, DATE=grace_Ylms['time'], ORDER=1)
         FLAGS.append('_wGSFC_21')
 
@@ -442,46 +465,73 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     #-- Running function read_SLR_CS2.py
     if (kwargs['SLR_22'] == 'CSR'):
         SLR_file = os.path.join(base_dir,'C22_S22_{0}.txt'.format(DREL))
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C22/S22 file: {0}'.format(SLR_file))
+        #-- read SLR file
         C22_input = read_SLR_CS2(SLR_file)
         FLAGS.append('_wCSR_22')
     elif (kwargs['SLR_22'] == 'GSFC'):
         SLR_file = os.path.join(base_dir,'gsfc_slr_5x5c61s61.txt')
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C22/S22 file: {0}'.format(SLR_file))
+        #-- read SLR file
         C22_input = read_SLR_CS2(SLR_file, DATE=grace_Ylms['time'], ORDER=2)
         FLAGS.append('_wGSFC_22')
 
     #-- Replacing C3,0 with SLR C3,0
     #-- Running function read_SLR_C30.py
     if (kwargs['SLR_C30'] == 'CSR'):
-        SLR_file=os.path.join(base_dir,'CSR_Monthly_5x5_Gravity_Harmonics.txt')
+        SLR_file = os.path.join(base_dir,'CSR_Monthly_5x5_Gravity_Harmonics.txt')
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C30 file: {0}'.format(SLR_file))
+        #-- read SLR file
         C30_input = read_SLR_C30(SLR_file)
         FLAGS.append('_wCSR_C30')
     elif (kwargs['SLR_C30'] == 'LARES'):
-        SLR_file=os.path.join(base_dir,'C30_LARES_filtered.txt')
+        SLR_file = os.path.join(base_dir,'C30_LARES_filtered.txt')
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C30 file: {0}'.format(SLR_file))
+        #-- read SLR file
         C30_input = read_SLR_C30(SLR_file)
         FLAGS.append('_wLARES_C30')
     elif (kwargs['SLR_C30'] == 'GSFC'):
-        SLR_file=os.path.join(base_dir,'TN-14_C30_C20_GSFC_SLR.txt')
+        SLR_file = os.path.join(base_dir,'TN-14_C30_C20_GSFC_SLR.txt')
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C30 file: {0}'.format(SLR_file))
+        #-- read SLR file
         C30_input = read_SLR_C30(SLR_file)
         FLAGS.append('_wGSFC_C30')
     elif (kwargs['SLR_C30'] == 'GFZ'):
         GravIS_file = 'GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat'
         SLR_file = os.path.join(base_dir,GravIS_file)
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C30 file: {0}'.format(SLR_file))
+        #-- read SLR file
         C30_input = read_SLR_C30(SLR_file)
         FLAGS.append('_wGFZ_C30')
 
     #-- Replacing C5,0 with SLR C5,0
     #-- Running function read_SLR_C50.py
     if (kwargs['SLR_C50'] == 'CSR'):
-        SLR_file=os.path.join(base_dir,'CSR_Monthly_5x5_Gravity_Harmonics.txt')
+        SLR_file = os.path.join(base_dir,'CSR_Monthly_5x5_Gravity_Harmonics.txt')
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C50 file: {0}'.format(SLR_file))
+        #-- read SLR file
         C50_input = read_SLR_C50(SLR_file)
         FLAGS.append('_wCSR_C50')
     elif (kwargs['SLR_C50'] == 'LARES'):
-        SLR_file=os.path.join(base_dir,'C50_LARES_filtered.txt')
+        SLR_file = os.path.join(base_dir,'C50_LARES_filtered.txt')
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C50 file: {0}'.format(SLR_file))
+        #-- read SLR file
         C50_input = read_SLR_C50(SLR_file)
         FLAGS.append('_wLARES_C50')
     elif (kwargs['SLR_C50'] == 'GSFC'):
-        # SLR_file=os.path.join(base_dir,'GSFC_SLR_C20_C30_C50_GSM_replacement.txt')
+        # SLR_file = os.path.join(base_dir,'GSFC_SLR_C20_C30_C50_GSM_replacement.txt')
         SLR_file = os.path.join(base_dir,'gsfc_slr_5x5c61s61.txt')
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C50 file: {0}'.format(SLR_file))
+        #-- read SLR file
         C50_input = read_SLR_C50(SLR_file, DATE=grace_Ylms['time'])
         FLAGS.append('_wGSFC_C50')
 
@@ -501,6 +551,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             JPL = True
         #-- read degree one files from JPL GRACE Tellus
         DEG1_file = kwargs.get('DEG1_FILE') or default_geocenter
+        #-- log geocenter file if debugging
+        logging.debug('Reading Geocenter file: {0}'.format(DEG1_file))
         DEG1_input = gravity_toolkit.geocenter().from_tellus(DEG1_file,JPL=JPL)
         FLAGS.append('_w{0}_DEG1'.format(DEG1))
     elif (DEG1 == 'SLR'):
@@ -525,6 +577,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         DEG1_file = os.path.join(base_dir,'geocenter','gct2est.220_5s')
         COLUMNS = ['MJD','time','X','Y','Z','XM','YM','ZM',
             'X_sigma','Y_sigma','Z_sigma','XM_sigma','YM_sigma','ZM_sigma']
+        #-- log geocenter file if debugging
+        logging.debug('Reading Geocenter file: {0}'.format(DEG1_file))
         #-- read degree one files from CSR satellite laser ranging
         DEG1_input = gravity_toolkit.geocenter(radius=6.378136e9).from_SLR(DEG1_file,
             AOD=True,release=DREL,header=15,columns=COLUMNS)
@@ -538,6 +592,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             '{0}_{1}_{2}_{3}.txt'.format(*args))
         #-- read degree one files from Sutterley and Velicogna (2019)
         DEG1_file = kwargs.get('DEG1_FILE') or default_geocenter
+        #-- log geocenter file if debugging
+        logging.debug('Reading Geocenter file: {0}'.format(DEG1_file))
         DEG1_input = gravity_toolkit.geocenter().from_UCI(DEG1_file)
         FLAGS.append('_w{0}_DEG1'.format(DEG1))
     elif (DEG1 == 'Swenson'):
@@ -546,6 +602,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             'gad_gsm.{0}.txt'.format(DREL))
         #-- read degree one files from Swenson et al. (2008)
         DEG1_file = kwargs.get('DEG1_FILE') or default_geocenter
+        #-- log geocenter file if debugging
+        logging.debug('Reading Geocenter file: {0}'.format(DEG1_file))
         DEG1_input = gravity_toolkit.geocenter().from_swenson(DEG1_file)
         FLAGS.append('_w{0}_DEG1'.format(DEG1))
     elif (DEG1 == 'GFZ'):
@@ -555,6 +613,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             'GRAVIS-2B_GFZOP_GEOCENTER_0002.dat')
         #-- read degree one files from GFZ GravIS
         DEG1_file = kwargs.get('DEG1_FILE') or default_geocenter
+        #-- log geocenter file if debugging
+        logging.debug('Reading Geocenter file: {0}'.format(DEG1_file))
         DEG1_input = gravity_toolkit.geocenter().from_gravis(DEG1_file)
         FLAGS.append('_w{0}_DEG1'.format(DEG1))
 
@@ -753,11 +813,14 @@ def read_ecmwf_corrections(base_dir, LMAX, months, MMAX=None):
     MMAX = LMAX if (MMAX is None) else MMAX
     #-- iterate through python dictionary keys (GAE, GAF, GAG)
     for key, val in corr_file.items():
+        #-- log ECMWF correction file if debugging
+        infile = os.path.join(base_dir, val)
+        logging.debug('Reading ECMWF file: {0}'.format(infile))
         #-- allocate for clm and slm of atmospheric corrections
         atm_corr_clm[key] = np.zeros((LMAX+1,MMAX+1))
         atm_corr_slm[key] = np.zeros((LMAX+1,MMAX+1))
         #-- GRACE correction files are compressed gz files
-        with gzip.open(os.path.join(base_dir, val),'rb') as f:
+        with gzip.open(infile,'rb') as f:
             file_contents = f.read().decode('ISO-8859-1').splitlines()
         #-- for each line in the GRACE correction file
         for line in file_contents:

@@ -81,6 +81,8 @@ General Methods
 
 .. autofunction:: gravity_toolkit.utilities.from_csr
 
+.. autofunction:: gravity_toolkit.utilities.from_gsfc
+
 .. autofunction:: gravity_toolkit.utilities.from_gfz
 
 .. autofunction:: gravity_toolkit.utilities.icgem_list

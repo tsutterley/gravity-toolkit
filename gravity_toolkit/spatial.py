@@ -21,6 +21,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 08/2022: fix output latitude HDF5 and netCDF4 attributes
+        place index filename within try/except statement
     Updated 04/2022: updated docstrings to numpy documentation format
         using internal netCDF4 and HDF5 readers and writers
         include utf-8 encoding in reads to be windows compliant
@@ -1207,8 +1208,10 @@ class spatial(object):
             temp.time = self.time[indice].copy()
             temp.month = self.month[indice].copy()
         #-- subset filenames
-        if getattr(self, 'filename'):
-            temp.filename = self.filename[indice]
+        try:
+            temp.filename = self.filename[indice] if getattr(self, 'filename') else None
+        except IndexError:
+            pass
         #-- get spacing and dimensions
         temp.update_spacing()
         temp.update_extents()

@@ -369,7 +369,7 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     ocean_function = 1.0 - land_function
 
     #-- Calculating Legendre Polynomials using Holmes and Featherstone relation
-    PLM,dPLM = plm_holmes(LMAX,np.cos(th))
+    PLM, dPLM = plm_holmes(LMAX, np.cos(th))
 
     #-- calculate spherical harmonics of ocean function to degree 1
     #-- mass is equivalent to 1 cm ocean height change

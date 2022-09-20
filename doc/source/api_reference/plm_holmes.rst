@@ -11,7 +11,7 @@ Calling Sequence
 .. code-block:: python
 
     from gravity_toolkit.plm_holmes import plm_holmes
-    plm,dplm = plm_holmes(LMAX, x)
+    PLM, dPLM = plm_holmes(LMAX, x)
 
 `Source code`__
 

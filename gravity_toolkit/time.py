@@ -13,6 +13,8 @@ PYTHON DEPENDENCIES:
 UPDATE HISTORY:
     Updated 08/2022: added file parsing functions from GRACE date utilities
         added function to dynamically select newest version of granules
+        output variables to unit conversion to seconds and the number of days
+        per month for both leap and standard years
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: added function for calendar year (decimal) to Julian Day
     Updated 09/2021: add functions for converting to and from GRACE months
@@ -27,9 +29,25 @@ UPDATE HISTORY:
 """
 import os
 import re
+import copy
+import warnings
 import datetime
 import numpy as np
 import dateutil.parser
+
+#-- conversion factors between time units and seconds
+_to_sec = {'microseconds': 1e-6, 'microsecond': 1e-6,
+           'microsec': 1e-6, 'microsecs': 1e-6,
+           'milliseconds': 1e-3, 'millisecond': 1e-3,
+           'millisec': 1e-3, 'millisecs': 1e-3,
+           'msec': 1e-3, 'msecs': 1e-3, 'ms': 1e-3,
+           'seconds': 1.0, 'second': 1.0, 'sec': 1.0,
+           'secs': 1.0, 's': 1.0,
+           'minutes': 60.0, 'minute': 60.0,
+           'min': 60.0, 'mins': 60.0,
+           'hours': 3600.0, 'hour': 3600.0,
+           'hr': 3600.0, 'hrs': 3600.0, 'h': 3600.0,
+           'day': 86400.0, 'days': 86400.0, 'd': 86400.0}
 
 #-- PURPOSE: parse a date string into epoch and units scale
 def parse_date_string(date_string):
@@ -60,20 +78,11 @@ def parse_date_string(date_string):
         #-- return the epoch (as list)
         return (datetime_to_list(epoch),0.0)
     #-- split the date string into units and epoch
-    units,epoch = split_date_string(date_string)
-    conversion_factors = {'microseconds': 1e-6,'microsecond': 1e-6,
-        'microsec': 1e-6,'microsecs': 1e-6,
-        'milliseconds': 1e-3,'millisecond': 1e-3,'millisec': 1e-3,
-        'millisecs': 1e-3,'msec': 1e-3,'msecs': 1e-3,'ms': 1e-3,
-        'seconds': 1.0,'second': 1.0,'sec': 1.0,'secs': 1.0,'s': 1.0,
-        'minutes': 60.0,'minute': 60.0,'min': 60.0,'mins': 60.0,
-        'hours': 3600.0,'hour': 3600.0,'hr': 3600.0,
-        'hrs': 3600.0,'h': 3600.0,
-        'day': 86400.0,'days': 86400.0,'d': 86400.0}
-    if units not in conversion_factors.keys():
+    units, epoch = split_date_string(date_string)
+    if units not in _to_sec.keys():
         raise ValueError('Invalid units: {0}'.format(units))
     #-- return the epoch (as list) and the time unit conversion factors
-    return (datetime_to_list(epoch),conversion_factors[units])
+    return (datetime_to_list(epoch), _to_sec[units])
 
 #-- PURPOSE: split a date string into units and epoch
 def split_date_string(date_string):
@@ -297,7 +306,7 @@ def adjust_months(grace_month):
     case2, = np.nonzero(c[i] == 2)
     #-- for each special case month
     for j in case2:
-        # prior month, current month, subsequent 2 months
+        #-- prior month, current month, subsequent 2 months
         mm1 = grace_month[j-1]
         mon = grace_month[j]
         mp1 = grace_month[j+1] if (j < (nmon-1)) else (mon + 1)
@@ -340,7 +349,7 @@ def calendar_to_grace(year,month=1,around=np.floor):
         GRACE/GRACE-FO month
     """
     grace_month = around(12.0*(year - 2002.0)) + month
-    return np.array(grace_month,dtype=int)
+    return np.array(grace_month, dtype=int)
 
 #-- PURPOSE: convert GRACE/GRACE-FO months to calendar dates
 def grace_to_calendar(grace_month):
@@ -389,6 +398,11 @@ def calendar_to_julian(year_decimal):
         DofY + 1721058.5, dtype=np.float64)
     return JD
 
+#-- days per month in a leap and a standard year
+#-- only difference is February (29 vs. 28)
+_dpm_leap = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+_dpm_stnd = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
 #-- PURPOSE: gets the number of days per month for a given year
 def calendar_days(year):
     """
@@ -404,10 +418,6 @@ def calendar_days(year):
     dpm: float
         number of days for each month
     """
-    #-- days per month in a leap and a standard year
-    #-- only difference is February (29 vs. 28)
-    dpm_leap = np.array([31,29,31,30,31,30,31,31,30,31,30,31],dtype=np.float64)
-    dpm_stnd = np.array([31,28,31,30,31,30,31,31,30,31,30,31],dtype=np.float64)
     #-- Rules in the Gregorian calendar for a year to be a leap year:
     #-- divisible by 4, but not by 100 unless divisible by 400
     #-- True length of the year is about 365.2422 days
@@ -421,9 +431,9 @@ def calendar_days(year):
     m4000 = (year % 4000)
     #-- find indices for standard years and leap years using criteria
     if ((m4 == 0) & (m100 != 0) | (m400 == 0) & (m4000 != 0)):
-        return dpm_leap
+        return np.array(_dpm_leap, dtype=np.float64)
     elif ((m4 != 0) | (m100 == 0) & (m400 != 0) | (m4000 == 0)):
-        return dpm_stnd
+        return np.array(_dpm_stnd, dtype=np.float64)
 
 #-- PURPOSE: convert times from seconds since epoch1 to time since epoch2
 def convert_delta_time(delta_time, epoch1=None, epoch2=None, scale=1.0):
@@ -549,8 +559,8 @@ def convert_calendar_decimal(year, month, day=None, hour=None, minute=None,
 
     #-- days per month in a leap and a standard year
     #-- only difference is February (29 vs. 28)
-    dpm_leap=np.array([31,29,31,30,31,30,31,31,30,31,30,31], dtype=np.float64)
-    dpm_stnd=np.array([31,28,31,30,31,30,31,31,30,31,30,31], dtype=np.float64)
+    dpm_leap = np.array(_dpm_leap, dtype=np.float64)
+    dpm_stnd = np.array(_dpm_stnd, dtype=np.float64)
 
     #-- Rules in the Gregorian calendar for a year to be a leap year:
     #-- divisible by 4, but not by 100 unless divisible by 400
@@ -640,7 +650,7 @@ def convert_calendar_decimal(year, month, day=None, hour=None, minute=None,
     return t_date
 
 #-- PURPOSE: Converts from Julian day to calendar date and time
-def convert_julian(JD, ASTYPE=None, FORMAT='dict'):
+def convert_julian(JD, **kwargs):
     """
     Converts from Julian day to calendar date and time
 
@@ -648,9 +658,9 @@ def convert_julian(JD, ASTYPE=None, FORMAT='dict'):
     ----------
     JD: float
         Julian Day (days since 01-01-4713 BCE at 12:00:00)
-    ASTYPE: str or NoneType, default None
+    astype: str or NoneType, default None
         convert output to variable type
-    FORMAT: str, default 'dict'
+    format: str, default 'dict'
         format of output variables
 
             - ``'dict'``: dictionary with variable keys
@@ -674,7 +684,6 @@ def convert_julian(JD, ASTYPE=None, FORMAT='dict'):
 
     References
     ----------
-
     .. [Press1988] *Numerical Recipes in C*, William H. Press,
         Brian P. Flannery, Saul A. Teukolsky, and William T. Vetterling.
         Second Edition, Cambridge University Press, (1988).
@@ -682,14 +691,27 @@ def convert_julian(JD, ASTYPE=None, FORMAT='dict'):
         Calendar Dates", *Quarterly Journal of the Royal Astronomical
         Society*, 25(1), (1984).
     """
+    #-- set default keyword arguments
+    kwargs.setdefault('astype', None)
+    kwargs.setdefault('format', 'dict')
+    #-- raise warnings for deprecated keyword arguments
+    deprecated_keywords = dict(ASTYPE='astype', FORMAT='format')
+    for old,new in deprecated_keywords.items():
+        if old in kwargs.keys():
+            warnings.warn("""Deprecated keyword argument {0}.
+                Changed to '{1}'""".format(old,new),
+                DeprecationWarning)
+            #-- set renamed argument to not break workflows
+            kwargs[new] = copy.copy(kwargs[old])
 
     #-- convert to array if only a single value was imported
     if (np.ndim(JD) == 0):
         JD = np.atleast_1d(JD)
-        SINGLE_VALUE = True
+        single_value = True
     else:
-        SINGLE_VALUE = False
+        single_value = False
 
+    #-- verify julian day
     JDO = np.floor(JD + 0.5)
     C = np.zeros_like(JD)
     #-- calculate C for dates before and after the switch to Gregorian
@@ -704,38 +726,38 @@ def convert_julian(JD, ASTYPE=None, FORMAT='dict'):
     E = np.floor((365.0 * D) + np.floor(D/4.0))
     F = np.floor((C - E)/30.6001)
     #-- calculate day, month, year and hour
-    DAY = np.floor(C - E + 0.5) - np.floor(30.6001*F)
-    MONTH = F - 1.0 - 12.0*np.floor(F/14.0)
-    YEAR = D - 4715.0 - np.floor((7.0+MONTH)/10.0)
-    HOUR = np.floor(24.0*(JD + 0.5 - JDO))
+    day = np.floor(C - E + 0.5) - np.floor(30.6001*F)
+    month = F - 1.0 - 12.0*np.floor(F/14.0)
+    year = D - 4715.0 - np.floor((7.0 + month)/10.0)
+    hour = np.floor(24.0*(JD + 0.5 - JDO))
     #-- calculate minute and second
-    G = (JD + 0.5 - JDO) - HOUR/24.0
-    MINUTE = np.floor(G*1440.0)
-    SECOND = (G - MINUTE/1440.0) * 86400.0
+    G = (JD + 0.5 - JDO) - hour/24.0
+    minute = np.floor(G*1440.0)
+    second = (G - minute/1440.0) * 86400.0
 
     #-- convert all variables to output type (from float)
-    if ASTYPE is not None:
-        YEAR = YEAR.astype(ASTYPE)
-        MONTH = MONTH.astype(ASTYPE)
-        DAY = DAY.astype(ASTYPE)
-        HOUR = HOUR.astype(ASTYPE)
-        MINUTE = MINUTE.astype(ASTYPE)
-        SECOND = SECOND.astype(ASTYPE)
+    if kwargs['astype'] is not None:
+        year = year.astype(kwargs['astype'])
+        month = month.astype(kwargs['astype'])
+        day = day.astype(kwargs['astype'])
+        hour = hour.astype(kwargs['astype'])
+        minute = minute.astype(kwargs['astype'])
+        second = second.astype(kwargs['astype'])
 
     #-- if only a single value was imported initially: remove singleton dims
-    if SINGLE_VALUE:
-        YEAR = YEAR.item(0)
-        MONTH = MONTH.item(0)
-        DAY = DAY.item(0)
-        HOUR = HOUR.item(0)
-        MINUTE = MINUTE.item(0)
-        SECOND = SECOND.item(0)
+    if single_value:
+        year = year.item(0)
+        month = month.item(0)
+        day = day.item(0)
+        hour = hour.item(0)
+        minute = minute.item(0)
+        second = second.item(0)
 
-    #-- return date variables in output format (default python dictionary)
-    if (FORMAT == 'dict'):
-        return dict(year=YEAR, month=MONTH, day=DAY,
-            hour=HOUR, minute=MINUTE, second=SECOND)
-    elif (FORMAT == 'tuple'):
-        return (YEAR, MONTH, DAY, HOUR, MINUTE, SECOND)
-    elif (FORMAT == 'zip'):
-        return zip(YEAR, MONTH, DAY, HOUR, MINUTE, SECOND)
+    #-- return date variables in output format
+    if (kwargs['format'] == 'dict'):
+        return dict(year=year, month=month, day=day,
+            hour=hour, minute=minute, second=second)
+    elif (kwargs['format'] == 'tuple'):
+        return (year, month, day, hour, minute, second)
+    elif (kwargs['format'] == 'zip'):
+        return zip(year, month, day, hour, minute, second)

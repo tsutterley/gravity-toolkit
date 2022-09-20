@@ -1670,6 +1670,61 @@ def from_gfz(directory,timeout=None,chunk=8192,verbose=False,fid=sys.stdout,
     from_ftp(FILE,timeout=timeout,local=local,hash=get_hash(local),
         chunk=chunk,verbose=verbose,fid=fid,mode=mode)
 
+#-- PURPOSE: download satellite laser ranging files from GSFC
+#-- https://earth.gsfc.nasa.gov/geo/data/slr
+def from_gsfc(directory,timeout=None,context=ssl.SSLContext(),
+    chunk=16384,verbose=False,fid=sys.stdout,copy=False,mode=0o775):
+    """
+    Download `satellite laser ranging (SLR) <https://earth.gsfc.nasa.gov/geo/data/slr/>`_
+    files from NASA Goddard Space Flight Center (GSFC)
+
+    Parameters
+    ----------
+    directory: str
+        download directory
+    timeout: int or NoneType, default None
+        timeout in seconds for blocking operations
+    context: obj, default ssl.SSLContext()
+        SSL context for url opener object
+    chunk: int, default 16384
+        chunk size for transfer encoding
+    verbose: bool, default False
+        print file transfer information
+    fid: obj, default fid.stdout
+        open file object to print if verbose
+    copy: bool, default False
+        create a copy of file for archival purposes
+    mode: oct, default 0o775
+        permissions mode of output local file
+    """
+    #-- GSFC download http server
+    HOST = ['https://earth.gsfc.nasa.gov/','sites','default','files','geo']
+    #-- recursively create directory if non-existent
+    directory = os.path.abspath(os.path.expanduser(directory))
+    if not os.access(directory, os.F_OK):
+        os.makedirs(directory, mode)
+    #-- download GSFC SLR 5x5 file
+    FILE = 'gsfc_slr_5x5c61s61.txt'
+    original_md5 = get_hash(os.path.join(directory,FILE))
+    fileID = from_http([*HOST,FILE], timeout=timeout, context=context,
+        local=os.path.join(directory,FILE),
+        hash=original_md5, chunk=chunk, verbose=verbose,
+        fid=fid, mode=mode)
+    if copy:
+        #-- create copy of file for archiving
+        #-- read file and extract data date span
+        file_contents = fileID.read().decode('utf-8').splitlines()
+        data_span, = [l for l in file_contents if l.startswith('Data span:')]
+        #-- extract start and end of data date span
+        span_start,span_end = data_span.replace('Data span: ','').split(' - ')
+        #-- create copy of file with date span
+        COPY = 'GSFC_SLR_5x5c61s61_{0}_{1}.txt'.format(
+            time.strftime('%Y%m', time.strptime(span_start, '%d %b %Y')),
+            time.strftime('%Y%m', time.strptime(span_end, '%d %b %Y')))
+        shutil.copyfile(os.path.join(directory,FILE), os.path.join(directory,COPY))
+        #-- copy modification times and permissions for archive file
+        shutil.copystat(os.path.join(directory,FILE), os.path.join(directory,COPY))
+
 #-- PURPOSE: list a directory on the GFZ ICGEM https server
 #-- http://icgem.gfz-potsdam.de
 def icgem_list(host='http://icgem.gfz-potsdam.de/tom_longtime',timeout=None,

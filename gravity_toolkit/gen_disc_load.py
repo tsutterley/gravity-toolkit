@@ -212,7 +212,7 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
     #-- this would be the plm for the center of the disc load
     #-- used to rotate the disc load to point lat/lon
     if PLM is None:
-        plmout,dplm = plm_holmes(LMAX,np.cos(th))
+        plmout,dplm = plm_holmes(LMAX, np.cos(th))
         #-- truncate precomputed plms to order
         plmout = np.squeeze(plmout[:,:MMAX+1,:])
     else:

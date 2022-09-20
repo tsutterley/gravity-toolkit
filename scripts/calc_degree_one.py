@@ -361,6 +361,9 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
 
     #-- output directory
     DIRECTORY = os.path.join(base_dir,'geocenter')
+    #-- create output directory if non-existent
+    if not os.access(DIRECTORY, os.F_OK):
+        os.makedirs(DIRECTORY, mode=MODE)
     #-- list object of output files for file logs (full path)
     output_files = []
 
@@ -431,7 +434,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
 
     #-- Calculating Legendre Polynomials using Holmes and Featherstone relation
     #-- calculate up to degree and order of spherical harmonic expansion for SLF
-    PLM,dPLM = plm_holmes(EXPANSION,np.cos(th))
+    PLM, dPLM = plm_holmes(EXPANSION, np.cos(th))
 
     #-- calculate spherical harmonics of ocean function to degree 1
     #-- mass is equivalent to 1 cm ocean height change

@@ -259,7 +259,7 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
 
     #-- Computing plms for converting to spatial domain
     theta = (90.0-grid.lat)*np.pi/180.0
-    PLM,dPLM = plm_holmes(LMAX,np.cos(theta))
+    PLM, dPLM = plm_holmes(LMAX, np.cos(theta))
 
     #-- converting harmonics to truncated, smoothed coefficients in output units
     for t in range(nt):

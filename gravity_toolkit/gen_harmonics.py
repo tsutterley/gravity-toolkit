@@ -184,7 +184,7 @@ def integration(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
     #-- Calculate polynomials using Holmes and Featherstone (2002) relation
     plm = np.zeros((LMAX+1,MMAX+1,nlat))
     if (np.ndim(PLM) == 0):
-        plmout,dplm = plm_holmes(LMAX,np.cos(th))
+        plmout,dplm = plm_holmes(LMAX, np.cos(th))
     else:
         #-- use precomputed plms to improve computational speed
         #-- or to use a different recursion relation for polynomials
