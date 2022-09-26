@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 scale_grace_maps.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (09/2022)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly scaled spatial fields, estimated scaling errors,
@@ -75,6 +75,9 @@ COMMAND LINE OPTIONS:
         CSR: use values from CSR (5x5 with 6,1)
         GFZ: use values from GFZ GravIS
         GSFC: use values from GSFC (TN-14)
+    --slr-c40 X: Replace C40 coefficients with SLR values
+        CSR: use values from CSR (5x5 with 6,1)
+        GSFC: use values from GSFC
     --slr-c50 X: Replace C50 coefficients with SLR values
         CSR: use values from CSR (5x5 with 6,1)
         GSFC: use values from GSFC
@@ -121,7 +124,7 @@ PYTHON DEPENDENCIES:
 PROGRAM DEPENDENCIES:
     grace_input_months.py: Reads GRACE/GRACE-FO files for a specified date range
         Includes degree 1 values (if specified)
-        Replaces C20,C21,S21,C22,S22,C30 and C50 with SLR values (if specified)
+        Replaces low-degree harmonics with SLR values (if specified)
     read_GIA_model.py: reads spherical harmonics for glacial isostatic adjustment
     read_love_numbers.py: reads Load Love Numbers from Han and Wahr (1995)
     gauss_weights.py: Computes the Gaussian weights as a function of degree
@@ -152,6 +155,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 09/2022: add option to replace degree 4 zonal harmonics with SLR
     Updated 04/2022: use wrapper function for reading load Love numbers
         use argparse descriptions within sphinx documentation
     Updated 12/2021: can use variable loglevels for verbose output
@@ -227,6 +231,7 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     SLR_21=None,
     SLR_22=None,
     SLR_C30=None,
+    SLR_C40=None,
     SLR_C50=None,
     DATAFORM=None,
     MEAN_FILE=None,
@@ -318,8 +323,8 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     #-- include degree 1 (geocenter) harmonics if specified
     #-- correcting for Pole-Tide and Atmospheric Jumps if specified
     Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
-        START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX,
-        SLR_21=SLR_21, SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C50=SLR_C50,
+        START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX, SLR_21=SLR_21,
+        SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C40=SLR_C40, SLR_C50=SLR_C50,
         DEG1_FILE=DEG1_FILE, MODEL_DEG1=MODEL_DEG1, ATM=ATM,
         POLE_TIDE=POLE_TIDE)
     #-- create harmonics object from GRACE/GRACE-FO data
@@ -807,6 +812,9 @@ def arguments():
     parser.add_argument('--slr-c30',
         type=str, default=None, choices=['CSR','GFZ','GSFC','LARES'],
         help='Replace C30 coefficients with SLR values')
+    parser.add_argument('--slr-c40',
+        type=str, default=None, choices=['CSR','GSFC','LARES'],
+        help='Replace C40 coefficients with SLR values')
     parser.add_argument('--slr-c50',
         type=str, default=None, choices=['CSR','GSFC','LARES'],
         help='Replace C50 coefficients with SLR values')
@@ -909,6 +917,7 @@ def main():
             SLR_21=args.slr_21,
             SLR_22=args.slr_22,
             SLR_C30=args.slr_c30,
+            SLR_C40=args.slr_c40,
             SLR_C50=args.slr_c50,
             DATAFORM=args.format,
             MEAN_FILE=args.mean_file,

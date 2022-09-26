@@ -5,21 +5,19 @@ Written by Yara Mohajerani and Tyler Sutterley (04/2022)
 
 Reads monthly degree 5 zonal spherical harmonic data files from SLR
 
-Dataset distributed by NASA PO.DAAC
-    https://podaac-tools.jpl.nasa.gov/drive/files/GeodeticsGravity/gracefo/docs
-    C50 file sent by Bryan Loomis
-        GSFC_SLR_C20_C30_C50_GSM_replacement.txt
+Dataset distributed by CSR
     ftp://ftp.csr.utexas.edu/pub/slr/degree_5/
         CSR_Monthly_5x5_Gravity_Harmonics.txt
 Dataset distributed by GSFC
     https://earth.gsfc.nasa.gov/geo/data/slr
+        gsfc_slr_5x5c61s61.txt
 
 CALLING SEQUENCE:
     SLR_C50 = read_SLR_C50(SLR_file)
 
 INPUTS:
     SLR_file:
-        GSFC: GSFC_SLR_C20_C30_C50_GSM_replacement.txt
+        GSFC: gsfc_slr_5x5c61s61.txt
         CSR: CSR_Monthly_5x5_Gravity_Harmonics.txt
 
 OUTPUTS:

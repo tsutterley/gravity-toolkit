@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_degree_one.py
-Written by Tyler Sutterley (08/2022)
+Written by Tyler Sutterley (09/2022)
 
 Calculates degree 1 variations using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from ECCO and OMCT/MPIOM
@@ -84,6 +84,9 @@ COMMAND LINE OPTIONS:
         CSR: use values from CSR (5x5 with 6,1)
         GFZ: use values from GFZ GravIS
         GSFC: use values from GSFC (TN-14)
+    --slr-c40 X: Replace C40 coefficients with SLR values
+        CSR: use values from CSR (5x5 with 6,1)
+        GSFC: use values from GSFC
     --slr-c50 X: Replace C50 coefficients with SLR values
         CSR: use values from CSR (5x5 with 6,1)
         GSFC: use values from GSFC
@@ -124,7 +127,7 @@ PROGRAM DEPENDENCIES:
     grace_input_months.py: Reads GRACE/GRACE-FO files for a specified spherical
             harmonic degree and order and for a specified date range
         Includes degree 1 with with Swenson values (if specified)
-        Replaces C20,C21,S21,C22,S22,C30 and C50 with SLR values (if specified)
+        Replaces low-degree harmonics with SLR values (if specified)
     time.py: utilities for calculating time operations
     read_GIA_model.py: reads harmonics for a glacial isostatic adjustment model
     read_love_numbers.py: reads Load Love Numbers from Han and Wahr (1995)
@@ -153,6 +156,7 @@ REFERENCES:
         https://doi.org/10.1029/2007JB005338
 
 UPDATE HISTORY:
+    Updated 09/2022: add option to replace degree 4 zonal harmonics with SLR
     Updated 08/2022: set default land-sea mask file in arguments
     Updated 07/2022: set plot tick formatter to not use offsets
     Updated 05/2022: use argparse descriptions within documentation
@@ -262,39 +266,38 @@ def info(args):
         logging.info('parent process: {0:d}'.format(os.getppid()))
     logging.info('process id: {0:d}'.format(os.getpid()))
 
-#-- PURPOSE: import GRACE GSM files for a given months range
+#-- PURPOSE: import GRACE/GRACE-FO GSM files for a given months range
 def load_grace_GSM(base_dir, PROC, DREL, START, END, MISSING, LMAX,
     MMAX=None, SLR_C20=None, SLR_21=None, SLR_22=None, SLR_C30=None,
-    SLR_C50=None, POLE_TIDE=False):
+    SLR_C40=None, SLR_C50=None, POLE_TIDE=False):
     #-- GRACE/GRACE-FO dataset
     DSET = 'GSM'
     #-- do not import degree 1 coefficients for the GRACE GSM solution
     #-- 0: No degree 1
     DEG1 = 0
-    #-- reading GRACE months for input date range
+    #-- reading GRACE/GRACE-FO GSM solutions for input date range
     #-- replacing low-degree harmonics with SLR values if specified
     #-- correcting for Pole-Tide if specified
     #-- atmospheric jumps will be corrected externally if specified
     grace_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
-        START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX,
-        SLR_21=SLR_21, SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C50=SLR_C50,
+        START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX, SLR_21=SLR_21,
+        SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C40=SLR_C40, SLR_C50=SLR_C50,
         POLE_TIDE=POLE_TIDE, ATM=False, MODEL_DEG1=False)
-    #-- returning input variables
-    return grace_Ylms
+    #-- returning input variables as a harmonics object
+    return harmonics().from_dict(grace_Ylms)
 
-#-- PURPOSE: import GRACE dealiasing files for a given months range
-def load_grace_AOD(base_dir, PROC, DREL, DSET, START, END, MISSING, LMAX):
+#-- PURPOSE: import GRACE/GRACE-FO dealiasing files for a given months range
+def load_AOD(base_dir, PROC, DREL, DSET, START, END, MISSING, LMAX):
     #-- do not replace low degree harmonics for AOD solutions
     SLR_C20 = 'N'
     #-- do not replace degree 1 coefficients for the GRACE AOD solution
     #-- 0: No degree 1 replacement
     DEG1 = 0
-    #-- reading GRACE AOD solutions for input range with grace_input_months.py
+    #-- reading GRACE/GRACE-FO AOD solutions for input date range
     grace_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
-        START, END, MISSING, SLR_C20, DEG1, SLR_21='N', SLR_22='N',
-        SLR_C30='N', POLE_TIDE=False, ATM=False, MODEL_DEG1=False)
-    #-- returning input variables
-    return grace_Ylms
+        START, END, MISSING, SLR_C20, DEG1, POLE_TIDE=False, ATM=False)
+    #-- returning input variables as a harmonics object
+    return harmonics().from_dict(grace_Ylms)
 
 #-- PURPOSE: model the seasonal component of an initial degree 1 model
 #-- using preliminary estimates of annual and semi-annual variations from LWM
@@ -346,6 +349,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     SLR_21=None,
     SLR_22=None,
     SLR_C30=None,
+    SLR_C40=None,
     SLR_C50=None,
     DATAFORM=None,
     MEAN_FILE=None,
@@ -385,12 +389,16 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         C30_str = '_w{0}_C30'.format(SLR_C30)
     else:
         C30_str = ''
+    if SLR_C40 in ('CSR','GSFC','LARES'):
+        C40_str = '_w{0}_C40'.format(SLR_C40)
+    else:
+        C40_str = ''
     if SLR_C50 in ('CSR','GSFC','LARES'):
         C50_str = '_w{0}_C50'.format(SLR_C50)
     else:
         C50_str = ''
     #-- combine satellite laser ranging flags
-    slr_str = ''.join([C21_str,C22_str,C30_str,C50_str])
+    slr_str = ''.join([C21_str,C22_str,C30_str,C40_str,C50_str])
 
     #-- read load love numbers
     hl,kl,ll = load_love_numbers(EXPANSION, LOVE_NUMBERS=LOVE_NUMBERS,
@@ -450,13 +458,11 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         wt = np.ones((LMAX+1))
 
     #-- load GRACE/GRACE-FO data
-    GSM_Ylms = harmonics().from_dict(load_grace_GSM(base_dir, PROC, DREL,
-        START, END, MISSING, LMAX, MMAX=MMAX, SLR_C20=SLR_C20, SLR_21=SLR_21,
-        SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C50=SLR_C50, POLE_TIDE=POLE_TIDE))
-    GAD_Ylms = harmonics().from_dict(load_grace_AOD(base_dir, PROC, DREL, 'GAD',
-        START, END, MISSING, LMAX))
-    GAC_Ylms = harmonics().from_dict(load_grace_AOD(base_dir, PROC, DREL, 'GAC',
-        START, END, MISSING, LMAX))
+    GSM_Ylms = load_grace_GSM(base_dir, PROC, DREL, START, END, MISSING, LMAX,
+        MMAX=MMAX, SLR_C20=SLR_C20, SLR_21=SLR_21, SLR_22=SLR_22,
+        SLR_C30=SLR_C30, SLR_C40=SLR_C40, SLR_C50=SLR_C50, POLE_TIDE=POLE_TIDE)
+    GAD_Ylms = load_AOD(base_dir, PROC, DREL, 'GAD', START, END, MISSING, LMAX)
+    GAC_Ylms = load_AOD(base_dir, PROC, DREL, 'GAC', START, END, MISSING, LMAX)
     #-- use a mean file for the static field to remove
     if MEAN_FILE:
         #-- read data form for input mean file (ascii, netCDF4, HDF5, gfc)
@@ -485,7 +491,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     n_files = len(GSM_Ylms.month)
 
     #-- input GIA spherical harmonic datafiles
-    GIA_Ylms_rate = read_GIA_model(GIA_FILE,GIA=GIA,LMAX=LMAX,MMAX=MMAX)
+    GIA_Ylms_rate = read_GIA_model(GIA_FILE, GIA=GIA, LMAX=LMAX, MMAX=MMAX)
     gia_str = '_{0}'.format(GIA_Ylms_rate['title']) if GIA else ''
     #-- GIA monthly coefficients
     GIA_Ylms = GSM_Ylms.zeros_like()
@@ -539,13 +545,13 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     #-- ECCO_V4r4: https://ecco.jpl.nasa.gov/drive/files/Version4/Release4/interp_monthly/
     if MODEL not in ('OMCT','MPIOM'):
         #-- read input data files for ascii (txt), netCDF4 (nc) or HDF5 (H5)
-        MODEL_INDEX=os.path.expanduser(MODEL_INDEX)
-        OBP_Ylms=harmonics().from_index(MODEL_INDEX, format=DATAFORM)
+        MODEL_INDEX = os.path.expanduser(MODEL_INDEX)
+        OBP_Ylms = harmonics().from_index(MODEL_INDEX, format=DATAFORM)
         #-- reduce to GRACE/GRACE-FO months and truncate to degree and order
-        OBP_Ylms=OBP_Ylms.subset(GSM_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
+        OBP_Ylms = OBP_Ylms.subset(GSM_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
         #-- filter ocean bottom pressure coefficients
         if DESTRIPE:
-            OBP_Ylms=OBP_Ylms.destripe()
+            OBP_Ylms = OBP_Ylms.destripe()
         #-- removing the mean of the ecco spherical harmonic coefficients
         OBP_Ylms.mean(apply=True)
         #-- converting ecco degree 1 harmonics to coefficients of mass
@@ -682,8 +688,8 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
                 #-- for land water: use an initial seasonal geocenter estimate
                 #-- from Chen et al. (1999) then the iterative if specified
                 l = np.arange(1,LMAX+1)
-                pcos[:,i]=np.sum(plmout[l,:,i]*Ylms.clm[l,:], axis=0)
-                psin[:,i]=np.sum(plmout[l,:,i]*Ylms.slm[l,:], axis=0)
+                pcos[:,i] = np.sum(plmout[l,:,i]*Ylms.clm[l,:], axis=0)
+                psin[:,i] = np.sum(plmout[l,:,i]*Ylms.slm[l,:], axis=0)
 
             #-- Multiplying by c/s(phi#m) to get surface density in cm w.e. (lonxlat)
             #-- this will be a spatial field similar to outputs from stokes_combine.py
@@ -743,8 +749,8 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
             if MODEL not in ('OMCT','MPIOM'):
                 #-- calculate difference between ECCO and GAD as the OMCT/MPIOM
                 #-- model is already removed from the GRACE GSM coefficients
-                GAD=np.array([GAD.C10[t], GAD.C11[t], GAD.S11[t]])
-                OBP=np.array([OBP.C10[t], OBP.C11[t], OBP.S11[t]])
+                GAD = np.array([GAD.C10[t], GAD.C11[t], GAD.S11[t]])
+                OBP = np.array([OBP.C10[t], OBP.C11[t], OBP.S11[t]])
                 #-- effectively adding back OMCT/MPIOM and then removing ECCO
                 CMAT += OBP - GAD
 
@@ -1361,6 +1367,9 @@ def arguments():
     parser.add_argument('--slr-c30',
         type=str, default=None, choices=['CSR','GFZ','GSFC','LARES'],
         help='Replace C30 coefficients with SLR values')
+    parser.add_argument('--slr-c40',
+        type=str, default=None, choices=['CSR','GSFC','LARES'],
+        help='Replace C40 coefficients with SLR values')
     parser.add_argument('--slr-c50',
         type=str, default=None, choices=['CSR','GSFC','LARES'],
         help='Replace C50 coefficients with SLR values')
@@ -1471,6 +1480,7 @@ def main():
             SLR_21=args.slr_21,
             SLR_22=args.slr_22,
             SLR_C30=args.slr_c30,
+            SLR_C40=args.slr_c40,
             SLR_C50=args.slr_c50,
             DATAFORM=args.format,
             MODEL_INDEX=args.ocean_file,

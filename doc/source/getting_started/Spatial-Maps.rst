@@ -86,6 +86,7 @@ for some low degree and order spherical harmonics.
 :math:`C_{22}`,
 :math:`S_{22}`,
 :math:`C_{30}`,
+:math:`C_{40}`,
 and :math:`C_{50}` with
 SLR low degree harmonic products [Cheng2011]_ [Cheng2018]_ [Koenig2019]_ [Loomis2019]_ [Loomis2020]_.
 

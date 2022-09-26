@@ -86,6 +86,14 @@ Calling Sequence
         * ``'GSFC'``: use values from GSFC (TN-14)
         * ``'LARES'``: use filtered values from CSR
 
+    --slr-c40 : @replace
+        Replace *C*\ :sub:`40` coefficients with SLR values
+
+        * ``None``: use original values
+        * ``'CSR'``: use values from CSR (5\ |times|\ 5 with 6,1)
+        * ``'GSFC'``: use values from GSFC
+        * ``'LARES'``: use filtered values from CSR
+
     --slr-c50 : @replace
         Replace *C*\ :sub:`50` coefficients with SLR values
 

@@ -106,6 +106,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 09/2022: use logging for debugging level verbose output
+        add option to replace degree 4 zonal harmonics with SLR
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 12/2021: option to specify a specific geocenter correction file
     Updated 11/2021: add GSFC low-degree harmonics
@@ -169,6 +170,7 @@ from gravity_toolkit.grace_date import grace_date
 from gravity_toolkit.read_SLR_C20 import read_SLR_C20
 from gravity_toolkit.read_SLR_CS2 import read_SLR_CS2
 from gravity_toolkit.read_SLR_C30 import read_SLR_C30
+from gravity_toolkit.read_SLR_C40 import read_SLR_C40
 from gravity_toolkit.read_SLR_C50 import read_SLR_C50
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
@@ -259,6 +261,12 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             - ``'CSR'``: use values from CSR (5x5 with 6,1)
             - ``'GFZ'``: use values from GFZ GravIS
             - ``'GSFC'``: use values from GSFC (TN-14)
+    SLR_C40: str or NoneType, default ''
+        Replace C40 with SLR values
+
+            - ``None``: use original values
+            - ``'CSR'``: use values from CSR (5x5 with 6,1)
+            - ``'GSFC'``: use values from GSFC
     SLR_C50: str or NoneType, default ''
         Replace C50 with SLR values
 
@@ -336,6 +344,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     kwargs.setdefault('SLR_21','')
     kwargs.setdefault('SLR_22','')
     kwargs.setdefault('SLR_C30','')
+    kwargs.setdefault('SLR_C40','')
     kwargs.setdefault('SLR_C50','')
     kwargs.setdefault('DEG1_FILE',None)
     kwargs.setdefault('MODEL_DEG1',False)
@@ -509,6 +518,30 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         #-- read SLR file
         C30_input = read_SLR_C30(SLR_file)
         FLAGS.append('_wGFZ_C30')
+
+    #-- Replacing C4,0 with SLR C4,0
+    #-- Running function read_SLR_C40.py
+    if (kwargs['SLR_C40'] == 'CSR'):
+        SLR_file = os.path.join(base_dir,'CSR_Monthly_5x5_Gravity_Harmonics.txt')
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C40 file: {0}'.format(SLR_file))
+        #-- read SLR file
+        C40_input = read_SLR_C40(SLR_file)
+        FLAGS.append('_wCSR_C40')
+    elif (kwargs['SLR_C40'] == 'LARES'):
+        SLR_file = os.path.join(base_dir,'C40_LARES_filtered.txt')
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C40 file: {0}'.format(SLR_file))
+        #-- read SLR file
+        C40_input = read_SLR_C40(SLR_file)
+        FLAGS.append('_wLARES_C40')
+    elif (kwargs['SLR_C40'] == 'GSFC'):
+        SLR_file = os.path.join(base_dir,'gsfc_slr_5x5c61s61.txt')
+        #-- log SLR file if debugging
+        logging.debug('Reading SLR C40 file: {0}'.format(SLR_file))
+        #-- read SLR file
+        C40_input = read_SLR_C40(SLR_file, DATE=grace_Ylms['time'])
+        FLAGS.append('_wGSFC_C40')
 
     #-- Replacing C5,0 with SLR C5,0
     #-- Running function read_SLR_C50.py
@@ -690,6 +723,21 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
                 k, = np.nonzero(C30_input['month'] == grace_month)
                 grace_Ylms['clm'][3,0,i] = np.copy(C30_input['data'][k])
                 grace_Ylms['eclm'][3,0,i] = np.copy(C30_input['error'][k])
+
+    #-- Replace C40 with SLR coefficients for single-accelerometer months
+    if kwargs['SLR_C40'] in ('CSR','GSFC','LARES'):
+        #-- verify that there are replacement C40 months for specified range
+        months_test = sorted(set(single_acc_months) - set(C40_input['month']))
+        if months_test:
+            gm = ','.join('{0:03d}'.format(gm) for gm in months_test)
+            raise IOError('No Matching C40 Months ({0})'.format(gm))
+        #-- replace C40 with SLR coefficients
+        for i,grace_month in enumerate(months):
+            count = np.count_nonzero(C40_input['month'] == grace_month)
+            if (count != 0) and (grace_month > 176):
+                k, = np.nonzero(C40_input['month'] == grace_month)
+                grace_Ylms['clm'][4,0,i] = np.copy(C40_input['data'][k])
+                grace_Ylms['eclm'][4,0,i] = np.copy(C40_input['error'][k])
 
     #-- Replace C50 with SLR coefficients for single-accelerometer months
     if kwargs['SLR_C50'] in ('CSR','GSFC','LARES'):

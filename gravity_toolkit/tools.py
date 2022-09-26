@@ -360,6 +360,15 @@ class widgets:
             style=self.style,
         )
 
+        # SLR C40
+        self.C40 = ipywidgets.Dropdown(
+            options=['[none]','CSR','GSFC'],
+            value='[none]',
+            description='SLR C40:',
+            disabled=False,
+            style=self.style,
+        )
+
         # SLR C50
         self.C50 = ipywidgets.Dropdown(
             options=['[none]','CSR','GSFC'],

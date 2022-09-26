@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 monte_carlo_degree_one.py
-Written by Tyler Sutterley (08/2022)
+Written by Tyler Sutterley (09/2022)
 
 Calculates degree 1 errors using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from OMCT/MPIOM in a Monte Carlo scheme
@@ -71,6 +71,9 @@ COMMAND LINE OPTIONS:
         CSR: use values from CSR (5x5 with 6,1)
         GFZ: use values from GFZ GravIS
         GSFC: use values from GSFC (TN-14)
+    --slr-c40 X: Replace C40 coefficients with SLR values
+        CSR: use values from CSR (5x5 with 6,1)
+        GSFC: use values from GSFC
     --slr-c50 X: Replace C50 coefficients with SLR values
         CSR: use values from CSR (5x5 with 6,1)
         GSFC: use values from GSFC
@@ -111,7 +114,7 @@ PROGRAM DEPENDENCIES:
     grace_input_months.py: Reads GRACE/GRACE-FO files for a specified spherical
             harmonic degree and order and for a specified date range
         Includes degree 1 with with Swenson values (if specified)
-        Replaces C20,C21,S21,C22,S22,C30 and C50 with SLR values (if specified)
+        Replaces low-degree harmonics with SLR values (if specified)
     time.py: utilities for calculating time operations
     read_GIA_model.py: reads harmonics for a glacial isostatic adjustment model
     read_love_numbers.py: reads Load Love Numbers from Han and Wahr (1995)
@@ -143,6 +146,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 09/2022: add option to replace degree 4 zonal harmonics with SLR
     Updated 08/2022: set default land-sea mask file in arguments
     Updated 07/2022: set plot tick formatter to not use offsets
     Updated 05/2022: use argparse descriptions within documentation
@@ -271,6 +275,7 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     SLR_21=None,
     SLR_22=None,
     SLR_C30=None,
+    SLR_C40=None,
     SLR_C50=None,
     DATAFORM=None,
     MEAN_FILE=None,
@@ -313,12 +318,16 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
         C30_str = '_w{0}_C30'.format(SLR_C30)
     else:
         C30_str = ''
+    if SLR_C40 in ('CSR','GSFC','LARES'):
+        C40_str = '_w{0}_C40'.format(SLR_C40)
+    else:
+        C40_str = ''
     if SLR_C50 in ('CSR','GSFC','LARES'):
         C50_str = '_w{0}_C50'.format(SLR_C50)
     else:
         C50_str = ''
     #-- combine satellite laser ranging flags
-    slr_str = ''.join([C21_str,C22_str,C30_str,C50_str])
+    slr_str = ''.join([C21_str,C22_str,C30_str,C40_str,C50_str])
     #-- suffix for input ascii, netcdf and HDF5 files
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
 
@@ -389,8 +398,8 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     #-- correcting for Pole-Tide drift if specified
     #-- atmospheric jumps will be corrected externally if specified
     Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
-        START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX,
-        SLR_21=SLR_21, SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C50=SLR_C50,
+        START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX, SLR_21=SLR_21,
+        SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C40=SLR_C40, SLR_C50=SLR_C50,
         POLE_TIDE=POLE_TIDE, ATM=False, MODEL_DEG1=False)
     #-- create harmonics object from GRACE/GRACE-FO data
     GSM_Ylms = harmonics().from_dict(Ylms)
@@ -1203,6 +1212,9 @@ def arguments():
     parser.add_argument('--slr-c30',
         type=str, default=None, choices=['CSR','GFZ','GSFC','LARES'],
         help='Replace C30 coefficients with SLR values')
+    parser.add_argument('--slr-c40',
+        type=str, default=None, choices=['CSR','GSFC','LARES'],
+        help='Replace C40 coefficients with SLR values')
     parser.add_argument('--slr-c50',
         type=str, default=None, choices=['CSR','GSFC','LARES'],
         help='Replace C50 coefficients with SLR values')
@@ -1293,6 +1305,7 @@ def main():
             SLR_21=args.slr_21,
             SLR_22=args.slr_22,
             SLR_C30=args.slr_c30,
+            SLR_C40=args.slr_c40,
             SLR_C50=args.slr_c50,
             DATAFORM=args.format,
             MEAN_FILE=args.mean_file,

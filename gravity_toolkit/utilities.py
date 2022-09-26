@@ -1710,14 +1710,15 @@ def from_gsfc(directory,timeout=None,context=ssl.SSLContext(),
         local=os.path.join(directory,FILE),
         hash=original_md5, chunk=chunk, verbose=verbose,
         fid=fid, mode=mode)
+    #-- can create a copy for archival purposes
     if copy:
         #-- create copy of file for archiving
         #-- read file and extract data date span
         file_contents = fileID.read().decode('utf-8').splitlines()
         data_span, = [l for l in file_contents if l.startswith('Data span:')]
         #-- extract start and end of data date span
-        span_start,span_end = data_span.replace('Data span: ','').split(' - ')
-        #-- create copy of file with date span
+        span_start,span_end = re.findall(r'\d+[\s+]\w{3}[\s+]\d{4}', data_span)
+        #-- create copy of file with date span in filename
         COPY = 'GSFC_SLR_5x5c61s61_{0}_{1}.txt'.format(
             time.strftime('%Y%m', time.strptime(span_start, '%d %b %Y')),
             time.strftime('%Y%m', time.strptime(span_end, '%d %b %Y')))

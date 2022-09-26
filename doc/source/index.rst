@@ -68,6 +68,7 @@ missions
     api_reference/read_SLR_C20.rst
     api_reference/read_SLR_CS2.rst
     api_reference/read_SLR_C30.rst
+    api_reference/read_SLR_C40.rst
     api_reference/read_SLR_C50.rst
     api_reference/read_SLR_harmonics.rst
     api_reference/savitzky_golay.rst
