@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_mean_harmonics.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (09/2022)
 
 Calculates the temporal mean of the GRACE/GRACE-FO spherical harmonics
     for a given date range from a set of parameters
@@ -38,6 +38,9 @@ COMMAND LINE OPTIONS:
         CSR: use values from CSR (5x5 with 6,1)
         GFZ: use values from GFZ GravIS
         GSFC: use values from GSFC (TN-14)
+    --slr-c40 X: Replace C40 coefficients with SLR values
+        CSR: use values from CSR (5x5 with 6,1)
+        GSFC: use values from GSFC
     --slr-c50 X: Replace C50 coefficients with SLR values
         CSR: use values from CSR (5x5 with 6,1)
         GSFC: use values from GSFC
@@ -62,13 +65,14 @@ PROGRAM DEPENDENCIES:
     grace_input_months.py: Reads GRACE/GRACE-FO files for a specified spherical
             harmonic degree and order and for a specified date range
         Includes degree 1 with with Swenson values (if specified)
-        Replaces C20,C21,S21,C22,S22,C30 and C50 with SLR values (if specified)
+        Replaces low-degree harmonics with SLR values (if specified)
     harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
     destripe_harmonics.py: calculates the decorrelation (destriping) filter
         and filters the GRACE/GRACE-FO coefficients for striping errors
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 09/2022: add option to replace degree 4 zonal harmonics with SLR
     Updated 04/2022: use argparse descriptions within documentation
     Updated 12/2021: can use variable loglevels for verbose output
         option to specify a specific geocenter correction file
@@ -139,6 +143,7 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
     SLR_21=None,
     SLR_22=None,
     SLR_C30=None,
+    SLR_C40=None,
     SLR_C50=None,
     MEAN_FILE=None,
     MEANFORM=None,
@@ -157,8 +162,8 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
     #-- include degree 1 (geocenter) harmonics if specified
     #-- correcting for Pole Tide Drift and Atmospheric Jumps if specified
     input_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
-        START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX,
-        SLR_21=SLR_21, SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C50=SLR_C50,
+        START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX, SLR_21=SLR_21,
+        SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C40=SLR_C40, SLR_C50=SLR_C50,
         DEG1_FILE=DEG1_FILE, MODEL_DEG1=MODEL_DEG1, ATM=ATM,
         POLE_TIDE=POLE_TIDE)
     grace_Ylms = harmonics().from_dict(input_Ylms)
@@ -402,6 +407,9 @@ def arguments():
     parser.add_argument('--slr-c30',
         type=str, default=None, choices=['CSR','GFZ','GSFC','LARES'],
         help='Replace C30 coefficients with SLR values')
+    parser.add_argument('--slr-c40',
+        type=str, default=None, choices=['CSR','GSFC','LARES'],
+        help='Replace C40 coefficients with SLR values')
     parser.add_argument('--slr-c50',
         type=str, default=None, choices=['CSR','GSFC','LARES'],
         help='Replace C50 coefficients with SLR values')
@@ -463,6 +471,7 @@ def main():
             SLR_21=args.slr_21,
             SLR_22=args.slr_22,
             SLR_C30=args.slr_c30,
+            SLR_C40=args.slr_c40,
             SLR_C50=args.slr_c50,
             MEAN_FILE=args.mean_file,
             MEANFORM=args.mean_format,

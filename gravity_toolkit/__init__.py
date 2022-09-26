@@ -53,6 +53,7 @@ from gravity_toolkit.read_love_numbers import read_love_numbers,load_love_number
 from gravity_toolkit.read_SLR_C20 import read_SLR_C20
 from gravity_toolkit.read_SLR_CS2 import read_SLR_CS2
 from gravity_toolkit.read_SLR_C30 import read_SLR_C30
+from gravity_toolkit.read_SLR_C40 import read_SLR_C40
 from gravity_toolkit.read_SLR_C50 import read_SLR_C50
 from gravity_toolkit.read_SLR_harmonics import read_SLR_harmonics, convert_weekly
 from gravity_toolkit.savitzky_golay import savitzky_golay
