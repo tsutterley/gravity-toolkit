@@ -51,6 +51,7 @@ missions
     api_reference/grace_find_months.rst
     api_reference/grace_input_months.rst
     api_reference/grace_months_index.rst
+    api_reference/harmonic_gradients.rst
     api_reference/harmonic_summation.rst
     api_reference/harmonics.rst
     api_reference/legendre.rst

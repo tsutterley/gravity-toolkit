@@ -396,3 +396,4 @@ def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
 
     #-- return the output spherical harmonics object
     return Ylms
+

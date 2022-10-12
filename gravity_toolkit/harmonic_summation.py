@@ -78,7 +78,7 @@ def harmonic_summation(clm1, slm1, lon, lat,
     th = (90.0 - np.squeeze(lat))*np.pi/180.0
     thmax = len(th)
 
-    #--  Calculate fourier coefficients from legendre coefficients
+    #-- Calculate fourier coefficients from legendre coefficients
     d_cos = np.zeros((MMAX+1,thmax))#-- [m,th]
     d_sin = np.zeros((MMAX+1,thmax))#-- [m,th]
     if PLM is None:

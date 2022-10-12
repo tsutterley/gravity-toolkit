@@ -17,3 +17,5 @@ Calling Sequence
 .. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/fourier_legendre.py
 
 .. autofunction:: gravity_toolkit.fourier_legendre
+
+.. autofunction:: gravity_toolkit.legendre_gradient

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_grace_ftp.py
-Written by Tyler Sutterley (08/2022)
+Written by Tyler Sutterley (10/2022)
 Syncs GRACE/GRACE-FO data from the GFZ Information System and Data Center (ISDC)
 Syncs CSR/GFZ/JPL files for RL06 GAA/GAB/GAC/GAD/GSM
     GAA and GAB are GFZ/JPL only
@@ -40,6 +40,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 10/2022: fix version check for mission
     Updated 08/2022: moved regular expression function to utilities
         Dynamically select newest version of granules for index
     Updated 04/2022: added option for GRACE/GRACE-FO Level-2 data version
@@ -236,7 +237,7 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
                 #-- for each satellite mission (grace, grace-fo)
                 for i,mi in enumerate(['grace','grace-fo']):
                     #-- modifiers for intermediate data releases
-                    if (int(VERSION) > 0):
+                    if (int(VERSION[i]) > 0):
                         drel_str = '{0}.{1}'.format(rl,VERSION[i])
                     else:
                         drel_str = copy.copy(rl)
@@ -364,7 +365,7 @@ def arguments():
         help='GRACE/GRACE-FO data release')
     #-- GRACE/GRACE-FO data version
     parser.add_argument('--version','-v',
-        metavar='VERSION', type=str, nargs='+',
+        metavar='VERSION', type=str, nargs=2,
         default=['0','1'], choices=['0','1','2','3'],
         help='GRACE/GRACE-FO Level-2 data version')
     #-- GRACE/GRACE-FO newsletters
