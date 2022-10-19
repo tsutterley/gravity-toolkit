@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GRACE_harmonics.py
-Written by Tyler Sutterley (05/2022)
+Written by Tyler Sutterley (10/2022)
 Contributions by Hugo Lecomte
 
 Reads GRACE files and extracts spherical harmonic data and drift rates (RL04)
@@ -42,6 +42,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 10/2022: make keyword arguments part of kwargs dictionary
     Updated 05/2022: updated comments
     Updated 04/2022: updated docstrings to numpy documentation format
         include utf-8 encoding in reads to be windows compliant
@@ -70,7 +71,7 @@ import numpy as np
 import gravity_toolkit.time
 
 #-- PURPOSE: read Level-2 GRACE and GRACE-FO spherical harmonic files
-def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
+def read_GRACE_harmonics(input_file, LMAX, **kwargs):
     """
     Extracts spherical harmonic coefficients from GRACE/GRACE-FO files
 
@@ -116,6 +117,9 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
         *Journal of Geophysical Research: Solid Earth*, 120(6), 4597--4615, (2015).
         `doi: 10.1002/2015JB011986 <https://doi.org/10.1002/2015JB011986>`_
     """
+    #-- set default keyword arguments
+    kwargs.setdefault('MMAX', None)
+    kwargs.setdefault('POLE_TIDE', False)
 
     #-- parse filename
     PFX,SY,SD,EY,ED,N,PRC,F1,DRL,F2,SFX = parse_file(input_file)
@@ -173,7 +177,7 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
         epoch=(1858,11,17,0,0,0))
 
     #-- set maximum spherical harmonic order
-    MMAX = np.copy(LMAX) if (MMAX is None) else MMAX
+    MMAX = np.copy(LMAX) if (kwargs['MMAX'] is None) else np.copy(kwargs['MMAX'])
     #-- output dimensions
     grace_L2_input['l'] = np.arange(LMAX+1)
     grace_L2_input['m'] = np.arange(MMAX+1)
@@ -241,7 +245,7 @@ def read_GRACE_harmonics(input_file, LMAX, MMAX=None, POLE_TIDE=False):
         grace_L2_input['slm'][:,:] += dt*drift_s[:,:]
 
     #-- Correct Pole Tide following Wahr et al. (2015) 10.1002/2015JB011986
-    if POLE_TIDE and (DSET == 'GSM'):
+    if kwargs['POLE_TIDE'] and (DSET == 'GSM'):
         #-- time since 2000.0
         dt = (grace_L2_input['time']-2000.0)
         #-- CSR and JPL Pole Tide Correction

@@ -328,7 +328,7 @@ def read_SLR_C20(SLR_file, AOD=True, HEADER=True):
                 MJD = np.float64(line_contents[0])
                 #-- converting from MJD into month, day and year
                 YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
-                    MJD+2400000.5, FORMAT='tuple')
+                    MJD+2400000.5, format='tuple')
                 #-- converting from month, day, year into decimal year
                 dinput['time'][t] = gravity_toolkit.time.convert_calendar_decimal(
                     YY, MM, day=DD, hour=hh)
@@ -388,7 +388,7 @@ def read_SLR_C20(SLR_file, AOD=True, HEADER=True):
                 MJD = np.float64(line_contents[0])
                 #-- converting from MJD into month, day and year
                 YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
-                    MJD+2400000.5, FORMAT='tuple')
+                    MJD+2400000.5, format='tuple')
                 #-- converting from month, day, year into decimal year
                 date_conv[t] = gravity_toolkit.time.convert_calendar_decimal(
                     YY, MM, day=DD, hour=hh)

@@ -311,11 +311,11 @@ class widgets:
         #    https://grace.jpl.nasa.gov/data/get-data/geocenter/
         # SLR: satellite laser ranging from CSR
         #    ftp://ftp.csr.utexas.edu/pub/slr/geocenter/
-        # SLF: Sutterley and Velicogna, Remote Sensing (2019)
+        # UCI: Sutterley and Velicogna, Remote Sensing (2019)
         #    https://www.mdpi.com/2072-4292/11/18/2108
-        geocenter_default = 'SLF' if (self.product.value == 'GSM') else '[none]'
+        geocenter_default = 'UCI' if (self.product.value == 'GSM') else '[none]'
         self.geocenter = ipywidgets.Dropdown(
-            options=['[none]', 'Tellus', 'SLR', 'SLF'],
+            options=['[none]', 'Tellus', 'SLR', 'UCI'],
             value=geocenter_default,
             description='Geocenter:',
             disabled=False,
@@ -918,7 +918,7 @@ def from_cpt(filename, use_extremes=True, **kwargs):
     """
 
     # read the cpt file and get contents
-    with open(filename,'r') as f:
+    with open(filename, mode='r', encoding='utf8') as f:
         file_contents = f.read().splitlines()
     # extract basename from cpt filename
     name = re.sub(r'\.cpt','',os.path.basename(filename),flags=re.I)

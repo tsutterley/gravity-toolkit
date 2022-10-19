@@ -201,7 +201,7 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
         #-- calendar dates to read
         JD = np.array(julian_days_to_read)
         Y,M,D,h,m,s = gravity_toolkit.time.convert_julian(JD,
-            ASTYPE='i', FORMAT='tuple')
+            astype='i', format='tuple')
         #-- find unique year and month pairs to read
         rx1='|'.join(['{0:d}-{1:02d}'.format(*p) for p in set(zip(Y,M))])
         rx2='|'.join(['{0:0d}-{1:02d}-{2:02d}'.format(*p) for p in set(zip(Y,M,D))])

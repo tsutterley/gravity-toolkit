@@ -243,11 +243,6 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
                         drel_str = copy.copy(rl)
                     #-- print string of exact data product
                     logging.info('{0}/{1}/{2}/{3}'.format(mi, pr, drel_str, ds))
-                    #-- local directory for exact data product
-                    local_dir = os.path.join(DIRECTORY, pr, rl, ds)
-                    #-- check if directory exists and recursively create if not
-                    if not os.path.exists(local_dir):
-                        os.makedirs(local_dir,MODE)
                     #-- compile the regular expression operator to find files
                     R1 = re.compile(r'({0}-(.*?)(gz|txt|dif))'.format(ds))
                     #-- get filenames from remote directory

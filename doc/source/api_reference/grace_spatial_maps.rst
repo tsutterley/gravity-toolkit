@@ -49,7 +49,7 @@ Calling Sequence
         * ``None``
         * ``'Tellus'``: GRACE/GRACE-FO TN-13 coefficients from PO.DAAC
         * ``'SLR'``: satellite laser ranging coefficients from CSR
-        * ``'SLF'``: Sutterley and Velicogna coefficients, Remote Sensing (2019)
+        * ``'UCI'``: Sutterley and Velicogna coefficients, Remote Sensing (2019)
         * ``'Swenson'``: GRACE-derived coefficients from Sean Swenson
         * ``'GFZ'``: GRACE/SLR derived coefficients from GFZ GravIS
 

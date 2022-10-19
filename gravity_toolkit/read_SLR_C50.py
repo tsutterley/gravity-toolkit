@@ -137,7 +137,7 @@ def read_SLR_C50(SLR_file, C50_MEAN=0.0, DATE=None, HEADER=True):
                 MJD = np.float64(line_contents[0])
                 #-- converting from MJD into month, day and year
                 YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
-                    MJD+2400000.5, FORMAT='tuple')
+                    MJD+2400000.5, format='tuple')
                 #-- converting from month, day, year into decimal year
                 dinput['time'][t] = gravity_toolkit.time.convert_calendar_decimal(
                     YY, MM, day=DD, hour=hh)
@@ -182,7 +182,7 @@ def read_SLR_C50(SLR_file, C50_MEAN=0.0, DATE=None, HEADER=True):
         dinput['error'] = Ylms['error']['clm'][5,0,:].copy()
         #-- converting from MJD into month, day and year
         YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
-            Ylms['MJD']+2400000.5, FORMAT='tuple')
+            Ylms['MJD']+2400000.5, format='tuple')
         #-- calculate GRACE/GRACE-FO month
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(YY,MM)
 

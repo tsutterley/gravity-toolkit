@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (09/2022)
+Written by Tyler Sutterley (10/2022)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
@@ -44,7 +44,7 @@ INPUTS:
             https://grace.jpl.nasa.gov/data/get-data/geocenter/
         SLR: satellite laser ranging coefficients from CSR
             http://download.csr.utexas.edu/pub/slr/geocenter/
-        SLF: Sutterley and Velicogna coefficients, Remote Sensing (2019)
+        UCI: Sutterley and Velicogna coefficients, Remote Sensing (2019)
             https://doi.org/10.6084/m9.figshare.7388540
         Swenson: GRACE-derived coefficients from Sean Swenson
             https://doi.org/10.1029/2007JB005338
@@ -105,6 +105,7 @@ PROGRAM DEPENDENCIES:
     read_gfc_harmonics.py: reads spherical harmonic data from gfc files
 
 UPDATE HISTORY:
+    Updated 10/2022: tilde-expansion of input working data directory
     Updated 09/2022: use logging for debugging level verbose output
         add option to replace degree 4 zonal harmonics with SLR
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -236,7 +237,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             - ``None``: No degree 1 replacement
             - ``'Tellus'``: `GRACE/GRACE-FO TN-13 coefficients from PO.DAAC <https://grace.jpl.nasa.gov/data/get-data/geocenter/>`_ [Sun2016]_
             - ``'SLR'``: `Satellite laser ranging coefficients from CSR <ftp://ftp.csr.utexas.edu/pub/slr/geocenter/>`_ [Cheng2013]_
-            - ``'SLF'``: `GRACE/GRACE-FO coefficients from Sutterley and Velicogna <https://doi.org/10.6084/m9.figshare.7388540>`_ [Sutterley2019]_
+            - ``'UCI'``: `GRACE/GRACE-FO coefficients from Sutterley and Velicogna <https://doi.org/10.6084/m9.figshare.7388540>`_ [Sutterley2019]_
             - ``'Swenson'``: GRACE-derived coefficients from Sean Swenson [Swenson2008]_
             - ``'GFZ'``: `GRACE/GRACE-FO coefficients from GFZ GravIS <http://gravis.gfz-potsdam.de/corrections>`_
     MMAX: int or NoneType, default None
@@ -352,7 +353,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     kwargs.setdefault('POLE_TIDE',False)
 
     #-- directory of exact GRACE/GRACE-FO product
-    grace_dir = os.path.join(base_dir, PROC, DREL, DSET)
+    grace_dir = os.path.join(os.path.expanduser(base_dir), PROC, DREL, DSET)
     #-- check that GRACE/GRACE-FO product directory exists
     if not os.access(grace_dir, os.F_OK):
         raise FileNotFoundError(grace_dir)
@@ -616,7 +617,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         DEG1_input = gravity_toolkit.geocenter(radius=6.378136e9).from_SLR(DEG1_file,
             AOD=True,release=DREL,header=15,columns=COLUMNS)
         FLAGS.append('_w{0}_DEG1'.format(DEG1))
-    elif (DEG1 == 'SLF'):
+    elif DEG1 in ('SLF','UCI'):
         #-- degree one files from Sutterley and Velicogna (2019)
         #-- default: iterated and with self-attraction and loading effects
         MODEL = dict(RL04='OMCT', RL05='OMCT', RL06='MPIOM')
@@ -757,10 +758,10 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     #-- Use Degree 1 coefficients
     #-- Tellus: Tellus Degree 1 (PO.DAAC following Sun et al., 2016)
     #-- SLR: CSR Satellite Laser Ranging (SLR) Degree 1 - GRACE AOD
-    #-- SLF: OMCT/MPIOM coefficients with Sea Level Fingerprint land-water mass
+    #-- UCI: OMCT/MPIOM coefficients with Sea Level Fingerprint land-water mass
     #-- Swenson: GRACE-derived coefficients from Sean Swenson
     #-- GFZ: GRACE/GRACE-FO coefficients from GFZ GravIS
-    if DEG1 in ('Tellus','SLR','SLF','Swenson','GFZ'):
+    if DEG1 in ('GFZ','SLR','SLF','Swenson','Tellus','UCI'):
         #-- check if modeling degree 1 or if all months are available
         if kwargs['MODEL_DEG1']:
             #-- least-squares modeling the degree 1 coefficients

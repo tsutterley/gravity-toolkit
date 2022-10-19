@@ -25,7 +25,7 @@ Convert from Julian Days into calendar dates
     import gravity_toolkit.time
     JD = MJD + 2400000.5
     YEAR,MONTH,DAY,HOUR,MINUTE,SECOND = gravity_toolkit.time.convert_julian(JD,
-        FORMAT='tuple')
+        format='tuple')
 
 Convert a calendar date into Modified Julian Days (MJD)
 
