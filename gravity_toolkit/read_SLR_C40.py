@@ -110,7 +110,7 @@ def read_SLR_C40(SLR_file, C40_MEAN=0.0, DATE=None, **kwargs):
         dinput['error'] = Ylms['error']['clm'][4,0,:].copy()
         #-- converting from MJD into month, day and year
         YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
-            Ylms['MJD']+2400000.5, FORMAT='tuple')
+            Ylms['MJD']+2400000.5, format='tuple')
         #-- calculate GRACE/GRACE-FO month
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(YY,MM)
 

@@ -52,7 +52,7 @@ COMMAND LINE OPTIONS:
     --geocenter X: Update Degree 1 coefficients with SLR or derived values
         Tellus: GRACE/GRACE-FO TN-13 coefficients from PO.DAAC
         SLR: satellite laser ranging coefficients from CSR
-        SLF: Sutterley and Velicogna coefficients, Remote Sensing (2019)
+        UCI: Sutterley and Velicogna coefficients, Remote Sensing (2019)
         Swenson: GRACE-derived coefficients from Sean Swenson
         GFZ: GRACE/GRACE-FO coefficients from GFZ GravIS
     --slr-c20 X: Replace C20 coefficients with SLR values
@@ -839,7 +839,7 @@ def arguments():
     #--     https://grace.jpl.nasa.gov/data/get-data/geocenter/
     #-- SLR: satellite laser ranging from CSR
     #--     ftp://ftp.csr.utexas.edu/pub/slr/geocenter/
-    #-- SLF: Sutterley and Velicogna, Remote Sensing (2019)
+    #-- UCI: Sutterley and Velicogna, Remote Sensing (2019)
     #--     https://www.mdpi.com/2072-4292/11/18/2108
     #-- Swenson: GRACE-derived coefficients from Sean Swenson
     #--     https://doi.org/10.1029/2007JB005338
@@ -847,7 +847,7 @@ def arguments():
     #--     http://gravis.gfz-potsdam.de/corrections
     parser.add_argument('--geocenter',
         metavar='DEG1', type=str,
-        choices=['Tellus','SLR','SLF','Swenson','GFZ'],
+        choices=['Tellus','SLR','SLF','UCI','Swenson','GFZ'],
         help='Update Degree 1 coefficients with SLR or derived values')
     parser.add_argument('--geocenter-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),

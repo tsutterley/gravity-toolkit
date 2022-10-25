@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 time.py
-Written by Tyler Sutterley (08/2022)
+Written by Tyler Sutterley (10/2022)
 Utilities for calculating time operations
 
 PYTHON DEPENDENCIES:
@@ -11,6 +11,7 @@ PYTHON DEPENDENCIES:
         https://dateutil.readthedocs.io/en/stable/
 
 UPDATE HISTORY:
+    Updated 10/2022: added more time parsing for longer periods
     Updated 08/2022: added file parsing functions from GRACE date utilities
         added function to dynamically select newest version of granules
         output variables to unit conversion to seconds and the number of days
@@ -48,6 +49,14 @@ _to_sec = {'microseconds': 1e-6, 'microsecond': 1e-6,
            'hours': 3600.0, 'hour': 3600.0,
            'hr': 3600.0, 'hrs': 3600.0, 'h': 3600.0,
            'day': 86400.0, 'days': 86400.0, 'd': 86400.0}
+#-- approximate conversions for longer periods
+_to_sec['mon'] = 30.0 * 86400.0
+_to_sec['month'] = 30.0 * 86400.0
+_to_sec['months'] = 30.0 * 86400.0
+_to_sec['common_year'] = 365.0 * 86400.0
+_to_sec['common_years'] = 365.0 * 86400.0
+_to_sec['year'] = 365.25 * 86400.0
+_to_sec['years'] = 365.25 * 86400.0
 
 #-- PURPOSE: parse a date string into epoch and units scale
 def parse_date_string(date_string):
