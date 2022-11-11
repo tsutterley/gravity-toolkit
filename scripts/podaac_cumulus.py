@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_cumulus.py
-Written by Tyler Sutterley (08/2022)
+Written by Tyler Sutterley (11/2022)
 
 Syncs GRACE/GRACE-FO data from NASA JPL PO.DAAC Cumulus AWS S3 bucket
 S3 Cumulus syncs are only available in AWS instances in us-west-2
@@ -51,6 +51,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 11/2022: added CMR queries for GRACE/GRACE-FO technical notes
     Updated 08/2022: moved regular expression function to utilities
         Dynamically select newest version of granules for index
     Updated 04/2022: added option for GRACE/GRACE-FO Level-2 data version
@@ -80,8 +81,6 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
     #-- check if directory exists and recursively create if not
     os.makedirs(DIRECTORY,MODE) if not os.path.exists(DIRECTORY) else None
 
-    #-- PO.DAAC cumulus bucket
-    bucket = 'podaac-ops-cumulus-protected'
     #-- mission shortnames
     shortname = {'grace':'GRAC', 'grace-fo':'GRFO'}
     #-- datasets for each processing center
@@ -93,17 +92,69 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
     #-- create log file with list of synchronized files (or print to terminal)
     if LOG:
         #-- format: PODAAC_sync_2002-04-01.log
-        today = time.strftime('%Y-%m-%d',time.localtime())
-        LOGFILE = 'PODAAC_sync_{0}.log'.format(today)
+        today = time.strftime('%Y-%m-%d', time.localtime())
+        LOGFILE = f'PODAAC_sync_{today}.log'
         logging.basicConfig(filename=os.path.join(DIRECTORY,LOGFILE),
             level=logging.INFO)
-        logging.info('PO.DAAC Cumulus Sync Log ({0})'.format(today))
+        logging.info(f'PO.DAAC Cumulus Sync Log ({today})')
         logging.info('CENTERS={0}'.format(','.join(PROC)))
         logging.info('RELEASES={0}'.format(','.join(DREL)))
     else:
         #-- standard output (terminal output)
         logging.basicConfig(level=logging.INFO)
 
+    #-- Degree 1 (geocenter) coefficients
+    logging.info('Degree 1 Coefficients:')
+    #-- SLR C2,0 and C3,0 coefficients
+    logging.info('C2,0 and C3,0 Coefficients:')
+    #-- compile regular expression operator for remote files
+    R1 = re.compile(r'TN-13_GEOC_(CSR|GFZ|JPL)_(.*?).txt', re.VERBOSE)
+    R2 = re.compile(r'TN-(14)_C30_C20_GSFC_SLR.txt', re.VERBOSE)
+    #-- current time stamp to use for local files
+    mtime = time.time()
+    #-- for each processing center (CSR, GFZ, JPL)
+    for pr in PROC:
+        #-- for each data release (RL04, RL05, RL06)
+        for rl in DREL:
+            #-- for each unique version of data to sync
+            for version in set(VERSION):
+                #-- query CMR for product metadata
+                urls = gravity_toolkit.utilities.cmr_metadata(
+                    mission='grace-fo', center=pr, release=rl,
+                    version=version, provider='POCLOUD',
+                    endpoint=ENDPOINT)
+
+                #-- TN-13 JPL degree 1 files
+                url, = [url for url in urls if R1.search(url)]
+                granule = gravity_toolkit.utilities.url_split(url)[-1]
+                local_file = os.path.join(DIRECTORY,'geocenter',granule)
+                #-- access auxiliary data from endpoint
+                if (ENDPOINT == 'data'):
+                    http_pull_file(url, mtime, local_file,
+                        GZIP=GZIP, TIMEOUT=TIMEOUT,
+                        CLOBBER=CLOBBER, MODE=MODE)
+                elif (ENDPOINT == 's3'):
+                    bucket = gravity_toolkit.utilities.s3_bucket(url)
+                    key = gravity_toolkit.utilities.s3_key(url)
+                    response = client.get_object(Bucket=bucket, Key=key)
+                    s3_pull_file(response, mtime, local_file,
+                        GZIP=GZIP, CLOBBER=CLOBBER, MODE=MODE)
+
+                #-- TN-14 SLR C2,0 and C3,0 files
+                url, = [url for url in urls if R2.search(url)]
+                granule = gravity_toolkit.utilities.url_split(url)[-1]
+                local_file = os.path.join(DIRECTORY,granule)
+                #-- access auxiliary data from endpoint
+                if (ENDPOINT == 'data'):
+                    http_pull_file(url, mtime, local_file,
+                        GZIP=GZIP, TIMEOUT=TIMEOUT,
+                        CLOBBER=CLOBBER, MODE=MODE)
+                elif (ENDPOINT == 's3'):
+                    bucket = gravity_toolkit.utilities.s3_bucket(url)
+                    key = gravity_toolkit.utilities.s3_key(url)
+                    response = client.get_object(Bucket=bucket, Key=key)
+                    s3_pull_file(response, mtime, local_file,
+                        GZIP=GZIP, CLOBBER=CLOBBER, MODE=MODE)
 
     #-- GRACE/GRACE-FO AOD1B dealiasing products
     if AOD1B:
@@ -111,7 +162,7 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
         #-- for each data release (RL04, RL05, RL06)
         for rl in DREL:
             #-- print string of exact data product
-            logging.info('{0}/{1}/{2}'.format('GFZ','AOD1B',rl))
+            logging.info(f'GFZ/AOD1B/{rl}')
             #-- local directory for exact data product
             local_dir = os.path.join(DIRECTORY,'AOD1B',rl)
             #-- check if directory exists and recursively create if not
@@ -132,6 +183,7 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                     http_pull_file(url, mtime, local_file,
                         TIMEOUT=TIMEOUT, CLOBBER=CLOBBER, MODE=MODE)
                 elif (ENDPOINT == 's3'):
+                    bucket = gravity_toolkit.utilities.s3_bucket(url)
                     key = gravity_toolkit.utilities.s3_key(url)
                     response = client.get_object(Bucket=bucket, Key=key)
                     s3_pull_file(response, mtime, local_file,
@@ -155,11 +207,12 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                 #-- for each satellite mission (grace, grace-fo)
                 for i,mi in enumerate(['grace','grace-fo']):
                     #-- print string of exact data product
-                    logging.info('{0} {1}/{2}/{3}'.format(mi, pr, rl, ds))
+                    logging.info(f'{mi} {pr}/{rl}/{ds}')
                     #-- query CMR for dataset
                     ids,urls,mtimes = gravity_toolkit.utilities.cmr(
                         mission=mi, center=pr, release=rl, product=ds,
-                        version=VERSION[i], provider='POCLOUD', endpoint=ENDPOINT)
+                        version=VERSION[i], provider='POCLOUD',
+                        endpoint=ENDPOINT)
                     #-- regular expression operator for data product
                     rx = gravity_toolkit.utilities.compile_regex_pattern(
                         pr, rl, ds, mission=shortname[mi])
@@ -168,14 +221,14 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                         #-- retrieve GRACE/GRACE-FO files
                         granule = gravity_toolkit.utilities.url_split(url)[-1]
                         suffix = '.gz' if GZIP else ''
-                        local_file = os.path.join(local_dir,
-                            '{0}{1}'.format(granule, suffix))
+                        local_file = os.path.join(local_dir, f'{granule}{suffix}')
                         #-- access data from endpoint
                         if (ENDPOINT == 'data'):
                             http_pull_file(url, mtime, local_file,
                                 GZIP=GZIP, TIMEOUT=TIMEOUT,
                                 CLOBBER=CLOBBER, MODE=MODE)
                         elif (ENDPOINT == 's3'):
+                            bucket = gravity_toolkit.utilities.s3_bucket(url)
                             key = gravity_toolkit.utilities.s3_key(url)
                             response = client.get_object(Bucket=bucket, Key=key)
                             s3_pull_file(response, mtime, local_file,
@@ -190,7 +243,7 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                 #-- outputting GRACE/GRACE-FO filenames to index
                 with open(os.path.join(local_dir,'index.txt'),'w') as fid:
                     for fi in sorted(grace_files):
-                        print('{0}'.format(fi), file=fid)
+                        print(fi, file=fid)
                 #-- change permissions of index file
                 os.chmod(os.path.join(local_dir,'index.txt'), MODE)
 
@@ -220,8 +273,8 @@ def http_pull_file(remote_file, remote_mtime, local_file,
     #-- if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         #-- Printing files transferred
-        logging.info('{0} --> '.format(remote_file))
-        logging.info('\t{0}{1}\n'.format(local_file,OVERWRITE))
+        logging.info(f'{remote_file} -->')
+        logging.info(f'\t{local_file}{OVERWRITE}\n')
         #-- chunked transfer encoding size
         CHUNK = 16 * 1024
         #-- Create and submit request.
@@ -263,7 +316,7 @@ def s3_pull_file(response, remote_mtime, local_file,
     #-- if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         #-- Printing files transferred
-        logging.info('{0}{1}'.format(local_file, OVERWRITE))
+        logging.info(f'{local_file}{OVERWRITE}')
         #-- chunked transfer encoding size
         CHUNK = 16 * 1024
         #-- copy remote file contents to local file

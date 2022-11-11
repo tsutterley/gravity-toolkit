@@ -226,7 +226,7 @@ def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
 
     #-- Degree 1 (geocenter) coefficients
     logging.info('Degree 1 Coefficients:')
-    PATH = [HOST,'drive','files','allData','tellus','L2','degree_1']
+    PATH = [HOST,'drive','files','allData','gracefo','docs']
     remote_dir = posixpath.join(*PATH)
     local_dir = os.path.join(DIRECTORY,'geocenter')
     #-- check if geocenter directory exists and recursively create if not
