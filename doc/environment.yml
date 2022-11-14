@@ -28,10 +28,10 @@ dependencies:
   - pyyaml
   - scipy
   - sphinx
-  - sphinx-argparse>=0.4
   - sphinx_rtd_theme
   - texlive-core
   - tk
   - pip:
+     - sphinx-argparse>=0.4
      - git+https://github.com/tsutterley/geoid-toolkit.git
      - ..
