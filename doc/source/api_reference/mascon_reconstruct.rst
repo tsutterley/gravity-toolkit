@@ -12,7 +12,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: ../../scripts/mascon_reconstruct.py
+    :filename: mascon_reconstruct.py
     :func: arguments
     :prog: mascon_reconstruct.py
     :nodescription:

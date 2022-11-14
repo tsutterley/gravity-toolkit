@@ -28,7 +28,7 @@ dependencies:
   - pyyaml
   - scipy
   - sphinx
-  - sphinx-argparse
+  - sphinx-argparse>=0.4
   - sphinx_rtd_theme
   - texlive-core
   - tk

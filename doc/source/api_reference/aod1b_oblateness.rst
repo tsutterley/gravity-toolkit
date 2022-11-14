@@ -18,7 +18,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: ../../scripts/aod1b_oblateness.py
+    :filename: aod1b_oblateness.py
     :func: arguments
     :prog: aod1b_oblateness.py
     :nodescription:

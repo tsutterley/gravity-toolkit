@@ -18,7 +18,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: ../../scripts/aod1b_geocenter.py
+    :filename: aod1b_geocenter.py
     :func: arguments
     :prog: aod1b_geocenter.py
     :nodescription:

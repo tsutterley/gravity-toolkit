@@ -13,7 +13,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: ../../scripts/itsg_graz_grace_sync.py
+    :filename: itsg_graz_grace_sync.py
     :func: arguments
     :prog: itsg_graz_grace_sync.py
     :nodescription:

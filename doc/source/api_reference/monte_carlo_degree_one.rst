@@ -13,7 +13,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: ../../scripts/monte_carlo_degree_one.py
+    :filename: monte_carlo_degree_one.py
     :func: arguments
     :prog: monte_carlo_degree_one.py
     :nodescription:
