@@ -269,7 +269,7 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     atm_str = '_wATM' if ATM else ''
     #-- output string for both LMAX==MMAX and LMAX != MMAX cases
     MMAX = np.copy(LMAX) if not MMAX else MMAX
-    order_str = 'M{0:d}'.format(MMAX) if (MMAX != LMAX) else ''
+    order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
     #-- output spatial units
     unit_str = 'cmwe'
     unit_name = 'Equivalent Water Thickness'
@@ -279,7 +279,7 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     #-- Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):
         wt = 2.0*np.pi*gauss_weights(RAD,LMAX)
-        gw_str = '_r{0:0.0f}km'.format(RAD)
+        gw_str = f'_r{RAD:0.0f}km'
     else:
         #-- else = 1
         wt = np.ones((LMAX+1))

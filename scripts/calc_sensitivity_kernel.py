@@ -205,12 +205,12 @@ def calc_sensitivity_kernel(LMAX, RAD,
 
     #-- input/output string for both LMAX==MMAX and LMAX != MMAX cases
     MMAX = np.copy(LMAX) if not MMAX else MMAX
-    order_str = 'M{0:d}'.format(MMAX) if (MMAX != LMAX) else ''
+    order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
 
     #-- Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):
         wt = 2.0*np.pi*gauss_weights(RAD,LMAX)
-        gw_str = '_r{0:0.0f}km'.format(RAD)
+        gw_str = f'_r{RAD:0.0f}km'
     else:
         #-- else = 1
         wt = np.ones((LMAX+1))
@@ -262,7 +262,7 @@ def calc_sensitivity_kernel(LMAX, RAD,
         #-- if lower case, will capitalize
         mascon_base = mascon_base.upper()
         #-- if mascon name contains degree and order info, remove
-        mascon_name.append(mascon_base.replace('_L{0:d}'.format(LMAX),''))
+        mascon_name.append(mascon_base.replace(f'_L{LMAX:d}', ''))
     #-- create single harmonics object from list
     mascon_Ylms = harmonics().from_list(mascon_list, date=False)
 

@@ -231,7 +231,7 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     #-- Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):
         wt = 2.0*np.pi*gauss_weights(RAD,LMAX)
-        gw_str = '_r{0:0.0f}km'.format(RAD)
+        gw_str = f'_r{RAD:0.0f}km'
     else:
         #-- else = 1
         wt = np.ones((LMAX+1))
@@ -239,7 +239,7 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
 
     #-- flag for spherical harmonic order
     MMAX = np.copy(LMAX) if not MMAX else MMAX
-    order_str = 'M{0:d}'.format(MMAX) if (MMAX != LMAX) else ''
+    order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
     #-- atmospheric ECMWF "jump" flag (if ATM)
     atm_str = '_wATM' if ATM else ''
 

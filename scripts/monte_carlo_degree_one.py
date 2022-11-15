@@ -296,7 +296,7 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     #-- delta coefficients flag for monte carlo run
     delta_str = '_monte_carlo'
     #-- output string for both LMAX==MMAX and LMAX != MMAX cases
-    order_str = 'M{0:d}'.format(MMAX) if MMAX and (MMAX != LMAX) else ''
+    order_str = f'M{MMAX:d}' if MMAX and (MMAX != LMAX) else ''
     #-- atmospheric ECMWF "jump" flag (if ATM)
     atm_str = '_wATM' if ATM else ''
     #-- ocean model string
@@ -305,26 +305,26 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     slf_str = '_SLF' if FINGERPRINT else ''
     #-- output flag for low-degree harmonic replacements
     if SLR_21 in ('CSR','GFZ','GSFC'):
-        C21_str = '_w{0}_21'.format(SLR_21)
+        C21_str = f'_w{SLR_21}_21'
     else:
         C21_str = ''
     if SLR_22 in ('CSR','GSFC'):
-        C22_str = '_w{0}_22'.format(SLR_22)
+        C22_str = f'_w{SLR_22}_22'
     else:
         C22_str = ''
     if SLR_C30 in ('GSFC',):
         #-- C30 replacement now default for all solutions
         C30_str = ''
     elif SLR_C30 in ('CSR','GFZ','LARES'):
-        C30_str = '_w{0}_C30'.format(SLR_C30)
+        C30_str = f'_w{SLR_C30}_C30'
     else:
         C30_str = ''
     if SLR_C40 in ('CSR','GSFC','LARES'):
-        C40_str = '_w{0}_C40'.format(SLR_C40)
+        C40_str = f'_w{SLR_C40}_C40'
     else:
         C40_str = ''
     if SLR_C50 in ('CSR','GSFC','LARES'):
-        C50_str = '_w{0}_C50'.format(SLR_C50)
+        C50_str = f'_w{SLR_C50}_C50'
     else:
         C50_str = ''
     #-- combine satellite laser ranging flags

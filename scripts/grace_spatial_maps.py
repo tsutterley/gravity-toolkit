@@ -261,7 +261,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     #-- Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):
         wt = 2.0*np.pi*gauss_weights(RAD,LMAX)
-        gw_str = '_r{0:0.0f}km'.format(RAD)
+        gw_str = f'_r{RAD:0.0f}km'
     else:
         #-- else = 1
         wt = np.ones((LMAX+1))
@@ -269,7 +269,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
 
     #-- flag for spherical harmonic order
     MMAX = np.copy(LMAX) if not MMAX else MMAX
-    order_str = 'M{0:d}'.format(MMAX) if (MMAX != LMAX) else ''
+    order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
 
     #-- reading GRACE months for input date range
     #-- replacing low-degree harmonics with SLR values if specified
@@ -425,7 +425,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         #-- 5: mbar, millibars equivalent surface pressure
         dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).mbar
     else:
-        raise ValueError('Invalid units code {0:d}'.format(UNITS))
+        raise ValueError(f'Invalid units code {UNITS:d}')
 
     #-- output file format
     file_format = '{0}{1}_L{2:d}{3}{4}{5}_{6:03d}.{7}'

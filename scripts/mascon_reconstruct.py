@@ -159,17 +159,17 @@ def mascon_reconstruct(DSET, LMAX, RAD,
     MODE=0o775):
 
     #-- for datasets not GSM: will add a label for the dataset
-    dset_str = '' if (DSET == 'GSM') else '_{0}'.format(DSET)
+    dset_str = '' if (DSET == 'GSM') else f'_{DSET}'
     #-- atmospheric ECMWF "jump" flag (if ATM)
     atm_str = '_wATM' if ATM else ''
     #-- Gaussian smoothing string for radius RAD
-    gw_str = '_r{0:0.0f}km'.format(RAD) if (RAD != 0) else ''
+    gw_str = f'_r{RAD:0.0f}km' if (RAD != 0) else ''
     #-- input GIA spherical harmonic datafiles
     GIA_Ylms_rate = read_GIA_model(GIA_FILE,GIA=GIA,LMAX=LMAX,MMAX=MMAX)
     gia_str = '_{0}'.format(GIA_Ylms_rate['title']) if GIA else ''
     #-- output string for both LMAX==MMAX and LMAX != MMAX cases
     MMAX = np.copy(LMAX) if not MMAX else MMAX
-    order_str = 'M{0:d}'.format(MMAX) if (MMAX != LMAX) else ''
+    order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
     #-- filter grace coefficients flag
     ds_str = '_FL' if DESTRIPE else ''
     #-- output filename suffix
@@ -238,7 +238,7 @@ def mascon_reconstruct(DSET, LMAX, RAD,
         #-- if lower case, will capitalize
         mascon_base = mascon_base.upper()
         #-- if mascon name contains degree and order info, remove
-        mascon_name = mascon_base.replace('_L{0:d}'.format(LMAX),'')
+        mascon_name = mascon_base.replace(f'_L{LMAX:d}', '')
 
         #-- input filename format (for both LMAX==MMAX and LMAX != MMAX cases):
         #-- mascon name, GRACE dataset, GIA model, LMAX, (MMAX,)

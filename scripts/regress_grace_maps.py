@@ -133,9 +133,9 @@ def regress_grace_maps(LMAX, RAD,
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')[DATAFORM]
 
     #-- flag for spherical harmonic order
-    order_str = 'M{0:d}'.format(MMAX) if MMAX and (MMAX != LMAX) else ''
+    order_str = f'M{MMAX:d}' if MMAX and (MMAX != LMAX) else ''
     #-- Calculating the Gaussian smoothing for radius RAD
-    gw_str = '_r{0:0.0f}km'.format(RAD) if (RAD != 0) else ''
+    gw_str = f'_r{RAD:0.0f}km' if (RAD != 0) else ''
     #-- destriped GRACE/GRACE-FO coefficients
     ds_str = '_FL' if DESTRIPE else ''
     #-- distributing removed mass uniformly over ocean

@@ -153,7 +153,7 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
 
     #-- output string for both LMAX==MMAX and LMAX != MMAX cases
     MMAX = np.copy(LMAX) if not MMAX else MMAX
-    order_str = 'M{0:d}'.format(MMAX) if (MMAX != LMAX) else ''
+    order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
 
     #-- data formats for output: ascii, netCDF4, HDF5, gfc
     suffix = dict(ascii='txt',netCDF4='nc',HDF5='H5',gfc='gfc')[MEANFORM]
