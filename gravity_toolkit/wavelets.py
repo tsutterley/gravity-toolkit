@@ -136,7 +136,7 @@ def wavelet(Y, dt, pad=1, dj=.25, s0=-1, J1=-1, mother='MORLET', param=-1):
 
     f = np.fft.fft(x) # fft on the padded time series
 
-    scale = s0 * 2**(np.arange(0, J1 + 1, 1)*dj)
+    scale = s0 * 2**(np.arange(0, J1, 1)*dj)
     # define wavelet array
     wave = np.zeros((int(J1 + 1), n))
     wave = wave + 1j * wave # make it complex

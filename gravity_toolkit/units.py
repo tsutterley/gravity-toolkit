@@ -107,6 +107,8 @@ class units(object):
         # Gravitational Constant of the Earth (w/o atm)
         GM=GM_e-GM_atm
         # degree dependent coefficients
+        # norm, fully normalized spherical harmonics
+        self.norm = np.ones((self.lmax + 1))
         # cmwe, centimeters water equivalent [g/cm^2]
         self.cmwe = 3.0 * (1.0 + kl[self.l]) / (1.0 + 2.0 * self.l) / (4.0 * np.pi * self.rad_e * self.rho_e)
         # cmwe_ne, centimeters water equivalent none elastic [g/cm^2]

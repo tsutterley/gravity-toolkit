@@ -142,28 +142,32 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     #-- Multiplying sin(th) with differentials of theta and phi
     #-- to calculate the integration factor at each latitude
     int_fact = np.zeros((nlat))
-    if (UNITS == 1):
+    if UNITS == 1:
         #-- Default Parameter: Input in cm w.e. (g/cm^2)
         dfactor = factors.cmwe
         int_fact[:] = np.sin(th)*dphi*dth
-    elif (UNITS == 2):
+    elif UNITS == 2:
         #-- Input in gigatonnes (Gt)
         dfactor = factors.cmwe
         #-- rad_e: Average Radius of the Earth [cm]
         int_fact[:] = 1e15/(factors.rad_e**2)
-    elif (UNITS == 3):
+    elif UNITS == 3:
         #-- Input in kg/m^2 (mm w.e.)
         dfactor = factors.mmwe
         int_fact[:] = np.sin(th)*dphi*dth
-    elif (UNITS == 4):
+    elif UNITS == 4:
         #-- Inputs in mmGH
         dfactor = factors.mmGH
         int_fact[:] = np.sin(th) * dphi * dth
-    elif (UNITS == 5):
+    elif UNITS == 5:
         dfactor = factors.microGal
         int_fact[:] = np.sin(th) * dphi * dth
-    elif (UNITS == 6):
+    elif UNITS == 6:
         dfactor = factors.cmwe_ne
+        int_fact[:] = np.sin(th) * dphi * dth
+    elif UNITS == 7:
+        #-- Inputs in units with no dfactor
+        dfactor = factors.norm
         int_fact[:] = np.sin(th) * dphi * dth
     else:
         #-- default is cm w.e. (g/cm^2)

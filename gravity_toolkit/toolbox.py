@@ -52,6 +52,11 @@ def create_grid(Ylms, lmax=None, rad=0, destripe=False, unit='cmwe', dlon=0.5, d
         grid.lon = np.arange(-bounds[1] + dlon / 2.0, bounds[0] + dlon / 2.0, dlon)
         grid.lat = np.arange(bounds[2] - dlat / 2.0, -bounds[3] - dlat / 2.0, -dlat)
 
+    if lmax is None:
+        lmax = Ylms.lmax
+    else:
+        Ylms.lmax = lmax
+
     nlon = len(grid.lon)
     nlat = len(grid.lat)
 
@@ -62,10 +67,7 @@ def create_grid(Ylms, lmax=None, rad=0, destripe=False, unit='cmwe', dlon=0.5, d
 
     # Computing plms for converting to spatial domain
     theta = (90.0 - grid.lat) * np.pi / 180.0
-    if lmax is None:
-        PLM, dPLM = plm_holmes(Ylms.lmax, np.cos(theta))
-    else:
-        PLM, dPLM = plm_holmes(lmax, np.cos(theta))
+    PLM, dPLM = plm_holmes(lmax, np.cos(theta))
 
     # read load love numbers file
     love_numbers_file = get_data_path(['data', 'love_numbers'])
@@ -74,15 +76,17 @@ def create_grid(Ylms, lmax=None, rad=0, destripe=False, unit='cmwe', dlon=0.5, d
     hl, kl, ll = read_love_numbers(love_numbers_file, REFERENCE='CF')
 
     if unit == 'cmwe':
-        dfactor = units(lmax=Ylms.lmax).harmonic(hl, kl, ll).cmwe
+        dfactor = units(lmax=lmax).harmonic(hl, kl, ll).cmwe
     elif unit == 'cmweEl':
-        dfactor = units(lmax=Ylms.lmax).harmonic(hl, kl, ll).cmweEl
+        dfactor = units(lmax=lmax).harmonic(hl, kl, ll).cmweEl
     elif unit == 'geoid':
-        dfactor = units(lmax=Ylms.lmax).harmonic(hl, kl, ll).mmGH
+        dfactor = units(lmax=lmax).harmonic(hl, kl, ll).mmGH
     elif unit == 'cmwe_ne':
-        dfactor = units(lmax=Ylms.lmax).harmonic(hl, kl, ll).cmwe_ne
+        dfactor = units(lmax=lmax).harmonic(hl, kl, ll).cmwe_ne
     elif unit == 'microGal':
-        dfactor = units(lmax=Ylms.lmax).harmonic(hl, kl, ll).microGal
+        dfactor = units(lmax=lmax).harmonic(hl, kl, ll).microGal
+    elif unit == 'none':
+        dfactor = units(lmax=lmax).harmonic(hl, kl, ll).norm
     else:
         raise ValueError("Unit not accepted, should be either 'cmwe' pr 'cmweEl' or 'cmwe_ne' or 'geoid' or 'microGal'")
 
@@ -93,9 +97,9 @@ def create_grid(Ylms, lmax=None, rad=0, destripe=False, unit='cmwe', dlon=0.5, d
         grid.data = np.zeros((nlat, nlon))
 
         if destripe:
-            tmp = Ylms.destripe()
+            tmp = Ylms.copy().destripe()
         else:
-            tmp = Ylms
+            tmp = Ylms.copy()
 
         if rad != 0:
             wt = 2.0 * np.pi * gauss_weights(rad, lmax)
@@ -103,11 +107,7 @@ def create_grid(Ylms, lmax=None, rad=0, destripe=False, unit='cmwe', dlon=0.5, d
         else:
             tmp.convolve(dfactor)
         # convert spherical harmonics to output spatial grid
-        if lmax is None:
-            grid.data[:, :] = harmonic_summation(tmp.clm, tmp.slm,
-                                                 grid.lon, grid.lat, LMAX=Ylms.lmax, MMAX=Ylms.mmax, PLM=PLM).T
-        else:
-            grid.data[:, :] = harmonic_summation(tmp.clm, tmp.slm,
+        grid.data[:, :] = harmonic_summation(tmp.clm, tmp.slm,
                                                  grid.lon, grid.lat, LMAX=lmax, MMAX=lmax, PLM=PLM).T
 
     else:
@@ -124,13 +124,9 @@ def create_grid(Ylms, lmax=None, rad=0, destripe=False, unit='cmwe', dlon=0.5, d
                 wt = 2.0 * np.pi * gauss_weights(rad, lmax)
                 tmp.convolve(dfactor * wt)
             else:
-                tmp.convolve(dfactor * np.ones((Ylms.lmax + 1)))
+                tmp.convolve(dfactor * np.ones((lmax + 1)))
             # convert spherical harmonics to output spatial grid
-            if lmax is None:
-                grid.data[:, :, i] = harmonic_summation(tmp.clm, tmp.slm,
-                                                        grid.lon, grid.lat, LMAX=Ylms.lmax, MMAX=Ylms.mmax, PLM=PLM).T
-            else:
-                grid.data[:, :, i] = harmonic_summation(tmp.clm, tmp.slm,
+            grid.data[:, :, i] = harmonic_summation(tmp.clm, tmp.slm,
                                                         grid.lon, grid.lat, LMAX=lmax, MMAX=lmax, PLM=PLM).T
 
     grid.mask = np.zeros(grid.data.shape)
@@ -179,6 +175,8 @@ def grid_to_hs(grid, lmax, mmax=None, unit='cmwe'):
         UNITS = 6
     elif unit == 'microGal':
         UNITS = 5
+    elif unit == 'norm':
+        UNITS = 7
     else:
         raise ValueError("Unit not accepted, should be either 'cmwe' or 'cmwe_ne' or 'geoid' or 'microGal'")
 
@@ -216,7 +214,7 @@ def diff_grid(grid1, grid2):
     Parameters
     ----------
     grid1 : spatial object
-    grid2 : spatial object to substract to the first
+    grid2 : spatial object to subtract to the first
 
     Returns
     -------
@@ -389,15 +387,6 @@ def save_gif(grid, path, unit='cmwe', bound=None, mask=None, color='viridis'):
     else:
         vmin, vmax = bound
 
-    if vmax - vmin >= 3:
-        levels = np.arange(vmin, vmax, max(1, int((vmax - vmin)/10)))
-    elif vmax - vmin >= 0.3:
-        levels = np.arange(vmin, vmax, max(0.1, float('%.1f'%((vmax - vmin)/10))))
-    elif vmax - vmin >= 0.03:
-        levels = np.arange(vmin, vmax, max(0.1, float('%.2f'%((vmax - vmin)/10))))
-    else:
-        raise ValueError("The range of data to plot is too small")
-
     norm = colors.Normalize(vmin=vmin,vmax=vmax)
     cmap = plt.cm.get_cmap(color)
     im = ax1.imshow(np.zeros((np.int(180.0 + 1.0),np.int(360.0 + 1.0))), interpolation='nearest',
@@ -441,16 +430,8 @@ def save_gif(grid, path, unit='cmwe', bound=None, mask=None, color='viridis'):
         cbar.ax.set_ylabel('$nT.y^{-2}$', fontsize=24, rotation=0)
 
     cbar.ax.yaxis.set_label_coords(1.045, 0.1)
-    # Set the tick levels for the colorbar
-    cbar.set_ticks(levels)
-    if vmax - vmin >= 3:
-        cbar.set_ticklabels(['{0:d}'.format(ct) for ct in levels])
-    elif vmax - vmin >= 0.3:
-        cbar.set_ticklabels(['{.1f}'.format(ct) for ct in levels])
-    elif vmax - vmin >= 0.03:
-        cbar.set_ticklabels(['{.2f}'.format(ct) for ct in levels])
     # ticks lines all the way across
-    cbar.ax.tick_params(which='both', width=1, length=26, labelsize=24,
+    cbar.ax.tick_params(which='both', width=1, length=26, labelsize=20,
         direction='in')
 
     # stronger linewidth on frame
@@ -468,7 +449,7 @@ def save_gif(grid, path, unit='cmwe', bound=None, mask=None, color='viridis'):
 
     # set animation
     anim = animation.FuncAnimation(fig, animate_frames, frames=len(grid.month))
-    HTML(anim.to_jshtml())
+    #HTML(anim.to_jshtml())
 
     anim.save(path, writer='imagemagick', fps=10)
     plt.clf()
@@ -559,6 +540,8 @@ def plot_rms_map(grid, path=False, proj=ccrs.PlateCarree(), unit='cmwe', bound=N
         plt.close()
     else:
         plt.show()
+
+    return np.sqrt(np.sum(grid.data ** 2, axis=2) / grid.time.shape[0])
 
 
 def calc_rms_grid(grid, mask=None):
@@ -672,16 +655,23 @@ def hs_to_grid_amp(amplitude, l, m, unit='cmwe', map=False):
     -------
     max, min : bound value of the grid create with the given amplitude in the asked unit
     """
-    ylms = harmonics(lmax=l, mmax=np.abs(m))
+    ylms = harmonics(lmax=np.max(l), mmax=np.max(l))
     ylms.time = np.array([0])
     ylms.month = np.array([0])
 
-    ylms.clm = np.zeros((l + 1, l + 1))
-    ylms.slm = np.zeros((l + 1, l + 1))
-    if m >= 0:
-        ylms.clm[l, np.abs(m)] = amplitude
-    else:
-        ylms.slm[l, np.abs(m)] = amplitude
+    ylms.clm = np.zeros((np.max(l) + 1, np.max(l) + 1))
+    ylms.slm = np.zeros((np.max(l) + 1, np.max(l) + 1))
+    try:
+        for amp, i, j in zip(amplitude, l, m):
+            if j >= 0:
+                ylms.clm[i, np.abs(j)] = amp
+            else:
+                ylms.slm[i, np.abs(j)] = amp
+    except TypeError:
+        if m >= 0:
+            ylms.clm[l, np.abs(m)] = amplitude
+        else:
+            ylms.slm[l, np.abs(m)] = amplitude
 
     grid = create_grid(ylms, l, unit=unit)
 
