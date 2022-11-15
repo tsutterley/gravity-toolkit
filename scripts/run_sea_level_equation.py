@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 u"""
-run_sea_level_equation.py (04/2022)
+run_sea_level_equation.py (11/2022)
 Solves the sea level equation with the option of including polar motion feedback
 Uses a Clenshaw summation to calculate the spherical harmonic summation
 
@@ -67,6 +67,7 @@ REFERENCES:
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use wrapper function for reading load Love numbers
         use argparse descriptions within sphinx documentation
     Updated 12/2021: can use variable loglevels for verbose output
@@ -119,10 +120,10 @@ from gravity_toolkit.spatial import spatial
 def info(args):
     logging.info(os.path.basename(sys.argv[0]))
     logging.info(args)
-    logging.info('module name: {0}'.format(__name__))
+    logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        logging.info('parent process: {0:d}'.format(os.getppid()))
-    logging.info('process id: {0:d}'.format(os.getpid()))
+        logging.info(f'parent process: {os.getppid():d}')
+    logging.info(f'process id: {os.getpid():d}')
 
 #-- PURPOSE: Computes Sea Level Fingerprints including polar motion feedback
 def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
@@ -327,7 +328,7 @@ def main():
         #-- if there has been an error exception
         #-- print the type, value, and stack trace of the
         #-- current exception being handled
-        logging.critical('process id {0:d} failed'.format(os.getpid()))
+        logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
 
 #-- run main program

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (11/2022)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -25,6 +25,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
         using internal netCDF4 and HDF5 readers and writers
         added function for converting to a python dictionary
@@ -153,7 +154,7 @@ class harmonics(object):
                 directory = os.path.dirname(os.path.expanduser(filename))
                 f = [f for f in os.listdir(directory) if re.match(basename,f,re.I)]
                 if not f:
-                    errmsg = '{0} not found in file system'.format(filename)
+                    errmsg = f'{filename} not found in file system'
                     raise FileNotFoundError(errmsg)
                 self.filename = os.path.join(directory,f.pop())
         #-- print filename
@@ -1449,8 +1450,8 @@ class harmonics(object):
         #-- check that all months are available
         months_check = list(set(months) - set(self.month))
         if months_check:
-            m = ','.join(['{0:03d}'.format(m) for m in months_check])
-            raise IOError('GRACE/GRACE-FO months {0} not Found'.format(m))
+            m = ','.join([f'{m:03d}' for m in months_check])
+            raise IOError(f'GRACE/GRACE-FO months {m} not Found')
         #-- indices to sort data objects
         months_list = [i for i,m in enumerate(self.month) if m in months]
         #-- output harmonics object

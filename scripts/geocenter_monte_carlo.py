@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter_monte_carlo.py
-Written by Tyler Sutterley (05/2022)
+Written by Tyler Sutterley (11/2022)
 
 CALLING SEQUENCE:
     python geocenter_monte_carlo.py --start 4 --end 237
@@ -15,6 +15,7 @@ COMMAND LINE OPTIONS:
     -M X, --missing X: Missing GRACE months in time series
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 05/2022: use argparse descriptions within documentation
     Updated 12/2021: adjust minimum x limit based on starting GRACE month
     Written 11/2021
@@ -140,11 +141,11 @@ def geocenter_monte_carlo(grace_dir,PROC,DREL,START_MON,END_MON,MISSING):
             tick.label.set_fontsize(14)
 
     #-- labels and set limits
-    ax[0].set_ylabel('{0} Geocenter Variation [mm]'.format(PROC), fontsize=14)
+    ax[0].set_ylabel(f'{PROC} Geocenter Variation [mm]', fontsize=14)
     #-- adjust locations of subplots
     fig.subplots_adjust(left=0.06,right=0.98,bottom=0.12,top=0.94,wspace=0.05)
     #-- save figure to file
-    OUTPUT_FIGURE = 'SV19_{0}_{1}_monte_carlo.pdf'.format(PROC,DREL)
+    OUTPUT_FIGURE = f'SV19_{PROC}_{DREL}_monte_carlo.pdf'
     plt.savefig(os.path.join(grace_dir,OUTPUT_FIGURE), format='pdf', dpi=300)
     plt.clf()
 

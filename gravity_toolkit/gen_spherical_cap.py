@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_spherical_cap.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (11/2022)
 Calculates gravitational spherical harmonic coefficients for a spherical cap
 
 Spherical cap derivation from Longman (1962), Farrell (1972), Pollack (1973)
@@ -63,6 +63,7 @@ REFERENCES:
         https://doi.org/10.1007/s00190-011-0522-7
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: added UNITS list option for converting from custom units
     Updated 07/2020: added function docstrings
@@ -215,7 +216,7 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
         #-- custom units
         unit_conv = np.copy(UNITS)
     else:
-        raise ValueError('Unknown units {0}'.format(UNITS))
+        raise ValueError(f'Unknown units {UNITS}')
 
     #-- Coefficient for calculating Stokes coefficients for a spherical cap
     #-- From Jacob et al (2012), Farrell (1972) and Longman (1962)

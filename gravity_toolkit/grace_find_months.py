@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_find_months.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (11/2022)
 
 Parses date index file from grace_date program
 Finds the months available for a GRACE/GRACE-FO/Swarm product
@@ -36,6 +36,7 @@ PROGRAM DEPENDENCIES:
     grace_date.py: reads GRACE index file and calculates dates for each month
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 07/2020: added function docstrings
@@ -106,9 +107,9 @@ def grace_find_months(base_dir, PROC, DREL, DSET='GSM'):
     grace_dir = os.path.join(base_dir, PROC, DREL, DSET)
 
     #-- check that GRACE/GRACE-FO date file exists
-    date_file = os.path.join(grace_dir,'{0}_{1}_DATES.txt'.format(PROC, DREL))
+    date_file = os.path.join(grace_dir, f'{PROC}_{DREL}_DATES.txt')
     if not os.access(date_file, os.F_OK):
-        grace_date(base_dir,PROC=PROC,DREL=DREL,DSET=DSET,OUTPUT=True)
+        grace_date(base_dir, PROC=PROC, DREL=DREL, DSET=DSET, OUTPUT=True)
 
     #-- read GRACE/GRACE-FO date ascii file from grace_date.py
     #-- skip the header row and extract dates (decimal format) and months

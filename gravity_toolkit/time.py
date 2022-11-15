@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 time.py
-Written by Tyler Sutterley (10/2022)
+Written by Tyler Sutterley (11/2022)
 Utilities for calculating time operations
 
 PYTHON DEPENDENCIES:
@@ -11,6 +11,7 @@ PYTHON DEPENDENCIES:
         https://dateutil.readthedocs.io/en/stable/
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 10/2022: added more time parsing for longer periods
     Updated 08/2022: added file parsing functions from GRACE date utilities
         added function to dynamically select newest version of granules
@@ -89,7 +90,7 @@ def parse_date_string(date_string):
     #-- split the date string into units and epoch
     units, epoch = split_date_string(date_string)
     if units not in _to_sec.keys():
-        raise ValueError('Invalid units: {0}'.format(units))
+        raise ValueError(f'Invalid units: {units}')
     #-- return the epoch (as list) and the time unit conversion factors
     return (datetime_to_list(epoch), _to_sec[units])
 
@@ -106,7 +107,7 @@ def split_date_string(date_string):
     try:
         units,_,epoch = date_string.split(None,2)
     except ValueError:
-        raise ValueError('Invalid format: {0}'.format(date_string))
+        raise ValueError(f'Invalid format: {date_string}')
     else:
         return (units.lower(),dateutil.parser.parse(epoch))
 
@@ -707,8 +708,8 @@ def convert_julian(JD, **kwargs):
     deprecated_keywords = dict(ASTYPE='astype', FORMAT='format')
     for old,new in deprecated_keywords.items():
         if old in kwargs.keys():
-            warnings.warn("""Deprecated keyword argument {0}.
-                Changed to '{1}'""".format(old,new),
+            warnings.warn(f"""Deprecated keyword argument {old}.
+                Changed to '{new}'""",
                 DeprecationWarning)
             #-- set renamed argument to not break workflows
             kwargs[new] = copy.copy(kwargs[old])

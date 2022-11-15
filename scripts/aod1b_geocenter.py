@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 aod1b_geocenter.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (11/2022)
 Contributions by Hugo Lecomte (03/2021)
 
 Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
@@ -34,6 +34,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
     Updated 12/2021: can use variable loglevels for verbose output
     Updated 11/2021: use gravity_toolkit geocenter class for operations
@@ -102,7 +103,7 @@ def aod1b_geocenter(base_dir,
     fx = re.compile(r'AOD1B_\d+-\d+-(\d+)_X_\d+.asc(.gz)?$', re.VERBOSE)
     #-- compile regular expressions operator for the clm/slm headers
     #-- for the specific AOD1b product
-    hx = re.compile(r'^DATA.*SET.*{0}'.format(DSET), re.VERBOSE)
+    hx = re.compile(rf'^DATA.*SET.*{DSET}', re.VERBOSE)
     #-- compile regular expression operator to find numerical instances
     #-- will extract the data from the file
     regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
@@ -131,10 +132,10 @@ def aod1b_geocenter(base_dir,
 
     #-- AOD1B data products
     product = {}
-    product['atm'] = 'Atmospheric loading from {0}'.format(ATMOSPHERE)
-    product['ocn'] = 'Oceanic loading from {0}'.format(OCEAN_MODEL)
+    product['atm'] = f'Atmospheric loading from {ATMOSPHERE}'
+    product['ocn'] = f'Oceanic loading from {OCEAN_MODEL}'
     product['glo'] = 'Global atmospheric and oceanic loading'
-    product['oba'] = 'Ocean bottom pressure from {0}'.format(OCEAN_MODEL)
+    product['oba'] = f'Ocean bottom pressure from {OCEAN_MODEL}'
 
     #-- AOD1B directory and output geocenter directory
     grace_dir = os.path.join(base_dir,'AOD1B',DREL)
@@ -151,7 +152,7 @@ def aod1b_geocenter(base_dir,
         YY,MM,SFX = tx.findall(i).pop()
         YY,MM = np.array([YY,MM], dtype=np.int64)
         #-- output monthly geocenter file
-        FILE = 'AOD1B_{0}_{1}_{2:4d}_{3:02d}.txt'.format(DREL,DSET,YY,MM)
+        FILE = f'AOD1B_{DREL}_{DSET}_{YY:4d}_{MM:02d}.txt'
         #-- if output file exists: check if input tar file is newer
         TEST = False
         OVERWRITE = ' (clobber)'

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GRACE_harmonics.py
-Written by Tyler Sutterley (10/2022)
+Written by Tyler Sutterley (11/2022)
 Contributions by Hugo Lecomte
 
 Reads GRACE files and extracts spherical harmonic data and drift rates (RL04)
@@ -42,6 +42,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 10/2022: make keyword arguments part of kwargs dictionary
     Updated 05/2022: updated comments
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -195,7 +196,7 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
     #-- extract GRACE and GRACE-FO file headers
     #-- replace colons in header if within quotations
     head = [re.sub(r'\"(.*?)\:\s(.*?)\"',r'"\1, \2"',l) for l in file_contents
-        if not re.match(r'{0}|GRDOTA'.format(FLAG),l)]
+        if not re.match(rf'{FLAG}|GRDOTA',l)]
     if SFX in ('.gfc',):
         #-- extract parameters from header
         header_parameters = ['modelname','earth_gravity_constant','radius',
@@ -331,7 +332,7 @@ def extract_file(input_file, compressed):
         input_file = os.path.expanduser(input_file)
         #-- check that data file is present in file system
         if not os.access(input_file, os.F_OK):
-            raise FileNotFoundError('{0} not found'.format(input_file))
+            raise FileNotFoundError(f'{input_file} not found')
     #-- check if file is uncompressed byteIO object
     if isinstance(input_file, io.IOBase) and not compressed:
         #-- extract spherical harmonic coefficients

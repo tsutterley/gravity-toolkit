@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter.py
-Written by Tyler Sutterley (06/2022)
+Written by Tyler Sutterley (11/2022)
 Data class for reading and processing geocenter data
 
 PYTHON DEPENDENCIES:
@@ -15,6 +15,7 @@ PYTHON DEPENDENCIES:
         https://github.com/yaml/pyyaml
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 06/2022: drop external reader dependency for UCI format
     Updated 04/2022: updated docstrings to numpy documentation format
         include utf-8 encoding in reads to be windows compliant
@@ -115,7 +116,7 @@ class geocenter(object):
                 f = [f for f in os.listdir(directory) if re.match(basename,f,re.I)]
                 #-- check that geocenter file exists
                 if not f:
-                    errmsg = '{0} not found in file system'.format(filename)
+                    errmsg = f'{filename} not found in file system'
                     raise FileNotFoundError(errmsg)
                 self.filename = os.path.join(directory,f.pop())
         #-- print filename
@@ -143,7 +144,7 @@ class geocenter(object):
         AOD1B_file = 'AOD1B_{0}_{1}_{2:4.0f}_{3:02.0f}.txt'.format(*args)
         #-- check that file exists
         if not os.access(os.path.join(self.directory,AOD1B_file), os.F_OK):
-            errmsg = 'AOD1B File {0} not in File System'.format(AOD1B_file)
+            errmsg = f'AOD1B File {AOD1B_file} not in File System'
             raise FileNotFoundError(errmsg)
         #-- read AOD1b geocenter skipping over commented header text
         with open(os.path.join(self.directory,AOD1B_file), mode='r', encoding='utf8') as f:
@@ -341,7 +342,7 @@ class geocenter(object):
             kwargs['release'],'geocenter'))
         #-- check that AOD1B directory exists
         if not os.access(self.directory, os.F_OK):
-            errmsg = '{0} not found in file system'.format(self.directory)
+            errmsg = f'{self.directory} not found in file system'
             raise FileNotFoundError(errmsg)
 
         #-- Input geocenter file and split lines
@@ -470,7 +471,7 @@ class geocenter(object):
 
         #-- verify HEADER flag was set
         if not HEADER:
-            raise IOError('Data not found in file:\n\t{0}'.format(geocenter_file))
+            raise IOError(f'Data not found in file:\n\t{geocenter_file}')
 
         #-- number of months within the file
         n_mon = np.int64(file_lines - count)
@@ -570,7 +571,7 @@ class geocenter(object):
 
         #-- catch to see if HEADER flag was not set to false
         if kwargs['header']:
-            raise IOError('Data lines not found in file {0}'.format(geocenter_file))
+            raise IOError(f'Data lines not found in file {geocenter_file}')
 
         #-- number of months within the file
         n_mon = np.int64(file_lines - count)
@@ -730,7 +731,7 @@ class geocenter(object):
                 self.eC11[t] = np.float64(line_contents[5])
                 self.eS11[t] = np.float64(line_contents[6])
             else:
-                raise Exception('Unknown harmonic order {0:d}'.format(m))
+                raise ValueError(f'Unknown harmonic order {m:d}')
 
             #-- calendar year and month
             if kwargs['JPL']:

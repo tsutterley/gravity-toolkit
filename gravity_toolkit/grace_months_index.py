@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_months_index.py
-Written by Tyler Sutterley (05/2022)
+Written by Tyler Sutterley (11/2022)
 
 Creates a file with the start and end days for each dataset
 Shows the range of each month for (CSR/GFZ/JPL) (RL04/RL05/RL06)
@@ -40,6 +40,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 05/2022: use argparse descriptions within documentation
         use new GSFC release 6 version 2 mascons as the default
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -109,7 +110,7 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
             grace_dir = os.path.join(base_dir, pr, rl, DSET)
             #-- read GRACE date ascii file
             #-- file created in read_grace.py or grace_dates.py
-            grace_date_file = '{0}_{1}_DATES.txt'.format(pr,rl)
+            grace_date_file = f'{pr}_{rl}_DATES.txt'
             if os.access(os.path.join(grace_dir,grace_date_file), os.F_OK):
                 #-- skip the header line
                 date_input = np.loadtxt(os.path.join(grace_dir,grace_date_file),
@@ -118,7 +119,7 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
                 nmon = np.shape(date_input)[0]
 
                 #-- Setting the dictionary key e.g. 'CSR_RL04'
-                var_name = '{0}_{1}'.format(pr,rl)
+                var_name = f'{pr}_{rl}'
 
                 #-- Creating a python dictionary for each dataset with parameters:
                 #-- month #, start year, start day, end year, end day
@@ -143,9 +144,9 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
 
     #-- sort datasets alphanumerically
     var_name = sorted(var_info.keys())
-    txt = ''.join(['{0:^21}'.format(d) for d in var_name])
+    txt = ''.join([f'{d:^21}' for d in var_name])
     #-- printing header to file
-    print('{0:^11}  {1}'.format('MONTH',txt),file=fid)
+    print(f'{"MONTH":^11}  {txt}', file=fid)
 
     #-- for each possible month
     #-- GRACE starts at month 004 (April 2002)
@@ -173,15 +174,15 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
                 end_day, = var_info[var]['endday'][ind]
                 #-- output string is the date range
                 #-- string format: 2002_102--2002_120
-                output_string.append('{0:4d}_{1:03d}--{2:4d}_{3:03d}'.format(
-                    st_yr, st_day, end_yr, end_day))
+                output_string.append(f'{st_yr:4d}_{st_day:03d}--'
+                    f'{end_yr:4d}_{end_day:03d}')
             else:
                 #-- if there is no matching month = missing
                 output_string.append(' ** missing **   ')
 
         #-- create single string with output string components
         #-- formatting the strings to be 20 characters in length
-        data_string = ' '.join(['{0:>20}'.format(s) for s in output_string])
+        data_string = ' '.join([f'{s:>20}' for s in output_string])
         #-- printing data line to file
         args = (m, month_string, calendar_year, data_string)
         print('{0:03d} {1:>3}{2:4d} {3}'.format(*args), file=fid)
