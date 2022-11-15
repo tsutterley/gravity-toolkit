@@ -167,28 +167,32 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
         # custom units
         dfactor = np.copy(UNITS)
         int_fact[:] = np.sin(th)*dphi*dth
-    elif (UNITS == 1):
+    elif UNITS == 1:
         # Default Parameter: Input in cm w.e. (g/cm^2)
         dfactor = factors.spatial(*LOVE).cmwe
         int_fact[:] = np.sin(th)*dphi*dth
-    elif (UNITS == 2):
+    elif UNITS == 2:
         # Input in gigatonnes (Gt)
         dfactor = factors.spatial(*LOVE).cmwe
         # rad_e: Average Radius of the Earth [cm]
         int_fact[:] = 1e15/(factors.rad_e**2)
-    elif (UNITS == 3):
+    elif UNITS == 3:
         # Input in kg/m^2 (mm w.e.)
         dfactor = factors.spatial(*LOVE).mmwe
         int_fact[:] = np.sin(th)*dphi*dth
-    elif (UNITS == 4):
+    elif UNITS == 4:
         #-- Inputs in mmGH
         dfactor = factors.mmGH
         int_fact[:] = np.sin(th) * dphi * dth
-    elif (UNITS == 5):
+    elif UNITS == 5:
         dfactor = factors.microGal
         int_fact[:] = np.sin(th) * dphi * dth
-    elif (UNITS == 6):
+    elif UNITS == 6:
         dfactor = factors.cmwe_ne
+        int_fact[:] = np.sin(th) * dphi * dth
+    elif UNITS == 7:
+        #-- Inputs in units with no dfactor
+        dfactor = factors.norm
         int_fact[:] = np.sin(th) * dphi * dth
     else:
         raise ValueError(f'Unknown units {UNITS}')
@@ -213,12 +217,12 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
         plm[:,m,j] = PLM[:,m,j]*int_fact[j]
 
     # Initializing preliminary spherical harmonic matrices
-    yclm = np.zeros((LMAX+1, MMAX+1))
-    yslm = np.zeros((LMAX+1, MMAX+1))
+    yclm = np.zeros((LMAX + 1, MMAX + 1))
+    yslm = np.zeros((LMAX + 1, MMAX + 1))
     # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
-    Ylms.clm = np.zeros((LMAX+1, MMAX+1))
-    Ylms.slm = np.zeros((LMAX+1, MMAX+1))
+    Ylms.clm = np.zeros((LMAX + 1, MMAX + 1))
+    Ylms.slm = np.zeros((LMAX + 1, MMAX + 1))
     # Multiplying gridded data with sin/cos of m#phis
     # This will sum through all phis in the dot product
     # output [m,theta]

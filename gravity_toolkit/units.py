@@ -231,7 +231,7 @@ class units(object):
             fraction += kl[self.l]
         # degree dependent coefficients
         # norm, fully normalized spherical harmonics
-        self.norm = np.ones((self.lmax+1))
+        self.norm = np.ones((self.lmax + 1))
         # cmwe, centimeters water equivalent [g/cm^2]
         self.cmwe = 3.0*fraction/(1.0+2.0*self.l)/(4.0*np.pi*self.rad_e*self.rho_e)
         # cmwe_ne, centimeters water equivalent none elastic [g/cm^2]

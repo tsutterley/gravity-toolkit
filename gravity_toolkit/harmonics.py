@@ -2112,7 +2112,7 @@ class harmonics(object):
         plt.show()
 
 
-    def plot_coefficient(self, l, m, dates=[], ylms=[], label=[''], save_path=False):
+    def plot_coefficient(self, l, m, dates=[], ylms=[], label=[''], color=[], save_path=False):
         """
         Plot Cl,m and Sl,m harmonic coefficients
         Inputs:
@@ -2126,20 +2126,28 @@ class harmonics(object):
         """
         #-- figure for Cl,m
         plt.figure()
+        ax = plt.gca()
         plt.title("Normalized spherical harmonics coefficient $C_{" + str(l) + "," + str(m) + "}$")
         if len(ylms):
-            plt.plot(self.time, self.clm[l, m, :], label=label[0])
+            if len(color):
+                plt.plot(self.time, self.clm[l, m, :], label=label[0], color=color[0])
+            else:
+                plt.plot(self.time, self.clm[l, m, :], label=label[0])
         else:
             plt.plot(self.time, self.clm[l, m, :], label="$C_{" + str(l) + "," + str(m) + "}$")
 
         try:
             for i in range(len(ylms)):
-                plt.plot(ylms[i].time, ylms[i].clm[l, m, :], label=label[i+1])
+                if len(color):
+                    plt.plot(ylms[i].time, ylms[i].clm[l, m, :], label=label[i + 1], color=color[i + 1])
+                else:
+                    plt.plot(ylms[i].time, ylms[i].clm[l, m, :], label=label[i + 1])
         except IndexError:
             raise IndexError("The list of labels is incomplete for correct plotting")
 
         plt.xlabel("Time (year)")
         plt.legend()
+        ax.yaxis.offsetText.set_horizontalalignment('right')
         if dates:
             plt.xlim(dates)
         plt.grid()
@@ -2148,25 +2156,33 @@ class harmonics(object):
             if os.path.isdir(save_path):
                 plt.savefig(os.path.join(save_path, 'C' + str(l) + str(m) + '_coefficient.png'))
             else:
-                plt.savefig(save_path[:-3] + 'c' + save_path[-3:])
+                plt.savefig(save_path[:-4] + 'c' + save_path[-4:])
 
         if m:
             #-- figure for Sl,m
             plt.figure()
+            ax = plt.gca()
             plt.title("Normalized spherical harmonic coefficient $S_{" + str(l) + "," + str(m) + "}$")
             if len(ylms):
-                plt.plot(self.time, self.slm[l, m, :], label=label[0])
+                if len(color):
+                    plt.plot(self.time, self.slm[l, m, :], label=label[0], color=color[0])
+                else:
+                    plt.plot(self.time, self.slm[l, m, :], label=label[0])
             else:
                 plt.plot(self.time, self.slm[l, m, :], label="$S_{" + str(l) + "," + str(m) + "}$")
 
             try:
                 for i in range(len(ylms)):
-                    plt.plot(ylms[i].time, ylms[i].slm[l, m, :], label=label[i + 1])
+                    if len(color):
+                        plt.plot(ylms[i].time, ylms[i].slm[l, m, :], label=label[i + 1], color=color[i + 1])
+                    else:
+                        plt.plot(ylms[i].time, ylms[i].slm[l, m, :], label=label[i + 1])
             except IndexError:
                 raise IndexError("The list of labels is incomplete for correct plotting")
 
             plt.xlabel("Time (year)")
             plt.legend()
+            ax.yaxis.offsetText.set_horizontalalignment('right')
             if dates:
                 plt.xlim(dates)
             plt.grid()
@@ -2175,11 +2191,11 @@ class harmonics(object):
                 if os.path.isdir(save_path):
                     plt.savefig(os.path.join(save_path, 'S' + str(l) + str(m) + '_coefficient.png'))
                 else:
-                    plt.savefig(save_path[:-3] + 's' + save_path[-3:])
+                    plt.savefig(save_path[:-4] + 's' + save_path[-4:])
 
         plt.show()
 
-    def plot_fft(self, l, m, save_path=False):
+    def plot_fft(self, l, m, save_path=False, fmax=6):
         """
         Plot Cl,m and Sl,m harmonic coefficients fast fourrier transform
         Inputs:
@@ -2188,11 +2204,12 @@ class harmonics(object):
 
         Options:
             save_path : if not False, give a path to save the figure
+            fmax : maximal frequency (default to 6 for period > 2 months)
         """
         #-- compute fft and create x monthly frequency
         N = len(self.time)
-        cf = sc.fft.fft(self.clm[l, m, :])
-        sf = sc.fft.fft(self.slm[l, m, :])
+        cf = sc.fft.fft(self.clm[l, m, :])[0:N // 2]
+        sf = sc.fft.fft(self.slm[l, m, :])[0:N // 2]
         xf = np.linspace(0.0, 12/2, N // 2)
 
         # -- figure for Cl,m and Sl,m
@@ -2200,9 +2217,9 @@ class harmonics(object):
         plt.title("Fourier transform of the normalized spherical harmonic coefficients $C_{" + str(l) + "," + str(
             m) + "}$ et $S_{" + str(
             l) + "," + str(m) + "}$")
-        plt.plot(xf, 2.0 / N * np.abs(cf[0:N // 2]), label="$C_{" + str(l) + "," + str(m) + "}$")
+        plt.plot(xf[xf <= fmax], 2.0 / N * np.abs(cf[xf <= fmax]), label="$C_{" + str(l) + "," + str(m) + "}$")
         if m:
-            plt.plot(xf, 2.0 / N * np.abs(sf[0:N // 2]), label="$S_{" + str(l) + "," + str(m) + "}$")
+            plt.plot(xf[xf <= fmax], 2.0 / N * np.abs(sf[xf <= fmax]), label="$S_{" + str(l) + "," + str(m) + "}$")
 
 
         plt.xlabel("Frequency ($year^{-1}$)")
@@ -2218,7 +2235,7 @@ class harmonics(object):
 
         plt.show()
 
-    def plot_wavelets(self, l, m, s0=0, pad=1, lag1=0, plot_coi=True, mother='MORLET', param=-1, func_plot=np.abs, save_path=False):
+    def plot_wavelets(self, l, m, s0=0, j1=None, pad=1, lag1=0, plot_coi=True, mother='MORLET', param=-1, func_plot=np.abs, save_path=False):
         """
         Plot Cl,m and Sl,m wavelet analysis based on (Torrence and Compo, 1998)
 
@@ -2246,8 +2263,10 @@ class harmonics(object):
 
         if not s0:
             s0 = 4 * dt  # min scale of the wavelets
+
         # max resolution of the wavelet, fixed for GRACE
-        j1 = 4.5 / dj
+        if j1 is None:
+            j1 = np.log2(11/s0)/dj
 
         siglvl = 0.95
 
@@ -2319,56 +2338,57 @@ class harmonics(object):
         axs[1].set_xlabel('Power')
         axs[1].set_title('Global Wavelet Spectrum')
 
-        plt.legend()
+        plt.legend(loc='upper right')
 
         if save_path:
             if os.path.isdir(save_path):
                 plt.savefig(os.path.join(save_path, 'C' + str(l) + str(m) + '_wavelet.png'))
             else:
-                plt.savefig(save_path[:-3] + 'c' + save_path[-3:])
+                plt.savefig(save_path[:-4] + 'c' + save_path[-4:])
 
-        # create figure Sl,m
-        fig = plt.figure(constrained_layout=True, figsize=(12, 6), dpi=200)
-        spec = matplotlib.gridspec.GridSpec(ncols=2, nrows=1, wspace=0.02, width_ratios=[3, 1])
-        ax0 = fig.add_subplot(spec[0])
-        ax1 = fig.add_subplot(spec[1], sharey=ax0)
-        axs = [ax0, ax1]
-        plt.setp(axs[1].get_yticklabels(), visible=False)
+        if m:
+            # create figure Sl,m
+            fig = plt.figure(constrained_layout=True, figsize=(12, 6), dpi=200)
+            spec = matplotlib.gridspec.GridSpec(ncols=2, nrows=1, wspace=0.02, width_ratios=[3, 1])
+            ax0 = fig.add_subplot(spec[0])
+            ax1 = fig.add_subplot(spec[1], sharey=ax0)
+            axs = [ax0, ax1]
+            plt.setp(axs[1].get_yticklabels(), visible=False)
 
-        # plot wavelet
-        im = axs[0].contourf(self.time, period, np.abs(waves), 100)
-        axs[0].contour(self.time, period, sig95s, levels=[1], linewidths=2)
+            # plot wavelet
+            im = axs[0].contourf(self.time, period, np.abs(waves), 100)
+            axs[0].contour(self.time, period, sig95s, levels=[1], linewidths=2)
 
-        # plot cone of interest of the wavelet
-        if plot_coi:
-            axs[0].fill(np.concatenate((self.time[:1] - 0.0001, self.time, self.time[-1:] + 0.0001,
-                                        self.time[-1:] + 0.0001, self.time[:1] - 0.0001, self.time[:1] - 0.0001)),
-                    np.concatenate(([s0], coi, [s0], period[-1:], period[-1:], [s0])), 'r', alpha=0.2, hatch='/')
-            axs[0].plot(self.time, coi, 'r--', lw=1.4)
+            # plot cone of interest of the wavelet
+            if plot_coi:
+                axs[0].fill(np.concatenate((self.time[:1] - 0.0001, self.time, self.time[-1:] + 0.0001,
+                                            self.time[-1:] + 0.0001, self.time[:1] - 0.0001, self.time[:1] - 0.0001)),
+                        np.concatenate(([s0], coi, [s0], period[-1:], period[-1:], [s0])), 'r', alpha=0.2, hatch='/')
+                axs[0].plot(self.time, coi, 'r--', lw=1.4)
 
-        fig.colorbar(im, ax=axs[0], location='left')
-        axs[0].invert_yaxis()
-        axs[0].set_yscale('log', base=2)
-        axs[0].set_ylabel('Period (year)')
-        axs[0].set_ylim(np.max(period), np.min(period))
-        axs[0].set_yticks(yticks)
-        axs[0].set_xlabel('Time (year)')
-        axs[0].get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
-        axs[0].set_title('Wavelet Power Spectrum')
+            fig.colorbar(im, ax=axs[0], location='left')
+            axs[0].invert_yaxis()
+            axs[0].set_yscale('log', base=2)
+            axs[0].set_ylabel('Period (year)')
+            axs[0].set_ylim(np.max(period), np.min(period))
+            axs[0].set_yticks(yticks)
+            axs[0].set_xlabel('Time (year)')
+            axs[0].get_yaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+            axs[0].set_title('Wavelet Power Spectrum')
 
-        # plot fft analysis at the right of the figure
-        axs[1].plot(sxxs, 1 / f * dt, 'gray', label='Fourier spectrum')
-        axs[1].plot(global_wss, period, 'b', label='Wavelet spectrum')
-        axs[1].plot(np.array(signifs) * np.var(self.clm[l, m]), period, 'g--', label='95% confidence spectrum')
-        axs[1].set_xlabel('Power')
-        axs[1].set_title('Global Wavelet Spectrum')
+            # plot fft analysis at the right of the figure
+            axs[1].plot(sxxs, 1 / f * dt, 'gray', label='Fourier spectrum')
+            axs[1].plot(global_wss, period, 'b', label='Wavelet spectrum')
+            axs[1].plot(np.array(signifs) * np.var(self.clm[l, m]), period, 'g--', label='95% confidence spectrum')
+            axs[1].set_xlabel('Power')
+            axs[1].set_title('Global Wavelet Spectrum')
 
-        plt.legend()
+            plt.legend(loc='upper right')
 
-        if save_path:
-            if os.path.isdir(save_path):
-                plt.savefig(os.path.join(save_path, 'C' + str(l) + str(m) + '_wavelet.png'))
-            else:
-                plt.savefig(save_path[:-3] + 's' + save_path[-3:])
+            if save_path:
+                if os.path.isdir(save_path):
+                    plt.savefig(os.path.join(save_path, 'S' + str(l) + str(m) + '_wavelet.png'))
+                else:
+                    plt.savefig(save_path[:-4] + 's' + save_path[-4:])
 
         plt.show()

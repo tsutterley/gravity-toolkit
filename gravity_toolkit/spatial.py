@@ -2103,25 +2103,33 @@ class scaling_factors(spatial):
                 axplot.yaxis.set_label_position("right")
                 axplot.set_xlabel('Time (year)')
 
-                if unit == "cmwe":
-                    axplot.set_ylabel('Equivalent Water\nThickness\ncm', labelpad=50, fontsize=12, rotation='horizontal')
-                elif unit == "cmwe_ne":
-                    axplot.set_ylabel('Non elastic\n Equivalent Water\nThickness\ncm', labelpad=50, fontsize=12, rotation='horizontal')
-                elif unit == "mmwe":
-                    axplot.set_ylabel('Equivalent Water\n Thickness\nmm', labelpad=50, fontsize=12, rotation='horizontal')
-                elif unit == "geoid":
-                    axplot.set_ylabel('Geoid Height\nmm', labelpad=45, fontsize=12, rotation='horizontal')
-                elif unit == "microGal":
-                    axplot.set_ylabel('Acceleration\n$\mu Gal$', labelpad=40, fontsize=12, rotation='horizontal')
-                elif unit == "secacc":
-                    axplot.set_ylabel('Secular\n Acceleration\n$nT.y^{-2}$', labelpad=40, fontsize=12, rotation='horizontal')
-
                 axfft = fig.add_subplot(spec[6:10, 1:], box_aspect=0.5)
-                plt.plot(1/xf[:len(xf)//2][1/xf[:len(xf)//2] < 10], 2.0/len(self.time) * np.abs(f[:len(xf)//2][1/xf[:len(xf)//2] < 10]))
+                plt.plot(1 / xf[:len(xf) // 2][1 / xf[:len(xf) // 2] < 10],
+                         2.0 / len(self.time) * np.abs(f[:len(xf) // 2][1 / xf[:len(xf) // 2] < 10]))
                 axfft.yaxis.tick_right()
                 axfft.set_xlim(0, 10)
-                axfft.set_ylim(0,)
+                axfft.set_ylim(0, )
                 axfft.set_xlabel('Period (year)')
+                axfft.yaxis.set_label_position("right")
+
+                if unit == "cmwe":
+                    axplot.set_ylabel('Equivalent Water\nThickness\ncm', labelpad=50, fontsize=12, rotation='horizontal')
+                    axfft.set_ylabel('Power\n$cm^2$', labelpad=50, fontsize=12, rotation='horizontal')
+                elif unit == "cmwe_ne":
+                    axplot.set_ylabel('Non elastic\n Equivalent Water\nThickness\ncm', labelpad=50, fontsize=12, rotation='horizontal')
+                    axfft.set_ylabel('Power\n$cm^2$', labelpad=50, fontsize=12, rotation='horizontal')
+                elif unit == "mmwe":
+                    axplot.set_ylabel('Equivalent Water\n Thickness\nmm', labelpad=50, fontsize=12, rotation='horizontal')
+                    axfft.set_ylabel('Power\n$mm^2$', labelpad=50, fontsize=12, rotation='horizontal')
+                elif unit == "geoid":
+                    axplot.set_ylabel('Geoid Height\nmm', labelpad=45, fontsize=12, rotation='horizontal')
+                    axfft.set_ylabel('Power\n$mm^2$', labelpad=50, fontsize=12, rotation='horizontal')
+                elif unit == "microGal":
+                    axplot.set_ylabel('Acceleration\n$\mu Gal$', labelpad=40, fontsize=12, rotation='horizontal')
+                    axfft.set_ylabel('Power\n$\mu Gal^2$', labelpad=50, fontsize=12, rotation='horizontal')
+                elif unit == "secacc":
+                    axplot.set_ylabel('Secular\n Acceleration\n$nT.y^{-2}$', labelpad=40, fontsize=12, rotation='horizontal')
+                    axfft.set_ylabel('Power\n$nT^2.y^{-4}$', labelpad=50, fontsize=12, rotation='horizontal')
 
                 plt.savefig(os.path.join(path_folder, 'eof_pc_'+str(k)+'.png'), bbox_inches='tight')
                 plt.close()
