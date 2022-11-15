@@ -176,7 +176,7 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
         logging.info(f'\t{local_file}{OVERWRITE}\n')
         #-- copy remote file contents to local file
         with open(local_file, 'wb') as f:
-                    ftp.retrbinary(f'RETR {remote_file}', f.write)
+            ftp.retrbinary(f'RETR {remote_file}', f.write)
         #-- keep remote modification time of file and local access time
         os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
         os.chmod(local_file, MODE)
