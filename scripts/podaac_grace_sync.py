@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_grace_sync.py
-Written by Tyler Sutterley (08/2022)
+Written by Tyler Sutterley (11/2022)
 
 Syncs GRACE/GRACE-FO and auxiliary data from the NASA JPL PO.DAAC Drive Server
 Syncs CSR/GFZ/JPL files for RL04/RL05/RL06 GAA/GAB/GAC/GAD/GSM
@@ -70,6 +70,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 08/2022: moved regular expression function to utilities
         Dynamically select newest version of granules for index
     Updated 04/2022: added option for GRACE/GRACE-FO Level-2 data version
@@ -214,10 +215,10 @@ def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     if LOG:
         #-- format: PODAAC_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
-        LOGFILE = 'PODAAC_sync_{0}.log'.format(today)
+        LOGFILE = f'PODAAC_sync_{today}.log'
         logging.basicConfig(filename=os.path.join(DIRECTORY,LOGFILE),
             level=logging.INFO)
-        logging.info('PO.DAAC Sync Log ({0})'.format(today))
+        logging.info(f'PO.DAAC Sync Log ({today})')
         logging.info('CENTERS={0}'.format(','.join(PROC)))
         logging.info('RELEASES={0}'.format(','.join(DREL)))
     else:
@@ -226,7 +227,7 @@ def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
 
     #-- Degree 1 (geocenter) coefficients
     logging.info('Degree 1 Coefficients:')
-    PATH = [HOST,'drive','files','allData','tellus','L2','degree_1']
+    PATH = [HOST,'drive','files','allData','gracefo','docs']
     remote_dir = posixpath.join(*PATH)
     local_dir = os.path.join(DIRECTORY,'geocenter')
     #-- check if geocenter directory exists and recursively create if not
@@ -315,12 +316,12 @@ def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
         os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
         #-- for each satellite mission (grace, grace-fo)
         for i,mi in enumerate(['grace','grace-fo']):
-            logging.info('{0} Newsletters:'.format(mi))
+            logging.info(f'{mi} Newsletters:')
             PATH = [HOST,'drive','files','allData',*newsletter_sub[mi]]
             remote_dir = posixpath.join(*PATH)
             #-- compile regular expression operator for remote files
             NAME = mi.upper().replace('-','_')
-            R1 = re.compile(r'{0}_SDS_NL_(\d+).pdf'.format(NAME), re.VERBOSE)
+            R1 = re.compile(rf'{NAME}_SDS_NL_(\d+).pdf', re.VERBOSE)
             #-- open connection with PO.DAAC drive server at remote directory
             files,mtimes = gravity_toolkit.utilities.drive_list(PATH,
                 timeout=TIMEOUT,build=False,parser=parser,pattern=R1,sort=True)
@@ -339,7 +340,7 @@ def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
         #-- for each data release (RL04, RL05, RL06)
         for rl in DREL:
             #-- print string of exact data product
-            logging.info('{0}/{1}/{2}/{3}'.format('L1B','GFZ','AOD1B',rl))
+            logging.info(f'GFZ/AOD1B/{rl}')
             #-- remote and local directory for exact data product
             local_dir = os.path.join(DIRECTORY,'AOD1B',rl)
             #-- check if AOD1B directory exists and recursively create if not
@@ -375,7 +376,7 @@ def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
                 #-- for each satellite mission (grace, grace-fo)
                 for i,mi in enumerate(['grace','grace-fo']):
                     #-- print string of exact data product
-                    logging.info('{0} {1}/{2}/{3}'.format(mi, pr, rl, ds))
+                    logging.info(f'{mi} {pr}/{rl}/{ds}')
                     #-- query CMR for dataset
                     ids,urls,mtimes = gravity_toolkit.utilities.cmr(
                         mission=mi, center=pr, release=rl, product=ds,
@@ -400,7 +401,7 @@ def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
                 #-- outputting GRACE/GRACE-FO filenames to index
                 with open(os.path.join(local_dir,'index.txt'),'w') as fid:
                     for fi in sorted(grace_files):
-                        print('{0}'.format(fi), file=fid)
+                        print(fi, file=fid)
                 #-- change permissions of index file
                 os.chmod(os.path.join(local_dir,'index.txt'), MODE)
 
@@ -433,7 +434,7 @@ def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
         #-- compare checksums
         if (local_hash != remote_hash):
             TEST = True
-            OVERWRITE = ' (checksums: {0} {1})'.format(local_hash,remote_hash)
+            OVERWRITE = f' (checksums: {local_hash} {remote_hash})'
     elif os.access(local_file, os.F_OK):
         #-- check last modification time of local file
         local_mtime = os.stat(local_file).st_mtime
@@ -448,8 +449,8 @@ def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
     #-- if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         #-- Printing files transferred
-        logging.info('{0} --> '.format(remote_file))
-        logging.info('\t{0}{1}\n'.format(local_file,OVERWRITE))
+        logging.info(f'{remote_file} --> ')
+        logging.info(f'\t{local_file}{OVERWRITE}\n')
         #-- if executing copy command (not only printing the files)
         if not LIST:
             #-- chunked transfer encoding size
@@ -564,11 +565,11 @@ def main():
     except:
         #-- check that NASA Earthdata credentials were entered
         if not args.user:
-            prompt = 'Username for {0}: '.format(HOST)
+            prompt = f'Username for {HOST}: '
             args.user = builtins.input(prompt)
         #-- enter WebDAV password securely from command-line
         if not args.webdav:
-            prompt = 'Password for {0}@{1}: '.format(args.user,HOST)
+            prompt = f'Password for {args.user}@{HOST}: '
             args.webdav = getpass.getpass(prompt)
 
     #-- build a urllib opener for PO.DAAC Drive
@@ -577,7 +578,7 @@ def main():
 
     #-- check internet connection before attempting to run program
     #-- check JPL PO.DAAC Drive credentials before attempting to run program
-    DRIVE = 'https://{0}/drive/files'.format(HOST)
+    DRIVE = f'https://{HOST}/drive/files'
     if gravity_toolkit.utilities.check_credentials(DRIVE):
         podaac_grace_sync(args.directory, PROC=args.center,
             DREL=args.release, VERSION=args.version,

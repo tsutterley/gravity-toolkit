@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 monte_carlo_degree_one.py
-Written by Tyler Sutterley (09/2022)
+Written by Tyler Sutterley (11/2022)
 
 Calculates degree 1 errors using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from OMCT/MPIOM in a Monte Carlo scheme
@@ -146,6 +146,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: add option to replace degree 4 zonal harmonics with SLR
     Updated 08/2022: set default land-sea mask file in arguments
     Updated 07/2022: set plot tick formatter to not use offsets
@@ -219,10 +220,10 @@ from gravity_toolkit.time import grace_to_calendar
 def info(args):
     logging.info(os.path.basename(sys.argv[0]))
     logging.info(args)
-    logging.info('module name: {0}'.format(__name__))
+    logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        logging.info('parent process: {0:d}'.format(os.getppid()))
-    logging.info('process id: {0:d}'.format(os.getpid()))
+        logging.info(f'parent process: {os.getppid():d}')
+    logging.info(f'process id: {os.getpid():d}')
 
 #-- PURPOSE: model the seasonal component of an initial degree 1 model
 #-- using preliminary estimates of annual and semi-annual variations from LWM
@@ -295,7 +296,7 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     #-- delta coefficients flag for monte carlo run
     delta_str = '_monte_carlo'
     #-- output string for both LMAX==MMAX and LMAX != MMAX cases
-    order_str = 'M{0:d}'.format(MMAX) if MMAX and (MMAX != LMAX) else ''
+    order_str = f'M{MMAX:d}' if MMAX and (MMAX != LMAX) else ''
     #-- atmospheric ECMWF "jump" flag (if ATM)
     atm_str = '_wATM' if ATM else ''
     #-- ocean model string
@@ -304,26 +305,26 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     slf_str = '_SLF' if FINGERPRINT else ''
     #-- output flag for low-degree harmonic replacements
     if SLR_21 in ('CSR','GFZ','GSFC'):
-        C21_str = '_w{0}_21'.format(SLR_21)
+        C21_str = f'_w{SLR_21}_21'
     else:
         C21_str = ''
     if SLR_22 in ('CSR','GSFC'):
-        C22_str = '_w{0}_22'.format(SLR_22)
+        C22_str = f'_w{SLR_22}_22'
     else:
         C22_str = ''
     if SLR_C30 in ('GSFC',):
         #-- C30 replacement now default for all solutions
         C30_str = ''
     elif SLR_C30 in ('CSR','GFZ','LARES'):
-        C30_str = '_w{0}_C30'.format(SLR_C30)
+        C30_str = f'_w{SLR_C30}_C30'
     else:
         C30_str = ''
     if SLR_C40 in ('CSR','GSFC','LARES'):
-        C40_str = '_w{0}_C40'.format(SLR_C40)
+        C40_str = f'_w{SLR_C40}_C40'
     else:
         C40_str = ''
     if SLR_C50 in ('CSR','GSFC','LARES'):
-        C50_str = '_w{0}_C50'.format(SLR_C50)
+        C50_str = f'_w{SLR_C50}_C50'
     else:
         C50_str = ''
     #-- combine satellite laser ranging flags
@@ -1320,7 +1321,7 @@ def main():
         #-- if there has been an error exception
         #-- print the type, value, and stack trace of the
         #-- current exception being handled
-        logging.critical('process id {0:d} failed'.format(os.getpid()))
+        logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
         if args.log:#-- write failed job completion log file
             output_error_log_file(args)

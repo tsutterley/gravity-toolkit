@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_love_numbers.py
-Written by Tyler Sutterley (09/2022)
+Written by Tyler Sutterley (11/2022)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
 Linearly interpolates load love numbers for missing degrees
@@ -56,6 +56,7 @@ REFERENCES:
         103(B12), 30205-30229, (1998)
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: use logging for debugging level verbose output
     Updated 04/2022: updated docstrings to numpy documentation format
         added wrapper function for reading load Love numbers from file
@@ -239,7 +240,7 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
         #-- Center of Mass of Solid Earth
         alpha = 0.0
     else:
-        raise Exception('Invalid Reference Frame {0}'.format(REFERENCE))
+        raise Exception(f'Invalid Reference Frame {REFERENCE}')
     #-- apply isomorphic parameters
     for n in ('hl','kl','ll'):
         love[n][1] -= alpha
@@ -268,7 +269,7 @@ def extract_love_numbers(love_numbers_file):
         love_numbers_file = os.path.expanduser(love_numbers_file)
         #-- check that load love number data file is present in file system
         if not os.access(love_numbers_file, os.F_OK):
-            raise FileNotFoundError('{0} not found'.format(love_numbers_file))
+            raise FileNotFoundError(f'{love_numbers_file} not found')
         #-- Input load love number data file and read contents
         with open(love_numbers_file, mode='r', encoding='utf8') as f:
             return f.read().splitlines()
@@ -358,7 +359,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
         header = 1
         columns = ['l','hl','ll','kl','nl','nk']
     #-- log load love numbers file if debugging
-    logging.debug('Reading Love numbers file: {0}'.format(love_numbers_file))
+    logging.debug(f'Reading Love numbers file: {love_numbers_file}')
     #-- LMAX of load love numbers from Han and Wahr (1995) is 696.
     #-- from Wahr (2007) linearly interpolating kl works
     #-- however, as we are linearly extrapolating out, do not make

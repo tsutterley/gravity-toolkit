@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_dealiasing_ftp.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (11/2022)
 Syncs GRACE Level-1b dealiasing products from the GFZ Information
     System and Data Center (ISDC)
 Optionally outputs as monthly tar files
@@ -30,6 +30,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
     Updated 10/2021: using python logging for handling verbose output
     Updated 07/2021: added option to sync only specific months
@@ -67,10 +68,10 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, MONTHS=None, TAR=False,
         #-- output to log file
         #-- format: GFZ_AOD1B_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
-        LOGFILE = 'GFZ_AOD1B_sync_{0}.log'.format(today)
+        LOGFILE = f'GFZ_AOD1B_sync_{today}.log'
         logging.basicConfig(filename=os.path.join(base_dir,LOGFILE),
             level=logging.INFO)
-        logging.info('GFZ AOD1b Sync Log ({0})'.format(today))
+        logging.info(f'GFZ AOD1b Sync Log ({today})')
     else:
         #-- standard output (terminal output)
         logging.basicConfig(level=logging.INFO)
@@ -84,9 +85,9 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, MONTHS=None, TAR=False,
     if YEAR is None:
         regex_years = r'\d{4}'
     else:
-        regex_years = r'|'.join(r'{0:d}'.format(y) for y in YEAR)
+        regex_years = r'|'.join(rf'{y:d}' for y in YEAR)
     #-- compile regular expression operator for years to sync
-    R1 = re.compile(r'({0})'.format(regex_years), re.VERBOSE)
+    R1 = re.compile(rf'({regex_years})', re.VERBOSE)
     #-- suffix for each data release
     SUFFIX = dict(RL04='tar.gz',RL05='tar.gz',RL06='tgz')
 
@@ -170,11 +171,12 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
     #-- if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         #-- Printing files transferred
-        arg = (posixpath.join('ftp://',*remote_path),local_file,OVERWRITE)
-        logging.info('{0} -->\n\t{1}{2}\n'.format(*arg))
+        remote_ftp_url = posixpath.join('ftp://',*remote_path)
+        logging.info(f'{remote_ftp_url} -->')
+        logging.info(f'\t{local_file}{OVERWRITE}\n')
         #-- copy remote file contents to local file
         with open(local_file, 'wb') as f:
-            ftp.retrbinary('RETR {0}'.format(remote_file), f.write)
+            ftp.retrbinary(f'RETR {remote_file}', f.write)
         #-- keep remote modification time of file and local access time
         os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
         os.chmod(local_file, MODE)

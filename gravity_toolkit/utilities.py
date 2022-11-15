@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (08/2022)
+Written by Tyler Sutterley (11/2022)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
@@ -9,6 +9,7 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/lxml
 
 UPDATE HISTORY:
+    Updated 11/2022: add CMR queries for collection metadata
     Updated 08/2022: add regular expression function for finding files
     Updated 07/2022: add s3 endpoints and buckets for Earthdata Cumulus
     Updated 05/2022: function for extracting bucket name from presigned url
@@ -239,7 +240,7 @@ def copy(source, destination, move=False, **kwargs):
     source = os.path.abspath(os.path.expanduser(source))
     destination = os.path.abspath(os.path.expanduser(destination))
     #-- log source and destination
-    logging.info('{0} -->\n\t{1}'.format(source,destination))
+    logging.info(f'{source} -->\n\t{destination}')
     shutil.copyfile(source, destination)
     shutil.copystat(source, destination)
     if move:
@@ -268,7 +269,7 @@ def create_unique_file(filename):
         else:
             return os.fdopen(fd, 'w+')
         #-- new filename adds counter the between fileBasename and fileExtension
-        filename = '{0}_{1:d}{2}'.format(fileBasename, counter, fileExtension)
+        filename = f'{fileBasename}_{counter:d}{fileExtension}'
         counter += 1
 
 #-- PURPOSE: check ftp connection
@@ -333,8 +334,8 @@ def ftp_list(HOST, username=None, password=None, timeout=None,
     #-- try to connect to ftp host
     try:
         ftp = ftplib.FTP(HOST[0],timeout=timeout)
-    except (socket.gaierror,IOError):
-        raise RuntimeError('Unable to connect to {0}'.format(HOST[0]))
+    except (socket.gaierror,IOError) as e:
+        raise RuntimeError(f'Unable to connect to {HOST[0]}')
     else:
         ftp.login(username,password)
         #-- list remote path
@@ -345,7 +346,7 @@ def ftp_list(HOST, username=None, password=None, timeout=None,
         for i,f in enumerate(output):
             try:
                 #-- try sending modification time command
-                mdtm = ftp.sendcmd('MDTM {0}'.format(f))
+                mdtm = ftp.sendcmd(f'MDTM {f}')
             except ftplib.error_perm:
                 #-- directories will return with an error
                 pass
@@ -417,15 +418,15 @@ def from_ftp(HOST, username=None, password=None, timeout=None,
     try:
         #-- try to connect to ftp host
         ftp = ftplib.FTP(HOST[0],timeout=timeout)
-    except (socket.gaierror,IOError):
-        raise RuntimeError('Unable to connect to {0}'.format(HOST[0]))
+    except (socket.gaierror,IOError) as e:
+        raise RuntimeError(f'Unable to connect to {HOST[0]}')
     else:
         ftp.login(username,password)
         #-- remote path
         ftp_remote_path = posixpath.join(*HOST[1:])
         #-- copy remote file contents to bytesIO object
         remote_buffer = io.BytesIO()
-        ftp.retrbinary('RETR {0}'.format(ftp_remote_path),
+        ftp.retrbinary(f'RETR {ftp_remote_path}',
             remote_buffer.write, blocksize=chunk)
         remote_buffer.seek(0)
         #-- save file basename with bytesIO object
@@ -433,7 +434,7 @@ def from_ftp(HOST, username=None, password=None, timeout=None,
         #-- generate checksum hash for remote file
         remote_hash = hashlib.md5(remote_buffer.getvalue()).hexdigest()
         #-- get last modified date of remote file and convert into unix time
-        mdtm = ftp.sendcmd('MDTM {0}'.format(ftp_remote_path))
+        mdtm = ftp.sendcmd(f'MDTM {ftp_remote_path}')
         remote_mtime = get_unix_time(mdtm[4:], format="%Y%m%d%H%M%S")
         #-- compare checksums
         if local and (hash != remote_hash):
@@ -586,7 +587,7 @@ def from_http(HOST, timeout=None, context=ssl.SSLContext(),
         #-- Create and submit request.
         request = urllib2.Request(posixpath.join(*HOST))
         response = urllib2.urlopen(request,timeout=timeout,context=context)
-    except (urllib2.HTTPError, urllib2.URLError):
+    except (urllib2.HTTPError, urllib2.URLError) as e:
         raise Exception('Download error from {0}'.format(posixpath.join(*HOST)))
     else:
         #-- copy remote file contents to bytesIO object
@@ -668,9 +669,9 @@ def attempt_login(urs, context=ssl.SSLContext(),
         pass
     # if username or password are not available
     if not username:
-        username = builtins.input('Username for {0}: '.format(urs))
+        username = builtins.input(f'Username for {urs}: ')
     if not password:
-        prompt = 'Password for {0}@{1}: '.format(username, urs)
+        prompt = f'Password for {username}@{urs}: '
         password = getpass.getpass(prompt=prompt)
     # for each retry
     for retry in range(kwargs['retries']):
@@ -691,7 +692,7 @@ def attempt_login(urs, context=ssl.SSLContext(),
         else:
             return opener
         # reattempt login
-        username = builtins.input('Username for {0}: '.format(urs))
+        username = builtins.input(f'Username for {urs}: ')
         password = getpass.getpass(prompt=prompt)
     # reached end of available retries
     raise RuntimeError('End of Retries: Check NASA Earthdata credentials')
@@ -752,7 +753,7 @@ def build_opener(username, password, context=ssl.SSLContext(),
     #-- Encode username/password for request authorization headers
     #-- add Authorization header to opener
     if authorization_header:
-        b64 = base64.b64encode('{0}:{1}'.format(username,password).encode())
+        b64 = base64.b64encode(f'{username}:{password}'.encode())
         opener.addheaders = [("Authorization","Basic {0}".format(b64.decode()))]
     #-- Now all calls to urllib2.urlopen use our opener.
     urllib2.install_opener(opener)
@@ -778,7 +779,8 @@ _s3_buckets = {
     'lpdaac': 'lp-prod-protected',
     'nsidc': 'nsidc-cumulus-prod-protected',
     'ornldaac': 'ornl-cumulus-prod-protected',
-    'podaac': 'podaac-ops-cumulus-protected'
+    'podaac': 'podaac-ops-cumulus-protected',
+    'podaac-doc': 'podaac-ops-cumulus-docs'
 }
 
 #-- PURPOSE: get AWS s3 client for PO.DAAC Cumulus
@@ -1210,7 +1212,7 @@ def cmr_filter_json(search_results, endpoint="data"):
     #-- check that there are urls for request
     if ('feed' not in search_results) or ('entry' not in search_results['feed']):
         return (granule_names,granule_urls)
-    # descriptor links for each endpoint
+    #-- descriptor links for each endpoint
     rel = {}
     rel['data'] = "http://esipfed.org/ns/fedsearch/1.1/data#"
     rel['s3'] = "http://esipfed.org/ns/fedsearch/1.1/s3#"
@@ -1225,6 +1227,45 @@ def cmr_filter_json(search_results, endpoint="data"):
                 break
     #-- return the list of urls, granule ids and modified times
     return (granule_names,granule_urls,granule_mtimes)
+
+#-- PURPOSE: filter the CMR json response for desired metadata files
+def cmr_metadata_json(search_results, endpoint="data"):
+    """
+    Filter the CMR json response for desired metadata files
+
+    Parameters
+    ----------
+    search_results: dict
+        json response from CMR query
+    endpoint: str, default 'data'
+        url endpoint type
+
+            - ``'documentation'``: PO.DAAC documentation archive
+            - ``'data'``: PO.DAAC https archive
+            - ``'s3'``: PO.DAAC Cumulus AWS S3 bucket
+
+    Returns
+    -------
+    collection_urls: list
+        urls from collection of endpoint type
+    """
+    #-- output list of collection urls
+    collection_urls = []
+    #-- check that there are urls for request
+    if ('feed' not in search_results) or ('entry' not in search_results['feed']):
+        return collection_urls
+    #-- descriptor links for each endpoint
+    rel = {}
+    rel['documentation'] = "http://esipfed.org/ns/fedsearch/1.1/documentation#"
+    rel['data'] = "http://esipfed.org/ns/fedsearch/1.1/data#"
+    rel['s3'] = "http://esipfed.org/ns/fedsearch/1.1/s3#"
+    #-- iterate over references and get cmr location
+    for entry in search_results['feed']['entry']:
+        for link in entry['links']:
+            if (link['rel'] == rel[endpoint]):
+                collection_urls.append(link['href'])
+    #-- return the list of urls
+    return collection_urls
 
 #-- PURPOSE: cmr queries for GRACE/GRACE-FO products
 def cmr(mission=None, center=None, release=None, level='L2', product=None,
@@ -1290,36 +1331,37 @@ def cmr(mission=None, center=None, release=None, level='L2', product=None,
     #-- create "opener" (OpenerDirector instance)
     opener = urllib2.build_opener(*handler)
     #-- build CMR query
+    cmr_query_type = 'granules'
     cmr_format = 'json'
     cmr_page_size = 2000
     CMR_HOST = ['https://cmr.earthdata.nasa.gov','search',
-        'granules.{0}'.format(cmr_format)]
+        f'{cmr_query_type}.{cmr_format}']
     #-- build list of CMR query parameters
     CMR_KEYS = []
-    CMR_KEYS.append('?provider={0}'.format(provider))
+    CMR_KEYS.append(f'?provider={provider}')
     CMR_KEYS.append('&sort_key[]=start_date')
     CMR_KEYS.append('&sort_key[]=producer_granule_id')
     CMR_KEYS.append('&scroll=true')
-    CMR_KEYS.append('&page_size={0}'.format(cmr_page_size))
+    CMR_KEYS.append(f'&page_size={cmr_page_size}')
     #-- dictionary of product shortnames
     short_names = cmr_product_shortname(mission, center, release,
         level=level, version=version)
     for short_name in short_names:
-        CMR_KEYS.append('&short_name={0}'.format(short_name))
+        CMR_KEYS.append(f'&short_name={short_name}')
     #-- append keys for start and end time
     #-- verify that start and end times are in ISO format
     start_date = isoformat(start_date) if start_date else ''
     end_date = isoformat(end_date) if end_date else ''
-    CMR_KEYS.append('&temporal={0},{1}'.format(start_date, end_date))
+    CMR_KEYS.append(f'&temporal={start_date},{end_date}')
     #-- append keys for querying specific products
     CMR_KEYS.append("&options[readable_granule_name][pattern]=true")
     CMR_KEYS.append("&options[spatial][or]=true")
     readable_granule = cmr_readable_granules(product,
         level=level, solution=solution, version=version)
-    CMR_KEYS.append("&readable_granule_name[]={0}".format(readable_granule))
+    CMR_KEYS.append(f"&readable_granule_name[]={readable_granule}")
     #-- full CMR query url
     cmr_query_url = "".join([posixpath.join(*CMR_HOST),*CMR_KEYS])
-    logging.info('CMR request={0}'.format(cmr_query_url))
+    logging.info(f'CMR request={cmr_query_url}')
     #-- output list of granule names and urls
     granule_names = []
     granule_urls = []
@@ -1345,6 +1387,92 @@ def cmr(mission=None, center=None, release=None, level='L2', product=None,
         granule_mtimes.extend(mtimes)
     #-- return the list of granule ids, urls and modification times
     return (granule_names, granule_urls, granule_mtimes)
+
+#-- PURPOSE: cmr queries for GRACE/GRACE-FO auxiliary data and documentation
+def cmr_metadata(mission=None, center=None, release=None, level='L2',
+    version='0', provider='POCLOUD', endpoint='data', pattern='',
+    verbose=False, fid=sys.stdout):
+    """
+    Query the NASA Common Metadata Repository (CMR) for GRACE/GRACE-FO
+    auxiliary data and documentation
+
+    Parameters
+    ----------
+    mission: str or NoneType, default None
+        GRACE (``'grace'``) or GRACE Follow-On (``'grace-fo'``)
+    center: str or NoneType, default None
+        GRACE/GRACE-FO processing center
+    release: str or NoneType, default None
+        GRACE/GRACE-FO data release
+    level: str, default 'L2'
+        GRACE/GRACE-FO product level
+    version: str, default '0'
+        GRACE/GRACE-FO Level-2 data version
+    provider: str, default 'POCLOUD'
+        CMR data provider
+
+            - ``'PODAAC'``: PO.DAAC Drive
+            - ``'POCLOUD'``: PO.DAAC Cumulus
+    endpoint: str, default 'data'
+        url endpoint type
+
+            - ``'documentation'``: PO.DAAC documentation archive
+            - ``'data'``: PO.DAAC https archive
+            - ``'s3'``: PO.DAAC Cumulus AWS S3 bucket
+    pattern: str, default ''
+        regular expression pattern for reducing list
+    verbose: bool, default False
+        print CMR query information
+    fid: obj, default sys.stdout
+        open file object to print if verbose
+
+    Returns
+    -------
+    collection_urls: list
+        urls from collection of endpoint type
+    """
+    #-- create logger
+    loglevel = logging.INFO if verbose else logging.CRITICAL
+    logging.basicConfig(stream=fid, level=loglevel)
+    #-- build urllib2 opener with SSL context
+    #-- https://docs.python.org/3/howto/urllib2.html#id5
+    handler = []
+    #-- Create cookie jar for storing cookies
+    cookie_jar = CookieJar()
+    handler.append(urllib2.HTTPCookieProcessor(cookie_jar))
+    handler.append(urllib2.HTTPSHandler(context=ssl.SSLContext()))
+    #-- create "opener" (OpenerDirector instance)
+    opener = urllib2.build_opener(*handler)
+    #-- build CMR query
+    cmr_query_type = 'collections'
+    cmr_format = 'json'
+    CMR_HOST = ['https://cmr.earthdata.nasa.gov','search',
+        f'{cmr_query_type}.{cmr_format}']
+    #-- build list of CMR query parameters
+    CMR_KEYS = []
+    CMR_KEYS.append(f'?provider={provider}')
+    #-- dictionary of product shortnames
+    short_names = cmr_product_shortname(mission, center, release,
+        level=level, version=version)
+    for short_name in short_names:
+        CMR_KEYS.append(f'&short_name={short_name}')
+    #-- full CMR query url
+    cmr_query_url = "".join([posixpath.join(*CMR_HOST),*CMR_KEYS])
+    logging.info(f'CMR request={cmr_query_url}')
+    #-- query CMR for collection metadata
+    req = urllib2.Request(cmr_query_url)
+    response = opener.open(req)
+    #-- read the CMR search as JSON
+    search_page = json.loads(response.read().decode('utf8'))
+    #-- filter the JSON response for desired endpoint links
+    collection_urls = cmr_metadata_json(search_page, endpoint=endpoint)
+    #-- reduce using regular expression pattern
+    if pattern:
+        i = [i for i,f in enumerate(collection_urls) if re.search(pattern,f)]
+        #-- reduce list of collection_urls
+        collection_urls = [collection_urls[indice] for indice in i]
+    #-- return the list of collection urls
+    return collection_urls
 
 #-- PURPOSE: create and compile regular expression operator to find GRACE files
 def compile_regex_pattern(PROC, DREL, DSET, mission=None,
@@ -1388,11 +1516,11 @@ def compile_regex_pattern(PROC, DREL, DSET, mission=None,
     """
     #-- verify inputs
     if mission and mission not in ('GRAC','GRFO'):
-        raise ValueError('Unknown mission {0}'.format(mission))
+        raise ValueError(f'Unknown mission {mission}')
     if PROC not in ('CNES','CSR','GFZ','JPL'):
-        raise ValueError('Unknown processing center {0}'.format(PROC))
+        raise ValueError(f'Unknown processing center {PROC}')
     if DSET not in ('GAA','GAB','GAC','GAD','GSM'):
-        raise ValueError('Unknown Level-2 product {0}'.format(DSET))
+        raise ValueError(f'Unknown Level-2 product {DSET}')
     if isinstance(version, int):
         version = str(version).zfill(2)
     #-- compile regular expression operator for inputs
@@ -1563,7 +1691,7 @@ def to_figshare(files,username=None,password=None,directory=None,
             os.path.basename(local_file))
         #-- open local file and send bytes
         with open(os.path.expanduser(local_file),'rb') as fp:
-            ftps.storbinary('STOR {0}'.format(ftp_remote_path), fp,
+            ftps.storbinary(f'STOR {ftp_remote_path}', fp,
                 blocksize=chunk, callback=None, rest=None)
 
 #-- PURPOSE: download satellite laser ranging files from CSR
@@ -1755,7 +1883,7 @@ def icgem_list(host='http://icgem.gfz-potsdam.de/tom_longtime',timeout=None,
         request = urllib2.Request(host)
         tree = lxml.etree.parse(urllib2.urlopen(request,timeout=timeout),parser)
     except:
-        raise Exception('List error from {0}'.format(host))
+        raise Exception(f'List error from {host}')
     else:
         #-- read and parse request for files
         colfiles = tree.xpath('//td[@class="tom-cell-modelfile"]//a/@href')

@@ -13,7 +13,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: ../../scripts/esa_costg_swarm_sync.py
+    :filename: esa_costg_swarm_sync.py
     :func: arguments
     :prog: esa_costg_swarm_sync.py
     :nodescription:

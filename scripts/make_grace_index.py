@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 make_grace_index.py
-Written by Tyler Sutterley (08/2022)
+Written by Tyler Sutterley (11/2022)
 Creates index files of GRACE/GRACE-FO Level-2 data
 
 CALLING SEQUENCE:
@@ -23,6 +23,7 @@ PYTHON DEPENDENCIES:
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 08/2022: make the data product optional
     Written 08/2022
 """
@@ -58,7 +59,7 @@ def make_grace_index(DIRECTORY, PROC=[], DREL=[], DSET=[],
                 #-- for each satellite mission (grace, grace-fo)
                 for i,mi in enumerate(['grace','grace-fo']):
                     #-- print string of exact data product
-                    logging.info('{0} {1}/{2}/{3}'.format(mi, pr, rl, ds))
+                    logging.info(f'{mi} {pr}/{rl}/{ds}')
                     #-- regular expression operator for data product
                     rx = compile_regex_pattern(pr, rl, ds,
                         mission=shortname[mi], version=VERSION[i])
@@ -70,7 +71,7 @@ def make_grace_index(DIRECTORY, PROC=[], DREL=[], DSET=[],
                 #-- outputting GRACE/GRACE-FO filenames to index
                 with open(os.path.join(local_dir,'index.txt'),'w') as fid:
                     for fi in sorted(grace_files):
-                        print('{0}'.format(fi), file=fid)
+                        print(fi, file=fid)
                 #-- change permissions of index file
                 os.chmod(os.path.join(local_dir,'index.txt'), MODE)
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 cnes_grace_sync.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (11/2022)
 
 CNES/GRGS GRACE data download program for gravity field products
     https://grace.obs-mip.fr/
@@ -35,6 +35,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
     Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
@@ -168,10 +169,10 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
         #-- output to log file
         #-- format: CNES_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
-        LOGFILE = 'CNES_sync_{0}.log'.format(today)
+        LOGFILE = f'CNES_sync_{today}.log'
         fid1 = open(os.path.join(DIRECTORY,LOGFILE),'w')
         logging.basicConfig(stream=fid1,level=logging.INFO)
-        logging.info('CNES Sync Log ({0})'.format(today))
+        logging.info(f'CNES Sync Log ({today})')
     else:
         #-- standard output (terminal output)
         logging.basicConfig(level=logging.INFO)
@@ -181,7 +182,7 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
     for rl in DREL:
         #-- datasets (GSM, GAA, GAB)
         for ds in DSET[rl]:
-            logging.info('CNES/{0}/{1}'.format(rl, ds))
+            logging.info(f'CNES/{rl}/{ds}')
             #-- specific GRACE directory
             local_dir = os.path.join(DIRECTORY, 'CNES', rl, ds)
             #-- check if GRACE directory exists and recursively create if not
@@ -204,7 +205,7 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
                 response = gravity_toolkit.utilities.urllib2.urlopen(request,
                     timeout=TIMEOUT)
                 #-- change modification time to remote
-                time_string=response.headers['last-modified']
+                time_string = response.headers['last-modified']
                 remote_mtime=gravity_toolkit.utilities.get_unix_time(time_string,
                     format='%a, %d %b %Y %H:%M:%S %Z')
                 #-- keep remote modification time of file and local access time
@@ -219,7 +220,7 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
                 for member in member_list:
                     #-- local gzipped version of the file
                     fi = os.path.basename(member.name)
-                    local_file = os.path.join(local_dir,'{0}.gz'.format(fi))
+                    local_file = os.path.join(local_dir, f'{fi}.gz')
                     gzip_copy_file(tar, member, local_file, CLOBBER, MODE)
                 #-- close the tar file
                 tar.close()
@@ -264,8 +265,8 @@ def gzip_copy_file(tar, member, local_file, CLOBBER, MODE):
     #-- if file does not exist, is to be overwritten, or CLOBBERed
     if TEST or CLOBBER:
         #-- Printing files copied from tar file to new compressed file
-        logging.info('{0}/{1} --> '.format(tar.name,member.name))
-        logging.info('\t{0}{1}\n'.format(local_file,OVERWRITE))
+        logging.info(f'{tar.name}/{member.name} --> ')
+        logging.info(f'\t{local_file}{OVERWRITE}\n')
         #-- extract file contents to new compressed file
         f_in = tar.extractfile(member)
         with gzip.GzipFile(local_file, 'wb', 9, None, file1_mtime) as f_out:

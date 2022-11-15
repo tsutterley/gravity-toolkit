@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_harmonics.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (11/2022)
 
 Reads in low-degree spherical harmonic coefficients calculated from
     Satellite Laser Ranging (SLR) measurements
@@ -50,6 +50,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
         include utf-8 encoding in reads to be windows compliant
     Updated 12/2021: added function for converting from 7-day arcs
@@ -90,7 +91,7 @@ def read_SLR_harmonics(SLR_file, **kwargs):
     elif bool(re.search(r'CSR_Monthly_5x5_Gravity_Harmonics',SLR_file,re.I)):
         return read_CSR_monthly_6x1(SLR_file, **kwargs)
     else:
-        raise Exception('Unknown SLR file format {0}'.format(SLR_file))
+        raise Exception(f'Unknown SLR file format {SLR_file}')
 
 #-- PURPOSE: read monthly degree harmonic data from Satellite Laser Ranging (SLR)
 def read_CSR_monthly_6x1(SLR_file, SCALE=1e-10, HEADER=True):

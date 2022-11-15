@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_point_load.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (11/2022)
 Calculates gravitational spherical harmonic coefficients for point masses
 
 CALLING SEQUENCE:
@@ -47,6 +47,7 @@ REFERENCES:
         https://doi.org/10.1029/JB078i011p01760
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: added UNITS list option for converting from custom units
     Updated 01/2021: use harmonics class for spherical harmonic operations
@@ -137,7 +138,7 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
         dfactor = np.copy(UNITS)
         int_fact[:] = 1.0
     else:
-        raise ValueError('Unknown units {0}'.format(UNITS))
+        raise ValueError(f'Unknown units {UNITS}')
     #-- flattened form of data converted to units
     D = int_fact*data.flatten()
 

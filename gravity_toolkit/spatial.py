@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (08/2022)
+Written by Tyler Sutterley (11/2022)
 
 Data class for reading, writing and processing spatial data
 
@@ -20,6 +20,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 08/2022: fix output latitude HDF5 and netCDF4 attributes
         place index filename within try/except statement
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -145,7 +146,7 @@ class spatial(object):
                 directory = os.path.dirname(os.path.expanduser(filename))
                 f = [f for f in os.listdir(directory) if re.match(basename,f,re.I)]
                 if not f:
-                    errmsg = '{0} not found in file system'.format(filename)
+                    errmsg = f'{filename} not found in file system'
                     raise FileNotFoundError(errmsg)
                 self.filename = os.path.join(directory,f.pop())
         #-- print filename
@@ -1234,8 +1235,8 @@ class spatial(object):
         #-- check that all months are available
         months_check = list(set(months) - set(self.month))
         if months_check:
-            m = ','.join(['{0:03d}'.format(m) for m in months_check])
-            raise IOError('GRACE/GRACE-FO months {0} not Found'.format(m))
+            m = ','.join([f'{m:03d}' for m in months_check])
+            raise IOError(f'GRACE/GRACE-FO months {m} not Found')
         #-- indices to sort data objects
         months_list = [i for i,m in enumerate(self.month) if m in months]
         #-- output spatial object

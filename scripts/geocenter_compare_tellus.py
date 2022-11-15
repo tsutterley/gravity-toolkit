@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter_compare_tellus.py
-Written by Tyler Sutterley (05/2022)
+Written by Tyler Sutterley (11/2022)
 Plots the GRACE/GRACE-FO geocenter time series for different
     GRACE/GRACE-FO processing centers comparing with the
     JPL GRACE Tellus product
@@ -17,6 +17,7 @@ COMMAND LINE OPTIONS:
     -M X, --missing X: Missing GRACE months in time series
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 05/2022: use argparse descriptions within documentation
     Updated 12/2021: adjust minimum x limit based on starting GRACE month
     Updated 11/2021: use gravity_toolkit geocenter class for operations
@@ -123,7 +124,7 @@ def geocenter_compare_tellus(grace_dir,DREL,START_MON,END_MON,MISSING):
                     label='GFZ GravIS')
 
         #-- Running function read_tellus_geocenter.py
-        grace_file = 'TN-13_GEOC_{0}_{1}.txt'.format(pr,DREL)
+        grace_file = f'TN-13_GEOC_{pr}_{DREL}.txt'
         DEG1 = geocenter().from_tellus(os.path.join(grace_dir,grace_file),JPL=True)
         #-- indices for mean months
         kk, = np.nonzero((DEG1.month >= START_MON) & (DEG1.month <= 176))
@@ -193,7 +194,7 @@ def geocenter_compare_tellus(grace_dir,DREL,START_MON,END_MON,MISSING):
         #-- adjust locations of subplots
         fig.subplots_adjust(left=0.06,right=0.98,bottom=0.12,top=0.94,wspace=0.05)
         #-- save figure to file
-        OUTPUT_FIGURE = 'TN13_SV19_{0}_{1}.pdf'.format(pr,DREL)
+        OUTPUT_FIGURE = f'TN13_SV19_{pr}_{DREL}.pdf'
         plt.savefig(os.path.join(grace_dir,OUTPUT_FIGURE), format='pdf', dpi=300)
         plt.clf()
 

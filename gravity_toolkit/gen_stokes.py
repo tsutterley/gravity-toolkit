@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_stokes.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (11/2022)
 
 Converts data from the spatial domain to spherical harmonic coefficients
 
@@ -43,6 +43,7 @@ PROGRAM DEPENDENCIES:
         and filters the GRACE/GRACE-FO coefficients for striping errors
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: added UNITS list option for converting from custom units
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -179,7 +180,7 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
         dfactor = np.copy(UNITS)
         int_fact[:] = np.sin(th)*dphi*dth
     else:
-        raise ValueError('Unknown units {0}'.format(UNITS))
+        raise ValueError(f'Unknown units {UNITS}')
 
     #-- Calculating cos/sin of phi arrays
     #-- output [m,phi]

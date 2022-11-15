@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_date.py
-Written by Tyler Sutterley (09/2022)
+Written by Tyler Sutterley (11/2022)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
@@ -46,6 +46,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: raise exception if index file cannot be found
         use logging for debugging level verbose output
     Updated 08/2022: moved file parsing functions to time module
@@ -156,9 +157,9 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     index_file = os.path.join(grace_dir, 'index.txt')
     #-- check that index file exists
     if not os.access(index_file, os.F_OK):
-        raise FileNotFoundError('{0} not found'.format(index_file))
+        raise FileNotFoundError(f'{index_file} not found')
     #-- log index file if debugging
-    logging.debug('Reading index file: {0}'.format(index_file))
+    logging.debug(f'Reading index file: {index_file}')
     #-- read index file for GRACE/GRACE-FO filenames
     with open(index_file, mode='r', encoding='utf8') as f:
         input_files = f.read().splitlines()
@@ -252,7 +253,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
 
     #-- Output GRACE/GRACE-FO date ascii file
     if OUTPUT:
-        date_file = '{0}_{1}_DATES.txt'.format(PROC, DREL)
+        date_file = f'{PROC}_{DREL}_DATES.txt'
         fid = open(os.path.join(grace_dir,date_file), 'w')
         #-- date file header information
         args = ('Mid-date','Month','Start_Day','End_Day','Total_Days')

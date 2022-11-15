@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_disc_load.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (11/2022)
 Calculates gravitational spherical harmonic coefficients for a uniform disc load
 
 CALLING SEQUENCE:
@@ -54,6 +54,7 @@ REFERENCES:
         https://doi.org/10.1007/s00190-011-0522-7
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: added UNITS option for converting from different inputs
     Updated 01/2021: use harmonics class for spherical harmonic operations
@@ -172,7 +173,7 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
         #-- custom units
         unit_conv = np.copy(UNITS)
     else:
-        raise ValueError('Unknown units {0}'.format(UNITS))
+        raise ValueError(f'Unknown units {UNITS}')
 
     #-- Coefficient for calculating Stokes coefficients for a disc load
     #-- From Jacob et al (2012), Farrell (1972) and Longman (1962)

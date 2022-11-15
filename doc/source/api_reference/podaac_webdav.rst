@@ -12,7 +12,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: ../../scripts/podaac_webdav.py
+    :filename: podaac_webdav.py
     :func: arguments
     :prog: podaac_webdav.py
     :nodescription:

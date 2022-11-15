@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 esa_costg_swarm_sync.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (11/2022)
 Syncs Swarm gravity field products from the ESA Swarm Science Server
     https://earth.esa.int/eogateway/missions/swarm/data
     https://www.esa.int/Applications/Observing_the_Earth/Swarm
@@ -29,6 +29,7 @@ PYTHON DEPENDENCIES:
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
     Updated 10/2021: using python logging for handling verbose output
     Written 09/2021
@@ -62,10 +63,10 @@ def esa_costg_swarm_sync(DIRECTORY, RELEASE=None, TIMEOUT=None, LOG=False,
         #-- output to log file
         #-- format: ESA_Swarm_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
-        LOGFILE = 'ESA_Swarm_sync_{0}.log'.format(today)
+        LOGFILE = f'ESA_Swarm_sync_{today}.log'
         logging.basicConfig(filename=os.path.join(DIRECTORY,LOGFILE),
             level=logging.INFO)
-        logging.info('ESA Swarm Sync Log ({0})'.format(today))
+        logging.info(f'ESA Swarm Sync Log ({today})')
     else:
         #-- standard output (terminal output)
         logging.basicConfig(level=logging.INFO)
@@ -101,7 +102,7 @@ def esa_costg_swarm_sync(DIRECTORY, RELEASE=None, TIMEOUT=None, LOG=False,
         #-- to list maxfiles number of files at position
         parameters = gravity_toolkit.utilities.urlencode({'maxfiles':prevmax,
             'pos':pos,'file':posixpath.join('swarm','Level2longterm','EGF')})
-        url=posixpath.join(HOST,'?do=list&{0}'.format(parameters))
+        url=posixpath.join(HOST,f'?do=list&{parameters}')
         request = gravity_toolkit.utilities.urllib2.Request(url=url)
         response = gravity_toolkit.utilities.urllib2.urlopen(request,
             timeout=TIMEOUT)
@@ -124,7 +125,7 @@ def esa_costg_swarm_sync(DIRECTORY, RELEASE=None, TIMEOUT=None, LOG=False,
         parameters = gravity_toolkit.utilities.urlencode({'file':
             posixpath.join('swarm','Level2longterm','EGF',colnames[i])})
         remote_file = posixpath.join(HOST,
-            '?do=download&{0}'.format(parameters))
+            f'?do=download&{parameters}')
         local_file = os.path.join(local_dir,colnames[i])
         #-- check that file is not in file system unless overwriting
         http_pull_file(remote_file, collastmod[i], local_file,
@@ -164,7 +165,7 @@ def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
         #-- compare checksums
         if (local_hash != remote_hash):
             TEST = True
-            OVERWRITE = ' (checksums: {0} {1})'.format(local_hash,remote_hash)
+            OVERWRITE = f' (checksums: {local_hash} {remote_hash})'
     elif os.access(local_file, os.F_OK):
         #-- check last modification time of local file
         local_mtime = os.stat(local_file).st_mtime
@@ -179,8 +180,8 @@ def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
     #-- if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         #-- Printing files transferred
-        logging.info('{0} --> '.format(remote_file))
-        logging.info('\t{0}{1}\n'.format(local_file,OVERWRITE))
+        logging.info(f'{remote_file} --> ')
+        logging.info(f'\t{local_file}{OVERWRITE}\n')
         #-- if executing copy command (not only printing the files)
         if not LIST:
             #-- chunked transfer encoding size

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter_processing_centers.py
-Written by Tyler Sutterley (05/2022)
+Written by Tyler Sutterley (11/2022)
 Plots the GRACE/GRACE-FO geocenter time series for different
     GRACE/GRACE-FO processing centers
 
@@ -17,6 +17,7 @@ COMMAND LINE OPTIONS:
     -M X, --missing X: Missing GRACE months in time series
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 05/2022: use argparse descriptions within documentation
     Updated 12/2021: adjust minimum x limit based on starting GRACE month
         make the list of processing centers an option
@@ -150,7 +151,7 @@ def geocenter_processing_centers(grace_dir,PROC,DREL,START_MON,END_MON,MISSING):
     #-- adjust locations of subplots
     fig.subplots_adjust(left=0.06,right=0.98,bottom=0.12,top=0.94,wspace=0.05)
     #-- save figure to file
-    OUTPUT_FIGURE = 'SV19_{0}_centers.pdf'.format(DREL)
+    OUTPUT_FIGURE = f'SV19_{DREL}_centers.pdf'
     plt.savefig(os.path.join(grace_dir,OUTPUT_FIGURE), format='pdf', dpi=300)
     plt.clf()
 

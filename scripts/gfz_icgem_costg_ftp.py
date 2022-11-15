@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_icgem_costg_ftp.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (11/2022)
 Syncs GRACE/GRACE-FO/Swarm COST-G data from the GFZ International
     Centre for Global Earth Models (ICGEM)
 
@@ -38,6 +38,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
     Updated 10/2021: using python logging for handling verbose output
     Written 09/2021
@@ -64,7 +65,7 @@ def compile_regex_pattern(MISSION, DSET):
     elif ((DSET != 'GSM') and (MISSION == 'Swarm')):
         regex=r'(GAA|GAB|GAC|GAD)_Swarm_(\d+)_(\d{2})_(\d{4})(\.gfc|\.ZIP)'
     else:
-        regex=r'{0}-2_(.*?)\.gfc$'.format(DSET)
+        regex=rf'{DSET}-2_(.*?)\.gfc$'
     #-- return the compiled regular expression operator used to find files
     return re.compile(regex, re.VERBOSE)
 
@@ -94,21 +95,21 @@ def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], RELEASE=None, TIMEOUT=None,
         #-- output to log file
         #-- format: GFZ_ICGEM_COST-G_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
-        LOGFILE = 'GFZ_ICGEM_COST-G_sync_{0}.log'.format(today)
+        LOGFILE = 'GFZ_ICGEM_COST-G_sync_{today}.log'
         logging.basicConfig(filename=os.path.join(DIRECTORY,LOGFILE),
             level=logging.INFO)
-        logging.info('GFZ ICGEM COST-G Sync Log ({0})'.format(today))
+        logging.info('GFZ ICGEM COST-G Sync Log ({today})')
     else:
         #-- standard output (terminal output)
         logging.basicConfig(level=logging.INFO)
 
     #-- find files for a particular mission
-    logging.info('{0} Spherical Harmonics:'.format(MISSION))
+    logging.info(f'{MISSION} Spherical Harmonics:')
 
     #-- Sync gravity field dealiasing products
     for ds in DSET[MISSION]:
         #-- print string of exact data product
-        logging.info('{0}/{1}/{2}'.format(MISSION,RELEASE,ds))
+        logging.info(f'{MISSION}/{RELEASE}/{ds}')
         #-- local directory for exact data product
         local_dir = os.path.join(DIRECTORY,LOCAL[MISSION],RELEASE,ds)
         #-- check if directory exists and recursively create if not
@@ -178,7 +179,7 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
         #-- compare checksums
         if (local_hash != remote_hash):
             TEST = True
-            OVERWRITE = ' (checksums: {0} {1})'.format(local_hash,remote_hash)
+            OVERWRITE = f' (checksums: {local_hash} {remote_hash})'
     elif os.access(local_file, os.F_OK):
         #-- check last modification time of local file
         local_mtime = os.stat(local_file).st_mtime
@@ -193,8 +194,9 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
     #-- if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         #-- Printing files transferred
-        arg=(posixpath.join('ftp://',*remote_path),local_file,OVERWRITE)
-        logging.info('{0} -->\n\t{1}{2}\n'.format(*arg))
+        remote_ftp_url = posixpath.join('ftp://',*remote_path)
+        logging.info(f'{remote_ftp_url} -->')
+        logging.info(f'\t{local_file}{OVERWRITE}\n')
         #-- if executing copy command (not only printing the files)
         if not LIST:
             #-- copy file from ftp server or from bytesIO object
@@ -208,7 +210,7 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
                 remote_file = posixpath.join(*remote_path[1:])
                 #-- copy remote file contents to local file
                 with open(local_file, 'wb') as f:
-                    ftp.retrbinary('RETR {0}'.format(remote_file), f.write)
+                    ftp.retrbinary(f'RETR {remote_file}', f.write)
             #-- keep remote modification time of file and local access time
             os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
             os.chmod(local_file, MODE)

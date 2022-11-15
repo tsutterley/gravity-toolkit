@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 u"""
-sea_level_equation.py (04/2022)
+sea_level_equation.py (11/2022)
 Solves the sea level equation with the option of including polar motion feedback
 Uses a Clenshaw summation to calculate the spherical harmonic summation
 
@@ -89,6 +89,7 @@ REFERENCES:
         https://doi.org/10.1029/JB090iB11p09363
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 10/2021: using python logging for handling verbose output
         can set custom values for BODY_TIDE_LOVE and FLUID_LOVE
@@ -344,8 +345,8 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     sea_height = -tmass/rho_water/rad_e**2/ocean_area
 
     #-- if verbose output: print ocean area and uniform sea level height
-    logging.info('Total Ocean Area: {0:0.10g}'.format(ocean_area))
-    logging.info('Uniform Ocean Height: {0:0.10g}'.format(sea_height))
+    logging.info(f'Total Ocean Area: {ocean_area:0.10g}')
+    logging.info(f'Uniform Ocean Height: {sea_height:0.10g}')
 
     #-- distribute sea height over ocean harmonics
     height_Ylms = ocean_Ylms.scale(sea_height)
@@ -404,9 +405,9 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
         sea_height = (-tmass/rho_water/rad_e**2 - rmass)/ocean_area
 
         #-- if verbose output: print iteration, mass and anomaly for convergence
-        logging.info('Iteration: {0:d}'.format(n_iter))
-        logging.info('Integrated Ocean Height: {0:0.10g}'.format(rmass))
-        logging.info('Difference from Initial Height: {0:0.10g}'.format(sea_height))
+        logging.info(f'Iteration: {n_iter:d}')
+        logging.info(f'Integrated Ocean Height: {rmass:0.10g}')
+        logging.info(f'Difference from Initial Height: {sea_height:0.10g}')
 
         #-- geoid component is split into two parts (Kendall 2005)
         #-- this part is the spatially uniform shift in the geoid that is

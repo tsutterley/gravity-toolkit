@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 clenshaw_summation.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (11/2022)
 Calculates the spatial field for a series of spherical harmonics for a
     sequence of ungridded points
 
@@ -49,6 +49,7 @@ REFERENCES:
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: added UNITS list option for converting to custom units
     Updated 09/2021: fix passing SCALE keyword argument to clenshaw_s_m
@@ -181,7 +182,7 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
         #-- custom units
         dfactor = np.copy(UNITS)
     else:
-        raise ValueError('Unknown units {0}'.format(UNITS))
+        raise ValueError(f'Unknown units {UNITS}')
 
     #-- calculate arrays for clenshaw summations over colatitudes
     s_m_c = np.zeros((npts,LMAX*2+2))

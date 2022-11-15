@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 itsg_graz_grace_sync.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (11/2022)
 Syncs GRACE/GRACE-FO and auxiliary data from the ITSG GRAZ server
 
 CALLING SEQUENCE:
@@ -39,6 +39,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
     Updated 10/2021: using python logging for handling verbose output
     Written 09/2021
@@ -66,12 +67,12 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
         #-- output to log file
         #-- format: ITSG_GRAZ_GRACE_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
-        LOGFILE = 'ITSG_GRAZ_GRACE_sync_{0}.log'.format(today)
+        LOGFILE = f'ITSG_GRAZ_GRACE_sync_{today}.log'
         logging.basicConfig(filename=os.path.join(DIRECTORY,LOGFILE),
             level=logging.INFO)
-        logging.info('ITSG GRAZ GRACE Sync Log ({0})'.format(today))
-        logging.info('Release: {0}'.format(RELEASE))
-        logging.info('LMAX: {0:d}'.format(LMAX))
+        logging.info(f'ITSG GRAZ GRACE Sync Log ({today})')
+        logging.info(f'Release: {RELEASE}')
+        logging.info(f'LMAX: {LMAX:d}')
     else:
         #-- standard output (terminal output)
         logging.basicConfig(level=logging.INFO)
@@ -79,7 +80,7 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
     #-- ITSG GRAZ server
     HOST = ['http://ftp.tugraz.at','outgoing','ITSG','GRACE']
     #-- open connection with ITSG GRAZ server at remote directory
-    release_directory = 'ITSG-{0}'.format(RELEASE)
+    release_directory = f'ITSG-{RELEASE}'
     #-- regular expression operators for ITSG data and models
     itsg_products = []
     itsg_products.append(r'atmosphere')
@@ -127,7 +128,7 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER, MODE=MODE)
 
     #-- sync ITSG GRAZ data for truncation
-    subdir = 'monthly_n{0:d}'.format(LMAX)
+    subdir = f'monthly_n{LMAX:d}'
     REMOTE = [*HOST,release_directory,'monthly',subdir]
     files,mtimes = gravity_toolkit.utilities.http_list(REMOTE,
         timeout=TIMEOUT,pattern=R1,sort=True)
@@ -186,8 +187,8 @@ def http_pull_file(remote_file,remote_mtime,local_file,
     #-- if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         #-- Printing files transferred
-        logging.info('{0} --> '.format(remote_file))
-        logging.info('\t{0}{1}\n'.format(local_file,OVERWRITE))
+        logging.info(f'{remote_file} --> ')
+        logging.info(f'\t{local_file}{OVERWRITE}\n')
         #-- if executing copy command (not only printing the files)
         if not LIST:
             #-- Create and submit request. There are a wide range of exceptions

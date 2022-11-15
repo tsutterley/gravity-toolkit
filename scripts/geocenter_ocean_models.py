@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter_ocean_models.py
-Written by Tyler Sutterley (05/2022)
+Written by Tyler Sutterley (11/2022)
 Plots the GRACE/GRACE-FO geocenter time series comparing results
     using different ocean bottom pressure estimates
 
@@ -19,6 +19,7 @@ COMMAND LINE OPTIONS:
     -O X, --ocean X: ocean bottom pressure products to use
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 05/2022: use argparse descriptions within documentation
     Updated 12/2021: adjust minimum x limit based on starting GRACE month
     Updated 11/2021: use gravity_toolkit geocenter class for operations
@@ -134,7 +135,7 @@ def geocenter_ocean_models(grace_dir,PROC,DREL,MODEL,START_MON,END_MON,MISSING):
     #-- adjust locations of subplots
     fig.subplots_adjust(left=0.06,right=0.98,bottom=0.12,top=0.94,wspace=0.05)
     #-- save figure to file
-    OUTPUT_FIGURE = 'SV19_{0}_{1}_ocean_models.pdf'.format(PROC,DREL)
+    OUTPUT_FIGURE = f'SV19_{PROC}_{DREL}_ocean_models.pdf'
     plt.savefig(os.path.join(grace_dir,OUTPUT_FIGURE), format='pdf', dpi=300)
     plt.clf()
 

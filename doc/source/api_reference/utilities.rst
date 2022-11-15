@@ -71,7 +71,11 @@ General Methods
 
 .. autofunction:: gravity_toolkit.utilities.cmr_filter_json
 
+.. autofunction:: gravity_toolkit.utilities.cmr_metadata_json
+
 .. autofunction:: gravity_toolkit.utilities.cmr
+
+.. autofunction:: gravity_toolkit.utilities.cmr_metadata
 
 .. autofunction:: gravity_toolkit.utilities.compile_regex_pattern
 

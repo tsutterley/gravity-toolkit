@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_maps.py
-Written by Tyler Sutterley (09/2022)
+Written by Tyler Sutterley (11/2022)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly spatial fields
@@ -147,6 +147,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: add option to replace degree 4 zonal harmonics with SLR
     Updated 07/2022: create mask for output gridded variables
     Updated 04/2022: use wrapper function for reading load Love numbers
@@ -198,10 +199,10 @@ from gravity_toolkit.units import units
 def info(args):
     logging.info(os.path.basename(sys.argv[0]))
     logging.info(args)
-    logging.info('module name: {0}'.format(__name__))
+    logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        logging.info('parent process: {0:d}'.format(os.getppid()))
-    logging.info('process id: {0:d}'.format(os.getpid()))
+        logging.info(f'parent process: {os.getppid():d}')
+    logging.info(f'process id: {os.getpid():d}')
 
 #-- PURPOSE: import GRACE/GRACE-FO files for a given months range
 #-- Converts the GRACE/GRACE-FO harmonics applying the specified procedures
@@ -260,7 +261,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     #-- Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):
         wt = 2.0*np.pi*gauss_weights(RAD,LMAX)
-        gw_str = '_r{0:0.0f}km'.format(RAD)
+        gw_str = f'_r{RAD:0.0f}km'
     else:
         #-- else = 1
         wt = np.ones((LMAX+1))
@@ -268,7 +269,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
 
     #-- flag for spherical harmonic order
     MMAX = np.copy(LMAX) if not MMAX else MMAX
-    order_str = 'M{0:d}'.format(MMAX) if (MMAX != LMAX) else ''
+    order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
 
     #-- reading GRACE months for input date range
     #-- replacing low-degree harmonics with SLR values if specified
@@ -424,7 +425,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         #-- 5: mbar, millibars equivalent surface pressure
         dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).mbar
     else:
-        raise ValueError('Invalid units code {0:d}'.format(UNITS))
+        raise ValueError(f'Invalid units code {UNITS:d}')
 
     #-- output file format
     file_format = '{0}{1}_L{2:d}{3}{4}{5}_{6:03d}.{7}'
@@ -782,7 +783,7 @@ def main():
         #-- if there has been an error exception
         #-- print the type, value, and stack trace of the
         #-- current exception being handled
-        logging.critical('process id {0:d} failed'.format(os.getpid()))
+        logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
         if args.log:#-- write failed job completion log file
             output_error_log_file(args)

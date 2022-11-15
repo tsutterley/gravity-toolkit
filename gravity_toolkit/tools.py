@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 tools.py
-Written by Tyler Sutterley (06/2022)
+Written by Tyler Sutterley (11/2022)
 Jupyter notebook, user interface and plotting tools
 
 PYTHON DEPENDENCIES:
@@ -27,6 +27,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 06/2022: place ipython and tkinter imports within try/except
     Updated 05/2022: adjusted mask oceans function to be able to output mask
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -898,7 +899,7 @@ class colormap:
     def label(self):
         """return tick labels for Matplotlib colorbars
         """
-        return ['{0:0.0f}'.format(ct) for ct in self.levels]
+        return [f'{ct:0.0f}' for ct in self.levels]
 
 def from_cpt(filename, use_extremes=True, **kwargs):
     """
@@ -1072,7 +1073,7 @@ def custom_colormap(N, map_name, **kwargs):
         for i in range(N):
             color_map[i,:] = colorsys.hsv_to_rgb(h[i],s[i],v[i])
     else:
-        raise ValueError('Incorrect color map specified ({0})'.format(map_name))
+        raise ValueError(f'Incorrect color map specified ({map_name})')
 
     # output RGB lists containing normalized location and colors
     Xnorm = len(color_map) - 1.0
@@ -1224,7 +1225,7 @@ def mask_oceans(xin, yin, data=None, order=0, lakes=False,
         masked data grid
     """
     # read in land/sea mask
-    lsmask = get_data_path(['data','landsea_{0}.nc'.format(resolution)])
+    lsmask = get_data_path(['data',f'landsea_{resolution}.nc'])
     #-- Land-Sea Mask with Antarctica from Rignot (2017) and Greenland from GEUS
     #-- 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
     #-- Open the land-sea NetCDF file for reading
