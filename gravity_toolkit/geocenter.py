@@ -465,7 +465,7 @@ class geocenter(object):
             #-- file line at count
             line = file_contents[count]
             #--if End of YAML Header is found: set HEADER flag
-            HEADER = bool(re.search("\# End of YAML header",line))
+            HEADER = bool(re.search(r"\# End of YAML header",line))
             #-- add 1 to counter
             count += 1
 
@@ -485,7 +485,7 @@ class geocenter(object):
             Loader=yaml.BaseLoader))
 
         #-- compile numerical expression operator
-        regex_pattern = '[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
+        regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
         rx = re.compile(regex_pattern, re.VERBOSE)
 
         #-- get names and columns of input variables

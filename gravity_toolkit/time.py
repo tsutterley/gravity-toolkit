@@ -709,8 +709,7 @@ def convert_julian(JD, **kwargs):
     for old,new in deprecated_keywords.items():
         if old in kwargs.keys():
             warnings.warn(f"""Deprecated keyword argument {old}.
-                Changed to '{new}'""",
-                DeprecationWarning)
+                Changed to '{new}'""", DeprecationWarning)
             #-- set renamed argument to not break workflows
             kwargs[new] = copy.copy(kwargs[old])
 
