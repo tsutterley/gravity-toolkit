@@ -52,6 +52,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 11/2022: added CMR queries for GRACE/GRACE-FO technical notes
+        recursively create geocenter directory if not in file system
     Updated 08/2022: moved regular expression function to utilities
         Dynamically select newest version of granules for index
     Updated 04/2022: added option for GRACE/GRACE-FO Level-2 data version
@@ -110,6 +111,9 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
     #-- compile regular expression operator for remote files
     R1 = re.compile(r'TN-13_GEOC_(CSR|GFZ|JPL)_(.*?).txt', re.VERBOSE)
     R2 = re.compile(r'TN-(14)_C30_C20_GSFC_SLR.txt', re.VERBOSE)
+    #-- check if geocenter directory exists and recursively create if not
+    local_dir = os.path.join(DIRECTORY,'geocenter')
+    os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
     #-- current time stamp to use for local files
     mtime = time.time()
     #-- for each processing center (CSR, GFZ, JPL)
@@ -131,14 +135,13 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                 #-- access auxiliary data from endpoint
                 if (ENDPOINT == 'data'):
                     http_pull_file(url, mtime, local_file,
-                        GZIP=GZIP, TIMEOUT=TIMEOUT,
-                        CLOBBER=CLOBBER, MODE=MODE)
+                        TIMEOUT=TIMEOUT, CLOBBER=CLOBBER, MODE=MODE)
                 elif (ENDPOINT == 's3'):
                     bucket = gravity_toolkit.utilities.s3_bucket(url)
                     key = gravity_toolkit.utilities.s3_key(url)
                     response = client.get_object(Bucket=bucket, Key=key)
                     s3_pull_file(response, mtime, local_file,
-                        GZIP=GZIP, CLOBBER=CLOBBER, MODE=MODE)
+                        CLOBBER=CLOBBER, MODE=MODE)
 
                 #-- TN-14 SLR C2,0 and C3,0 files
                 url, = [url for url in urls if R2.search(url)]
@@ -147,14 +150,13 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                 #-- access auxiliary data from endpoint
                 if (ENDPOINT == 'data'):
                     http_pull_file(url, mtime, local_file,
-                        GZIP=GZIP, TIMEOUT=TIMEOUT,
-                        CLOBBER=CLOBBER, MODE=MODE)
+                        TIMEOUT=TIMEOUT, CLOBBER=CLOBBER, MODE=MODE)
                 elif (ENDPOINT == 's3'):
                     bucket = gravity_toolkit.utilities.s3_bucket(url)
                     key = gravity_toolkit.utilities.s3_key(url)
                     response = client.get_object(Bucket=bucket, Key=key)
                     s3_pull_file(response, mtime, local_file,
-                        GZIP=GZIP, CLOBBER=CLOBBER, MODE=MODE)
+                        CLOBBER=CLOBBER, MODE=MODE)
 
     #-- GRACE/GRACE-FO AOD1B dealiasing products
     if AOD1B:

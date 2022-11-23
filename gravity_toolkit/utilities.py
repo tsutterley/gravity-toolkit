@@ -10,6 +10,7 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 11/2022: add CMR queries for collection metadata
+        exposed GSFC SLR url for weekly 5x5 harmonics as an option
     Updated 08/2022: add regular expression function for finding files
     Updated 07/2022: add s3 endpoints and buckets for Earthdata Cumulus
     Updated 05/2022: function for extracting bucket name from presigned url
@@ -1125,7 +1126,7 @@ def cmr_product_shortname(mission, center, release, level='L2', version='0'):
     #-- dictionary entries for GRACE-FO Level-2 products
     #-- for each data release
     for rl in ['RL06']:
-        rs = re.findall('\d+',rl).pop().zfill(3)
+        rs = re.findall(r'\d+',rl).pop().zfill(3)
         for c in ['CSR','GFZ','JPL']:
             shortname = gracefo_l2_format.format('L2',c,rs,version)
             cmr_shortname['grace-fo']['L2'][c][rl] = [shortname]
@@ -1578,9 +1579,9 @@ def compile_regex_pattern(PROC, DREL, DSET, mission=None,
 #-- PURPOSE: download geocenter files from Sutterley and Velicogna (2019)
 #-- https://doi.org/10.3390/rs11182108
 #-- https://doi.org/10.6084/m9.figshare.7388540
-def from_figshare(directory,article='7388540',timeout=None,
-    context=ssl.SSLContext(),chunk=16384,verbose=False,fid=sys.stdout,
-    pattern=r'(CSR|GFZ|JPL)_(RL\d+)_(.*?)_SLF_iter.txt$',mode=0o775):
+def from_figshare(directory, article='7388540', timeout=None,
+    context=ssl.SSLContext(), chunk=16384, verbose=False, fid=sys.stdout,
+    pattern=r'(CSR|GFZ|JPL)_(RL\d+)_(.*?)_SLF_iter.txt$', mode=0o775):
     """
     Download [Sutterley2019]_ geocenter files from
     `figshare <https://doi.org/10.6084/m9.figshare.7388540>`_
@@ -1637,9 +1638,9 @@ def from_figshare(directory,article='7388540',timeout=None,
             raise Exception('Checksum mismatch: {0}'.format(f['download_url']))
 
 #-- PURPOSE: send files to figshare using secure FTP uploader
-def to_figshare(files,username=None,password=None,directory=None,
-    timeout=None,context=ssl.SSLContext(ssl.PROTOCOL_TLS),
-    get_ca_certs=False,verbose=False,chunk=8192):
+def to_figshare(files, username=None, password=None, directory=None,
+    timeout=None, context=ssl.SSLContext(ssl.PROTOCOL_TLS),
+    get_ca_certs=False, verbose=False, chunk=8192):
     """
     Send files to figshare using secure `FTP uploader
     <https://help.figshare.com/article/upload-large-datasets-and-bulk-upload-using-the-ftp-uploader-desktop-uploader-or-api>`_
@@ -1697,8 +1698,8 @@ def to_figshare(files,username=None,password=None,directory=None,
 #-- PURPOSE: download satellite laser ranging files from CSR
 #-- http://download.csr.utexas.edu/pub/slr/geocenter/GCN_L1_L2_30d_CF-CM.txt
 #-- http://download.csr.utexas.edu/outgoing/cheng/gct2est.220_5s
-def from_csr(directory,timeout=None,context=ssl.SSLContext(),
-    chunk=16384,verbose=False,fid=sys.stdout,mode=0o775):
+def from_csr(directory, timeout=None, context=ssl.SSLContext(),
+    chunk=16384, verbose=False, fid=sys.stdout, mode=0o775):
     """
     Download `satellite laser ranging (SLR) <http://download.csr.utexas.edu/pub/slr/>`_
     files from the University of Texas Center for Space Research (UTCSR)
@@ -1755,8 +1756,8 @@ def from_csr(directory,timeout=None,context=ssl.SSLContext(),
 #-- PURPOSE: download GravIS and satellite laser ranging files from GFZ
 #-- ftp://isdcftp.gfz-potsdam.de/grace/Level-2/GFZ/RL06_SLR_C20/
 #-- ftp://isdcftp.gfz-potsdam.de/grace/GravIS/GFZ/Level-2B/aux_data/
-def from_gfz(directory,timeout=None,chunk=8192,verbose=False,fid=sys.stdout,
-    mode=0o775):
+def from_gfz(directory, timeout=None, chunk=8192, verbose=False,
+    fid=sys.stdout, mode=0o775):
     """
     Download GravIS and satellite laser ranging (SLR) files from the
         German Research Centre for Geosciences (GeoForschungsZentrum, GFZ)
@@ -1800,8 +1801,10 @@ def from_gfz(directory,timeout=None,chunk=8192,verbose=False,fid=sys.stdout,
 
 #-- PURPOSE: download satellite laser ranging files from GSFC
 #-- https://earth.gsfc.nasa.gov/geo/data/slr
-def from_gsfc(directory,timeout=None,context=ssl.SSLContext(),
-    chunk=16384,verbose=False,fid=sys.stdout,copy=False,mode=0o775):
+def from_gsfc(directory,
+    host='https://earth.gsfc.nasa.gov/sites/default/files/geo/slr-weekly',
+    timeout=None, context=ssl.SSLContext(), chunk=16384, verbose=False,
+    fid=sys.stdout, copy=False, mode=0o775):
     """
     Download `satellite laser ranging (SLR) <https://earth.gsfc.nasa.gov/geo/data/slr/>`_
     files from NASA Goddard Space Flight Center (GSFC)
@@ -1810,6 +1813,8 @@ def from_gsfc(directory,timeout=None,context=ssl.SSLContext(),
     ----------
     directory: str
         download directory
+    host: str, default 'https://earth.gsfc.nasa.gov/sites/default/files/geo/slr-weekly'
+        url for the GSFC SLR weekly fields
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
     context: obj, default ssl.SSLContext()
@@ -1825,8 +1830,6 @@ def from_gsfc(directory,timeout=None,context=ssl.SSLContext(),
     mode: oct, default 0o775
         permissions mode of output local file
     """
-    #-- GSFC download http server
-    HOST = ['https://earth.gsfc.nasa.gov/','sites','default','files','geo']
     #-- recursively create directory if non-existent
     directory = os.path.abspath(os.path.expanduser(directory))
     if not os.access(directory, os.F_OK):
@@ -1834,11 +1837,12 @@ def from_gsfc(directory,timeout=None,context=ssl.SSLContext(),
     #-- download GSFC SLR 5x5 file
     FILE = 'gsfc_slr_5x5c61s61.txt'
     original_md5 = get_hash(os.path.join(directory,FILE))
-    fileID = from_http([*HOST,FILE], timeout=timeout, context=context,
+    fileID = from_http(posixpath.join(host,FILE),
+        timeout=timeout, context=context,
         local=os.path.join(directory,FILE),
         hash=original_md5, chunk=chunk, verbose=verbose,
         fid=fid, mode=mode)
-    #-- can create a copy for archival purposes
+    #-- create a dated copy for archival purposes
     if copy:
         #-- create copy of file for archiving
         #-- read file and extract data date span
@@ -1856,8 +1860,8 @@ def from_gsfc(directory,timeout=None,context=ssl.SSLContext(),
 
 #-- PURPOSE: list a directory on the GFZ ICGEM https server
 #-- http://icgem.gfz-potsdam.de
-def icgem_list(host='http://icgem.gfz-potsdam.de/tom_longtime',timeout=None,
-    parser=lxml.etree.HTMLParser()):
+def icgem_list(host='http://icgem.gfz-potsdam.de/tom_longtime',
+    timeout=None, parser=lxml.etree.HTMLParser()):
     """
     Parse the table of static gravity field models on the GFZ
     `International Centre for Global Earth Models (ICGEM) <http://icgem.gfz-potsdam.de/>`_
@@ -1889,5 +1893,5 @@ def icgem_list(host='http://icgem.gfz-potsdam.de/tom_longtime',timeout=None,
         colfiles = tree.xpath('//td[@class="tom-cell-modelfile"]//a/@href')
         #-- reduce list of files to find gfc files
         #-- return the dict of model files mapped by name
-        return {re.findall('(.*?).gfc',posixpath.basename(f)).pop():url_split(f)
-            for i,f in enumerate(colfiles) if re.search('gfc$',f)}
+        return {re.findall(r'(.*?).gfc',posixpath.basename(f)).pop():url_split(f)
+            for i,f in enumerate(colfiles) if re.search(r'gfc$',f)}

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 mascons.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (11/2022)
 Conversion routines for publicly available GRACE/GRACE-FO mascon solutions
 
 PYTHON DEPENDENCIES:
@@ -12,6 +12,7 @@ REFERENCES:
     mascon2grid.m written by Felix Landerer and David Wiese (JPL)
 
 UPDATE HISTORY:
+    Updated 11/2022: use lowercase keyword arguments
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 10/2021: publicly released version
     Updated 09/2019: check number of latitude points for using regional grids
@@ -23,6 +24,8 @@ UPDATE HISTORY:
     Updated 12/2015: added TRANSPOSE option to output spatial routines
     Written 07/2013
 """
+import copy
+import warnings
 import numpy as np
 
 def to_gsfc(gdata, lon, lat, lon_center, lat_center, lon_span, lat_span):
@@ -189,7 +192,7 @@ def to_jpl(gdata, lon, lat, lon_bound, lat_bound):
     return mascon_array
 
 def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
-    TRANSPOSE=False):
+    **kwargs):
     """
     Converts an input GSFC mascon array to an output gridded field
 
@@ -207,7 +210,7 @@ def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
         mascon longitudinal central angles
     lat_span: float
         mascon latitudinal central angles
-    TRANSPOSE: bool, default False
+    transpose: bool, default False
         transpose output matrix (lon/lat)
 
     Returns
@@ -224,6 +227,17 @@ def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
         *Journal of Glaciology*, 59(216), (2013).
         `doi: 10.3189/2013JoG12J147 <https://doi.org/10.3189/2013JoG12J147>`_
     """
+    #-- set default keyword arguments
+    kwargs.setdefault('transpose', False)
+    #-- raise warnings for deprecated keyword arguments
+    deprecated_keywords = dict(TRANSPOSE='transpose')
+    for old,new in deprecated_keywords.items():
+        if old in kwargs.keys():
+            warnings.warn(f"""Deprecated keyword argument {old}.
+                Changed to '{new}'""", DeprecationWarning)
+            #-- set renamed argument to not break workflows
+            kwargs[new] = copy.copy(kwargs[old])
+
     #-- number of mascons
     nmas = len(lon_center)
     #-- convert mascon centers to -180:180
@@ -266,12 +280,12 @@ def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
         mdata[I,J] = mscdata[k]
 
     #-- return array
-    if TRANSPOSE:
+    if kwargs['transpose']:
         return mdata.T
     else:
         return mdata
 
-def from_jpl(mscdata, grid_spacing, lon_bound, lat_bound, TRANSPOSE=False):
+def from_jpl(mscdata, grid_spacing, lon_bound, lat_bound, **kwargs):
     """
     Converts an input JPL mascon array to an output gridded field
 
@@ -285,7 +299,7 @@ def from_jpl(mscdata, grid_spacing, lon_bound, lat_bound, TRANSPOSE=False):
         mascon longitudinal bounds from coordinate file
     lat_bound: float
         mascon latitudinal bounds from coordinate file
-    TRANSPOSE: bool, default False
+    transpose: bool, default False
         transpose output matrix (lon/lat)
 
     Returns
@@ -301,14 +315,25 @@ def from_jpl(mscdata, grid_spacing, lon_bound, lat_bound, TRANSPOSE=False):
         *Journal of Geophysical Research: Solid Earth*, 120(4), 2648--2671,
         (2015). `doi: 10.1002/2014JB011547 <https://doi.org/10.1002/2014JB011547>`_
     """
+    #-- set default keyword arguments
+    kwargs.setdefault('transpose', False)
+    #-- raise warnings for deprecated keyword arguments
+    deprecated_keywords = dict(TRANSPOSE='transpose')
+    for old,new in deprecated_keywords.items():
+        if old in kwargs.keys():
+            warnings.warn(f"""Deprecated keyword argument {old}.
+                Changed to '{new}'""", DeprecationWarning)
+            #-- set renamed argument to not break workflows
+            kwargs[new] = copy.copy(kwargs[old])
+
     #-- mascon dimensions
     nmas,nvar = lat_bound.shape
 
     #-- Define latitude and longitude grids
     #-- output lon will not include 360
     #-- output lat will not include 90
-    lon = np.arange(grid_spacing/2.0,360.0+grid_spacing/2.0,grid_spacing)
-    lat = np.arange(-90.0+grid_spacing/2.0,90.0+grid_spacing/2.0,grid_spacing)
+    lon = np.arange(grid_spacing/2.0, 360.0+grid_spacing/2.0, grid_spacing)
+    lat = np.arange(-90.0+grid_spacing/2.0, 90.0+grid_spacing/2.0, grid_spacing)
     nlon,nlat = (len(lon),len(lat))
 
     #-- loop over each mascon bin and assign value to grid points inside bin:
@@ -320,7 +345,7 @@ def from_jpl(mscdata, grid_spacing, lon_bound, lat_bound, TRANSPOSE=False):
         mdata[I,J] = mscdata[k]
 
     #-- return array
-    if TRANSPOSE:
+    if kwargs['transpose']:
         return mdata.T
     else:
         return mdata
