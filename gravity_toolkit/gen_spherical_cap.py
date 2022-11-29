@@ -160,144 +160,144 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
         `doi: 10.1007/s00190-011-0522-7 <https://doi.org/10.1007/s00190-011-0522-7>`_
     """
 
-    #-- upper bound of spherical harmonic orders (default = LMAX)
+    # upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:
         MMAX = np.copy(LMAX)
 
-    #-- Earth Parameters
+    # Earth Parameters
     factors = gravity_toolkit.units(lmax=LMAX)
-    rho_e = factors.rho_e#-- Average Density of the Earth [g/cm^3]
-    rad_e = factors.rad_e#-- Average Radius of the Earth [cm]
+    rho_e = factors.rho_e# Average Density of the Earth [g/cm^3]
+    rad_e = factors.rad_e# Average Radius of the Earth [cm]
 
-    #-- convert lon and lat to radians
-    phi = lon*np.pi/180.0#-- Longitude in radians
-    th = (90.0 - lat)*np.pi/180.0#-- Colatitude in radians
+    # convert lon and lat to radians
+    phi = lon*np.pi/180.0# Longitude in radians
+    th = (90.0 - lat)*np.pi/180.0# Colatitude in radians
 
-    #-- Converting input area into an equivalent spherical cap radius
-    #-- Following Jacob et al. (2012) Equation 4 and 5
-    #-- alpha is the vertical semi-angle subtending a cone at the
-    #-- center of the earth
+    # Converting input area into an equivalent spherical cap radius
+    # Following Jacob et al. (2012) Equation 4 and 5
+    # alpha is the vertical semi-angle subtending a cone at the
+    # center of the earth
     if (RAD_CAP != 0):
-        #-- if given spherical cap radius in degrees
-        #-- converting to radians
+        # if given spherical cap radius in degrees
+        # converting to radians
         alpha = RAD_CAP*np.pi/180.0
     elif (AREA != 0):
-        #-- if given spherical cap area in cm^2
-        #-- radius in centimeters
+        # if given spherical cap area in cm^2
+        # radius in centimeters
         radius_cm = np.sqrt(AREA/np.pi)
-        #-- Calculating angular radius of spherical cap
+        # Calculating angular radius of spherical cap
         alpha = (radius_cm/rad_e)
     elif (RAD_KM != 0):
-        #-- if given spherical cap radius in kilometers
-        #-- Calculating angular radius of spherical cap
+        # if given spherical cap radius in kilometers
+        # Calculating angular radius of spherical cap
         alpha = (1e5*RAD_KM)/rad_e
     else:
         raise ValueError('Input RAD_CAP, AREA or RAD_KM of spherical cap')
 
-    #-- Calculate factor to convert from input units into cmH2O equivalent
-    #-- Default input is for inputs already in cmH2O (unit_conv = 1)
+    # Calculate factor to convert from input units into cmH2O equivalent
+    # Default input is for inputs already in cmH2O (unit_conv = 1)
     if (UNITS == 1):
-        #-- Input data is in cm water equivalent (cmH2O)
+        # Input data is in cm water equivalent (cmH2O)
         unit_conv = 1.0
     elif (UNITS == 2):
-        #-- Input data is in gigatonnes (Gt)
-        #-- calculate spherical cap area from angular radius
+        # Input data is in gigatonnes (Gt)
+        # calculate spherical cap area from angular radius
         area = np.pi*(alpha*rad_e)**2
-        #-- the 1.e15 converts from gigatons/cm^2 to cm of water
-        #-- 1 g/cm^3 = 1000 kg/m^3 = density water
-        #-- 1 Gt = 1 Pg = 1.e15 g
+        # the 1.e15 converts from gigatons/cm^2 to cm of water
+        # 1 g/cm^3 = 1000 kg/m^3 = density water
+        # 1 Gt = 1 Pg = 1.e15 g
         unit_conv = 1.e15/area
     elif (UNITS == 3):
-        #-- Input data is in kg/m^2
-        #-- 1 kg = 1000 g
-        #-- 1 m^2 = 100*100 cm^2 = 1e4 cm^2
+        # Input data is in kg/m^2
+        # 1 kg = 1000 g
+        # 1 m^2 = 100*100 cm^2 = 1e4 cm^2
         unit_conv = 0.1
     elif isinstance(UNITS,(list,np.ndarray)):
-        #-- custom units
+        # custom units
         unit_conv = np.copy(UNITS)
     else:
         raise ValueError(f'Unknown units {UNITS}')
 
-    #-- Coefficient for calculating Stokes coefficients for a spherical cap
-    #-- From Jacob et al (2012), Farrell (1972) and Longman (1962)
+    # Coefficient for calculating Stokes coefficients for a spherical cap
+    # From Jacob et al (2012), Farrell (1972) and Longman (1962)
     coeff = 3.0/(rad_e*rho_e)
 
-    #-- extract arrays of kl, hl, and ll Love Numbers
+    # extract arrays of kl, hl, and ll Love Numbers
     hl,kl,ll = LOVE
 
-    #-- calculate array of l values ranging from 0 to LMAX (harmonic degrees)
-    #-- LMAX+1 as there are LMAX+1 elements between 0 and LMAX
+    # calculate array of l values ranging from 0 to LMAX (harmonic degrees)
+    # LMAX+1 as there are LMAX+1 elements between 0 and LMAX
     l = np.arange(LMAX+1)
-    #-- calculate SH degree dependent factors to convert from coefficients
-    #-- of mass into normalized geoid coefficients
-    #-- NOTE: these are not the normal factors for converting to geoid due
-    #-- to the square of the denominator
-    #-- kl[l] is the Load Love Number of degree l
+    # calculate SH degree dependent factors to convert from coefficients
+    # of mass into normalized geoid coefficients
+    # NOTE: these are not the normal factors for converting to geoid due
+    # to the square of the denominator
+    # kl[l] is the Load Love Number of degree l
     dfactor = (1.0 + kl[l])/((1.0 + 2.0*l)**2)
 
-    #-- Calculating plms of the spherical caps
-    #-- From Longman et al. (1962)
-    #-- pl_alpha = F(alpha) from Jacob 2011
-    #-- pl_alpha is purely zonal and depends only on the size of the cap
-    #-- allocating for constructed array
+    # Calculating plms of the spherical caps
+    # From Longman et al. (1962)
+    # pl_alpha = F(alpha) from Jacob 2011
+    # pl_alpha is purely zonal and depends only on the size of the cap
+    # allocating for constructed array
     pl_alpha = np.zeros((LMAX+1))
-    #-- l=0 is a special case (P(-1) = 1, P(1) = cos(alpha))
+    # l=0 is a special case (P(-1) = 1, P(1) = cos(alpha))
     pl_alpha[0] = (1.0 - np.cos(alpha))/2.0
-    #-- for all other degrees: calculate the legendre polynomials up to LMAX+1
+    # for all other degrees: calculate the legendre polynomials up to LMAX+1
     pl_matrix,_ = legendre_polynomials(LMAX+1,np.cos(alpha))
-    for l in range(1, LMAX+1):#-- LMAX+1 to include LMAX
-        #-- from Longman (1962) and Jacob et al (2012)
-        #-- unnormalizing Legendre polynomials
-        #-- sqrt(2*l - 1) == sqrt(2*(l-1) + 1)
-        #-- sqrt(2*l + 3) == sqrt(2*(l+1) + 1)
+    for l in range(1, LMAX+1):# LMAX+1 to include LMAX
+        # from Longman (1962) and Jacob et al (2012)
+        # unnormalizing Legendre polynomials
+        # sqrt(2*l - 1) == sqrt(2*(l-1) + 1)
+        # sqrt(2*l + 3) == sqrt(2*(l+1) + 1)
         pl_lower = pl_matrix[l-1]/np.sqrt(2.0*l-1.0)
         pl_upper = pl_matrix[l+1]/np.sqrt(2.0*l+3.0)
         pl_alpha[l] = (pl_lower - pl_upper)/2.0
 
-    #-- Calculating Legendre Polynomials
-    #-- added option to precompute plms to improve computational speed
-    #-- this would be the plm for the center of the spherical cap
-    #-- used to rotate the spherical cap to point lat/lon
+    # Calculating Legendre Polynomials
+    # added option to precompute plms to improve computational speed
+    # this would be the plm for the center of the spherical cap
+    # used to rotate the spherical cap to point lat/lon
     if PLM is None:
         plmout,dplm = plm_holmes(LMAX, np.cos(th))
-        #-- truncate precomputed plms to order
+        # truncate precomputed plms to order
         plmout = np.squeeze(plmout[:,:MMAX+1,:])
     else:
-        #-- truncate precomputed plms to degree and order
+        # truncate precomputed plms to degree and order
         plmout = PLM[:LMAX+1,:MMAX+1]
 
-    #-- calculate array of m values ranging from 0 to MMAX (harmonic orders)
-    #-- MMAX+1 as there are MMAX+1 elements between 0 and MMAX
+    # calculate array of m values ranging from 0 to MMAX (harmonic orders)
+    # MMAX+1 as there are MMAX+1 elements between 0 and MMAX
     m = np.arange(MMAX+1)
-    #-- Multiplying by the units conversion factor (unit_conv) to
-    #-- convert from the input units into cmH2O equivalent
-    #-- Multiplying point mass data (converted to cmH2O) with sin/cos of m*phis
-    #-- data normally is 1 for a uniform 1cm water equivalent layer
-    #-- but can be a mass point if reconstructing a spherical harmonic field
-    #-- NOTE: NOT a matrix multiplication as data (and phi) is a single point
+    # Multiplying by the units conversion factor (unit_conv) to
+    # convert from the input units into cmH2O equivalent
+    # Multiplying point mass data (converted to cmH2O) with sin/cos of m*phis
+    # data normally is 1 for a uniform 1cm water equivalent layer
+    # but can be a mass point if reconstructing a spherical harmonic field
+    # NOTE: NOT a matrix multiplication as data (and phi) is a single point
     dcos = unit_conv*data*np.cos(m*phi)
     dsin = unit_conv*data*np.sin(m*phi)
 
-    #-- Multiplying by plm_alpha (F_l from Jacob 2012)
+    # Multiplying by plm_alpha (F_l from Jacob 2012)
     plm = np.zeros((LMAX+1,MMAX+1))
-    #-- Initializing preliminary spherical harmonic matrices
+    # Initializing preliminary spherical harmonic matrices
     yclm = np.zeros((LMAX+1,MMAX+1))
     yslm = np.zeros((LMAX+1,MMAX+1))
-    #-- Initializing output spherical harmonic matrices
+    # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
     Ylms.clm = np.zeros((LMAX+1,MMAX+1))
     Ylms.slm = np.zeros((LMAX+1,MMAX+1))
-    for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
-        l = np.arange(m,LMAX+1)#-- LMAX+1 to include LMAX
-        #-- rotate spherical cap to be centered at lat/lon
+    for m in range(0,MMAX+1):# MMAX+1 to include MMAX
+        l = np.arange(m,LMAX+1)# LMAX+1 to include LMAX
+        # rotate spherical cap to be centered at lat/lon
         plm[l,m] = plmout[l,m]*pl_alpha[l]
-        #-- multiplying clm by cos(m*phi) and slm by sin(m*phi)
-        #-- to get a field of spherical harmonics
+        # multiplying clm by cos(m*phi) and slm by sin(m*phi)
+        # to get a field of spherical harmonics
         yclm[l,m] = plm[l,m]*dcos[m]
         yslm[l,m] = plm[l,m]*dsin[m]
-        #-- multiplying by coefficients to convert to geoid coefficients
+        # multiplying by coefficients to convert to geoid coefficients
         Ylms.clm[l,m] = coeff*dfactor[l]*yclm[l,m]
         Ylms.slm[l,m] = coeff*dfactor[l]*yslm[l,m]
 
-    #-- return the output spherical harmonics object
+    # return the output spherical harmonics object
     return Ylms

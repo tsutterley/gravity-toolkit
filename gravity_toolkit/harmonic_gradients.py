@@ -68,36 +68,36 @@ def harmonic_gradients(clm1, slm1, lon, lat,
         zonal and meridional gradient fields
     """
 
-    #-- if LMAX is not specified, will use the size of the input harmonics
+    # if LMAX is not specified, will use the size of the input harmonics
     if (LMAX == 0):
         LMAX = np.shape(clm1)[0]-1
-    #-- upper bound of spherical harmonic orders (default = LMAX)
+    # upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:
         MMAX = np.copy(LMAX)
 
-    #-- Longitude in radians
+    # Longitude in radians
     phi = (np.squeeze(lon)*np.pi/180.0)[np.newaxis,:]
-    #-- Colatitude in radians
+    # Colatitude in radians
     th = (90.0 - np.squeeze(lat))*np.pi/180.0
     thmax = len(np.squeeze(lat))
     phimax = len(np.squeeze(lon))
 
-    #-- Truncating harmonics to degree and order LMAX
-    #-- removing coefficients below LMIN and above MMAX
+    # Truncating harmonics to degree and order LMAX
+    # removing coefficients below LMIN and above MMAX
     mm = np.arange(0,MMAX+1)
     clm = np.zeros((LMAX+1,MMAX+1))
     slm = np.zeros((LMAX+1,MMAX+1))
     clm[LMIN:LMAX+1,mm] = clm1[LMIN:LMAX+1,mm]
     slm[LMIN:LMAX+1,mm] = slm1[LMIN:LMAX+1,mm]
-    #-- spherical harmonic degree and order
-    ll = np.arange(0,LMAX+1)[np.newaxis, :]#-- lmax+1 to include lmax
-    mm = np.arange(0,MMAX+1)[:, np.newaxis]#-- mmax+1 to include mmax
+    # spherical harmonic degree and order
+    ll = np.arange(0,LMAX+1)[np.newaxis, :]# lmax+1 to include lmax
+    mm = np.arange(0,MMAX+1)[:, np.newaxis]# mmax+1 to include mmax
 
-    #-- generate Vlm coefficients (vlm and wlm)
+    # generate Vlm coefficients (vlm and wlm)
     vlm, wlm = legendre_gradient(LMAX, MMAX)
 
     dlm = np.zeros((LMAX+1,LMAX+1,2))
-    #--  minus sign is because lat and theta change with opposite sign
+    #  minus sign is because lat and theta change with opposite sign
     for l in range(0,LMAX+1):
         dlm[l,:,0] = -clm[l,:]*np.sqrt((l+1.0)*l)
         dlm[l,:,1] = -slm[l,:]*np.sqrt((l+1.0)*l)
@@ -105,7 +105,7 @@ def harmonic_gradients(clm1, slm1, lon, lat,
     m_even = np.arange(0,MMAX+2,2)
     m_odd = np.arange(1,MMAX,2)
 
-    #--  Calculate fourier coefficients from legendre coefficients
+    #  Calculate fourier coefficients from legendre coefficients
     d_cos = np.zeros((LMAX+1,thmax,2))
     d_sin = np.zeros((LMAX+1,thmax,2))
     cnk = np.cos(np.dot(th[:,np.newaxis],ll))
@@ -113,7 +113,7 @@ def harmonic_gradients(clm1, slm1, lon, lat,
 
     wtmp = np.zeros((len(m_even),LMAX+1,2))
     vtmp = np.zeros((len(m_even),LMAX+1,2))
-    #-- m = even terms (vlm,wlm sine series)
+    # m = even terms (vlm,wlm sine series)
     for n in range(0,LMAX+1):
         wtmp[:,n,0] = np.sum(wlm[:,m_even,n]*dlm[:,m_even,0],axis=0)
         wtmp[:,n,1] = np.sum(wlm[:,m_even,n]*dlm[:,m_even,1],axis=0)
@@ -125,7 +125,7 @@ def harmonic_gradients(clm1, slm1, lon, lat,
     d_cos[m_even,:,1] = np.dot(vtmp[:,:,1],np.transpose(snk))
     d_sin[m_even,:,1] = np.dot(-vtmp[:,:,0],np.transpose(snk))
 
-    #-- m = odd terms (vlm,wlm cosine series)
+    # m = odd terms (vlm,wlm cosine series)
     wtmp = np.zeros((len(m_odd),LMAX+1,2))
     vtmp = np.zeros((len(m_odd),LMAX+1,2))
     for n in range(0,LMAX+1):
@@ -139,14 +139,14 @@ def harmonic_gradients(clm1, slm1, lon, lat,
     d_cos[m_odd,:,1] = np.dot(vtmp[:,:,1],np.transpose(cnk))
     d_sin[m_odd,:,1] = np.dot(-vtmp[:,:,0],np.transpose(cnk))
 
-    #-- Calculating cos(m*phi) and sin(m*phi)
+    # Calculating cos(m*phi) and sin(m*phi)
     ccos = np.cos(np.dot(mm,phi))
     ssin = np.sin(np.dot(mm,phi))
-    #-- Final signal recovery from fourier coefficients
+    # Final signal recovery from fourier coefficients
     gradients = np.zeros((phimax,thmax,2))
     gradients[:,:,0] = np.dot(np.transpose(ccos), d_cos[:,:,0]) + \
         np.dot(np.transpose(ssin), d_sin[:,:,0])
     gradients[:,:,1] = np.dot(np.transpose(ccos), d_cos[:,:,1]) + \
         np.dot(np.transpose(ssin), d_sin[:,:,1])
-    #-- return the gradient fields
+    # return the gradient fields
     return gradients

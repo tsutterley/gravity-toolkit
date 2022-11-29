@@ -81,7 +81,7 @@ from __future__ import print_function
 import warnings
 import gravity_toolkit.geocenter
 
-#-- PURPOSE: read geocenter data from Satellite Laser Ranging (SLR)
+# PURPOSE: read geocenter data from Satellite Laser Ranging (SLR)
 def read_SLR_geocenter(geocenter_file, RADIUS=None, HEADER=0,
     COLUMNS=['time', 'X', 'Y', 'Z', 'X_sigma', 'Y_sigma', 'Z_sigma']):
     """
@@ -131,12 +131,12 @@ def read_SLR_geocenter(geocenter_file, RADIUS=None, HEADER=0,
     # call renamed version to not break workflows
     DEG1 = gravity_toolkit.geocenter(radius=RADIUS).from_SLR(geocenter_file,
         AOD=False, header=HEADER, columns=COLUMNS)
-    #-- return the SLR-derived geocenter solutions
+    # return the SLR-derived geocenter solutions
     return DEG1.to_dict()
 
 
-#-- special function for outputting AOD corrected SLR geocenter values
-#-- need to run aod1b_geocenter.py to calculate the monthly geocenter dealiasing
+# special function for outputting AOD corrected SLR geocenter values
+# need to run aod1b_geocenter.py to calculate the monthly geocenter dealiasing
 def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, HEADER=0,
     COLUMNS=[]):
     """
@@ -176,5 +176,5 @@ def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, HEADER=0,
     # call renamed version to not break workflows
     DEG1 = gravity_toolkit.geocenter(radius=RADIUS).from_SLR(geocenter_file,
         AOD=True, release=DREL, header=HEADER, columns=COLUMNS)
-    #-- return the SLR-derived geocenter solutions
+    # return the SLR-derived geocenter solutions
     return DEG1.to_dict()

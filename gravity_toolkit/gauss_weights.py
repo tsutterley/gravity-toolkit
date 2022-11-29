@@ -73,36 +73,36 @@ def gauss_weights(hw, LMAX, CUTOFF=1e-10):
         the Earth's Gravity Field", NASA Grant No. NGR 36-008-161,
         OSURF Proj. No. 783210, 48 pp., (1981).
     """
-    #-- allocate for output weights
+    # allocate for output weights
     wl = np.zeros((LMAX+1))
-    #-- radius of the Earth in km
+    # radius of the Earth in km
     rad_e = 6371.0
     if (hw < CUTOFF):
-        #-- distance is smaller than cutoff
+        # distance is smaller than cutoff
         wl[:]=1.0/(2.0*np.pi)
     else:
-        #-- calculate gaussian weights using recursion
+        # calculate gaussian weights using recursion
         b = np.log(2.0)/(1.0 - np.cos(hw/rad_e))
-        #-- weight for degree 0
+        # weight for degree 0
         wl[0] = 1.0/(2.0*np.pi)
-        #-- weight for degree 1
+        # weight for degree 1
         wl[1] = wl[0]*((1.0+np.exp(-2.0*b))/(1.0-np.exp(-2.0*b))-1.0/b)
-        #-- valid flag
+        # valid flag
         valid = True
-        #-- spherical harmonic degree
+        # spherical harmonic degree
         l = 2
-        #-- while valid (within cutoff)
-        #-- and spherical harmonic degree is less than LMAX
+        # while valid (within cutoff)
+        # and spherical harmonic degree is less than LMAX
         while (valid and (l <= LMAX)):
-            #-- calculate weight with recursion
+            # calculate weight with recursion
             wl[l] = (1.0-2.0*l)/b*wl[l-1]+wl[l-2]
-            #-- weight is less than cutoff
+            # weight is less than cutoff
             if (wl[l] < CUTOFF):
-                #-- set all weights to cutoff
+                # set all weights to cutoff
                 wl[l:LMAX+1] = CUTOFF
-                #-- set valid flag
+                # set valid flag
                 valid = False
-            #-- add 1 to l
+            # add 1 to l
             l += 1
-    #-- return the gaussian weights
+    # return the gaussian weights
     return wl

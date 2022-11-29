@@ -43,7 +43,7 @@ UPDATE HISTORY:
 import warnings
 import geoid_toolkit.read_ICGEM_harmonics
 
-#-- PURPOSE: read spherical harmonic coefficients of a gravity model
+# PURPOSE: read spherical harmonic coefficients of a gravity model
 def read_ICGEM_harmonics(*args,**kwargs):
     warnings.filterwarnings("always")
     warnings.warn("Deprecated. Please use geoid toolkit instead",

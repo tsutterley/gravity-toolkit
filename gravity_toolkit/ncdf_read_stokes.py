@@ -106,53 +106,53 @@ def ncdf_read_stokes(filename, **kwargs):
     month: GRACE/GRACE-FO month
     attributes: netCDF4 attributes for variables and file
     """
-    #-- set default keyword arguments
+    # set default keyword arguments
     kwargs.setdefault('DATE',True)
     kwargs.setdefault('COMPRESSION',None)
-    #-- set deprecation warning
+    # set deprecation warning
     warnings.filterwarnings("always")
     warnings.warn("Deprecated. Please use harmonics.from_netCDF4",
         DeprecationWarning)
 
-    #-- Open the NetCDF4 file for reading
+    # Open the NetCDF4 file for reading
     if (kwargs['COMPRESSION'] == 'gzip'):
-        #-- read as in-memory (diskless) netCDF4 dataset
+        # read as in-memory (diskless) netCDF4 dataset
         with gzip.open(os.path.expanduser(filename),'r') as f:
             fileID = netCDF4.Dataset(os.path.basename(filename),memory=f.read())
     elif (kwargs['COMPRESSION'] == 'zip'):
-        #-- read zipped file and extract file into in-memory file object
+        # read zipped file and extract file into in-memory file object
         fileBasename,_ = os.path.splitext(os.path.basename(filename))
         with zipfile.ZipFile(os.path.expanduser(filename)) as z:
-            #-- first try finding a netCDF4 file with same base filename
-            #-- if none found simply try searching for a netCDF4 file
+            # first try finding a netCDF4 file with same base filename
+            # if none found simply try searching for a netCDF4 file
             try:
                 f,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
             except:
                 f,=[f for f in z.namelist() if re.search(r'\.nc(4)?$',f)]
-            #-- read bytes from zipfile as in-memory (diskless) netCDF4 dataset
+            # read bytes from zipfile as in-memory (diskless) netCDF4 dataset
             fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=z.read(f))
     elif (kwargs['COMPRESSION'] == 'bytes'):
-        #-- read as in-memory (diskless) netCDF4 dataset
+        # read as in-memory (diskless) netCDF4 dataset
         fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=filename.read())
     else:
-        #-- read netCDF4 dataset
+        # read netCDF4 dataset
         fileID = netCDF4.Dataset(os.path.expanduser(filename), 'r')
-    #-- create python dictionary for output variables
+    # create python dictionary for output variables
     dinput = {}
     dinput['attributes'] = {}
 
-    #-- Output NetCDF file information
+    # Output NetCDF file information
     logging.info(fileID.filepath())
     logging.info(list(fileID.variables.keys()))
 
-    #-- Getting the data from each NetCDF variable
-    #-- converting NetCDF objects into numpy arrays
+    # Getting the data from each NetCDF variable
+    # converting NetCDF objects into numpy arrays
     nckeys = ['l','m','clm','slm']
     ll = fileID.variables['l'][:].copy()
     mm = fileID.variables['m'][:].copy()
     clm = fileID.variables['clm'][:].copy()
     slm = fileID.variables['slm'][:].copy()
-    #-- read date variables if specified
+    # read date variables if specified
     if kwargs['DATE']:
         nckeys.extend(['time','month'])
         dinput['time'] = fileID.variables['time'][:].copy()
@@ -161,33 +161,33 @@ def ncdf_read_stokes(filename, **kwargs):
     else:
         n_time = 0
 
-    #-- Restructuring input array back into matrix format
+    # Restructuring input array back into matrix format
     LMAX = np.max(ll)
     MMAX = np.max(mm)
-    #-- output spherical harmonic degree and order
-    #-- LMAX+1 to include LMAX (LMAX+1 elements)
+    # output spherical harmonic degree and order
+    # LMAX+1 to include LMAX (LMAX+1 elements)
     dinput['l'] = np.arange(0,LMAX+1)
     dinput['m'] = np.arange(0,MMAX+1)
-    #-- number of harmonics
+    # number of harmonics
     n_harm, = fileID.variables['l'].shape
-    #-- import spherical harmonic data
+    # import spherical harmonic data
     if (kwargs['DATE'] and (n_time > 1)):
-        #-- contains multiple dates
+        # contains multiple dates
         dinput['clm'] = np.zeros((LMAX+1,MMAX+1,n_time))
         dinput['slm'] = np.zeros((LMAX+1,MMAX+1,n_time))
         for lm in range(n_harm):
             dinput['clm'][ll[lm],mm[lm],:] = clm[lm,:]
             dinput['slm'][ll[lm],mm[lm],:] = slm[lm,:]
     else:
-        #-- contains either no dates or a single date
+        # contains either no dates or a single date
         dinput['clm'] = np.zeros((LMAX+1,MMAX+1))
         dinput['slm'] = np.zeros((LMAX+1,MMAX+1))
         for lm in range(n_harm):
             dinput['clm'][ll[lm],mm[lm]] = clm[lm]
             dinput['slm'][ll[lm],mm[lm]] = slm[lm]
 
-    #-- Getting attributes of clm/slm and included variables
-    #-- get attributes for the included variables
+    # Getting attributes of clm/slm and included variables
+    # get attributes for the included variables
     for key in nckeys:
         try:
             dinput['attributes'][key] = [
@@ -196,7 +196,7 @@ def ncdf_read_stokes(filename, **kwargs):
                 ]
         except (KeyError,ValueError,AttributeError):
             pass
-    #-- Global attributes
+    # Global attributes
     for att_name in ['title','description','reference']:
         try:
             ncattr, = [s for s in fileID.ncattrs()
@@ -205,8 +205,8 @@ def ncdf_read_stokes(filename, **kwargs):
         except (ValueError, KeyError, AttributeError):
             pass
 
-    #-- Closing the NetCDF file
+    # Closing the NetCDF file
     fileID.close()
 
-    #-- return output variable
+    # return output variable
     return dinput

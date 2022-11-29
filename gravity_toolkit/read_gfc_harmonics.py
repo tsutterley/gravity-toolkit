@@ -71,7 +71,7 @@ import numpy as np
 import gravity_toolkit.time
 from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 
-#-- PURPOSE: read spherical harmonic coefficients of a gravity model
+# PURPOSE: read spherical harmonic coefficients of a gravity model
 def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
     """
     Extract gravity model spherical harmonics from Gravity
@@ -133,7 +133,7 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         Coefficients for Satellite Altimetry Applications", (2003).
         `eprint ID: 11802 <http://mitgcm.org/~mlosch/geoidcookbook.pdf>`_
     """
-    #-- regular expression operators for ITSG data and models
+    # regular expression operators for ITSG data and models
     itsg_products = []
     itsg_products.append(r'atmosphere')
     itsg_products.append(r'dealiasing')
@@ -145,60 +145,60 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
     itsg_products.append(r'Grace_operational')
     itsg_pattern = (r'(AOD1B_RL\d+|model|ITSG)[-_]({0})(_n\d+)?_'
         r'(\d+)-(\d+)(\.gfc)').format(r'|'.join(itsg_products))
-    #-- regular expression operators for Swarm data and models
+    # regular expression operators for Swarm data and models
     swarm_data = r'(SW)_(.*?)_(EGF_SHA_2)__(.*?)_(.*?)_(.*?)(\.gfc|\.ZIP)'
     swarm_model = r'(GAA|GAB|GAC|GAD)_Swarm_(\d+)_(\d{2})_(\d{4})(\.gfc|\.ZIP)'
-    #-- extract parameters for each data center and product
+    # extract parameters for each data center and product
     if re.match(itsg_pattern, os.path.basename(input_file)):
-        #-- compile numerical expression operator for parameters from files
-        #-- GRAZ: Institute of Geodesy from GRAZ University of Technology
+        # compile numerical expression operator for parameters from files
+        # GRAZ: Institute of Geodesy from GRAZ University of Technology
         rx = re.compile(itsg_pattern, re.VERBOSE | re.IGNORECASE)
-        #-- extract parameters from input filename
+        # extract parameters from input filename
         PFX,PRD,trunc,year,month,SFX = rx.findall(input_file).pop()
-        #-- number of days in each month for the calendar year
+        # number of days in each month for the calendar year
         dpm = gravity_toolkit.time.calendar_days(int(year))
-        #-- create start and end date lists
+        # create start and end date lists
         start_date = [int(year),int(month),1,0,0,0]
         end_date = [int(year),int(month),dpm[int(month)-1],23,59,59]
     elif re.match(swarm_data, os.path.basename(input_file)):
-        #-- compile numerical expression operator for parameters from files
-        #-- Swarm: data from Swarm satellite
+        # compile numerical expression operator for parameters from files
+        # Swarm: data from Swarm satellite
         rx = re.compile(swarm_data, re.VERBOSE | re.IGNORECASE)
-        #-- extract parameters from input filename
+        # extract parameters from input filename
         SAT,tmp,PROD,starttime,endtime,RL,SFX = rx.findall(input_file).pop()
         start_date,_ = gravity_toolkit.time.parse_date_string(starttime)
         end_date,_ = gravity_toolkit.time.parse_date_string(endtime)
-        #-- number of days in each month for the calendar year
+        # number of days in each month for the calendar year
         dpm = gravity_toolkit.time.calendar_days(start_date[0])
     elif re.match(swarm_model, os.path.basename(input_file)):
-        #-- compile numerical expression operator for parameters from files
-        #-- Swarm: dealiasing products for Swarm data
+        # compile numerical expression operator for parameters from files
+        # Swarm: dealiasing products for Swarm data
         rx = re.compile(swarm_data, re.VERBOSE | re.IGNORECASE)
-        #-- extract parameters from input filename
+        # extract parameters from input filename
         PROD,trunc,month,year,SFX = rx.findall(input_file).pop()
-        #-- number of days in each month for the calendar year
+        # number of days in each month for the calendar year
         dpm = gravity_toolkit.time.calendar_days(int(year))
-        #-- create start and end date lists
+        # create start and end date lists
         start_date = [int(year),int(month),1,0,0,0]
         end_date = [int(year),int(month),dpm[int(month)-1],23,59,59]
 
-    #-- python dictionary with model input and headers
+    # python dictionary with model input and headers
     ZIP = bool(re.search('ZIP',SFX,re.IGNORECASE))
     model_input = read_ICGEM_harmonics(input_file, TIDE=TIDE,
         FLAG=FLAG, ZIP=ZIP)
 
-    #-- start and end day of the year
+    # start and end day of the year
     start_day = np.sum(dpm[:start_date[1]-1]) + start_date[2] + \
         start_date[3]/24.0 + start_date[4]/1440.0 + start_date[5]/86400.0
     end_day = np.sum(dpm[:end_date[1]-1]) + end_date[2] + \
         end_date[3]/24.0 + end_date[4]/1440.0 + end_date[5]/86400.0
-    #-- end date taking into account measurements taken on different years
+    # end date taking into account measurements taken on different years
     end_cyclic = (end_date[0]-start_date[0])*np.sum(dpm) + end_day
-    #-- calculate mid-month value
+    # calculate mid-month value
     mid_day = np.mean([start_day, end_cyclic])
-    #-- Calculating the mid-month date in decimal form
+    # Calculating the mid-month date in decimal form
     model_input['time'] = start_date[0] + mid_day/np.sum(dpm)
-    #-- Calculating the Julian dates of the start and end date
+    # Calculating the Julian dates of the start and end date
     model_input['start'] = 2400000.5 + \
         gravity_toolkit.time.convert_calendar_dates(start_date[0],
         start_date[1],start_date[2],hour=start_date[3],minute=start_date[4],
@@ -208,5 +208,5 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         end_date[1],end_date[2],hour=end_date[3],minute=end_date[4],
         second=end_date[5],epoch=(1858,11,17,0,0,0))
 
-    #-- return the spherical harmonics and parameters
+    # return the spherical harmonics and parameters
     return model_input

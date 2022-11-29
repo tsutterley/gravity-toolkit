@@ -87,7 +87,7 @@ import logging
 import numpy as np
 from gravity_toolkit.utilities import get_data_path
 
-#-- PURPOSE: read load love numbers from PREM
+# PURPOSE: read load love numbers from PREM
 def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
     COLUMNS=['l','hl','kl','ll'], REFERENCE='CE', FORMAT='tuple'):
     """
@@ -167,85 +167,85 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
         *Computers & Geosciences*, 49, 190--199, (2012).
         `doi: 10.1016/j.cageo.2012.06.022 <https://doi.org/10.1016/j.cageo.2012.06.022>`_
     """
-    #-- Input load love number data file and read contents
+    # Input load love number data file and read contents
     file_contents = extract_love_numbers(love_numbers_file)
 
-    #-- compile regular expression operator to find numerical instances
+    # compile regular expression operator to find numerical instances
     regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
     rx = re.compile(regex_pattern, re.VERBOSE)
 
-    #-- extract maximum spherical harmonic degree from final line in file
+    # extract maximum spherical harmonic degree from final line in file
     if LMAX is None:
         LMAX = np.int64(rx.findall(file_contents[-1])[COLUMNS.index('l')])
 
-    #-- dictionary of output love numbers
+    # dictionary of output love numbers
     love = {}
-    #-- spherical harmonic degree
+    # spherical harmonic degree
     love['l'] = np.arange(LMAX+1)
-    #-- vertical displacement hl
-    #-- gravitational potential kl
-    #-- horizontal displacement ll
+    # vertical displacement hl
+    # gravitational potential kl
+    # horizontal displacement ll
     for n in ('hl','kl','ll'):
         love[n] = np.zeros((LMAX+1))
-    #-- check if needing to interpolate between degrees
+    # check if needing to interpolate between degrees
     flag = np.ones((LMAX+1),dtype=bool)
-    #-- for each line in the file (skipping header lines)
+    # for each line in the file (skipping header lines)
     for file_line in file_contents[HEADER:]:
-        #-- find numerical instances in line
-        #-- replacing fortran double precision exponential
+        # find numerical instances in line
+        # replacing fortran double precision exponential
         love_numbers = rx.findall(file_line.replace('D','E'))
-        #-- spherical harmonic degree
+        # spherical harmonic degree
         l = np.int64(love_numbers[COLUMNS.index('l')])
-        #-- truncate to spherical harmonic degree LMAX
+        # truncate to spherical harmonic degree LMAX
         if (l <= LMAX):
-            #-- convert love numbers to float
-            #-- vertical displacement hl
-            #-- gravitational potential kl
-            #-- horizontal displacement ll
+            # convert love numbers to float
+            # vertical displacement hl
+            # gravitational potential kl
+            # horizontal displacement ll
             for n in ('hl','kl','ll'):
                 love[n][l] = np.float64(love_numbers[COLUMNS.index(n)])
-            #-- set interpolation flag for degree
+            # set interpolation flag for degree
             flag[l] = False
 
-    #-- if needing to linearly interpolate love numbers
+    # if needing to linearly interpolate love numbers
     if np.any(flag):
-        #-- linearly interpolate each load love number following Wahr (1998)
+        # linearly interpolate each load love number following Wahr (1998)
         for n in ('hl','kl','ll'):
             love[n][flag] = np.interp(love['l'][flag],
                 love['l'][~flag], love[n][~flag])
 
-    #-- if needing to linearly extrapolate love numbers
-    #-- NOTE: use caution if extrapolating far beyond the
-    #-- maximum degree of the love numbers dataset
+    # if needing to linearly extrapolate love numbers
+    # NOTE: use caution if extrapolating far beyond the
+    # maximum degree of the love numbers dataset
     for lint in range(l,LMAX+1):
-        #-- linearly extrapolate each load love number
+        # linearly extrapolate each load love number
         for n in ('hl','kl','ll'):
             love[n][lint] = 2.0*love[n][lint-1] - love[n][lint-2]
 
-    #-- calculate isomorphic parameters for different reference frames
-    #-- From Blewitt (2003), Wahr (1998), Trupin (1992) and Farrell (1972)
+    # calculate isomorphic parameters for different reference frames
+    # From Blewitt (2003), Wahr (1998), Trupin (1992) and Farrell (1972)
     if (REFERENCE.upper() == 'CF'):
-        #-- Center of Surface Figure
+        # Center of Surface Figure
         alpha = (love['hl'][1] + 2.0*love['ll'][1])/3.0
     elif (REFERENCE.upper() == 'CL'):
-        #-- Center of Surface Lateral Figure
+        # Center of Surface Lateral Figure
         alpha = love['ll'][1].copy()
     elif (REFERENCE.upper() == 'CH'):
-        #-- Center of Surface Height Figure
+        # Center of Surface Height Figure
         alpha = love['hl'][1].copy()
     elif (REFERENCE.upper() == 'CM'):
-        #-- Center of Mass of Earth System
+        # Center of Mass of Earth System
         alpha = 1.0
     elif (REFERENCE.upper() == 'CE'):
-        #-- Center of Mass of Solid Earth
+        # Center of Mass of Solid Earth
         alpha = 0.0
     else:
         raise Exception(f'Invalid Reference Frame {REFERENCE}')
-    #-- apply isomorphic parameters
+    # apply isomorphic parameters
     for n in ('hl','kl','ll'):
         love[n][1] -= alpha
 
-    #-- return love numbers in output format
+    # return love numbers in output format
     if (FORMAT == 'dict'):
         return love
     elif (FORMAT == 'tuple'):
@@ -253,7 +253,7 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
     elif (FORMAT == 'zip'):
         return zip(love['hl'], love['kl'], love['ll'])
 
-#-- PURPOSE: read input file and extract contents
+# PURPOSE: read input file and extract contents
 def extract_love_numbers(love_numbers_file):
     """
     Read load love number file and extract contents
@@ -263,21 +263,21 @@ def extract_love_numbers(love_numbers_file):
     love_numbers_file: str
         Elastic load Love numbers file
     """
-    #-- check if input love numbers are a string or bytesIO object
+    # check if input love numbers are a string or bytesIO object
     if isinstance(love_numbers_file, str):
-        #-- tilde expansion of load love number data file
+        # tilde expansion of load love number data file
         love_numbers_file = os.path.expanduser(love_numbers_file)
-        #-- check that load love number data file is present in file system
+        # check that load love number data file is present in file system
         if not os.access(love_numbers_file, os.F_OK):
             raise FileNotFoundError(f'{love_numbers_file} not found')
-        #-- Input load love number data file and read contents
+        # Input load love number data file and read contents
         with open(love_numbers_file, mode='r', encoding='utf8') as f:
             return f.read().splitlines()
     elif isinstance(love_numbers_file, io.IOBase):
-        #-- read contents from load love number data
+        # read contents from load love number data
         return love_numbers_file.read().decode('utf8').splitlines()
 
-#-- PURPOSE: read load love numbers for a range of spherical harmonic degrees
+# PURPOSE: read load love numbers for a range of spherical harmonic degrees
 def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
     """
     Wrapper function for reading PREM load Love numbers for a
@@ -339,31 +339,31 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
         *Computers & Geosciences*, 49, 190--199, (2012).
         `doi: 10.1016/j.cageo.2012.06.022 <https://doi.org/10.1016/j.cageo.2012.06.022>`_
     """
-    #-- load love numbers file
+    # load love numbers file
     if (LOVE_NUMBERS == 0):
-        #-- PREM outputs from Han and Wahr (1995)
-        #-- https://doi.org/10.1111/j.1365-246X.1995.tb01819.x
+        # PREM outputs from Han and Wahr (1995)
+        # https://doi.org/10.1111/j.1365-246X.1995.tb01819.x
         love_numbers_file = get_data_path(['data','love_numbers'])
         header = 2
         columns = ['l','hl','kl','ll']
     elif (LOVE_NUMBERS == 1):
-        #-- PREM outputs from Gegout (2005)
-        #-- http://gemini.gsfc.nasa.gov/aplo/
+        # PREM outputs from Gegout (2005)
+        # http://gemini.gsfc.nasa.gov/aplo/
         love_numbers_file = get_data_path(['data','Load_Love2_CE.dat'])
         header = 3
         columns = ['l','hl','ll','kl']
     elif (LOVE_NUMBERS == 2):
-        #-- PREM outputs from Wang et al. (2012)
-        #-- https://doi.org/10.1016/j.cageo.2012.06.022
+        # PREM outputs from Wang et al. (2012)
+        # https://doi.org/10.1016/j.cageo.2012.06.022
         love_numbers_file = get_data_path(['data','PREM-LLNs-truncated.dat'])
         header = 1
         columns = ['l','hl','ll','kl','nl','nk']
-    #-- log load love numbers file if debugging
+    # log load love numbers file if debugging
     logging.debug(f'Reading Love numbers file: {love_numbers_file}')
-    #-- LMAX of load love numbers from Han and Wahr (1995) is 696.
-    #-- from Wahr (2007) linearly interpolating kl works
-    #-- however, as we are linearly extrapolating out, do not make
-    #-- LMAX too much larger than 696
-    #-- read arrays of kl, hl, and ll Love Numbers
+    # LMAX of load love numbers from Han and Wahr (1995) is 696.
+    # from Wahr (2007) linearly interpolating kl works
+    # however, as we are linearly extrapolating out, do not make
+    # LMAX too much larger than 696
+    # read arrays of kl, hl, and ll Love Numbers
     return read_love_numbers(love_numbers_file, LMAX=LMAX, HEADER=header,
         COLUMNS=columns, REFERENCE=REFERENCE, FORMAT=FORMAT)

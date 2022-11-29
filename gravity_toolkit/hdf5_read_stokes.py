@@ -95,64 +95,64 @@ def hdf5_read_stokes(filename, **kwargs):
     month: GRACE/GRACE-FO month
     attributes: HDF5 attributes for variables and file
     """
-    #-- set default keyword arguments
+    # set default keyword arguments
     kwargs.setdefault('DATE',True)
     kwargs.setdefault('COMPRESSION',None)
-    #-- set deprecation warning
+    # set deprecation warning
     warnings.filterwarnings("always")
     warnings.warn("Deprecated. Please use harmonics.from_HDF5",
         DeprecationWarning)
 
-    #-- Open the HDF5 file for reading
+    # Open the HDF5 file for reading
     if (kwargs['COMPRESSION'] == 'gzip'):
-        #-- read gzip compressed file and extract into in-memory file object
+        # read gzip compressed file and extract into in-memory file object
         with gzip.open(os.path.expanduser(filename),'r') as f:
             fid = io.BytesIO(f.read())
-        #-- set filename of BytesIO object
+        # set filename of BytesIO object
         fid.filename = os.path.basename(filename)
-        #-- rewind to start of file
+        # rewind to start of file
         fid.seek(0)
-        #-- read as in-memory (diskless) HDF5 dataset from BytesIO object
+        # read as in-memory (diskless) HDF5 dataset from BytesIO object
         fileID = h5py.File(fid, 'r')
     elif (kwargs['COMPRESSION'] == 'zip'):
-        #-- read zipped file and extract file into in-memory file object
+        # read zipped file and extract file into in-memory file object
         fileBasename,_ = os.path.splitext(os.path.basename(filename))
         with zipfile.ZipFile(os.path.expanduser(filename)) as z:
-            #-- first try finding a HDF5 file with same base filename
-            #-- if none found simply try searching for a HDF5 file
+            # first try finding a HDF5 file with same base filename
+            # if none found simply try searching for a HDF5 file
             try:
                 f,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
             except:
                 f,=[f for f in z.namelist() if re.search(r'\.H(DF)?5$',f,re.I)]
-            #-- read bytes from zipfile into in-memory BytesIO object
+            # read bytes from zipfile into in-memory BytesIO object
             fid = io.BytesIO(z.read(f))
-        #-- set filename of BytesIO object
+        # set filename of BytesIO object
         fid.filename = os.path.basename(filename)
-        #-- rewind to start of file
+        # rewind to start of file
         fid.seek(0)
-        #-- read as in-memory (diskless) HDF5 dataset from BytesIO object
+        # read as in-memory (diskless) HDF5 dataset from BytesIO object
         fileID = h5py.File(fid, 'r')
     elif (kwargs['COMPRESSION'] == 'bytes'):
-        #-- read as in-memory (diskless) HDF5 dataset
+        # read as in-memory (diskless) HDF5 dataset
         fileID = h5py.File(filename, 'r')
     else:
-        #-- read HDF5 dataset
+        # read HDF5 dataset
         fileID = h5py.File(os.path.expanduser(filename), 'r')
-    #-- allocate python dictionary for output variables
+    # allocate python dictionary for output variables
     dinput = {}
     dinput['attributes'] = {}
 
-    #-- Output HDF5 file information
+    # Output HDF5 file information
     logging.info(fileID.filename)
     logging.info(list(fileID.keys()))
 
-    #-- output variable keys
+    # output variable keys
     h5keys = ['l','m','clm','slm']
-    #-- Getting the data from each HDF5 variable
-    #-- converting HDF5 objects into numpy arrays
+    # Getting the data from each HDF5 variable
+    # converting HDF5 objects into numpy arrays
     ll = np.array(fileID['l'][:])
     mm = np.array(fileID['m'][:])
-    #-- Spherical harmonic files have date information
+    # Spherical harmonic files have date information
     if kwargs['DATE']:
         h5keys.extend(['time','month'])
         dinput['time'] = fileID['time'][:].copy()
@@ -161,36 +161,36 @@ def hdf5_read_stokes(filename, **kwargs):
     else:
         n_time = 0
 
-    #-- Restructuring input array back into matrix format
+    # Restructuring input array back into matrix format
     LMAX = np.max(ll)
     MMAX = np.max(mm)
 
-    #-- LMAX+1 to include LMAX (LMAX+1 elements)
+    # LMAX+1 to include LMAX (LMAX+1 elements)
     dinput['l'] = np.arange(0,LMAX+1)
     dinput['m'] = np.arange(0,MMAX+1)
-    #-- convert input clm/slm to numpy arrays
+    # convert input clm/slm to numpy arrays
     CLM = np.array(fileID['clm'][:])
     SLM = np.array(fileID['slm'][:])
-    #-- size of the input grids
+    # size of the input grids
     n_harm, = fileID['l'].shape
-    #-- import spherical harmonic data
+    # import spherical harmonic data
     if (kwargs['DATE'] and (n_time > 1)):
-        #-- contains multiple dates
+        # contains multiple dates
         dinput['clm'] = np.zeros((LMAX+1,MMAX+1,n_time))
         dinput['slm'] = np.zeros((LMAX+1,MMAX+1,n_time))
         for lm in range(n_harm):
             dinput['clm'][ll[lm],mm[lm],:] = CLM[lm,:]
             dinput['slm'][ll[lm],mm[lm],:] = SLM[lm,:]
     else:
-        #-- contains either no dates or a single date
+        # contains either no dates or a single date
         dinput['clm'] = np.zeros((LMAX+1,MMAX+1))
         dinput['slm'] = np.zeros((LMAX+1,MMAX+1))
         for lm in range(n_harm):
             dinput['clm'][ll[lm],mm[lm]] = CLM[lm]
             dinput['slm'][ll[lm],mm[lm]] = SLM[lm]
 
-    #-- Getting attributes of clm/slm and included variables
-    #-- get attributes for the included variables
+    # Getting attributes of clm/slm and included variables
+    # get attributes for the included variables
     for key in h5keys:
         try:
             dinput['attributes'][key] = [
@@ -199,15 +199,15 @@ def hdf5_read_stokes(filename, **kwargs):
                 ]
         except (KeyError, AttributeError):
             pass
-    #-- Global attributes
+    # Global attributes
     for att_name in ['title','description','reference']:
         try:
             dinput['attributes'][att_name] = fileID.attrs[att_name]
         except (ValueError, KeyError, AttributeError):
             pass
 
-    #-- Closing the HDF5 file
+    # Closing the HDF5 file
     fileID.close()
 
-    #-- return the output variable
+    # return the output variable
     return dinput

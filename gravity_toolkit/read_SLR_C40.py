@@ -51,7 +51,7 @@ import numpy as np
 import gravity_toolkit.time
 import gravity_toolkit.read_SLR_harmonics
 
-#-- PURPOSE: read Degree 4 zonal data from Satellite Laser Ranging (SLR)
+# PURPOSE: read Degree 4 zonal data from Satellite Laser Ranging (SLR)
 def read_SLR_C40(SLR_file, C40_MEAN=0.0, DATE=None, **kwargs):
     """
     Reads C40 spherical harmonic coefficients from SLR measurements
@@ -77,51 +77,51 @@ def read_SLR_C40(SLR_file, C40_MEAN=0.0, DATE=None, **kwargs):
         date of SLR measurement
     """
 
-    #-- check that SLR file exists
+    # check that SLR file exists
     if not os.access(os.path.expanduser(SLR_file), os.F_OK):
         raise FileNotFoundError('SLR file not found in file system')
-    #-- output dictionary with input data
+    # output dictionary with input data
     dinput = {}
 
     if bool(re.search(r'gsfc_slr_5x5c61s61',SLR_file,re.I)):
-        #-- read 5x5 + 6,1 file from GSFC and extract coefficients
+        # read 5x5 + 6,1 file from GSFC and extract coefficients
         Ylms = gravity_toolkit.read_SLR_harmonics(SLR_file, HEADER=True)
-        #-- calculate 28-day moving-average solution from 7-day arcs
+        # calculate 28-day moving-average solution from 7-day arcs
         dinput.update(gravity_toolkit.convert_weekly(Ylms['time'],
             Ylms['clm'][4,0,:], DATE=DATE, NEIGHBORS=28))
-        #-- no estimated spherical harmonic errors
+        # no estimated spherical harmonic errors
         dinput['error'] = np.zeros_like(DATE,dtype='f8')
     elif bool(re.search(r'C40_LARES',SLR_file,re.I)):
-        #-- read LARES filtered values
+        # read LARES filtered values
         LARES_input = np.loadtxt(SLR_file,skiprows=1)
         dinput['time'] = LARES_input[:,0].copy()
-        #-- convert C40 from anomalies to absolute
+        # convert C40 from anomalies to absolute
         dinput['data'] = 1e-10*LARES_input[:,1] + C40_MEAN
-        #-- filtered data does not have errors
+        # filtered data does not have errors
         dinput['error'] = np.zeros_like(LARES_input[:,1])
-        #-- calculate GRACE/GRACE-FO month
+        # calculate GRACE/GRACE-FO month
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
     else:
-        #-- read 5x5 + 6,1 file from CSR and extract C4,0 coefficients
+        # read 5x5 + 6,1 file from CSR and extract C4,0 coefficients
         Ylms = gravity_toolkit.read_SLR_harmonics(SLR_file, HEADER=True)
-        #-- extract dates, C40 harmonics and errors
+        # extract dates, C40 harmonics and errors
         dinput['time'] = Ylms['time'].copy()
         dinput['data'] = Ylms['clm'][4,0,:].copy()
         dinput['error'] = Ylms['error']['clm'][4,0,:].copy()
-        #-- converting from MJD into month, day and year
+        # converting from MJD into month, day and year
         YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
             Ylms['MJD']+2400000.5, format='tuple')
-        #-- calculate GRACE/GRACE-FO month
+        # calculate GRACE/GRACE-FO month
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(YY,MM)
 
-    #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
-    #-- Accelerometer shutoffs make the relation between month number
-    #-- and date more complicated as days from other months are used
-    #-- For CSR and GFZ: Nov 2011 (119) is centered in Oct 2011 (118)
-    #-- For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
-    #-- For all: May 2015 (161) is centered in Apr 2015 (160)
-    #-- For GSFC: Oct 2018 (202) is centered in Nov 2018 (203)
+    # The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
+    # Accelerometer shutoffs make the relation between month number
+    # and date more complicated as days from other months are used
+    # For CSR and GFZ: Nov 2011 (119) is centered in Oct 2011 (118)
+    # For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
+    # For all: May 2015 (161) is centered in Apr 2015 (160)
+    # For GSFC: Oct 2018 (202) is centered in Nov 2018 (203)
     dinput['month'] = gravity_toolkit.time.adjust_months(dinput['month'])
 
-    #-- return the SLR-derived degree 4 zonal solutions
+    # return the SLR-derived degree 4 zonal solutions
     return dinput

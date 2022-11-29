@@ -70,7 +70,7 @@ import numpy as np
 from gravity_toolkit.geocenter import geocenter
 import gravity_toolkit.utilities as utilities
 
-#-- program module to read the degree 1 coefficients of the AOD1b data
+# program module to read the degree 1 coefficients of the AOD1b data
 def aod1b_geocenter(base_dir,
     DREL='',
     DSET='',
@@ -96,84 +96,84 @@ def aod1b_geocenter(base_dir,
     MODE: Permission mode of directories and files
     """
 
-    #-- compile regular expressions operators for file dates
-    #-- will extract the year and month from the tar file (.tar.gz)
+    # compile regular expressions operators for file dates
+    # will extract the year and month from the tar file (.tar.gz)
     tx = re.compile(r'AOD1B_(\d+)-(\d+)_\d+\.(tar\.gz|tgz)$', re.VERBOSE)
-    #-- and the calendar day from the ascii file (.asc or gzipped .asc.gz)
+    # and the calendar day from the ascii file (.asc or gzipped .asc.gz)
     fx = re.compile(r'AOD1B_\d+-\d+-(\d+)_X_\d+.asc(.gz)?$', re.VERBOSE)
-    #-- compile regular expressions operator for the clm/slm headers
-    #-- for the specific AOD1b product
+    # compile regular expressions operator for the clm/slm headers
+    # for the specific AOD1b product
     hx = re.compile(rf'^DATA.*SET.*{DSET}', re.VERBOSE)
-    #-- compile regular expression operator to find numerical instances
-    #-- will extract the data from the file
+    # compile regular expression operator to find numerical instances
+    # will extract the data from the file
     regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
     rx = re.compile(regex_pattern, re.VERBOSE)
-    #-- output formatting string
+    # output formatting string
     fstr = '{0:4d}-{1:02d}-{2:02d}T{3:02d}:00:00 {4:12.8f} {5:12.8f} {6:12.8f}'
 
-    #-- set number of hours in a file
-    #-- set the ocean model for a given release
+    # set number of hours in a file
+    # set the ocean model for a given release
     if DREL in ('RL01','RL02','RL03','RL04','RL05'):
-        #-- for 00, 06, 12 and 18
+        # for 00, 06, 12 and 18
         n_time = 4
         ATMOSPHERE = 'ECMWF'
         OCEAN_MODEL = 'OMCT'
         LMAX = 100
     elif DREL in ('RL06',):
-        #-- for 00, 03, 06, 09, 12, 15, 18 and 21
+        # for 00, 03, 06, 09, 12, 15, 18 and 21
         n_time = 8
         ATMOSPHERE = 'ECMWF'
         OCEAN_MODEL = 'MPIOM'
         LMAX = 180
     else:
         raise ValueError('Invalid data release')
-    #-- Calculating the number of cos and sin harmonics up to LMAX
+    # Calculating the number of cos and sin harmonics up to LMAX
     n_harm = (LMAX**2 + 3*LMAX)//2 + 1
 
-    #-- AOD1B data products
+    # AOD1B data products
     product = {}
     product['atm'] = f'Atmospheric loading from {ATMOSPHERE}'
     product['ocn'] = f'Oceanic loading from {OCEAN_MODEL}'
     product['glo'] = 'Global atmospheric and oceanic loading'
     product['oba'] = f'Ocean bottom pressure from {OCEAN_MODEL}'
 
-    #-- AOD1B directory and output geocenter directory
+    # AOD1B directory and output geocenter directory
     grace_dir = os.path.join(base_dir,'AOD1B',DREL)
     output_dir = os.path.join(grace_dir,'geocenter')
     if not os.access(output_dir, os.F_OK):
         os.mkdir(output_dir, MODE)
 
-    #-- finding all of the tar files in the AOD1b directory
+    # finding all of the tar files in the AOD1b directory
     input_tar_files = [tf for tf in os.listdir(grace_dir) if tx.match(tf)]
 
-    #-- for each tar file
+    # for each tar file
     for i in sorted(input_tar_files):
-        #-- extract the year and month from the file
+        # extract the year and month from the file
         YY,MM,SFX = tx.findall(i).pop()
         YY,MM = np.array([YY,MM], dtype=np.int64)
-        #-- output monthly geocenter file
+        # output monthly geocenter file
         FILE = f'AOD1B_{DREL}_{DSET}_{YY:4d}_{MM:02d}.txt'
-        #-- if output file exists: check if input tar file is newer
+        # if output file exists: check if input tar file is newer
         TEST = False
         OVERWRITE = ' (clobber)'
-        #-- check if output file exists
+        # check if output file exists
         if os.access(os.path.join(output_dir,FILE), os.F_OK):
-            #-- check last modification time of input and output files
+            # check last modification time of input and output files
             input_mtime = os.stat(os.path.join(grace_dir,i)).st_mtime
             output_mtime = os.stat(os.path.join(output_dir,FILE)).st_mtime
-            #-- if input tar file is newer: overwrite the output file
+            # if input tar file is newer: overwrite the output file
             if (input_mtime > output_mtime):
                 TEST = True
                 OVERWRITE = ' (overwrite)'
         else:
             TEST = True
             OVERWRITE = ' (new)'
-        #-- As there are so many files.. this will only read the new files
-        #-- or will rewrite if CLOBBER is set (if wanting something changed)
+        # As there are so many files.. this will only read the new files
+        # or will rewrite if CLOBBER is set (if wanting something changed)
         if TEST or CLOBBER:
-            #-- if verbose: output information about the geocenter file
+            # if verbose: output information about the geocenter file
             logging.info('{0}{1}'.format(os.path.join(output_dir,FILE),OVERWRITE))
-            #-- open output monthly geocenter file
+            # open output monthly geocenter file
             f = open(os.path.join(output_dir,FILE), 'w')
             args = ('Geocenter time series',DREL,DSET)
             print('# {0} from {1} AOD1b {2} Product'.format(*args), file=f)
@@ -181,43 +181,43 @@ def aod1b_geocenter(base_dir,
             args = ('ISO-Time','X','Y','Z')
             print('# {0:^15}    {1:^12} {2:^12} {3:^12}'.format(*args), file=f)
 
-            #-- open the AOD1B monthly tar file
+            # open the AOD1B monthly tar file
             tar = tarfile.open(name=os.path.join(grace_dir,i), mode='r:gz')
 
-            #-- Iterate over every member within the tar file
+            # Iterate over every member within the tar file
             for member in tar.getmembers():
-                #-- get calendar day from file
+                # get calendar day from file
                 DD,SFX = fx.findall(member.name).pop()
                 DD = np.int64(DD)
-                #-- open data file for day
+                # open data file for day
                 if (SFX == '.gz'):
                     fid = gzip.GzipFile(fileobj=tar.extractfile(member))
                 else:
                     fid = tar.extractfile(member)
-                #-- degree 1 spherical harmonics for day and hours
+                # degree 1 spherical harmonics for day and hours
                 DEG1 = geocenter()
                 DEG1.C10 = np.zeros((n_time))
                 DEG1.C11 = np.zeros((n_time))
                 DEG1.S11 = np.zeros((n_time))
                 hours = np.zeros((n_time),dtype=np.int64)
 
-                #-- create counter for hour in dataset
+                # create counter for hour in dataset
                 c = 0
-                #-- while loop ends when dataset is read
+                # while loop ends when dataset is read
                 while (c < n_time):
-                    #-- read line
+                    # read line
                     file_contents = fid.readline().decode('ISO-8859-1')
-                    #-- find file header for data product
+                    # find file header for data product
                     if bool(hx.search(file_contents)):
-                        #-- extract hour from header and convert to float
+                        # extract hour from header and convert to float
                         HH, = re.findall(r'(\d+):\d+:\d+',file_contents)
                         hours[c] = np.int64(HH)
-                        #-- read each line of spherical harmonics
+                        # read each line of spherical harmonics
                         for k in range(0,n_harm):
                             file_contents = fid.readline().decode('ISO-8859-1')
-                            #-- find numerical instances in the data line
+                            # find numerical instances in the data line
                             line_contents = rx.findall(file_contents)
-                            #-- spherical harmonic degree and order
+                            # spherical harmonic degree and order
                             l1 = np.int64(line_contents[0])
                             m1 = np.int64(line_contents[1])
                             if (l1 == 1) and (m1 == 0):
@@ -225,24 +225,24 @@ def aod1b_geocenter(base_dir,
                             elif (l1 == 1) and (m1 == 1):
                                 DEG1.C11[c] = np.float64(line_contents[2])
                                 DEG1.S11[c] = np.float64(line_contents[3])
-                        #-- add 1 to hour counter
+                        # add 1 to hour counter
                         c += 1
-                #-- close the input file for day
+                # close the input file for day
                 fid.close()
-                #-- convert from spherical harmonics into geocenter
+                # convert from spherical harmonics into geocenter
                 DEG1.to_cartesian()
-                #-- write to file for each hour (iterates each 6-hour block)
+                # write to file for each hour (iterates each 6-hour block)
                 for h,X,Y,Z in zip(hours,DEG1.X,DEG1.Y,DEG1.Z):
                     print(fstr.format(YY,MM,DD,h,X,Y,Z), file=f)
 
-            #-- close the tar file
+            # close the tar file
             tar.close()
-            #-- close the output file
+            # close the output file
             f.close()
-            #-- set the permissions mode of the output file
+            # set the permissions mode of the output file
             os.chmod(os.path.join(output_dir,FILE), MODE)
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Creates monthly files of geocenter variations
@@ -251,54 +251,54 @@ def arguments():
         fromfile_prefix_chars="@"
     )
     parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
-    #-- command line parameters
-    #-- working data directory
+    # command line parameters
+    # working data directory
     parser.add_argument('--directory','-D',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
-    #-- GRACE/GRACE-FO data release
+    # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
         metavar='DREL', type=str, default='',
         help='GRACE/GRACE-FO Data Release')
-    #-- GRACE/GRACE-FO level-1b dealiasing product
+    # GRACE/GRACE-FO level-1b dealiasing product
     parser.add_argument('--product','-p',
         metavar='DSET', type=str.lower, nargs='+',
         choices=['atm','ocn','glo','oba'],
         help='GRACE/GRACE-FO Level-1b data product')
-    #-- clobber will overwrite the existing data
+    # clobber will overwrite the existing data
     parser.add_argument('--clobber','-C',
         default=False, action='store_true',
         help='Overwrite existing data')
-    #-- verbose will output information about each output file
+    # verbose will output information about each output file
     parser.add_argument('--verbose','-V',
         action='count', default=0,
         help='Verbose output of processing run')
-    #-- permissions mode of the local directories and files (number in octal)
+    # permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permissions mode of output files')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
-    #-- Read the system arguments listed after the program
+    # Read the system arguments listed after the program
     parser = arguments()
     args,_ = parser.parse_known_args()
-    #-- create logger
+    # create logger
     loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
-    #-- for each entered AOD1B dataset
+    # for each entered AOD1B dataset
     for DSET in args.product:
-        #-- run AOD1b geocenter program with parameters
+        # run AOD1b geocenter program with parameters
         aod1b_geocenter(args.directory,
             DREL=args.release,
             DSET=DSET,
             CLOBBER=args.clobber,
             MODE=args.mode)
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()

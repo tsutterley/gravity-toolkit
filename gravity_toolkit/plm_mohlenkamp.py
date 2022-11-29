@@ -88,56 +88,56 @@ def plm_mohlenkamp(LMAX, x, MMAX=None):
     .. |ouml|    unicode:: U+00F6 .. LATIN SMALL LETTER O WITH DIAERESIS
     """
 
-    #-- Verify LMAX as integer
+    # Verify LMAX as integer
     LMAX = np.int64(LMAX)
-    #-- upper bound of spherical harmonic orders (default = LMAX)
+    # upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:
         MMAX = np.copy(LMAX)
 
-    #-- removing singleton dimensions of x
+    # removing singleton dimensions of x
     x = np.atleast_1d(x).flatten()
-    #-- length of the x array
+    # length of the x array
     sx = len(x)
 
-    #-- Initialize the output Legendre polynomials
+    # Initialize the output Legendre polynomials
     plm=np.zeros((LMAX+1,MMAX+1,sx))
-    #-- Jacobi polynomial for the recurrence relation
+    # Jacobi polynomial for the recurrence relation
     jlmm=np.zeros((LMAX+1,MMAX+1,sx))
-    #-- for x=cos(th): rsin= sin(th)
+    # for x=cos(th): rsin= sin(th)
     rsin=np.sqrt(1.0 - x**2)
 
-    #-- for all spherical harmonic orders of interest
-    for mm in range(0,MMAX+1):#-- equivalent to 0:MMAX
-        #-- Initialize the recurrence relation
-        #-- J-1,m,m Term == 0
-        #-- J0,m,m Term
+    # for all spherical harmonic orders of interest
+    for mm in range(0,MMAX+1):# equivalent to 0:MMAX
+        # Initialize the recurrence relation
+        # J-1,m,m Term == 0
+        # J0,m,m Term
         if (mm > 0):
-            #-- j ranges from 1 to mm for the product
+            # j ranges from 1 to mm for the product
             j = np.arange(0,mm)+1.0
             jlmm[0,mm,:] = np.prod(np.sqrt(1.0 + 1.0/(2.0*j)))/np.sqrt(2.0)
-        else: #-- if mm == 0: jlmm = 1/sqrt(2)
+        else: # if mm == 0: jlmm = 1/sqrt(2)
             jlmm[0,mm,:] = 1.0/np.sqrt(2.0)
-        #-- Jk,m,m Terms
-        for k in range(1, LMAX+1):#-- computation for SH degrees
-            #-- Initialization begins at -1
-            #-- this is to make the formula parallel the function written in
-            #-- Martin Mohlenkamp's Guide to Spherical Harmonics
-            #-- Jacobi General Terms
-            if (k == 1):#-- for degree 1 terms
+        # Jk,m,m Terms
+        for k in range(1, LMAX+1):# computation for SH degrees
+            # Initialization begins at -1
+            # this is to make the formula parallel the function written in
+            # Martin Mohlenkamp's Guide to Spherical Harmonics
+            # Jacobi General Terms
+            if (k == 1):# for degree 1 terms
                 jlmm[k,mm,:] = 2.0*x * jlmm[k-1,mm,:] * \
                     np.sqrt(1.0 + (mm - 0.5)/k) * \
                     np.sqrt(1.0 - (mm - 0.5)/(k + 2.0*mm))
-            else:#-- for all other spherical harmonic degrees
+            else:# for all other spherical harmonic degrees
                 jlmm[k,mm,:] = 2.0*x * jlmm[k-1,mm,:] * \
                     np.sqrt(1.0 + (mm - 0.5)/k) * \
                     np.sqrt(1.0 - (mm - 0.5)/(k + 2.0*mm)) - \
                     jlmm[k-2,mm,:] * np.sqrt(1.0 + 4.0/(2.0*k + 2.0*mm - 3.0)) * \
                     np.sqrt(1.0 - (1.0/k)) * np.sqrt(1.0 - 1.0/(k + 2.0*mm))
-        #-- Normalization is geodesy convention
-        for l in range(mm,LMAX+1): #-- equivalent to mm:LMAX
-            if (mm == 0):#-- Geodesy normalization (m=0) == sqrt(2)*sin(th)^0
-                #-- rsin^mm term is dropped as rsin^0 = 1
+        # Normalization is geodesy convention
+        for l in range(mm,LMAX+1): # equivalent to mm:LMAX
+            if (mm == 0):# Geodesy normalization (m=0) == sqrt(2)*sin(th)^0
+                # rsin^mm term is dropped as rsin^0 = 1
                 plm[l,mm,:] = np.sqrt(2.0)*jlmm[l-mm,mm,:]
-            else:#-- Geodesy normalization all others == 2*sin(th)^mm
+            else:# Geodesy normalization all others == 2*sin(th)^mm
                 plm[l,mm,:] = 2.0*(rsin**mm)*jlmm[l-mm,mm,:]
     return plm

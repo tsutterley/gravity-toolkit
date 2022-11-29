@@ -119,7 +119,7 @@ from gravity_toolkit.grace_input_months import grace_input_months
 from gravity_toolkit.harmonics import harmonics
 import gravity_toolkit.utilities as utilities
 
-#-- PURPOSE: keep track of threads
+# PURPOSE: keep track of threads
 def info(args):
     logging.info(os.path.basename(sys.argv[0]))
     logging.info(args)
@@ -128,8 +128,8 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
-#-- PURPOSE: import GRACE/GRACE-FO files for a given months range
-#-- calculate the mean of the spherical harmonics and output to file
+# PURPOSE: import GRACE/GRACE-FO files for a given months range
+# calculate the mean of the spherical harmonics and output to file
 def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
     START=None,
     END=None,
@@ -151,40 +151,40 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
     VERBOSE=0,
     MODE=0o775):
 
-    #-- output string for both LMAX==MMAX and LMAX != MMAX cases
+    # output string for both LMAX==MMAX and LMAX != MMAX cases
     MMAX = np.copy(LMAX) if not MMAX else MMAX
     order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
 
-    #-- data formats for output: ascii, netCDF4, HDF5, gfc
+    # data formats for output: ascii, netCDF4, HDF5, gfc
     suffix = dict(ascii='txt',netCDF4='nc',HDF5='H5',gfc='gfc')[MEANFORM]
 
-    #-- reading GRACE months for input date range
-    #-- replacing low-degree harmonics with SLR values if specified
-    #-- include degree 1 (geocenter) harmonics if specified
-    #-- correcting for Pole Tide Drift and Atmospheric Jumps if specified
+    # reading GRACE months for input date range
+    # replacing low-degree harmonics with SLR values if specified
+    # include degree 1 (geocenter) harmonics if specified
+    # correcting for Pole Tide Drift and Atmospheric Jumps if specified
     input_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX, SLR_21=SLR_21,
         SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C40=SLR_C40, SLR_C50=SLR_C50,
         DEG1_FILE=DEG1_FILE, MODEL_DEG1=MODEL_DEG1, ATM=ATM,
         POLE_TIDE=POLE_TIDE)
     grace_Ylms = harmonics().from_dict(input_Ylms)
-    #-- descriptor string for processing parameters
+    # descriptor string for processing parameters
     grace_str = input_Ylms['title']
-    #-- calculate mean Ylms
+    # calculate mean Ylms
     mean_Ylms = mean().from_harmonics(grace_Ylms.mean())
     mean_Ylms.time = np.mean(grace_Ylms.time)
     mean_Ylms.month = np.mean(grace_Ylms.month)
-    #-- number of months
+    # number of months
     nt = grace_Ylms.shape[-1]
-    #-- calculate RMS of harmonic errors
+    # calculate RMS of harmonic errors
     mean_Ylms.eclm = np.sqrt(np.sum(input_Ylms['eclm']**2,axis=2)/nt)
     mean_Ylms.eslm = np.sqrt(np.sum(input_Ylms['eslm']**2,axis=2)/nt)
-    #-- product information
+    # product information
     mean_Ylms.center = PROC
     mean_Ylms.release = DREL
     mean_Ylms.product = DSET
 
-    #-- default output filename if not entering via parameter file
+    # default output filename if not entering via parameter file
     if not MEAN_FILE:
         DIRECTORY = os.path.expanduser(input_Ylms['directory'])
         args = (PROC,DREL,DSET,grace_str,LMAX,order_str,START,END,suffix)
@@ -192,24 +192,24 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
         MEAN_FILE = os.path.join(DIRECTORY,file_format.format(*args))
     else:
         DIRECTORY = os.path.dirname(MEAN_FILE)
-    #-- recursively create output directory if non-existent
+    # recursively create output directory if non-existent
     if not os.access(DIRECTORY, os.F_OK):
         os.makedirs(DIRECTORY, MODE)
 
-    #-- output spherical harmonics for the static field
+    # output spherical harmonics for the static field
     if (MEANFORM == 'gfc'):
-        #-- output mean field to gfc format
+        # output mean field to gfc format
         mean_Ylms.to_gfc(MEAN_FILE, verbose=VERBOSE)
     else:
-        #-- output mean field to specified file format
+        # output mean field to specified file format
         mean_Ylms.to_file(MEAN_FILE, format=MEANFORM, verbose=VERBOSE)
-    #-- change the permissions mode
+    # change the permissions mode
     os.chmod(MEAN_FILE, MODE)
 
-    #-- return the output file
+    # return the output file
     return MEAN_FILE
 
-#-- PURPOSE: additional routines for the harmonics module
+# PURPOSE: additional routines for the harmonics module
 class mean(harmonics):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -224,7 +224,7 @@ class mean(harmonics):
         Convert a harmonics object to a new mean object
         """
         self = mean(lmax=temp.lmax, mmax=temp.mmax)
-        #-- try to assign variables to self
+        # try to assign variables to self
         for key in ['clm','slm','eclm','eslm','shape','ndim','filename',
             'center','release','product']:
             try:
@@ -232,7 +232,7 @@ class mean(harmonics):
                 setattr(self, key, np.copy(val))
             except AttributeError:
                 pass
-        #-- assign ndim and shape attributes
+        # assign ndim and shape attributes
         self.update_dimensions()
         return self
 
@@ -245,28 +245,28 @@ class mean(harmonics):
             keyword arguments for gfc output
         """
         self.filename = os.path.expanduser(filename)
-        #-- set default verbosity
+        # set default verbosity
         kwargs.setdefault('verbose',False)
         logging.info(self.filename)
-        #-- open the output file
+        # open the output file
         fid = open(self.filename, 'w')
-        #-- print the header informat
+        # print the header informat
         self.print_header(fid)
-        #-- output file format
+        # output file format
         file_format = ('{0:3} {1:4d} {2:4d} {3:+18.12E} {4:+18.12E}  '
             '{5:11.5E}  {6:11.5E}')
-        #-- write to file for each spherical harmonic degree and order
+        # write to file for each spherical harmonic degree and order
         for m in range(0, self.mmax+1):
             for l in range(m, self.lmax+1):
                 args = ('gfc', l, m, self.clm[l,m], self.slm[l,m],
                     self.eclm[l,m], self.eslm[l,m])
                 print(file_format.format(*args), file=fid)
-        #-- close the output file
+        # close the output file
         fid.close()
 
-    #-- PURPOSE: print gfc header to top of file
+    # PURPOSE: print gfc header to top of file
     def print_header(self, fid):
-        #-- print header
+        # print header
         fid.write('{0} {1}\n'.format('begin_of_head',73*'='))
         fid.write('{0:30}{1}\n'.format('product_type','gravity_field'))
         fid.write('{0:30}{1}\n'.format('center',self.center))
@@ -282,45 +282,45 @@ class mean(harmonics):
         fid.write('\n{0:7}{1:5}{2:10}{3:20}{4:15}{5:13}{6:7}\n'.format(*args))
         fid.write('{0} {1}\n'.format('end_of_head',75*'='))
 
-#-- PURPOSE: print a file log for the GRACE/GRACE-FO mean program
+# PURPOSE: print a file log for the GRACE/GRACE-FO mean program
 def output_log_file(arguments,output_file):
-    #-- format: GRACE_mean_run_2002-04-01_PID-70335.log
+    # format: GRACE_mean_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_mean_run_{0}_PID-{1:d}.log'.format(*args)
-    #-- create a unique log and open the log file
+    # create a unique log and open the log file
     DIRECTORY = os.path.expanduser(arguments.directory)
     fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
-    #-- print argument values sorted alphabetically
+    # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
     for arg, value in sorted(vars(arguments).items()):
         logging.info('{0}: {1}'.format(arg, value))
-    #-- print output files
+    # print output files
     logging.info('\n\nOUTPUT FILE:')
     logging.info('{0}'.format(output_file))
-    #-- close the log file
+    # close the log file
     fid.close()
 
-#-- PURPOSE: print a error file log for the GRACE/GRACE-FO mean program
+# PURPOSE: print a error file log for the GRACE/GRACE-FO mean program
 def output_error_log_file(arguments):
-    #-- format: GRACE_mean_failed_run_2002-04-01_PID-70335.log
+    # format: GRACE_mean_failed_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_mean_failed_run_{0}_PID-{1:d}.log'.format(*args)
-    #-- create a unique log and open the log file
+    # create a unique log and open the log file
     DIRECTORY = os.path.expanduser(arguments.directory)
     fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
-    #-- print argument values sorted alphabetically
+    # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
     for arg, value in sorted(vars(arguments).items()):
         logging.info('{0}: {1}'.format(arg, value))
-    #-- print traceback error
+    # print traceback error
     logging.info('\n\nTRACEBACK ERROR:')
     traceback.print_exc(file=fid)
-    #-- close the log file
+    # close the log file
     fid.close()
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Calculates the temporal mean of the GRACE/GRACE-FO
@@ -329,32 +329,32 @@ def arguments():
         fromfile_prefix_chars="@"
     )
     parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
-    #-- command line parameters
-    #-- working data directory
+    # command line parameters
+    # working data directory
     parser.add_argument('--directory','-D',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
-    #-- Data processing center or satellite mission
+    # Data processing center or satellite mission
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, required=True,
         help='GRACE/GRACE-FO Processing Center')
-    #-- GRACE/GRACE-FO data release
+    # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
         metavar='DREL', type=str, default='RL06',
         help='GRACE/GRACE-FO Data Release')
-    #-- GRACE/GRACE-FO Level-2 data product
+    # GRACE/GRACE-FO Level-2 data product
     parser.add_argument('--product','-p',
         metavar='DSET', type=str, default='GSM',
         help='GRACE/GRACE-FO Level-2 data product')
-    #-- maximum spherical harmonic degree and order
+    # maximum spherical harmonic degree and order
     parser.add_argument('--lmax','-l',
         type=int, default=60,
         help='Maximum spherical harmonic degree')
     parser.add_argument('--mmax','-m',
         type=int, default=None,
         help='Maximum spherical harmonic order')
-    #-- start and end GRACE/GRACE-FO months
+    # start and end GRACE/GRACE-FO months
     parser.add_argument('--start','-S',
         type=int, default=4,
         help='Starting GRACE/GRACE-FO month')
@@ -366,25 +366,25 @@ def arguments():
     parser.add_argument('--missing','-N',
         metavar='MISSING', type=int, nargs='+', default=MISSING,
         help='Missing GRACE/GRACE-FO months')
-    #-- use atmospheric jump corrections from Fagiolini et al. (2015)
+    # use atmospheric jump corrections from Fagiolini et al. (2015)
     parser.add_argument('--atm-correction',
         default=False, action='store_true',
         help='Apply atmospheric jump correction coefficients')
-    #-- correct for pole tide drift follow Wahr et al. (2015)
+    # correct for pole tide drift follow Wahr et al. (2015)
     parser.add_argument('--pole-tide',
         default=False, action='store_true',
         help='Correct for pole tide drift')
-    #-- Update Degree 1 coefficients with SLR or derived values
-    #-- Tellus: GRACE/GRACE-FO TN-13 from PO.DAAC
-    #--     https://grace.jpl.nasa.gov/data/get-data/geocenter/
-    #-- SLR: satellite laser ranging from CSR
-    #--     ftp://ftp.csr.utexas.edu/pub/slr/geocenter/
-    #-- UCI: Sutterley and Velicogna, Remote Sensing (2019)
-    #--     https://www.mdpi.com/2072-4292/11/18/2108
-    #-- Swenson: GRACE-derived coefficients from Sean Swenson
-    #--     https://doi.org/10.1029/2007JB005338
-    #-- GFZ: GRACE/GRACE-FO coefficients from GFZ GravIS
-    #--     http://gravis.gfz-potsdam.de/corrections
+    # Update Degree 1 coefficients with SLR or derived values
+    # Tellus: GRACE/GRACE-FO TN-13 from PO.DAAC
+    #     https://grace.jpl.nasa.gov/data/get-data/geocenter/
+    # SLR: satellite laser ranging from CSR
+    #     ftp://ftp.csr.utexas.edu/pub/slr/geocenter/
+    # UCI: Sutterley and Velicogna, Remote Sensing (2019)
+    #     https://www.mdpi.com/2072-4292/11/18/2108
+    # Swenson: GRACE-derived coefficients from Sean Swenson
+    #     https://doi.org/10.1029/2007JB005338
+    # GFZ: GRACE/GRACE-FO coefficients from GFZ GravIS
+    #     http://gravis.gfz-potsdam.de/corrections
     parser.add_argument('--geocenter',
         metavar='DEG1', type=str,
         choices=['Tellus','SLR','SLF','UCI','Swenson','GFZ'],
@@ -395,7 +395,7 @@ def arguments():
     parser.add_argument('--interpolate-geocenter',
         default=False, action='store_true',
         help='Least-squares model missing Degree 1 coefficients')
-    #-- replace low degree harmonics with values from Satellite Laser Ranging
+    # replace low degree harmonics with values from Satellite Laser Ranging
     parser.add_argument('--slr-c20',
         type=str, default=None, choices=['CSR','GFZ','GSFC'],
         help='Replace C20 coefficients with SLR values')
@@ -414,45 +414,45 @@ def arguments():
     parser.add_argument('--slr-c50',
         type=str, default=None, choices=['CSR','GSFC','LARES'],
         help='Replace C50 coefficients with SLR values')
-    #-- mean file to remove
+    # mean file to remove
     parser.add_argument('--mean-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='Output GRACE/GRACE-FO mean file')
-    #-- input data format (ascii, netCDF4, HDF5, gfc)
+    # input data format (ascii, netCDF4, HDF5, gfc)
     parser.add_argument('--mean-format',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5','gfc'],
         help='Output data format for GRACE/GRACE-FO mean file')
-    #-- Output log file for each job in forms
-    #-- GRACE_mean_run_2002-04-01_PID-00000.log
-    #-- GRACE_mean_failed_run_2002-04-01_PID-00000.log
+    # Output log file for each job in forms
+    # GRACE_mean_run_2002-04-01_PID-00000.log
+    # GRACE_mean_failed_run_2002-04-01_PID-00000.log
     parser.add_argument('--log',
         default=False, action='store_true',
         help='Output log file for each job')
-    #-- print information about each input and output file
+    # print information about each input and output file
     parser.add_argument('--verbose','-V',
         action='count', default=0,
         help='Verbose output of run')
-    #-- permissions mode of the local directories and files (number in octal)
+    # permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permissions mode of output files')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
-    #-- Read the system arguments listed after the program
+    # Read the system arguments listed after the program
     parser = arguments()
     args,_ = parser.parse_known_args()
 
-    #-- create logger
+    # create logger
     loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
-    #-- try to run the analysis with listed parameters
+    # try to run the analysis with listed parameters
     try:
         info(args)
-        #-- run grace_mean_harmonics algorithm with parameters
+        # run grace_mean_harmonics algorithm with parameters
         output_file = grace_mean_harmonics(
             args.directory,
             args.center,
@@ -479,17 +479,17 @@ def main():
             VERBOSE=args.verbose,
             MODE=args.mode)
     except Exception as e:
-        #-- if there has been an error exception
-        #-- print the type, value, and stack trace of the
-        #-- current exception being handled
+        # if there has been an error exception
+        # print the type, value, and stack trace of the
+        # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
-        if args.log:#-- write failed job completion log file
+        if args.log:# write failed job completion log file
             output_error_log_file(args)
     else:
-        if args.log:#-- write successful job completion log file
+        if args.log:# write successful job completion log file
             output_log_file(args,output_file)
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()
