@@ -112,7 +112,7 @@ from gravity_toolkit.harmonics import harmonics
 from gravity_toolkit.spatial import spatial
 from gravity_toolkit.units import units
 
-#-- PURPOSE: keep track of threads
+# PURPOSE: keep track of threads
 def info(args):
     logging.info(os.path.basename(sys.argv[0]))
     logging.info(args)
@@ -121,7 +121,7 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
-#-- PURPOSE: converts from the spherical harmonic domain into the spatial domain
+# PURPOSE: converts from the spherical harmonic domain into the spatial domain
 def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     LMAX=None,
     MMAX=None,
@@ -139,164 +139,164 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     DATAFORM=None,
     MODE=0o775):
 
-    #-- verify that output directory exists
+    # verify that output directory exists
     DIRECTORY = os.path.abspath(os.path.dirname(OUTPUT_FILE))
     if not os.access(DIRECTORY, os.F_OK):
         os.makedirs(DIRECTORY,MODE,exist_ok=True)
 
-    #-- upper bound of spherical harmonic orders (default = LMAX)
+    # upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:
         MMAX = np.copy(LMAX)
 
-    #-- read input spherical harmonic coefficients from file in DATAFORM
+    # read input spherical harmonic coefficients from file in DATAFORM
     if (DATAFORM == 'ascii'):
         input_Ylms = harmonics().from_ascii(INPUT_FILE)
     elif (DATAFORM == 'netCDF4'):
-        #-- read input netCDF4 file (.nc)
+        # read input netCDF4 file (.nc)
         input_Ylms = harmonics().from_netCDF4(INPUT_FILE)
     elif (DATAFORM == 'HDF5'):
-        #-- read input HDF5 file (.H5)
+        # read input HDF5 file (.H5)
         input_Ylms = harmonics().from_HDF5(INPUT_FILE)
-    #-- reform harmonic dimensions to be l,m,t
-    #-- truncate to degree and order LMAX, MMAX
+    # reform harmonic dimensions to be l,m,t
+    # truncate to degree and order LMAX, MMAX
     input_Ylms = input_Ylms.truncate(lmax=LMAX, mmax=MMAX).expand_dims()
-    #-- remove mean file from input Ylms
+    # remove mean file from input Ylms
     if MEAN_FILE and (DATAFORM == 'ascii'):
         mean_Ylms = harmonics().from_ascii(MEAN_FILE,date=False)
         input_Ylms.subtract(mean_Ylms)
     elif MEAN_FILE and (DATAFORM == 'netCDF4'):
-        #-- read input netCDF4 file (.nc)
+        # read input netCDF4 file (.nc)
         mean_Ylms = harmonics().from_netCDF4(MEAN_FILE,date=False)
         input_Ylms.subtract(mean_Ylms)
     elif MEAN_FILE and (DATAFORM == 'HDF5'):
-        #-- read input HDF5 file (.H5)
+        # read input HDF5 file (.H5)
         mean_Ylms = harmonics().from_HDF5(MEAN_FILE,date=False)
         input_Ylms.subtract(mean_Ylms)
 
-    #-- read arrays of kl, hl, and ll Love Numbers
+    # read arrays of kl, hl, and ll Love Numbers
     hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE)
 
-    #-- distribute total mass uniformly over the ocean
+    # distribute total mass uniformly over the ocean
     if REDISTRIBUTE:
-        #-- read Land-Sea Mask and convert to spherical harmonics
+        # read Land-Sea Mask and convert to spherical harmonics
         ocean_Ylms = ocean_stokes(LANDMASK, LMAX, MMAX=MMAX, LOVE=(hl,kl,ll))
-        #-- calculate ratio between total mass and a uniformly distributed
-        #-- layer of water over the ocean
+        # calculate ratio between total mass and a uniformly distributed
+        # layer of water over the ocean
         ratio = input_Ylms.clm[0,0,:]/ocean_Ylms.clm[0,0]
-        #-- for each spherical harmonic
-        for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
-            for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
-                #-- remove the ratio*ocean Ylms from Ylms
-                #-- note: x -= y is equivalent to x = x - y
+        # for each spherical harmonic
+        for m in range(0,MMAX+1):# MMAX+1 to include MMAX
+            for l in range(m,LMAX+1):# LMAX+1 to include LMAX
+                # remove the ratio*ocean Ylms from Ylms
+                # note: x -= y is equivalent to x = x - y
                 input_Ylms.clm[l,m,:] -= ratio*ocean_Ylms.clm[l,m]
                 input_Ylms.slm[l,m,:] -= ratio*ocean_Ylms.slm[l,m]
 
-    #-- if using a decorrelation filter (Isabella's destriping Routine)
+    # if using a decorrelation filter (Isabella's destriping Routine)
     if DESTRIPE:
         input_Ylms = input_Ylms.destripe()
 
-    #-- Gaussian smoothing
+    # Gaussian smoothing
     if (RAD != 0):
         wt = 2.0*np.pi*gauss_weights(RAD,LMAX)
     else:
         wt = np.ones((LMAX+1))
 
-    #-- Output spatial data
+    # Output spatial data
     grid = spatial()
     grid.time = np.copy(input_Ylms.time)
     grid.month = np.copy(input_Ylms.month)
     nt = len(input_Ylms.time)
 
-    #-- Output Degree Spacing
+    # Output Degree Spacing
     dlon,dlat = (DDEG[0],DDEG[0]) if (len(DDEG) == 1) else (DDEG[0],DDEG[1])
-    #-- Output Degree Interval
+    # Output Degree Interval
     if (INTERVAL == 1):
-        #-- (0:360,90:-90)
+        # (0:360,90:-90)
         nlon = np.int64((360.0/dlon)+1.0)
         nlat = np.int64((180.0/dlat)+1.0)
         grid.lon = dlon*np.arange(0,nlon)
         grid.lat = 90.0 - dlat*np.arange(0,nlat)
     elif (INTERVAL == 2):
-        #-- (Degree spacing)/2
+        # (Degree spacing)/2
         grid.lon = np.arange(dlon/2.0,360+dlon/2.0,dlon)
         grid.lat = np.arange(90.0-dlat/2.0,-90.0-dlat/2.0,-dlat)
         nlon = len(grid.lon)
         nlat = len(grid.lat)
     elif (INTERVAL == 3):
-        #-- non-global grid set with BOUNDS parameter
+        # non-global grid set with BOUNDS parameter
         minlon,maxlon,minlat,maxlat = BOUNDS.copy()
         grid.lon = np.arange(minlon+dlon/2.0,maxlon+dlon/2.0,dlon)
         grid.lat = np.arange(maxlat-dlat/2.0,minlat-dlat/2.0,-dlat)
         nlon = len(grid.lon)
         nlat = len(grid.lat)
-    #-- output spatial grid
+    # output spatial grid
     grid.data = np.zeros((nlat,nlon,nt))
     grid.mask = np.zeros((nlat,nlon,nt), dtype=bool)
-    #-- update attributes
+    # update attributes
     grid.update_spacing()
     grid.update_extents()
     grid.update_dimensions()
 
-    #-- Setting units factor for output
-    #-- dfactor computes the degree dependent coefficients
+    # Setting units factor for output
+    # dfactor computes the degree dependent coefficients
     if (UNITS == 1):
-        #-- 1: cmwe, centimeters water equivalent
+        # 1: cmwe, centimeters water equivalent
         dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).cmwe
     elif (UNITS == 2):
-        #-- 2: mmGH, millimeters geoid height
+        # 2: mmGH, millimeters geoid height
         dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).mmGH
     elif (UNITS == 3):
-        #-- 3: mmCU, millimeters elastic crustal deformation
+        # 3: mmCU, millimeters elastic crustal deformation
         dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).mmCU
     elif (UNITS == 4):
-        #-- 4: micGal, microGal gravity perturbations
+        # 4: micGal, microGal gravity perturbations
         dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).microGal
     elif (UNITS == 5):
-        #-- 5: mbar, millibars equivalent surface pressure
+        # 5: mbar, millibars equivalent surface pressure
         dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).mbar
     else:
         raise ValueError(f'Invalid units code {UNITS:d}')
 
-    #-- Computing plms for converting to spatial domain
+    # Computing plms for converting to spatial domain
     theta = (90.0-grid.lat)*np.pi/180.0
     PLM, dPLM = plm_holmes(LMAX, np.cos(theta))
 
-    #-- converting harmonics to truncated, smoothed coefficients in output units
+    # converting harmonics to truncated, smoothed coefficients in output units
     for t in range(nt):
-        #-- spherical harmonics for time t
+        # spherical harmonics for time t
         Ylms = input_Ylms.index(t)
         Ylms.convolve(dfactor*wt)
-        #-- convert spherical harmonics to output spatial grid
+        # convert spherical harmonics to output spatial grid
         grid.data[:,:,t] = harmonic_summation(Ylms.clm, Ylms.slm,
             grid.lon, grid.lat, LMAX=LMAX, PLM=PLM).T
 
-    #-- outputting data to file
+    # outputting data to file
     output_data(grid.squeeze(), FILENAME=OUTPUT_FILE,
         DATAFORM=DATAFORM, UNITS=UNITS)
-    #-- change output permissions level to MODE
+    # change output permissions level to MODE
     os.chmod(OUTPUT_FILE,MODE)
 
-#-- PURPOSE: wrapper function for outputting data to file
+# PURPOSE: wrapper function for outputting data to file
 def output_data(data, FILENAME=None, DATAFORM=None, UNITS=None):
-    #-- output units and units longname
+    # output units and units longname
     unit_short = ['cmwe', 'mmGH', 'mmCU', 'microGal', 'mbar']
     unit_name = ['Equivalent Water Thickness', 'Geoid Height',
         'Elastic Crustal Uplift', 'Gravitational Undulation',
         'Equivalent Surface Pressure']
     if (DATAFORM == 'ascii'):
-        #-- ascii (.txt)
+        # ascii (.txt)
         data.to_ascii(FILENAME)
     elif (DATAFORM == 'netCDF4'):
-        #-- netcdf (.nc)
+        # netcdf (.nc)
         data.to_netCDF4(FILENAME, units=unit_short[UNITS-1],
             longname=unit_name[UNITS-1])
     elif (DATAFORM == 'HDF5'):
-        #-- HDF5 (.H5)
+        # HDF5 (.H5)
         data.to_HDF5(FILENAME, units=unit_short[UNITS-1],
             longname=unit_name[UNITS-1])
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Converts a file from the spherical harmonic
@@ -305,46 +305,46 @@ def arguments():
         fromfile_prefix_chars="@"
     )
     parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
-    #-- command line parameters
-    #-- input and output file
+    # command line parameters
+    # input and output file
     parser.add_argument('infile',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='?',
         help='Input harmonic file')
     parser.add_argument('outfile',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='?',
         help='Output spatial file')
-    #-- maximum spherical harmonic degree and order
+    # maximum spherical harmonic degree and order
     parser.add_argument('--lmax','-l',
         type=int, default=60,
         help='Maximum spherical harmonic degree')
     parser.add_argument('--mmax','-m',
         type=int, default=None,
         help='Maximum spherical harmonic order')
-    #-- different treatments of the load Love numbers
-    #-- 0: Han and Wahr (1995) values from PREM
-    #-- 1: Gegout (2005) values from PREM
-    #-- 2: Wang et al. (2012) values from PREM
+    # different treatments of the load Love numbers
+    # 0: Han and Wahr (1995) values from PREM
+    # 1: Gegout (2005) values from PREM
+    # 2: Wang et al. (2012) values from PREM
     parser.add_argument('--love','-n',
         type=int, default=0, choices=[0,1,2],
         help='Treatment of the Load Love numbers')
-    #-- option for setting reference frame for gravitational load love number
-    #-- reference frame options (CF, CM, CE)
+    # option for setting reference frame for gravitational load love number
+    # reference frame options (CF, CM, CE)
     parser.add_argument('--reference',
         type=str.upper, default='CF', choices=['CF','CM','CE'],
         help='Reference frame for load Love numbers')
-    #-- Gaussian smoothing radius (km)
+    # Gaussian smoothing radius (km)
     parser.add_argument('--radius','-R',
         type=float, default=0,
         help='Gaussian smoothing radius (km)')
-    #-- Use a decorrelation (destriping) filter
+    # Use a decorrelation (destriping) filter
     parser.add_argument('--destripe','-d',
         default=False, action='store_true',
         help='Verbose output of run')
-    #-- output units
+    # output units
     parser.add_argument('--units','-U',
         type=int, default=1, choices=[1,2,3,4,5],
         help='Output units')
-    #-- output grid parameters
+    # output grid parameters
     parser.add_argument('--spacing','-S',
         type=float, nargs='+', default=[0.5,0.5], metavar=('dlon','dlat'),
         help='Spatial resolution of output data')
@@ -355,45 +355,45 @@ def arguments():
     parser.add_argument('--bounds','-B',
         type=float, nargs=4, metavar=('lon_min','lon_max','lat_min','lat_max'),
         help='Bounding box for non-global grid')
-    #-- redistribute total mass over the ocean
+    # redistribute total mass over the ocean
     parser.add_argument('--redistribute-mass',
         default=False, action='store_true',
         help='Redistribute total mass over the ocean')
-    #-- land-sea mask for redistributing over the ocean
+    # land-sea mask for redistributing over the ocean
     lsmask = utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
         help='Land-sea mask for redistributing over the ocean')
-    #-- mean file to remove
+    # mean file to remove
     parser.add_argument('--mean',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='Mean file to remove from the harmonic data')
-    #-- input and output data format (ascii, netCDF4, HDF5)
+    # input and output data format (ascii, netCDF4, HDF5)
     parser.add_argument('--format','-F',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
         help='Input and output data format')
-    #-- print information about each input and output file
+    # print information about each input and output file
     parser.add_argument('--verbose','-V',
         action='count', default=0,
         help='Verbose output of run')
-    #-- permissions mode of the output files (octal)
+    # permissions mode of the output files (octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permissions mode of output files')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
-    #-- Read the system arguments listed after the program
+    # Read the system arguments listed after the program
     parser = arguments()
     args,_ = parser.parse_known_args()
 
-    #-- create logger
+    # create logger
     loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
-    #-- run program with parameters
+    # run program with parameters
     try:
         info(args)
         combine_harmonics(args.infile, args.outfile,
@@ -413,12 +413,12 @@ def main():
             DATAFORM=args.format,
             MODE=args.mode)
     except Exception as e:
-        #-- if there has been an error exception
-        #-- print the type, value, and stack trace of the
-        #-- current exception being handled
+        # if there has been an error exception
+        # print the type, value, and stack trace of the
+        # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()

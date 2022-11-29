@@ -125,7 +125,7 @@ from gravity_toolkit.ocean_stokes import ocean_stokes
 from gravity_toolkit.harmonics import harmonics
 from gravity_toolkit.units import units
 
-#-- PURPOSE: keep track of threads
+# PURPOSE: keep track of threads
 def info(args):
     logging.info(os.path.basename(sys.argv[0]))
     logging.info(args)
@@ -134,12 +134,12 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
-#-- PURPOSE: tilde-compress a file path string
+# PURPOSE: tilde-compress a file path string
 def tilde_compress(file_path):
     return file_path.replace(os.path.expanduser('~'),'~')
 
-#-- PURPOSE: Reconstruct spherical harmonic fields from the mascon
-#-- time series calculated in calc_mascon
+# PURPOSE: Reconstruct spherical harmonic fields from the mascon
+# time series calculated in calc_mascon
 def mascon_reconstruct(DSET, LMAX, RAD,
     START=None,
     END=None,
@@ -158,125 +158,125 @@ def mascon_reconstruct(DSET, LMAX, RAD,
     OUTPUT_DIRECTORY=None,
     MODE=0o775):
 
-    #-- for datasets not GSM: will add a label for the dataset
+    # for datasets not GSM: will add a label for the dataset
     dset_str = '' if (DSET == 'GSM') else f'_{DSET}'
-    #-- atmospheric ECMWF "jump" flag (if ATM)
+    # atmospheric ECMWF "jump" flag (if ATM)
     atm_str = '_wATM' if ATM else ''
-    #-- Gaussian smoothing string for radius RAD
+    # Gaussian smoothing string for radius RAD
     gw_str = f'_r{RAD:0.0f}km' if (RAD != 0) else ''
-    #-- input GIA spherical harmonic datafiles
+    # input GIA spherical harmonic datafiles
     GIA_Ylms_rate = read_GIA_model(GIA_FILE,GIA=GIA,LMAX=LMAX,MMAX=MMAX)
     gia_str = '_{0}'.format(GIA_Ylms_rate['title']) if GIA else ''
-    #-- output string for both LMAX==MMAX and LMAX != MMAX cases
+    # output string for both LMAX==MMAX and LMAX != MMAX cases
     MMAX = np.copy(LMAX) if not MMAX else MMAX
     order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
-    #-- filter grace coefficients flag
+    # filter grace coefficients flag
     ds_str = '_FL' if DESTRIPE else ''
-    #-- output filename suffix
+    # output filename suffix
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
-    #-- file parser for reading index files
-    #-- removes commented lines (can comment out files in the index)
-    #-- removes empty lines (if there are extra empty lines)
+    # file parser for reading index files
+    # removes commented lines (can comment out files in the index)
+    # removes empty lines (if there are extra empty lines)
     parser = re.compile(r'^(?!\#|\%|$)', re.VERBOSE)
 
-    #-- create initial reconstruct index for calc_mascon.py
+    # create initial reconstruct index for calc_mascon.py
     fid = open(RECONSTRUCT_FILE,'w')
-    #-- output file format
+    # output file format
     file_format = '{0}{1}{2}{3}{4}_L{5:d}{6}{7}{8}_{9:03d}-{10:03d}.{11}'
 
-    #-- read load love numbers
+    # read load love numbers
     hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE)
-    #-- Earth Parameters
+    # Earth Parameters
     factors = units(lmax=LMAX).harmonic(hl,kl,ll)
-    #-- Average Density of the Earth [g/cm^3]
+    # Average Density of the Earth [g/cm^3]
     rho_e = factors.rho_e
-    #-- Average Radius of the Earth [cm]
+    # Average Radius of the Earth [cm]
     rad_e = factors.rad_e
-    #-- Read Ocean function and convert to Ylms for redistribution
+    # Read Ocean function and convert to Ylms for redistribution
     if REDISTRIBUTE_MASCONS:
-        #-- read Land-Sea Mask and convert to spherical harmonics
+        # read Land-Sea Mask and convert to spherical harmonics
         ocean_Ylms = ocean_stokes(LANDMASK,LMAX,MMAX=MMAX,LOVE=(hl,kl,ll))
         ocean_str = '_OCN'
     else:
-        #-- not distributing uniformly over ocean
+        # not distributing uniformly over ocean
         ocean_str = ''
 
-    #-- input mascon spherical harmonic datafiles
+    # input mascon spherical harmonic datafiles
     with open(MASCON_FILE, mode='r', encoding='utf8') as f:
         mascon_files = [l for l in f.read().splitlines() if parser.match(l)]
     for k,fi in enumerate(mascon_files):
-        #-- read mascon spherical harmonics
+        # read mascon spherical harmonics
         if (DATAFORM == 'ascii'):
-            #-- ascii (.txt)
+            # ascii (.txt)
             Ylms=harmonics().from_ascii(os.path.expanduser(fi),date=False)
         elif (DATAFORM == 'netCDF4'):
-            #-- netcdf (.nc)
+            # netcdf (.nc)
             Ylms=harmonics().from_netCDF4(os.path.expanduser(fi),date=False)
         elif (DATAFORM == 'HDF5'):
-            #-- HDF5 (.H5)
+            # HDF5 (.H5)
             Ylms=harmonics().from_HDF5(os.path.expanduser(fi),date=False)
-        #-- Calculating the total mass of each mascon (1 cmwe uniform)
+        # Calculating the total mass of each mascon (1 cmwe uniform)
         total_area = 4.0*np.pi*(rad_e**3)*rho_e*Ylms.clm[0,0]/3.0
-        #-- distribute mascon mass uniformly over the ocean
+        # distribute mascon mass uniformly over the ocean
         if REDISTRIBUTE_MASCONS:
-            #-- calculate ratio between total mascon mass and
-            #-- a uniformly distributed cm of water over the ocean
+            # calculate ratio between total mascon mass and
+            # a uniformly distributed cm of water over the ocean
             ratio = Ylms.clm[0,0]/ocean_Ylms.clm[0,0]
-            #-- for each spherical harmonic
-            for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
-                for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
-                    #-- remove ratio*ocean Ylms from mascon Ylms
-                    #-- note: x -= y is equivalent to x = x - y
+            # for each spherical harmonic
+            for m in range(0,MMAX+1):# MMAX+1 to include MMAX
+                for l in range(m,LMAX+1):# LMAX+1 to include LMAX
+                    # remove ratio*ocean Ylms from mascon Ylms
+                    # note: x -= y is equivalent to x = x - y
                     Ylms.clm[l,m] -= ratio*ocean_Ylms.clm[l,m]
                     Ylms.slm[l,m] -= ratio*ocean_Ylms.slm[l,m]
-        #-- truncate mascon spherical harmonics to d/o LMAX/MMAX
+        # truncate mascon spherical harmonics to d/o LMAX/MMAX
         Ylms = Ylms.truncate(lmax=LMAX, mmax=MMAX)
-        #-- mascon base is the file without directory or suffix
+        # mascon base is the file without directory or suffix
         mascon_base = os.path.basename(fi)
         mascon_base = os.path.splitext(mascon_base)[0]
-        #-- if lower case, will capitalize
+        # if lower case, will capitalize
         mascon_base = mascon_base.upper()
-        #-- if mascon name contains degree and order info, remove
+        # if mascon name contains degree and order info, remove
         mascon_name = mascon_base.replace(f'_L{LMAX:d}', '')
 
-        #-- input filename format (for both LMAX==MMAX and LMAX != MMAX cases):
-        #-- mascon name, GRACE dataset, GIA model, LMAX, (MMAX,)
-        #-- Gaussian smoothing, filter flag, remove reconstructed fields flag
-        #-- output GRACE error file
+        # input filename format (for both LMAX==MMAX and LMAX != MMAX cases):
+        # mascon name, GRACE dataset, GIA model, LMAX, (MMAX,)
+        # Gaussian smoothing, filter flag, remove reconstructed fields flag
+        # output GRACE error file
         args = (mascon_name,dset_str,gia_str.upper(),atm_str,ocean_str,
             LMAX,order_str,gw_str,ds_str)
         file_input = '{0}{1}{2}{3}{4}_L{5:d}{6}{7}{8}.txt'.format(*args)
         mascon_data_input=np.loadtxt(os.path.join(OUTPUT_DIRECTORY,file_input))
 
-        #-- convert mascon time-series from Gt to cmwe
+        # convert mascon time-series from Gt to cmwe
         mascon_sigma = 1e15*mascon_data_input[:,2]/total_area
-        #-- mascon time-series Ylms
+        # mascon time-series Ylms
         mascon_Ylms = Ylms.scale(mascon_sigma)
         mascon_Ylms.time = mascon_data_input[:,1].copy()
         mascon_Ylms.month = mascon_data_input[:,0].astype(np.int64)
 
-        #-- output to file: no ascii option
+        # output to file: no ascii option
         args = (mascon_name,dset_str,gia_str.upper(),atm_str,ocean_str,
             LMAX,order_str,gw_str,ds_str,START,END,suffix[DATAFORM])
         FILE = file_format.format(*args)
-        #-- output harmonics to file
+        # output harmonics to file
         if (DATAFORM == 'netCDF4'):
-            #-- netcdf (.nc)
+            # netcdf (.nc)
             mascon_Ylms.to_netCDF4(os.path.join(OUTPUT_DIRECTORY,FILE))
         elif (DATAFORM == 'HDF5'):
-            #-- HDF5 (.H5)
+            # HDF5 (.H5)
             mascon_Ylms.to_HDF5(os.path.join(OUTPUT_DIRECTORY,FILE))
-        #-- print file name to index
+        # print file name to index
         print(tilde_compress(os.path.join(OUTPUT_DIRECTORY,FILE)),file=fid)
-        #-- change the permissions mode
+        # change the permissions mode
         os.chmod(os.path.join(OUTPUT_DIRECTORY,FILE),MODE)
-    #-- close the reconstruct index
+    # close the reconstruct index
     fid.close()
-    #-- change the permissions mode of the index file
+    # change the permissions mode of the index file
     os.chmod(RECONSTRUCT_FILE,MODE)
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
             description="""Calculates the equivalent spherical
@@ -285,50 +285,50 @@ def arguments():
         fromfile_prefix_chars="@"
     )
     parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
-    #-- command line parameters
+    # command line parameters
     parser.add_argument('--output-directory','-O',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Output directory for mascon files')
-    #-- GRACE/GRACE-FO Level-2 data product
+    # GRACE/GRACE-FO Level-2 data product
     parser.add_argument('--product','-p',
         metavar='DSET', type=str, default='GSM',
         help='GRACE/GRACE-FO Level-2 data product')
-    #-- maximum spherical harmonic degree and order
+    # maximum spherical harmonic degree and order
     parser.add_argument('--lmax','-l',
         type=int, default=60,
         help='Maximum spherical harmonic degree')
     parser.add_argument('--mmax','-m',
         type=int, default=None,
         help='Maximum spherical harmonic order')
-    #-- start and end GRACE/GRACE-FO months
+    # start and end GRACE/GRACE-FO months
     parser.add_argument('--start','-S',
         type=int, default=4,
         help='Starting GRACE/GRACE-FO month')
     parser.add_argument('--end','-E',
         type=int, default=232,
         help='Ending GRACE/GRACE-FO month')
-    #-- different treatments of the load Love numbers
-    #-- 0: Han and Wahr (1995) values from PREM
-    #-- 1: Gegout (2005) values from PREM
-    #-- 2: Wang et al. (2012) values from PREM
+    # different treatments of the load Love numbers
+    # 0: Han and Wahr (1995) values from PREM
+    # 1: Gegout (2005) values from PREM
+    # 2: Wang et al. (2012) values from PREM
     parser.add_argument('--love','-n',
         type=int, default=0, choices=[0,1,2],
         help='Treatment of the Load Love numbers')
-    #-- option for setting reference frame for gravitational load love number
-    #-- reference frame options (CF, CM, CE)
+    # option for setting reference frame for gravitational load love number
+    # reference frame options (CF, CM, CE)
     parser.add_argument('--reference',
         type=str.upper, default='CF', choices=['CF','CM','CE'],
         help='Reference frame for load Love numbers')
-    #-- Gaussian smoothing radius (km)
+    # Gaussian smoothing radius (km)
     parser.add_argument('--radius','-R',
         type=float, default=0,
         help='Gaussian smoothing radius (km)')
-    #-- Use a decorrelation (destriping) filter
+    # Use a decorrelation (destriping) filter
     parser.add_argument('--destripe','-d',
         default=False, action='store_true',
         help='Use decorrelation (destriping) filter')
-    #-- GIA model type list
+    # GIA model type list
     models = {}
     models['IJ05-R2'] = 'Ivins R2 GIA Models'
     models['W12a'] = 'Whitehouse GIA Models'
@@ -342,63 +342,63 @@ def arguments():
     models['ascii'] = 'reformatted GIA in ascii format'
     models['netCDF4'] = 'reformatted GIA in netCDF4 format'
     models['HDF5'] = 'reformatted GIA in HDF5 format'
-    #-- GIA model type
+    # GIA model type
     parser.add_argument('--gia','-G',
         type=str, metavar='GIA', choices=models.keys(),
         help='GIA model type to read')
-    #-- full path to GIA file
+    # full path to GIA file
     parser.add_argument('--gia-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='GIA file to read')
-    #-- use atmospheric jump corrections from Fagiolini et al. (2015)
+    # use atmospheric jump corrections from Fagiolini et al. (2015)
     parser.add_argument('--atm-correction',
         default=False, action='store_true',
         help='Apply atmospheric jump correction coefficients')
-    #-- input data format (ascii, netCDF4, HDF5)
+    # input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--format','-F',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
         help='Input data format for auxiliary files')
-    #-- mascon index file and parameters
+    # mascon index file and parameters
     parser.add_argument('--mascon-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='Index file of mascons spherical harmonics')
     parser.add_argument('--redistribute-mascons',
         default=False, action='store_true',
         help='Redistribute mascon mass over the ocean')
-    #-- mascon reconstruct parameters
+    # mascon reconstruct parameters
     parser.add_argument('--reconstruct-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='Reconstructed mascon time series file')
-    #-- land-sea mask for redistributing mascon mass
+    # land-sea mask for redistributing mascon mass
     lsmask = utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
         help='Land-sea mask for redistributing mascon mass')
-    #-- print information about processing run
+    # print information about processing run
     parser.add_argument('--verbose','-V',
         action='count', default=0,
         help='Verbose output of processing run')
-    #-- permissions mode of the local directories and files (number in octal)
+    # permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permissions mode of output files')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
-    #-- Read the system arguments listed after the program
+    # Read the system arguments listed after the program
     parser = arguments()
     args,_ = parser.parse_known_args()
 
-    #-- create logger
+    # create logger
     loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
-    #-- try to run the analysis with listed parameters
+    # try to run the analysis with listed parameters
     try:
         info(args)
-        #-- run mascon_reconstruct algorithm with parameters
+        # run mascon_reconstruct algorithm with parameters
         mascon_reconstruct(
             args.product,
             args.lmax,
@@ -420,12 +420,12 @@ def main():
             OUTPUT_DIRECTORY=args.output_directory,
             MODE=args.mode)
     except Exception as e:
-        #-- if there has been an error exception
-        #-- print the type, value, and stack trace of the
-        #-- current exception being handled
+        # if there has been an error exception
+        # print the type, value, and stack trace of the
+        # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()

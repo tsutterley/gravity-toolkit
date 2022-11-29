@@ -1226,28 +1226,28 @@ def mask_oceans(xin, yin, data=None, order=0, lakes=False,
     """
     # read in land/sea mask
     lsmask = get_data_path(['data',f'landsea_{resolution}.nc'])
-    #-- Land-Sea Mask with Antarctica from Rignot (2017) and Greenland from GEUS
-    #-- 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
-    #-- Open the land-sea NetCDF file for reading
+    # Land-Sea Mask with Antarctica from Rignot (2017) and Greenland from GEUS
+    # 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
+    # Open the land-sea NetCDF file for reading
     landsea = spatial().from_netCDF4(lsmask, date=False, varname='LSMASK')
-    #-- create land function
+    # create land function
     nth,nphi = landsea.shape
     land_function = np.zeros((nth,nphi),dtype=bool)
-    #-- extract land function from file
-    #-- find land values (1)
+    # extract land function from file
+    # find land values (1)
     land_function |= (landsea.data == 1)
-    #-- find lake values (2)
+    # find lake values (2)
     if lakes:
         land_function |= (landsea.data == 2)
-    #-- find small island values (3)
+    # find small island values (3)
     land_function |= (landsea.data == 3)
-    #-- find Greenland and Antarctic ice shelf values (4)
+    # find Greenland and Antarctic ice shelf values (4)
     if iceshelves:
         land_function |= (landsea.data == 4)
-    #-- interpolate to output grid
+    # interpolate to output grid
     mask = interp_grid(land_function.astype(np.int32),
         landsea.lon, landsea.lat, xin, yin, order)
-    #-- mask input data or return the interpolated mask
+    # mask input data or return the interpolated mask
     if data is not None:
         # update data mask with interpolated mask
         data.mask |= mask.astype(bool)

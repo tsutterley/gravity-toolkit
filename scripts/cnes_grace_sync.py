@@ -106,15 +106,15 @@ import argparse
 import posixpath
 import gravity_toolkit.utilities
 
-#-- PURPOSE: sync local GRACE/GRACE-FO files with CNES server
+# PURPOSE: sync local GRACE/GRACE-FO files with CNES server
 def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
     CLOBBER=False, MODE=None):
-    #-- remote CNES/GRGS host directory
+    # remote CNES/GRGS host directory
     HOST = ['http://gravitegrace.get.obs-mip.fr','grgs.obs-mip.fr','data']
-    #-- check if directory exists and recursively create if not
+    # check if directory exists and recursively create if not
     os.makedirs(DIRECTORY,MODE) if not os.path.exists(DIRECTORY) else None
 
-    #-- create dictionaries for dataset and host directory
+    # create dictionaries for dataset and host directory
     DSET = {}
     DSET['RL01'] = ['GSM', 'GAC']
     DSET['RL02'] = ['GSM', 'GAA', 'GAB']
@@ -122,209 +122,209 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
     DSET['RL04'] = ['GSM']
     DSET['RL05'] = ['GSM', 'GAA', 'GAB']
 
-    #-- remote path to tar files on CNES servers
+    # remote path to tar files on CNES servers
     REMOTE = dict(RL01={},RL02={},RL03={},RL04={},RL05={})
-    #-- RL01: GSM and GAC
+    # RL01: GSM and GAC
     REMOTE['RL01']['GSM'] = ['RL01','variable','archives']
     REMOTE['RL01']['GAC'] = ['RL01','variable','archives']
-    #-- RL02: GSM, GAA and GAB
+    # RL02: GSM, GAA and GAB
     REMOTE['RL02']['GSM'] = ['RL02','variable','archives']
     REMOTE['RL02']['GAA'] = ['RL02','variable','archives']
     REMOTE['RL02']['GAB'] = ['RL02','variable','archives']
-    #-- RL03: GSM, GAA and GAB
+    # RL03: GSM, GAA and GAB
     REMOTE['RL03']['GSM'] = ['RL03-v3','archives']
     REMOTE['RL03']['GAA'] = ['RL03','variable','archives']
     REMOTE['RL03']['GAB'] = ['RL03','variable','archives']
-    #-- RL04: GSM
+    # RL04: GSM
     REMOTE['RL04']['GSM'] = ['RL04-v1','archives']
-    #-- RL05: GSM, GAA, GAB for GRACE/GRACE-FO
+    # RL05: GSM, GAA, GAB for GRACE/GRACE-FO
     REMOTE['RL05']['GSM'] = ['RL05','archives']
     REMOTE['RL05']['GAA'] = ['RL05','archives']
     REMOTE['RL05']['GAB'] = ['RL05','archives']
 
-    #-- tar file names for each dataset
+    # tar file names for each dataset
     TAR = dict(RL01={},RL02={},RL03={},RL04={},RL05={})
-    #-- RL01: GSM and GAC
+    # RL01: GSM and GAC
     TAR['RL01']['GSM'] = ['GRGS.SH_models.GRACEFORMAT.RL01.tar.gz']
     TAR['RL01']['GAC'] = ['GRGS.dealiasing.RL01.tar.gz']
-    #-- RL02: GSM, GAA and GAB
+    # RL02: GSM, GAA and GAB
     TAR['RL02']['GSM'] = ['GRGS.SH_models.GRACEFORMAT.all.tar.gz']
     TAR['RL02']['GAA'] = ['GRGS.dealiasing.GRACEFORMAT.all.tar.gz']
     TAR['RL02']['GAB'] = ['GRGS.dealiasing.GRACEFORMAT.all.tar.gz']
-    #-- RL03: GSM, GAA and GAB
+    # RL03: GSM, GAA and GAB
     TAR['RL03']['GSM'] = ['CNES-GRGS.RL03-v3.monthly.coeff.tar.gz']
     TAR['RL03']['GAA'] = ['GRGS.RL03.dealiasing.monthly.tar.gz']
     TAR['RL03']['GAB'] = ['GRGS.RL03.dealiasing.monthly.tar.gz']
-    #-- RL04: GSM
+    # RL04: GSM
     # TAR['RL04']['GSM'] = ['CNES.RL04-v1.monthly.OLD_IERS2010_MEAN_POLE_CONVENTION.tar.gz']
     TAR['RL04']['GSM'] = ['CNES.RL04-v1.monthly.NEW_IERS2010_MEAN_POLE_CONVENTION.tar.gz']
-    #-- RL05: GSM, GAA and GAB
+    # RL05: GSM, GAA and GAB
     TAR['RL05']['GSM'] = ['CNES-GRGS.RL05.GRACE.monthly.tar.gz',
         'CNES-GRGS.RL05.GRACE-FO.monthly.tar.gz']
     TAR['RL05']['GAA'] = ['CNES-GRGS.RL05.monthly.dealiasing.tar.gz']
     TAR['RL05']['GAB'] = ['CNES-GRGS.RL05.monthly.dealiasing.tar.gz']
 
-    #-- create log file with list of synchronized files (or print to terminal)
+    # create log file with list of synchronized files (or print to terminal)
     if LOG:
-        #-- output to log file
-        #-- format: CNES_sync_2002-04-01.log
+        # output to log file
+        # format: CNES_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
         LOGFILE = f'CNES_sync_{today}.log'
         fid1 = open(os.path.join(DIRECTORY,LOGFILE),'w')
         logging.basicConfig(stream=fid1,level=logging.INFO)
         logging.info(f'CNES Sync Log ({today})')
     else:
-        #-- standard output (terminal output)
+        # standard output (terminal output)
         logging.basicConfig(level=logging.INFO)
 
-    #-- DATA RELEASES (RL01, RL02, RL03, RL04)
-    #-- RL01 and RL02 are no longer updated as default
+    # DATA RELEASES (RL01, RL02, RL03, RL04)
+    # RL01 and RL02 are no longer updated as default
     for rl in DREL:
-        #-- datasets (GSM, GAA, GAB)
+        # datasets (GSM, GAA, GAB)
         for ds in DSET[rl]:
             logging.info(f'CNES/{rl}/{ds}')
-            #-- specific GRACE directory
+            # specific GRACE directory
             local_dir = os.path.join(DIRECTORY, 'CNES', rl, ds)
-            #-- check if GRACE directory exists and recursively create if not
+            # check if GRACE directory exists and recursively create if not
             os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
-            #-- retrieve each tar file from CNES
+            # retrieve each tar file from CNES
             for t in TAR[rl][ds]:
                 remote_tar_path = copy.copy(HOST)
                 remote_tar_path.extend(REMOTE[rl][ds])
                 remote_tar_path.append(t)
-                #-- local copy of CNES data tar file
+                # local copy of CNES data tar file
                 local_file = os.path.join(DIRECTORY, 'CNES', rl, t)
                 MD5 = gravity_toolkit.utilities.get_hash(local_file)
-                #-- copy remote tar file to local if new or updated
+                # copy remote tar file to local if new or updated
                 gravity_toolkit.utilities.from_http(remote_tar_path,
                     local=local_file, timeout=TIMEOUT, hash=MD5, chunk=16384,
                     verbose=True, fid=fid1, mode=MODE)
-                #-- Create and submit request to get modification time of file
+                # Create and submit request to get modification time of file
                 remote_file = posixpath.join(*remote_tar_path)
                 request = gravity_toolkit.utilities.urllib2.Request(remote_file)
                 response = gravity_toolkit.utilities.urllib2.urlopen(request,
                     timeout=TIMEOUT)
-                #-- change modification time to remote
+                # change modification time to remote
                 time_string = response.headers['last-modified']
                 remote_mtime=gravity_toolkit.utilities.get_unix_time(time_string,
                     format='%a, %d %b %Y %H:%M:%S %Z')
-                #-- keep remote modification time of file and local access time
+                # keep remote modification time of file and local access time
                 os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
 
-                #-- open file with tarfile (read)
+                # open file with tarfile (read)
                 tar = tarfile.open(name=local_file, mode='r:gz')
 
-                #-- copy files from the tar file into the data directory
+                # copy files from the tar file into the data directory
                 member_list=[m for m in tar.getmembers() if re.search(ds,m.name)]
-                #-- for each member of the dataset within the tar file
+                # for each member of the dataset within the tar file
                 for member in member_list:
-                    #-- local gzipped version of the file
+                    # local gzipped version of the file
                     fi = os.path.basename(member.name)
                     local_file = os.path.join(local_dir, f'{fi}.gz')
                     gzip_copy_file(tar, member, local_file, CLOBBER, MODE)
-                #-- close the tar file
+                # close the tar file
                 tar.close()
 
-            #-- find GRACE files and sort by date
+            # find GRACE files and sort by date
             grace_files=[fi for fi in os.listdir(local_dir) if re.search(ds,fi)]
-            #-- outputting GRACE filenames to index
+            # outputting GRACE filenames to index
             with open(os.path.join(local_dir,'index.txt'),'w') as fid:
                 for fi in sorted(grace_files):
                     print(fi, file=fid)
-            #-- change permissions of index file
+            # change permissions of index file
             os.chmod(os.path.join(local_dir,'index.txt'), MODE)
 
-    #-- close log file and set permissions level to MODE
+    # close log file and set permissions level to MODE
     if LOG:
         fid1.close()
         os.chmod(os.path.join(DIRECTORY,LOGFILE), MODE)
 
-#-- PURPOSE: copy file from tar file checking if file exists locally
-#-- and if the original file is newer than the local file
+# PURPOSE: copy file from tar file checking if file exists locally
+# and if the original file is newer than the local file
 def gzip_copy_file(tar, member, local_file, CLOBBER, MODE):
-    #-- if file exists in file system: check if remote file is newer
+    # if file exists in file system: check if remote file is newer
     TEST = False
     OVERWRITE = ' (clobber)'
-    #-- last modification time of file within tar file
+    # last modification time of file within tar file
     file1_mtime = member.mtime
-    #-- check if output compressed file exists in local directory
+    # check if output compressed file exists in local directory
     if os.access(local_file, os.F_OK):
-        #-- check last modification time of output gzipped file
+        # check last modification time of output gzipped file
         with gzip.open(local_file, 'rb') as fileID:
             fileobj = fileID.fileobj
             fileobj.seek(4)
-            #-- extract little endian 4 bit unsigned integer
+            # extract little endian 4 bit unsigned integer
             file2_mtime, = struct.unpack("<I", fileobj.read(4))
-        #-- if remote file is newer: overwrite the local file
+        # if remote file is newer: overwrite the local file
         if (file1_mtime > file2_mtime):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
         TEST = True
         OVERWRITE = ' (new)'
-    #-- if file does not exist, is to be overwritten, or CLOBBERed
+    # if file does not exist, is to be overwritten, or CLOBBERed
     if TEST or CLOBBER:
-        #-- Printing files copied from tar file to new compressed file
+        # Printing files copied from tar file to new compressed file
         logging.info(f'{tar.name}/{member.name} --> ')
         logging.info(f'\t{local_file}{OVERWRITE}\n')
-        #-- extract file contents to new compressed file
+        # extract file contents to new compressed file
         f_in = tar.extractfile(member)
         with gzip.GzipFile(local_file, 'wb', 9, None, file1_mtime) as f_out:
             shutil.copyfileobj(f_in, f_out)
         f_in.close()
-        #-- keep remote modification time of file and local access time
+        # keep remote modification time of file and local access time
         os.utime(local_file, (os.stat(local_file).st_atime, file1_mtime))
         os.chmod(local_file, MODE)
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""CNES/GRGS GRACE data download program for
             gravity field products
             """
     )
-    #-- command line parameters
-    #-- working data directory
+    # command line parameters
+    # working data directory
     parser.add_argument('--directory','-D',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
-    #-- GRACE/GRACE-FO data release
+    # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
         metavar='DREL', type=str, nargs='+',
         default=['RL05'], choices=['RL01','RL02','RL03','RL04','RL05'],
         help='GRACE/GRACE-FO data release')
-    #-- connection timeout
+    # connection timeout
     parser.add_argument('--timeout','-t',
         type=int, default=360,
         help='Timeout in seconds for blocking operations')
-    #-- Output log file in form
-    #-- CNES_sync_2002-04-01.log
+    # Output log file in form
+    # CNES_sync_2002-04-01.log
     parser.add_argument('--log','-l',
         default=False, action='store_true',
         help='Output log file')
     parser.add_argument('--clobber','-C',
         default=False, action='store_true',
         help='Overwrite existing data in transfer')
-    #-- permissions mode of the directories and files synced (number in octal)
+    # permissions mode of the directories and files synced (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permission mode of directories and files synced')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
-    #-- Read the system arguments listed after the program
+    # Read the system arguments listed after the program
     parser = arguments()
     args,_ = parser.parse_known_args()
 
-    #-- check internet connection before attempting to run program
+    # check internet connection before attempting to run program
     HOST = 'http://gravitegrace.get.obs-mip.fr'
     if gravity_toolkit.utilities.check_connection(HOST):
         cnes_grace_sync(args.directory, DREL=args.release, TIMEOUT=args.timeout,
             LOG=args.log, CLOBBER=args.clobber, MODE=args.mode)
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()

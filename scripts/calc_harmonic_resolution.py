@@ -40,8 +40,8 @@ import sys
 import argparse
 import numpy as np
 
-#-- PURPOSE: Calculates minimum spatial resolution that can be resolved
-#-- from spherical harmonics of a maximum degree
+# PURPOSE: Calculates minimum spatial resolution that can be resolved
+# from spherical harmonics of a maximum degree
 def calc_harmonic_resolution(LMAX, RADIUS=6371.0008, SPH_CAP=False):
     """
     Calculates minimum spatial resolution that can be resolved from

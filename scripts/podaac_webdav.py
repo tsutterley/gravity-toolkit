@@ -67,16 +67,16 @@ import posixpath
 import lxml.etree
 import gravity_toolkit.utilities
 
-#-- PURPOSE: retrieve PO.DAAC Drive WebDAV credentials
+# PURPOSE: retrieve PO.DAAC Drive WebDAV credentials
 def podaac_webdav(USER, PASSWORD, parser):
-    #-- build opener for retrieving PO.DAAC Drive WebDAV credentials
-    #-- Add the username and password for NASA Earthdata Login system
+    # build opener for retrieving PO.DAAC Drive WebDAV credentials
+    # Add the username and password for NASA Earthdata Login system
     URS = 'https://urs.earthdata.nasa.gov'
     gravity_toolkit.utilities.build_opener(USER, PASSWORD,
         password_manager=True, authorization_header=True, urs=URS)
-    #-- All calls to urllib2.urlopen will now use handler
-    #-- Make sure not to include the protocol in with the URL, or
-    #-- HTTPPasswordMgrWithDefaultRealm will be confused.
+    # All calls to urllib2.urlopen will now use handler
+    # Make sure not to include the protocol in with the URL, or
+    # HTTPPasswordMgrWithDefaultRealm will be confused.
     HOST = posixpath.join('https://podaac-tools.jpl.nasa.gov','drive')
     parameters = gravity_toolkit.utilities.urlencode(
         {'client_id':'lRY01RPdFZ2BKR77Mv9ivQ', 'response_type':'code',
@@ -84,27 +84,27 @@ def podaac_webdav(USER, PASSWORD, parser):
         'redirect_uri':posixpath.join(HOST,'authenticated'),
         'required_scope': 'country+study_area'}
     )
-    #-- retrieve cookies from NASA Earthdata URS
+    # retrieve cookies from NASA Earthdata URS
     request = gravity_toolkit.utilities.urllib2.Request(
         url=posixpath.join(URS,'oauth',f'authorize?{parameters}'))
     gravity_toolkit.utilities.urllib2.urlopen(request)
-    #-- read and parse request for webdav password
+    # read and parse request for webdav password
     request = gravity_toolkit.utilities.urllib2.Request(url=HOST)
     response = gravity_toolkit.utilities.urllib2.urlopen(request,timeout=20)
     tree = lxml.etree.parse(response, parser)
     WEBDAV, = tree.xpath('//input[@id="password"]/@value')
-    #-- return webdav password
+    # return webdav password
     return WEBDAV
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Retrieves and prints a user's PO.DAAC WebDAV
             credentials
             """
     )
-    #-- command line parameters
-    #-- NASA Earthdata credentials
+    # command line parameters
+    # NASA Earthdata credentials
     parser.add_argument('--user','-U',
         type=str, default=os.environ.get('EARTHDATA_USERNAME'),
         help='Username for NASA Earthdata Login')
@@ -115,50 +115,50 @@ def arguments():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.path.join(os.path.expanduser('~'),'.netrc'),
         help='Path to .netrc file for authentication')
-    #-- append to netrc
+    # append to netrc
     parser.add_argument('--append','-A',
         default=False, action='store_true',
         help='Append .netrc file instead of printing')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
-    #-- Read the system arguments listed after the program
+    # Read the system arguments listed after the program
     parser = arguments()
     args,_ = parser.parse_known_args()
 
-    #-- NASA Earthdata hostname
+    # NASA Earthdata hostname
     URS = 'urs.earthdata.nasa.gov'
-    #-- JPL PO.DAAC drive hostname
+    # JPL PO.DAAC drive hostname
     HOST = 'podaac-tools.jpl.nasa.gov'
-    #-- get NASA Earthdata credentials
+    # get NASA Earthdata credentials
     try:
         args.user,_,args.password = netrc.netrc(args.netrc).authenticators(URS)
     except:
-        #-- check that NASA Earthdata credentials were entered
+        # check that NASA Earthdata credentials were entered
         if not args.user:
             prompt = f'Username for {URS}: '
             args.user = builtins.input(prompt)
-        #-- enter password securely from command-line
+        # enter password securely from command-line
         if not args.password:
             prompt = f'Password for {args.user}@{URS}: '
             args.password = getpass.getpass(prompt)
 
-    #-- check internet connection before attempting to run program
+    # check internet connection before attempting to run program
     DRIVE = posixpath.join('https://podaac-tools.jpl.nasa.gov','drive')
     if gravity_toolkit.utilities.check_connection(DRIVE):
-        #-- compile HTML parser for lxml
+        # compile HTML parser for lxml
         WEBDAV = podaac_webdav(args.user, args.password, lxml.etree.HTMLParser())
-        #-- output to terminal or append to netrc file
+        # output to terminal or append to netrc file
         if args.append:
-            #-- append to netrc file and set permissions level
+            # append to netrc file and set permissions level
             with open(args.netrc,'a+') as f:
                 f.write(f'machine {args.user} login {HOST} password {WEBDAV}\n')
                 os.chmod(args.netrc, 0o600)
         else:
             print(f'\nWebDAV Password for {args.user}@{HOST}:\n\t{WEBDAV}')
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()

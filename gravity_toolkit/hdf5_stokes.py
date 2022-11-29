@@ -99,7 +99,7 @@ def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
     CLOBBER: will overwrite an existing HDF5 file
     DATE: harmonics have date information
     """
-    #-- set default keyword arguments
+    # set default keyword arguments
     kwargs.setdefault('FILENAME',None)
     kwargs.setdefault('UNITS','Geodesy_Normalization')
     kwargs.setdefault('TIME_UNITS',None)
@@ -111,30 +111,30 @@ def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
     kwargs.setdefault('REFERENCE',None)
     kwargs.setdefault('DATE',True)
     kwargs.setdefault('CLOBBER',True)
-    #-- set deprecation warning
+    # set deprecation warning
     warnings.filterwarnings("always")
     warnings.warn("Deprecated. Please use harmonics.to_HDF5",
         DeprecationWarning)
 
-    #-- setting HDF5 clobber attribute
+    # setting HDF5 clobber attribute
     clobber = 'w' if kwargs['CLOBBER'] else 'w-'
-    #-- opening HDF5 file for writing
+    # opening HDF5 file for writing
     fileID = h5py.File(kwargs['FILENAME'], clobber)
 
-    #-- Maximum spherical harmonic degree (LMAX) and order (MMAX)
+    # Maximum spherical harmonic degree (LMAX) and order (MMAX)
     LMAX = np.max(linp)
     MMAX = np.max(minp)
-    #-- Calculating the number of cos and sin harmonics up to LMAX
-    #-- taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
+    # Calculating the number of cos and sin harmonics up to LMAX
+    # taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
     n_harm = (LMAX**2 + 3*LMAX - (LMAX-MMAX)**2 - (LMAX-MMAX))//2 + 1
 
-    #-- dictionary with output variables
+    # dictionary with output variables
     output = {}
-    #-- restructured degree and order
+    # restructured degree and order
     output['l'] = np.zeros((n_harm,), dtype=np.int32)
     output['m'] = np.zeros((n_harm,), dtype=np.int32)
-    #-- Restructuring output matrix to array format
-    #-- will reduce matrix size and insure compatibility between platforms
+    # Restructuring output matrix to array format
+    # will reduce matrix size and insure compatibility between platforms
     if kwargs['DATE']:
         n_time = len(np.atleast_1d(tinp))
         output['time'] = np.copy(tinp)
@@ -150,10 +150,10 @@ def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
         output['clm'] = np.zeros((n_harm))
         output['slm'] = np.zeros((n_harm))
 
-    #-- create counter variable lm
+    # create counter variable lm
     lm = 0
-    for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
-        for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
+    for m in range(0,MMAX+1):# MMAX+1 to include MMAX
+        for l in range(m,LMAX+1):# LMAX+1 to include LMAX
             output['l'][lm] = np.int64(l)
             output['m'][lm] = np.int64(m)
             if (kwargs['DATE'] and (n_time > 1)):
@@ -162,44 +162,44 @@ def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
             else:
                 output['clm'][lm] = clm1[l,m]
                 output['slm'][lm] = slm1[l,m]
-            #-- add 1 to lm counter variable
+            # add 1 to lm counter variable
             lm += 1
 
-    #-- Defining the HDF5 dataset variables
+    # Defining the HDF5 dataset variables
     h5 = {}
     for key,val in output.items():
         h5[key] = fileID.create_dataset(key, val.shape,
             data=val, dtype=val.dtype, compression='gzip')
 
-    #-- filling HDF5 dataset attributes
-    #-- Defining attributes for degree and order
-    h5['l'].attrs['long_name'] = 'spherical_harmonic_degree'#-- degree long name
-    h5['l'].attrs['units'] = 'Wavenumber'#-- SH degree units
-    h5['m'].attrs['long_name'] = 'spherical_harmonic_order'#-- order long name
-    h5['m'].attrs['units'] = 'Wavenumber'#-- SH order units
-    #-- Defining attributes for dataset
+    # filling HDF5 dataset attributes
+    # Defining attributes for degree and order
+    h5['l'].attrs['long_name'] = 'spherical_harmonic_degree'# degree long name
+    h5['l'].attrs['units'] = 'Wavenumber'# SH degree units
+    h5['m'].attrs['long_name'] = 'spherical_harmonic_order'# order long name
+    h5['m'].attrs['units'] = 'Wavenumber'# SH order units
+    # Defining attributes for dataset
     h5['clm'].attrs['long_name'] = 'cosine_spherical_harmonics'
     h5['clm'].attrs['units'] = kwargs['UNITS']
     h5['slm'].attrs['long_name'] = 'sine_spherical_harmonics'
     h5['slm'].attrs['units'] = kwargs['UNITS']
     if kwargs['DATE']:
-        #-- Defining attributes for date and month (or integer date)
+        # Defining attributes for date and month (or integer date)
         h5['time'].attrs['long_name'] = kwargs['TIME_LONGNAME']
         h5['time'].attrs['units'] = kwargs['TIME_UNITS']
         h5['month'].attrs['long_name'] = kwargs['MONTHS_LONGNAME']
         h5['month'].attrs['units'] = kwargs['MONTHS_UNITS']
-    #-- description of file
+    # description of file
     if kwargs['TITLE']:
         fileID.attrs['description'] = kwargs['TITLE']
-    #-- reference of file
+    # reference of file
     if kwargs['REFERENCE']:
         fileID.attrs['reference'] = kwargs['REFERENCE']
-    #-- date created
+    # date created
     fileID.attrs['date_created'] = time.strftime('%Y-%m-%d',time.localtime())
 
-    #-- Output HDF5 structure information
+    # Output HDF5 structure information
     logging.info(kwargs['FILENAME'])
     logging.info(list(fileID.keys()))
 
-    #-- Closing the HDF5 file
+    # Closing the HDF5 file
     fileID.close()

@@ -99,26 +99,26 @@ def gen_harmonics(data, lon, lat, **kwargs):
     m: int
         spherical harmonic order to MMAX
     """
-    #-- set default keyword arguments
+    # set default keyword arguments
     kwargs.setdefault('LMAX',60)
     kwargs.setdefault('MMAX',None)
     kwargs.setdefault('PLM',0)
     kwargs.setdefault('METHOD','integration')
-    #-- upper bound of spherical harmonic orders (default = LMAX)
+    # upper bound of spherical harmonic orders (default = LMAX)
     if kwargs['MMAX'] is None:
         kwargs['MMAX'] = np.copy(kwargs['LMAX'])
-    #-- convert latitude and longitude to float if integers
+    # convert latitude and longitude to float if integers
     lon = lon.astype(np.float64)
     lat = lat.astype(np.float64)
-    #-- reforming data to lonXlat if input latXlon
+    # reforming data to lonXlat if input latXlon
     sz = np.shape(data)
     dinput = np.transpose(data) if (sz[0] == len(lat)) else np.copy(data)
-    #-- convert spatial field into spherical harmonics
+    # convert spatial field into spherical harmonics
     if (kwargs['METHOD'].lower() == 'integration'):
         Ylms = integration(dinput, lon, lat, **kwargs)
     elif (kwargs['METHOD'].lower() == 'fourier'):
         Ylms = fourier(dinput, lon, lat, **kwargs)
-    #-- return the output spherical harmonics object
+    # return the output spherical harmonics object
     return Ylms
 
 def integration(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
@@ -152,72 +152,72 @@ def integration(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
         spherical harmonic order to MMAX
     """
 
-    #-- dimensions of the longitude and latitude arrays
+    # dimensions of the longitude and latitude arrays
     nlon = np.int64(len(lon))
     nlat = np.int64(len(lat))
-    #-- grid step
+    # grid step
     dlon = np.abs(lon[1]-lon[0])
     dlat = np.abs(lat[1]-lat[0])
-    #-- longitude degree spacing in radians
+    # longitude degree spacing in radians
     dphi = dlon*np.pi/180.0
-    #-- colatitude degree spacing in radians
+    # colatitude degree spacing in radians
     dth = dlat*np.pi/180.0
 
-    #-- reformatting longitudes to range 0:360 (if previously -180:180)
+    # reformatting longitudes to range 0:360 (if previously -180:180)
     if np.count_nonzero(lon < 0):
         lon[lon < 0] += 360.0
-    #-- calculate longitude and colatitude arrays in radians
-    phi = np.reshape(lon,(1,nlon))*np.pi/180.0#-- reshape to 1xnlon
-    th = (90.0 - np.squeeze(lat))*np.pi/180.0#-- remove singleton dimensions
+    # calculate longitude and colatitude arrays in radians
+    phi = np.reshape(lon,(1,nlon))*np.pi/180.0# reshape to 1xnlon
+    th = (90.0 - np.squeeze(lat))*np.pi/180.0# remove singleton dimensions
 
-    #-- Calculating cos/sin of phi arrays (output [m,phi])
-    #-- LMAX+1 as there are LMAX+1 elements between 0 and LMAX
+    # Calculating cos/sin of phi arrays (output [m,phi])
+    # LMAX+1 as there are LMAX+1 elements between 0 and LMAX
     m = np.arange(MMAX+1)[:, np.newaxis]
     ccos = np.cos(np.dot(m,phi))
     ssin = np.sin(np.dot(m,phi))
 
-    #-- Multiplying sin(th) with differentials of theta and phi
-    #-- to calculate the integration factor at each latitude
+    # Multiplying sin(th) with differentials of theta and phi
+    # to calculate the integration factor at each latitude
     int_fact = np.sin(th)*dphi*dth
     coeff = 1.0/(4.0*np.pi)
 
-    #-- Calculate polynomials using Holmes and Featherstone (2002) relation
+    # Calculate polynomials using Holmes and Featherstone (2002) relation
     plm = np.zeros((LMAX+1,MMAX+1,nlat))
     if (np.ndim(PLM) == 0):
         plmout,dplm = plm_holmes(LMAX, np.cos(th))
     else:
-        #-- use precomputed plms to improve computational speed
-        #-- or to use a different recursion relation for polynomials
+        # use precomputed plms to improve computational speed
+        # or to use a different recursion relation for polynomials
         plmout = PLM
 
-    #-- Multiply plms by integration factors [sin(theta)*dtheta*dphi]
-    #-- truncate plms to maximum spherical harmonic order if MMAX < LMAX
+    # Multiply plms by integration factors [sin(theta)*dtheta*dphi]
+    # truncate plms to maximum spherical harmonic order if MMAX < LMAX
     m = np.arange(MMAX+1)
     for j in range(0,nlat):
         plm[:,m,j] = plmout[:,m,j]*int_fact[j]
 
-    #-- Initializing preliminary spherical harmonic matrices
+    # Initializing preliminary spherical harmonic matrices
     yclm = np.zeros((LMAX+1,MMAX+1))
     yslm = np.zeros((LMAX+1,MMAX+1))
-    #-- Initializing output spherical harmonic matrices
+    # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
     Ylms.clm = np.zeros((LMAX+1,MMAX+1))
     Ylms.slm = np.zeros((LMAX+1,MMAX+1))
-    #-- Multiplying gridded data with sin/cos of m#phis (output [m,theta])
-    #-- This will sum through all phis in the dot product
+    # Multiplying gridded data with sin/cos of m#phis (output [m,theta])
+    # This will sum through all phis in the dot product
     dcos = np.dot(ccos,data)
     dsin = np.dot(ssin,data)
     for l in range(0,LMAX+1):
-        mm = np.min([MMAX,l])#-- truncate to MMAX if specified (if l > MMAX)
-        m = np.arange(0,mm+1)#-- mm+1 elements between 0 and mm
-        #-- Summing product of plms and data over all latitudes
+        mm = np.min([MMAX,l])# truncate to MMAX if specified (if l > MMAX)
+        m = np.arange(0,mm+1)# mm+1 elements between 0 and mm
+        # Summing product of plms and data over all latitudes
         yclm[l,m] = np.sum(plm[l,m,:]*dcos[m,:], axis=1)
         yslm[l,m] = np.sum(plm[l,m,:]*dsin[m,:], axis=1)
-        #-- convert to output normalization (4-pi normalized harmonics)
+        # convert to output normalization (4-pi normalized harmonics)
         Ylms.clm[l,m] = coeff*yclm[l,m]
         Ylms.slm[l,m] = coeff*yslm[l,m]
 
-    #-- return the output spherical harmonics object
+    # return the output spherical harmonics object
     return Ylms
 
 def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
@@ -251,32 +251,32 @@ def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
         spherical harmonic order to MMAX
     """
 
-    #-- dimensions of the longitude and latitude arrays
+    # dimensions of the longitude and latitude arrays
     nlon = np.int64(len(lon))
     nlat = np.int64(len(lat))
-    #-- remove singleton dimensions and convert to radians
+    # remove singleton dimensions and convert to radians
     phi = (np.squeeze(lon)*np.pi/180.0)
-    #-- Colatitude in radians
+    # Colatitude in radians
     theta = ((90.0 - np.squeeze(lat))*np.pi/180.0)
 
-    #-- MMAX+1 to include MMAX
+    # MMAX+1 to include MMAX
     mm = np.arange(MMAX+1)[:, np.newaxis]
-    #-- Calculate cos and sin coefficients of signal
+    # Calculate cos and sin coefficients of signal
     ccos = np.cos(np.dot(mm,phi[np.newaxis,:]))
     ssin = np.sin(np.dot(mm,phi[np.newaxis,:]))
     dcos = np.dot(ccos,data)
     dsin = np.dot(ssin,data)
 
-    #-- Normalize fourier coefficients
+    # Normalize fourier coefficients
     dcos[0,:] = dcos[0,:]/nlon
     dcos[1:MMAX+1,:] = 2.0*dcos[1:MMAX+1,:]/nlon
     dsin[0,:] = dsin[0,:]/nlon
     dsin[1:MMAX+1,:] = 2.0*dsin[1:MMAX+1,:]/nlon
 
-    #-- Calculate cos and sin coefficients of theta component
-    #-- Because the function is defined on (0,pi)
-    #-- it can be expanded in just cosine terms.
-    #-- this routine assumes that 0 and pi are not included
+    # Calculate cos and sin coefficients of theta component
+    # Because the function is defined on (0,pi)
+    # it can be expanded in just cosine terms.
+    # this routine assumes that 0 and pi are not included
     theta_cc = np.zeros((MMAX+1,MMAX+1))
     theta_sc = np.zeros((MMAX+1,MMAX+1))
     m_even = np.arange(0,MMAX+1,2)
@@ -285,14 +285,14 @@ def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
     n_odd = len(m_odd)
 
     if np.isclose([theta[0],theta[nlat-1]],[0.0,np.pi]).all():
-        #-- non-endpoints
+        # non-endpoints
         nt = np.dot(mm,theta[1:nlat-1][np.newaxis,:])
         theta_cc[m_even,:] = 2.0*np.dot(dcos[m_even,1:nlat-1],np.cos(nt).T)
         theta_sc[m_even,:] = 2.0*np.dot(dsin[m_even,1:nlat-1],np.cos(nt).T)
         theta_cc[m_odd,:] = 2.0*np.dot(dcos[m_odd,1:nlat-1],np.sin(nt).T)
         theta_sc[m_odd,:] = 2.0*np.dot(dsin[m_odd,1:nlat-1],np.sin(nt).T)
 
-        #-- endpoints
+        # endpoints
         theta_cc[m_even,:] += np.dot((dcos[m_even,0]*np.cos(theta[0]) +
             dcos[m_even,nlat-1]*np.cos(theta[nlat-1]))[:,np.newaxis], mm.T)
         theta_sc[m_even,:] += np.dot((dsin[m_even,0]*np.cos(theta[0]) +
@@ -311,40 +311,40 @@ def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
     else:
         raise ValueError('Latitude coordinates incompatible')
 
-    #-- Normalize theta fourier coefficients
+    # Normalize theta fourier coefficients
     theta_cc[:,0] = theta_cc[:,0]/(2.0*nlat)
     theta_cc[:,1:MMAX+1] = theta_cc[:,1:MMAX+1]/nlat
     theta_sc[:,0] = theta_sc[:,0]/(2.0*nlat)
     theta_sc[:,1:MMAX+1] = theta_sc[:,1:MMAX+1]/nlat
 
-    #-- Correct normalization for the incomplete coverage of the sphere
+    # Correct normalization for the incomplete coverage of the sphere
     delphi = np.abs(phi[1]-phi[0])
     deltheta = np.abs(theta[1]-theta[0])
     norm = nlon*delphi/(2.0*np.pi)*nlat*deltheta/np.pi
     theta_cc = theta_cc*norm
     theta_sc = theta_sc*norm
 
-    #-- Calculate cos and sin coefficients of Legendre functions
-    #-- Expand m = even terms in a cosine series
-    #-- Expand m = odd terms in a sine series
-    #-- Both are stride 2
+    # Calculate cos and sin coefficients of Legendre functions
+    # Expand m = even terms in a cosine series
+    # Expand m = odd terms in a sine series
+    # Both are stride 2
     if (np.ndim(PLM) == 0):
         plm = fourier_legendre(LMAX,MMAX)
     else:
-        #-- use precomputed plms to improve computational speed
+        # use precomputed plms to improve computational speed
         plm = PLM
 
-    #-- Initializing output spherical harmonic matrices
+    # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
     Ylms.clm = np.zeros((LMAX+1,MMAX+1))
     Ylms.slm = np.zeros((LMAX+1,MMAX+1))
 
-    #-- Sum theta fourier coefficients
-    #-- temp is the integral of cos(n theta) cos(k theta) dcos(theta)
-    #-- over the interval 0 to pi
-    #-- n and k must have like parities
+    # Sum theta fourier coefficients
+    # temp is the integral of cos(n theta) cos(k theta) dcos(theta)
+    # over the interval 0 to pi
+    # n and k must have like parities
 
-    #-- m = even terms
+    # m = even terms
     k_even = np.zeros((n_even,n_even))
     for n in range(0,MMAX+2,2):
         k_even[:,n//2] = 0.5*(1.0/(1.0-m_even-n) + 1.0/(1.0+m_even-n) +
@@ -355,7 +355,7 @@ def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
         k_odd[:,(n-1)//2] = 0.5*(1.0/(1-m_odd-n) + 1.0/(1+m_odd-n) +
             1.0/(1-m_odd+n) + 1.0/(1+m_odd+n))
 
-    #-- calculate spherical harmonics for m == even terms
+    # calculate spherical harmonics for m == even terms
     l_even = np.arange(0,LMAX+1,2)
     l_odd = np.arange(1,LMAX,2)
     for m in range(0,MMAX+2,2):
@@ -366,7 +366,7 @@ def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
         Ylms.clm[l_odd,m] = np.dot(theta_cc[m,m_odd[:,np.newaxis]].T,temp.T)
         Ylms.slm[l_odd,m] = np.dot(theta_sc[m,m_odd[:,np.newaxis]].T,temp.T)
 
-    #-- m = odd terms
+    # m = odd terms
     k_even = np.zeros((n_even,n_even))
     for n in range(0,MMAX+2,2):
         k_even[:,n//2] = 0.5*(-1.0/(1-m_even-n) + 1.0/(1.0+m_even-n) +
@@ -377,8 +377,8 @@ def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
         k_odd[:,(n-1)//2] = 0.5*(-1.0/(1-m_odd-n) + 1.0/(1.0+m_odd-n) +
             1.0/(1.0-m_odd+n) - 1.0/(1.0+m_odd+n))
 
-    #-- calculate spherical harmonics for m == odd terms
-    l_even = np.arange(2,LMAX+1,2)#-- do not in include l=0
+    # calculate spherical harmonics for m == odd terms
+    l_even = np.arange(2,LMAX+1,2)# do not in include l=0
     l_odd = np.arange(1,LMAX,2)
     for m in range(1,MMAX+1,2):
         temp = np.dot(plm[l_even,m,m_even[:,np.newaxis]].T,k_even)
@@ -388,12 +388,12 @@ def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
         Ylms.clm[l_odd,m] = np.dot(theta_cc[m,m_odd[:,np.newaxis]].T,temp.T)
         Ylms.slm[l_odd,m] = np.dot(theta_sc[m,m_odd[:,np.newaxis]].T,temp.T)
 
-    #-- Divide by Plm normalization
+    # Divide by Plm normalization
     Ylms.clm[:,0] /= 2.0
     Ylms.slm[:,0] /= 2.0
     Ylms.clm[:,1:MMAX+1] /= 4.0
     Ylms.slm[:,1:MMAX+1] /= 4.0
 
-    #-- return the output spherical harmonics object
+    # return the output spherical harmonics object
     return Ylms
 

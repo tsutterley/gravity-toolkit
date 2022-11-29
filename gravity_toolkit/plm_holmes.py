@@ -93,26 +93,26 @@ def plm_holmes(LMAX, x, ASTYPE=np.float64):
         `doi: 10.1007/s00190-002-0216-2 <https://doi.org/10.1007/s00190-002-0216-2>`_
     """
 
-    #-- removing singleton dimensions of x
+    # removing singleton dimensions of x
     x = np.atleast_1d(x).flatten().astype(ASTYPE)
-    #-- length of the x array
+    # length of the x array
     jm = len(x)
-    #-- verify data type of spherical harmonic truncation
+    # verify data type of spherical harmonic truncation
     LMAX = np.int64(LMAX)
-    #-- scaling factor
+    # scaling factor
     scalef = 1.0e-280
 
-    #-- allocate for multiplicative factors, and plms
+    # allocate for multiplicative factors, and plms
     f1 = np.zeros(((LMAX+1)*(LMAX+2)//2),dtype=ASTYPE)
     f2 = np.zeros(((LMAX+1)*(LMAX+2)//2),dtype=ASTYPE)
     p = np.zeros(((LMAX+1)*(LMAX+2)//2,jm),dtype=ASTYPE)
     plm = np.zeros((LMAX+1,LMAX+1,jm),dtype=ASTYPE)
     dplm = np.zeros((LMAX+1,LMAX+1,jm),dtype=ASTYPE)
 
-    #-- Precompute multiplicative factors used in recursion relationships
-    #-- Note that prefactors are not used for the case when m=l and m=l-1,
-    #-- as a different recursion is used for these two values.
-    k = 2#-- k = l*(l+1)/2 + m
+    # Precompute multiplicative factors used in recursion relationships
+    # Note that prefactors are not used for the case when m=l and m=l-1,
+    # as a different recursion is used for these two values.
+    k = 2# k = l*(l+1)/2 + m
     for l in range(2, LMAX+1):
         k += 1
         f1[k] = np.sqrt(2.0*l-1.0)*np.sqrt(2.0*l+1.0)/np.longdouble(l)
@@ -124,13 +124,13 @@ def plm_holmes(LMAX, x, ASTYPE=np.float64):
                 (np.sqrt(2.0*l-3.0)*np.sqrt(l+m)*np.sqrt(l-m))
         k += 2
 
-    #-- u is sine of colatitude (cosine of latitude) so that 0 <= s <= 1
-    #-- for x=cos(th): u=sin(th)
+    # u is sine of colatitude (cosine of latitude) so that 0 <= s <= 1
+    # for x=cos(th): u=sin(th)
     u = np.sqrt(1.0 - x**2)
-    #-- update where u==0 to eps of data type to prevent invalid divisions
+    # update where u==0 to eps of data type to prevent invalid divisions
     u[u == 0] = np.finfo(u.dtype).eps
 
-    #-- Calculate P(l,0). These are not scaled.
+    # Calculate P(l,0). These are not scaled.
     p[0,:] = 1.0
     p[1,:]  = np.sqrt(3.0)*x
     k = 1
@@ -138,44 +138,44 @@ def plm_holmes(LMAX, x, ASTYPE=np.float64):
         k += l
         p[k,:] = f1[k]*x*p[k-l,:] - f2[k]*p[k-2*l+1,:]
 
-    #-- Calculate P(m,m), P(m+1,m), and P(l,m)
+    # Calculate P(m,m), P(m+1,m), and P(l,m)
     pmm = np.sqrt(2.0)*scalef
     rescalem = 1.0/scalef
     kstart = 0
 
     for m in range(1, LMAX):
         rescalem = rescalem * u
-        #-- Calculate P(m,m)
+        # Calculate P(m,m)
         kstart += m+1
         pmm = pmm * np.sqrt(2*m+1)/np.sqrt(2*m)
         p[kstart,:] = pmm
-        #-- Calculate P(m+1,m)
+        # Calculate P(m+1,m)
         k = kstart+m+1
         p[k,:] = x*np.sqrt(2*m+3)*pmm
-        #-- Calculate P(l,m)
+        # Calculate P(l,m)
         for l in range(m+2, LMAX+1):
             k += l
             p[k,:] = x*f1[k]*p[k-l,:] - f2[k]*p[k-2*l+1,:]
             p[k-2*l+1,:] = p[k-2*l+1,:] * rescalem
-        #-- rescale
+        # rescale
         p[k,:] = p[k,:] * rescalem
         p[k-LMAX,:] = p[k-LMAX,:] * rescalem
 
-    #-- Calculate P(LMAX,LMAX)
+    # Calculate P(LMAX,LMAX)
     rescalem = rescalem * u
     kstart += m+2
     p[kstart,:] = pmm * np.sqrt(2*LMAX+1) / np.sqrt(2*LMAX) * rescalem
-    #-- reshape Legendre polynomials to output dimensions
+    # reshape Legendre polynomials to output dimensions
     for m in range(LMAX+1):
         for l in range(m,LMAX+1):
             lm = (l*(l+1))//2 + m
             plm[l,m,:] = p[lm,:]
-            #-- calculate first derivatives
+            # calculate first derivatives
             if (l == m):
                 dplm[l,m,:] = np.longdouble(m)*(x/u)*plm[l,m,:]
             else:
                 flm = np.sqrt(((l**2.0 - m**2.0)*(2.0*l + 1.0))/(2.0*l - 1.0))
                 dplm[l,m,:]= (1.0/u)*(l*x*plm[l,m,:] - flm*plm[l-1,m,:])
 
-    #-- return the legendre polynomials and their first derivative
+    # return the legendre polynomials and their first derivative
     return plm, dplm

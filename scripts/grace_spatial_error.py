@@ -171,7 +171,7 @@ from gravity_toolkit.spatial import spatial
 from gravity_toolkit.tssmooth import tssmooth
 from gravity_toolkit.units import units
 
-#-- PURPOSE: keep track of threads
+# PURPOSE: keep track of threads
 def info(args):
     logging.info(os.path.basename(sys.argv[0]))
     logging.info(args)
@@ -180,8 +180,8 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
-#-- PURPOSE: import GRACE files for a given months range
-#-- Estimates the GRACE/GRACE-FO errors applying the specified procedures
+# PURPOSE: import GRACE files for a given months range
+# Estimates the GRACE/GRACE-FO errors applying the specified procedures
 def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     START=None,
     END=None,
@@ -214,275 +214,275 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     VERBOSE=0,
     MODE=0o775):
 
-    #-- recursively create output directory if not currently existing
+    # recursively create output directory if not currently existing
     if not os.access(OUTPUT_DIRECTORY, os.F_OK):
         os.makedirs(OUTPUT_DIRECTORY, mode=MODE, exist_ok=True)
 
-    #-- list object of output files for file logs (full path)
+    # list object of output files for file logs (full path)
     output_files = []
 
-    #-- file information
+    # file information
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
 
-    #-- read arrays of kl, hl, and ll Love Numbers
+    # read arrays of kl, hl, and ll Love Numbers
     hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE)
 
-    #-- Calculating the Gaussian smoothing for radius RAD
+    # Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):
         wt = 2.0*np.pi*gauss_weights(RAD,LMAX)
         gw_str = f'_r{RAD:0.0f}km'
     else:
-        #-- else = 1
+        # else = 1
         wt = np.ones((LMAX+1))
         gw_str = ''
 
-    #-- flag for spherical harmonic order
+    # flag for spherical harmonic order
     MMAX = np.copy(LMAX) if not MMAX else MMAX
     order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
-    #-- atmospheric ECMWF "jump" flag (if ATM)
+    # atmospheric ECMWF "jump" flag (if ATM)
     atm_str = '_wATM' if ATM else ''
 
-    #-- reading GRACE months for input date range
-    #-- replacing low-degree harmonics with SLR values if specified
-    #-- include degree 1 (geocenter) harmonics if specified
-    #-- correcting for Pole-Tide and Atmospheric Jumps if specified
+    # reading GRACE months for input date range
+    # replacing low-degree harmonics with SLR values if specified
+    # include degree 1 (geocenter) harmonics if specified
+    # correcting for Pole-Tide and Atmospheric Jumps if specified
     Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX, SLR_21=SLR_21,
         SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C40=SLR_C40, SLR_C50=SLR_C50,
         DEG1_FILE=DEG1_FILE, MODEL_DEG1=MODEL_DEG1, ATM=ATM,
         POLE_TIDE=POLE_TIDE)
-    #-- convert to harmonics object and remove mean if specified
+    # convert to harmonics object and remove mean if specified
     GRACE_Ylms = harmonics().from_dict(Ylms)
-    #-- full path to directory for specific GRACE/GRACE-FO product
+    # full path to directory for specific GRACE/GRACE-FO product
     GRACE_Ylms.directory = Ylms['directory']
-    #-- use a mean file for the static field to remove
+    # use a mean file for the static field to remove
     if MEAN_FILE:
-        #-- read data form for input mean file (ascii, netCDF4, HDF5, gfc)
+        # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
         mean_Ylms = harmonics().from_file(MEAN_FILE,format=MEANFORM,date=False)
-        #-- remove the input mean
+        # remove the input mean
         GRACE_Ylms.subtract(mean_Ylms)
     else:
         GRACE_Ylms.mean(apply=True)
-    #-- date information of GRACE/GRACE-FO coefficients
+    # date information of GRACE/GRACE-FO coefficients
     nfiles = len(GRACE_Ylms.time)
 
-    #-- default file prefix
+    # default file prefix
     if not FILE_PREFIX:
         FILE_PREFIX = '{0}_{1}_{2}{3}_'.format(PROC,DREL,DSET,Ylms['title'])
 
-    #-- filter GRACE/GRACE-FO coefficients
+    # filter GRACE/GRACE-FO coefficients
     if DESTRIPE:
-        #-- destriping GRACE/GRACE-FO coefficients
+        # destriping GRACE/GRACE-FO coefficients
         ds_str = '_FL'
         GRACE_Ylms = GRACE_Ylms.destripe()
     else:
-        #-- using standard GRACE/GRACE-FO harmonics
+        # using standard GRACE/GRACE-FO harmonics
         ds_str = ''
 
-    #-- calculating GRACE error (Wahr et al 2006)
-    #-- output GRACE error file (for both LMAX==MMAX and LMAX != MMAX cases)
+    # calculating GRACE error (Wahr et al 2006)
+    # output GRACE error file (for both LMAX==MMAX and LMAX != MMAX cases)
     args = (PROC,DREL,DSET,LMAX,order_str,ds_str,atm_str,GRACE_Ylms.month[0],
         GRACE_Ylms.month[-1],suffix[DATAFORM])
     delta_format = '{0}_{1}_{2}_DELTA_CLM_L{3:d}{4}{5}{6}_{7:03d}-{8:03d}.{9}'
     DELTA_FILE = os.path.join(GRACE_Ylms.directory,delta_format.format(*args))
-    #-- full path of the GRACE directory
-    #-- if file was previously calculated, will read file
-    #-- else will calculate the GRACE error
+    # full path of the GRACE directory
+    # if file was previously calculated, will read file
+    # else will calculate the GRACE error
     if not os.access(DELTA_FILE, os.F_OK):
-        #-- add output delta file to list object
+        # add output delta file to list object
         output_files.append(DELTA_FILE)
 
-        #-- Delta coefficients of GRACE time series (Error components)
+        # Delta coefficients of GRACE time series (Error components)
         delta_Ylms = harmonics(lmax=LMAX,mmax=MMAX)
         delta_Ylms.clm = np.zeros((LMAX+1,MMAX+1))
         delta_Ylms.slm = np.zeros((LMAX+1,MMAX+1))
-        #-- Smoothing Half-Width (CNES is a 10-day solution)
-        #-- 365/10/2 = 18.25 (next highest is 19)
-        #-- All other solutions are monthly solutions (HFWTH for annual = 6)
+        # Smoothing Half-Width (CNES is a 10-day solution)
+        # 365/10/2 = 18.25 (next highest is 19)
+        # All other solutions are monthly solutions (HFWTH for annual = 6)
         if ((PROC == 'CNES') and (DREL in ('RL01','RL02'))):
             HFWTH = 19
         else:
             HFWTH = 6
-        #-- Equal to the noise of the smoothed time-series
-        #-- for each spherical harmonic order
-        for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
-            #-- for each spherical harmonic degree
-            for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
-                #-- Delta coefficients of GRACE time series
+        # Equal to the noise of the smoothed time-series
+        # for each spherical harmonic order
+        for m in range(0,MMAX+1):# MMAX+1 to include MMAX
+            # for each spherical harmonic degree
+            for l in range(m,LMAX+1):# LMAX+1 to include LMAX
+                # Delta coefficients of GRACE time series
                 for cs,csharm in enumerate(['clm','slm']):
-                    #-- Constrained GRACE Error (Noise of smoothed time-series)
-                    #-- With Annual and Semi-Annual Terms
+                    # Constrained GRACE Error (Noise of smoothed time-series)
+                    # With Annual and Semi-Annual Terms
                     val1 = getattr(GRACE_Ylms, csharm)
                     smth = tssmooth(GRACE_Ylms.time, val1[l,m,:], HFWTH=HFWTH)
-                    #-- number of smoothed points
+                    # number of smoothed points
                     nsmth = len(smth['data'])
-                    #-- GRACE delta Ylms
-                    #-- variance of data-(smoothed+annual+semi)
+                    # GRACE delta Ylms
+                    # variance of data-(smoothed+annual+semi)
                     val2 = getattr(delta_Ylms, csharm)
                     val2[l,m] = np.sqrt(np.sum(smth['noise']**2)/nsmth)
 
-        #-- save GRACE DELTA to file
+        # save GRACE DELTA to file
         delta_Ylms.time = np.copy(nsmth)
         delta_Ylms.month = np.copy(nsmth)
         delta_Ylms.to_file(DELTA_FILE,format=DATAFORM)
-        #-- set the permissions mode of the output harmonics file
+        # set the permissions mode of the output harmonics file
         os.chmod(DELTA_FILE, MODE)
-        #-- append delta harmonics file to output files list
+        # append delta harmonics file to output files list
         output_files.append(DELTA_FILE)
     else:
-        #-- read GRACE DELTA spherical harmonics datafile
+        # read GRACE DELTA spherical harmonics datafile
         delta_Ylms = harmonics().from_file(DELTA_FILE,format=DATAFORM)
-        #-- truncate grace delta clm and slm to d/o LMAX/MMAX
+        # truncate grace delta clm and slm to d/o LMAX/MMAX
         delta_Ylms = delta_Ylms.truncate(lmax=LMAX, mmax=MMAX)
         nsmth = np.int64(delta_Ylms.time)
 
-    #-- Output spatial data object
+    # Output spatial data object
     delta = spatial()
-    #-- Output Degree Spacing
+    # Output Degree Spacing
     dlon,dlat = (DDEG[0],DDEG[0]) if (len(DDEG) == 1) else (DDEG[0],DDEG[1])
-    #-- Output Degree Interval
+    # Output Degree Interval
     if (INTERVAL == 1):
-        #-- (-180:180,90:-90)
+        # (-180:180,90:-90)
         nlon = np.int64((360.0/dlon)+1.0)
         nlat = np.int64((180.0/dlat)+1.0)
         delta.lon = -180 + dlon*np.arange(0,nlon)
         delta.lat = 90.0 - dlat*np.arange(0,nlat)
     elif (INTERVAL == 2):
-        #-- (Degree spacing)/2
+        # (Degree spacing)/2
         delta.lon = np.arange(-180+dlon/2.0,180+dlon/2.0,dlon)
         delta.lat = np.arange(90.0-dlat/2.0,-90.0-dlat/2.0,-dlat)
         nlon = len(delta.lon)
         nlat = len(delta.lat)
     elif (INTERVAL == 3):
-        #-- non-global grid set with BOUNDS parameter
+        # non-global grid set with BOUNDS parameter
         minlon,maxlon,minlat,maxlat = BOUNDS.copy()
         delta.lon = np.arange(minlon+dlon/2.0,maxlon+dlon/2.0,dlon)
         delta.lat = np.arange(maxlat-dlat/2.0,minlat-dlat/2.0,-dlat)
         nlon = len(delta.lon)
         nlat = len(delta.lat)
 
-    #-- Earth Parameters
-    #-- output spatial units
+    # Earth Parameters
+    # output spatial units
     unit_list = ['cmwe', 'mmGH', 'mmCU', u'\u03BCGal', 'mbar']
     unit_name = ['Equivalent Water Thickness', 'Geoid Height',
         'Elastic Crustal Uplift', 'Gravitational Undulation',
         'Equivalent Surface Pressure']
-    #-- dfactor is the degree dependent coefficients
-    #-- for specific spherical harmonic output units
+    # dfactor is the degree dependent coefficients
+    # for specific spherical harmonic output units
     if (UNITS == 1):
-        #-- 1: cmwe, centimeters water equivalent
+        # 1: cmwe, centimeters water equivalent
         dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).cmwe
     elif (UNITS == 2):
-        #-- 2: mmGH, millimeters geoid height
+        # 2: mmGH, millimeters geoid height
         dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).mmGH
     elif (UNITS == 3):
-        #-- 3: mmCU, millimeters elastic crustal deformation
+        # 3: mmCU, millimeters elastic crustal deformation
         dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).mmCU
     elif (UNITS == 4):
-        #-- 4: micGal, microGal gravity perturbations
+        # 4: micGal, microGal gravity perturbations
         dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).microGal
     elif (UNITS == 5):
-        #-- 5: mbar, millibar equivalent surface pressure
+        # 5: mbar, millibar equivalent surface pressure
         dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).mbar
 
-    #-- Computing plms for converting to spatial domain
+    # Computing plms for converting to spatial domain
     phi = delta.lon[np.newaxis,:]*np.pi/180.0
     theta = (90.0-delta.lat)*np.pi/180.0
     PLM, dPLM = plm_holmes(LMAX, np.cos(theta))
-    #-- square of legendre polynomials truncated to order MMAX
+    # square of legendre polynomials truncated to order MMAX
     mm = np.arange(0,MMAX+1)
     PLM2 = PLM[:,mm,:]**2
 
-    #-- Calculating cos(m*phi)^2 and sin(m*phi)^2
+    # Calculating cos(m*phi)^2 and sin(m*phi)^2
     m = delta_Ylms.m[:,np.newaxis]
     ccos = np.cos(np.dot(m,phi))**2
     ssin = np.sin(np.dot(m,phi))**2
 
-    #-- truncate delta harmonics to spherical harmonic range
+    # truncate delta harmonics to spherical harmonic range
     Ylms = delta_Ylms.truncate(LMAX,lmin=LMIN,mmax=MMAX)
-    #-- convolve delta harmonics with degree dependent factors
-    #-- smooth harmonics and convert to output units
+    # convolve delta harmonics with degree dependent factors
+    # smooth harmonics and convert to output units
     Ylms = Ylms.convolve(dfactor*wt).power(2.0).scale(1.0/nsmth)
-    #-- Calculate fourier coefficients
-    d_cos = np.zeros((MMAX+1,nlat))#-- [m,th]
-    d_sin = np.zeros((MMAX+1,nlat))#-- [m,th]
-    #-- Calculating delta spatial values
+    # Calculate fourier coefficients
+    d_cos = np.zeros((MMAX+1,nlat))# [m,th]
+    d_sin = np.zeros((MMAX+1,nlat))# [m,th]
+    # Calculating delta spatial values
     for k in range(0,nlat):
-        #-- summation over all spherical harmonic degrees
+        # summation over all spherical harmonic degrees
         d_cos[:,k] = np.sum(PLM2[:,:,k]*Ylms.clm, axis=0)
         d_sin[:,k] = np.sum(PLM2[:,:,k]*Ylms.slm, axis=0)
 
-    #-- Multiplying by c/s(phi#m) to get spatial maps (lon,lat)
+    # Multiplying by c/s(phi#m) to get spatial maps (lon,lat)
     delta.data=np.sqrt(np.dot(ccos.T,d_cos) + np.dot(ssin.T,d_sin)).T
 
-    #-- output file format
+    # output file format
     file_format = '{0}{1}_L{2:d}{3}{4}{5}_ERR_{6:03d}-{7:03d}.{8}'
-    #-- output error file to ascii, netCDF4 or HDF5
+    # output error file to ascii, netCDF4 or HDF5
     args = (FILE_PREFIX,unit_list[UNITS-1],LMAX,order_str,gw_str,ds_str,
         GRACE_Ylms.month[0],GRACE_Ylms.month[-1],suffix[DATAFORM])
     FILE = os.path.join(OUTPUT_DIRECTORY,file_format.format(*args))
     if (DATAFORM == 'ascii'):
-        #-- ascii (.txt)
+        # ascii (.txt)
         delta.to_ascii(FILE, date=False, verbose=VERBOSE)
     elif (DATAFORM == 'netCDF4'):
-        #-- netCDF4
+        # netCDF4
         delta.to_netCDF4(FILE, date=False, verbose=VERBOSE,
             units=unit_list[UNITS-1], longname=unit_name[UNITS-1],
             title='GRACE/GRACE-FO Spatial Error')
     elif (DATAFORM == 'HDF5'):
-        #-- HDF5
+        # HDF5
         delta.to_HDF5(FILE, date=False, verbose=VERBOSE,
             units=unit_list[UNITS-1], longname=unit_name[UNITS-1],
             title='GRACE/GRACE-FO Spatial Error')
-    #-- set the permissions mode of the output files
+    # set the permissions mode of the output files
     os.chmod(FILE, MODE)
-    #-- add file to list
+    # add file to list
     output_files.append(FILE)
 
-    #-- return the list of output files
+    # return the list of output files
     return output_files
 
-#-- PURPOSE: print a file log for the GRACE analysis
+# PURPOSE: print a file log for the GRACE analysis
 def output_log_file(arguments,output_files):
-    #-- format: GRACE_error_run_2002-04-01_PID-70335.log
+    # format: GRACE_error_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_error_run_{0}_PID-{1:d}.log'.format(*args)
-    #-- create a unique log and open the log file
+    # create a unique log and open the log file
     DIRECTORY = os.path.expanduser(arguments.output_directory)
     fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
-    #-- print argument values sorted alphabetically
+    # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
     for arg, value in sorted(vars(arguments).items()):
         logging.info('{0}: {1}'.format(arg, value))
-    #-- print output files
+    # print output files
     logging.info('\n\nOUTPUT FILES:')
     for f in output_files:
         logging.info('{0}'.format(f))
-    #-- close the log file
+    # close the log file
     fid.close()
 
-#-- PURPOSE: print a error file log for the GRACE analysis
+# PURPOSE: print a error file log for the GRACE analysis
 def output_error_log_file(arguments):
-    #-- format: GRACE_error_failed_run_2002-04-01_PID-70335.log
+    # format: GRACE_error_failed_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_error_failed_run_{0}_PID-{1:d}.log'.format(*args)
-    #-- create a unique log and open the log file
+    # create a unique log and open the log file
     DIRECTORY = os.path.expanduser(arguments.output_directory)
     fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
-    #-- print argument values sorted alphabetically
+    # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
     for arg, value in sorted(vars(arguments).items()):
         logging.info('{0}: {1}'.format(arg, value))
-    #-- print traceback error
+    # print traceback error
     logging.info('\n\nTRACEBACK ERROR:')
     traceback.print_exc(file=fid)
-    #-- close the log file
+    # close the log file
     fid.close()
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Calculates the GRACE/GRACE-FO spatial errors
@@ -491,8 +491,8 @@ def arguments():
         fromfile_prefix_chars="@"
     )
     parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
-    #-- command line parameters
-    #-- working data directory
+    # command line parameters
+    # working data directory
     parser.add_argument('--directory','-D',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
@@ -504,30 +504,30 @@ def arguments():
     parser.add_argument('--file-prefix','-P',
         type=str,
         help='Prefix string for input and output files')
-    #-- Data processing center or satellite mission
+    # Data processing center or satellite mission
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, required=True,
         help='GRACE/GRACE-FO Processing Center')
-    #-- GRACE/GRACE-FO data release
+    # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
         metavar='DREL', type=str, default='RL06',
         help='GRACE/GRACE-FO Data Release')
-    #-- GRACE/GRACE-FO Level-2 data product
+    # GRACE/GRACE-FO Level-2 data product
     parser.add_argument('--product','-p',
         metavar='DSET', type=str, default='GSM',
         help='GRACE/GRACE-FO Level-2 data product')
-    #-- minimum spherical harmonic degree
+    # minimum spherical harmonic degree
     parser.add_argument('--lmin',
         type=int, default=1,
         help='Minimum spherical harmonic degree')
-    #-- maximum spherical harmonic degree and order
+    # maximum spherical harmonic degree and order
     parser.add_argument('--lmax','-l',
         type=int, default=60,
         help='Maximum spherical harmonic degree')
     parser.add_argument('--mmax','-m',
         type=int, default=None,
         help='Maximum spherical harmonic order')
-    #-- start and end GRACE/GRACE-FO months
+    # start and end GRACE/GRACE-FO months
     parser.add_argument('--start','-S',
         type=int, default=4,
         help='Starting GRACE/GRACE-FO month')
@@ -539,31 +539,31 @@ def arguments():
     parser.add_argument('--missing','-N',
         metavar='MISSING', type=int, nargs='+', default=MISSING,
         help='Missing GRACE/GRACE-FO months')
-    #-- different treatments of the load Love numbers
-    #-- 0: Han and Wahr (1995) values from PREM
-    #-- 1: Gegout (2005) values from PREM
-    #-- 2: Wang et al. (2012) values from PREM
+    # different treatments of the load Love numbers
+    # 0: Han and Wahr (1995) values from PREM
+    # 1: Gegout (2005) values from PREM
+    # 2: Wang et al. (2012) values from PREM
     parser.add_argument('--love','-n',
         type=int, default=0, choices=[0,1,2],
         help='Treatment of the Load Love numbers')
-    #-- option for setting reference frame for gravitational load love number
-    #-- reference frame options (CF, CM, CE)
+    # option for setting reference frame for gravitational load love number
+    # reference frame options (CF, CM, CE)
     parser.add_argument('--reference',
         type=str.upper, default='CF', choices=['CF','CM','CE'],
         help='Reference frame for load Love numbers')
-    #-- Gaussian smoothing radius (km)
+    # Gaussian smoothing radius (km)
     parser.add_argument('--radius','-R',
         type=float, default=0,
         help='Gaussian smoothing radius (km)')
-    #-- Use a decorrelation (destriping) filter
+    # Use a decorrelation (destriping) filter
     parser.add_argument('--destripe','-d',
         default=False, action='store_true',
         help='Use decorrelation (destriping) filter')
-    #-- output units
+    # output units
     parser.add_argument('--units','-U',
         type=int, default=1, choices=[1,2,3,4,5],
         help='Output units')
-    #-- output grid parameters
+    # output grid parameters
     parser.add_argument('--spacing',
         type=float, nargs='+', default=[0.5,0.5], metavar=('dlon','dlat'),
         help='Spatial resolution of output data')
@@ -574,25 +574,25 @@ def arguments():
     parser.add_argument('--bounds',
         type=float, nargs=4, metavar=('lon_min','lon_max','lat_min','lat_max'),
         help='Bounding box for non-global grid')
-    #-- use atmospheric jump corrections from Fagiolini et al. (2015)
+    # use atmospheric jump corrections from Fagiolini et al. (2015)
     parser.add_argument('--atm-correction',
         default=False, action='store_true',
         help='Apply atmospheric jump correction coefficients')
-    #-- correct for pole tide drift follow Wahr et al. (2015)
+    # correct for pole tide drift follow Wahr et al. (2015)
     parser.add_argument('--pole-tide',
         default=False, action='store_true',
         help='Correct for pole tide drift')
-    #-- Update Degree 1 coefficients with SLR or derived values
-    #-- Tellus: GRACE/GRACE-FO TN-13 from PO.DAAC
-    #--     https://grace.jpl.nasa.gov/data/get-data/geocenter/
-    #-- SLR: satellite laser ranging from CSR
-    #--     ftp://ftp.csr.utexas.edu/pub/slr/geocenter/
-    #-- UCI: Sutterley and Velicogna, Remote Sensing (2019)
-    #--     https://www.mdpi.com/2072-4292/11/18/2108
-    #-- Swenson: GRACE-derived coefficients from Sean Swenson
-    #--     https://doi.org/10.1029/2007JB005338
-    #-- GFZ: GRACE/GRACE-FO coefficients from GFZ GravIS
-    #--     http://gravis.gfz-potsdam.de/corrections
+    # Update Degree 1 coefficients with SLR or derived values
+    # Tellus: GRACE/GRACE-FO TN-13 from PO.DAAC
+    #     https://grace.jpl.nasa.gov/data/get-data/geocenter/
+    # SLR: satellite laser ranging from CSR
+    #     ftp://ftp.csr.utexas.edu/pub/slr/geocenter/
+    # UCI: Sutterley and Velicogna, Remote Sensing (2019)
+    #     https://www.mdpi.com/2072-4292/11/18/2108
+    # Swenson: GRACE-derived coefficients from Sean Swenson
+    #     https://doi.org/10.1029/2007JB005338
+    # GFZ: GRACE/GRACE-FO coefficients from GFZ GravIS
+    #     http://gravis.gfz-potsdam.de/corrections
     parser.add_argument('--geocenter',
         metavar='DEG1', type=str,
         choices=['Tellus','SLR','SLF','UCI','Swenson','GFZ'],
@@ -603,7 +603,7 @@ def arguments():
     parser.add_argument('--interpolate-geocenter',
         default=False, action='store_true',
         help='Least-squares model missing Degree 1 coefficients')
-    #-- replace low degree harmonics with values from Satellite Laser Ranging
+    # replace low degree harmonics with values from Satellite Laser Ranging
     parser.add_argument('--slr-c20',
         type=str, default=None, choices=['CSR','GFZ','GSFC'],
         help='Replace C20 coefficients with SLR values')
@@ -622,49 +622,49 @@ def arguments():
     parser.add_argument('--slr-c50',
         type=str, default=None, choices=['CSR','GSFC','LARES'],
         help='Replace C50 coefficients with SLR values')
-    #-- input data format (ascii, netCDF4, HDF5)
+    # input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--format','-F',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
         help='Input/output data format')
-    #-- mean file to remove
+    # mean file to remove
     parser.add_argument('--mean-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='GRACE/GRACE-FO mean file to remove from the harmonic data')
-    #-- input data format (ascii, netCDF4, HDF5)
+    # input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--mean-format',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5','gfc'],
         help='Input data format for GRACE/GRACE-FO mean file')
-    #-- Output log file for each job in forms
-    #-- GRACE_error_run_2002-04-01_PID-00000.log
-    #-- GRACE_error_failed_run_2002-04-01_PID-00000.log
+    # Output log file for each job in forms
+    # GRACE_error_run_2002-04-01_PID-00000.log
+    # GRACE_error_failed_run_2002-04-01_PID-00000.log
     parser.add_argument('--log',
         default=False, action='store_true',
         help='Output log file for each job')
-    #-- print information about each input and output file
+    # print information about each input and output file
     parser.add_argument('--verbose','-V',
         action='count', default=0,
         help='Verbose output of run')
-    #-- permissions mode of the local directories and files (number in octal)
+    # permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permissions mode of output files')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
-    #-- Read the system arguments listed after the program
+    # Read the system arguments listed after the program
     parser = arguments()
     args,_ = parser.parse_known_args()
 
-    #-- create logger
+    # create logger
     loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
-    #-- try to run the analysis with listed parameters
+    # try to run the analysis with listed parameters
     try:
         info(args)
-        #-- run grace_spatial_error algorithm with parameters
+        # run grace_spatial_error algorithm with parameters
         output_files = grace_spatial_error(
             args.directory,
             args.center,
@@ -703,17 +703,17 @@ def main():
             VERBOSE=args.verbose,
             MODE=args.mode)
     except Exception as e:
-        #-- if there has been an error exception
-        #-- print the type, value, and stack trace of the
-        #-- current exception being handled
+        # if there has been an error exception
+        # print the type, value, and stack trace of the
+        # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
-        if args.log:#-- write failed job completion log file
+        if args.log:# write failed job completion log file
             output_error_log_file(args)
     else:
-        if args.log:#-- write successful job completion log file
+        if args.log:# write successful job completion log file
             output_log_file(args,output_files)
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()

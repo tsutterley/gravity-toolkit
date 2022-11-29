@@ -100,7 +100,7 @@ def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
     CLOBBER: will overwrite an existing netCDF4 file
     DATE: harmonics have date information
     """
-    #-- set default keyword arguments
+    # set default keyword arguments
     kwargs.setdefault('FILENAME',None)
     kwargs.setdefault('UNITS','Geodesy_Normalization')
     kwargs.setdefault('TIME_UNITS',None)
@@ -112,30 +112,30 @@ def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
     kwargs.setdefault('REFERENCE',None)
     kwargs.setdefault('DATE',True)
     kwargs.setdefault('CLOBBER',True)
-    #-- set deprecation warning
+    # set deprecation warning
     warnings.filterwarnings("always")
     warnings.warn("Deprecated. Please use harmonics.to_netCDF4",
         DeprecationWarning)
 
-    #-- setting NetCDF clobber attribute
+    # setting NetCDF clobber attribute
     clobber = 'w' if kwargs['CLOBBER'] else 'a'
-    #-- opening netCDF file for writing
+    # opening netCDF file for writing
     fileID = netCDF4.Dataset(kwargs['FILENAME'], clobber, format="NETCDF4")
 
-    #-- Maximum spherical harmonic degree (LMAX) and order (MMAX)
+    # Maximum spherical harmonic degree (LMAX) and order (MMAX)
     LMAX = np.max(linp)
     MMAX = np.max(minp)
-    #-- Calculating the number of cos and sin harmonics up to LMAX
-    #-- taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
+    # Calculating the number of cos and sin harmonics up to LMAX
+    # taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
     n_harm = (LMAX**2 + 3*LMAX - (LMAX-MMAX)**2 - (LMAX-MMAX))//2 + 1
 
-    #-- dictionary with output variables
+    # dictionary with output variables
     output = {}
-    #-- restructured degree and order
+    # restructured degree and order
     output['l'] = np.zeros((n_harm,), dtype=np.int32)
     output['m'] = np.zeros((n_harm,), dtype=np.int32)
-    #-- Restructuring output matrix to array format
-    #-- will reduce matrix size and insure compatibility between platforms
+    # Restructuring output matrix to array format
+    # will reduce matrix size and insure compatibility between platforms
     if kwargs['DATE']:
         n_time = len(np.atleast_1d(tinp))
         output['time'] = np.copy(tinp)
@@ -151,10 +151,10 @@ def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
         output['clm'] = np.zeros((n_harm))
         output['slm'] = np.zeros((n_harm))
 
-    #-- create counter variable lm
+    # create counter variable lm
     lm = 0
-    for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
-        for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
+    for m in range(0,MMAX+1):# MMAX+1 to include MMAX
+        for l in range(m,LMAX+1):# LMAX+1 to include LMAX
             output['l'][lm] = np.int64(l)
             output['m'][lm] = np.int64(m)
             if (kwargs['DATE'] and (n_time > 1)):
@@ -163,20 +163,20 @@ def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
             else:
                 output['clm'][lm] = clm1[l,m]
                 output['slm'][lm] = slm1[l,m]
-            #-- add 1 to lm counter variable
+            # add 1 to lm counter variable
             lm += 1
 
-    #-- Defining the netCDF dimensions
+    # Defining the netCDF dimensions
     fileID.createDimension('lm', n_harm)
     if kwargs['DATE']:
         fileID.createDimension('time', n_time)
 
-    #-- defining the netCDF variables
+    # defining the netCDF variables
     nc = {}
-    #-- degree and order
+    # degree and order
     nc['l'] = fileID.createVariable('l', 'i', ('lm',))
     nc['m'] = fileID.createVariable('m', 'i', ('lm',))
-    #-- spherical harmonics
+    # spherical harmonics
     if (kwargs['DATE'] and (n_time > 1)):
         nc['clm'] = fileID.createVariable('clm', 'd', ('lm','time',))
         nc['slm'] = fileID.createVariable('slm', 'd', ('lm','time',))
@@ -184,43 +184,43 @@ def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
         nc['clm'] = fileID.createVariable('clm', 'd', ('lm',))
         nc['slm'] = fileID.createVariable('slm', 'd', ('lm',))
     if kwargs['DATE']:
-        #-- time (in decimal form)
+        # time (in decimal form)
         nc['time'] = fileID.createVariable('time', 'd', ('time',))
-        #-- GRACE/GRACE-FO month (or integer date)
+        # GRACE/GRACE-FO month (or integer date)
         nc['month'] = fileID.createVariable(kwargs['MONTHS_NAME'],
             'i', ('time',))
 
-    #-- filling netCDF variables
+    # filling netCDF variables
     for key,val in output.items():
         nc[key][:] = val.copy()
 
-    #-- Defining attributes for degree and order
-    nc['l'].long_name = 'spherical_harmonic_degree'#-- SH degree long name
-    nc['l'].units = 'Wavenumber'#-- SH degree units
-    nc['m'].long_name = 'spherical_harmonic_order'#-- SH order long name
-    nc['m'].units = 'Wavenumber'#-- SH order units
-    #-- Defining attributes for harmonics
+    # Defining attributes for degree and order
+    nc['l'].long_name = 'spherical_harmonic_degree'# SH degree long name
+    nc['l'].units = 'Wavenumber'# SH degree units
+    nc['m'].long_name = 'spherical_harmonic_order'# SH order long name
+    nc['m'].units = 'Wavenumber'# SH order units
+    # Defining attributes for harmonics
     nc['clm'].long_name = 'cosine_spherical_harmonics'
     nc['clm'].units = kwargs['UNITS']
     nc['slm'].long_name = 'sine_spherical_harmonics'
     nc['slm'].units = kwargs['UNITS']
     if kwargs['DATE']:
-        #-- Defining attributes for date and month
+        # Defining attributes for date and month
         nc['time'].long_name = kwargs['TIME_LONGNAME']
         nc['time'].units = kwargs['TIME_UNITS']
         nc['month'].long_name = kwargs['MONTHS_LONGNAME']
         nc['month'].units = kwargs['MONTHS_UNITS']
-    #-- global variables of NetCDF file
+    # global variables of NetCDF file
     if kwargs['TITLE']:
         fileID.title = kwargs['TITLE']
     if kwargs['REFERENCE']:
         fileID.reference = kwargs['REFERENCE']
-    #-- date created
+    # date created
     fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
 
-    #-- Output netCDF structure information
+    # Output netCDF structure information
     logging.info(kwargs['FILENAME'])
     logging.info(list(fileID.variables.keys()))
 
-    #-- Closing the netCDF file
+    # Closing the netCDF file
     fileID.close()

@@ -76,89 +76,89 @@ from gravity_toolkit.grace_date import grace_date
 from gravity_toolkit.grace_months_index import grace_months_index
 
 def run_grace_date(base_dir, PROC, DREL, VERBOSE=0, MODE=0o775):
-    #-- create logger
+    # create logger
     loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
     logging.basicConfig(level=loglevels[VERBOSE])
 
-    #-- allocate python dictionaries for each processing center
+    # allocate python dictionaries for each processing center
     DSET = {}
     VALID = {}
-    #-- CSR RL04/5/6 at LMAX 60
+    # CSR RL04/5/6 at LMAX 60
     DSET['CSR'] = {'RL04':['GAC', 'GAD', 'GSM'], 'RL05':['GAC', 'GAD', 'GSM'],
         'RL06':['GAC', 'GAD', 'GSM']}
     VALID['CSR'] = ['RL04','RL05','RL06']
-    #-- GFZ RL04/5 at LMAX 90
-    #-- GFZ RL06 at LMAX 60
+    # GFZ RL04/5 at LMAX 90
+    # GFZ RL06 at LMAX 60
     DSET['GFZ'] = {'RL04':['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
         'RL05':['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
         'RL06':['GAA', 'GAB', 'GAC', 'GAD', 'GSM']}
     VALID['GFZ'] = ['RL04','RL05','RL06']
-    #-- JPL RL04/5/6 at LMAX 60
+    # JPL RL04/5/6 at LMAX 60
     DSET['JPL'] = {'RL04':['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
         'RL05':['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
         'RL06':['GAA', 'GAB', 'GAC', 'GAD', 'GSM']}
     VALID['JPL'] = ['RL04','RL05','RL06']
 
-    #-- for each processing center
+    # for each processing center
     for p in PROC:
-        #-- for each valid dataset release from the processing center
+        # for each valid dataset release from the processing center
         drel = [r for r in DREL if r in VALID[p]]
         for r in drel:
-            #-- for number of data products
+            # for number of data products
             for d in DSET[p][r]:
                 logging.info('GRACE Date Program: {0} {1} {2}'.format(p,r,d))
-                #-- run program for processing center, data release and product
+                # run program for processing center, data release and product
                 grace_date(base_dir,PROC=p,DREL=r,DSET=d,OUTPUT=True,MODE=MODE)
 
-    #-- run grace months program for data releases
+    # run grace months program for data releases
     logging.info('GRACE Months Program')
     grace_months_index(base_dir, DREL=DREL, MODE=MODE)
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Wrapper program for running GRACE date and
             months programs
             """
     )
-    #-- command line parameters
-    #-- working data directory
+    # command line parameters
+    # working data directory
     parser.add_argument('--directory','-D',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
-    #-- Data processing center or satellite mission
+    # Data processing center or satellite mission
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, nargs='+',
         default=['CSR','GFZ','JPL'],
         choices=['CSR','GFZ','JPL'],
         help='GRACE/GRACE-FO Processing Center')
-    #-- GRACE/GRACE-FO data release
+    # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
         metavar='DREL', type=str, nargs='+',
         default=['RL06','v02.4'],
         help='GRACE/GRACE-FO Data Release')
-    #-- print information about each input and output file
+    # print information about each input and output file
     parser.add_argument('--verbose','-V',
         action='count', default=0,
         help='Verbose output of run')
-    #-- permissions mode of the local directories and files (number in octal)
+    # permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permissions mode of output files')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
-    #-- Read the system arguments listed after the program
+    # Read the system arguments listed after the program
     parser = arguments()
     args,_ = parser.parse_known_args()
 
-    #-- run GRACE preliminary date program
+    # run GRACE preliminary date program
     run_grace_date(args.directory, args.center, args.release,
         VERBOSE=args.verbose, MODE=args.mode)
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()

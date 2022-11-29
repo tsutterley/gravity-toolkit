@@ -93,7 +93,7 @@ def ncdf_write(data, lon, lat, tim, **kwargs):
     CLOBBER: will overwrite an existing netCDF4 file
     DATE: data has date information
     """
-    #-- set default keyword arguments
+    # set default keyword arguments
     kwargs.setdefault('FILENAME',None)
     kwargs.setdefault('VARNAME','z')
     kwargs.setdefault('LONNAME','lon')
@@ -108,23 +108,23 @@ def ncdf_write(data, lon, lat, tim, **kwargs):
     kwargs.setdefault('REFERENCE',None)
     kwargs.setdefault('DATE',True)
     kwargs.setdefault('CLOBBER',True)
-    #-- set deprecation warning
+    # set deprecation warning
     warnings.filterwarnings("always")
     warnings.warn("Deprecated. Please use spatial.to_netCDF4",
         DeprecationWarning)
 
-    #-- setting NetCDF clobber attribute
+    # setting NetCDF clobber attribute
     clobber = 'w' if kwargs['CLOBBER'] else 'a'
-    #-- opening NetCDF file for writing
-    #-- Create the NetCDF file
+    # opening NetCDF file for writing
+    # Create the NetCDF file
     fileID = netCDF4.Dataset(kwargs['FILENAME'], clobber, format="NETCDF4")
 
-    #-- create output dictionary with key mapping
+    # create output dictionary with key mapping
     output = {}
     output[kwargs['LONNAME']] = np.copy(lon)
     output[kwargs['LATNAME']] = np.copy(lat)
     dimensions = [kwargs['LATNAME'],kwargs['LONNAME']]
-    #-- extend with date variables
+    # extend with date variables
     if kwargs['DATE']:
         output[kwargs['TIMENAME']] = np.atleast_1d(tim).astype('f')
         output[kwargs['VARNAME']] = np.atleast_3d(data)
@@ -132,44 +132,44 @@ def ncdf_write(data, lon, lat, tim, **kwargs):
     else:
         output[kwargs['VARNAME']] = np.copy(data)
 
-    #-- defining the NetCDF dimensions and variables
+    # defining the NetCDF dimensions and variables
     nc = {}
-    #-- NetCDF dimensions
+    # NetCDF dimensions
     for i,dim in enumerate(dimensions):
         fileID.createDimension(dim, len(output[dim]))
         nc[dim] = fileID.createVariable(dim, output[dim].dtype, (dim,))
-    #-- NetCDF spatial data
+    # NetCDF spatial data
     for key in [kwargs['VARNAME']]:
         nc[key] = fileID.createVariable(key, output[key].dtype,
             tuple(dimensions), fill_value=kwargs['FILL_VALUE'],
             zlib=True)
-    #-- filling NetCDF variables
+    # filling NetCDF variables
     for key,val in output.items():
         nc[key][:] = val.copy()
 
-    #-- Defining attributes for longitude and latitude
+    # Defining attributes for longitude and latitude
     nc[kwargs['LONNAME']].long_name = 'longitude'
     nc[kwargs['LONNAME']].units = 'degrees_east'
     nc[kwargs['LATNAME']].long_name = 'latitude'
     nc[kwargs['LATNAME']].units = 'degrees_north'
-    #-- Defining attributes for dataset
+    # Defining attributes for dataset
     nc[kwargs['VARNAME']].long_name = kwargs['LONGNAME']
     nc[kwargs['VARNAME']].units = kwargs['UNITS']
-    #-- Defining attributes for date if applicable
+    # Defining attributes for date if applicable
     if kwargs['DATE']:
         nc[kwargs['TIMENAME']].long_name = kwargs['TIME_LONGNAME']
         nc[kwargs['TIMENAME']].units = kwargs['TIME_UNITS']
-    #-- global variables of NetCDF file
+    # global variables of NetCDF file
     if kwargs['TITLE']:
         fileID.title = kwargs['TITLE']
     if kwargs['REFERENCE']:
         fileID.reference = kwargs['REFERENCE']
-    #-- date created
+    # date created
     fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
 
-    #-- Output NetCDF structure information
+    # Output NetCDF structure information
     logging.info(kwargs['FILENAME'])
     logging.info(list(fileID.variables.keys()))
 
-    #-- Closing the NetCDF file
+    # Closing the NetCDF file
     fileID.close()

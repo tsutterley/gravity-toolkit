@@ -80,7 +80,7 @@ from __future__ import print_function, division
 import warnings
 import gravity_toolkit.geocenter
 
-#-- PURPOSE: read geocenter data from PO.DAAC
+# PURPOSE: read geocenter data from PO.DAAC
 def read_tellus_geocenter(geocenter_file, HEADER=True, JPL=False):
     """
     Reads monthly geocenter files computed by JPL Tellus using
@@ -120,5 +120,5 @@ def read_tellus_geocenter(geocenter_file, HEADER=True, JPL=False):
     # call renamed version to not break workflows
     DEG1 = gravity_toolkit.geocenter().from_tellus(geocenter_file,
         header=HEADER, JPL=JPL)
-    #-- return the JPL GRACE Tellus geocenter solutions
+    # return the JPL GRACE Tellus geocenter solutions
     return DEG1.to_dict()

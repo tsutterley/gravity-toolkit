@@ -100,7 +100,7 @@ from gravity_toolkit.tsregress import tsregress
 from gravity_toolkit.tsamplitude import tsamplitude
 from gravity_toolkit.spatial import spatial
 
-#-- PURPOSE: keep track of threads
+# PURPOSE: keep track of threads
 def info(args):
     logging.info(os.path.basename(sys.argv[0]))
     logging.info(args)
@@ -109,7 +109,7 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
-#-- program module to run with specified parameters
+# program module to run with specified parameters
 def regress_grace_maps(LMAX, RAD,
     START=None,
     END=None,
@@ -129,66 +129,66 @@ def regress_grace_maps(LMAX, RAD,
     VERBOSE=0,
     MODE=0o775):
 
-    #-- output filename suffix
+    # output filename suffix
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')[DATAFORM]
 
-    #-- flag for spherical harmonic order
+    # flag for spherical harmonic order
     order_str = f'M{MMAX:d}' if MMAX and (MMAX != LMAX) else ''
-    #-- Calculating the Gaussian smoothing for radius RAD
+    # Calculating the Gaussian smoothing for radius RAD
     gw_str = f'_r{RAD:0.0f}km' if (RAD != 0) else ''
-    #-- destriped GRACE/GRACE-FO coefficients
+    # destriped GRACE/GRACE-FO coefficients
     ds_str = '_FL' if DESTRIPE else ''
-    #-- distributing removed mass uniformly over ocean
+    # distributing removed mass uniformly over ocean
     ocean_str = '_OCN' if REDISTRIBUTE_REMOVED else ''
-    #-- input and output spatial units
+    # input and output spatial units
     unit_list = ['cmwe', 'mmGH', 'mmCU', u'\u03BCGal', 'mbar']
     unit_name = ['Equivalent Water Thickness', 'Geoid Height',
         'Elastic Crustal Uplift', 'Gravitational Undulation',
         'Equivalent Surface Pressure']
 
-    #-- input file format
+    # input file format
     input_format = '{0}{1}_L{2:d}{3}{4}{5}_{6:03d}.{7}'
-    #-- output file format
+    # output file format
     output_format = '{0}{1}_L{2:d}{3}{4}{5}_{6}{7}_{8:03d}-{9:03d}.{10}'
 
-    #-- GRACE months to read
+    # GRACE months to read
     months = sorted(set(np.arange(START,END+1)) - set(MISSING))
     nmon = len(months)
 
-    #-- Output Degree Spacing
+    # Output Degree Spacing
     dlon,dlat = (DDEG[0],DDEG[0]) if (len(DDEG) == 1) else (DDEG[0],DDEG[1])
-    #-- Output Degree Interval
+    # Output Degree Interval
     if (INTERVAL == 1):
-        #-- (-180:180,90:-90)
+        # (-180:180,90:-90)
         nlon = np.int64((360.0/dlon)+1.0)
         nlat = np.int64((180.0/dlat)+1.0)
     elif (INTERVAL == 2):
-        #-- (Degree spacing)/2
+        # (Degree spacing)/2
         nlon = np.int64(360.0/dlon)
         nlat = np.int64(180.0/dlat)
     elif (INTERVAL == 3):
-        #-- non-global grid set with BOUNDS parameter
+        # non-global grid set with BOUNDS parameter
         minlon,maxlon,minlat,maxlat = BOUNDS.copy()
         lon = np.arange(minlon+dlon/2.0,maxlon+dlon/2.0,dlon)
         lat = np.arange(maxlat-dlat/2.0,minlat-dlat/2.0,-dlat)
         nlon = len(lon)
         nlat = len(lat)
 
-    #-- Setting output parameters for each fit type
+    # Setting output parameters for each fit type
     coef_str = ['x{0:d}'.format(o) for o in range(ORDER+1)]
     unit_suffix = [' yr^{0:d}'.format(-o) if o else '' for o in range(ORDER+1)]
-    if (ORDER == 0):#-- Mean
+    if (ORDER == 0):# Mean
         unit_longname = ['Mean']
-    elif (ORDER == 1):#-- Trend
+    elif (ORDER == 1):# Trend
         unit_longname = ['Constant','Trend']
-    elif (ORDER == 2):#-- Quadratic
+    elif (ORDER == 2):# Quadratic
         unit_longname = ['Constant','Linear','Quadratic']
-    #-- filename strings for cyclical terms
+    # filename strings for cyclical terms
     cyclic_str = {}
     cyclic_str['SEMI'] = ['SS','SC']
     cyclic_str['ANN'] = ['AS','AC']
     cyclic_str['S2'] = ['S2S','S2C']
-    #-- unit longnames for cyclical terms
+    # unit longnames for cyclical terms
     cyclic_longname = {}
     cyclic_longname['SEMI'] = ['Semi-Annual Sine', 'Semi-Annual Cosine']
     cyclic_longname['ANN'] = ['Annual Sine', 'Annual Cosine']
@@ -206,83 +206,83 @@ def regress_grace_maps(LMAX, RAD,
         unit_suffix.extend(['',''])
         amp_str.append(flag)
 
-    #-- input data spatial object
+    # input data spatial object
     spatial_list = []
     for t,grace_month in enumerate(months):
-        #-- input GRACE/GRACE-FO spatial file
+        # input GRACE/GRACE-FO spatial file
         fi = input_format.format(FILE_PREFIX,unit_list[UNITS-1],LMAX,
             order_str,gw_str,ds_str,grace_month,suffix)
-        #-- read GRACE/GRACE-FO spatial file
+        # read GRACE/GRACE-FO spatial file
         if (DATAFORM == 'ascii'):
             dinput = spatial(spacing=[dlon,dlat],nlon=nlon,
                 nlat=nlat).from_ascii(os.path.join(OUTPUT_DIRECTORY,fi))
         elif (DATAFORM == 'netCDF4'):
-            #-- netcdf (.nc)
+            # netcdf (.nc)
             dinput = spatial().from_netCDF4(os.path.join(OUTPUT_DIRECTORY,fi))
         elif (DATAFORM == 'HDF5'):
-            #-- HDF5 (.H5)
+            # HDF5 (.H5)
             dinput = spatial().from_HDF5(os.path.join(OUTPUT_DIRECTORY,fi))
-        #-- append to spatial list
+        # append to spatial list
         dinput.month = grace_month
         nlat,nlon = dinput.shape
         spatial_list.append(dinput)
 
-    #-- concatenate list to single spatial object
+    # concatenate list to single spatial object
     grid = spatial().from_list(spatial_list)
     spatial_list = None
 
-    #-- Fitting seasonal components
+    # Fitting seasonal components
     ncomp = len(coef_str)
     ncycles = 2*len(CYCLES)
 
-    #-- Allocating memory for output variables
+    # Allocating memory for output variables
     out = dinput.zeros_like()
     out.data = np.zeros((nlat,nlon,ncomp))
     out.error = np.zeros((nlat,nlon,ncomp))
     out.mask = np.ones((nlat,nlon,ncomp),dtype=bool)
-    #-- Fit Significance
+    # Fit Significance
     FS = {}
-    #-- SSE: Sum of Squares Error
-    #-- AIC: Akaike information criterion
-    #-- BIC: Bayesian information criterion
-    #-- R2Adj: Adjusted Coefficient of Determination
+    # SSE: Sum of Squares Error
+    # AIC: Akaike information criterion
+    # BIC: Bayesian information criterion
+    # R2Adj: Adjusted Coefficient of Determination
     for key in ['SSE','AIC','BIC','R2Adj']:
         FS[key] = dinput.zeros_like()
 
-    #-- calculate the regression coefficients and fit significance
+    # calculate the regression coefficients and fit significance
     for i in range(nlat):
         for j in range(nlon):
-            #-- Calculating the regression coefficients
+            # Calculating the regression coefficients
             tsbeta = tsregress(grid.time, grid.data[i,j,:],
                 ORDER=ORDER, CYCLES=CYCLES, CONF=0.95)
-            #-- save regression components
+            # save regression components
             for k in range(0, ncomp):
                 out.data[i,j,k] = tsbeta['beta'][k]
                 out.error[i,j,k] = tsbeta['error'][k]
                 out.mask[i,j,k] = False
-            #-- Fit significance terms
-            #-- Degrees of Freedom
+            # Fit significance terms
+            # Degrees of Freedom
             nu = tsbeta['DOF']
-            #-- Converting Mean Square Error to Sum of Squares Error
+            # Converting Mean Square Error to Sum of Squares Error
             FS['SSE'].data[i,j] = tsbeta['MSE']*nu
             FS['AIC'].data[i,j] = tsbeta['AIC']
             FS['BIC'].data[i,j] = tsbeta['BIC']
             FS['R2Adj'].data[i,j] = tsbeta['R2Adj']
 
-    #-- list of output files
+    # list of output files
     output_files = []
-    #-- Output spatial files
+    # Output spatial files
     for i in range(0,ncomp):
-        #-- output spatial file name
+        # output spatial file name
         f1 = output_format.format(FILE_PREFIX,unit_list[UNITS-1],LMAX,
             order_str,gw_str,ds_str,coef_str[i],'',START,END,suffix)
         f2 = output_format.format(FILE_PREFIX,unit_list[UNITS-1],LMAX,
             order_str,gw_str,ds_str,coef_str[i],'_ERROR',START,END,suffix)
-        #-- full attributes
+        # full attributes
         UNITS_TITLE = '{0}{1}'.format(unit_list[UNITS-1],unit_suffix[i])
         LONGNAME = unit_name[UNITS-1]
         FILE_TITLE = 'GRACE/GRACE-FO_Spatial_Data_{0}'.format(unit_longname[i])
-        #-- output regression fit to file
+        # output regression fit to file
         output = out.index(i, date=False)
         output_data(output, FILENAME=os.path.join(OUTPUT_DIRECTORY,f1),
             DATAFORM=DATAFORM, UNITS=UNITS_TITLE, LONGNAME=LONGNAME,
@@ -290,157 +290,157 @@ def regress_grace_maps(LMAX, RAD,
         output_data(output, FILENAME=os.path.join(OUTPUT_DIRECTORY,f2),
             DATAFORM=DATAFORM, UNITS=UNITS_TITLE, LONGNAME=LONGNAME,
             TITLE=FILE_TITLE, KEY='error', VERBOSE=VERBOSE, MODE=MODE)
-        #-- add output files to list object
+        # add output files to list object
         output_files.append(os.path.join(OUTPUT_DIRECTORY,f1))
         output_files.append(os.path.join(OUTPUT_DIRECTORY,f2))
 
-    #-- if fitting coefficients with cyclical components
+    # if fitting coefficients with cyclical components
     if (ncycles > 0):
-        #-- output spatial titles for amplitudes
+        # output spatial titles for amplitudes
         amp_title = {'ANN':'Annual Amplitude','SEMI':'Semi-Annual Amplitude',
             'S2':'S2 Tidal Alias Amplitude'}
         ph_title = {'ANN':'Annual Phase','SEMI':'Semi-Annual Phase',
             'S2':'S2 Tidal Alias Phase'}
 
-        #-- output amplitude and phase of cyclical components
+        # output amplitude and phase of cyclical components
         for i,flag in enumerate(amp_str):
-            #-- Indice pointing to the cyclical components
+            # Indice pointing to the cyclical components
             j = 1 + ORDER + 2*i
-            #-- Allocating memory for output amplitude and phase
+            # Allocating memory for output amplitude and phase
             amp = dinput.zeros_like()
             ph = dinput.zeros_like()
-            #-- calculating amplitude and phase of spatial field
+            # calculating amplitude and phase of spatial field
             amp.data,ph.data = tsamplitude(out.data[:,:,j],out.data[:,:,j+1])
-            #-- convert phase from -180:180 to 0:360
+            # convert phase from -180:180 to 0:360
             ii,jj = np.nonzero(ph.data < 0)
             ph.data[ii,jj] += 360.0
-            #-- Amplitude Error
+            # Amplitude Error
             comp1 = out.error[:,:,j]*out.data[:,:,j]/amp.data
             comp2 = out.error[:,:,j+1]*out.data[:,:,j+1]/amp.data
             amp.error = np.sqrt(comp1**2 + comp2**2)
-            #-- Phase Error (degrees)
+            # Phase Error (degrees)
             comp1 = out.error[:,:,j]*out.data[:,:,j+1]/(amp.data**2)
             comp2 = out.error[:,:,j+1]*out.data[:,:,j]/(amp.data**2)
             ph.error = (180.0/np.pi)*np.sqrt(comp1**2 + comp2**2)
 
-            #-- output file names for amplitude, phase and errors
+            # output file names for amplitude, phase and errors
             f3 = output_format.format(FILE_PREFIX,unit_list[UNITS-1],LMAX,
                 order_str,gw_str,ds_str,flag,'',START,END,suffix)
             f4 = output_format.format(FILE_PREFIX,unit_list[UNITS-1],LMAX,
                 order_str,gw_str,ds_str,flag,'_PHASE',START,END,suffix)
-            #-- output spatial error file name
+            # output spatial error file name
             f5 = output_format.format(FILE_PREFIX,unit_list[UNITS-1],LMAX,
                 order_str,gw_str,ds_str,flag,'_ERROR',START,END,suffix)
             f6 = output_format.format(FILE_PREFIX,unit_list[UNITS-1],LMAX,
                 order_str,gw_str,ds_str,flag,'_PHASE_ERROR',START,END,suffix)
-            #-- full attributes
+            # full attributes
             AMP_UNITS = unit_list[UNITS-1]
             PH_UNITS = 'degrees'
             LONGNAME = unit_name[UNITS-1]
             AMP_TITLE = 'GRACE/GRACE-FO_Spatial_Data_{0}'.format(amp_title[flag])
             PH_TITLE = 'GRACE/GRACE-FO_Spatial_Data_{0}'.format(ph_title[flag])
-            #-- Output seasonal amplitude and phase to files
+            # Output seasonal amplitude and phase to files
             output_data(amp, FILENAME=os.path.join(OUTPUT_DIRECTORY,f3),
                 DATAFORM=DATAFORM, UNITS=AMP_UNITS, LONGNAME=LONGNAME,
                 TITLE=AMP_TITLE, VERBOSE=VERBOSE, MODE=MODE)
             output_data(ph, FILENAME=os.path.join(OUTPUT_DIRECTORY,f4),
                 DATAFORM=DATAFORM, UNITS=PH_UNITS, LONGNAME='Phase',
                 TITLE=PH_TITLE, VERBOSE=VERBOSE, MODE=MODE)
-            #-- Output seasonal amplitude and phase error to files
+            # Output seasonal amplitude and phase error to files
             output_data(amp, FILENAME=os.path.join(OUTPUT_DIRECTORY,f5),
                 DATAFORM=DATAFORM, UNITS=AMP_UNITS, LONGNAME=LONGNAME,
                 TITLE=AMP_TITLE, KEY='error', VERBOSE=VERBOSE, MODE=MODE)
             output_data(ph, FILENAME=os.path.join(OUTPUT_DIRECTORY,f6),
                 DATAFORM=DATAFORM, UNITS=PH_UNITS, LONGNAME='Phase',
                 TITLE=PH_TITLE, KEY='error', VERBOSE=VERBOSE, MODE=MODE)
-            #-- add output files to list object
+            # add output files to list object
             output_files.append(os.path.join(OUTPUT_DIRECTORY,f3))
             output_files.append(os.path.join(OUTPUT_DIRECTORY,f4))
             output_files.append(os.path.join(OUTPUT_DIRECTORY,f5))
             output_files.append(os.path.join(OUTPUT_DIRECTORY,f6))
 
-    #-- Output fit significance
+    # Output fit significance
     signif_longname = {'SSE':'Sum of Squares Error',
         'AIC':'Akaike information criterion',
         'BIC':'Bayesian information criterion',
         'R2Adj':'Adjusted Coefficient of Determination'}
-    #-- for each fit significance term
+    # for each fit significance term
     for key,fs in FS.items():
-        #-- output file names for fit significance
+        # output file names for fit significance
         signif_str = '{0}_'.format(key)
         f7 = output_format.format(FILE_PREFIX,unit_list[UNITS-1],LMAX,
             order_str,gw_str,ds_str,signif_str,coef_str[ORDER],START,END,suffix)
-        #-- full attributes
+        # full attributes
         LONGNAME = signif_longname[key]
-        #-- output fit significance to file
+        # output fit significance to file
         output_data(fs, FILENAME=os.path.join(OUTPUT_DIRECTORY,f7),
             DATAFORM=DATAFORM, UNITS=key, LONGNAME=LONGNAME,
             TITLE=nu, VERBOSE=VERBOSE, MODE=MODE)
-        #-- add output files to list object
+        # add output files to list object
         output_files.append(os.path.join(OUTPUT_DIRECTORY,f7))
 
-    #-- return the list of output files
+    # return the list of output files
     return output_files
 
-#-- PURPOSE: wrapper function for outputting data to file
+# PURPOSE: wrapper function for outputting data to file
 def output_data(data, FILENAME=None, KEY='data', DATAFORM=None,
     UNITS=None, LONGNAME=None, TITLE=None, VERBOSE=0, MODE=0o775):
     output = data.copy()
     setattr(output,'data',getattr(data,KEY))
     if (DATAFORM == 'ascii'):
-        #-- ascii (.txt)
+        # ascii (.txt)
         output.to_ascii(FILENAME,date=False,verbose=VERBOSE)
     elif (DATAFORM == 'netCDF4'):
-        #-- netcdf (.nc)
+        # netcdf (.nc)
         output.to_netCDF4(FILENAME,date=False,verbose=VERBOSE,
             units=UNITS,longname=LONGNAME,title=TITLE)
     elif (DATAFORM == 'HDF5'):
-        #-- HDF5 (.H5)
+        # HDF5 (.H5)
         output.to_HDF5(FILENAME,date=False,verbose=VERBOSE,
             units=UNITS,longname=LONGNAME,title=TITLE)
-    #-- change the permissions mode of the output file
+    # change the permissions mode of the output file
     os.chmod(FILENAME, MODE)
 
-#-- PURPOSE: print a file log for the GRACE/GRACE-FO regression
+# PURPOSE: print a file log for the GRACE/GRACE-FO regression
 def output_log_file(arguments,output_files):
-    #-- format: GRACE_processing_run_2002-04-01_PID-70335.log
+    # format: GRACE_processing_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_processing_run_{0}_PID-{1:d}.log'.format(*args)
-    #-- create a unique log and open the log file
+    # create a unique log and open the log file
     DIRECTORY = os.path.expanduser(arguments.output_directory)
     fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
-    #-- print argument values sorted alphabetically
+    # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
     for arg, value in sorted(vars(arguments).items()):
         logging.info('{0}: {1}'.format(arg, value))
-    #-- print output files
+    # print output files
     logging.info('\n\nOUTPUT FILES:')
     for f in output_files:
         logging.info('{0}'.format(f))
-    #-- close the log file
+    # close the log file
     fid.close()
 
-#-- PURPOSE: print a error file log for the GRACE/GRACE-FO regression
+# PURPOSE: print a error file log for the GRACE/GRACE-FO regression
 def output_error_log_file(arguments):
-    #-- format: GRACE_processing_failed_run_2002-04-01_PID-70335.log
+    # format: GRACE_processing_failed_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_processing_failed_run_{0}_PID-{1:d}.log'.format(*args)
-    #-- create a unique log and open the log file
+    # create a unique log and open the log file
     DIRECTORY = os.path.expanduser(arguments.output_directory)
     fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
-    #-- print argument values sorted alphabetically
+    # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
     for arg, value in sorted(vars(arguments).items()):
         logging.info('{0}: {1}'.format(arg, value))
-    #-- print traceback error
+    # print traceback error
     logging.info('\n\nTRACEBACK ERROR:')
     traceback.print_exc(file=fid)
-    #-- close the log file
+    # close the log file
     fid.close()
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Reads in GRACE/GRACE-FO spatial files and calculates the
@@ -449,7 +449,7 @@ def arguments():
         fromfile_prefix_chars="@"
     )
     parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
-    #-- command line parameters
+    # command line parameters
     parser.add_argument('--output-directory','-O',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
@@ -457,14 +457,14 @@ def arguments():
     parser.add_argument('--file-prefix','-P',
         type=str,
         help='Prefix string for input and output files')
-    #-- maximum spherical harmonic degree and order
+    # maximum spherical harmonic degree and order
     parser.add_argument('--lmax','-l',
         type=int, default=60,
         help='Maximum spherical harmonic degree')
     parser.add_argument('--mmax','-m',
         type=int, default=None,
         help='Maximum spherical harmonic order')
-    #-- start and end GRACE/GRACE-FO months
+    # start and end GRACE/GRACE-FO months
     parser.add_argument('--start','-S',
         type=int, default=4,
         help='Starting GRACE/GRACE-FO month for time series regression')
@@ -476,19 +476,19 @@ def arguments():
     parser.add_argument('--missing','-N',
         metavar='MISSING', type=int, nargs='+', default=MISSING,
         help='Missing GRACE/GRACE-FO months')
-    #-- Gaussian smoothing radius (km)
+    # Gaussian smoothing radius (km)
     parser.add_argument('--radius','-R',
         type=float, default=0,
         help='Gaussian smoothing radius (km)')
-    #-- Use a decorrelation (destriping) filter
+    # Use a decorrelation (destriping) filter
     parser.add_argument('--destripe','-d',
         default=False, action='store_true',
         help='Use decorrelation (destriping) filter')
-    #-- output units
+    # output units
     parser.add_argument('--units','-U',
         type=int, default=1, choices=[1,2,3,4,5],
         help='Output units')
-    #-- output grid parameters
+    # output grid parameters
     parser.add_argument('--spacing',
         type=float, nargs='+', default=[0.5,0.5], metavar=('dlon','dlat'),
         help='Spatial resolution of output data')
@@ -499,55 +499,55 @@ def arguments():
     parser.add_argument('--bounds',
         type=float, nargs=4, metavar=('lon_min','lon_max','lat_min','lat_max'),
         help='Bounding box for non-global grid')
-    #-- input data format (ascii, netCDF4, HDF5)
+    # input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--format','-F',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
         help='Input/output data format')
     parser.add_argument('--redistribute-removed',
         default=False, action='store_true',
         help='Redistribute removed mass fields over the ocean')
-    #-- regression parameters
-    #-- 0: mean
-    #-- 1: trend
-    #-- 2: acceleration
+    # regression parameters
+    # 0: mean
+    # 1: trend
+    # 2: acceleration
     parser.add_argument('--order',
         type=int, default=2,
         help='Regression fit polynomial order')
-    #-- regression fit cyclical terms
+    # regression fit cyclical terms
     parser.add_argument('--cycles',
         type=float, default=[0.5,1.0,161.0/365.25], nargs='+',
         help='Regression fit cyclical terms')
-    #-- Output log file for each job in forms
-    #-- GRACE_processing_run_2002-04-01_PID-00000.log
-    #-- GRACE_processing_failed_run_2002-04-01_PID-00000.log
+    # Output log file for each job in forms
+    # GRACE_processing_run_2002-04-01_PID-00000.log
+    # GRACE_processing_failed_run_2002-04-01_PID-00000.log
     parser.add_argument('--log',
         default=False, action='store_true',
         help='Output log file for each job')
-    #-- print information about each input and output file
+    # print information about each input and output file
     parser.add_argument('--verbose','-V',
         action='count', default=0,
         help='Verbose output of run')
-    #-- permissions mode of the local directories and files (number in octal)
+    # permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permissions mode of output files')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
-    #-- Read the system arguments listed after the program
+    # Read the system arguments listed after the program
     parser = arguments()
     args,_ = parser.parse_known_args()
 
-    #-- create logger
+    # create logger
     loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
-    #-- try to run the analysis with listed parameters
+    # try to run the analysis with listed parameters
     try:
         info(args)
-        #-- run regress_grace_maps algorithm with parameters
+        # run regress_grace_maps algorithm with parameters
         output_files = regress_grace_maps(
             args.lmax,
             args.radius,
@@ -569,17 +569,17 @@ def main():
             VERBOSE=args.verbose,
             MODE=args.mode)
     except Exception as e:
-        #-- if there has been an error exception
-        #-- print the type, value, and stack trace of the
-        #-- current exception being handled
+        # if there has been an error exception
+        # print the type, value, and stack trace of the
+        # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
-        if args.log:#-- write failed job completion log file
+        if args.log:# write failed job completion log file
             output_error_log_file(args)
     else:
-        if args.log:#-- write successful job completion log file
+        if args.log:# write successful job completion log file
             output_log_file(args,output_files)
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()

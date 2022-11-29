@@ -43,39 +43,39 @@ matplotlib.rcParams['mathtext.default'] = 'regular'
 from matplotlib.offsetbox import AnchoredText
 import gravity_toolkit.geocenter as geocenter
 
-#-- PURPOSE: plots the GRACE/GRACE-FO geocenter time series
-#-- comparing results using different ocean bottom pressure estimates
+# PURPOSE: plots the GRACE/GRACE-FO geocenter time series
+# comparing results using different ocean bottom pressure estimates
 def geocenter_ocean_models(grace_dir,PROC,DREL,MODEL,START_MON,END_MON,MISSING):
-    #-- GRACE months
+    # GRACE months
     GAP = [187,188,189,190,191,192,193,194,195,196,197]
     months = sorted(set(np.arange(START_MON,END_MON+1)) - set(MISSING))
-    #-- labels for each scenario
+    # labels for each scenario
     input_flags = ['','iter','SLF_iter']
     input_labels = ['Static','Iterated','Iterated SLF']
-    #-- degree one coefficient labels
+    # degree one coefficient labels
     fig_labels = ['C11','S11','C10']
     axes_labels = dict(C10='c)',C11='a)',S11='b)')
     ylabels = dict(C10='z',C11='x',S11='y')
 
-    #-- list of plot colors
+    # list of plot colors
     plot_colors = ['darkorange','darkorchid','mediumseagreen','dodgerblue','0.4']
 
-    #-- 3 row plot (C10, C11 and S11)
+    # 3 row plot (C10, C11 and S11)
     ax = {}
     fig,(ax[0],ax[1],ax[2])=plt.subplots(num=1,ncols=3,sharey=True,figsize=(9,4))
-    #-- plot geocenter estimates for each processing center
+    # plot geocenter estimates for each processing center
     for k,mdl in enumerate(MODEL):
-        #-- read geocenter file for processing center and model
+        # read geocenter file for processing center and model
         grace_file = '{0}_{1}_{2}_{3}.txt'.format(PROC,DREL,mdl,input_flags[2])
         DEG1 = geocenter().from_UCI(os.path.join(grace_dir,grace_file))
-        #-- indices for mean months
+        # indices for mean months
         kk, = np.nonzero((DEG1.month >= START_MON) & (DEG1.month <= 176))
         DEG1.mean(apply=True, indices=kk)
-        #-- setting Load Love Number (kl) to 0.021 to match Swenson et al. (2008)
+        # setting Load Love Number (kl) to 0.021 to match Swenson et al. (2008)
         DEG1.to_cartesian(kl=0.021)
-        #-- plot each coefficient
+        # plot each coefficient
         for j,key in enumerate(fig_labels):
-            #-- create a time series with nans for missing months
+            # create a time series with nans for missing months
             tdec = np.full_like(months,np.nan,dtype=np.float64)
             data = np.full_like(months,np.nan,dtype=np.float64)
             val = getattr(DEG1, ylabels[key].upper())
@@ -85,27 +85,27 @@ def geocenter_ocean_models(grace_dir,PROC,DREL,MODEL,START_MON,END_MON,MISSING):
                     mm, = np.nonzero(DEG1.month == m)
                     tdec[i] = DEG1.time[mm]
                     data[i] = val[mm]
-            #-- plot all dates
+            # plot all dates
             label = mdl.replace('_','-')
             ax[j].plot(tdec, data, color=plot_colors[k], label=label)
 
-    #-- read geocenter file for processing center and model
+    # read geocenter file for processing center and model
     model_str = 'OMCT' if DREL in ('RL04','RL05') else 'MPIOM'
     grace_file = '{0}_{1}_{2}_{3}.txt'.format(PROC,DREL,model_str,input_flags[2])
     DEG1 = geocenter().from_UCI(os.path.join(grace_dir,grace_file))
-    #-- add axis labels and adjust font sizes for axis ticks
+    # add axis labels and adjust font sizes for axis ticks
     for j,key in enumerate(fig_labels):
-        #-- vertical lines for end of the GRACE mission and start of GRACE-FO
+        # vertical lines for end of the GRACE mission and start of GRACE-FO
         jj, = np.flatnonzero(DEG1.month == 186)
         kk, = np.flatnonzero(DEG1.month == 198)
         ax[j].axvspan(DEG1.time[jj],DEG1.time[kk],
             color='0.5',ls='dashed',alpha=0.15)
-        #-- axis label
+        # axis label
         ax[j].set_title(ylabels[key], style='italic', fontsize=14)
         ax[j].add_artist(AnchoredText(axes_labels[key], pad=0.,
             prop=dict(size=16,weight='bold'), frameon=False, loc=2))
         ax[j].set_xlabel('Time [Yr]', fontsize=14)
-        #-- set ticks
+        # set ticks
         xmin = 2002 + (START_MON + 1.0)//12.0
         xmax = 2002 + (END_MON + 1.0)/12.0
         major_ticks = np.arange(2005, xmax, 5)
@@ -114,7 +114,7 @@ def geocenter_ocean_models(grace_dir,PROC,DREL,MODEL,START_MON,END_MON,MISSING):
         ax[j].xaxis.set_ticks(minor_ticks, minor=True)
         ax[j].set_xlim(xmin, xmax)
         ax[j].set_ylim(-9.5,8.5)
-        #-- axes tick adjustments
+        # axes tick adjustments
         ax[j].get_xaxis().set_tick_params(which='both', direction='in')
         ax[j].get_yaxis().set_tick_params(which='both', direction='in')
         for tick in ax[j].xaxis.get_major_ticks():
@@ -122,7 +122,7 @@ def geocenter_ocean_models(grace_dir,PROC,DREL,MODEL,START_MON,END_MON,MISSING):
         for tick in ax[j].yaxis.get_major_ticks():
             tick.label.set_fontsize(14)
 
-    #-- add legend
+    # add legend
     lgd = ax[0].legend(loc=3,frameon=False)
     lgd.get_frame().set_alpha(1.0)
     for line in lgd.get_lines():
@@ -130,38 +130,38 @@ def geocenter_ocean_models(grace_dir,PROC,DREL,MODEL,START_MON,END_MON,MISSING):
     for i,text in enumerate(lgd.get_texts()):
         text.set_weight('bold')
         text.set_color(plot_colors[i])
-    #-- labels and set limits
+    # labels and set limits
     ax[0].set_ylabel('Geocenter Variation [mm]', fontsize=14)
-    #-- adjust locations of subplots
+    # adjust locations of subplots
     fig.subplots_adjust(left=0.06,right=0.98,bottom=0.12,top=0.94,wspace=0.05)
-    #-- save figure to file
+    # save figure to file
     OUTPUT_FIGURE = f'SV19_{PROC}_{DREL}_ocean_models.pdf'
     plt.savefig(os.path.join(grace_dir,OUTPUT_FIGURE), format='pdf', dpi=300)
     plt.clf()
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Plots the GRACE/GRACE-FO geocenter time series
             comparing results using different ocean bottom pressure estimates
             """
     )
-    #-- working data directory
+    # working data directory
     parser.add_argument('--directory','-D',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
-    #-- GRACE/GRACE-FO processing center
+    # GRACE/GRACE-FO processing center
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, nargs='+',
         default=['CSR','GFZ','JPL'], choices=['CSR','GFZ','JPL'],
         help='GRACE/GRACE-FO processing center')
-    #-- GRACE/GRACE-FO data release
+    # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
         metavar='DREL', type=str,
         default='RL06', choices=['RL04','RL05','RL06'],
         help='GRACE/GRACE-FO data release')
-    #-- start and end GRACE/GRACE-FO months
+    # start and end GRACE/GRACE-FO months
     parser.add_argument('--start','-S',
         type=int, default=4,
         help='Starting GRACE/GRACE-FO month for time series')
@@ -176,20 +176,20 @@ def arguments():
     parser.add_argument('--ocean','-O',
         type=str, nargs='+',
         help='Ocean bottom pressure products to use')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
-    #-- Read the system arguments listed after the program
+    # Read the system arguments listed after the program
     parser = arguments()
     args,_ = parser.parse_known_args()
 
-    #-- run program with parameters
+    # run program with parameters
     for PROC in args.center:
         geocenter_ocean_models(args.directory, PROC, args.release,
             args.ocean, args.start, args.end, args.missing)
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()

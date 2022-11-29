@@ -123,106 +123,106 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
         `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_
     """
 
-    #-- converting LMIN and LMAX to integer
+    # converting LMIN and LMAX to integer
     LMIN = np.int64(LMIN)
     LMAX = np.int64(LMAX)
-    #-- upper bound of spherical harmonic orders (default = LMAX)
+    # upper bound of spherical harmonic orders (default = LMAX)
     MMAX = np.copy(LMAX) if (MMAX is None) else MMAX
 
-    #-- grid dimensions
+    # grid dimensions
     nlat = np.int64(len(lat))
-    #-- grid step
+    # grid step
     dlon = np.abs(lon[1]-lon[0])
     dlat = np.abs(lat[1]-lat[0])
-    #-- longitude degree spacing in radians
+    # longitude degree spacing in radians
     dphi = dlon*np.pi/180.0
-    #-- colatitude degree spacing in radians
+    # colatitude degree spacing in radians
     dth = dlat*np.pi/180.0
 
-    #-- reformatting longitudes to range 0:360 (if previously -180:180)
+    # reformatting longitudes to range 0:360 (if previously -180:180)
     lon = np.squeeze(lon.copy())
     if np.any(lon < 0):
         lon_ind, = np.nonzero(lon < 0)
         lon[lon_ind] += 360.0
-    #-- Longitude in radians
+    # Longitude in radians
     phi = lon[np.newaxis,:]*np.pi/180.0
-    #-- Colatitude in radians
+    # Colatitude in radians
     th = (90.0 - np.squeeze(lat.copy()))*np.pi/180.0
 
-    #-- reforming data to lonXlat if input latXlon
+    # reforming data to lonXlat if input latXlon
     sz = np.shape(data)
     data = data.T if (sz[0] == nlat) else np.copy(data)
 
-    #-- SH Degree dependent factors to convert into fully normalized SH's
-    #-- use splat operator to extract arrays of kl, hl, and ll Love Numbers
+    # SH Degree dependent factors to convert into fully normalized SH's
+    # use splat operator to extract arrays of kl, hl, and ll Love Numbers
     factors = gravity_toolkit.units(lmax=LMAX).spatial(*LOVE)
 
-    #-- extract degree dependent factor for specific units
-    #-- calculate integration factors for theta and phi
-    #-- Multiplying sin(th) with differentials of theta and phi
-    #-- to calculate the integration factor at each latitude
+    # extract degree dependent factor for specific units
+    # calculate integration factors for theta and phi
+    # Multiplying sin(th) with differentials of theta and phi
+    # to calculate the integration factor at each latitude
     int_fact = np.zeros((nlat))
     if (UNITS == 1):
-        #-- Default Parameter: Input in cm w.e. (g/cm^2)
+        # Default Parameter: Input in cm w.e. (g/cm^2)
         dfactor = factors.cmwe
         int_fact[:] = np.sin(th)*dphi*dth
     elif (UNITS == 2):
-        #-- Input in gigatonnes (Gt)
+        # Input in gigatonnes (Gt)
         dfactor = factors.cmwe
-        #-- rad_e: Average Radius of the Earth [cm]
+        # rad_e: Average Radius of the Earth [cm]
         int_fact[:] = 1e15/(factors.rad_e**2)
     elif (UNITS == 3):
-        #-- Input in kg/m^2 (mm w.e.)
+        # Input in kg/m^2 (mm w.e.)
         dfactor = factors.mmwe
         int_fact[:] = np.sin(th)*dphi*dth
     elif isinstance(UNITS,(list,np.ndarray)):
-        #-- custom units
+        # custom units
         dfactor = np.copy(UNITS)
         int_fact[:] = np.sin(th)*dphi*dth
     else:
         raise ValueError(f'Unknown units {UNITS}')
 
-    #-- Calculating cos/sin of phi arrays
-    #-- output [m,phi]
+    # Calculating cos/sin of phi arrays
+    # output [m,phi]
     m = np.arange(MMAX+1)
     ccos = np.cos(np.dot(m[:,np.newaxis],phi))
     ssin = np.sin(np.dot(m[:,np.newaxis],phi))
 
-    #-- Calculating fully-normalized Legendre Polynomials
-    #-- Output is plm[l,m,th]
+    # Calculating fully-normalized Legendre Polynomials
+    # Output is plm[l,m,th]
     plm = np.zeros((LMAX+1,MMAX+1,nlat))
-    #-- added option to precompute plms to improve computational speed
+    # added option to precompute plms to improve computational speed
     if PLM is None:
-        #-- if plms are not pre-computed: calculate Legendre polynomials
+        # if plms are not pre-computed: calculate Legendre polynomials
         PLM, dPLM = plm_holmes(LMAX, np.cos(th))
 
-    #-- Multiplying by integration factors [sin(theta)*dtheta*dphi]
-    #-- truncate legendre polynomials to spherical harmonic order MMAX
+    # Multiplying by integration factors [sin(theta)*dtheta*dphi]
+    # truncate legendre polynomials to spherical harmonic order MMAX
     for j in range(0,nlat):
         plm[:,m,j] = PLM[:,m,j]*int_fact[j]
 
-    #-- Initializing preliminary spherical harmonic matrices
+    # Initializing preliminary spherical harmonic matrices
     yclm = np.zeros((LMAX+1,MMAX+1))
     yslm = np.zeros((LMAX+1,MMAX+1))
-    #-- Initializing output spherical harmonic matrices
+    # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
     Ylms.clm = np.zeros((LMAX+1,MMAX+1))
     Ylms.slm = np.zeros((LMAX+1,MMAX+1))
-    #-- Multiplying gridded data with sin/cos of m#phis
-    #-- This will sum through all phis in the dot product
-    #-- output [m,theta]
+    # Multiplying gridded data with sin/cos of m#phis
+    # This will sum through all phis in the dot product
+    # output [m,theta]
     dcos = np.dot(ccos,data)
     dsin = np.dot(ssin,data)
-    for l in range(LMIN,LMAX+1):#-- equivalent to LMIN:LMAX
-        mm = np.min([MMAX,l])#-- truncate to MMAX if specified (if l > MMAX)
-        m = np.arange(0,mm+1)#-- mm+1 elements between 0 and mm
-        #-- Summing product of plms and data over all latitudes
-        #-- axis=1 signifies the direction of the summation
+    for l in range(LMIN,LMAX+1):# equivalent to LMIN:LMAX
+        mm = np.min([MMAX,l])# truncate to MMAX if specified (if l > MMAX)
+        m = np.arange(0,mm+1)# mm+1 elements between 0 and mm
+        # Summing product of plms and data over all latitudes
+        # axis=1 signifies the direction of the summation
         yclm[l,m] = np.sum(plm[l,m,:]*dcos[m,:], axis=1)
         yslm[l,m] = np.sum(plm[l,m,:]*dsin[m,:], axis=1)
-        #-- Multiplying by factors to convert to fully normalized coefficients
+        # Multiplying by factors to convert to fully normalized coefficients
         Ylms.clm[l,m] = dfactor[l]*yclm[l,m]
         Ylms.slm[l,m] = dfactor[l]*yslm[l,m]
 
-    #-- return the output spherical harmonics object
+    # return the output spherical harmonics object
     return Ylms

@@ -94,7 +94,7 @@ from gravity_toolkit.harmonics import harmonics
 from gravity_toolkit.spatial import spatial
 from gravity_toolkit.time import calendar_to_grace
 
-#-- PURPOSE: keep track of threads
+# PURPOSE: keep track of threads
 def info(args):
     logging.info(os.path.basename(sys.argv[0]))
     logging.info(args)
@@ -103,7 +103,7 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
-#-- PURPOSE: converts from the spatial domain into the spherical harmonic domain
+# PURPOSE: converts from the spatial domain into the spherical harmonic domain
 def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     LMAX=None,
     MMAX=None,
@@ -117,80 +117,80 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     DATAFORM=None,
     MODE=0o775):
 
-    #-- verify that output directory exists
+    # verify that output directory exists
     DIRECTORY = os.path.abspath(os.path.dirname(OUTPUT_FILE))
     if not os.access(DIRECTORY, os.F_OK):
         os.makedirs(DIRECTORY,MODE,exist_ok=True)
 
-    #-- Grid spacing
+    # Grid spacing
     dlon,dlat = (DDEG,DDEG) if (np.ndim(DDEG) == 0) else (DDEG[0],DDEG[1])
-    #-- Grid dimensions
-    if (INTERVAL == 1):#-- (0:360, 90:-90)
+    # Grid dimensions
+    if (INTERVAL == 1):# (0:360, 90:-90)
         nlon = np.int64((360.0/dlon)+1.0)
         nlat = np.int64((180.0/dlat)+1.0)
-    elif (INTERVAL == 2):#-- degree spacing/2
+    elif (INTERVAL == 2):# degree spacing/2
         nlon = np.int64((360.0/dlon))
         nlat = np.int64((180.0/dlat))
 
-    #-- read spatial file in data format
-    #-- expand dimensions
+    # read spatial file in data format
+    # expand dimensions
     if (DATAFORM == 'ascii'):
-        #-- ascii (.txt)
+        # ascii (.txt)
         input_spatial = spatial(spacing=[dlon,dlat],nlat=nlat,
             nlon=nlon,fill_value=FILL_VALUE).from_ascii(INPUT_FILE,
             header=HEADER).expand_dims()
     elif (DATAFORM == 'netCDF4'):
-        #-- netcdf (.nc)
+        # netcdf (.nc)
         input_spatial = spatial().from_netCDF4(INPUT_FILE).expand_dims()
     elif (DATAFORM == 'HDF5'):
-        #-- HDF5 (.H5)
+        # HDF5 (.H5)
         input_spatial = spatial().from_HDF5(INPUT_FILE).expand_dims()
-    #-- convert missing values to zero
+    # convert missing values to zero
     input_spatial.replace_invalid(0.0)
-    #-- input data shape
+    # input data shape
     nlat,nlon,nt = input_spatial.shape
 
-    #-- read arrays of kl, hl, and ll Love Numbers
+    # read arrays of kl, hl, and ll Love Numbers
     LOVE = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE)
 
-    #-- upper bound of spherical harmonic orders (default = LMAX)
+    # upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:
         MMAX = np.copy(LMAX)
 
-    #-- calculate associated Legendre polynomials
+    # calculate associated Legendre polynomials
     th = (90.0 - input_spatial.lat)*np.pi/180.0
     PLM, dPLM = plm_holmes(LMAX, np.cos(th))
 
-    #-- create list of harmonics objects
+    # create list of harmonics objects
     Ylms_list = []
     for i,t in enumerate(input_spatial.time):
-        #-- convert spatial field to spherical harmonics
+        # convert spatial field to spherical harmonics
         output_Ylms = gen_stokes(input_spatial.data[:,:,i].T,
             input_spatial.lon, input_spatial.lat, UNITS=UNITS,
             LMIN=0, LMAX=LMAX, MMAX=MMAX, PLM=PLM, LOVE=LOVE)
         output_Ylms.time = np.copy(t)
         output_Ylms.month = calendar_to_grace(t)
-        #-- append to list
+        # append to list
         Ylms_list.append(output_Ylms)
-    #-- convert Ylms list for output spherical harmonics
+    # convert Ylms list for output spherical harmonics
     Ylms = harmonics().from_list(Ylms_list)
     Ylms_list = None
 
-    #-- outputting data to file
+    # outputting data to file
     if (DATAFORM == 'ascii'):
-        #-- ascii (.txt)
+        # ascii (.txt)
         Ylms.to_ascii(OUTPUT_FILE)
     elif (DATAFORM == 'netCDF4'):
-        #-- netCDF4 (.nc)
+        # netCDF4 (.nc)
         Ylms.to_netCDF4(OUTPUT_FILE)
     elif (DATAFORM == 'HDF5'):
-        #-- HDF5 (.H5)
+        # HDF5 (.H5)
         Ylms.to_HDF5(OUTPUT_FILE)
-    #-- change output permissions level to MODE
+    # change output permissions level to MODE
     os.chmod(OUTPUT_FILE,MODE)
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Converts a file from the spatial domain into the
@@ -199,77 +199,77 @@ def arguments():
         fromfile_prefix_chars="@"
     )
     parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
-    #-- command line parameters
-    #-- input and output file
+    # command line parameters
+    # input and output file
     parser.add_argument('infile',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='?',
         help='Input spatial file')
     parser.add_argument('outfile',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='?',
         help='Output harmonic file')
-    #-- maximum spherical harmonic degree and order
+    # maximum spherical harmonic degree and order
     parser.add_argument('--lmax','-l',
         type=int, default=60,
         help='Maximum spherical harmonic degree')
     parser.add_argument('--mmax','-m',
         type=int, default=None,
         help='Maximum spherical harmonic order')
-    #-- different treatments of the load Love numbers
-    #-- 0: Han and Wahr (1995) values from PREM
-    #-- 1: Gegout (2005) values from PREM
-    #-- 2: Wang et al. (2012) values from PREM
+    # different treatments of the load Love numbers
+    # 0: Han and Wahr (1995) values from PREM
+    # 1: Gegout (2005) values from PREM
+    # 2: Wang et al. (2012) values from PREM
     parser.add_argument('--love','-n',
         type=int, default=0, choices=[0,1,2],
         help='Treatment of the Load Love numbers')
-    #-- option for setting reference frame for gravitational load love number
-    #-- reference frame options (CF, CM, CE)
+    # option for setting reference frame for gravitational load love number
+    # reference frame options (CF, CM, CE)
     parser.add_argument('--reference',
         type=str.upper, default='CF', choices=['CF','CM','CE'],
         help='Reference frame for load Love numbers')
-    #-- output units
+    # output units
     parser.add_argument('--units','-U',
         type=int, default=1, choices=[1,2,3],
         help='Output units')
-    #-- output grid parameters
+    # output grid parameters
     parser.add_argument('--spacing','-S',
         type=float, nargs='+', default=[0.5,0.5], metavar=('dlon','dlat'),
         help='Spatial resolution of output data')
     parser.add_argument('--interval','-I',
         type=int, default=2, choices=[1,2],
         help='Input grid interval (1: global, 2: centered global)')
-    #-- fill value for ascii
+    # fill value for ascii
     parser.add_argument('--fill-value','-f',
         type=float,
         help='Set fill_value for input spatial fields')
-    #-- ascii parameters
+    # ascii parameters
     parser.add_argument('--header',
         type=int,
         help='Number of header rows to skip in input ascii files')
-    #-- input and output data format (ascii, netCDF4, HDF5)
+    # input and output data format (ascii, netCDF4, HDF5)
     parser.add_argument('--format','-F',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
         help='Input and output data format')
-    #-- print information about each input and output file
+    # print information about each input and output file
     parser.add_argument('--verbose','-V',
         action='count', default=0,
         help='Verbose output of run')
-    #-- permissions mode of the output files (octal)
+    # permissions mode of the output files (octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permissions mode of output files')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
     parser = arguments()
     args,_ = parser.parse_known_args()
 
-    #-- create logger
+    # create logger
     loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
-    #-- run program with parameters
+    # run program with parameters
     try:
         info(args)
         convert_harmonics(args.infile, args.outfile,
@@ -285,12 +285,12 @@ def main():
             DATAFORM=args.format,
             MODE=args.mode)
     except Exception as e:
-        #-- if there has been an error exception
-        #-- print the type, value, and stack trace of the
-        #-- current exception being handled
+        # if there has been an error exception
+        # print the type, value, and stack trace of the
+        # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()

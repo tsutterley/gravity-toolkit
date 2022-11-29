@@ -94,7 +94,7 @@ def hdf5_write(data, lon, lat, tim, **kwargs):
     CLOBBER: will overwrite an existing HDF5 file
     DATE: data has date information
     """
-    #-- set default keyword arguments
+    # set default keyword arguments
     kwargs.setdefault('FILENAME',None)
     kwargs.setdefault('VARNAME','z')
     kwargs.setdefault('LONNAME','lon')
@@ -109,23 +109,23 @@ def hdf5_write(data, lon, lat, tim, **kwargs):
     kwargs.setdefault('REFERENCE',None)
     kwargs.setdefault('DATE',True)
     kwargs.setdefault('CLOBBER',True)
-    #-- set deprecation warning
+    # set deprecation warning
     warnings.filterwarnings("always")
     warnings.warn("Deprecated. Please use spatial.to_HDF5",
         DeprecationWarning)
 
-    #-- setting HDF5 clobber attribute
+    # setting HDF5 clobber attribute
     clobber = 'w' if kwargs['CLOBBER'] else 'w-'
 
-    #-- opening HDF5 file for writing
+    # opening HDF5 file for writing
     fileID = h5py.File(kwargs['FILENAME'], clobber)
 
-    #-- create output dictionary with key mapping
+    # create output dictionary with key mapping
     output = {}
     output[kwargs['LONNAME']] = np.copy(lon)
     output[kwargs['LATNAME']] = np.copy(lat)
     dimensions = [kwargs['LATNAME'],kwargs['LONNAME']]
-    #-- extend with date variables
+    # extend with date variables
     if kwargs['DATE']:
         output[kwargs['TIMENAME']] = np.array(tim,dtype='f')
         output[kwargs['VARNAME']] = np.atleast_3d(data)
@@ -133,44 +133,44 @@ def hdf5_write(data, lon, lat, tim, **kwargs):
     else:
         output[kwargs['VARNAME']] = np.copy(data)
 
-    #-- Defining the HDF5 dataset variables
+    # Defining the HDF5 dataset variables
     h5 = {}
     for key,val in output.items():
         h5[key] = fileID.create_dataset(key, val.shape, data=val,
             dtype=val.dtype, compression='gzip')
-    #-- add dimensions
+    # add dimensions
     for i,dim in enumerate(dimensions):
         h5[kwargs['VARNAME']].dims[i].label = dim
         h5[kwargs['VARNAME']].dims[i].attach_scale(h5[dim])
 
-    #-- filling HDF5 dataset attributes
-    #-- Defining attributes for longitude and latitude
+    # filling HDF5 dataset attributes
+    # Defining attributes for longitude and latitude
     h5[kwargs['LONNAME']].attrs['long_name'] = 'longitude'
     h5[kwargs['LONNAME']].attrs['units'] = 'degrees_east'
     h5[kwargs['LATNAME']].attrs['long_name'] = 'latitude'
     h5[kwargs['LATNAME']].attrs['units'] = 'degrees_north'
-    #-- Defining attributes for dataset
+    # Defining attributes for dataset
     h5[kwargs['VARNAME']].attrs['long_name'] = kwargs['LONGNAME']
     h5[kwargs['VARNAME']].attrs['units'] = kwargs['UNITS']
-    #-- Dataset contains missing values
+    # Dataset contains missing values
     if (kwargs['FILL_VALUE'] is not None):
         h5[kwargs['VARNAME']].attrs['_FillValue'] = kwargs['FILL_VALUE']
-    #-- Defining attributes for date
+    # Defining attributes for date
     if kwargs['DATE']:
         h5[kwargs['TIMENAME']].attrs['long_name'] = kwargs['TIME_LONGNAME']
         h5[kwargs['TIMENAME']].attrs['units'] = kwargs['TIME_UNITS']
-    #-- description of file
+    # description of file
     if kwargs['TITLE']:
         fileID.attrs['description'] = kwargs['TITLE']
-    #-- reference of file
+    # reference of file
     if kwargs['REFERENCE']:
         fileID.attrs['reference'] = kwargs['REFERENCE']
-    #-- date created
+    # date created
     fileID.attrs['date_created'] = time.strftime('%Y-%m-%d',time.localtime())
 
-    #-- Output HDF5 structure information
+    # Output HDF5 structure information
     logging.info(kwargs['FILENAME'])
     logging.info(list(fileID.keys()))
 
-    #-- Closing the HDF5 file
+    # Closing the HDF5 file
     fileID.close()

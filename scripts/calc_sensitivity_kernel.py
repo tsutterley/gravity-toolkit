@@ -150,7 +150,7 @@ from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.ocean_stokes import ocean_stokes
 from gravity_toolkit.harmonic_summation import harmonic_summation
 
-#-- PURPOSE: keep track of threads
+# PURPOSE: keep track of threads
 def info(args):
     logging.info(os.path.basename(sys.argv[0]))
     logging.info(args)
@@ -159,8 +159,8 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
-#-- PURPOSE: calculate a regional time-series through a least
-#-- squares mascon process
+# PURPOSE: calculate a regional time-series through a least
+# squares mascon process
 def calc_sensitivity_kernel(LMAX, RAD,
     LMIN=None,
     MMAX=None,
@@ -178,309 +178,309 @@ def calc_sensitivity_kernel(LMAX, RAD,
     OUTPUT_DIRECTORY=None,
     MODE=0o775):
 
-    #-- file information
+    # file information
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')[DATAFORM]
-    #-- file parser for reading index files
-    #-- removes commented lines (can comment out files in the index)
-    #-- removes empty lines (if there are extra empty lines)
+    # file parser for reading index files
+    # removes commented lines (can comment out files in the index)
+    # removes empty lines (if there are extra empty lines)
     parser = re.compile(r'^(?!\#|\%|$)', re.VERBOSE)
 
-    #-- Create output Directory if not currently existing
+    # Create output Directory if not currently existing
     if (not os.access(OUTPUT_DIRECTORY,os.F_OK)):
         os.mkdir(OUTPUT_DIRECTORY)
 
-    #-- list object of output files for file logs (full path)
+    # list object of output files for file logs (full path)
     output_files = []
 
-    #-- read arrays of kl, hl, and ll Love Numbers
+    # read arrays of kl, hl, and ll Love Numbers
     hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE)
 
-    #-- Earth Parameters
+    # Earth Parameters
     factors = units(lmax=LMAX).harmonic(hl,kl,ll)
-    #-- Average Density of the Earth [g/cm^3]
+    # Average Density of the Earth [g/cm^3]
     rho_e = factors.rho_e
-    #-- Average Radius of the Earth [cm]
+    # Average Radius of the Earth [cm]
     rad_e = factors.rad_e
 
-    #-- input/output string for both LMAX==MMAX and LMAX != MMAX cases
+    # input/output string for both LMAX==MMAX and LMAX != MMAX cases
     MMAX = np.copy(LMAX) if not MMAX else MMAX
     order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
 
-    #-- Calculating the Gaussian smoothing for radius RAD
+    # Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):
         wt = 2.0*np.pi*gauss_weights(RAD,LMAX)
         gw_str = f'_r{RAD:0.0f}km'
     else:
-        #-- else = 1
+        # else = 1
         wt = np.ones((LMAX+1))
         gw_str = ''
 
-    #-- Read Ocean function and convert to Ylms for redistribution
+    # Read Ocean function and convert to Ylms for redistribution
     if REDISTRIBUTE_MASCONS:
-        #-- read Land-Sea Mask and convert to spherical harmonics
+        # read Land-Sea Mask and convert to spherical harmonics
         ocean_Ylms = ocean_stokes(LANDMASK, LMAX, MMAX=MMAX, LOVE=(hl,kl,ll))
         ocean_str = '_OCN'
     else:
-        #-- not distributing uniformly over ocean
+        # not distributing uniformly over ocean
         ocean_str = ''
 
-    #-- input mascon spherical harmonic datafiles
+    # input mascon spherical harmonic datafiles
     with open(MASCON_FILE, mode='r', encoding='utf8') as f:
         mascon_files = [l for l in f.read().splitlines() if parser.match(l)]
-    #-- number of mascons
+    # number of mascons
     n_mas = len(mascon_files)
-    #-- spatial area of the mascon
+    # spatial area of the mascon
     total_area = np.zeros((n_mas))
-    #-- name of each mascon
+    # name of each mascon
     mascon_name = []
-    #-- for each valid file in the index (iterate over mascons)
+    # for each valid file in the index (iterate over mascons)
     mascon_list = []
     for k,fi in enumerate(mascon_files):
-        #-- read mascon spherical harmonics
+        # read mascon spherical harmonics
         Ylms = harmonics().from_file(os.path.expanduser(fi),
             format=DATAFORM, date=False)
-        #-- Calculating the total mass of each mascon (1 cmwe uniform)
+        # Calculating the total mass of each mascon (1 cmwe uniform)
         total_area[k] = 4.0*np.pi*(rad_e**3)*rho_e*Ylms.clm[0,0]/3.0
-        #-- distribute mascon mass uniformly over the ocean
+        # distribute mascon mass uniformly over the ocean
         if REDISTRIBUTE_MASCONS:
-            #-- calculate ratio between total mascon mass and
-            #-- a uniformly distributed cm of water over the ocean
+            # calculate ratio between total mascon mass and
+            # a uniformly distributed cm of water over the ocean
             ratio = Ylms.clm[0,0]/ocean_Ylms.clm[0,0]
-            #-- for each spherical harmonic
-            for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
-                for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
-                    #-- remove ratio*ocean Ylms from mascon Ylms
-                    #-- note: x -= y is equivalent to x = x - y
+            # for each spherical harmonic
+            for m in range(0,MMAX+1):# MMAX+1 to include MMAX
+                for l in range(m,LMAX+1):# LMAX+1 to include LMAX
+                    # remove ratio*ocean Ylms from mascon Ylms
+                    # note: x -= y is equivalent to x = x - y
                     Ylms.clm[l,m] -= ratio*ocean_Ylms.clm[l,m]
                     Ylms.slm[l,m] -= ratio*ocean_Ylms.slm[l,m]
-        #-- truncate mascon spherical harmonics to d/o LMAX/MMAX and add to list
+        # truncate mascon spherical harmonics to d/o LMAX/MMAX and add to list
         mascon_list.append(Ylms.truncate(lmax=LMAX, mmax=MMAX))
-        #-- mascon base is the file without directory or suffix
+        # mascon base is the file without directory or suffix
         mascon_base = os.path.basename(mascon_files[k])
         mascon_base = os.path.splitext(mascon_base)[0]
-        #-- if lower case, will capitalize
+        # if lower case, will capitalize
         mascon_base = mascon_base.upper()
-        #-- if mascon name contains degree and order info, remove
+        # if mascon name contains degree and order info, remove
         mascon_name.append(mascon_base.replace(f'_L{LMAX:d}', ''))
-    #-- create single harmonics object from list
+    # create single harmonics object from list
     mascon_Ylms = harmonics().from_list(mascon_list, date=False)
 
-    #-- Calculating the number of cos and sin harmonics between LMIN and LMAX
-    #-- taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
+    # Calculating the number of cos and sin harmonics between LMIN and LMAX
+    # taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
     n_harm=np.int64(LMAX**2 - LMIN**2 + 2*LMAX + 1 - (LMAX-MMAX)**2 - (LMAX-MMAX))
 
-    #-- Initialing harmonics for least squares fitting
-    #-- mascon kernel
+    # Initialing harmonics for least squares fitting
+    # mascon kernel
     M_lm = np.zeros((n_harm,n_mas))
-    #-- mascon kernel converted to output unit
+    # mascon kernel converted to output unit
     MA_lm = np.zeros((n_harm,n_mas))
-    #-- sensitivity kernel
+    # sensitivity kernel
     A_lm = np.zeros((n_harm,n_mas))
-    #-- Initializing conversion factors
-    #-- factor for converting to smoothed coefficients of mass
+    # Initializing conversion factors
+    # factor for converting to smoothed coefficients of mass
     fact = np.zeros((n_harm))
-    #-- factor for converting back into geoid coefficients
+    # factor for converting back into geoid coefficients
     fact_inv = np.zeros((n_harm))
-    #-- smoothing factor
+    # smoothing factor
     wt_lm = np.zeros((n_harm))
 
-    #-- ii is a counter variable for building the mascon column array
+    # ii is a counter variable for building the mascon column array
     ii = 0
-    #-- Creating column array of clm/slm coefficients
-    #-- Order is [C00...C6060,S11...S6060]
-    #-- Calculating factor to convert geoid spherical harmonic coefficients
-    #-- to coefficients of mass (Wahr, 1998)
+    # Creating column array of clm/slm coefficients
+    # Order is [C00...C6060,S11...S6060]
+    # Calculating factor to convert geoid spherical harmonic coefficients
+    # to coefficients of mass (Wahr, 1998)
     coeff = rho_e*rad_e/3.0
     coeff_inv = 0.75/(np.pi*rho_e*rad_e**3)
-    #-- Switching between Cosine and Sine Stokes
+    # Switching between Cosine and Sine Stokes
     for cs,csharm in enumerate(['clm','slm']):
-        #-- copy cosine and sin harmonics
+        # copy cosine and sin harmonics
         mascon_harm = getattr(mascon_Ylms, csharm)
-        #-- for each spherical harmonic degree
-        #-- +1 to include LMAX
+        # for each spherical harmonic degree
+        # +1 to include LMAX
         for l in range(LMIN,LMAX+1):
-            #-- for each spherical harmonic order
-            #-- Sine Stokes for (m=0) = 0
+            # for each spherical harmonic order
+            # Sine Stokes for (m=0) = 0
             mm = np.min([MMAX,l])
-            #-- +1 to include l or MMAX (whichever is smaller)
+            # +1 to include l or MMAX (whichever is smaller)
             for m in range(cs,mm+1):
-                #-- Mascon Spherical Harmonics
+                # Mascon Spherical Harmonics
                 M_lm[ii,:] = np.copy(mascon_harm[l,m,:])
-                #-- degree dependent factor to convert to mass
+                # degree dependent factor to convert to mass
                 fact[ii] = (2.0*l + 1.0)/(1.0 + kl[l])
-                #-- degree dependent factor to convert from mass
+                # degree dependent factor to convert from mass
                 fact_inv[ii] = coeff_inv*(1.0 + kl[l])/(2.0*l+1.0)
-                #-- degree dependent smoothing
+                # degree dependent smoothing
                 wt_lm[ii] = np.copy(wt[l])
-                #-- add 1 to counter
+                # add 1 to counter
                 ii += 1
 
-    #-- Converting mascon coefficients to fit method
+    # Converting mascon coefficients to fit method
     if (FIT_METHOD == 1):
-        #-- Fitting Sensitivity Kernel as mass coefficients
-        #-- converting M_lm to mass coefficients of the kernel
+        # Fitting Sensitivity Kernel as mass coefficients
+        # converting M_lm to mass coefficients of the kernel
         for i in range(n_harm):
             MA_lm[i,:] = M_lm[i,:]*wt_lm[i]*fact[i]
         fit_factor = wt_lm*fact
         inv_fit_factor = np.copy(fact_inv)
     else:
-        #-- Fitting Sensitivity Kernel as geoid coefficients
+        # Fitting Sensitivity Kernel as geoid coefficients
         for i in range(n_harm):
             MA_lm[:,:] = M_lm[i,:]*wt_lm[i]
         fit_factor = wt_lm*np.ones((n_harm))
         inv_fit_factor = np.ones((n_harm))
 
-    #-- Fitting the sensitivity kernel from the input kernel
+    # Fitting the sensitivity kernel from the input kernel
     for i in range(n_harm):
-        #-- setting kern_i equal to 1 for d/o
+        # setting kern_i equal to 1 for d/o
         kern_i = np.zeros((n_harm))
-        #-- converting to mass coefficients if specified
+        # converting to mass coefficients if specified
         kern_i[i] = 1.0*fit_factor[i]
-        #-- spherical harmonics solution for the
-        #-- mascon sensitivity kernels
-        #-- Least Squares Solutions: Inv(X'.X).(X'.Y)
+        # spherical harmonics solution for the
+        # mascon sensitivity kernels
+        # Least Squares Solutions: Inv(X'.X).(X'.Y)
         kern_lm = np.linalg.lstsq(MA_lm, kern_i, rcond=-1)[0]
         for k in range(n_mas):
             A_lm[i,k] = kern_lm[k]*total_area[k]
-    #-- free up larger variables
+    # free up larger variables
     del M_lm, MA_lm, wt_lm, fact, fact_inv, fit_factor
 
-    #-- reshaping harmonics of sensitivity kernel to LMAX+1,MMAX+1
-    #-- calculating the spatial sensitivity kernel of each mascon
-    #-- kernel calculated as outlined in Tiwari (2009) and Jacobs (2012)
-    #-- Initializing output sensitivity kernel (both spatial and Ylms)
+    # reshaping harmonics of sensitivity kernel to LMAX+1,MMAX+1
+    # calculating the spatial sensitivity kernel of each mascon
+    # kernel calculated as outlined in Tiwari (2009) and Jacobs (2012)
+    # Initializing output sensitivity kernel (both spatial and Ylms)
     kern_Ylms = harmonics(lmax=LMAX, mmax=MMAX)
     kern_Ylms.clm = np.zeros((LMAX+1,MMAX+1,n_mas))
     kern_Ylms.slm = np.zeros((LMAX+1,MMAX+1,n_mas))
     kern_Ylms.time = np.copy(total_area)
-    #-- counter variable for deconstructing the mascon column arrays
+    # counter variable for deconstructing the mascon column arrays
     ii = 0
-    #-- Switching between Cosine and Sine Stokes
+    # Switching between Cosine and Sine Stokes
     for cs,csharm in enumerate(['clm','slm']):
-        #-- for each spherical harmonic degree
-        #-- +1 to include LMAX
+        # for each spherical harmonic degree
+        # +1 to include LMAX
         for l in range(LMIN,LMAX+1):
-            #-- for each spherical harmonic order
-            #-- Sine Stokes for (m=0) = 0
+            # for each spherical harmonic order
+            # Sine Stokes for (m=0) = 0
             mm = np.min([MMAX,l])
-            #-- +1 to include l or MMAX (whichever is smaller)
+            # +1 to include l or MMAX (whichever is smaller)
             for m in range(cs,mm+1):
-                #-- inv_fit_factor: normalize from mass harmonics
+                # inv_fit_factor: normalize from mass harmonics
                 temp = getattr(kern_Ylms, csharm)
                 temp[l,m,:] = inv_fit_factor[ii]*A_lm[ii,:]
-                #-- add 1 to counter
+                # add 1 to counter
                 ii += 1
-    #-- free up larger variables
+    # free up larger variables
     del A_lm, inv_fit_factor
 
-    #-- for each mascon
+    # for each mascon
     for k in range(n_mas):
-        #-- get harmonics for mascon
+        # get harmonics for mascon
         Ylms = kern_Ylms.index(k, date=False)
-        #-- output sensitivity kernel to file
+        # output sensitivity kernel to file
         args = (mascon_name[k],ocean_str,LMAX,order_str,gw_str,suffix)
         FILE1 = '{0}_SKERNEL_CLM{1}_L{2:d}{3}{4}.{5}'.format(*args)
         Ylms.to_file(os.path.join(OUTPUT_DIRECTORY, FILE1),
             format=DATAFORM, date=False)
-        #-- change the permissions mode
+        # change the permissions mode
         os.chmod(os.path.join(OUTPUT_DIRECTORY,FILE1),MODE)
-        #-- add output files to list object
+        # add output files to list object
         output_files.append(os.path.join(OUTPUT_DIRECTORY,FILE1))
 
-    #-- if outputting spatial grids
+    # if outputting spatial grids
     if SPATIAL:
-        #-- Output spatial data object
+        # Output spatial data object
         grid = spatial()
-        #-- Output Degree Spacing
+        # Output Degree Spacing
         dlon,dlat = (DDEG[0],DDEG[0]) if (len(DDEG) == 1) else (DDEG[0],DDEG[1])
-        #-- Output Degree Interval
+        # Output Degree Interval
         if (INTERVAL == 1):
-            #-- (-180:180,90:-90)
+            # (-180:180,90:-90)
             n_lon = np.int64((360.0/dlon)+1.0)
             n_lat = np.int64((180.0/dlat)+1.0)
             grid.lon = -180 + dlon*np.arange(0,n_lon)
             grid.lat = 90.0 - dlat*np.arange(0,n_lat)
         elif (INTERVAL == 2):
-            #-- (Degree spacing)/2
+            # (Degree spacing)/2
             grid.lon = np.arange(-180+dlon/2.0,180+dlon/2.0,dlon)
             grid.lat = np.arange(90.0-dlat/2.0,-90.0-dlat/2.0,-dlat)
             n_lon = len(grid.lon)
             n_lat = len(grid.lat)
         elif (INTERVAL == 3):
-            #-- non-global grid set with BOUNDS parameter
+            # non-global grid set with BOUNDS parameter
             minlon,maxlon,minlat,maxlat = BOUNDS.copy()
             grid.lon = np.arange(minlon+dlon/2.0,maxlon+dlon/2.0,dlon)
             grid.lat = np.arange(maxlat-dlat/2.0,minlat-dlat/2.0,-dlat)
             nlon = len(grid.lon)
             nlat = len(grid.lat)
 
-        #-- Computing plms for converting to spatial domain
+        # Computing plms for converting to spatial domain
         theta = (90.0-grid.lat)*np.pi/180.0
         PLM, dPLM = plm_holmes(LMAX, np.cos(theta))
 
-        #-- for each mascon
+        # for each mascon
         for k in range(n_mas):
-            #-- get harmonics for mascon
+            # get harmonics for mascon
             Ylms = kern_Ylms.index(k, date=False)
-            #-- convert spherical harmonics to output spatial grid
+            # convert spherical harmonics to output spatial grid
             grid.data = harmonic_summation(Ylms.clm, Ylms.slm,
                 grid.lon, grid.lat, LMAX=LMAX, MMAX=MMAX, PLM=PLM).T
             grid.mask = np.zeros_like(grid.data, dtype=bool)
-            #-- output sensitivity kernel to file
+            # output sensitivity kernel to file
             args = (mascon_name[k],ocean_str,LMAX,order_str,gw_str,suffix)
             FILE2 = '{0}_SKERNEL{1}_L{2:d}{3}{4}.{5}'.format(*args)
             grid.to_file(os.path.join(OUTPUT_DIRECTORY,FILE2),
                 format=DATAFORM, date=False,
                 units='unitless', longname='Sensitivity_Kernel')
-            #-- change the permissions mode
+            # change the permissions mode
             os.chmod(os.path.join(OUTPUT_DIRECTORY,FILE2),MODE)
-            #-- add output files to list object
+            # add output files to list object
             output_files.append(os.path.join(OUTPUT_DIRECTORY,FILE2))
 
-    #-- return the list of output files
+    # return the list of output files
     return output_files
 
-#-- PURPOSE: print a file log for the mascon sensitivity kernel analysis
+# PURPOSE: print a file log for the mascon sensitivity kernel analysis
 def output_log_file(arguments,output_files):
-    #-- format: calc_skernel_run_2002-04-01_PID-70335.log
+    # format: calc_skernel_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'calc_skernel_run_{0}_PID-{1:d}.log'.format(*args)
-    #-- create a unique log and open the log file
+    # create a unique log and open the log file
     DIRECTORY = os.path.expanduser(arguments.output_directory)
     fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
-    #-- print argument values sorted alphabetically
+    # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
     for arg, value in sorted(vars(arguments).items()):
         logging.info('{0}: {1}'.format(arg, value))
-    #-- print output files
+    # print output files
     logging.info('\n\nOUTPUT FILES:')
     for f in output_files:
         logging.info('{0}'.format(f))
-    #-- close the log file
+    # close the log file
     fid.close()
 
-#-- PURPOSE: print a error file log for the mascon sensitivity kernel analysis
+# PURPOSE: print a error file log for the mascon sensitivity kernel analysis
 def output_error_log_file(arguments):
-    #-- format: calc_skernel_failed_run_2002-04-01_PID-70335.log
+    # format: calc_skernel_failed_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'calc_skernel_failed_run_{0}_PID-{1:d}.log'.format(*args)
-    #-- create a unique log and open the log file
+    # create a unique log and open the log file
     DIRECTORY = os.path.expanduser(arguments.output_directory)
     fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
-    #-- print argument values sorted alphabetically
+    # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
     for arg, value in sorted(vars(arguments).items()):
         logging.info('{0}: {1}'.format(arg, value))
-    #-- print traceback error
+    # print traceback error
     logging.info('\n\nTRACEBACK ERROR:')
     traceback.print_exc(file=fid)
-    #-- close the log file
+    # close the log file
     fid.close()
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Calculates spatial sensitivity kernels through a
@@ -489,64 +489,64 @@ def arguments():
         fromfile_prefix_chars="@"
     )
     parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
-    #-- command line parameters
+    # command line parameters
     parser.add_argument('--output-directory','-O',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Output directory for mascon files')
-    #-- minimum spherical harmonic degree
+    # minimum spherical harmonic degree
     parser.add_argument('--lmin',
         type=int, default=1,
         help='Minimum spherical harmonic degree')
-    #-- maximum spherical harmonic degree and order
+    # maximum spherical harmonic degree and order
     parser.add_argument('--lmax','-l',
         type=int, default=60,
         help='Maximum spherical harmonic degree')
     parser.add_argument('--mmax','-m',
         type=int, default=None,
         help='Maximum spherical harmonic order')
-    #-- different treatments of the load Love numbers
-    #-- 0: Han and Wahr (1995) values from PREM
-    #-- 1: Gegout (2005) values from PREM
-    #-- 2: Wang et al. (2012) values from PREM
+    # different treatments of the load Love numbers
+    # 0: Han and Wahr (1995) values from PREM
+    # 1: Gegout (2005) values from PREM
+    # 2: Wang et al. (2012) values from PREM
     parser.add_argument('--love','-n',
         type=int, default=0, choices=[0,1,2],
         help='Treatment of the Load Love numbers')
-    #-- option for setting reference frame for gravitational load love number
-    #-- reference frame options (CF, CM, CE)
+    # option for setting reference frame for gravitational load love number
+    # reference frame options (CF, CM, CE)
     parser.add_argument('--reference',
         type=str.upper, default='CF', choices=['CF','CM','CE'],
         help='Reference frame for load Love numbers')
-    #-- Gaussian smoothing radius (km)
+    # Gaussian smoothing radius (km)
     parser.add_argument('--radius','-R',
         type=float, default=0,
         help='Gaussian smoothing radius (km)')
-    #-- input data format (ascii, netCDF4, HDF5)
+    # input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--format','-F',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
         help='Input data format for auxiliary files')
-    #-- mascon index file and parameters
+    # mascon index file and parameters
     parser.add_argument('--mascon-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='Index file of mascons spherical harmonics')
     parser.add_argument('--redistribute-mascons',
         default=False, action='store_true',
         help='Redistribute mascon mass over the ocean')
-    #-- 1: mass coefficients
-    #-- 2: geoid coefficients
+    # 1: mass coefficients
+    # 2: geoid coefficients
     parser.add_argument('--fit-method',
         type=int, default=1, choices=(1,2),
         help='Method for fitting sensitivity kernel to harmonics')
-    #-- land-sea mask for redistributing mascon mass
+    # land-sea mask for redistributing mascon mass
     lsmask = utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
         help='Land-sea mask for redistributing mascon mass')
-    #-- output spatial grid
+    # output spatial grid
     parser.add_argument('--spatial','-s',
         default=False, action='store_true',
         help='Output spatial grid file for each mascon')
-    #-- output grid parameters
+    # output grid parameters
     parser.add_argument('--spacing','-S',
         type=float, nargs='+', default=[0.5,0.5], metavar=('dlon','dlat'),
         help='Spatial resolution of output data')
@@ -557,37 +557,37 @@ def arguments():
     parser.add_argument('--bounds','-B',
         type=float, nargs=4, metavar=('lon_min','lon_max','lat_min','lat_max'),
         help='Bounding box for non-global grid')
-    #-- Output log file for each job in forms
-    #-- calc_skernel_run_2002-04-01_PID-00000.log
-    #-- calc_skernel_failed_run_2002-04-01_PID-00000.log
+    # Output log file for each job in forms
+    # calc_skernel_run_2002-04-01_PID-00000.log
+    # calc_skernel_failed_run_2002-04-01_PID-00000.log
     parser.add_argument('--log',
         default=False, action='store_true',
         help='Output log file for each job')
-    #-- print information about processing run
+    # print information about processing run
     parser.add_argument('--verbose','-V',
         action='count', default=0,
         help='Verbose output of processing run')
-    #-- permissions mode of the local directories and files (number in octal)
+    # permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permissions mode of output files')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
-    #-- Read the system arguments listed after the program
+    # Read the system arguments listed after the program
     parser = arguments()
     args,_ = parser.parse_known_args()
 
-    #-- create logger
+    # create logger
     loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
-    #-- try to run the analysis with listed parameters
+    # try to run the analysis with listed parameters
     try:
         info(args)
-        #-- run calc_sensitivity_kernel algorithm with parameters
+        # run calc_sensitivity_kernel algorithm with parameters
         output_files = calc_sensitivity_kernel(
             args.lmax,
             args.radius,
@@ -607,17 +607,17 @@ def main():
             OUTPUT_DIRECTORY=args.output_directory,
             MODE=args.mode)
     except Exception as e:
-        #-- if there has been an error exception
-        #-- print the type, value, and stack trace of the
-        #-- current exception being handled
+        # if there has been an error exception
+        # print the type, value, and stack trace of the
+        # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
-        if args.log:#-- write failed job completion log file
+        if args.log:# write failed job completion log file
             output_error_log_file(args)
     else:
-        if args.log:#-- write successful job completion log file
+        if args.log:# write successful job completion log file
             output_log_file(args,output_files)
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()

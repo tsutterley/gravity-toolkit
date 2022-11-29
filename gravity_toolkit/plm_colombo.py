@@ -86,48 +86,48 @@ def plm_colombo(LMAX, x, ASTYPE=np.float64):
         `doi: 10.1007/s00190-002-0216-2 <https://doi.org/10.1007/s00190-002-0216-2>`_
     """
 
-    #-- removing singleton dimensions of x
+    # removing singleton dimensions of x
     x = np.atleast_1d(x).flatten().astype(ASTYPE)
-    #-- length of the x array
+    # length of the x array
     jm = len(x)
-    #-- verify data type of spherical harmonic truncation
+    # verify data type of spherical harmonic truncation
     LMAX = np.int64(LMAX)
 
-    #-- allocating for the plm matrix and differentials
+    # allocating for the plm matrix and differentials
     plm = np.zeros((LMAX+1,LMAX+1,jm))
     dplm = np.zeros((LMAX+1,LMAX+1,jm))
 
-    #-- u is sine of colatitude (cosine of latitude) so that 0 <= s <= 1
-    #-- for x=cos(th): u=sin(th)
+    # u is sine of colatitude (cosine of latitude) so that 0 <= s <= 1
+    # for x=cos(th): u=sin(th)
     u = np.sqrt(1.0 - x**2)
-    #-- update where u==0 to eps of data type to prevent invalid divisions
+    # update where u==0 to eps of data type to prevent invalid divisions
     u[u == 0] = np.finfo(u.dtype).eps
 
-    #-- Calculating the initial polynomials for the recursion
+    # Calculating the initial polynomials for the recursion
     plm[0,0,:] = 1.0
     plm[1,0,:] = np.sqrt(3.0)*x
     plm[1,1,:] = np.sqrt(3.0)*u
-    #-- calculating first derivatives for harmonics of degree 1
+    # calculating first derivatives for harmonics of degree 1
     dplm[1,0,:] = (1.0/u)*(x*plm[1,0,:] - np.sqrt(3)*plm[0,0,:])
     dplm[1,1,:] = (x/u)*plm[1,1,:]
     for l in range(2, LMAX+1):
-        for m in range(0, l):#-- Zonal and Tesseral harmonics (non-sectorial)
-            #-- Computes the non-sectorial terms from previously computed
-            #-- sectorial terms.
+        for m in range(0, l):# Zonal and Tesseral harmonics (non-sectorial)
+            # Computes the non-sectorial terms from previously computed
+            # sectorial terms.
             alm = np.sqrt(((2.0*l-1.0)*(2.0*l+1.0))/((l-m)*(l+m)))
             blm = np.sqrt(((2.0*l+1.0)*(l+m-1.0)*(l-m-1.0))/((l-m)*(l+m)*(2.0*l-3.0)))
-            #-- if (m == l-1): plm[l-2,m,:] will be 0
+            # if (m == l-1): plm[l-2,m,:] will be 0
             plm[l,m,:] = alm*x*plm[l-1,m,:] - blm*plm[l-2,m,:]
-            #-- calculate first derivatives
+            # calculate first derivatives
             flm = np.sqrt(((l**2.0 - m**2.0)*(2.0*l + 1.0))/(2.0*l - 1.0))
             dplm[l,m,:] = (1.0/u)*(l*x*plm[l,m,:] - flm*plm[l-1,m,:])
 
-        #-- Sectorial harmonics
-        #-- The sectorial harmonics serve as seed values for the recursion
-        #-- starting with P00 and P11 (outside the loop)
+        # Sectorial harmonics
+        # The sectorial harmonics serve as seed values for the recursion
+        # starting with P00 and P11 (outside the loop)
         plm[l,l,:] = u*np.sqrt((2.0*l+1.0)/(2.0*l))*np.squeeze(plm[l-1,l-1,:])
-        #-- calculate first derivatives for sectorial harmonics
+        # calculate first derivatives for sectorial harmonics
         dplm[l,l,:] = np.longdouble(l)*(x/u)*plm[l,l,:]
 
-    #-- return the legendre polynomials and their first derivative
+    # return the legendre polynomials and their first derivative
     return plm, dplm

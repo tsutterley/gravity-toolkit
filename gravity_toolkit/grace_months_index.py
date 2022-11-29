@@ -86,146 +86,146 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
     MODE: oct or NoneType, default None
         Permissions mode of output index file
     """
-    #-- Output GRACE months file
+    # Output GRACE months file
     grace_months_file = 'GRACE_months.txt'
     fid = open(os.path.join(base_dir,grace_months_file), 'w')
 
-    #-- Initial parameters
-    #-- processing centers
+    # Initial parameters
+    # processing centers
     PROC = ['CSR', 'GFZ', 'GSFC', 'JPL']
-    #-- read from GSM datasets
+    # read from GSM datasets
     DSET = 'GSM'
-    #-- maximum month of the datasets
-    #-- checks for the maximum month between processing centers
+    # maximum month of the datasets
+    # checks for the maximum month between processing centers
     max_mon = 0
-    #-- contain the information for each dataset
+    # contain the information for each dataset
     var_info = {}
 
-    #-- Looping through data releases first (all RL04 then all RL05)
-    #-- for each considered data release (RL04,RL05)
+    # Looping through data releases first (all RL04 then all RL05)
+    # for each considered data release (RL04,RL05)
     for rl in DREL:
-        #-- for each processing centers (CSR, GFZ, JPL)
+        # for each processing centers (CSR, GFZ, JPL)
         for pr in PROC:
-            #-- Setting the data directory for processing center and release
+            # Setting the data directory for processing center and release
             grace_dir = os.path.join(base_dir, pr, rl, DSET)
-            #-- read GRACE date ascii file
-            #-- file created in read_grace.py or grace_dates.py
+            # read GRACE date ascii file
+            # file created in read_grace.py or grace_dates.py
             grace_date_file = f'{pr}_{rl}_DATES.txt'
             if os.access(os.path.join(grace_dir,grace_date_file), os.F_OK):
-                #-- skip the header line
+                # skip the header line
                 date_input = np.loadtxt(os.path.join(grace_dir,grace_date_file),
                     skiprows=1)
-                #-- number of months
+                # number of months
                 nmon = np.shape(date_input)[0]
 
-                #-- Setting the dictionary key e.g. 'CSR_RL04'
+                # Setting the dictionary key e.g. 'CSR_RL04'
                 var_name = f'{pr}_{rl}'
 
-                #-- Creating a python dictionary for each dataset with parameters:
-                #-- month #, start year, start day, end year, end day
-                #-- Purpose is to get all of the dates loaded for each dataset
-                #-- Adding data to dictionary for data processing and release
+                # Creating a python dictionary for each dataset with parameters:
+                # month #, start year, start day, end year, end day
+                # Purpose is to get all of the dates loaded for each dataset
+                # Adding data to dictionary for data processing and release
                 var_info[var_name] = {}
-                #-- allocate for output variables
+                # allocate for output variables
                 var_info[var_name]['mon'] = np.zeros((nmon),dtype=np.int64)
                 var_info[var_name]['styr'] = np.zeros((nmon),dtype=np.int64)
                 var_info[var_name]['stday'] = np.zeros((nmon),dtype=np.int64)
                 var_info[var_name]['endyr'] = np.zeros((nmon),dtype=np.int64)
                 var_info[var_name]['endday'] = np.zeros((nmon),dtype=np.int64)
-                #-- place output variables in dictionary
+                # place output variables in dictionary
                 for i,key in enumerate(['mon','styr','stday','endyr','endday']):
-                    #-- first column is date in decimal form (start at 1 not 0)
+                    # first column is date in decimal form (start at 1 not 0)
                     var_info[var_name][key] = date_input[:,i+1].astype(np.int64)
-                #-- Finding the maximum month measured
+                # Finding the maximum month measured
                 if (var_info[var_name]['mon'].max() > max_mon):
-                    #-- if the maximum month in this dataset is greater
-                    #-- than the previously read datasets
+                    # if the maximum month in this dataset is greater
+                    # than the previously read datasets
                     max_mon = np.int64(var_info[var_name]['mon'].max())
 
-    #-- sort datasets alphanumerically
+    # sort datasets alphanumerically
     var_name = sorted(var_info.keys())
     txt = ''.join([f'{d:^21}' for d in var_name])
-    #-- printing header to file
+    # printing header to file
     print(f'{"MONTH":^11}  {txt}', file=fid)
 
-    #-- for each possible month
-    #-- GRACE starts at month 004 (April 2002)
-    #-- max_mon+1 to include max_mon
+    # for each possible month
+    # GRACE starts at month 004 (April 2002)
+    # max_mon+1 to include max_mon
     for m in range(4, max_mon+1):
-        #-- finding the month name e.g. Apr
+        # finding the month name e.g. Apr
         calendar_year,calendar_month = grace_to_calendar(m)
         month_string = calendar.month_abbr[calendar_month]
-        #-- create list object for output string
+        # create list object for output string
         output_string = []
-        #-- for each processing center and data release
+        # for each processing center and data release
         for var in var_name:
-            #-- find if the month of data exists
-            #-- exists will be greater than 0 if there is a match
+            # find if the month of data exists
+            # exists will be greater than 0 if there is a match
             exists = np.count_nonzero(var_info[var]['mon'] == m)
             if (exists != 0):
-                #-- if there is a matching month
-                #-- indice of matching month
+                # if there is a matching month
+                # indice of matching month
                 ind, = np.nonzero(var_info[var]['mon'] == m)
-                #-- start date
+                # start date
                 st_yr, = var_info[var]['styr'][ind]
                 st_day, = var_info[var]['stday'][ind]
-                #-- end date
+                # end date
                 end_yr, = var_info[var]['endyr'][ind]
                 end_day, = var_info[var]['endday'][ind]
-                #-- output string is the date range
-                #-- string format: 2002_102--2002_120
+                # output string is the date range
+                # string format: 2002_102--2002_120
                 output_string.append(f'{st_yr:4d}_{st_day:03d}--'
                     f'{end_yr:4d}_{end_day:03d}')
             else:
-                #-- if there is no matching month = missing
+                # if there is no matching month = missing
                 output_string.append(' ** missing **   ')
 
-        #-- create single string with output string components
-        #-- formatting the strings to be 20 characters in length
+        # create single string with output string components
+        # formatting the strings to be 20 characters in length
         data_string = ' '.join([f'{s:>20}' for s in output_string])
-        #-- printing data line to file
+        # printing data line to file
         args = (m, month_string, calendar_year, data_string)
         print('{0:03d} {1:>3}{2:4d} {3}'.format(*args), file=fid)
 
-    #-- close months file
+    # close months file
     fid.close()
-    #-- set the permissions level of the output file
+    # set the permissions level of the output file
     os.chmod(os.path.join(base_dir,grace_months_file), MODE)
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Creates a file with the start and end days for
             each month of GRACE/GRACE-FO data
             """
     )
-    #-- command line parameters
-    #-- working data directory
+    # command line parameters
+    # working data directory
     parser.add_argument('--directory','-D',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
-    #-- GRACE/GRACE-FO data release
+    # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
         metavar='DREL', type=str, nargs='+',
         default=['RL06','rl06v2.0'],
         help='GRACE/GRACE-FO Data Release')
-    #-- permissions mode of the local directories and files (number in octal)
+    # permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permissions mode of output files')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
-    #-- Read the system arguments listed after the program
+    # Read the system arguments listed after the program
     parser = arguments()
     args,_ = parser.parse_known_args()
 
-    #-- run GRACE/GRACE-FO months program
+    # run GRACE/GRACE-FO months program
     grace_months_index(args.directory, DREL=args.release, MODE=args.mode)
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()

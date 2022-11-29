@@ -61,7 +61,7 @@ UPDATE HISTORY:
 import warnings
 import gravity_toolkit.geocenter
 
-#-- PURPOSE: read geocenter data from Sean Swenson
+# PURPOSE: read geocenter data from Sean Swenson
 def read_swenson_geocenter(geocenter_file, HEADER=True):
     """
     Reads monthly geocenter files computed by Sean Swenson using
@@ -93,5 +93,5 @@ def read_swenson_geocenter(geocenter_file, HEADER=True):
     # call renamed version to not break workflows
     DEG1 = gravity_toolkit.geocenter().from_swenson(geocenter_file,
         header=HEADER)
-    #-- return the geocenter solutions from Sean Swenson
+    # return the geocenter solutions from Sean Swenson
     return DEG1.to_dict()

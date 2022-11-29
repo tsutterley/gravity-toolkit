@@ -116,7 +116,7 @@ from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.harmonics import harmonics
 from gravity_toolkit.spatial import spatial
 
-#-- PURPOSE: keep track of threads
+# PURPOSE: keep track of threads
 def info(args):
     logging.info(os.path.basename(sys.argv[0]))
     logging.info(args)
@@ -125,7 +125,7 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
-#-- PURPOSE: Computes Sea Level Fingerprints including polar motion feedback
+# PURPOSE: Computes Sea Level Fingerprints including polar motion feedback
 def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     LANDMASK=None,
     LMAX=0,
@@ -139,86 +139,86 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     DATE=False,
     MODE=0o775):
 
-    #-- Land-Sea Mask with Antarctica from Rignot (2017) and Greenland from GEUS
-    #-- 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
-    #-- Open the land-sea NetCDF file for reading
+    # Land-Sea Mask with Antarctica from Rignot (2017) and Greenland from GEUS
+    # 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
+    # Open the land-sea NetCDF file for reading
     landsea = spatial().from_netCDF4(LANDMASK, date=False, varname='LSMASK')
-    #-- create land function
+    # create land function
     nth,nphi = landsea.shape
     land_function = np.zeros((nth,nphi),dtype=np.float64)
-    #-- calculate colatitude in radians
+    # calculate colatitude in radians
     th = (90.0 - landsea.lat)*np.pi/180.0
-    #-- extract land function from file
-    #-- combine land and island levels for land function
+    # extract land function from file
+    # combine land and island levels for land function
     indx,indy = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))
     land_function[indx,indy] = 1.0
 
-    #-- read load love numbers
+    # read load love numbers
     hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE)
 
-    #-- read spherical harmonic coefficients of the load from input DATAFORM
+    # read spherical harmonic coefficients of the load from input DATAFORM
     if (DATAFORM == 'ascii'):
-        #-- read input ascii file (.txt)
+        # read input ascii file (.txt)
         load_Ylms = harmonics().from_ascii(INPUT_FILE, date=DATE)
     elif (DATAFORM == 'netCDF4'):
-        #-- read input netCDF4 file (.nc)
+        # read input netCDF4 file (.nc)
         load_Ylms = harmonics().from_netCDF4(INPUT_FILE, date=DATE)
     elif (DATAFORM == 'HDF5'):
-        #-- read input HDF5 file (.H5)
+        # read input HDF5 file (.H5)
         load_Ylms = harmonics().from_HDF5(INPUT_FILE, date=DATE)
-    #-- truncate harmonics to degree and order LMAX
+    # truncate harmonics to degree and order LMAX
     load_Ylms.truncate(lmax=LMAX, mmax=LMAX)
-    #-- expand dimensions to iterate over slices
+    # expand dimensions to iterate over slices
     load_Ylms.expand_dims()
     l1,m1,nt = load_Ylms.shape
 
-    #-- calculate the legendre functions using Holmes and Featherstone relation
+    # calculate the legendre functions using Holmes and Featherstone relation
     PLM, dPLM = plm_holmes(LMAX, np.cos(th))
 
-    #-- allocate for pseudo-spectral sea level equation solver
+    # allocate for pseudo-spectral sea level equation solver
     sea_level = spatial(nlon=nphi, nlat=nth)
     sea_level.data = np.zeros((nth,nphi,nt))
     sea_level.mask = np.zeros((nth,nphi,nt), dtype=bool)
     for i in range(nt):
-        #-- print iteration if running a series
+        # print iteration if running a series
         if (nt > 1):
             logging.info('Index {0:d} of {1:d}'.format(i+1,nt))
-        #-- subset harmonics to indice
+        # subset harmonics to indice
         Ylms = load_Ylms.index(i, date=DATE)
-        #-- run pseudo-spectral sea level equation solver
+        # run pseudo-spectral sea level equation solver
         sea_level.data[:,:,i] = sea_level_equation(Ylms.clm, Ylms.slm,
             landsea.lon, landsea.lat, land_function.T, LMAX=LMAX,
             LOVE=(hl,kl,ll), BODY_TIDE_LOVE=BODY_TIDE_LOVE,
             FLUID_LOVE=FLUID_LOVE, POLAR=POLAR, PLM=PLM,
             ITERATIONS=ITERATIONS, FILL_VALUE=0).T
         sea_level.mask[:,:,i] = (sea_level.data[:,:,i] == 0)
-    #-- copy dimensions
+    # copy dimensions
     sea_level.lon = np.copy(landsea.lon)
     sea_level.lat = np.copy(landsea.lat)
     sea_level.time = np.copy(load_Ylms.time) if DATE else None
-    #-- remove singleton dimensions if necessary
+    # remove singleton dimensions if necessary
     sea_level.squeeze()
 
-    #-- save as output DATAFORM
+    # save as output DATAFORM
     if (DATAFORM == 'ascii'):
-        #-- ascii (.txt)
-        #-- only print ocean points
+        # ascii (.txt)
+        # only print ocean points
         sea_level.fill_value = 0
         sea_level.update_mask()
         sea_level.to_ascii(OUTPUT_FILE, date=DATE)
     elif (DATAFORM == 'netCDF4'):
-        #-- netCDF4 (.nc)
+        # netCDF4 (.nc)
         sea_level.to_netCDF4(OUTPUT_FILE, date=DATE, units='centimeters',
             longname='Equivalent_Water_Thickness', title='Sea_Level_Fingerprint')
     elif (DATAFORM == 'HDF5'):
-        #-- HDF5 (.H5)
+        # HDF5 (.H5)
         sea_level.to_HDF5(OUTPUT_FILE, date=DATE, units='centimeters',
             longname='Equivalent_Water_Thickness', title='Sea_Level_Fingerprint')
-    #-- set the permissions mode of the output file
+    # set the permissions mode of the output file
     os.chmod(OUTPUT_FILE, MODE)
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Solves the sea level equation with the option of
@@ -227,91 +227,91 @@ def arguments():
         fromfile_prefix_chars="@"
     )
     parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
-    #-- command line parameters
-    #-- input and output file
+    # command line parameters
+    # input and output file
     parser.add_argument('infile',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='?',
         help='Input load file')
     parser.add_argument('outfile',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='?',
         help='Output sea level fingerprints file')
-    #-- land mask file
+    # land mask file
     lsmask = utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
         help='Land-sea mask for calculating sea level fingerprints')
-    #-- maximum spherical harmonic degree and order
+    # maximum spherical harmonic degree and order
     parser.add_argument('--lmax','-l',
         type=int, default=240,
         help='Maximum spherical harmonic degree')
-    #-- different treatments of the load Love numbers
-    #-- 0: Han and Wahr (1995) values from PREM
-    #-- 1: Gegout (2005) values from PREM
-    #-- 2: Wang et al. (2012) values from PREM
+    # different treatments of the load Love numbers
+    # 0: Han and Wahr (1995) values from PREM
+    # 1: Gegout (2005) values from PREM
+    # 2: Wang et al. (2012) values from PREM
     parser.add_argument('--love','-n',
         type=int, default=0, choices=[0,1,2],
         help='Treatment of the Load Love numbers')
-    #-- different treatments of the body tide Love numbers of degree 2
-    #-- 0: Wahr (1981) and Wahr (1985) values from PREM
-    #-- 1: Farrell (1972) values from Gutenberg-Bullen oceanic mantle model
+    # different treatments of the body tide Love numbers of degree 2
+    # 0: Wahr (1981) and Wahr (1985) values from PREM
+    # 1: Farrell (1972) values from Gutenberg-Bullen oceanic mantle model
     parser.add_argument('--body','-b',
         type=int, default=0, choices=[0,1],
         help='Treatment of the body tide Love number')
-    #-- different treatments of the fluid Love number of gravitational potential
-    #-- 0: Han and Wahr (1989) fluid love number
-    #-- 1: Munk and MacDonald (1960) secular love number
-    #-- 2: Munk and MacDonald (1960) fluid love number
-    #-- 3: Lambeck (1980) fluid love number
+    # different treatments of the fluid Love number of gravitational potential
+    # 0: Han and Wahr (1989) fluid love number
+    # 1: Munk and MacDonald (1960) secular love number
+    # 2: Munk and MacDonald (1960) fluid love number
+    # 3: Lambeck (1980) fluid love number
     parser.add_argument('--fluid','-f',
         type=int, default=0, choices=[0,1,2,3],
         help='Treatment of the fluid Love number')
-    #-- maximum number of iterations for the solver
-    #-- 0th iteration: distribute the water in a uniform layer (barystatic)
+    # maximum number of iterations for the solver
+    # 0th iteration: distribute the water in a uniform layer (barystatic)
     parser.add_argument('--iterations','-I',
         type=int, default=6,
         help='Maximum number of iterations')
-    #-- option for polar feedback
+    # option for polar feedback
     parser.add_argument('--polar-feedback',
         default=False, action='store_true',
         help='Include effects of polar feedback')
-    #-- option for setting reference frame for load love numbers
-    #-- reference frame options (CF, CM, CE)
+    # option for setting reference frame for load love numbers
+    # reference frame options (CF, CM, CE)
     parser.add_argument('--reference',
         type=str.upper, default='CF', choices=['CF','CM','CE'],
         help='Reference frame for load Love numbers')
-    #-- input and output data format (ascii, netCDF4, HDF5)
+    # input and output data format (ascii, netCDF4, HDF5)
     parser.add_argument('--format','-F',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
         help='Input and output data format')
-    #-- Input and output files have date information
+    # Input and output files have date information
     parser.add_argument('--date','-D',
         default=False, action='store_true',
         help='Input and output files have date information')
-    #-- print information about processing run
+    # print information about processing run
     parser.add_argument('--verbose','-V',
         action='count', default=0,
         help='Verbose output of run')
-    #-- permissions mode of the output files (octal)
+    # permissions mode of the output files (octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permissions mode of output files')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
-    #-- Read the system arguments listed after the program
+    # Read the system arguments listed after the program
     parser = arguments()
     args,_ = parser.parse_known_args()
 
-    #-- create logger
+    # create logger
     loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
-    #-- try to run the analysis with listed parameters
+    # try to run the analysis with listed parameters
     try:
         info(args)
-        #-- run sea level fingerprints program with parameters
+        # run sea level fingerprints program with parameters
         run_sea_level_equation(args.infile, args.outfile,
             LANDMASK=args.mask,
             LMAX=args.lmax,
@@ -325,12 +325,12 @@ def main():
             DATE=args.date,
             MODE=args.mode)
     except Exception as e:
-        #-- if there has been an error exception
-        #-- print the type, value, and stack trace of the
-        #-- current exception being handled
+        # if there has been an error exception
+        # print the type, value, and stack trace of the
+        # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()

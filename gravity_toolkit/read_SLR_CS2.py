@@ -81,7 +81,7 @@ import numpy as np
 import gravity_toolkit.time
 import gravity_toolkit.read_SLR_harmonics
 
-#-- PURPOSE: read Degree 2,m data from Satellite Laser Ranging (SLR)
+# PURPOSE: read Degree 2,m data from Satellite Laser Ranging (SLR)
 def read_SLR_CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
     """
     Reads CS2,m spherical harmonic coefficients from SLR measurements
@@ -113,36 +113,36 @@ def read_SLR_CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
         date of SLR measurement
     """
 
-    #-- check that SLR file exists
+    # check that SLR file exists
     if not os.access(os.path.expanduser(SLR_file), os.F_OK):
         raise FileNotFoundError('SLR file not found in file system')
-    #-- output dictionary with input data
+    # output dictionary with input data
     dinput = {}
 
     if bool(re.search(r'GSFC_C2(\d)_S2(\d)',SLR_file,re.I)):
-        #-- 7-day arc SLR file produced by GSFC
-        #-- input variable names and types
+        # 7-day arc SLR file produced by GSFC
+        # input variable names and types
         dtype = {}
         dtype['names'] = ('time','C2','S2')
         dtype['formats'] = ('f','f8','f8')
-        #-- read SLR 2,1 file from GSFC
-        #-- Column 1: Approximate mid-point of 7-day solution (years)
-        #-- Column 2: Solution from SLR (normalized)
-        #-- Column 3: Solution from SLR (normalized)
+        # read SLR 2,1 file from GSFC
+        # Column 1: Approximate mid-point of 7-day solution (years)
+        # Column 2: Solution from SLR (normalized)
+        # Column 3: Solution from SLR (normalized)
         content = np.loadtxt(os.path.expanduser(SLR_file),dtype=dtype)
-        #-- duplicate time and harmonics
+        # duplicate time and harmonics
         tdec = np.repeat(content['time'],7)
         c2m = np.repeat(content['C2'],7)
         s2m = np.repeat(content['S2'],7)
-        #-- calculate daily dates to use in centered moving average
+        # calculate daily dates to use in centered moving average
         tdec += (np.mod(np.arange(len(tdec)),7) - 3.5)/365.25
-        #-- number of dates to use in average
+        # number of dates to use in average
         n_neighbors = 28
-        #-- calculate 28-day moving-average solution from 7-day arcs
+        # calculate 28-day moving-average solution from 7-day arcs
         dinput['time'] = np.zeros_like(DATE)
         dinput['C2m'] = np.zeros_like(DATE,dtype='f8')
         dinput['S2m'] = np.zeros_like(DATE,dtype='f8')
-        #-- no estimated spherical harmonic errors
+        # no estimated spherical harmonic errors
         dinput['eC2m'] = np.zeros_like(DATE,dtype='f8')
         dinput['eS2m'] = np.zeros_like(DATE,dtype='f8')
         for i,D in enumerate(DATE):
@@ -150,24 +150,24 @@ def read_SLR_CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
             dinput['time'][i] = np.mean(tdec[isort])
             dinput['C2m'][i] = np.mean(c2m[isort])
             dinput['S2m'][i] = np.mean(s2m[isort])
-        #-- GRACE/GRACE-FO month
+        # GRACE/GRACE-FO month
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
     elif bool(re.search(r'gsfc_slr_5x5c61s61',SLR_file,re.I)):
-        #-- read 5x5 + 6,1 file from GSFC and extract coefficients
+        # read 5x5 + 6,1 file from GSFC and extract coefficients
         Ylms = gravity_toolkit.read_SLR_harmonics(SLR_file, HEADER=True)
-        #-- duplicate time and harmonics
+        # duplicate time and harmonics
         tdec = np.repeat(Ylms['time'],7)
         c2m = np.repeat(Ylms['clm'][2,ORDER],7)
         s2m = np.repeat(Ylms['slm'][2,ORDER],7)
-        #-- calculate daily dates to use in centered moving average
+        # calculate daily dates to use in centered moving average
         tdec += (np.mod(np.arange(len(tdec)),7) - 3.5)/365.25
-        #-- number of dates to use in average
+        # number of dates to use in average
         n_neighbors = 28
-        #-- calculate 28-day moving-average solution from 7-day arcs
+        # calculate 28-day moving-average solution from 7-day arcs
         dinput['time'] = np.zeros_like(DATE)
         dinput['C2m'] = np.zeros_like(DATE,dtype='f8')
         dinput['S2m'] = np.zeros_like(DATE,dtype='f8')
-        #-- no estimated spherical harmonic errors
+        # no estimated spherical harmonic errors
         dinput['eC2m'] = np.zeros_like(DATE,dtype='f8')
         dinput['eS2m'] = np.zeros_like(DATE,dtype='f8')
         for i,D in enumerate(DATE):
@@ -175,106 +175,106 @@ def read_SLR_CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
             dinput['time'][i] = np.mean(tdec[isort])
             dinput['C2m'][i] = np.mean(c2m[isort])
             dinput['S2m'][i] = np.mean(s2m[isort])
-        #-- GRACE/GRACE-FO month
+        # GRACE/GRACE-FO month
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
     elif bool(re.search(r'C2(\d)_S2(\d)_(RL\d{2})',SLR_file,re.I)):
-        #-- SLR RL06 file produced by CSR
-        #-- input variable names and types
+        # SLR RL06 file produced by CSR
+        # input variable names and types
         dtype = {}
         dtype['names'] = ('time','C2','S2','eC2','eS2',
             'C2aod','S2aod','start','end')
         dtype['formats'] = ('f','f8','f8','f','f','f','f','f','f')
-        #-- read SLR 2,1 or 2,2 RL06 file from CSR
-        #-- header text is commented and won't be read
-        #-- Column 1: Approximate mid-point of monthly solution (years)
-        #-- Column 2: Solution from SLR (normalized)
-        #-- Column 3: Solution from SLR (normalized)
-        #-- Column 4: Solution sigma (1E-10)
-        #-- Column 5: Solution sigma (1E-10)
-        #-- Column 6: Mean value of Atmosphere-Ocean De-aliasing model (1E-10)
-        #-- Column 7: Mean value of Atmosphere-Ocean De-aliasing model (1E-10)
-        #-- Columns 8-9: Start and end dates of data used in solution
+        # read SLR 2,1 or 2,2 RL06 file from CSR
+        # header text is commented and won't be read
+        # Column 1: Approximate mid-point of monthly solution (years)
+        # Column 2: Solution from SLR (normalized)
+        # Column 3: Solution from SLR (normalized)
+        # Column 4: Solution sigma (1E-10)
+        # Column 5: Solution sigma (1E-10)
+        # Column 6: Mean value of Atmosphere-Ocean De-aliasing model (1E-10)
+        # Column 7: Mean value of Atmosphere-Ocean De-aliasing model (1E-10)
+        # Columns 8-9: Start and end dates of data used in solution
         content = np.loadtxt(os.path.expanduser(SLR_file),dtype=dtype)
-        #-- date and GRACE/GRACE-FO month
+        # date and GRACE/GRACE-FO month
         dinput['time'] = content['time'].copy()
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
-        #-- remove the monthly mean of the AOD model
+        # remove the monthly mean of the AOD model
         dinput['C2m'] = content['C2'] - content['C2aod']*10**-10
         dinput['S2m'] = content['S2'] - content['S2aod']*10**-10
-        #-- scale SLR solution sigmas
+        # scale SLR solution sigmas
         dinput['eC2m'] = content['eC2']*10**-10
         dinput['eS2m'] = content['eS2']*10**-10
     elif bool(re.search(r'GRAVIS-2B_GFZOP',SLR_file,re.I)):
-        #-- Combined GRACE/SLR solution file produced by GFZ
-        #-- Column  1: MJD of BEGINNING of solution data span
-        #-- Column  2: Year and fraction of year of BEGINNING of solution span
-        #-- Column  9: Replacement C(2,1)
-        #-- Column 10: Replacement C(2,1) - mean C(2,1) (1.0E-10)
-        #-- Column 11: C(2,1) formal standard deviation (1.0E-12)
-        #-- Column 12: Replacement S(2,1)
-        #-- Column 13: Replacement S(2,1) - mean S(2,1) (1.0E-10)
-        #-- Column 14: S(2,1) formal standard deviation (1.0E-12)
+        # Combined GRACE/SLR solution file produced by GFZ
+        # Column  1: MJD of BEGINNING of solution data span
+        # Column  2: Year and fraction of year of BEGINNING of solution span
+        # Column  9: Replacement C(2,1)
+        # Column 10: Replacement C(2,1) - mean C(2,1) (1.0E-10)
+        # Column 11: C(2,1) formal standard deviation (1.0E-12)
+        # Column 12: Replacement S(2,1)
+        # Column 13: Replacement S(2,1) - mean S(2,1) (1.0E-10)
+        # Column 14: S(2,1) formal standard deviation (1.0E-12)
         with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
-        #-- number of lines contained in the file
+        # number of lines contained in the file
         file_lines = len(file_contents)
 
-        #-- counts the number of lines in the header
+        # counts the number of lines in the header
         count = 0
-        #-- Reading over header text
+        # Reading over header text
         while HEADER:
-            #-- file line at count
+            # file line at count
             line = file_contents[count]
-            #-- find PRODUCT: within line to set HEADER flag to False when found
+            # find PRODUCT: within line to set HEADER flag to False when found
             HEADER = not bool(re.match(r'PRODUCT:+',line))
-            #-- add 1 to counter
+            # add 1 to counter
             count += 1
 
-        #-- number of months within the file
+        # number of months within the file
         n_mon = file_lines - count
-        #-- date and GRACE/GRACE-FO month
+        # date and GRACE/GRACE-FO month
         dinput['time'] = np.zeros((n_mon))
         dinput['month'] = np.zeros((n_mon),dtype=int)
-        #-- monthly spherical harmonic replacement solutions
+        # monthly spherical harmonic replacement solutions
         dinput['C2m'] = np.zeros((n_mon))
         dinput['S2m'] = np.zeros((n_mon))
-        #-- monthly spherical harmonic formal standard deviations
+        # monthly spherical harmonic formal standard deviations
         dinput['eC2m'] = np.zeros((n_mon))
         dinput['eS2m'] = np.zeros((n_mon))
-        #-- time count
+        # time count
         t = 0
-        #-- for every other line:
+        # for every other line:
         for line in file_contents[count:]:
-            #-- find numerical instances in line including exponents,
-            #-- decimal points and negatives
+            # find numerical instances in line including exponents,
+            # decimal points and negatives
             line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
             count = len(line_contents)
-            #-- check for empty lines
+            # check for empty lines
             if (count > 0):
-                #-- reading decimal year for start of span
+                # reading decimal year for start of span
                 dinput['time'][t] = np.float64(line_contents[1])
-                #-- Spherical Harmonic data for line
+                # Spherical Harmonic data for line
                 dinput['C2m'][t] = np.float64(line_contents[8])
                 dinput['eC2m'][t] = np.float64(line_contents[10])*1e-10
                 dinput['S2m'][t] = np.float64(line_contents[11])
                 dinput['eS2m'][t] = np.float64(line_contents[13])*1e-10
-                #-- GRACE/GRACE-FO month of SLR solutions
+                # GRACE/GRACE-FO month of SLR solutions
                 dinput['month'][t] = gravity_toolkit.time.calendar_to_grace(
                     dinput['time'][t], around=np.round)
-                #-- add to t count
+                # add to t count
                 t += 1
-        #-- truncate variables if necessary
+        # truncate variables if necessary
         for key,val in dinput.items():
             dinput[key] = val[:t]
 
-    #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
-    #-- Accelerometer shutoffs make the relation between month number
-    #-- and date more complicated as days from other months are used
-    #-- For CSR and GFZ: Nov 2011 (119) is centered in Oct 2011 (118)
-    #-- For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
-    #-- For all: May 2015 (161) is centered in Apr 2015 (160)
-    #-- For GSFC: Oct 2018 (202) is centered in Nov 2018 (203)
+    # The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
+    # Accelerometer shutoffs make the relation between month number
+    # and date more complicated as days from other months are used
+    # For CSR and GFZ: Nov 2011 (119) is centered in Oct 2011 (118)
+    # For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
+    # For all: May 2015 (161) is centered in Apr 2015 (160)
+    # For GSFC: Oct 2018 (202) is centered in Nov 2018 (203)
     dinput['month'] = gravity_toolkit.time.adjust_months(dinput['month'])
 
-    #-- return the SLR-derived degree 2 solutions
+    # return the SLR-derived degree 2 solutions
     return dinput

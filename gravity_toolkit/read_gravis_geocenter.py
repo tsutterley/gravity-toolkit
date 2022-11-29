@@ -53,7 +53,7 @@ UPDATE HISTORY:
 import warnings
 import gravity_toolkit.geocenter
 
-#-- PURPOSE: read geocenter data from GFZ GravIS SLR/GRACE solutions
+# PURPOSE: read geocenter data from GFZ GravIS SLR/GRACE solutions
 def read_gravis_geocenter(geocenter_file, HEADER=True):
     """
     Reads monthly geocenter spherical harmonic data files from
@@ -85,5 +85,5 @@ def read_gravis_geocenter(geocenter_file, HEADER=True):
         DeprecationWarning)
     # call renamed version to not break workflows
     DEG1 = gravity_toolkit.geocenter().from_gravis(geocenter_file,header=HEADER)
-    #-- return the GFZ GravIS geocenter solutions
+    # return the GFZ GravIS geocenter solutions
     return DEG1.to_dict()

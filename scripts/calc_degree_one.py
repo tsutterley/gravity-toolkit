@@ -258,7 +258,7 @@ from gravity_toolkit.gen_stokes import gen_stokes
 from gravity_toolkit.sea_level_equation import sea_level_equation
 from gravity_toolkit.time import grace_to_calendar
 
-#-- PURPOSE: keep track of threads
+# PURPOSE: keep track of threads
 def info(args):
     logging.info(os.path.basename(sys.argv[0]))
     logging.info(args)
@@ -267,63 +267,63 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
-#-- PURPOSE: import GRACE/GRACE-FO GSM files for a given months range
+# PURPOSE: import GRACE/GRACE-FO GSM files for a given months range
 def load_grace_GSM(base_dir, PROC, DREL, START, END, MISSING, LMAX,
     MMAX=None, SLR_C20=None, SLR_21=None, SLR_22=None, SLR_C30=None,
     SLR_C40=None, SLR_C50=None, POLE_TIDE=False):
-    #-- GRACE/GRACE-FO dataset
+    # GRACE/GRACE-FO dataset
     DSET = 'GSM'
-    #-- do not import degree 1 coefficients for the GRACE GSM solution
-    #-- 0: No degree 1
+    # do not import degree 1 coefficients for the GRACE GSM solution
+    # 0: No degree 1
     DEG1 = 0
-    #-- reading GRACE/GRACE-FO GSM solutions for input date range
-    #-- replacing low-degree harmonics with SLR values if specified
-    #-- correcting for Pole-Tide if specified
-    #-- atmospheric jumps will be corrected externally if specified
+    # reading GRACE/GRACE-FO GSM solutions for input date range
+    # replacing low-degree harmonics with SLR values if specified
+    # correcting for Pole-Tide if specified
+    # atmospheric jumps will be corrected externally if specified
     grace_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX, SLR_21=SLR_21,
         SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C40=SLR_C40, SLR_C50=SLR_C50,
         POLE_TIDE=POLE_TIDE, ATM=False, MODEL_DEG1=False)
-    #-- returning input variables as a harmonics object
+    # returning input variables as a harmonics object
     return harmonics().from_dict(grace_Ylms)
 
-#-- PURPOSE: import GRACE/GRACE-FO dealiasing files for a given months range
+# PURPOSE: import GRACE/GRACE-FO dealiasing files for a given months range
 def load_AOD(base_dir, PROC, DREL, DSET, START, END, MISSING, LMAX):
-    #-- do not replace low degree harmonics for AOD solutions
+    # do not replace low degree harmonics for AOD solutions
     SLR_C20 = 'N'
-    #-- do not replace degree 1 coefficients for the GRACE AOD solution
-    #-- 0: No degree 1 replacement
+    # do not replace degree 1 coefficients for the GRACE AOD solution
+    # 0: No degree 1 replacement
     DEG1 = 0
-    #-- reading GRACE/GRACE-FO AOD solutions for input date range
+    # reading GRACE/GRACE-FO AOD solutions for input date range
     grace_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         START, END, MISSING, SLR_C20, DEG1, POLE_TIDE=False, ATM=False)
-    #-- returning input variables as a harmonics object
+    # returning input variables as a harmonics object
     return harmonics().from_dict(grace_Ylms)
 
-#-- PURPOSE: model the seasonal component of an initial degree 1 model
-#-- using preliminary estimates of annual and semi-annual variations from LWM
-#-- as calculated in Chen et al. (1999), doi:10.1029/1998JB900019
-#-- NOTE: this is to get an accurate assessment of the land water mass for the
-#-- eustatic component (not for the ocean component from GRACE)
+# PURPOSE: model the seasonal component of an initial degree 1 model
+# using preliminary estimates of annual and semi-annual variations from LWM
+# as calculated in Chen et al. (1999), doi:10.1029/1998JB900019
+# NOTE: this is to get an accurate assessment of the land water mass for the
+# eustatic component (not for the ocean component from GRACE)
 def model_seasonal_geocenter(grace_date):
-    #-- Annual amplitudes of (Soil Moisture + Snow) geocenter components (mm)
+    # Annual amplitudes of (Soil Moisture + Snow) geocenter components (mm)
     AAx = 1.28
     AAy = 0.52
     AAz = 3.30
-    #-- Annual phase of (Soil Moisture + Snow) geocenter components (degrees)
+    # Annual phase of (Soil Moisture + Snow) geocenter components (degrees)
     APx = 44.0
     APy = 182.0
     APz = 43.0
-    #-- Semi-Annual amplitudes of (Soil Moisture + Snow) geocenter components
+    # Semi-Annual amplitudes of (Soil Moisture + Snow) geocenter components
     SAAx = 0.15
     SAAy = 0.56
     SAAz = 0.50
-    #-- Semi-Annual phase of (Soil Moisture + Snow) geocenter components
+    # Semi-Annual phase of (Soil Moisture + Snow) geocenter components
     SAPx = 331.0
     SAPy = 312.0
     SAPz = 75.0
-    #-- calculate each geocenter component from the amplitude and phase
-    #-- converting the phase from degrees to radians
+    # calculate each geocenter component from the amplitude and phase
+    # converting the phase from degrees to radians
     X = AAx*np.sin(2.0*np.pi*grace_date + APx*np.pi/180.0) + \
         SAAx*np.sin(4.0*np.pi*grace_date + SAPx*np.pi/180.0)
     Y = AAy*np.sin(2.0*np.pi*grace_date + APy*np.pi/180.0) + \
@@ -333,7 +333,7 @@ def model_seasonal_geocenter(grace_date):
     DEG1 = geocenter(X=X-X.mean(), Y=Y-Y.mean(), Z=Z-Z.mean())
     return DEG1.from_cartesian()
 
-#-- PURPOSE: calculate a geocenter time-series
+# PURPOSE: calculate a geocenter time-series
 def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     START=None,
     END=None,
@@ -364,17 +364,17 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     COPY=False,
     MODE=0o775):
 
-    #-- output directory
+    # output directory
     DIRECTORY = os.path.join(base_dir,'geocenter')
-    #-- create output directory if non-existent
+    # create output directory if non-existent
     if not os.access(DIRECTORY, os.F_OK):
         os.makedirs(DIRECTORY, mode=MODE)
-    #-- list object of output files for file logs (full path)
+    # list object of output files for file logs (full path)
     output_files = []
 
-    #-- output flag for using sea level fingerprints
+    # output flag for using sea level fingerprints
     slf_str = '_SLF' if FINGERPRINT else ''
-    #-- output flag for low-degree harmonic replacements
+    # output flag for low-degree harmonic replacements
     if SLR_21 in ('CSR','GFZ','GSFC'):
         C21_str = f'_w{SLR_21}_21'
     else:
@@ -384,7 +384,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     else:
         C22_str = ''
     if SLR_C30 in ('GSFC',):
-        #-- C30 replacement now default for all solutions
+        # C30 replacement now default for all solutions
         C30_str = ''
     elif SLR_C30 in ('CSR','GFZ','LARES'):
         C30_str = f'_w{SLR_C30}_C30'
@@ -398,115 +398,115 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         C50_str = f'_w{SLR_C50}_C50'
     else:
         C50_str = ''
-    #-- combine satellite laser ranging flags
+    # combine satellite laser ranging flags
     slr_str = ''.join([C21_str,C22_str,C30_str,C40_str,C50_str])
 
-    #-- read load love numbers
+    # read load love numbers
     hl,kl,ll = load_love_numbers(EXPANSION, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE='CF')
-    #-- set gravitational load love number to a specific value
+    # set gravitational load love number to a specific value
     if LOVE_K1:
         kl[1] = np.copy(LOVE_K1)
-    #-- maximum spherical harmonic order
+    # maximum spherical harmonic order
     if not MMAX:
         MMAX = np.copy(LMAX)
 
-    #-- Earth Parameters
+    # Earth Parameters
     factors = units(lmax=LMAX).harmonic(hl,kl,ll)
-    rho_e = factors.rho_e#-- Average Density of the Earth [g/cm^3]
-    rad_e = factors.rad_e#-- Average Radius of the Earth [cm]
+    rho_e = factors.rho_e# Average Density of the Earth [g/cm^3]
+    rad_e = factors.rad_e# Average Radius of the Earth [cm]
     l = factors.l
-    #-- Factor for converting to Mass SH
+    # Factor for converting to Mass SH
     dfactor = factors.cmwe
 
-    #-- Read Smoothed Ocean and Land Functions
-    #-- Open the land-sea NetCDF file for reading
+    # Read Smoothed Ocean and Land Functions
+    # Open the land-sea NetCDF file for reading
     landsea = spatial().from_netCDF4(LANDMASK, date=False, varname='LSMASK')
-    #-- degree spacing and grid dimensions
-    #-- will create GRACE spatial fields with same dimensions
+    # degree spacing and grid dimensions
+    # will create GRACE spatial fields with same dimensions
     dlon,dlat = landsea.spacing
     nlat,nlon = landsea.shape
-    #-- spatial parameters in radians
+    # spatial parameters in radians
     dphi = dlon*np.pi/180.0
     dth = dlat*np.pi/180.0
-    #-- longitude and colatitude in radians
+    # longitude and colatitude in radians
     phi = landsea.lon[np.newaxis,:]*np.pi/180.0
     th = (90.0 - np.squeeze(landsea.lat))*np.pi/180.0
-    #-- create land function
+    # create land function
     land_function = np.zeros((nlon,nlat),dtype=np.float64)
-    #-- extract land function from file
-    #-- combine land and island levels for land function
+    # extract land function from file
+    # combine land and island levels for land function
     indx,indy = np.nonzero((landsea.data.T >= 1) & (landsea.data.T <= 3))
     land_function[indx,indy] = 1.0
-    #-- calculate ocean function from land function
+    # calculate ocean function from land function
     ocean_function = 1.0 - land_function
 
-    #-- Calculating Legendre Polynomials using Holmes and Featherstone relation
-    #-- calculate up to degree and order of spherical harmonic expansion for SLF
+    # Calculating Legendre Polynomials using Holmes and Featherstone relation
+    # calculate up to degree and order of spherical harmonic expansion for SLF
     PLM, dPLM = plm_holmes(EXPANSION, np.cos(th))
 
-    #-- calculate spherical harmonics of ocean function to degree 1
-    #-- mass is equivalent to 1 cm ocean height change
-    #-- eustatic ratio = -land total/ocean total
+    # calculate spherical harmonics of ocean function to degree 1
+    # mass is equivalent to 1 cm ocean height change
+    # eustatic ratio = -land total/ocean total
     ocean_Ylms = gen_stokes(ocean_function, landsea.lon, landsea.lat,
         UNITS=1, LMIN=0, LMAX=1, LOVE=(hl,kl,ll), PLM=PLM[:2,:2,:])
 
-    #-- Gaussian Smoothing (Jekeli, 1981)
+    # Gaussian Smoothing (Jekeli, 1981)
     if (RAD != 0):
         wt = 2.0*np.pi*gauss_weights(RAD,LMAX)
     else:
-        #-- else = 1
+        # else = 1
         wt = np.ones((LMAX+1))
 
-    #-- load GRACE/GRACE-FO data
+    # load GRACE/GRACE-FO data
     GSM_Ylms = load_grace_GSM(base_dir, PROC, DREL, START, END, MISSING, LMAX,
         MMAX=MMAX, SLR_C20=SLR_C20, SLR_21=SLR_21, SLR_22=SLR_22,
         SLR_C30=SLR_C30, SLR_C40=SLR_C40, SLR_C50=SLR_C50, POLE_TIDE=POLE_TIDE)
     GAD_Ylms = load_AOD(base_dir, PROC, DREL, 'GAD', START, END, MISSING, LMAX)
     GAC_Ylms = load_AOD(base_dir, PROC, DREL, 'GAC', START, END, MISSING, LMAX)
-    #-- use a mean file for the static field to remove
+    # use a mean file for the static field to remove
     if MEAN_FILE:
-        #-- read data form for input mean file (ascii, netCDF4, HDF5, gfc)
+        # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
         mean_Ylms = harmonics().from_file(MEAN_FILE,format=MEANFORM,date=False)
-        #-- remove the input mean
+        # remove the input mean
         GSM_Ylms.subtract(mean_Ylms)
     else:
         GSM_Ylms.mean(apply=True)
-    #-- remove the mean from the GRACE/GRACE-FO dealiasing data
+    # remove the mean from the GRACE/GRACE-FO dealiasing data
     GAD_Ylms.mean(apply=True)
     GAC_Ylms.mean(apply=True)
-    #-- convert GAC to geocenter object
+    # convert GAC to geocenter object
     GAC = geocenter().from_harmonics(GAC_Ylms)
-    #-- filter GRACE/GRACE-FO coefficients
+    # filter GRACE/GRACE-FO coefficients
     if DESTRIPE:
-        #-- destriping GRACE GSM and GAD coefficients
+        # destriping GRACE GSM and GAD coefficients
         ds_str = '_FL'
         GSM_Ylms = GSM_Ylms.destripe()
         GAD_Ylms = GAD_Ylms.destripe()
     else:
-        #-- using standard GRACE GSM harmonics
+        # using standard GRACE GSM harmonics
         ds_str = ''
-    #-- GRACE dates
+    # GRACE dates
     tdec = GSM_Ylms.time
-    #-- number of months considered
+    # number of months considered
     n_files = len(GSM_Ylms.month)
 
-    #-- input GIA spherical harmonic datafiles
+    # input GIA spherical harmonic datafiles
     GIA_Ylms_rate = read_GIA_model(GIA_FILE, GIA=GIA, LMAX=LMAX, MMAX=MMAX)
     gia_str = '_{0}'.format(GIA_Ylms_rate['title']) if GIA else ''
-    #-- GIA monthly coefficients
+    # GIA monthly coefficients
     GIA_Ylms = GSM_Ylms.zeros_like()
     GIA_Ylms.time[:] = np.copy(GSM_Ylms.time)
     GIA_Ylms.month[:] = np.copy(GSM_Ylms.month)
-    #-- monthly GIA calculated by gia_rate*time elapsed
-    #-- finding change in GIA each month
+    # monthly GIA calculated by gia_rate*time elapsed
+    # finding change in GIA each month
     for t in range(0,n_files):
         GIA_Ylms.clm[:,:,t] = GIA_Ylms_rate['clm']*(GIA_Ylms.time[t]-2003.3)
         GIA_Ylms.slm[:,:,t] = GIA_Ylms_rate['slm']*(GIA_Ylms.time[t]-2003.3)
-    #-- save geocenter coefficients of monthly GIA variability
+    # save geocenter coefficients of monthly GIA variability
     gia = geocenter().from_harmonics(GIA_Ylms)
 
-    #-- GRACE GAD degree 1
+    # GRACE GAD degree 1
     GAD = geocenter()
     GAD.time = np.copy(GAD_Ylms.time)
     GAD.month = np.copy(GAD_Ylms.month)
@@ -514,17 +514,17 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     GAD.C11 = np.zeros((n_files))
     GAD.S11 = np.zeros((n_files))
     for t in range(0,n_files):
-        #-- converting GAD degree 1 harmonics to mass
-        #-- NOTE: following Swenson (2008): do not use the kl Load Love number
-        #-- to convert the GAD coefficients into coefficients of mass as
-        #-- the GAC and GAD products are computed with a Load Love number of 0
+        # converting GAD degree 1 harmonics to mass
+        # NOTE: following Swenson (2008): do not use the kl Load Love number
+        # to convert the GAD coefficients into coefficients of mass as
+        # the GAC and GAD products are computed with a Load Love number of 0
         GAD.C10[t] = rho_e*rad_e*np.squeeze(GAD_Ylms.clm[1,0,t])*(2.0 + 1.0)/3.0
         GAD.C11[t] = rho_e*rad_e*np.squeeze(GAD_Ylms.clm[1,1,t])*(2.0 + 1.0)/3.0
         GAD.S11[t] = rho_e*rad_e*np.squeeze(GAD_Ylms.slm[1,1,t])*(2.0 + 1.0)/3.0
-    #-- removing the mean of the GAD OBP coefficients
+    # removing the mean of the GAD OBP coefficients
     GAD.mean(apply=True)
 
-    #-- read atmospheric jump corrections from Fagiolini et al. (2015)
+    # read atmospheric jump corrections from Fagiolini et al. (2015)
     ATM_Ylms = GSM_Ylms.zeros_like()
     ATM_Ylms.time[:] = np.copy(GSM_Ylms.time)
     ATM_Ylms.month[:] = np.copy(GSM_Ylms.month)
@@ -532,77 +532,77 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         atm_corr = read_ecmwf_corrections(base_dir,LMAX,ATM_Ylms.month)
         ATM_Ylms.clm[:,:,:] = np.copy(atm_corr['clm'])
         ATM_Ylms.slm[:,:,:] = np.copy(atm_corr['slm'])
-        #-- removing the mean of the atmospheric jump correction coefficients
+        # removing the mean of the atmospheric jump correction coefficients
         ATM_Ylms.mean(apply=True)
-    #-- truncate to degree and order LMAX/MMAX
+    # truncate to degree and order LMAX/MMAX
     ATM_Ylms = ATM_Ylms.truncate(lmax=LMAX, mmax=MMAX)
-    #-- save geocenter coefficients of the atmospheric jump corrections
+    # save geocenter coefficients of the atmospheric jump corrections
     atm = geocenter().from_harmonics(ATM_Ylms)
 
-    #-- read bottom pressure model if applicable
-    #-- ECCO_kf080i: https://ecco.jpl.nasa.gov/drive/files/NearRealTime/KalmanFilter/
-    #-- ECCO_dr080i: https://ecco.jpl.nasa.gov/drive/files/NearRealTime/Smoother/
-    #-- ECCO_V4r3: https://ecco.jpl.nasa.gov/drive/files/Version4/Release3/interp_monthly/
-    #-- ECCO_V4r4: https://ecco.jpl.nasa.gov/drive/files/Version4/Release4/interp_monthly/
+    # read bottom pressure model if applicable
+    # ECCO_kf080i: https://ecco.jpl.nasa.gov/drive/files/NearRealTime/KalmanFilter/
+    # ECCO_dr080i: https://ecco.jpl.nasa.gov/drive/files/NearRealTime/Smoother/
+    # ECCO_V4r3: https://ecco.jpl.nasa.gov/drive/files/Version4/Release3/interp_monthly/
+    # ECCO_V4r4: https://ecco.jpl.nasa.gov/drive/files/Version4/Release4/interp_monthly/
     if MODEL not in ('OMCT','MPIOM'):
-        #-- read input data files for ascii (txt), netCDF4 (nc) or HDF5 (H5)
+        # read input data files for ascii (txt), netCDF4 (nc) or HDF5 (H5)
         MODEL_INDEX = os.path.expanduser(MODEL_INDEX)
         OBP_Ylms = harmonics().from_index(MODEL_INDEX, format=DATAFORM)
-        #-- reduce to GRACE/GRACE-FO months and truncate to degree and order
+        # reduce to GRACE/GRACE-FO months and truncate to degree and order
         OBP_Ylms = OBP_Ylms.subset(GSM_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
-        #-- filter ocean bottom pressure coefficients
+        # filter ocean bottom pressure coefficients
         if DESTRIPE:
             OBP_Ylms = OBP_Ylms.destripe()
-        #-- removing the mean of the ecco spherical harmonic coefficients
+        # removing the mean of the ecco spherical harmonic coefficients
         OBP_Ylms.mean(apply=True)
-        #-- converting ecco degree 1 harmonics to coefficients of mass
+        # converting ecco degree 1 harmonics to coefficients of mass
         OBP = geocenter.from_harmonics(OBP_Ylms).scale(dfactor[1])
 
-    #-- Calculating cos/sin of phi arrays
-    #-- output [m,phi]
+    # Calculating cos/sin of phi arrays
+    # output [m,phi]
     m = GSM_Ylms.m[:, np.newaxis]
-    #-- Integration factors (solid angle)
+    # Integration factors (solid angle)
     int_fact = np.sin(th)*dphi*dth
-    #-- Calculating cos(m*phi) and sin(m*phi)
+    # Calculating cos(m*phi) and sin(m*phi)
     ccos = np.cos(np.dot(m,phi))
     ssin = np.sin(np.dot(m,phi))
 
-    #-- Legendre polynomials for degree 1
+    # Legendre polynomials for degree 1
     P10 = np.squeeze(PLM[1,0,:])
     P11 = np.squeeze(PLM[1,1,:])
-    #-- PLM for spherical harmonic degrees 2+ up to LMAX
-    #-- converted into mass and smoothed if specified
+    # PLM for spherical harmonic degrees 2+ up to LMAX
+    # converted into mass and smoothed if specified
     plmout = np.zeros((LMAX+1,MMAX+1,nlat))
     for l in range(1,LMAX+1):
         m = np.arange(0,np.min([l,MMAX])+1)
-        #-- convert to smoothed coefficients of mass
-        #-- Convolving plms with degree dependent factor and smoothing
+        # convert to smoothed coefficients of mass
+        # Convolving plms with degree dependent factor and smoothing
         plmout[l,m,:] = PLM[l,m,:]*dfactor[l]*wt[l]
 
-    #-- Initializing 3x3 I-Parameter matrix
+    # Initializing 3x3 I-Parameter matrix
     IMAT = np.zeros((3,3))
-    #-- Calculating I-Parameter matrix by integrating over latitudes
-    #-- I-Parameter matrix accounts for the fact that the GRACE data only
-    #-- includes spherical harmonic degrees greater than or equal to 2
+    # Calculating I-Parameter matrix by integrating over latitudes
+    # I-Parameter matrix accounts for the fact that the GRACE data only
+    # includes spherical harmonic degrees greater than or equal to 2
     for i in range(0,nlat):
-        #-- C10: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
+        # C10: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
         IMAT[0,0] += np.sum(int_fact[i]*P10[i]*ccos[0,:]*ocean_function[:,i]*P10[i]*ccos[0,:])/(4.0*np.pi)
         IMAT[1,0] += np.sum(int_fact[i]*P10[i]*ccos[0,:]*ocean_function[:,i]*P11[i]*ccos[1,:])/(4.0*np.pi)
         IMAT[2,0] += np.sum(int_fact[i]*P10[i]*ccos[0,:]*ocean_function[:,i]*P11[i]*ssin[1,:])/(4.0*np.pi)
-        #-- C11: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
+        # C11: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
         IMAT[0,1] += np.sum(int_fact[i]*P11[i]*ccos[1,:]*ocean_function[:,i]*P10[i]*ccos[0,:])/(4.0*np.pi)
         IMAT[1,1] += np.sum(int_fact[i]*P11[i]*ccos[1,:]*ocean_function[:,i]*P11[i]*ccos[1,:])/(4.0*np.pi)
         IMAT[2,1] += np.sum(int_fact[i]*P11[i]*ccos[1,:]*ocean_function[:,i]*P11[i]*ssin[1,:])/(4.0*np.pi)
-        #-- S11: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
+        # S11: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
         IMAT[0,2] += np.sum(int_fact[i]*P11[i]*ssin[1,:]*ocean_function[:,i]*P10[i]*ccos[0,:])/(4.0*np.pi)
         IMAT[1,2] += np.sum(int_fact[i]*P11[i]*ssin[1,:]*ocean_function[:,i]*P11[i]*ccos[1,:])/(4.0*np.pi)
         IMAT[2,2] += np.sum(int_fact[i]*P11[i]*ssin[1,:]*ocean_function[:,i]*P11[i]*ssin[1,:])/(4.0*np.pi)
 
-    #-- get seasonal variations of an initial geocenter correction
-    #-- for use in the land water mass calculation
+    # get seasonal variations of an initial geocenter correction
+    # for use in the land water mass calculation
     seasonal_geocenter = model_seasonal_geocenter(tdec)
 
-    #-- iterate solutions: if not single iteration
+    # iterate solutions: if not single iteration
     n_iter = 0
     eps = np.inf
     eps_max = 1e-6
@@ -613,33 +613,33 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         iter_str = ''
         max_iter = 1
 
-    #-- Calculating data matrices
-    #-- GRACE Eustatic degree 1 from land variations
+    # Calculating data matrices
+    # GRACE Eustatic degree 1 from land variations
     eustatic = geocenter()
     eustatic.C10 = np.zeros((n_files))
     eustatic.C11 = np.zeros((n_files))
     eustatic.S11 = np.zeros((n_files))
-    #-- Allocate for G matrix parameters
-    #-- G matrix calculates the GRACE ocean mass variations
+    # Allocate for G matrix parameters
+    # G matrix calculates the GRACE ocean mass variations
     G = geocenter()
     G.C10 = np.zeros((n_files))
     G.C11 = np.zeros((n_files))
     G.S11 = np.zeros((n_files))
-    #-- DMAT is the degree one matrix ((C10,C11,S11) x Time) in terms of mass
+    # DMAT is the degree one matrix ((C10,C11,S11) x Time) in terms of mass
     DMAT = np.zeros((3,n_files))
-    #-- degree 1 iterations
+    # degree 1 iterations
     iteration = geocenter()
     iteration.C10 = np.zeros((n_files,max_iter))
     iteration.C11 = np.zeros((n_files,max_iter))
     iteration.S11 = np.zeros((n_files,max_iter))
-    #-- calculate non-iterated terms for each file (G-matrix parameters)
+    # calculate non-iterated terms for each file (G-matrix parameters)
     for t in range(n_files):
-        #-- calculate geocenter component of ocean mass with GRACE
-        #-- allocate for product of grace and legendre polynomials
+        # calculate geocenter component of ocean mass with GRACE
+        # allocate for product of grace and legendre polynomials
         pcos = np.zeros((MMAX+1, nlat))#-[m,lat]
         psin = np.zeros((MMAX+1, nlat))#-[m,lat]
-        #-- Summing product of plms and c/slms over all SH degrees >= 2
-        #-- Removing monthly GIA signal and atmospheric correction
+        # Summing product of plms and c/slms over all SH degrees >= 2
+        # Removing monthly GIA signal and atmospheric correction
         Ylms = GSM_Ylms.index(t)
         Ylms.subtract(GIA_Ylms.index(t))
         Ylms.subtract(ATM_Ylms.index(t))
@@ -647,214 +647,214 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
             l = np.arange(2,LMAX+1)
             pcos[:,i] = np.sum(plmout[l,:,i]*Ylms.clm[l,:], axis=0)
             psin[:,i] = np.sum(plmout[l,:,i]*Ylms.slm[l,:], axis=0)
-        #-- Multiplying by c/s(phi#m) to get surface density in cmH2Oeq (lon,lat)
-        #-- ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
-        #-- The summation over spherical harmonic order is in this multiplication
+        # Multiplying by c/s(phi#m) to get surface density in cmH2Oeq (lon,lat)
+        # ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
+        # The summation over spherical harmonic order is in this multiplication
         rmass = np.dot(np.transpose(ccos),pcos) + np.dot(np.transpose(ssin),psin)
-        #-- calculate G matrix parameters through a summation of each latitude
+        # calculate G matrix parameters through a summation of each latitude
         for i in range(0,nlat):
-            #-- summation of integration factors, Legendre polynomials,
-            #-- (convolution of order and harmonics) and the ocean mass at t
+            # summation of integration factors, Legendre polynomials,
+            # (convolution of order and harmonics) and the ocean mass at t
             G.C10[t] += np.sum(int_fact[i]*P10[i]*ccos[0,:]*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
             G.C11[t] += np.sum(int_fact[i]*P11[i]*ccos[1,:]*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
             G.S11[t] += np.sum(int_fact[i]*P11[i]*ssin[1,:]*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
 
-    #-- calculate degree one solution for each iteration (or single if not)
+    # calculate degree one solution for each iteration (or single if not)
     while (eps > eps_max) and (n_iter < max_iter):
-        #-- for each file
+        # for each file
         for t in range(n_files):
-            #-- calculate eustatic component from GRACE (can iterate)
+            # calculate eustatic component from GRACE (can iterate)
             if (n_iter == 0):
-                #-- for first iteration (will be only iteration if not ITERATIVE):
-                #-- seasonal component of geocenter variation for land water
+                # for first iteration (will be only iteration if not ITERATIVE):
+                # seasonal component of geocenter variation for land water
                 GSM_Ylms.clm[1,0,t] = seasonal_geocenter.C10[t]
                 GSM_Ylms.clm[1,1,t] = seasonal_geocenter.C11[t]
                 GSM_Ylms.slm[1,1,t] = seasonal_geocenter.S11[t]
             else:
-                #-- for all others: use previous iteration of inversion
-                #-- for each of the geocenter solutions (C10, C11, S11)
+                # for all others: use previous iteration of inversion
+                # for each of the geocenter solutions (C10, C11, S11)
                 GSM_Ylms.clm[1,0,t] = iteration.C10[t,n_iter-1]
                 GSM_Ylms.clm[1,1,t] = iteration.C11[t,n_iter-1]
                 GSM_Ylms.slm[1,1,t] = iteration.S11[t,n_iter-1]
 
-            #-- allocate for product of grace and legendre polynomials
+            # allocate for product of grace and legendre polynomials
             pcos = np.zeros((MMAX+1, nlat))#-[m,lat]
             psin = np.zeros((MMAX+1, nlat))#-[m,lat]
-            #-- Summing product of plms and c/slms over all SH degrees
-            #-- Removing monthly GIA signal and atmospheric correction
+            # Summing product of plms and c/slms over all SH degrees
+            # Removing monthly GIA signal and atmospheric correction
             Ylms = GSM_Ylms.index(t)
             Ylms.subtract(GIA_Ylms.index(t))
             Ylms.subtract(ATM_Ylms.index(t))
             for i in range(0, nlat):
-                #-- for land water: use an initial seasonal geocenter estimate
-                #-- from Chen et al. (1999) then the iterative if specified
+                # for land water: use an initial seasonal geocenter estimate
+                # from Chen et al. (1999) then the iterative if specified
                 l = np.arange(1,LMAX+1)
                 pcos[:,i] = np.sum(plmout[l,:,i]*Ylms.clm[l,:], axis=0)
                 psin[:,i] = np.sum(plmout[l,:,i]*Ylms.slm[l,:], axis=0)
 
-            #-- Multiplying by c/s(phi#m) to get surface density in cm w.e. (lonxlat)
-            #-- this will be a spatial field similar to outputs from stokes_combine.py
-            #-- ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
-            #-- The summation over spherical harmonic order is in this multiplication
+            # Multiplying by c/s(phi#m) to get surface density in cm w.e. (lonxlat)
+            # this will be a spatial field similar to outputs from stokes_combine.py
+            # ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
+            # The summation over spherical harmonic order is in this multiplication
             lmass = np.dot(np.transpose(ccos),pcos) + np.dot(np.transpose(ssin),psin)
 
-            #-- use sea level fingerprints or eustatic from GRACE land components
+            # use sea level fingerprints or eustatic from GRACE land components
             if FINGERPRINT:
-                #-- calculate total sea level fingerprint for eustatic component
-                #-- steps to calculate sea level from GRACE land-water change:
-                #-- 1) calculate total land mass at time t (GRACE*land function)
-                #-- NOTE: this is an unscaled GRACE estimate that uses the
-                #-- buffered land function when solving the sea-level equation.
-                #-- possible improvement using scaled estimate with real coastlines
+                # calculate total sea level fingerprint for eustatic component
+                # steps to calculate sea level from GRACE land-water change:
+                # 1) calculate total land mass at time t (GRACE*land function)
+                # NOTE: this is an unscaled GRACE estimate that uses the
+                # buffered land function when solving the sea-level equation.
+                # possible improvement using scaled estimate with real coastlines
                 land_Ylms = gen_stokes(lmass*land_function, landsea.lon, landsea.lat,
                     UNITS=1, LMIN=0, LMAX=EXPANSION, PLM=PLM, LOVE=(hl,kl,ll))
-                #-- 2) calculate sea level fingerprints of land mass at time t
-                #-- use maximum of 3 iterations for computational efficiency
+                # 2) calculate sea level fingerprints of land mass at time t
+                # use maximum of 3 iterations for computational efficiency
                 sea_level = sea_level_equation(land_Ylms.clm, land_Ylms.slm,
                     landsea.lon, landsea.lat, land_function, LMAX=EXPANSION,
                     LOVE=(hl,kl,ll), BODY_TIDE_LOVE=0, FLUID_LOVE=0, ITERATIONS=3,
                     POLAR=True, PLM=PLM, ASTYPE=np.float64, SCALE=1e-32, FILL_VALUE=0)
-                #-- 3) convert sea level fingerprints into spherical harmonics
+                # 3) convert sea level fingerprints into spherical harmonics
                 slf_Ylms = gen_stokes(sea_level, landsea.lon, landsea.lat,
                     UNITS=1, LMIN=0, LMAX=1, PLM=PLM[:2,:2,:], LOVE=(hl,kl,ll))
-                #-- 4) convert the slf degree 1 harmonics to mass with dfactor
+                # 4) convert the slf degree 1 harmonics to mass with dfactor
                 eustatic.C10[t] = slf_Ylms.clm[1,0]*dfactor[1]
                 eustatic.C11[t] = slf_Ylms.clm[1,1]*dfactor[1]
                 eustatic.S11[t] = slf_Ylms.slm[1,1]*dfactor[1]
             else:
-                #-- steps to calculate eustatic component from GRACE land-water change:
-                #-- 1) calculate total mass of 1 cm of ocean height (calculated above)
-                #-- 2) calculate total land mass at time t (GRACE*land function)
-                #-- NOTE: possible improvement using the sea-level equation to solve
-                #-- for the spatial pattern of sea level from the land water mass
+                # steps to calculate eustatic component from GRACE land-water change:
+                # 1) calculate total mass of 1 cm of ocean height (calculated above)
+                # 2) calculate total land mass at time t (GRACE*land function)
+                # NOTE: possible improvement using the sea-level equation to solve
+                # for the spatial pattern of sea level from the land water mass
                 land_Ylms = gen_stokes(lmass*land_function, landsea.lon,
                     landsea.lat, UNITS=1, LMIN=0, LMAX=1, PLM=PLM[:2,:2,:],
                     LOVE=(hl,kl,ll))
-                #-- 3) calculate ratio between the total land mass and the total mass
-                #-- of 1 cm of ocean height (negative as positive land = sea level drop)
-                #-- this converts the total land change to ocean height change
+                # 3) calculate ratio between the total land mass and the total mass
+                # of 1 cm of ocean height (negative as positive land = sea level drop)
+                # this converts the total land change to ocean height change
                 eustatic_ratio = -land_Ylms.clm[0,0]/ocean_Ylms.clm[0,0]
-                #-- 4) scale degree one coefficients of ocean function with ratio
-                #-- and convert the eustatic degree 1 harmonics to mass with dfactor
+                # 4) scale degree one coefficients of ocean function with ratio
+                # and convert the eustatic degree 1 harmonics to mass with dfactor
                 scale_factor = eustatic_ratio*dfactor[1]
                 eustatic.C10[t] = ocean_Ylms.clm[1,0]*scale_factor
                 eustatic.C11[t] = ocean_Ylms.clm[1,1]*scale_factor
                 eustatic.S11[t] = ocean_Ylms.slm[1,1]*scale_factor
 
-            #-- eustatic coefficients of degree 1
-            #-- for OMCT/MPIOM:
-            #-- equal to the eustatic component only as OMCT/MPIOM model is
-            #-- already removed from the GRACE/GRACE-FO GSM coefficients
+            # eustatic coefficients of degree 1
+            # for OMCT/MPIOM:
+            # equal to the eustatic component only as OMCT/MPIOM model is
+            # already removed from the GRACE/GRACE-FO GSM coefficients
             CMAT = np.array([eustatic.C10[t],eustatic.C11[t],eustatic.S11[t]])
-            #-- replacing the OBP harmonics of degree 1
+            # replacing the OBP harmonics of degree 1
             if MODEL not in ('OMCT','MPIOM'):
-                #-- calculate difference between ECCO and GAD as the OMCT/MPIOM
-                #-- model is already removed from the GRACE GSM coefficients
+                # calculate difference between ECCO and GAD as the OMCT/MPIOM
+                # model is already removed from the GRACE GSM coefficients
                 GAD = np.array([GAD.C10[t], GAD.C11[t], GAD.S11[t]])
                 OBP = np.array([OBP.C10[t], OBP.C11[t], OBP.S11[t]])
-                #-- effectively adding back OMCT/MPIOM and then removing ECCO
+                # effectively adding back OMCT/MPIOM and then removing ECCO
                 CMAT += OBP - GAD
 
-            #-- G Matrix for time t
+            # G Matrix for time t
             GMAT = np.array([G.C10[t], G.C11[t], G.S11[t]])
-            #-- calculate inversion for degree 1 solutions
-            #-- this is mathematically equivalent to an iterative procedure
-            #-- whereby the initial degree one coefficients are used to update
-            #-- the G Matrix until (C10, C11, S11) converge
-            #-- for OMCT/MPIOM: min(eustatic from land - measured ocean)
-            #-- for ECCO: min((OBP-GAD) + eustatic from land - measured ocean)
+            # calculate inversion for degree 1 solutions
+            # this is mathematically equivalent to an iterative procedure
+            # whereby the initial degree one coefficients are used to update
+            # the G Matrix until (C10, C11, S11) converge
+            # for OMCT/MPIOM: min(eustatic from land - measured ocean)
+            # for ECCO: min((OBP-GAD) + eustatic from land - measured ocean)
             DMAT[:,t] = np.dot(np.linalg.inv(IMAT), (CMAT-GMAT))
-            #-- could also use pseudo-inverse in least-squares
+            # could also use pseudo-inverse in least-squares
             #DMAT[:,t] = np.linalg.lstsq(IMAT,(CMAT-GMAT),rcond=-1)[0]
-            #-- save geocenter for iteration and time t after restoring GIA+ATM
+            # save geocenter for iteration and time t after restoring GIA+ATM
             iteration.C10[t,n_iter] = DMAT[0,t]/dfactor[1]+gia.C10[t]+atm.C10[t]
             iteration.C11[t,n_iter] = DMAT[1,t]/dfactor[1]+gia.C11[t]+atm.C11[t]
             iteration.S11[t,n_iter] = DMAT[2,t]/dfactor[1]+gia.S11[t]+atm.S11[t]
-        #-- remove mean of each solution for iteration
+        # remove mean of each solution for iteration
         iteration.C10[:,n_iter] -= iteration.C10[:,n_iter].mean()
         iteration.C11[:,n_iter] -= iteration.C11[:,n_iter].mean()
         iteration.S11[:,n_iter] -= iteration.S11[:,n_iter].mean()
-        #-- calculate difference between original geocenter coefficients and the
-        #-- calculated coefficients for each of the geocenter solutions
+        # calculate difference between original geocenter coefficients and the
+        # calculated coefficients for each of the geocenter solutions
         sigma_C10 = np.sum((GSM_Ylms.clm[1,0,:] - iteration.C10[:,n_iter])**2)
         sigma_C11 = np.sum((GSM_Ylms.clm[1,1,:] - iteration.C11[:,n_iter])**2)
         sigma_S11 = np.sum((GSM_Ylms.slm[1,1,:] - iteration.S11[:,n_iter])**2)
         power = GSM_Ylms.clm[1,0,:]**2 + GSM_Ylms.clm[1,1,:]**2 + GSM_Ylms.slm[1,1,:]**2
         eps = np.sqrt(sigma_C10 + sigma_C11 + sigma_S11)/np.sqrt(np.sum(power))
-        #-- add 1 to n_iter counter
+        # add 1 to n_iter counter
         n_iter += 1
 
-    #-- Convert inverted solutions into fully normalized spherical harmonics
-    #-- restore geocenter variation from glacial isostatic adjustment (GIA)
-    #-- restore atmospheric jump corrections from Fagiolini (2015) if applicable
-    #-- for each of the geocenter solutions (C10, C11, S11)
-    #-- for the iterative case this will be the final iteration
+    # Convert inverted solutions into fully normalized spherical harmonics
+    # restore geocenter variation from glacial isostatic adjustment (GIA)
+    # restore atmospheric jump corrections from Fagiolini (2015) if applicable
+    # for each of the geocenter solutions (C10, C11, S11)
+    # for the iterative case this will be the final iteration
     DEG1 = geocenter()
     DEG1.C10 = DMAT[0,:]/dfactor[1] + gia.C10[:] + atm.C10[:]
     DEG1.C11 = DMAT[1,:]/dfactor[1] + gia.C11[:] + atm.C11[:]
     DEG1.S11 = DMAT[2,:]/dfactor[1] + gia.S11[:] + atm.S11[:]
-    #-- remove mean of geocenter for each component
+    # remove mean of geocenter for each component
     DEG1.mean(apply=True)
-    #-- calculate geocenter variations with dealiasing restored
+    # calculate geocenter variations with dealiasing restored
     aod = DEG1.copy()
     aod.add(GAC)
 
-    #-- output degree 1 coefficients with and without dealiasing
+    # output degree 1 coefficients with and without dealiasing
     file_format = '{0}_{1}_{2}{3}{4}{5}{6}{7}{8}.{9}'
     output_format = '{0:11.4f}{1:14.6e}{2:14.6e}{3:14.6e} {4:03d}\n'
-    #-- public file format in fully normalized spherical harmonics
-    #-- before and after restoring the atmospheric and oceanic dealiasing
+    # public file format in fully normalized spherical harmonics
+    # before and after restoring the atmospheric and oceanic dealiasing
     for AOD in ['','_wAOD']:
-        #-- local version with all descriptor flags
+        # local version with all descriptor flags
         a1=(PROC,DREL,MODEL,slf_str,iter_str,slr_str,gia_str,AOD,ds_str,'txt')
         FILE1 = os.path.join(DIRECTORY,file_format.format(*a1))
         fid1 = open(FILE1,'w')
-        #-- print headers for cases with and without dealiasing
+        # print headers for cases with and without dealiasing
         print_header(fid1)
         print_harmonic(fid1,kl[1])
         print_global(fid1,PROC,DREL,MODEL.replace('_',' '),AOD,GIA_Ylms_rate,
             SLR_C20,SLR_21,GSM_Ylms.month)
         print_variables(fid1,'single precision','fully normalized')
-        #-- for each GRACE/GRACE-FO month
+        # for each GRACE/GRACE-FO month
         for t,mon in enumerate(GSM_Ylms.month):
-            #-- geocenter coefficients with and without AOD restored
+            # geocenter coefficients with and without AOD restored
             if AOD:
                 args=(tdec[t],aod.C10[t],aod.C11[t],aod.S11[t],mon)
             else:
                 args=(tdec[t],DEG1.C10[t],DEG1.C11[t],DEG1.S11[t],mon)
-            #-- output geocenter coefficients to file
+            # output geocenter coefficients to file
             fid1.write(output_format.format(*args))
-        #-- close the output file
+        # close the output file
         fid1.close()
         output_files.append(FILE1)
-        #-- set the permissions mode of the output file
+        # set the permissions mode of the output file
         os.chmod(FILE1, MODE)
-        #-- create public and archival copies of data
+        # create public and archival copies of data
         if COPY:
-            #-- create symbolic link for public distribution without flags
+            # create symbolic link for public distribution without flags
             a2=(PROC,DREL,MODEL,slf_str,iter_str,'','',AOD,'','txt')
             FILE2 = os.path.join(DIRECTORY,file_format.format(*a2))
             os.symlink(FILE1,FILE2) if not os.access(FILE2,os.F_OK) else None
             output_files.append(FILE2)
-            #-- create copy of file with date for archiving
+            # create copy of file with date for archiving
             today=time.strftime('_%Y-%m-%d',time.localtime())
             a3=(PROC,DREL,MODEL,slf_str,iter_str,'','',AOD,today,'txt')
             FILE3 = os.path.join(DIRECTORY,file_format.format(*a3))
             shutil.copyfile(FILE1,FILE3)
-            #-- copy modification times and permissions for archive file
+            # copy modification times and permissions for archive file
             shutil.copystat(FILE1,FILE3)
             output_files.append(FILE3)
 
-    #-- save iterations to netCDF4 file
+    # save iterations to netCDF4 file
     if ITERATIVE:
-        #-- output all degree 1 coefficients as a netCDF4 file
+        # output all degree 1 coefficients as a netCDF4 file
         a4=(PROC,DREL,MODEL,slf_str,iter_str,slr_str,gia_str,'',ds_str,'nc')
         FILE4=os.path.join(DIRECTORY,file_format.format(*a4))
         fileID=netCDF4.Dataset(FILE4,'w')
-        #-- Defining the NetCDF4 dimensions
+        # Defining the NetCDF4 dimensions
         fileID.createDimension('iteration', n_iter)
         fileID.createDimension('time', n_files)
-        #-- defining the NetCDF4 variables
+        # defining the NetCDF4 variables
         nc = {}
         nc['time'] = fileID.createVariable('time',GSM_Ylms.time.dtype,('time',))
         nc['month'] = fileID.createVariable('month',GSM_Ylms.month.dtype,('time',))
@@ -864,13 +864,13 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
             ('time','iteration',), zlib=True)
         nc['S11'] = fileID.createVariable('S11',iteration.S11.dtype,
             ('time','iteration',), zlib=True)
-        #-- filling NetCDF4 variables
+        # filling NetCDF4 variables
         nc['time'][:] = np.copy(GSM_Ylms.time)
         nc['month'][:] = np.copy(GSM_Ylms.month)
         nc['C10'][:] = iteration.C10[:,:n_iter]
         nc['C11'][:] = iteration.C11[:,:n_iter]
         nc['S11'][:] = iteration.S11[:,:n_iter]
-        #-- defining the NetCDF4 attributes
+        # defining the NetCDF4 attributes
         nc['time'].units = 'years'
         nc['time'].long_name = 'Date_in_Decimal_Years'
         nc['month'].long_name = 'GRACE_month'
@@ -882,45 +882,45 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         nc['C11'].long_name = 'cosine_spherical_harmonic_of_degree_1,_order_1'
         nc['S11'].units = 'fully_normalized'
         nc['S11'].long_name = 'sine_spherical_harmonic_of_degree_1,_order_1'
-        #-- define global attributes
+        # define global attributes
         fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
-        #-- close the output file
+        # close the output file
         fileID.close()
-        #-- set the permissions mode of the output file
+        # set the permissions mode of the output file
         os.chmod(FILE4, MODE)
         output_files.append(FILE4)
 
-    #-- create plot similar to Figure 1 of Swenson et al (2008)
+    # create plot similar to Figure 1 of Swenson et al (2008)
     if PLOT:
-        #-- 3 row plot (C10, C11 and S11)
-        #-- with ECCO OBP geocenter, OMCT/MPIOM OBP geocenter, eustatic geocenter
-        #-- and the G matrix geocenter components
+        # 3 row plot (C10, C11 and S11)
+        # with ECCO OBP geocenter, OMCT/MPIOM OBP geocenter, eustatic geocenter
+        # and the G matrix geocenter components
         ax = {}
         fig, (ax[0], ax[1], ax[2]) = plt.subplots(num=1, nrows=3, sharex=True,
             sharey=True, figsize=(6,9))
         ii = np.nonzero((tdec >= 2003.) & (tdec < 2008.))
-        #-- plot ocean bottom pressure for alternative models
+        # plot ocean bottom pressure for alternative models
         if MODEL not in ('OMCT','MPIOM'):
             OBP.mean(apply=True,indices=ii)
             ax[0].plot(tdec,10.*OBP.C10,color='#1ed565',lw=2)
             ax[1].plot(tdec,10.*OBP.C11,color='#1ed565',lw=2)
             ax[2].plot(tdec,10.*OBP.S11,color='#1ed565',lw=2)
-        #-- plot GRACE components
+        # plot GRACE components
         G.mean(apply=True,indices=ii)
         ax[0].plot(tdec,10.*G.C10, color='orange', lw=2)
         ax[1].plot(tdec,10.*G.C11, color='orange', lw=2)
         ax[2].plot(tdec,10.*G.S11, color='orange', lw=2)
-        #-- plot OMCT/MPIOM ocean bottom pressure
+        # plot OMCT/MPIOM ocean bottom pressure
         GAD.mean(apply=True,indices=ii)
         ax[0].plot(tdec,10.*GAD.C10, 'b', lw=2)
         ax[1].plot(tdec,10.*GAD.C11, 'b', lw=2)
         ax[2].plot(tdec,10.*GAD.C11, 'b', lw=2)
-        #-- plot eustatic components
+        # plot eustatic components
         eustatic.mean(apply=True,indices=ii)
         ax[0].plot(tdec,10.*eustatic.C10, 'r', lw=2)
         ax[1].plot(tdec,10.*eustatic.C11, 'r', lw=2)
         ax[2].plot(tdec,10.*eustatic.S11, 'r', lw=2)
-        #-- labels and set limits to Swenson range
+        # labels and set limits to Swenson range
         ax[0].set_ylabel('[mm]', fontsize=14)
         ax[1].set_ylabel('[mm]', fontsize=14)
         ax[2].set_ylabel('[mm]', fontsize=14)
@@ -931,48 +931,48 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         ax[2].xaxis.set_minor_locator(MultipleLocator(0.25))
         ax[2].yaxis.set_ticks(np.arange(-6,8,2))
         ax[2].xaxis.get_major_formatter().set_useOffset(False)
-        #-- add axis labels and adjust font sizes for axis ticks
+        # add axis labels and adjust font sizes for axis ticks
         fig_labels = ['C10','C11','S11']
         for i in range(3):
-            #-- axis label
+            # axis label
             ax[i].add_artist(AnchoredText(fig_labels[i], pad=0.,
                 prop=dict(size=16,weight='bold'), frameon=False, loc=2))
-            #-- axes tick adjustments
+            # axes tick adjustments
             for tick in ax[i].xaxis.get_major_ticks():
                 tick.label.set_fontsize(14)
             for tick in ax[i].yaxis.get_major_ticks():
                 tick.label.set_fontsize(14)
-            #-- adjust ticks
+            # adjust ticks
             ax[i].get_xaxis().set_tick_params(which='both', direction='in')
             ax[i].get_yaxis().set_tick_params(which='both', direction='in')
-        #-- adjust locations of subplots and save to file
+        # adjust locations of subplots and save to file
         fig.subplots_adjust(left=0.1,right=0.96,bottom=0.06,top=0.98,hspace=0.1)
         args = (PROC,DREL,MODEL,slf_str,iter_str,slr_str,gia_str,ds_str)
         FILE = 'Swenson_Figure_1_{0}_{1}_{2}{3}{4}{5}{6}{7}.pdf'.format(*args)
         plt.savefig(os.path.join(DIRECTORY,FILE), format='pdf',
             metadata={'Title':os.path.basename(sys.argv[0])})
         plt.clf()
-        #-- set the permissions mode of the output files
+        # set the permissions mode of the output files
         os.chmod(os.path.join(DIRECTORY,FILE), MODE)
         output_files.append(os.path.join(DIRECTORY,FILE))
 
-    #-- if ITERATIVE: create plot showing iteration solutions
+    # if ITERATIVE: create plot showing iteration solutions
     if PLOT and ITERATIVE:
-        #-- 3 row plot (C10, C11 and S11)
+        # 3 row plot (C10, C11 and S11)
         ax = {}
         fig, (ax[0], ax[1], ax[2]) = plt.subplots(num=1, nrows=3, sharex=True,
             figsize=(6,9))
-        #-- show solutions for each iteration
+        # show solutions for each iteration
         cmap = copy.copy(cm.rainbow)
         plot_colors = iter(cmap(np.linspace(0,1,n_iter)))
         iteration_mmwe = iteration.scale(10.0*dfactor[1])
         for j in range(n_iter):
             c = next(plot_colors)
-            #-- C10, C11 and S11
+            # C10, C11 and S11
             ax[0].plot(GSM_Ylms.month,iteration_mmwe.C10[:,j],c=c)
             ax[1].plot(GSM_Ylms.month,iteration_mmwe.C11[:,j],c=c)
             ax[2].plot(GSM_Ylms.month,iteration_mmwe.S11[:,j],c=c)
-        #-- labels and set limits
+        # labels and set limits
         ax[0].set_ylabel('mm', fontsize=14)
         ax[1].set_ylabel('mm', fontsize=14)
         ax[2].set_ylabel('mm', fontsize=14)
@@ -982,59 +982,59 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         ax[2].set_xlim(xmin,xmax)
         ax[2].xaxis.set_minor_locator(MultipleLocator(5))
         ax[2].xaxis.get_major_formatter().set_useOffset(False)
-        #-- add axis labels and adjust font sizes for axis ticks
+        # add axis labels and adjust font sizes for axis ticks
         fig_labels = ['C10','C11','S11']
         for i in range(3):
-            #-- axis label
+            # axis label
             ax[i].add_artist(AnchoredText(fig_labels[i], pad=0.,
                 prop=dict(size=16,weight='bold'), frameon=False, loc=2))
-            #-- axes tick adjustments
+            # axes tick adjustments
             for tick in ax[i].xaxis.get_major_ticks():
                 tick.label.set_fontsize(14)
             for tick in ax[i].yaxis.get_major_ticks():
                 tick.label.set_fontsize(14)
-            #-- adjust ticks
+            # adjust ticks
             ax[i].get_xaxis().set_tick_params(which='both', direction='in')
             ax[i].get_yaxis().set_tick_params(which='both', direction='in')
-        #-- adjust locations of subplots and save to file
+        # adjust locations of subplots and save to file
         fig.subplots_adjust(left=0.12,right=0.94,bottom=0.06,top=0.98,hspace=0.1)
         args = (PROC,DREL,MODEL,slf_str,slr_str,gia_str,ds_str)
         FILE = 'Geocenter_Iterative_{0}_{1}_{2}{3}{4}{5}{6}.pdf'.format(*args)
         plt.savefig(os.path.join(DIRECTORY,FILE), format='pdf',
             metadata={'Title':os.path.basename(sys.argv[0])})
         plt.clf()
-        #-- set the permissions mode of the output files
+        # set the permissions mode of the output files
         os.chmod(os.path.join(DIRECTORY,FILE), MODE)
         output_files.append(os.path.join(DIRECTORY,FILE))
 
-    #-- return the list of output files and the number of iterations
+    # return the list of output files and the number of iterations
     return (output_files, n_iter)
 
-#-- PURPOSE: print YAML header to top of file
+# PURPOSE: print YAML header to top of file
 def print_header(fid):
-    #-- print header
+    # print header
     fid.write('{0}:\n'.format('header'))
-    #-- data dimensions
+    # data dimensions
     fid.write('  {0}:\n'.format('dimensions'))
     fid.write('    {0:22}: {1:d}\n'.format('degree',1))
     fid.write('    {0:22}: {1:d}\n'.format('order',1))
     fid.write('\n')
 
-#-- PURPOSE: print spherical harmonic attributes to YAML header
+# PURPOSE: print spherical harmonic attributes to YAML header
 def print_harmonic(fid,kl):
-    #-- non-standard attributes
+    # non-standard attributes
     fid.write('  {0}:\n'.format('non-standard_attributes'))
-    #-- load love number
+    # load love number
     fid.write('    {0:22}:\n'.format('love_number'))
     long_name = 'Gravitational Load Love Number of Degree 1 (k1)'
     fid.write('      {0:20}: {1}\n'.format('long_name',long_name))
     fid.write('      {0:20}: {1:0.3f}\n'.format('value',kl))
-    #-- data format
+    # data format
     data_format = '(f11.4,3e14.6,i4)'
     fid.write('    {0:22}: {1}\n'.format('formatting_string',data_format))
     fid.write('\n')
 
-#-- PURPOSE: print global attributes to YAML header
+# PURPOSE: print global attributes to YAML header
 def print_global(fid,PROC,DREL,MODEL,AOD,GIA,SLR,S21,month):
     fid.write('  {0}:\n'.format('global_attributes'))
     MISSION = dict(RL05='GRACE',RL06='GRACE/GRACE-FO')
@@ -1053,7 +1053,7 @@ def print_global(fid,PROC,DREL,MODEL,AOD,GIA,SLR,S21,month):
             'processes.  In addition, the coefficients represent the '
             'atmospheric and oceanic processes not captured in the {0} {1} '
             'de-aliasing product.').format(MISSION[DREL],DREL))
-    #-- get GIA parameters
+    # get GIA parameters
     summary.append(('  Glacial Isostatic Adjustment (GIA) estimates from '
         '{0} have been restored.').format(GIA['citation']))
     if AOD:
@@ -1107,7 +1107,7 @@ def print_global(fid,PROC,DREL,MODEL,AOD,GIA,SLR,S21,month):
     fid.write('    {0:22}: {1}\n'.format('product_version',PRODUCT_VERSION))
     fid.write('    {0:22}:\n'.format('references'))
     reference = []
-    #-- geocenter citations
+    # geocenter citations
     reference.append(('T. C. Sutterley, and I. Velicogna, "Improved estimates '
         'of geocenter variability from time-variable gravity and ocean model '
         'outputs", Remote Sensing, 11(18), 2108, (2019). '
@@ -1116,16 +1116,16 @@ def print_global(fid,PROC,DREL,MODEL,AOD,GIA,SLR,S21,month):
         'geocenter variations from a combination of GRACE and ocean model '
         'output", Journal of Geophysical Research - Solid Earth, 113(B08410), '
         '(2008). https://doi.org/10.1029/2007JB005338'))
-    #-- GIA citation
+    # GIA citation
     reference.append(GIA['reference'])
-    #-- ECMWF jump corrections citation
+    # ECMWF jump corrections citation
     if (DREL == 'RL05') and not AOD:
         reference.append(('E. Fagiolini, F. Flechtner, M. Horwath, H. Dobslaw, '
             '''"Correction of inconsistencies in ECMWF's operational '''
             '''analysis data during de-aliasing of GRACE gravity models", '''
             'Geophysical Journal International, 202(3), 2150, (2015). '
             'https://doi.org/10.1093/gji/ggv276'))
-    #-- SLR citation for a given solution
+    # SLR citation for a given solution
     if (SLR == 'CSR'):
         reference.append(('M. Cheng, B. D. Tapley, and J. C. Ries, '
             '''"Deceleration in the Earth's oblateness", Journal of '''
@@ -1156,7 +1156,7 @@ def print_global(fid,PROC,DREL,MODEL,AOD,GIA,SLR,S21,month):
             'GRACE/GRACE-FO Geopotential GSM Coefficients GFZ RL06 '
             '(Level-2B Product)." V. 0002. GFZ Data Services, (2019). '
             'http://doi.org/10.5880/GFZ.GRAVIS_06_L2B'))
-    #-- print list of references
+    # print list of references
     for ref in reference:
         fid.write('      - {0}\n'.format(ref))
     creators = 'Tyler C. Sutterley and Isabella Velicogna'
@@ -1168,7 +1168,7 @@ def print_global(fid,PROC,DREL,MODEL,AOD,GIA,SLR,S21,month):
     fid.write('    {0:22}: {1}\n'.format('creator_type', 'group'))
     inst = 'University of Washington; University of California, Irvine'
     fid.write('    {0:22}: {1}\n'.format('creator_institution',inst))
-    #-- date range and date created
+    # date range and date created
     calendar_year,calendar_month = grace_to_calendar(month)
     start_time = '{0:4.0f}-{1:02.0f}'.format(calendar_year[0],calendar_month[0])
     fid.write('    {0:22}: {1}\n'.format('time_coverage_start', start_time))
@@ -1178,39 +1178,39 @@ def print_global(fid,PROC,DREL,MODEL,AOD,GIA,SLR,S21,month):
     fid.write('    {0:22}: {1}\n'.format('date_created', today))
     fid.write('\n')
 
-#-- PURPOSE: print variable descriptions to YAML header
+# PURPOSE: print variable descriptions to YAML header
 def print_variables(fid,data_precision,data_units):
-    #-- variables
+    # variables
     fid.write('  {0}:\n'.format('variables'))
-    #-- time
+    # time
     fid.write('    {0:22}:\n'.format('mid-epoch_time'))
     long_name = 'mid-date of each measurement epoch'
     fid.write('      {0:20}: {1}\n'.format('long_name', long_name))
     fid.write('      {0:20}: {1}\n'.format('data_type', 'single precision'))
     fid.write('      {0:20}: {1}\n'.format('units', 'decimal-years'))
     fid.write('      {0:20}: {1}\n'.format('comment', '1st column'))
-    #-- C10
+    # C10
     fid.write('    {0:22}:\n'.format('C10'))
     long_name = 'C10 coefficient; cosine coefficient for degree 1 and order 0'
     fid.write('      {0:20}: {1}\n'.format('long_name', long_name))
     fid.write('      {0:20}: {1}\n'.format('data_type', data_precision))
     fid.write('      {0:20}: {1}\n'.format('units', data_units))
     fid.write('      {0:20}: {1}\n'.format('comment', '2nd column'))
-    #-- C11
+    # C11
     fid.write('    {0:22}:\n'.format('C11'))
     long_name = 'C11 coefficient; cosine coefficient for degree 1 and order 1'
     fid.write('      {0:20}: {1}\n'.format('long_name', long_name))
     fid.write('      {0:20}: {1}\n'.format('data_type', data_precision))
     fid.write('      {0:20}: {1}\n'.format('units', data_units))
     fid.write('      {0:20}: {1}\n'.format('comment', '3rd column'))
-    #-- S11
+    # S11
     fid.write('    {0:22}:\n'.format('S11'))
     long_name = 'S11 coefficient; sine coefficient for degree 1 and order 1'
     fid.write('      {0:20}: {1}\n'.format('long_name', long_name))
     fid.write('      {0:20}: {1}\n'.format('data_type', data_precision))
     fid.write('      {0:20}: {1}\n'.format('units', data_units))
     fid.write('      {0:20}: {1}\n'.format('comment', '4th column'))
-    #-- GRACE month
+    # GRACE month
     fid.write('    {0:22}:\n'.format('month'))
     long_name = 'GRACE month of each measurement epoch'
     fid.write('      {0:20}: {1}\n'.format('long_name', long_name))
@@ -1219,52 +1219,52 @@ def print_variables(fid,data_precision,data_units):
     fid.write('      {0:20}: {1}\n'.format('data_type', 'integer'))
     fid.write('      {0:20}: {1}\n'.format('units', 'month'))
     fid.write('      {0:20}: {1}\n'.format('comment', '5th column'))
-    #-- end of header
+    # end of header
     fid.write('\n\n# End of YAML header\n')
 
-#-- PURPOSE: print a file log for the GRACE degree one analysis
+# PURPOSE: print a file log for the GRACE degree one analysis
 def output_log_file(arguments,output_files,n_iter):
-    #-- format: calc_degree_one_run_2002-04-01_PID-70335.log
+    # format: calc_degree_one_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'calc_degree_one_run_{0}_PID-{1:d}.log'.format(*args)
     DIRECTORY = os.path.join(arguments.directory,'geocenter')
-    #-- create a unique log and open the log file
+    # create a unique log and open the log file
     fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
-    #-- print argument values sorted alphabetically
+    # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
     for arg, value in sorted(vars(arguments).items()):
         logging.info('{0}: {1}'.format(arg, value))
-    #-- print number of iterations used in calculation
+    # print number of iterations used in calculation
     if arguments.iterative:
         logging.info('\n\nNUMBER OF ITERATIONS: {0:d}'.format(n_iter))
-    #-- print output files
+    # print output files
     logging.info('\n\nOUTPUT FILES:')
     for f in output_files:
         logging.info('{0}'.format(f))
-    #-- close the log file
+    # close the log file
     fid.close()
 
-#-- PURPOSE: print a error file log for the GRACE degree one analysis
+# PURPOSE: print a error file log for the GRACE degree one analysis
 def output_error_log_file(arguments):
-    #-- format: calc_degree_one_failed_run_2002-04-01_PID-70335.log
+    # format: calc_degree_one_failed_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'calc_degree_one_failed_run_{0}_PID-{1:d}.log'.format(*args)
     DIRECTORY = os.path.join(arguments.directory,'geocenter')
-    #-- create a unique log and open the log file
+    # create a unique log and open the log file
     fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
-    #-- print argument values sorted alphabetically
+    # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
     for arg, value in sorted(vars(arguments).items()):
         logging.info('{0}: {1}'.format(arg, value))
-    #-- print traceback error
+    # print traceback error
     logging.info('\n\nTRACEBACK ERROR:')
     traceback.print_exc(file=fid)
-    #-- close the log file
+    # close the log file
     fid.close()
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Calculates degree 1 variations using GRACE/GRACE-FO
@@ -1274,28 +1274,28 @@ def arguments():
         fromfile_prefix_chars="@"
     )
     parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
-    #-- command line parameters
-    #-- working data directory
+    # command line parameters
+    # working data directory
     parser.add_argument('--directory','-D',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
-    #-- GRACE/GRACE-FO data processing center
+    # GRACE/GRACE-FO data processing center
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, required=True,
         help='GRACE/GRACE-FO Processing Center')
-    #-- GRACE/GRACE-FO data release
+    # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
         metavar='DREL', type=str, default='RL06',
         help='GRACE/GRACE-FO Data Release')
-    #-- maximum spherical harmonic degree and order
+    # maximum spherical harmonic degree and order
     parser.add_argument('--lmax','-l',
         type=int, default=60,
         help='Maximum spherical harmonic degree')
     parser.add_argument('--mmax','-m',
         type=int, default=None,
         help='Maximum spherical harmonic order')
-    #-- start and end GRACE/GRACE-FO months
+    # start and end GRACE/GRACE-FO months
     parser.add_argument('--start','-S',
         type=int, default=4,
         help='Starting GRACE/GRACE-FO month')
@@ -1307,25 +1307,25 @@ def arguments():
     parser.add_argument('--missing','-N',
         metavar='MISSING', type=int, nargs='+', default=MISSING,
         help='Missing GRACE/GRACE-FO months')
-    #-- different treatments of the load Love numbers
-    #-- 0: Han and Wahr (1995) values from PREM
-    #-- 1: Gegout (2005) values from PREM
-    #-- 2: Wang et al. (2012) values from PREM
+    # different treatments of the load Love numbers
+    # 0: Han and Wahr (1995) values from PREM
+    # 1: Gegout (2005) values from PREM
+    # 2: Wang et al. (2012) values from PREM
     parser.add_argument('--love','-n',
         type=int, default=0, choices=[0,1,2],
         help='Treatment of the Load Love numbers')
     parser.add_argument('--kl','-k',
         type=float, default=0.021, nargs='?',
         help='Degree 1 gravitational Load Love number')
-    #-- Gaussian smoothing radius (km)
+    # Gaussian smoothing radius (km)
     parser.add_argument('--radius','-R',
         type=float, default=0,
         help='Gaussian smoothing radius (km)')
-    #-- Use a decorrelation (destriping) filter
+    # Use a decorrelation (destriping) filter
     parser.add_argument('--destripe','-d',
         default=False, action='store_true',
         help='Use decorrelation (destriping) filter')
-    #-- GIA model type list
+    # GIA model type list
     models = {}
     models['IJ05-R2'] = 'Ivins R2 GIA Models'
     models['W12a'] = 'Whitehouse GIA Models'
@@ -1339,23 +1339,23 @@ def arguments():
     models['ascii'] = 'reformatted GIA in ascii format'
     models['netCDF4'] = 'reformatted GIA in netCDF4 format'
     models['HDF5'] = 'reformatted GIA in HDF5 format'
-    #-- GIA model type
+    # GIA model type
     parser.add_argument('--gia','-G',
         type=str, metavar='GIA', default='AW13-ICE6G', choices=models.keys(),
         help='GIA model type to read')
-    #-- full path to GIA file
+    # full path to GIA file
     parser.add_argument('--gia-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='GIA file to read')
-    #-- use atmospheric jump corrections from Fagiolini et al. (2015)
+    # use atmospheric jump corrections from Fagiolini et al. (2015)
     parser.add_argument('--atm-correction',
         default=False, action='store_true',
         help='Apply atmospheric jump correction coefficients')
-    #-- correct for pole tide drift follow Wahr et al. (2015)
+    # correct for pole tide drift follow Wahr et al. (2015)
     parser.add_argument('--pole-tide',
         default=False, action='store_true',
         help='Correct for pole tide drift')
-    #-- replace low degree harmonics with values from Satellite Laser Ranging
+    # replace low degree harmonics with values from Satellite Laser Ranging
     parser.add_argument('--slr-c20',
         type=str, default=None, choices=['CSR','GFZ','GSFC'],
         help='Replace C20 coefficients with SLR values')
@@ -1374,7 +1374,7 @@ def arguments():
     parser.add_argument('--slr-c50',
         type=str, default=None, choices=['CSR','GSFC','LARES'],
         help='Replace C50 coefficients with SLR values')
-    #-- ocean model list
+    # ocean model list
     choices = []
     choices.append('OMCT')
     choices.append('MPIOM')
@@ -1387,78 +1387,78 @@ def arguments():
         metavar='MODEL', type=str,
         default='MPIOM', choices=choices,
         help='Ocean model to use')
-    #-- input data format (ascii, netCDF4, HDF5)
+    # input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--format','-F',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
         help='Input data format for ocean models')
-    #-- index file for ocean model harmonics
+    # index file for ocean model harmonics
     parser.add_argument('--ocean-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='Index file for ocean model harmonics')
-    #-- mean file to remove
+    # mean file to remove
     parser.add_argument('--mean-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='GRACE/GRACE-FO mean file to remove from the harmonic data')
-    #-- input data format (ascii, netCDF4, HDF5)
+    # input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--mean-format',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5','gfc'],
         help='Input data format for GRACE/GRACE-FO mean file')
-    #-- run with iterative scheme
+    # run with iterative scheme
     parser.add_argument('--iterative',
         default=False, action='store_true',
         help='Iterate degree one solutions')
-    #-- run with sea level fingerprints
+    # run with sea level fingerprints
     parser.add_argument('--fingerprint',
         default=False, action='store_true',
         help='Redistribute land-water flux using sea level fingerprints')
     parser.add_argument('--expansion','-e',
         type=int, default=240,
         help='Spherical harmonic expansion for sea level fingerprints')
-    #-- land-sea mask for calculating ocean mass and land water flux
+    # land-sea mask for calculating ocean mass and land water flux
     land_mask_file = utilities.get_data_path(['data','land_fcn_300km.nc'])
     parser.add_argument('--mask',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=land_mask_file,
         help='Land-sea mask for calculating ocean mass and land water flux')
-    #-- create output plots
+    # create output plots
     parser.add_argument('--plot','-p',
         default=False, action='store_true',
         help='Create output plots for components and iterations')
-    #-- copy output files
+    # copy output files
     parser.add_argument('--copy','-C',
         default=False, action='store_true',
         help='Copy output files for distribution and archival')
-    #-- Output log file for each job in forms
-    #-- calc_degree_one_run_2002-04-01_PID-00000.log
-    #-- calc_degree_one_failed_run_2002-04-01_PID-00000.log
+    # Output log file for each job in forms
+    # calc_degree_one_run_2002-04-01_PID-00000.log
+    # calc_degree_one_failed_run_2002-04-01_PID-00000.log
     parser.add_argument('--log',
         default=False, action='store_true',
         help='Output log file for each job')
-    #-- print information about processing run
+    # print information about processing run
     parser.add_argument('--verbose','-V',
         action='count', default=0,
         help='Verbose output of processing run')
-    #-- permissions mode of the local directories and files (number in octal)
+    # permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permissions mode of output files')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
-    #-- Read the system arguments listed after the program
+    # Read the system arguments listed after the program
     parser = arguments()
     args,_ = parser.parse_known_args()
 
-    #-- create logger
+    # create logger
     loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
-    #-- try to run the analysis with listed parameters
+    # try to run the analysis with listed parameters
     try:
         info(args)
-        #-- run calc_degree_one algorithm with parameters
+        # run calc_degree_one algorithm with parameters
         output_files,n_iter = calc_degree_one(
             args.directory,
             args.center,
@@ -1495,17 +1495,17 @@ def main():
             COPY=args.copy,
             MODE=args.mode)
     except Exception as e:
-        #-- if there has been an error exception
-        #-- print the type, value, and stack trace of the
-        #-- current exception being handled
+        # if there has been an error exception
+        # print the type, value, and stack trace of the
+        # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
-        if args.log:#-- write failed job completion log file
+        if args.log:# write failed job completion log file
             output_error_log_file(args)
     else:
-        if args.log:#-- write successful job completion log file
+        if args.log:# write successful job completion log file
             output_log_file(args,output_files,n_iter)
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()

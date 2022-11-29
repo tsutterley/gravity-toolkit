@@ -253,7 +253,7 @@ from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.ocean_stokes import ocean_stokes
 from gravity_toolkit.tssmooth import tssmooth
 
-#-- PURPOSE: keep track of threads
+# PURPOSE: keep track of threads
 def info(args):
     logging.info(os.path.basename(sys.argv[0]))
     logging.info(args)
@@ -262,8 +262,8 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
-#-- PURPOSE: calculate a regional time-series through a least
-#-- squares mascon process
+# PURPOSE: calculate a regional time-series through a least
+# squares mascon process
 def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     START=None,
     END=None,
@@ -302,435 +302,435 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     OUTPUT_DIRECTORY=None,
     MODE=0o775):
 
-    #-- recursively create output Directory if not currently existing
+    # recursively create output Directory if not currently existing
     if (not os.access(OUTPUT_DIRECTORY, os.F_OK)):
         os.makedirs(OUTPUT_DIRECTORY, mode=MODE, exist_ok=True)
 
-    #-- list object of output files for file logs (full path)
+    # list object of output files for file logs (full path)
     output_files = []
 
-    #-- file information
+    # file information
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
-    #-- file parser for reading index files
-    #-- removes commented lines (can comment out files in the index)
-    #-- removes empty lines (if there are extra empty lines)
+    # file parser for reading index files
+    # removes commented lines (can comment out files in the index)
+    # removes empty lines (if there are extra empty lines)
     parser = re.compile(r'^(?!\#|\%|$)', re.VERBOSE)
 
-    #-- read arrays of kl, hl, and ll Love Numbers
+    # read arrays of kl, hl, and ll Love Numbers
     hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE)
 
-    #-- Earth Parameters
+    # Earth Parameters
     factors = units(lmax=LMAX).harmonic(hl,kl,ll)
-    #-- Average Density of the Earth [g/cm^3]
+    # Average Density of the Earth [g/cm^3]
     rho_e = factors.rho_e
-    #-- Average Radius of the Earth [cm]
+    # Average Radius of the Earth [cm]
     rad_e = factors.rad_e
 
-    #-- for datasets not GSM: will add a label for the dataset
+    # for datasets not GSM: will add a label for the dataset
     dset_str = '' if (DSET == 'GSM') else f'_{DSET}'
-    #-- atmospheric ECMWF "jump" flag (if ATM)
+    # atmospheric ECMWF "jump" flag (if ATM)
     atm_str = '_wATM' if ATM else ''
-    #-- output string for both LMAX==MMAX and LMAX != MMAX cases
+    # output string for both LMAX==MMAX and LMAX != MMAX cases
     MMAX = np.copy(LMAX) if not MMAX else MMAX
     order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
 
-    #-- Calculating the Gaussian smoothing for radius RAD
+    # Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):
         wt = 2.0*np.pi*gauss_weights(RAD,LMAX)
         gw_str = f'_r{RAD:0.0f}km'
     else:
-        #-- else = 1
+        # else = 1
         wt = np.ones((LMAX+1))
         gw_str = ''
 
-    #-- Read Ocean function and convert to Ylms for redistribution
+    # Read Ocean function and convert to Ylms for redistribution
     if (REDISTRIBUTE_MASCONS | REDISTRIBUTE_REMOVED):
-        #-- read Land-Sea Mask and convert to spherical harmonics
+        # read Land-Sea Mask and convert to spherical harmonics
         ocean_Ylms = ocean_stokes(LANDMASK, LMAX, MMAX=MMAX, LOVE=(hl,kl,ll))
         ocean_str = '_OCN'
     else:
-        #-- not distributing uniformly over ocean
+        # not distributing uniformly over ocean
         ocean_str = ''
 
-    #-- input GRACE/GRACE-FO spherical harmonic datafiles for date range
-    #-- replacing low-degree harmonics with SLR values if specified
-    #-- include degree 1 (geocenter) harmonics if specified
-    #-- correcting for Pole-Tide and Atmospheric Jumps if specified
+    # input GRACE/GRACE-FO spherical harmonic datafiles for date range
+    # replacing low-degree harmonics with SLR values if specified
+    # include degree 1 (geocenter) harmonics if specified
+    # correcting for Pole-Tide and Atmospheric Jumps if specified
     Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX, SLR_21=SLR_21,
         SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C40=SLR_C40, SLR_C50=SLR_C50,
         DEG1_FILE=DEG1_FILE, MODEL_DEG1=MODEL_DEG1, ATM=ATM,
         POLE_TIDE=POLE_TIDE)
-    #-- create harmonics object from GRACE/GRACE-FO data
+    # create harmonics object from GRACE/GRACE-FO data
     GRACE_Ylms = harmonics().from_dict(Ylms)
-    #-- use a mean file for the static field to remove
+    # use a mean file for the static field to remove
     if MEAN_FILE:
-        #-- read data form for input mean file (ascii, netCDF4, HDF5, gfc)
+        # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
         mean_Ylms = harmonics().from_file(MEAN_FILE,format=MEANFORM,date=False)
-        #-- remove the input mean
+        # remove the input mean
         GRACE_Ylms.subtract(mean_Ylms)
     else:
         GRACE_Ylms.mean(apply=True)
-    #-- filter GRACE/GRACE-FO coefficients
+    # filter GRACE/GRACE-FO coefficients
     if DESTRIPE:
-        #-- destriping GRACE/GRACE-FO coefficients
+        # destriping GRACE/GRACE-FO coefficients
         ds_str = '_FL'
         GRACE_Ylms = GRACE_Ylms.destripe()
     else:
-        #-- using standard GRACE/GRACE-FO harmonics
+        # using standard GRACE/GRACE-FO harmonics
         ds_str = ''
-    #-- full path to directory for specific GRACE/GRACE-FO product
+    # full path to directory for specific GRACE/GRACE-FO product
     GRACE_Ylms.directory = Ylms['directory']
-    #-- date information of GRACE/GRACE-FO coefficients
+    # date information of GRACE/GRACE-FO coefficients
     n_files = len(GRACE_Ylms.time)
 
-    #-- input GIA spherical harmonic datafiles
+    # input GIA spherical harmonic datafiles
     GIA_Ylms_rate = read_GIA_model(GIA_FILE,GIA=GIA,LMAX=LMAX,MMAX=MMAX)
     gia_str = '_{0}'.format(GIA_Ylms_rate['title']) if GIA else ''
-    #-- calculate the monthly mass change from GIA
+    # calculate the monthly mass change from GIA
     GIA_Ylms = GRACE_Ylms.zeros_like()
     GIA_Ylms.time[:] = np.copy(GRACE_Ylms.time)
     GIA_Ylms.month[:] = np.copy(GRACE_Ylms.month)
-    #-- monthly GIA calculated by gia_rate*time elapsed
-    #-- finding change in GIA each month
+    # monthly GIA calculated by gia_rate*time elapsed
+    # finding change in GIA each month
     for t in range(n_files):
         GIA_Ylms.clm[:,:,t] = GIA_Ylms_rate['clm']*(GIA_Ylms.time[t]-2003.3)
         GIA_Ylms.slm[:,:,t] = GIA_Ylms_rate['slm']*(GIA_Ylms.time[t]-2003.3)
 
-    #-- input spherical harmonic datafiles to be removed from the GRACE data
-    #-- Remove sets of Ylms from the GRACE data before returning
+    # input spherical harmonic datafiles to be removed from the GRACE data
+    # Remove sets of Ylms from the GRACE data before returning
     remove_Ylms = GRACE_Ylms.zeros_like()
     remove_Ylms.time[:] = np.copy(GRACE_Ylms.time)
     remove_Ylms.month[:] = np.copy(GRACE_Ylms.month)
     if REMOVE_FILES:
-        #-- extend list if a single format was entered for all files
+        # extend list if a single format was entered for all files
         if len(REMOVE_FORMAT) < len(REMOVE_FILES):
             REMOVE_FORMAT = REMOVE_FORMAT*len(REMOVE_FILES)
-        #-- for each file to be removed
+        # for each file to be removed
         for REMOVE_FILE,REMOVEFORM in zip(REMOVE_FILES,REMOVE_FORMAT):
             if REMOVEFORM in ('ascii','netCDF4','HDF5'):
-                #-- ascii (.txt)
-                #-- netCDF4 (.nc)
-                #-- HDF5 (.H5)
+                # ascii (.txt)
+                # netCDF4 (.nc)
+                # HDF5 (.H5)
                 Ylms = harmonics().from_file(REMOVE_FILE, format=REMOVEFORM)
             elif REMOVEFORM in ('index-ascii','index-netCDF4','index-HDF5'):
-                #-- read from index file
+                # read from index file
                 _,removeform = REMOVEFORM.split('-')
-                #-- index containing files in data format
+                # index containing files in data format
                 Ylms = harmonics().from_index(REMOVE_FILE, format=removeform)
-            #-- reduce to GRACE/GRACE-FO months and truncate to degree and order
+            # reduce to GRACE/GRACE-FO months and truncate to degree and order
             Ylms = Ylms.subset(GRACE_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
-            #-- distribute removed Ylms uniformly over the ocean
+            # distribute removed Ylms uniformly over the ocean
             if REDISTRIBUTE_REMOVED:
-                #-- calculate ratio between total removed mass and
-                #-- a uniformly distributed cm of water over the ocean
+                # calculate ratio between total removed mass and
+                # a uniformly distributed cm of water over the ocean
                 ratio = Ylms.clm[0,0,:]/ocean_Ylms.clm[0,0]
-                #-- for each spherical harmonic
-                for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
-                    for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
-                        #-- remove the ratio*ocean Ylms from Ylms
-                        #-- note: x -= y is equivalent to x = x - y
+                # for each spherical harmonic
+                for m in range(0,MMAX+1):# MMAX+1 to include MMAX
+                    for l in range(m,LMAX+1):# LMAX+1 to include LMAX
+                        # remove the ratio*ocean Ylms from Ylms
+                        # note: x -= y is equivalent to x = x - y
                         Ylms.clm[l,m,:] -= ratio*ocean_Ylms.clm[l,m]
                         Ylms.slm[l,m,:] -= ratio*ocean_Ylms.slm[l,m]
-            #-- filter removed coefficients
+            # filter removed coefficients
             if DESTRIPE:
                 Ylms = Ylms.destripe()
-            #-- add data for month t and INDEX_FILE to the total
-            #-- remove_clm and remove_slm matrices
-            #-- redistributing the mass over the ocean if specified
+            # add data for month t and INDEX_FILE to the total
+            # remove_clm and remove_slm matrices
+            # redistributing the mass over the ocean if specified
             remove_Ylms.add(Ylms)
 
-    #-- input reconstructed spherical harmonic datafiles
+    # input reconstructed spherical harmonic datafiles
     construct_Ylms = GRACE_Ylms.zeros_like()
     construct_Ylms.time[:] = np.copy(GRACE_Ylms.time)
     construct_Ylms.month[:] = np.copy(GRACE_Ylms.month)
     if RECONSTRUCT:
-        #-- input index for reconstructed spherical harmonic datafiles
+        # input index for reconstructed spherical harmonic datafiles
         with open(RECONSTRUCT_FILE, mode='r', encoding='utf8') as f:
             file_list = [l for l in f.read().splitlines() if parser.match(l)]
-        #-- for each valid file in the index (iterate over mascons)
+        # for each valid file in the index (iterate over mascons)
         for reconstruct_file in file_list:
-            #-- read reconstructed spherical harmonics
+            # read reconstructed spherical harmonics
             Ylms = harmonics().from_file(reconstruct_file,format=DATAFORM)
-            #-- truncate clm and slm matrices to LMAX/MMAX
-            #-- add harmonics object to total
+            # truncate clm and slm matrices to LMAX/MMAX
+            # add harmonics object to total
             construct_Ylms.add(Ylms.truncate(lmax=LMAX, mmax=MMAX))
-        #-- filter reconstructed coefficients
+        # filter reconstructed coefficients
         if DESTRIPE:
             construct_Ylms = construct_Ylms.destripe()
-        #-- set flag for removing reconstructed coefficients
+        # set flag for removing reconstructed coefficients
         construct_str = '_LEAKAGE'
     else:
-        #-- set flag for not removing the reconstructed coefficients
+        # set flag for not removing the reconstructed coefficients
         construct_str = ''
 
-    #-- input mascon spherical harmonic datafiles
+    # input mascon spherical harmonic datafiles
     with open(MASCON_FILE, mode='r', encoding='utf8') as f:
         mascon_files = [l for l in f.read().splitlines() if parser.match(l)]
-    #-- number of mascons
+    # number of mascons
     n_mas = len(mascon_files)
-    #-- spatial area of the mascon
+    # spatial area of the mascon
     total_area = np.zeros((n_mas))
-    #-- name of each mascon
+    # name of each mascon
     mascon_name = []
-    #-- for each valid file in the index (iterate over mascons)
+    # for each valid file in the index (iterate over mascons)
     mascon_list = []
     for k,fi in enumerate(mascon_files):
-        #-- read mascon spherical harmonics
+        # read mascon spherical harmonics
         Ylms = harmonics().from_file(os.path.expanduser(fi),
             format=MASCON_FORMAT, date=False)
-        #-- Calculating the total mass of each mascon (1 cmwe uniform)
+        # Calculating the total mass of each mascon (1 cmwe uniform)
         total_area[k] = 4.0*np.pi*(rad_e**3)*rho_e*Ylms.clm[0,0]/3.0
-        #-- distribute mascon mass uniformly over the ocean
+        # distribute mascon mass uniformly over the ocean
         if REDISTRIBUTE_MASCONS:
-            #-- calculate ratio between total mascon mass and
-            #-- a uniformly distributed cm of water over the ocean
+            # calculate ratio between total mascon mass and
+            # a uniformly distributed cm of water over the ocean
             ratio = Ylms.clm[0,0]/ocean_Ylms.clm[0,0]
-            #-- for each spherical harmonic
-            for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
-                for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
-                    #-- remove ratio*ocean Ylms from mascon Ylms
-                    #-- note: x -= y is equivalent to x = x - y
+            # for each spherical harmonic
+            for m in range(0,MMAX+1):# MMAX+1 to include MMAX
+                for l in range(m,LMAX+1):# LMAX+1 to include LMAX
+                    # remove ratio*ocean Ylms from mascon Ylms
+                    # note: x -= y is equivalent to x = x - y
                     Ylms.clm[l,m] -= ratio*ocean_Ylms.clm[l,m]
                     Ylms.slm[l,m] -= ratio*ocean_Ylms.slm[l,m]
-        #-- truncate mascon spherical harmonics to d/o LMAX/MMAX and add to list
+        # truncate mascon spherical harmonics to d/o LMAX/MMAX and add to list
         mascon_list.append(Ylms.truncate(lmax=LMAX, mmax=MMAX))
-        #-- mascon base is the file without directory or suffix
+        # mascon base is the file without directory or suffix
         mascon_base = os.path.basename(mascon_files[k])
         mascon_base = os.path.splitext(mascon_base)[0]
-        #-- if lower case, will capitalize
+        # if lower case, will capitalize
         mascon_base = mascon_base.upper()
-        #-- if mascon name contains degree and order info, remove
+        # if mascon name contains degree and order info, remove
         mascon_name.append(mascon_base.replace(f'_L{LMAX:d}', ''))
-    #-- create single harmonics object from list
+    # create single harmonics object from list
     mascon_Ylms = harmonics().from_list(mascon_list, date=False)
 
-    #-- calculating GRACE/GRACE-FO error (Wahr et al. 2006)
-    #-- output GRACE error file (for both LMAX==MMAX and LMAX != MMAX cases)
+    # calculating GRACE/GRACE-FO error (Wahr et al. 2006)
+    # output GRACE error file (for both LMAX==MMAX and LMAX != MMAX cases)
     args = (PROC,DREL,DSET,LMAX,order_str,ds_str,atm_str,GRACE_Ylms.month[0],
         GRACE_Ylms.month[-1], suffix[DATAFORM])
     delta_format = '{0}_{1}_{2}_DELTA_CLM_L{3:d}{4}{5}{6}_{7:03d}-{8:03d}.{9}'
     DELTA_FILE = os.path.join(GRACE_Ylms.directory,delta_format.format(*args))
-    #-- check full path of the GRACE directory for delta file
-    #-- if file was previously calculated: will read file
-    #-- else: will calculate the GRACE/GRACE-FO error
+    # check full path of the GRACE directory for delta file
+    # if file was previously calculated: will read file
+    # else: will calculate the GRACE/GRACE-FO error
     if not os.access(DELTA_FILE, os.F_OK):
-        #-- add output delta file to list object
+        # add output delta file to list object
         output_files.append(DELTA_FILE)
 
-        #-- Delta coefficients of GRACE time series (Error components)
+        # Delta coefficients of GRACE time series (Error components)
         delta_Ylms = harmonics(lmax=LMAX,mmax=MMAX)
         delta_Ylms.clm = np.zeros((LMAX+1,MMAX+1))
         delta_Ylms.slm = np.zeros((LMAX+1,MMAX+1))
-        #-- Smoothing Half-Width (CNES is a 10-day solution)
-        #-- All other solutions are monthly solutions (HFWTH for annual = 6)
+        # Smoothing Half-Width (CNES is a 10-day solution)
+        # All other solutions are monthly solutions (HFWTH for annual = 6)
         if ((PROC == 'CNES') and (DREL in ('RL01','RL02'))):
             HFWTH = 19
         else:
             HFWTH = 6
-        #-- Equal to the noise of the smoothed time-series
-        #-- for each spherical harmonic order
-        for m in range(0,MMAX+1):#-- MMAX+1 to include MMAX
-            #-- for each spherical harmonic degree
-            for l in range(m,LMAX+1):#-- LMAX+1 to include LMAX
-                #-- Delta coefficients of GRACE time series
+        # Equal to the noise of the smoothed time-series
+        # for each spherical harmonic order
+        for m in range(0,MMAX+1):# MMAX+1 to include MMAX
+            # for each spherical harmonic degree
+            for l in range(m,LMAX+1):# LMAX+1 to include LMAX
+                # Delta coefficients of GRACE time series
                 for cs,csharm in enumerate(['clm','slm']):
-                    #-- calculate GRACE Error (Noise of smoothed time-series)
-                    #-- With Annual and Semi-Annual Terms
+                    # calculate GRACE Error (Noise of smoothed time-series)
+                    # With Annual and Semi-Annual Terms
                     val1 = getattr(GRACE_Ylms, csharm)
                     smth = tssmooth(GRACE_Ylms.time, val1[l,m,:], HFWTH=HFWTH)
-                    #-- number of smoothed points
+                    # number of smoothed points
                     nsmth = len(smth['data'])
                     tsmth = np.mean(smth['time'])
-                    #-- GRACE delta Ylms
-                    #-- variance of data-(smoothed+annual+semi)
+                    # GRACE delta Ylms
+                    # variance of data-(smoothed+annual+semi)
                     val2 = getattr(delta_Ylms, csharm)
                     val2[l,m] = np.sqrt(np.sum(smth['noise']**2)/nsmth)
 
-        #-- save GRACE/GRACE-FO delta harmonics to file
+        # save GRACE/GRACE-FO delta harmonics to file
         delta_Ylms.time = np.copy(tsmth)
         delta_Ylms.month = np.int64(nsmth)
         delta_Ylms.to_file(DELTA_FILE,format=DATAFORM)
     else:
-        #-- read GRACE/GRACE-FO delta harmonics from file
+        # read GRACE/GRACE-FO delta harmonics from file
         delta_Ylms = harmonics().from_file(DELTA_FILE,format=DATAFORM)
-        #-- truncate GRACE/GRACE-FO delta clm and slm to d/o LMAX/MMAX
+        # truncate GRACE/GRACE-FO delta clm and slm to d/o LMAX/MMAX
         delta_Ylms = delta_Ylms.truncate(lmax=LMAX, mmax=MMAX)
         tsmth = np.squeeze(delta_Ylms.time)
         nsmth = np.int64(delta_Ylms.month)
 
-    #-- Calculating the number of cos and sin harmonics between LMIN and LMAX
-    #-- taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
+    # Calculating the number of cos and sin harmonics between LMIN and LMAX
+    # taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
     n_harm=np.int64(LMAX**2 - LMIN**2 + 2*LMAX + 1 - (LMAX-MMAX)**2 - (LMAX-MMAX))
 
-    #-- Initialing harmonics for least squares fitting
-    #-- mascon kernel
+    # Initialing harmonics for least squares fitting
+    # mascon kernel
     M_lm = np.zeros((n_harm,n_mas))
-    #-- mascon kernel converted to output unit
+    # mascon kernel converted to output unit
     MA_lm = np.zeros((n_harm,n_mas))
-    #-- corrected clm and slm
+    # corrected clm and slm
     Y_lm = np.zeros((n_harm,n_files))
-    #-- sensitivity kernel
+    # sensitivity kernel
     A_lm = np.zeros((n_harm,n_mas))
-    #-- Satellite error harmonics
+    # Satellite error harmonics
     delta_lm = np.zeros((n_harm))
-    #-- Initializing output Mascon time-series
+    # Initializing output Mascon time-series
     mascon = np.zeros((n_mas,n_files))
-    #-- Mascon satellite error component
+    # Mascon satellite error component
     M_delta = np.zeros((n_mas))
-    #-- Initializing conversion factors
-    #-- factor for converting to coefficients of mass
+    # Initializing conversion factors
+    # factor for converting to coefficients of mass
     fact = np.zeros((n_harm))
-    #-- smoothing factor
+    # smoothing factor
     wt_lm = np.zeros((n_harm))
 
-    #-- ii is a counter variable for building the mascon column array
+    # ii is a counter variable for building the mascon column array
     ii = 0
-    #-- Creating column array of clm/slm coefficients
-    #-- Order is [C00...C6060,S11...S6060]
-    #-- Calculating factor to convert geoid spherical harmonic coefficients
-    #-- to coefficients of mass (Wahr, 1998)
+    # Creating column array of clm/slm coefficients
+    # Order is [C00...C6060,S11...S6060]
+    # Calculating factor to convert geoid spherical harmonic coefficients
+    # to coefficients of mass (Wahr, 1998)
     coeff = rho_e*rad_e/3.0
-    #-- Switching between Cosine and Sine Stokes
+    # Switching between Cosine and Sine Stokes
     for cs,csharm in enumerate(['clm','slm']):
-        #-- copy cosine and sin harmonics
+        # copy cosine and sin harmonics
         mascon_harm = getattr(mascon_Ylms, csharm)
         grace_harm = getattr(GRACE_Ylms, csharm)
         GIA_harm = getattr(GIA_Ylms, csharm)
         remove_harm = getattr(remove_Ylms, csharm)
         construct_harm = getattr(construct_Ylms, csharm)
         delta_harm = getattr(delta_Ylms, csharm)
-        #-- for each spherical harmonic degree
-        #-- +1 to include LMAX
+        # for each spherical harmonic degree
+        # +1 to include LMAX
         for l in range(LMIN,LMAX+1):
-            #-- for each spherical harmonic order
-            #-- Sine Stokes for (m=0) = 0
+            # for each spherical harmonic order
+            # Sine Stokes for (m=0) = 0
             mm = np.min([MMAX,l])
-            #-- +1 to include l or MMAX (whichever is smaller)
+            # +1 to include l or MMAX (whichever is smaller)
             for m in range(cs,mm+1):
-                #-- Mascon Spherical Harmonics
+                # Mascon Spherical Harmonics
                 M_lm[ii,:] = np.copy(mascon_harm[l,m,:])
-                #-- GRACE Spherical Harmonics
-                #-- Correcting GRACE Harmonics for GIA and Removed Terms
+                # GRACE Spherical Harmonics
+                # Correcting GRACE Harmonics for GIA and Removed Terms
                 Y_lm[ii,:] = grace_harm[l,m,:] - GIA_harm[l,m,:] - \
                     remove_harm[l,m,:] - construct_harm[l,m,:]
-                #-- GRACE delta spherical harmonics
+                # GRACE delta spherical harmonics
                 delta_lm[ii] = np.copy(delta_harm[l,m])
-                #-- degree dependent factor to convert to mass
+                # degree dependent factor to convert to mass
                 fact[ii] = (2.0*l + 1.0)/(1.0 + kl[l])
-                #-- degree dependent smoothing
+                # degree dependent smoothing
                 wt_lm[ii] = np.copy(wt[l])
-                #-- add 1 to counter
+                # add 1 to counter
                 ii += 1
 
-    #-- Converting mascon coefficients to fit method
+    # Converting mascon coefficients to fit method
     if (FIT_METHOD == 1):
-        #-- Fitting Sensitivity Kernel as mass coefficients
-        #-- converting M_lm to mass coefficients of the kernel
+        # Fitting Sensitivity Kernel as mass coefficients
+        # converting M_lm to mass coefficients of the kernel
         for i in range(n_harm):
             MA_lm[i,:] = M_lm[i,:]*wt_lm[i]*fact[i]
         fit_factor = wt_lm*fact
     else:
-        #-- Fitting Sensitivity Kernel as geoid coefficients
+        # Fitting Sensitivity Kernel as geoid coefficients
         for i in range(n_harm):
             MA_lm[:,:] = M_lm[i,:]*wt_lm[i]
         fit_factor = wt_lm*np.ones((n_harm))
 
-    #-- Fitting the sensitivity kernel from the input kernel
+    # Fitting the sensitivity kernel from the input kernel
     for i in range(n_harm):
-        #-- setting kern_i equal to 1 for d/o
+        # setting kern_i equal to 1 for d/o
         kern_i = np.zeros((n_harm))
-        #-- converting to mass coefficients if specified
+        # converting to mass coefficients if specified
         kern_i[i] = 1.0*fit_factor[i]
-        #-- spherical harmonics solution for the
-        #-- mascon sensitivity kernels
-        #-- Least Squares Solutions: Inv(X'.X).(X'.Y)
+        # spherical harmonics solution for the
+        # mascon sensitivity kernels
+        # Least Squares Solutions: Inv(X'.X).(X'.Y)
         kern_lm = np.linalg.lstsq(MA_lm,kern_i,rcond=-1)[0]
         for k in range(n_mas):
             A_lm[i,k] = kern_lm[k]*total_area[k]
 
-    #-- for each mascon
+    # for each mascon
     for k in range(n_mas):
-        #-- Multiply the Satellite error (noise of a smoothed time-series
-        #-- with annual and semi-annual components) by the sensitivity kernel
-        #-- Converting to Gigatonnes
+        # Multiply the Satellite error (noise of a smoothed time-series
+        # with annual and semi-annual components) by the sensitivity kernel
+        # Converting to Gigatonnes
         M_delta[k] = np.sqrt(np.sum((delta_lm*A_lm[:,k])**2))/1e15
 
-        #-- output filename format (for both LMAX==MMAX and LMAX != MMAX cases):
-        #-- mascon name, GRACE dataset, GIA model, LMAX, (MMAX,)
-        #-- Gaussian smoothing, filter flag, remove reconstructed fields flag
-        #-- output GRACE error file
+        # output filename format (for both LMAX==MMAX and LMAX != MMAX cases):
+        # mascon name, GRACE dataset, GIA model, LMAX, (MMAX,)
+        # Gaussian smoothing, filter flag, remove reconstructed fields flag
+        # output GRACE error file
         file_out='{0}{1}{2}{3}{4}_L{5:d}{6}{7}{8}{9}.txt'.format(mascon_name[k],
             dset_str, gia_str.upper(), atm_str, ocean_str, LMAX, order_str,
             gw_str, ds_str, construct_str)
 
-        #-- Output mascon datafiles
-        #-- Will output each mascon time series
-        #-- month, date, mascon mass [Gt], satellite error [Gt], mascon area [km^2]
-        #-- open output mascon time-series file
+        # Output mascon datafiles
+        # Will output each mascon time series
+        # month, date, mascon mass [Gt], satellite error [Gt], mascon area [km^2]
+        # open output mascon time-series file
         fid = open(os.path.join(OUTPUT_DIRECTORY,file_out),'w')
-        #-- for each date
+        # for each date
         formatting_string = '{0:03d} {1:12.4f} {2:16.10f} {3:16.10f} {4:16.5f}'
         for t,mon in enumerate(GRACE_Ylms.month):
-            #-- Summing over all spherical harmonics for mascon k, and time t
-            #-- multiplies by the degree dependent factor to convert
-            #-- the harmonics into mass coefficients
-            #-- Converting mascon mass time-series from g to gigatonnes
+            # Summing over all spherical harmonics for mascon k, and time t
+            # multiplies by the degree dependent factor to convert
+            # the harmonics into mass coefficients
+            # Converting mascon mass time-series from g to gigatonnes
             mascon[k,t] = np.sum(A_lm[:,k]*Y_lm[:,t])/1e15
-            #-- output to file
+            # output to file
             args=(mon,GRACE_Ylms.time[t],mascon[k,t],M_delta[k],total_area[k]/1e10)
             print(formatting_string.format(*args), file=fid)
-        #-- close the output file
+        # close the output file
         fid.close()
-        #-- change the permissions mode
+        # change the permissions mode
         os.chmod(os.path.join(OUTPUT_DIRECTORY,file_out),MODE)
-        #-- add output files to list object
+        # add output files to list object
         output_files.append(os.path.join(OUTPUT_DIRECTORY,file_out))
 
-    #-- return the list of output files
+    # return the list of output files
     return output_files
 
-#-- PURPOSE: print a file log for the GRACE mascon analysis
+# PURPOSE: print a file log for the GRACE mascon analysis
 def output_log_file(arguments,output_files):
-    #-- format: calc_mascon_run_2002-04-01_PID-70335.log
+    # format: calc_mascon_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'calc_mascon_run_{0}_PID-{1:d}.log'.format(*args)
-    #-- create a unique log and open the log file
+    # create a unique log and open the log file
     DIRECTORY = os.path.expanduser(arguments.output_directory)
     fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
-    #-- print argument values sorted alphabetically
+    # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
     for arg, value in sorted(vars(arguments).items()):
         logging.info('{0}: {1}'.format(arg, value))
-    #-- print output files
+    # print output files
     logging.info('\n\nOUTPUT FILES:')
     for f in output_files:
         logging.info('{0}'.format(f))
-    #-- close the log file
+    # close the log file
     fid.close()
 
-#-- PURPOSE: print a error file log for the GRACE mascon analysis
+# PURPOSE: print a error file log for the GRACE mascon analysis
 def output_error_log_file(arguments):
-    #-- format: calc_mascon_failed_run_2002-04-01_PID-70335.log
+    # format: calc_mascon_failed_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'calc_mascon_failed_run_{0}_PID-{1:d}.log'.format(*args)
-    #-- create a unique log and open the log file
+    # create a unique log and open the log file
     DIRECTORY = os.path.expanduser(arguments.output_directory)
     fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
-    #-- print argument values sorted alphabetically
+    # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
     for arg, value in sorted(vars(arguments).items()):
         logging.info('{0}: {1}'.format(arg, value))
-    #-- print traceback error
+    # print traceback error
     logging.info('\n\nTRACEBACK ERROR:')
     traceback.print_exc(file=fid)
-    #-- close the log file
+    # close the log file
     fid.close()
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Calculates a time-series of regional mass anomalies
@@ -740,8 +740,8 @@ def arguments():
         fromfile_prefix_chars="@"
     )
     parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
-    #-- command line parameters
-    #-- working data directory
+    # command line parameters
+    # working data directory
     parser.add_argument('--directory','-D',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
@@ -750,30 +750,30 @@ def arguments():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Output directory for mascon files')
-    #-- Data processing center or satellite mission
+    # Data processing center or satellite mission
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, required=True,
         help='GRACE/GRACE-FO Processing Center')
-    #-- GRACE/GRACE-FO data release
+    # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
         metavar='DREL', type=str, default='RL06',
         help='GRACE/GRACE-FO Data Release')
-    #-- GRACE/GRACE-FO Level-2 data product
+    # GRACE/GRACE-FO Level-2 data product
     parser.add_argument('--product','-p',
         metavar='DSET', type=str, default='GSM',
         help='GRACE/GRACE-FO Level-2 data product')
-    #-- minimum spherical harmonic degree
+    # minimum spherical harmonic degree
     parser.add_argument('--lmin',
         type=int, default=1,
         help='Minimum spherical harmonic degree')
-    #-- maximum spherical harmonic degree and order
+    # maximum spherical harmonic degree and order
     parser.add_argument('--lmax','-l',
         type=int, default=60,
         help='Maximum spherical harmonic degree')
     parser.add_argument('--mmax','-m',
         type=int, default=None,
         help='Maximum spherical harmonic order')
-    #-- start and end GRACE/GRACE-FO months
+    # start and end GRACE/GRACE-FO months
     parser.add_argument('--start','-S',
         type=int, default=4,
         help='Starting GRACE/GRACE-FO month')
@@ -785,27 +785,27 @@ def arguments():
     parser.add_argument('--missing','-N',
         metavar='MISSING', type=int, nargs='+', default=MISSING,
         help='Missing GRACE/GRACE-FO months')
-    #-- different treatments of the load Love numbers
-    #-- 0: Han and Wahr (1995) values from PREM
-    #-- 1: Gegout (2005) values from PREM
-    #-- 2: Wang et al. (2012) values from PREM
+    # different treatments of the load Love numbers
+    # 0: Han and Wahr (1995) values from PREM
+    # 1: Gegout (2005) values from PREM
+    # 2: Wang et al. (2012) values from PREM
     parser.add_argument('--love','-n',
         type=int, default=0, choices=[0,1,2],
         help='Treatment of the Load Love numbers')
-    #-- option for setting reference frame for gravitational load love number
-    #-- reference frame options (CF, CM, CE)
+    # option for setting reference frame for gravitational load love number
+    # reference frame options (CF, CM, CE)
     parser.add_argument('--reference',
         type=str.upper, default='CF', choices=['CF','CM','CE'],
         help='Reference frame for load Love numbers')
-    #-- Gaussian smoothing radius (km)
+    # Gaussian smoothing radius (km)
     parser.add_argument('--radius','-R',
         type=float, default=0,
         help='Gaussian smoothing radius (km)')
-    #-- Use a decorrelation (destriping) filter
+    # Use a decorrelation (destriping) filter
     parser.add_argument('--destripe','-d',
         default=False, action='store_true',
         help='Use decorrelation (destriping) filter')
-    #-- GIA model type list
+    # GIA model type list
     models = {}
     models['IJ05-R2'] = 'Ivins R2 GIA Models'
     models['W12a'] = 'Whitehouse GIA Models'
@@ -819,33 +819,33 @@ def arguments():
     models['ascii'] = 'reformatted GIA in ascii format'
     models['netCDF4'] = 'reformatted GIA in netCDF4 format'
     models['HDF5'] = 'reformatted GIA in HDF5 format'
-    #-- GIA model type
+    # GIA model type
     parser.add_argument('--gia','-G',
         type=str, metavar='GIA', choices=models.keys(),
         help='GIA model type to read')
-    #-- full path to GIA file
+    # full path to GIA file
     parser.add_argument('--gia-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='GIA file to read')
-    #-- use atmospheric jump corrections from Fagiolini et al. (2015)
+    # use atmospheric jump corrections from Fagiolini et al. (2015)
     parser.add_argument('--atm-correction',
         default=False, action='store_true',
         help='Apply atmospheric jump correction coefficients')
-    #-- correct for pole tide drift follow Wahr et al. (2015)
+    # correct for pole tide drift follow Wahr et al. (2015)
     parser.add_argument('--pole-tide',
         default=False, action='store_true',
         help='Correct for pole tide drift')
-    #-- Update Degree 1 coefficients with SLR or derived values
-    #-- Tellus: GRACE/GRACE-FO TN-13 from PO.DAAC
-    #--     https://grace.jpl.nasa.gov/data/get-data/geocenter/
-    #-- SLR: satellite laser ranging from CSR
-    #--     ftp://ftp.csr.utexas.edu/pub/slr/geocenter/
-    #-- UCI: Sutterley and Velicogna, Remote Sensing (2019)
-    #--     https://www.mdpi.com/2072-4292/11/18/2108
-    #-- Swenson: GRACE-derived coefficients from Sean Swenson
-    #--     https://doi.org/10.1029/2007JB005338
-    #-- GFZ: GRACE/GRACE-FO coefficients from GFZ GravIS
-    #--     http://gravis.gfz-potsdam.de/corrections
+    # Update Degree 1 coefficients with SLR or derived values
+    # Tellus: GRACE/GRACE-FO TN-13 from PO.DAAC
+    #     https://grace.jpl.nasa.gov/data/get-data/geocenter/
+    # SLR: satellite laser ranging from CSR
+    #     ftp://ftp.csr.utexas.edu/pub/slr/geocenter/
+    # UCI: Sutterley and Velicogna, Remote Sensing (2019)
+    #     https://www.mdpi.com/2072-4292/11/18/2108
+    # Swenson: GRACE-derived coefficients from Sean Swenson
+    #     https://doi.org/10.1029/2007JB005338
+    # GFZ: GRACE/GRACE-FO coefficients from GFZ GravIS
+    #     http://gravis.gfz-potsdam.de/corrections
     parser.add_argument('--geocenter',
         metavar='DEG1', type=str,
         choices=['Tellus','SLR','SLF','UCI','Swenson','GFZ'],
@@ -856,7 +856,7 @@ def arguments():
     parser.add_argument('--interpolate-geocenter',
         default=False, action='store_true',
         help='Least-squares model missing Degree 1 coefficients')
-    #-- replace low degree harmonics with values from Satellite Laser Ranging
+    # replace low degree harmonics with values from Satellite Laser Ranging
     parser.add_argument('--slr-c20',
         type=str, default=None, choices=['CSR','GFZ','GSFC'],
         help='Replace C20 coefficients with SLR values')
@@ -875,19 +875,19 @@ def arguments():
     parser.add_argument('--slr-c50',
         type=str, default=None, choices=['CSR','GSFC','LARES'],
         help='Replace C50 coefficients with SLR values')
-    #-- input data format (ascii, netCDF4, HDF5)
+    # input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--format','-F',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
         help='Input data format for auxiliary files')
-    #-- mean file to remove
+    # mean file to remove
     parser.add_argument('--mean-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='GRACE/GRACE-FO mean file to remove from the harmonic data')
-    #-- input data format (ascii, netCDF4, HDF5)
+    # input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--mean-format',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5','gfc'],
         help='Input data format for GRACE/GRACE-FO mean file')
-    #-- mascon index file and parameters
+    # mascon index file and parameters
     parser.add_argument('--mascon-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='Index file of mascons spherical harmonics')
@@ -897,12 +897,12 @@ def arguments():
     parser.add_argument('--redistribute-mascons',
         default=False, action='store_true',
         help='Redistribute mascon mass over the ocean')
-    #-- 1: mass coefficients
-    #-- 2: geoid coefficients
+    # 1: mass coefficients
+    # 2: geoid coefficients
     parser.add_argument('--fit-method',
         type=int, default=1, choices=(1,2),
         help='Method for fitting sensitivity kernel to harmonics')
-    #-- monthly files to be removed from the GRACE/GRACE-FO data
+    # monthly files to be removed from the GRACE/GRACE-FO data
     parser.add_argument('--remove-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='+',
         help='Monthly files to be removed from the GRACE/GRACE-FO data')
@@ -915,49 +915,49 @@ def arguments():
     parser.add_argument('--redistribute-removed',
         default=False, action='store_true',
         help='Redistribute removed mass fields over the ocean')
-    #-- mascon reconstruct parameters
+    # mascon reconstruct parameters
     parser.add_argument('--remove-reconstruct',
         default=False, action='store_true',
         help='Remove reconstructed mascon time series fields')
     parser.add_argument('--reconstruct-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='Reconstructed mascon time series file to be removed')
-    #-- land-sea mask for redistributing mascon mass and land water flux
+    # land-sea mask for redistributing mascon mass and land water flux
     lsmask = utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
         help='Land-sea mask for redistributing mascon mass and land water flux')
-    #-- Output log file for each job in forms
-    #-- calc_mascon_run_2002-04-01_PID-00000.log
-    #-- calc_mascon_failed_run_2002-04-01_PID-00000.log
+    # Output log file for each job in forms
+    # calc_mascon_run_2002-04-01_PID-00000.log
+    # calc_mascon_failed_run_2002-04-01_PID-00000.log
     parser.add_argument('--log',
         default=False, action='store_true',
         help='Output log file for each job')
-    #-- print information about processing run
+    # print information about processing run
     parser.add_argument('--verbose','-V',
         action='count', default=0,
         help='Verbose output of processing run')
-    #-- permissions mode of the local directories and files (number in octal)
+    # permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permissions mode of output files')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
-    #-- Read the system arguments listed after the program
+    # Read the system arguments listed after the program
     parser = arguments()
     args,_ = parser.parse_known_args()
 
-    #-- create logger
+    # create logger
     loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
-    #-- try to run the analysis with listed parameters
+    # try to run the analysis with listed parameters
     try:
         info(args)
-        #-- run calc_mascon algorithm with parameters
+        # run calc_mascon algorithm with parameters
         output_files = calc_mascon(
             args.directory,
             args.center,
@@ -1002,17 +1002,17 @@ def main():
             OUTPUT_DIRECTORY=args.output_directory,
             MODE=args.mode)
     except Exception as e:
-        #-- if there has been an error exception
-        #-- print the type, value, and stack trace of the
-        #-- current exception being handled
+        # if there has been an error exception
+        # print the type, value, and stack trace of the
+        # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
-        if args.log:#-- write failed job completion log file
+        if args.log:# write failed job completion log file
             output_error_log_file(args)
     else:
-        if args.log:#-- write successful job completion log file
+        if args.log:# write successful job completion log file
             output_log_file(args,output_files)
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()

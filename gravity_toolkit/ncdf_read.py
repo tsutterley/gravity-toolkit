@@ -110,78 +110,78 @@ def ncdf_read(filename, **kwargs):
     time: time value of dataset
     attributes: netCDF4 attributes
     """
-    #-- set default keyword arguments
+    # set default keyword arguments
     kwargs.setdefault('DATE',False)
     kwargs.setdefault('VARNAME','z')
     kwargs.setdefault('LONNAME','lon')
     kwargs.setdefault('LATNAME','lat')
     kwargs.setdefault('TIMENAME','time')
     kwargs.setdefault('COMPRESSION',None)
-    #-- set deprecation warning
+    # set deprecation warning
     warnings.filterwarnings("always")
     warnings.warn("Deprecated. Please use spatial.from_netCDF4",
         DeprecationWarning)
 
-    #-- Open the NetCDF4 file for reading
+    # Open the NetCDF4 file for reading
     if (kwargs['COMPRESSION'] == 'gzip'):
-        #-- read as in-memory (diskless) netCDF4 dataset
+        # read as in-memory (diskless) netCDF4 dataset
         with gzip.open(os.path.expanduser(filename),'r') as f:
             fileID = netCDF4.Dataset(os.path.basename(filename),memory=f.read())
     elif (kwargs['COMPRESSION'] == 'zip'):
-        #-- read zipped file and extract file into in-memory file object
+        # read zipped file and extract file into in-memory file object
         fileBasename,_ = os.path.splitext(os.path.basename(filename))
         with zipfile.ZipFile(os.path.expanduser(filename)) as z:
-            #-- first try finding a netCDF4 file with same base filename
-            #-- if none found simply try searching for a netCDF4 file
+            # first try finding a netCDF4 file with same base filename
+            # if none found simply try searching for a netCDF4 file
             try:
                 f,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
             except:
                 f,=[f for f in z.namelist() if re.search(r'\.nc(4)?$',f)]
-            #-- read bytes from zipfile as in-memory (diskless) netCDF4 dataset
+            # read bytes from zipfile as in-memory (diskless) netCDF4 dataset
             fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=z.read(f))
     elif (kwargs['COMPRESSION'] == 'bytes'):
-        #-- read as in-memory (diskless) netCDF4 dataset
+        # read as in-memory (diskless) netCDF4 dataset
         fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=filename.read())
     else:
-        #-- read netCDF4 dataset
+        # read netCDF4 dataset
         fileID = netCDF4.Dataset(os.path.expanduser(filename), 'r')
-    #-- create python dictionary for output variables
+    # create python dictionary for output variables
     dinput = {}
     dinput['attributes'] = {}
 
-    #-- Output NetCDF file information
+    # Output NetCDF file information
     logging.info(fileID.filepath())
     logging.info(list(fileID.variables.keys()))
 
-    #-- mapping between output keys and netCDF4 variable names
+    # mapping between output keys and netCDF4 variable names
     keys = ['lon','lat','data']
     nckeys = [kwargs['LONNAME'],kwargs['LATNAME'],kwargs['VARNAME']]
     if kwargs['DATE']:
         keys.append('time')
         nckeys.append(kwargs['TIMENAME'])
-    #-- list of variable attributes
+    # list of variable attributes
     attributes_list = ['description','units','long_name','calendar',
         'standard_name','_FillValue','missing_value']
-    #-- for each variable
+    # for each variable
     for key,nckey in zip(keys,nckeys):
-        #-- Getting the data from each NetCDF variable
+        # Getting the data from each NetCDF variable
         dinput[key] = np.squeeze(fileID.variables[nckey][:].data)
-        #-- Getting attributes of included variables
+        # Getting attributes of included variables
         dinput['attributes'][key] = {}
         for attr in attributes_list:
-            #-- try getting the attribute
+            # try getting the attribute
             try:
                 dinput['attributes'][key][attr] = \
                     fileID.variables[nckey].getncattr(attr)
             except (KeyError,ValueError,AttributeError):
                 pass
 
-    #-- switching data array to lat/lon if lon/lat
+    # switching data array to lat/lon if lon/lat
     sz = dinput['data'].shape
     if (dinput['data'].ndim == 2) and (len(dinput['lon']) == sz[0]):
         dinput['data'] = dinput['data'].T
 
-    #-- Global attributes
+    # Global attributes
     for att_name in ['title','description','reference']:
         try:
             ncattr, = [s for s in fileID.ncattrs()
@@ -189,7 +189,7 @@ def ncdf_read(filename, **kwargs):
             dinput['attributes'][att_name] = fileID.getncattr(ncattr)
         except (ValueError, KeyError, AttributeError):
             pass
-    #-- Closing the NetCDF file
+    # Closing the NetCDF file
     fileID.close()
-    #-- return the output variable
+    # return the output variable
     return dinput

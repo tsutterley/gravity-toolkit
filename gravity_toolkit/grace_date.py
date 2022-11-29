@@ -107,7 +107,7 @@ import argparse
 import numpy as np
 import gravity_toolkit.time
 
-#-- PURPOSE: parses GRACE/GRACE-FO data files and assigns month numbers
+# PURPOSE: parses GRACE/GRACE-FO data files and assigns month numbers
 def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     """
     Reads index file containing GRACE/GRACE-FO/Swarm data files
@@ -151,136 +151,136 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
         dictionary of GRACE/GRACE-FO files indexed by month
     """
 
-    #--  Directory of exact product
+    #  Directory of exact product
     grace_dir = os.path.join(base_dir, PROC, DREL, DSET)
-    #-- index file containing GRACE/GRACE-FO data filenames
+    # index file containing GRACE/GRACE-FO data filenames
     index_file = os.path.join(grace_dir, 'index.txt')
-    #-- check that index file exists
+    # check that index file exists
     if not os.access(index_file, os.F_OK):
         raise FileNotFoundError(f'{index_file} not found')
-    #-- log index file if debugging
+    # log index file if debugging
     logging.debug(f'Reading index file: {index_file}')
-    #-- read index file for GRACE/GRACE-FO filenames
+    # read index file for GRACE/GRACE-FO filenames
     with open(index_file, mode='r', encoding='utf8') as f:
         input_files = f.read().splitlines()
 
-    #--  number of lines in input_files
+    #  number of lines in input_files
     n_files = len(input_files)
 
-    #-- define date variables
-    start_yr = np.zeros((n_files))#-- year start date
-    end_yr = np.zeros((n_files))#-- year end date
-    start_day = np.zeros((n_files))#-- day number start date
-    end_day = np.zeros((n_files))#-- day number end date
-    mid_day = np.zeros((n_files))#-- mid-month day
-    tot_days = np.zeros((n_files))#-- number of days since Jan 2002
-    tdec = np.zeros((n_files))#-- tdec is the date in decimal form
-    mon = np.zeros((n_files,),dtype=np.int64)#-- GRACE/GRACE-FO month number
+    # define date variables
+    start_yr = np.zeros((n_files))# year start date
+    end_yr = np.zeros((n_files))# year end date
+    start_day = np.zeros((n_files))# day number start date
+    end_day = np.zeros((n_files))# day number end date
+    mid_day = np.zeros((n_files))# mid-month day
+    tot_days = np.zeros((n_files))# number of days since Jan 2002
+    tdec = np.zeros((n_files))# tdec is the date in decimal form
+    mon = np.zeros((n_files,),dtype=np.int64)# GRACE/GRACE-FO month number
 
-    #-- for each data file
+    # for each data file
     for t,infile in enumerate(input_files):
         if PROC in ('GRAZ','Swarm',):
-            #-- get date lists for the start and end of fields
+            # get date lists for the start and end of fields
             start_date,end_date = gravity_toolkit.time.parse_gfc_file(
                 infile, PROC, DSET)
-            #-- start and end year
+            # start and end year
             start_yr[t] = np.float64(start_date[0])
             end_yr[t] = np.float64(end_date[0])
-            #-- number of days in each month for the calendar year
+            # number of days in each month for the calendar year
             dpm = gravity_toolkit.time.calendar_days(start_yr[t])
-            #-- start and end day of the year
+            # start and end day of the year
             start_day[t] = np.sum(dpm[:start_date[1]-1]) + start_date[2] + \
                 start_date[3]/24. + start_date[4]/1440. + start_date[5]/86400.
             end_day[t] = np.sum(dpm[:end_date[1]-1]) + end_date[2] + \
                 end_date[3]/24. + end_date[4]/1440. + end_date[5]/86400.
         else:
-            #-- get date lists for the start and end of fields
+            # get date lists for the start and end of fields
             start_date,end_date = gravity_toolkit.time.parse_grace_file(infile)
-            #-- start and end year
+            # start and end year
             start_yr[t] = np.float64(start_date[0])
             end_yr[t] = np.float64(end_date[0])
-            #-- start and end day of the year
+            # start and end day of the year
             start_day[t] = np.float64(start_date[1])
             end_day[t] = np.float64(end_date[1])
 
-        #-- number of days in the starting year for leap and standard years
+        # number of days in the starting year for leap and standard years
         dpy = gravity_toolkit.time.calendar_days(start_yr[t]).sum()
-        #-- end date taking into account measurements taken on different years
+        # end date taking into account measurements taken on different years
         end_cyclic = (end_yr[t]-start_yr[t])*dpy + end_day[t]
-        #-- calculate mid-month value
+        # calculate mid-month value
         mid_day[t] = np.mean([start_day[t], end_cyclic])
 
-        #-- calculate Modified Julian Day from start_yr and mid_day
+        # calculate Modified Julian Day from start_yr and mid_day
         MJD = gravity_toolkit.time.convert_calendar_dates(start_yr[t],
             1.0,mid_day[t],epoch=(1858,11,17,0,0,0))
-        #-- convert from Modified Julian Days to calendar dates
+        # convert from Modified Julian Days to calendar dates
         cal_date = gravity_toolkit.time.convert_julian(MJD+2400000.5)
 
-        #-- Calculating the mid-month date in decimal form
+        # Calculating the mid-month date in decimal form
         tdec[t] = start_yr[t] + mid_day[t]/dpy
 
-        #-- Calculation of total days since start of campaign
+        # Calculation of total days since start of campaign
         count = 0
         n_yrs = np.int64(start_yr[t]-2002)
-        #-- for each of the GRACE years up to the file year
+        # for each of the GRACE years up to the file year
         for iyr in range(n_yrs):
-            #-- year
+            # year
             year = 2002 + iyr
-            #-- add all days from prior years to count
-            #-- number of days in year i (if leap year or standard year)
+            # add all days from prior years to count
+            # number of days in year i (if leap year or standard year)
             count += gravity_toolkit.time.calendar_days(year).sum()
 
-        #-- calculating the total number of days since 2002
+        # calculating the total number of days since 2002
         tot_days[t] = np.mean([count+start_day[t], count+end_cyclic])
 
-        #-- Calculates the month number (or 10-day number for CNES RL01,RL02)
+        # Calculates the month number (or 10-day number for CNES RL01,RL02)
         if ((PROC == 'CNES') and (DREL in ('RL01','RL02'))):
             mon[t] = np.round(1.0+(tot_days[t]-tot_days[0])/10.0)
         else:
-            #-- calculate the GRACE/GRACE-FO month (Apr02 == 004)
-            #-- https://grace.jpl.nasa.gov/data/grace-months/
-            #-- Notes on special months (e.g. 119, 120) below
+            # calculate the GRACE/GRACE-FO month (Apr02 == 004)
+            # https://grace.jpl.nasa.gov/data/grace-months/
+            # Notes on special months (e.g. 119, 120) below
             mon[t] = gravity_toolkit.time.calendar_to_grace(
                 cal_date['year'],cal_date['month'])
 
-    #-- The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
-    #-- Accelerometer shutoffs make the relation between month number
-    #-- and date more complicated as days from other months are used
-    #-- For CSR and GFZ: Nov 2011 (119) is centered in Oct 2011 (118)
-    #-- For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
-    #-- For all: May 2015 (161) is centered in Apr 2015 (160)
+    # The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
+    # Accelerometer shutoffs make the relation between month number
+    # and date more complicated as days from other months are used
+    # For CSR and GFZ: Nov 2011 (119) is centered in Oct 2011 (118)
+    # For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
+    # For all: May 2015 (161) is centered in Apr 2015 (160)
     mon = gravity_toolkit.time.adjust_months(mon)
 
-    #-- Output GRACE/GRACE-FO date ascii file
+    # Output GRACE/GRACE-FO date ascii file
     if OUTPUT:
         date_file = f'{PROC}_{DREL}_DATES.txt'
         fid = open(os.path.join(grace_dir,date_file), 'w')
-        #-- date file header information
+        # date file header information
         args = ('Mid-date','Month','Start_Day','End_Day','Total_Days')
         print('{0} {1:>10} {2:>11} {3:>10} {4:>13}'.format(*args),file=fid)
 
-    #-- create python dictionary mapping input file names with GRACE months
+    # create python dictionary mapping input file names with GRACE months
     grace_files = {}
-    #-- for each data file
+    # for each data file
     for t, infile in enumerate(input_files):
-        #-- add file to python dictionary mapped to GRACE/GRACE-FO month
+        # add file to python dictionary mapped to GRACE/GRACE-FO month
         grace_files[mon[t]] = os.path.join(grace_dir,infile)
-        #-- print to GRACE dates ascii file (NOTE: tot_days will be rounded)
+        # print to GRACE dates ascii file (NOTE: tot_days will be rounded)
         if OUTPUT:
             print(('{0:13.8f} {1:03d} {2:8.0f} {3:03.0f} {4:8.0f} {5:03.0f} '
                 '{6:8.0f}').format(tdec[t],mon[t],start_yr[t],start_day[t],
                 end_yr[t],end_day[t],tot_days[t]), file=fid)
 
-    #-- close date file
-    #-- set permissions level of output date file
+    # close date file
+    # set permissions level of output date file
     if OUTPUT:
         fid.close()
         os.chmod(os.path.join(grace_dir, date_file), MODE)
 
-    #-- return the python dictionary that maps GRACE months with GRACE files
+    # return the python dictionary that maps GRACE months with GRACE files
     return grace_files
 
-#-- PURPOSE: create argument parser
+# PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Parses dates of each GRACE/GRACE-FO file and
@@ -288,51 +288,51 @@ def arguments():
             Creates an index of dates for GRACE/GRACE-FO files.
             """
     )
-    #-- working data directory
+    # working data directory
     parser.add_argument('--directory','-D',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
-    #-- Data processing center or satellite mission
+    # Data processing center or satellite mission
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, nargs='+',
         default=['CSR','GFZ','JPL'],
         help='GRACE/GRACE-FO Processing Center')
-    #-- GRACE/GRACE-FO data release
+    # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
         metavar='DREL', type=str, nargs='+',
         default=['RL06'],
         help='GRACE/GRACE-FO Data Release')
-    #-- GRACE/GRACE-FO data product
+    # GRACE/GRACE-FO data product
     parser.add_argument('--product','-p',
         metavar='DSET', type=str.upper, nargs='+',
         default=['GAC','GAD','GSM'],
         choices=['GAA','GAB','GAC','GAD','GSM'],
         help='GRACE/GRACE-FO Level-2 data product')
-    #-- output GRACE/GRACE-FO ascii date file
+    # output GRACE/GRACE-FO ascii date file
     parser.add_argument('--output','-O',
         default=False, action='store_true',
         help='Overwrite existing data')
-    #-- permissions mode of the local directories and files (number in octal)
+    # permissions mode of the local directories and files (number in octal)
     parser.add_argument('--mode','-M',
         type=lambda x: int(x,base=8), default=0o775,
         help='Permissions mode of output files')
-    #-- return the parser
+    # return the parser
     return parser
 
-#-- This is the main part of the program that calls the individual functions
+# This is the main part of the program that calls the individual functions
 def main():
-    #-- Read the system arguments listed after the program
+    # Read the system arguments listed after the program
     parser = arguments()
     args,_ = parser.parse_known_args()
 
-    #-- run GRACE/GRACE-FO date program
+    # run GRACE/GRACE-FO date program
     for pr in args.center:
         for rl in args.release:
             for ds in args.product:
                 grace_date(args.directory, PROC=pr, DREL=rl, DSET=ds,
                     OUTPUT=args.output, MODE=args.mode)
 
-#-- run main program
+# run main program
 if __name__ == '__main__':
     main()

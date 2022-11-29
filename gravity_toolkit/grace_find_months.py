@@ -103,26 +103,26 @@ def grace_find_months(base_dir, PROC, DREL, DSET='GSM'):
         center dates of all available months in a GRACE/GRACE-FO dataset
     """
 
-    #--  Directory of exact product (using date index from GSM)
+    #  Directory of exact product (using date index from GSM)
     grace_dir = os.path.join(base_dir, PROC, DREL, DSET)
 
-    #-- check that GRACE/GRACE-FO date file exists
+    # check that GRACE/GRACE-FO date file exists
     date_file = os.path.join(grace_dir, f'{PROC}_{DREL}_DATES.txt')
     if not os.access(date_file, os.F_OK):
         grace_date(base_dir, PROC=PROC, DREL=DREL, DSET=DSET, OUTPUT=True)
 
-    #-- read GRACE/GRACE-FO date ascii file from grace_date.py
-    #-- skip the header row and extract dates (decimal format) and months
+    # read GRACE/GRACE-FO date ascii file from grace_date.py
+    # skip the header row and extract dates (decimal format) and months
     date_input = np.loadtxt(date_file, skiprows=1)
     tdec = date_input[:,0]
     months = date_input[:,1].astype(np.int64)
 
-    #-- array of all possible months (or in case of CNES RL01/2: 10-day sets)
+    # array of all possible months (or in case of CNES RL01/2: 10-day sets)
     all_months = np.arange(1,months.max(),dtype=np.int64)
-    #-- missing months (values in all_months but not in months)
+    # missing months (values in all_months but not in months)
     missing = sorted(set(all_months)-set(months))
-    #-- If CNES RL01/2: simply convert into numpy array
-    #-- else: remove months 1-3 and convert into numpy array
+    # If CNES RL01/2: simply convert into numpy array
+    # else: remove months 1-3 and convert into numpy array
     if ((PROC == 'CNES') & (DREL in ('RL01','RL02'))):
         missing = np.array(missing,dtype=np.int64)
     else:

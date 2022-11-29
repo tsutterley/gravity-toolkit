@@ -49,25 +49,25 @@ def degree_amplitude(clm, slm, LMAX=None, MMAX=None):
     amp: float
         degree amplitude
     """
-    #-- add a singleton dimension to input harmonics
+    # add a singleton dimension to input harmonics
     clm = np.atleast_3d(clm)
     slm = np.atleast_3d(slm)
-    #-- check shape
+    # check shape
     LMp1,MMp1,nt = np.shape(clm)
 
-    #-- upper bound of spherical harmonic degrees
+    # upper bound of spherical harmonic degrees
     if LMAX is None:
         LMAX = LMp1 - 1
-    #-- upper bound of spherical harmonic orders
+    # upper bound of spherical harmonic orders
     if MMAX is None:
         MMAX = MMp1 - 1
 
-    #-- allocating for output array
+    # allocating for output array
     amp = np.zeros((LMAX+1,nt))
     for l in range(LMAX+1):
         m = np.arange(0,MMAX+1)
-        #-- degree amplitude of spherical harmonic degree
+        # degree amplitude of spherical harmonic degree
         amp[l,:] = np.sqrt(np.sum(clm[l,m,:]**2 + slm[l,m,:]**2,axis=0))
 
-    #-- return the degree amplitude with singleton dimensions removed
+    # return the degree amplitude with singleton dimensions removed
     return np.squeeze(amp)
