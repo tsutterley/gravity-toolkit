@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter_ocean_models.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 Plots the GRACE/GRACE-FO geocenter time series comparing results
     using different ocean bottom pressure estimates
 
@@ -19,6 +19,7 @@ COMMAND LINE OPTIONS:
     -O X, --ocean X: ocean bottom pressure products to use
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 05/2022: use argparse descriptions within documentation
     Updated 12/2021: adjust minimum x limit based on starting GRACE month
@@ -41,7 +42,7 @@ matplotlib.rcParams['font.family'] = 'sans-serif'
 matplotlib.rcParams['font.sans-serif'] = ['Helvetica']
 matplotlib.rcParams['mathtext.default'] = 'regular'
 from matplotlib.offsetbox import AnchoredText
-import gravity_toolkit.geocenter as geocenter
+import gravity_toolkit as gravtk
 
 # PURPOSE: plots the GRACE/GRACE-FO geocenter time series
 # comparing results using different ocean bottom pressure estimates
@@ -67,7 +68,7 @@ def geocenter_ocean_models(grace_dir,PROC,DREL,MODEL,START_MON,END_MON,MISSING):
     for k,mdl in enumerate(MODEL):
         # read geocenter file for processing center and model
         grace_file = '{0}_{1}_{2}_{3}.txt'.format(PROC,DREL,mdl,input_flags[2])
-        DEG1 = geocenter().from_UCI(os.path.join(grace_dir,grace_file))
+        DEG1 = gravtk.geocenter().from_UCI(os.path.join(grace_dir,grace_file))
         # indices for mean months
         kk, = np.nonzero((DEG1.month >= START_MON) & (DEG1.month <= 176))
         DEG1.mean(apply=True, indices=kk)
@@ -92,7 +93,7 @@ def geocenter_ocean_models(grace_dir,PROC,DREL,MODEL,START_MON,END_MON,MISSING):
     # read geocenter file for processing center and model
     model_str = 'OMCT' if DREL in ('RL04','RL05') else 'MPIOM'
     grace_file = '{0}_{1}_{2}_{3}.txt'.format(PROC,DREL,model_str,input_flags[2])
-    DEG1 = geocenter().from_UCI(os.path.join(grace_dir,grace_file))
+    DEG1 = gravtk.geocenter().from_UCI(os.path.join(grace_dir,grace_file))
     # add axis labels and adjust font sizes for axis ticks
     for j,key in enumerate(fig_labels):
         # vertical lines for end of the GRACE mission and start of GRACE-FO

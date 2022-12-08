@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -25,6 +25,8 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 12/2022: add software information to output HDF5 and netCDF4
+        moved GIA model reader to be an inherited class of harmonics
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
         using internal netCDF4 and HDF5 readers and writers
@@ -79,12 +81,13 @@ import logging
 import netCDF4
 import zipfile
 import numpy as np
+import gravity_toolkit.version
+from gravity_toolkit.utilities import get_git_revision_hash
 from gravity_toolkit.time import adjust_months,calendar_to_grace
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
 from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
-from gravity_toolkit.read_GIA_model import read_GIA_model
 
 class harmonics(object):
     """
@@ -312,8 +315,9 @@ class harmonics(object):
         self = temp.expand(date=kwargs['date'])
         # adjust months to fix special cases if necessary
         self.month = adjust_months(self.month)
-        # get attributes for the included variables
+        # attributes of clm/slm and included variables
         for key in fields:
+            # attempt to get attribute for variable
             try:
                 self.attributes[key] = [
                     fileID.variables[key].units,
@@ -321,8 +325,8 @@ class harmonics(object):
                     ]
             except (KeyError,ValueError,AttributeError):
                 pass
-        # Global attributes
-        for att_name in ['title','description','reference']:
+        # attempt to get global netCDF4 attributes
+        for att_name in ['title','description','source','reference']:
             try:
                 s, = [s for s in fileID.ncattrs() if re.match(att_name,s,re.I)]
                 self.attributes[att_name] = fileID.getncattr(s)
@@ -415,9 +419,9 @@ class harmonics(object):
         self = temp.expand(date=kwargs['date'])
         # adjust months to fix special cases if necessary
         self.month = adjust_months(self.month)
-        # Getting attributes of clm/slm and included variables
-        # get attributes for the included variables
+        # attributes of clm/slm and included variables
         for key in fields:
+            # attempt to get attribute for variable
             try:
                 self.attributes[key] = [
                     fileID[key].attrs['units'],
@@ -425,8 +429,8 @@ class harmonics(object):
                     ]
             except (KeyError, AttributeError):
                 pass
-        # Global attributes
-        for att_name in ['title','description','reference']:
+        # attempt to get global HDF5 attributes
+        for att_name in ['title','description','source','reference']:
             try:
                 self.attributes[att_name] = fileID.attrs[att_name]
             except (ValueError, KeyError, AttributeError):
@@ -523,61 +527,6 @@ class harmonics(object):
         self.month = np.int64(calendar_to_grace(self.time))
         # copy header information for gravity model
         self.header = Ylms['header']
-        # assign shape and ndim attributes
-        self.update_dimensions()
-        return self
-
-    def from_GIA(self, filename, **kwargs):
-        """
-        Read a harmonics object from a GIA model file
-
-        Parameters
-        ----------
-        filename: str
-            full path of input GIA file
-        GIA: str or NoneType, default None
-            GIA model type to read and output
-
-            - ``'IJ05-R2'``: Ivins R2 GIA Models
-            - ``'W12a'``: Whitehouse GIA Models
-            - ``'SM09'``: Simpson/Milne GIA Models
-            - ``'ICE6G'``: ICE-6G GIA Models
-            - ``'Wu10'``: Wu (2010) GIA Correction
-            - ``'AW13-ICE6G'``: Geruo A ICE-6G GIA Models
-            - ``'AW13-IJ05'``: Geruo A IJ05-R2 GIA Models
-            - ``'Caron'``: Caron JPL GIA Assimilation
-            - ``'ICE6G-D'``: ICE-6G Version-D GIA Models
-            - ``'ascii'``: reformatted GIA in ascii format
-            - ``'netCDF4'``: reformatted GIA in netCDF4 format
-            - ``'HDF5'``: reformatted GIA in HDF5 format
-        MMAX: int or NoneType, default None
-            Maximum order of spherical harmonics
-        verbose: bool, default False
-            print file and variable information
-        """
-        # set filename
-        self.case_insensitive_filename(filename)
-        # set default keyword arguments
-        kwargs.setdefault('GIA',None)
-        kwargs.setdefault('MMAX',None)
-        kwargs.setdefault('verbose',False)
-        # read data from GIA file
-        Ylms = read_GIA_model(self.filename, GIA=kwargs['GIA'],
-            LMAX=self.lmax, MMAX=kwargs['MMAX'])
-        # Output file information
-        logging.info(self.filename)
-        logging.info(list(Ylms.keys()))
-        # copy variables for GIA model
-        self.clm = Ylms['clm'].copy()
-        self.slm = Ylms['slm'].copy()
-        # copy dimensions for GIA model
-        self.lmax = np.max(Ylms['l'])
-        self.mmax = np.max(Ylms['m'])
-        # copy information for GIA model
-        self.title = Ylms['title']
-        self.citation = Ylms['citation']
-        self.reference = Ylms['reference']
-        self.url = Ylms['url']
         # assign shape and ndim attributes
         self.update_dimensions()
         return self
@@ -776,7 +725,7 @@ class harmonics(object):
         kwargs.setdefault('verbose',False)
         logging.info(self.filename)
         # open the output file
-        fid = open(self.filename, 'w')
+        fid = open(self.filename, mode='w', encoding='utf8')
         if date:
             file_format = '{0:5d} {1:5d} {2:+21.12e} {3:+21.12e} {4:10.4f}'
         else:
@@ -811,6 +760,8 @@ class harmonics(object):
             months variable description
         title: str or NoneType, default None
             title attribute of dataset
+        source: str or NoneType, default None
+            source attribute of dataset
         reference: str or NoneType, default None
             reference attribute of dataset
         date: bool, default True
@@ -828,6 +779,7 @@ class harmonics(object):
         kwargs.setdefault('months_units','number')
         kwargs.setdefault('months_longname','GRACE_month')
         kwargs.setdefault('title',None)
+        kwargs.setdefault('source',None)
         kwargs.setdefault('reference',None)
         kwargs.setdefault('date',True)
         kwargs.setdefault('clobber',True)
@@ -892,11 +844,17 @@ class harmonics(object):
             nc['time'].units = kwargs['time_units']
             nc['month'].long_name = kwargs['months_longname']
             nc['month'].units = kwargs['months_units']
-        # global variables of NetCDF file
+        # global variables of NetCDF4 file
         if kwargs['title']:
             fileID.title = kwargs['title']
+        if kwargs['source']:
+            fileID.source = kwargs['source']
         if kwargs['reference']:
             fileID.reference = kwargs['reference']
+        # add software information
+        fileID.attrs['software_reference'] = gravity_toolkit.version.project_name
+        fileID.attrs['software_version'] = gravity_toolkit.version.full_version
+        fileID.attrs['software_revision'] = get_git_revision_hash()
         # date created
         fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
         # Output netCDF structure information
@@ -927,6 +885,8 @@ class harmonics(object):
             months variable description
         title: str or NoneType, default None
             description attribute of dataset
+        source: str or NoneType, default None
+            source attribute of dataset
         reference: str or NoneType, default None
             reference attribute of dataset
         date: bool, default True
@@ -944,6 +904,7 @@ class harmonics(object):
         kwargs.setdefault('months_units','number')
         kwargs.setdefault('months_longname','GRACE_month')
         kwargs.setdefault('title',None)
+        kwargs.setdefault('source',None)
         kwargs.setdefault('reference',None)
         kwargs.setdefault('date',True)
         kwargs.setdefault('clobber',True)
@@ -989,12 +950,17 @@ class harmonics(object):
             h5['time'].attrs['units'] = kwargs['time_units']
             h5['month'].attrs['long_name'] = kwargs['months_longname']
             h5['month'].attrs['units'] = kwargs['months_units']
-        # description of file
+        # global attributes of HDF5 file
         if kwargs['title']:
             fileID.attrs['description'] = kwargs['title']
-        # reference of file
+        if kwargs['source']:
+            fileID.attrs['source'] = kwargs['source']
         if kwargs['reference']:
             fileID.attrs['reference'] = kwargs['reference']
+        # add software information
+        fileID.attrs['software_reference'] = gravity_toolkit.version.project_name
+        fileID.attrs['software_version'] = gravity_toolkit.version.full_version
+        fileID.attrs['software_revision'] = get_git_revision_hash()
         # date created
         fileID.attrs['date_created'] = time.strftime('%Y-%m-%d',time.localtime())
         # Output HDF5 structure information
@@ -1028,7 +994,7 @@ class harmonics(object):
         """
         # Write index file of output spherical harmonics
         self.filename = os.path.expanduser(filename)
-        fid = open(self.filename,'w')
+        fid = open(self.filename, mode='w', encoding='utf8')
         # set default verbosity
         kwargs.setdefault('verbose',False)
         # for each file to be in the index
@@ -1632,8 +1598,12 @@ class harmonics(object):
         # reassign shape and ndim attributes
         self.update_dimensions()
         temp = harmonics(lmax=self.lmax, mmax=self.mmax)
+        # allocate for drift field
+        temp.clm = np.zeros((temp.lmax+1,temp.mmax+1,len(t)))
+        temp.slm = np.zeros((temp.lmax+1,temp.mmax+1,len(t)))
+        # copy time variables and calculate GRACE/GRACE-FO months
         temp.time = np.copy(t)
-        temp.month = np.int64(calendar_to_grace(self.time))
+        temp.month = np.int64(calendar_to_grace(temp.time))
         # adjust months to fix special cases if necessary
         temp.month = adjust_months(temp.month)
         # get filenames if applicable

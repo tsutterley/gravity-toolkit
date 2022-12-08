@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_maps.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly spatial fields
@@ -147,6 +147,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: add option to replace degree 4 zonal harmonics with SLR
     Updated 07/2022: create mask for output gridded variables
@@ -177,23 +178,13 @@ from __future__ import print_function
 import sys
 import os
 import re
+import copy
 import time
 import logging
 import numpy as np
 import argparse
 import traceback
-
-import gravity_toolkit.utilities as utilities
-from gravity_toolkit.grace_input_months import grace_input_months
-from gravity_toolkit.read_GIA_model import read_GIA_model
-from gravity_toolkit.read_love_numbers import load_love_numbers
-from gravity_toolkit.plm_holmes import plm_holmes
-from gravity_toolkit.gauss_weights import gauss_weights
-from gravity_toolkit.ocean_stokes import ocean_stokes
-from gravity_toolkit.harmonic_summation import harmonic_summation
-from gravity_toolkit.harmonics import harmonics
-from gravity_toolkit.spatial import spatial
-from gravity_toolkit.units import units
+import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -255,12 +246,12 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
 
     # read arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+    hl,kl,ll = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE)
 
     # Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):
-        wt = 2.0*np.pi*gauss_weights(RAD,LMAX)
+        wt = 2.0*np.pi*gravtk.gauss_weights(RAD,LMAX)
         gw_str = f'_r{RAD:0.0f}km'
     else:
         # else = 1
@@ -275,18 +266,19 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # replacing low-degree harmonics with SLR values if specified
     # include degree 1 (geocenter) harmonics if specified
     # correcting for Pole-Tide and Atmospheric Jumps if specified
-    Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
+    Ylms = gravtk.grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX, SLR_21=SLR_21,
         SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C40=SLR_C40, SLR_C50=SLR_C50,
         DEG1_FILE=DEG1_FILE, MODEL_DEG1=MODEL_DEG1, ATM=ATM,
         POLE_TIDE=POLE_TIDE)
     # convert to harmonics object and remove mean if specified
-    GRACE_Ylms = harmonics().from_dict(Ylms)
+    GRACE_Ylms = gravtk.harmonics().from_dict(Ylms)
     GRACE_Ylms.directory = Ylms['directory']
     # use a mean file for the static field to remove
     if MEAN_FILE:
         # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
-        mean_Ylms = harmonics().from_file(MEAN_FILE,format=MEANFORM,date=False)
+        mean_Ylms = gravtk.harmonics().from_file(MEAN_FILE,
+            format=MEANFORM, date=False)
         # remove the input mean
         GRACE_Ylms.subtract(mean_Ylms)
     else:
@@ -304,17 +296,12 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         ds_str = ''
 
     # input GIA spherical harmonic datafiles
-    GIA_Ylms_rate = read_GIA_model(GIA_FILE,GIA=GIA,LMAX=LMAX,MMAX=MMAX)
-    gia_str = '_{0}'.format(GIA_Ylms_rate['title']) if GIA else ''
-    # calculate the monthly mass change from GIA
-    GIA_Ylms = GRACE_Ylms.zeros_like()
-    GIA_Ylms.time[:] = np.copy(GRACE_Ylms.time)
-    GIA_Ylms.month[:] = np.copy(GRACE_Ylms.month)
+    GIA_Ylms_rate = gravtk.gia(lmax=LMAX).from_GIA(GIA_FILE, GIA=GIA, mmax=MMAX)
+    gia_str = f'_{GIA_Ylms_rate.title}' if GIA else ''
     # monthly GIA calculated by gia_rate*time elapsed
     # finding change in GIA each month
-    for t in range(nfiles):
-        GIA_Ylms.clm[:,:,t] = GIA_Ylms_rate['clm']*(GIA_Ylms.time[t]-2003.3)
-        GIA_Ylms.slm[:,:,t] = GIA_Ylms_rate['slm']*(GIA_Ylms.time[t]-2003.3)
+    GIA_Ylms = GIA_Ylms_rate.drift(GRACE_Ylms.time, epoch=2003.3)
+    GIA_Ylms.month[:] = np.copy(GRACE_Ylms.month)
 
     # default file prefix
     if not FILE_PREFIX:
@@ -324,7 +311,8 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # Read Ocean function and convert to Ylms for redistribution
     if REDISTRIBUTE_REMOVED:
         # read Land-Sea Mask and convert to spherical harmonics
-        ocean_Ylms = ocean_stokes(LANDMASK,LMAX,MMAX=MMAX,LOVE=(hl,kl,ll))
+        ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX, MMAX=MMAX,
+            LOVE=(hl,kl,ll))
         ocean_str = '_OCN'
     else:
         ocean_str = ''
@@ -344,12 +332,14 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
                 # ascii (.txt)
                 # netCDF4 (.nc)
                 # HDF5 (.H5)
-                Ylms = harmonics().from_file(REMOVE_FILE, format=REMOVEFORM)
+                Ylms = gravtk.harmonics().from_file(REMOVE_FILE,
+                    format=REMOVEFORM)
             elif REMOVEFORM in ('index-ascii','index-netCDF4','index-HDF5'):
                 # read from index file
                 _,removeform = REMOVEFORM.split('-')
                 # index containing files in data format
-                Ylms = harmonics().from_index(REMOVE_FILE, format=removeform)
+                Ylms = gravtk.harmonics().from_index(REMOVE_FILE,
+                    format=removeform)
             # reduce to GRACE/GRACE-FO months and truncate to degree and order
             Ylms = Ylms.subset(GRACE_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
             # distribute removed Ylms uniformly over the ocean
@@ -373,7 +363,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
             remove_Ylms.add(Ylms)
 
     # Output spatial data object
-    grid = spatial()
+    grid = gravtk.spatial()
     # Output Degree Spacing
     dlon,dlat = (DDEG[0],DDEG[0]) if (len(DDEG) == 1) else (DDEG[0],DDEG[1])
     # Output Degree Interval
@@ -399,36 +389,42 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
 
     # Computing plms for converting to spatial domain
     theta = (90.0-grid.lat)*np.pi/180.0
-    PLM, dPLM = plm_holmes(LMAX, np.cos(theta))
+    PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(theta))
 
     # Earth Parameters
     # output spatial units
     unit_list = ['cmwe', 'mmGH', 'mmCU', u'\u03BCGal', 'mbar']
-    unit_name = ['Equivalent Water Thickness', 'Geoid Height',
-        'Elastic Crustal Uplift', 'Gravitational Undulation',
-        'Equivalent Surface Pressure']
+    unit_name = ['Equivalent_Water_Thickness', 'Geoid_Height',
+        'Elastic_Crustal_Uplift', 'Gravitational_Undulation',
+        'Equivalent_Surface_Pressure']
     # Setting units factor for output
     # dfactor computes the degree dependent coefficients
     if (UNITS == 1):
         # 1: cmwe, centimeters water equivalent
-        dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).cmwe
+        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).cmwe
     elif (UNITS == 2):
         # 2: mmGH, mm geoid height
-        dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).mmGH
+        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).mmGH
     elif (UNITS == 3):
         # 3: mmCU, mm elastic crustal deformation
-        dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).mmCU
+        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).mmCU
     elif (UNITS == 4):
         # 4: micGal, microGal gravity perturbations
-        dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).microGal
+        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).microGal
     elif (UNITS == 5):
         # 5: mbar, millibars equivalent surface pressure
-        dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).mbar
+        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).mbar
     else:
         raise ValueError(f'Invalid units code {UNITS:d}')
 
     # output file format
     file_format = '{0}{1}_L{2:d}{3}{4}{5}_{6:03d}.{7}'
+    # attributes for output files
+    attributes = {}
+    attributes['units'] = copy.copy(unit_list[UNITS-1])
+    attributes['longname'] = copy.copy(unit_name[UNITS-1])
+    attributes['title'] = 'GRACE/GRACE-FO Spatial Data'
+    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
     # converting harmonics to truncated, smoothed coefficients in units
     # combining harmonics to calculate output spatial fields
     for i,grace_month in enumerate(GRACE_Ylms.month):
@@ -441,7 +437,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         # smooth harmonics and convert to output units
         Ylms.convolve(dfactor*wt)
         # convert spherical harmonics to output spatial grid
-        grid.data = harmonic_summation(Ylms.clm, Ylms.slm,
+        grid.data = gravtk.harmonic_summation(Ylms.clm, Ylms.slm,
             grid.lon, grid.lat, LMIN=LMIN, LMAX=LMAX,
             MMAX=MMAX, PLM=PLM).T
         grid.mask = np.zeros_like(grid.data, dtype=bool)
@@ -450,22 +446,18 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         grid.month = np.copy(Ylms.month)
 
         # output monthly files to ascii, netCDF4 or HDF5
-        args=(FILE_PREFIX,unit_list[UNITS-1],LMAX,order_str,gw_str,
+        fargs = (FILE_PREFIX,unit_list[UNITS-1],LMAX,order_str,gw_str,
             ds_str,grace_month,suffix[DATAFORM])
-        FILE=os.path.join(OUTPUT_DIRECTORY,file_format.format(*args))
+        FILE = os.path.join(OUTPUT_DIRECTORY,file_format.format(*fargs))
         if (DATAFORM == 'ascii'):
             # ascii (.txt)
             grid.to_ascii(FILE, date=True, verbose=VERBOSE)
         elif (DATAFORM == 'netCDF4'):
             # netCDF4
-            grid.to_netCDF4(FILE, date=True, verbose=VERBOSE,
-                units=unit_list[UNITS-1], longname=unit_name[UNITS-1],
-                title='GRACE/GRACE-FO Spatial Data')
+            grid.to_netCDF4(FILE, date=True, verbose=VERBOSE, **attributes)
         elif (DATAFORM == 'HDF5'):
             # HDF5
-            grid.to_HDF5(FILE, date=True, verbose=VERBOSE,
-                units=unit_list[UNITS-1], longname=unit_name[UNITS-1],
-                title='GRACE/GRACE-FO Spatial Data')
+            grid.to_HDF5(FILE, date=True, verbose=VERBOSE, **attributes)
         # set the permissions mode of the output files
         os.chmod(FILE, MODE)
         # add file to list
@@ -475,38 +467,38 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     return output_files
 
 # PURPOSE: print a file log for the GRACE analysis
-def output_log_file(arguments,output_files):
+def output_log_file(input_arguments, output_files):
     # format: GRACE_processing_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_processing_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(arguments.output_directory)
-    fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = os.path.expanduser(input_arguments.output_directory)
+    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
-    for arg, value in sorted(vars(arguments).items()):
-        logging.info('{0}: {1}'.format(arg, value))
+    for arg, value in sorted(vars(input_arguments).items()):
+        logging.info(f'{arg}: {value}')
     # print output files
     logging.info('\n\nOUTPUT FILES:')
     for f in output_files:
-        logging.info('{0}'.format(f))
+        logging.info(f)
     # close the log file
     fid.close()
 
 # PURPOSE: print a error file log for the GRACE analysis
-def output_error_log_file(arguments):
+def output_error_log_file(input_arguments):
     # format: GRACE_processing_failed_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_processing_failed_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(arguments.output_directory)
-    fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = os.path.expanduser(input_arguments.output_directory)
+    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
-    for arg, value in sorted(vars(arguments).items()):
-        logging.info('{0}: {1}'.format(arg, value))
+    for arg, value in sorted(vars(input_arguments).items()):
+        logging.info(f'{arg}: {value}')
     # print traceback error
     logging.info('\n\nTRACEBACK ERROR:')
     traceback.print_exc(file=fid)
@@ -521,7 +513,7 @@ def arguments():
             """,
         fromfile_prefix_chars="@"
     )
-    parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
+    parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
@@ -701,7 +693,7 @@ def arguments():
         default=False, action='store_true',
         help='Redistribute removed mass fields over the ocean')
     # land-sea mask for redistributing fluxes
-    lsmask = utilities.get_data_path(['data','landsea_hd.nc'])
+    lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
         help='Land-sea mask for redistributing land water flux')

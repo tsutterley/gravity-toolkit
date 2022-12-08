@@ -21,6 +21,10 @@ General Methods
 
 .. autofunction:: gravity_toolkit.utilities.get_hash
 
+.. autofunction:: gravity_toolkit.utilities.get_git_revision_hash
+
+.. autofunction:: gravity_toolkit.utilities.get_git_status
+
 .. autofunction:: gravity_toolkit.utilities.url_split
 
 .. autofunction:: gravity_toolkit.utilities.convert_arg_line_to_args

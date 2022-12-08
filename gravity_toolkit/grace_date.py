@@ -254,7 +254,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     # Output GRACE/GRACE-FO date ascii file
     if OUTPUT:
         date_file = f'{PROC}_{DREL}_DATES.txt'
-        fid = open(os.path.join(grace_dir,date_file), 'w')
+        fid = open(os.path.join(grace_dir,date_file), mode='w', encoding='utf8')
         # date file header information
         args = ('Mid-date','Month','Start_Day','End_Day','Total_Days')
         print('{0} {1:>10} {2:>11} {3:>10} {4:>13}'.format(*args),file=fid)

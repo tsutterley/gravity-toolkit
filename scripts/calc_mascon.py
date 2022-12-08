@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_mascon.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 
 Calculates a time-series of regional mass anomalies through a least-squares
     mascon procedure from GRACE/GRACE-FO time-variable gravity data
@@ -156,6 +156,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: add option to replace degree 4 zonal harmonics with SLR
     Updated 04/2022: use wrapper function for reading load Love numbers
@@ -242,16 +243,7 @@ import logging
 import argparse
 import numpy as np
 import traceback
-
-import gravity_toolkit.utilities as utilities
-from gravity_toolkit.grace_input_months import grace_input_months
-from gravity_toolkit.harmonics import harmonics
-from gravity_toolkit.units import units
-from gravity_toolkit.read_GIA_model import read_GIA_model
-from gravity_toolkit.read_love_numbers import load_love_numbers
-from gravity_toolkit.gauss_weights import gauss_weights
-from gravity_toolkit.ocean_stokes import ocean_stokes
-from gravity_toolkit.tssmooth import tssmooth
+import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -317,11 +309,11 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     parser = re.compile(r'^(?!\#|\%|$)', re.VERBOSE)
 
     # read arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+    hl,kl,ll = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE)
 
     # Earth Parameters
-    factors = units(lmax=LMAX).harmonic(hl,kl,ll)
+    factors = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll)
     # Average Density of the Earth [g/cm^3]
     rho_e = factors.rho_e
     # Average Radius of the Earth [cm]
@@ -337,7 +329,7 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
 
     # Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):
-        wt = 2.0*np.pi*gauss_weights(RAD,LMAX)
+        wt = 2.0*np.pi*gravtk.gauss_weights(RAD,LMAX)
         gw_str = f'_r{RAD:0.0f}km'
     else:
         # else = 1
@@ -347,7 +339,8 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # Read Ocean function and convert to Ylms for redistribution
     if (REDISTRIBUTE_MASCONS | REDISTRIBUTE_REMOVED):
         # read Land-Sea Mask and convert to spherical harmonics
-        ocean_Ylms = ocean_stokes(LANDMASK, LMAX, MMAX=MMAX, LOVE=(hl,kl,ll))
+        ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX, MMAX=MMAX,
+            LOVE=(hl,kl,ll))
         ocean_str = '_OCN'
     else:
         # not distributing uniformly over ocean
@@ -357,17 +350,18 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # replacing low-degree harmonics with SLR values if specified
     # include degree 1 (geocenter) harmonics if specified
     # correcting for Pole-Tide and Atmospheric Jumps if specified
-    Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
+    Ylms = gravtk.grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX, SLR_21=SLR_21,
         SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C40=SLR_C40, SLR_C50=SLR_C50,
         DEG1_FILE=DEG1_FILE, MODEL_DEG1=MODEL_DEG1, ATM=ATM,
         POLE_TIDE=POLE_TIDE)
     # create harmonics object from GRACE/GRACE-FO data
-    GRACE_Ylms = harmonics().from_dict(Ylms)
+    GRACE_Ylms = gravtk.harmonics().from_dict(Ylms)
     # use a mean file for the static field to remove
     if MEAN_FILE:
         # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
-        mean_Ylms = harmonics().from_file(MEAN_FILE,format=MEANFORM,date=False)
+        mean_Ylms = gravtk.harmonics().from_file(MEAN_FILE,
+            format=MEANFORM, date=False)
         # remove the input mean
         GRACE_Ylms.subtract(mean_Ylms)
     else:
@@ -386,17 +380,12 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     n_files = len(GRACE_Ylms.time)
 
     # input GIA spherical harmonic datafiles
-    GIA_Ylms_rate = read_GIA_model(GIA_FILE,GIA=GIA,LMAX=LMAX,MMAX=MMAX)
-    gia_str = '_{0}'.format(GIA_Ylms_rate['title']) if GIA else ''
-    # calculate the monthly mass change from GIA
-    GIA_Ylms = GRACE_Ylms.zeros_like()
-    GIA_Ylms.time[:] = np.copy(GRACE_Ylms.time)
-    GIA_Ylms.month[:] = np.copy(GRACE_Ylms.month)
+    GIA_Ylms_rate = gravtk.gia(lmax=LMAX).from_GIA(GIA_FILE, GIA=GIA, mmax=MMAX)
+    gia_str = f'_{GIA_Ylms_rate.title}' if GIA else ''
     # monthly GIA calculated by gia_rate*time elapsed
     # finding change in GIA each month
-    for t in range(n_files):
-        GIA_Ylms.clm[:,:,t] = GIA_Ylms_rate['clm']*(GIA_Ylms.time[t]-2003.3)
-        GIA_Ylms.slm[:,:,t] = GIA_Ylms_rate['slm']*(GIA_Ylms.time[t]-2003.3)
+    GIA_Ylms = GIA_Ylms_rate.drift(GRACE_Ylms.time, epoch=2003.3)
+    GIA_Ylms.month[:] = np.copy(GRACE_Ylms.month)
 
     # input spherical harmonic datafiles to be removed from the GRACE data
     # Remove sets of Ylms from the GRACE data before returning
@@ -413,12 +402,14 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
                 # ascii (.txt)
                 # netCDF4 (.nc)
                 # HDF5 (.H5)
-                Ylms = harmonics().from_file(REMOVE_FILE, format=REMOVEFORM)
+                Ylms = gravtk.harmonics().from_file(REMOVE_FILE,
+                    format=REMOVEFORM)
             elif REMOVEFORM in ('index-ascii','index-netCDF4','index-HDF5'):
                 # read from index file
                 _,removeform = REMOVEFORM.split('-')
                 # index containing files in data format
-                Ylms = harmonics().from_index(REMOVE_FILE, format=removeform)
+                Ylms = gravtk.harmonics().from_index(REMOVE_FILE,
+                    format=removeform)
             # reduce to GRACE/GRACE-FO months and truncate to degree and order
             Ylms = Ylms.subset(GRACE_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
             # distribute removed Ylms uniformly over the ocean
@@ -452,7 +443,8 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         # for each valid file in the index (iterate over mascons)
         for reconstruct_file in file_list:
             # read reconstructed spherical harmonics
-            Ylms = harmonics().from_file(reconstruct_file,format=DATAFORM)
+            Ylms = gravtk.harmonics().from_file(reconstruct_file,
+                format=DATAFORM)
             # truncate clm and slm matrices to LMAX/MMAX
             # add harmonics object to total
             construct_Ylms.add(Ylms.truncate(lmax=LMAX, mmax=MMAX))
@@ -478,7 +470,7 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     mascon_list = []
     for k,fi in enumerate(mascon_files):
         # read mascon spherical harmonics
-        Ylms = harmonics().from_file(os.path.expanduser(fi),
+        Ylms = gravtk.harmonics().from_file(os.path.expanduser(fi),
             format=MASCON_FORMAT, date=False)
         # Calculating the total mass of each mascon (1 cmwe uniform)
         total_area[k] = 4.0*np.pi*(rad_e**3)*rho_e*Ylms.clm[0,0]/3.0
@@ -504,14 +496,16 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         # if mascon name contains degree and order info, remove
         mascon_name.append(mascon_base.replace(f'_L{LMAX:d}', ''))
     # create single harmonics object from list
-    mascon_Ylms = harmonics().from_list(mascon_list, date=False)
+    mascon_Ylms = gravtk.harmonics().from_list(mascon_list, date=False)
+    # clear mascon list variable
+    del mascon_list
 
     # calculating GRACE/GRACE-FO error (Wahr et al. 2006)
     # output GRACE error file (for both LMAX==MMAX and LMAX != MMAX cases)
-    args = (PROC,DREL,DSET,LMAX,order_str,ds_str,atm_str,GRACE_Ylms.month[0],
+    fargs = (PROC,DREL,DSET,LMAX,order_str,ds_str,atm_str,GRACE_Ylms.month[0],
         GRACE_Ylms.month[-1], suffix[DATAFORM])
     delta_format = '{0}_{1}_{2}_DELTA_CLM_L{3:d}{4}{5}{6}_{7:03d}-{8:03d}.{9}'
-    DELTA_FILE = os.path.join(GRACE_Ylms.directory,delta_format.format(*args))
+    DELTA_FILE = os.path.join(GRACE_Ylms.directory,delta_format.format(*fargs))
     # check full path of the GRACE directory for delta file
     # if file was previously calculated: will read file
     # else: will calculate the GRACE/GRACE-FO error
@@ -520,7 +514,7 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         output_files.append(DELTA_FILE)
 
         # Delta coefficients of GRACE time series (Error components)
-        delta_Ylms = harmonics(lmax=LMAX,mmax=MMAX)
+        delta_Ylms = gravtk.harmonics(lmax=LMAX,mmax=MMAX)
         delta_Ylms.clm = np.zeros((LMAX+1,MMAX+1))
         delta_Ylms.slm = np.zeros((LMAX+1,MMAX+1))
         # Smoothing Half-Width (CNES is a 10-day solution)
@@ -539,22 +533,32 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
                     # calculate GRACE Error (Noise of smoothed time-series)
                     # With Annual and Semi-Annual Terms
                     val1 = getattr(GRACE_Ylms, csharm)
-                    smth = tssmooth(GRACE_Ylms.time, val1[l,m,:], HFWTH=HFWTH)
+                    smth = gravtk.tssmooth(GRACE_Ylms.time, val1[l,m,:],
+                        HFWTH=HFWTH)
                     # number of smoothed points
                     nsmth = len(smth['data'])
                     tsmth = np.mean(smth['time'])
-                    # GRACE delta Ylms
+                    # GRACE/GRACE-FO delta Ylms
                     # variance of data-(smoothed+annual+semi)
                     val2 = getattr(delta_Ylms, csharm)
                     val2[l,m] = np.sqrt(np.sum(smth['noise']**2)/nsmth)
 
+        # attributes for output files
+        attributes = {}
+        attributes['title'] = 'GRACE/GRACE-FO Spherical Harmonic Errors'
+        attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
         # save GRACE/GRACE-FO delta harmonics to file
         delta_Ylms.time = np.copy(tsmth)
         delta_Ylms.month = np.int64(nsmth)
-        delta_Ylms.to_file(DELTA_FILE,format=DATAFORM)
+        delta_Ylms.to_file(DELTA_FILE, format=DATAFORM, **attributes)
+        # set the permissions mode of the output harmonics file
+        os.chmod(DELTA_FILE, MODE)
+        # append delta harmonics file to output files list
+        output_files.append(DELTA_FILE)
     else:
         # read GRACE/GRACE-FO delta harmonics from file
-        delta_Ylms = harmonics().from_file(DELTA_FILE,format=DATAFORM)
+        delta_Ylms = gravtk.harmonics().from_file(DELTA_FILE,
+            format=DATAFORM)
         # truncate GRACE/GRACE-FO delta clm and slm to d/o LMAX/MMAX
         delta_Ylms = delta_Ylms.truncate(lmax=LMAX, mmax=MMAX)
         tsmth = np.squeeze(delta_Ylms.time)
@@ -661,15 +665,16 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         # mascon name, GRACE dataset, GIA model, LMAX, (MMAX,)
         # Gaussian smoothing, filter flag, remove reconstructed fields flag
         # output GRACE error file
-        file_out='{0}{1}{2}{3}{4}_L{5:d}{6}{7}{8}{9}.txt'.format(mascon_name[k],
-            dset_str, gia_str.upper(), atm_str, ocean_str, LMAX, order_str,
-            gw_str, ds_str, construct_str)
+        fargs = (mascon_name[k], dset_str, gia_str.upper(), atm_str, ocean_str,
+            LMAX, order_str, gw_str, ds_str, construct_str)
+        file_format = '{0}{1}{2}{3}{4}_L{5:d}{6}{7}{8}{9}.txt'
+        output_file = os.path.join(OUTPUT_DIRECTORY,file_format.format(*fargs))
 
         # Output mascon datafiles
         # Will output each mascon time series
         # month, date, mascon mass [Gt], satellite error [Gt], mascon area [km^2]
         # open output mascon time-series file
-        fid = open(os.path.join(OUTPUT_DIRECTORY,file_out),'w')
+        fid = open(output_file, mode='w', encoding='utf8')
         # for each date
         formatting_string = '{0:03d} {1:12.4f} {2:16.10f} {3:16.10f} {4:16.5f}'
         for t,mon in enumerate(GRACE_Ylms.month):
@@ -684,46 +689,46 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         # close the output file
         fid.close()
         # change the permissions mode
-        os.chmod(os.path.join(OUTPUT_DIRECTORY,file_out),MODE)
+        os.chmod(output_file, MODE)
         # add output files to list object
-        output_files.append(os.path.join(OUTPUT_DIRECTORY,file_out))
+        output_files.append(output_file)
 
     # return the list of output files
     return output_files
 
 # PURPOSE: print a file log for the GRACE mascon analysis
-def output_log_file(arguments,output_files):
+def output_log_file(input_arguments, output_files):
     # format: calc_mascon_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'calc_mascon_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(arguments.output_directory)
-    fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = os.path.expanduser(input_arguments.output_directory)
+    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
-    for arg, value in sorted(vars(arguments).items()):
-        logging.info('{0}: {1}'.format(arg, value))
+    for arg, value in sorted(vars(input_arguments).items()):
+        logging.info(f'{arg}: {value}')
     # print output files
     logging.info('\n\nOUTPUT FILES:')
     for f in output_files:
-        logging.info('{0}'.format(f))
+        logging.info(f)
     # close the log file
     fid.close()
 
 # PURPOSE: print a error file log for the GRACE mascon analysis
-def output_error_log_file(arguments):
+def output_error_log_file(input_arguments):
     # format: calc_mascon_failed_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'calc_mascon_failed_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(arguments.output_directory)
-    fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = os.path.expanduser(input_arguments.output_directory)
+    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
-    for arg, value in sorted(vars(arguments).items()):
-        logging.info('{0}: {1}'.format(arg, value))
+    for arg, value in sorted(vars(input_arguments).items()):
+        logging.info(f'{arg}: {value}')
     # print traceback error
     logging.info('\n\nTRACEBACK ERROR:')
     traceback.print_exc(file=fid)
@@ -739,7 +744,7 @@ def arguments():
             """,
         fromfile_prefix_chars="@"
     )
-    parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
+    parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
@@ -923,7 +928,7 @@ def arguments():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='Reconstructed mascon time series file to be removed')
     # land-sea mask for redistributing mascon mass and land water flux
-    lsmask = utilities.get_data_path(['data','landsea_hd.nc'])
+    lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
         help='Land-sea mask for redistributing mascon mass and land water flux')

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter_compare_tellus.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 Plots the GRACE/GRACE-FO geocenter time series for different
     GRACE/GRACE-FO processing centers comparing with the
     JPL GRACE Tellus product
@@ -17,6 +17,7 @@ COMMAND LINE OPTIONS:
     -M X, --missing X: Missing GRACE months in time series
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 05/2022: use argparse descriptions within documentation
     Updated 12/2021: adjust minimum x limit based on starting GRACE month
@@ -32,8 +33,7 @@ import matplotlib
 import matplotlib.font_manager
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredText
-from gravity_toolkit.time import convert_calendar_decimal
-import gravity_toolkit.geocenter as geocenter
+import gravity_toolkit as gravtk
 
 # rebuilt the matplotlib fonts and set parameters
 matplotlib.font_manager._load_fontmanager()
@@ -74,7 +74,7 @@ def geocenter_compare_tellus(grace_dir,DREL,START_MON,END_MON,MISSING):
             fargs = (pr,DREL,model_str,input_flags[2])
         # read geocenter file for processing center and model
         grace_file = '{0}_{1}_{2}_{3}.txt'.format(*fargs)
-        DEG1 = geocenter().from_UCI(os.path.join(grace_dir,grace_file))
+        DEG1 = gravtk.geocenter().from_UCI(os.path.join(grace_dir,grace_file))
         # indices for mean months
         kk, = np.nonzero((DEG1.month >= START_MON) & (DEG1.month <= 176))
         DEG1.mean(apply=True, indices=kk)
@@ -99,7 +99,7 @@ def geocenter_compare_tellus(grace_dir,DREL,START_MON,END_MON,MISSING):
 
         if (pr == 'GFZwPT'):
             grace_file = 'GRAVIS-2B_GFZOP_GEOCENTER_0002.dat'
-            DEG1 = geocenter().from_gravis(os.path.join(grace_dir,grace_file))
+            DEG1 = gravtk.geocenter().from_gravis(os.path.join(grace_dir,grace_file))
             # indices for mean months
             kk, = np.nonzero((DEG1.month >= START_MON) & (DEG1.month <= 176))
             DEG1.mean(apply=True, indices=kk)
@@ -108,11 +108,11 @@ def geocenter_compare_tellus(grace_dir,DREL,START_MON,END_MON,MISSING):
             # plot each coefficient
             for j,key in enumerate(fig_labels):
                 # plot model outputs
-                DEG1[key] -= DEG1[key][kk].mean()
+                val = getattr(DEG1, ylabels[key].upper())
+                val -= val[kk].mean()
                 # create a time series with nans for missing months
                 tdec = np.full_like(months,np.nan,dtype=np.float64)
                 data = np.full_like(months,np.nan,dtype=np.float64)
-                val = getattr(DEG1, ylabels[key].upper())
                 for i,m in enumerate(months):
                     valid = np.count_nonzero(DEG1.month == m)
                     if valid:
@@ -125,7 +125,8 @@ def geocenter_compare_tellus(grace_dir,DREL,START_MON,END_MON,MISSING):
 
         # Running function read_tellus_geocenter.py
         grace_file = f'TN-13_GEOC_{pr}_{DREL}.txt'
-        DEG1 = geocenter().from_tellus(os.path.join(grace_dir,grace_file),JPL=True)
+        DEG1 = gravtk.geocenter().from_tellus(os.path.join(grace_dir,grace_file),
+            JPL=True)
         # indices for mean months
         kk, = np.nonzero((DEG1.month >= START_MON) & (DEG1.month <= 176))
         DEG1.mean(apply=True, indices=kk)
@@ -151,7 +152,7 @@ def geocenter_compare_tellus(grace_dir,DREL,START_MON,END_MON,MISSING):
         # add axis labels and adjust font sizes for axis ticks
         for j,key in enumerate(fig_labels):
             # vertical line denoting the accelerometer shutoff
-            acc = convert_calendar_decimal(2016,9,day=3,hour=12,minute=12)
+            acc = gravtk.time.convert_calendar_decimal(2016,9,day=3,hour=12,minute=12)
             ax[j].axvline(acc,color='0.5',ls='dashed',lw=0.5,dashes=(8,4))
             # vertical lines for end of the GRACE mission and start of GRACE-FO
             jj, = np.flatnonzero(DEG1.month == 186)

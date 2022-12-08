@@ -19,3 +19,6 @@ Calling Sequence
    .. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_GIA_model.py
 
 .. autofunction:: gravity_toolkit.read_GIA_model
+
+.. autoclass:: gravity_toolkit.read_GIA_model.gia
+   :members:

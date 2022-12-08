@@ -20,6 +20,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 12/2022: add software information to output HDF5 and netCDF4
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 08/2022: fix output latitude HDF5 and netCDF4 attributes
         place index filename within try/except statement
@@ -63,6 +64,8 @@ import logging
 import netCDF4
 import zipfile
 import numpy as np
+import gravity_toolkit.version
+from gravity_toolkit.utilities import get_git_revision_hash
 from gravity_toolkit.time import adjust_months, calendar_to_grace
 
 class spatial(object):
@@ -338,8 +341,8 @@ class spatial(object):
                         fileID.variables[key].getncattr(attr)
                 except (KeyError,ValueError,AttributeError):
                     pass
-        # Global attributes
-        for att_name in ['title','description','reference']:
+        # attempt to get global netCDF4 attributes
+        for att_name in ['title','description','source','reference']:
             try:
                 ncattr, = [s for s in fileID.ncattrs()
                     if re.match(att_name,s,re.I)]
@@ -470,8 +473,8 @@ class spatial(object):
                     self.attributes[field][attr] = fileID[key].attrs[attr]
                 except (KeyError, AttributeError):
                     pass
-        # Global attributes
-        for att_name in ['title','description','reference']:
+        # attempt to get global HDF5 attributes
+        for att_name in ['title','description','source','reference']:
             try:
                 self.attributes[att_name] = fileID.attrs[att_name]
             except (ValueError, KeyError, AttributeError):
@@ -697,7 +700,7 @@ class spatial(object):
         kwargs.setdefault('verbose',False)
         logging.info(self.filename)
         # open the output file
-        fid = open(self.filename, 'w')
+        fid = open(self.filename, mode='w', encoding='utf8')
         if kwargs['date']:
             file_format = '{0:10.4f} {1:10.4f} {2:12.4f} {3:10.4f}'
         else:
@@ -737,6 +740,8 @@ class spatial(object):
             time variable unit description
         title: str or NoneType, default None
             title attribute of dataset
+        source: str or NoneType, default None
+            source attribute of dataset
         reference: str or NoneType, default None
             reference attribute of dataset
         date: bool, default True
@@ -759,6 +764,7 @@ class spatial(object):
         kwargs.setdefault('time_units','years')
         kwargs.setdefault('time_longname','Date_in_Decimal_Years')
         kwargs.setdefault('title',None)
+        kwargs.setdefault('source',None)
         kwargs.setdefault('reference',None)
         kwargs.setdefault('date',True)
         kwargs.setdefault('clobber',True)
@@ -822,13 +828,23 @@ class spatial(object):
             nc[key][:] = getattr(self,field)
             # filling netCDF dataset attributes
             for att_name,att_val in kwargs['attributes'][key].items():
+                # skip variable attribute if None
+                if not att_val:
+                    continue
+                # skip variable attributes if in list
                 if att_name not in ('DIMENSION_LIST','CLASS','NAME','_FillValue'):
                     nc[key].setncattr(att_name, att_val)
-        # filling global netCDF attributes
+        # global variables of NetCDF4 file
         if kwargs['title']:
             fileID.title = kwargs['title']
+        if kwargs['source']:
+            fileID.source = kwargs['source']
         if kwargs['reference']:
             fileID.reference = kwargs['reference']
+        # add software information
+        fileID.attrs['software_reference'] = gravity_toolkit.version.project_name
+        fileID.attrs['software_version'] = gravity_toolkit.version.full_version
+        fileID.attrs['software_revision'] = get_git_revision_hash()
         # date created
         fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
         # Output NetCDF structure information
@@ -865,6 +881,8 @@ class spatial(object):
             time variable unit description
         title: str or NoneType, default None
             description attribute of dataset
+        source: str or NoneType, default None
+            source attribute of dataset
         reference: str or NoneType, default None
             reference attribute of dataset
         date: bool, default True
@@ -887,6 +905,7 @@ class spatial(object):
         kwargs.setdefault('time_units','years')
         kwargs.setdefault('time_longname','Date_in_Decimal_Years')
         kwargs.setdefault('title',None)
+        kwargs.setdefault('source',None)
         kwargs.setdefault('reference',None)
         kwargs.setdefault('date',True)
         kwargs.setdefault('clobber',True)
@@ -939,6 +958,10 @@ class spatial(object):
                 data=temp, dtype=temp.dtype, compression='gzip')
             # filling HDF5 dataset attributes
             for att_name,att_val in kwargs['attributes'][key].items():
+                # skip variable attribute if None
+                if not att_val:
+                    continue
+                # skip variable attributes if in list
                 if att_name not in ('DIMENSION_LIST','CLASS','NAME'):
                     h5[key].attrs[att_name] = att_val
         # add dimensions
@@ -951,13 +974,17 @@ class spatial(object):
             # Dataset contains missing values
             if (self.fill_value is not None):
                 h5[key].attrs['_FillValue'] = self.fill_value
-        # filling global HDF5 attributes
-        # description of file
+        # global attributes of HDF5 file
         if kwargs['title']:
             fileID.attrs['description'] = kwargs['title']
-        # reference of file
+        if kwargs['source']:
+            fileID.attrs['source'] = kwargs['source']
         if kwargs['reference']:
             fileID.attrs['reference'] = kwargs['reference']
+        # add software information
+        fileID.attrs['software_reference'] = gravity_toolkit.version.project_name
+        fileID.attrs['software_version'] = gravity_toolkit.version.full_version
+        fileID.attrs['software_revision'] = get_git_revision_hash()
         # date created
         fileID.attrs['date_created'] = time.strftime('%Y-%m-%d',time.localtime())
         # Output HDF5 structure information
@@ -991,7 +1018,7 @@ class spatial(object):
         """
         # Write index file of output spatial files
         self.filename = os.path.expanduser(filename)
-        fid = open(self.filename,'w')
+        fid = open(self.filename, mode='w', encoding='utf8')
         # set default verbosity
         kwargs.setdefault('verbose',False)
         # for each file to be in the index

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 u"""
-run_sea_level_equation.py (11/2022)
+run_sea_level_equation.py (12/2022)
 Solves the sea level equation with the option of including polar motion feedback
 Uses a Clenshaw summation to calculate the spherical harmonic summation
 
@@ -67,6 +67,7 @@ REFERENCES:
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use wrapper function for reading load Love numbers
         use argparse descriptions within sphinx documentation
@@ -109,12 +110,7 @@ import logging
 import argparse
 import traceback
 import numpy as np
-import gravity_toolkit.utilities as utilities
-from gravity_toolkit.read_love_numbers import load_love_numbers
-from gravity_toolkit.sea_level_equation import sea_level_equation
-from gravity_toolkit.plm_holmes import plm_holmes
-from gravity_toolkit.harmonics import harmonics
-from gravity_toolkit.spatial import spatial
+import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -142,7 +138,8 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     # Land-Sea Mask with Antarctica from Rignot (2017) and Greenland from GEUS
     # 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
     # Open the land-sea NetCDF file for reading
-    landsea = spatial().from_netCDF4(LANDMASK, date=False, varname='LSMASK')
+    landsea = gravtk.spatial().from_netCDF4(LANDMASK, date=False,
+        varname='LSMASK')
     # create land function
     nth,nphi = landsea.shape
     land_function = np.zeros((nth,nphi),dtype=np.float64)
@@ -154,19 +151,12 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     land_function[indx,indy] = 1.0
 
     # read load love numbers
-    hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+    hl,kl,ll = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE)
 
-    # read spherical harmonic coefficients of the load from input DATAFORM
-    if (DATAFORM == 'ascii'):
-        # read input ascii file (.txt)
-        load_Ylms = harmonics().from_ascii(INPUT_FILE, date=DATE)
-    elif (DATAFORM == 'netCDF4'):
-        # read input netCDF4 file (.nc)
-        load_Ylms = harmonics().from_netCDF4(INPUT_FILE, date=DATE)
-    elif (DATAFORM == 'HDF5'):
-        # read input HDF5 file (.H5)
-        load_Ylms = harmonics().from_HDF5(INPUT_FILE, date=DATE)
+    # read spherical harmonic coefficients from input file format
+    load_Ylms = gravtk.harmonics().from_file(INPUT_FILE,
+        format=DATAFORM, date=DATE)
     # truncate harmonics to degree and order LMAX
     load_Ylms.truncate(lmax=LMAX, mmax=LMAX)
     # expand dimensions to iterate over slices
@@ -174,10 +164,10 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     l1,m1,nt = load_Ylms.shape
 
     # calculate the legendre functions using Holmes and Featherstone relation
-    PLM, dPLM = plm_holmes(LMAX, np.cos(th))
+    PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(th))
 
     # allocate for pseudo-spectral sea level equation solver
-    sea_level = spatial(nlon=nphi, nlat=nth)
+    sea_level = gravtk.spatial(nlon=nphi, nlat=nth)
     sea_level.data = np.zeros((nth,nphi,nt))
     sea_level.mask = np.zeros((nth,nphi,nt), dtype=bool)
     for i in range(nt):
@@ -187,7 +177,7 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
         # subset harmonics to indice
         Ylms = load_Ylms.index(i, date=DATE)
         # run pseudo-spectral sea level equation solver
-        sea_level.data[:,:,i] = sea_level_equation(Ylms.clm, Ylms.slm,
+        sea_level.data[:,:,i] = gravtk.sea_level_equation(Ylms.clm, Ylms.slm,
             landsea.lon, landsea.lat, land_function.T, LMAX=LMAX,
             LOVE=(hl,kl,ll), BODY_TIDE_LOVE=BODY_TIDE_LOVE,
             FLUID_LOVE=FLUID_LOVE, POLAR=POLAR, PLM=PLM,
@@ -200,6 +190,12 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     # remove singleton dimensions if necessary
     sea_level.squeeze()
 
+    # attributes for output files
+    attributes = {}
+    attributes['units'] = 'centimeters'
+    attributes['longname'] = 'Equivalent_Water_Thickness'
+    attributes['title'] = 'Sea_Level_Fingerprint'
+    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
     # save as output DATAFORM
     if (DATAFORM == 'ascii'):
         # ascii (.txt)
@@ -209,12 +205,10 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
         sea_level.to_ascii(OUTPUT_FILE, date=DATE)
     elif (DATAFORM == 'netCDF4'):
         # netCDF4 (.nc)
-        sea_level.to_netCDF4(OUTPUT_FILE, date=DATE, units='centimeters',
-            longname='Equivalent_Water_Thickness', title='Sea_Level_Fingerprint')
+        sea_level.to_netCDF4(OUTPUT_FILE, date=DATE, **attributes)
     elif (DATAFORM == 'HDF5'):
         # HDF5 (.H5)
-        sea_level.to_HDF5(OUTPUT_FILE, date=DATE, units='centimeters',
-            longname='Equivalent_Water_Thickness', title='Sea_Level_Fingerprint')
+        sea_level.to_HDF5(OUTPUT_FILE, date=DATE, **attributes)
     # set the permissions mode of the output file
     os.chmod(OUTPUT_FILE, MODE)
 
@@ -226,7 +220,7 @@ def arguments():
             """,
         fromfile_prefix_chars="@"
     )
-    parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
+    parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # input and output file
     parser.add_argument('infile',
@@ -236,7 +230,7 @@ def arguments():
         type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='?',
         help='Output sea level fingerprints file')
     # land mask file
-    lsmask = utilities.get_data_path(['data','landsea_hd.nc'])
+    lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
         help='Land-sea mask for calculating sea level fingerprints')

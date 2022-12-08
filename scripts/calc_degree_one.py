@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_degree_one.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 
 Calculates degree 1 variations using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from ECCO and OMCT/MPIOM
@@ -156,6 +156,7 @@ REFERENCES:
         https://doi.org/10.1029/2007JB005338
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: add option to replace degree 4 zonal harmonics with SLR
     Updated 08/2022: set default land-sea mask file in arguments
@@ -243,20 +244,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.ticker import MultipleLocator
-import gravity_toolkit.utilities as utilities
-from gravity_toolkit.grace_input_months import grace_input_months, \
-    read_ecmwf_corrections
-from gravity_toolkit.geocenter import geocenter
-from gravity_toolkit.harmonics import harmonics
-from gravity_toolkit.spatial import spatial
-from gravity_toolkit.units import units
-from gravity_toolkit.read_GIA_model import read_GIA_model
-from gravity_toolkit.read_love_numbers import load_love_numbers
-from gravity_toolkit.plm_holmes import plm_holmes
-from gravity_toolkit.gauss_weights import gauss_weights
-from gravity_toolkit.gen_stokes import gen_stokes
-from gravity_toolkit.sea_level_equation import sea_level_equation
-from gravity_toolkit.time import grace_to_calendar
+import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -280,12 +268,13 @@ def load_grace_GSM(base_dir, PROC, DREL, START, END, MISSING, LMAX,
     # replacing low-degree harmonics with SLR values if specified
     # correcting for Pole-Tide if specified
     # atmospheric jumps will be corrected externally if specified
-    grace_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
-        START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX, SLR_21=SLR_21,
-        SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C40=SLR_C40, SLR_C50=SLR_C50,
-        POLE_TIDE=POLE_TIDE, ATM=False, MODEL_DEG1=False)
+    grace_Ylms = gravtk.grace_input_months(base_dir,
+        PROC, DREL, DSET, LMAX, START, END, MISSING, SLR_C20, DEG1,
+        MMAX=MMAX, SLR_21=SLR_21, SLR_22=SLR_22, SLR_C30=SLR_C30,
+        SLR_C40=SLR_C40, SLR_C50=SLR_C50, POLE_TIDE=POLE_TIDE,
+        ATM=False, MODEL_DEG1=False)
     # returning input variables as a harmonics object
-    return harmonics().from_dict(grace_Ylms)
+    return gravtk.harmonics().from_dict(grace_Ylms)
 
 # PURPOSE: import GRACE/GRACE-FO dealiasing files for a given months range
 def load_AOD(base_dir, PROC, DREL, DSET, START, END, MISSING, LMAX):
@@ -295,10 +284,11 @@ def load_AOD(base_dir, PROC, DREL, DSET, START, END, MISSING, LMAX):
     # 0: No degree 1 replacement
     DEG1 = 0
     # reading GRACE/GRACE-FO AOD solutions for input date range
-    grace_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
-        START, END, MISSING, SLR_C20, DEG1, POLE_TIDE=False, ATM=False)
+    grace_Ylms = gravtk.grace_input_months(base_dir,
+        PROC, DREL, DSET, LMAX, START, END, MISSING, SLR_C20, DEG1,
+        POLE_TIDE=False, ATM=False)
     # returning input variables as a harmonics object
-    return harmonics().from_dict(grace_Ylms)
+    return gravtk.harmonics().from_dict(grace_Ylms)
 
 # PURPOSE: model the seasonal component of an initial degree 1 model
 # using preliminary estimates of annual and semi-annual variations from LWM
@@ -330,7 +320,7 @@ def model_seasonal_geocenter(grace_date):
         SAAy*np.sin(4.0*np.pi*grace_date + SAPy*np.pi/180.0)
     Z = AAz*np.sin(2.0*np.pi*grace_date + APz*np.pi/180.0) + \
         SAAz*np.sin(4.0*np.pi*grace_date + SAPz*np.pi/180.0)
-    DEG1 = geocenter(X=X-X.mean(), Y=Y-Y.mean(), Z=Z-Z.mean())
+    DEG1 = gravtk.geocenter(X=X-X.mean(), Y=Y-Y.mean(), Z=Z-Z.mean())
     return DEG1.from_cartesian()
 
 # PURPOSE: calculate a geocenter time-series
@@ -402,8 +392,8 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     slr_str = ''.join([C21_str,C22_str,C30_str,C40_str,C50_str])
 
     # read load love numbers
-    hl,kl,ll = load_love_numbers(EXPANSION, LOVE_NUMBERS=LOVE_NUMBERS,
-        REFERENCE='CF')
+    hl,kl,ll = gravtk.load_love_numbers(EXPANSION,
+        LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE='CF')
     # set gravitational load love number to a specific value
     if LOVE_K1:
         kl[1] = np.copy(LOVE_K1)
@@ -412,7 +402,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         MMAX = np.copy(LMAX)
 
     # Earth Parameters
-    factors = units(lmax=LMAX).harmonic(hl,kl,ll)
+    factors = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll)
     rho_e = factors.rho_e# Average Density of the Earth [g/cm^3]
     rad_e = factors.rad_e# Average Radius of the Earth [cm]
     l = factors.l
@@ -421,7 +411,8 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
 
     # Read Smoothed Ocean and Land Functions
     # Open the land-sea NetCDF file for reading
-    landsea = spatial().from_netCDF4(LANDMASK, date=False, varname='LSMASK')
+    landsea = gravtk.spatial().from_netCDF4(LANDMASK,
+        date=False, varname='LSMASK')
     # degree spacing and grid dimensions
     # will create GRACE spatial fields with same dimensions
     dlon,dlat = landsea.spacing
@@ -443,17 +434,18 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
 
     # Calculating Legendre Polynomials using Holmes and Featherstone relation
     # calculate up to degree and order of spherical harmonic expansion for SLF
-    PLM, dPLM = plm_holmes(EXPANSION, np.cos(th))
+    PLM, dPLM = gravtk.plm_holmes(EXPANSION, np.cos(th))
 
     # calculate spherical harmonics of ocean function to degree 1
     # mass is equivalent to 1 cm ocean height change
     # eustatic ratio = -land total/ocean total
-    ocean_Ylms = gen_stokes(ocean_function, landsea.lon, landsea.lat,
-        UNITS=1, LMIN=0, LMAX=1, LOVE=(hl,kl,ll), PLM=PLM[:2,:2,:])
+    ocean_Ylms = gravtk.gen_stokes(ocean_function,
+        landsea.lon, landsea.lat, UNITS=1, LMIN=0, LMAX=1,
+        LOVE=(hl,kl,ll), PLM=PLM[:2,:2,:])
 
     # Gaussian Smoothing (Jekeli, 1981)
     if (RAD != 0):
-        wt = 2.0*np.pi*gauss_weights(RAD,LMAX)
+        wt = 2.0*np.pi*gravtk.gauss_weights(RAD,LMAX)
     else:
         # else = 1
         wt = np.ones((LMAX+1))
@@ -467,7 +459,8 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     # use a mean file for the static field to remove
     if MEAN_FILE:
         # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
-        mean_Ylms = harmonics().from_file(MEAN_FILE,format=MEANFORM,date=False)
+        mean_Ylms = gravtk.harmonics().from_file(MEAN_FILE,
+            format=MEANFORM, date=False)
         # remove the input mean
         GSM_Ylms.subtract(mean_Ylms)
     else:
@@ -476,7 +469,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     GAD_Ylms.mean(apply=True)
     GAC_Ylms.mean(apply=True)
     # convert GAC to geocenter object
-    GAC = geocenter().from_harmonics(GAC_Ylms)
+    GAC = gravtk.geocenter().from_harmonics(GAC_Ylms)
     # filter GRACE/GRACE-FO coefficients
     if DESTRIPE:
         # destriping GRACE GSM and GAD coefficients
@@ -492,22 +485,17 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     n_files = len(GSM_Ylms.month)
 
     # input GIA spherical harmonic datafiles
-    GIA_Ylms_rate = read_GIA_model(GIA_FILE, GIA=GIA, LMAX=LMAX, MMAX=MMAX)
-    gia_str = '_{0}'.format(GIA_Ylms_rate['title']) if GIA else ''
-    # GIA monthly coefficients
-    GIA_Ylms = GSM_Ylms.zeros_like()
-    GIA_Ylms.time[:] = np.copy(GSM_Ylms.time)
-    GIA_Ylms.month[:] = np.copy(GSM_Ylms.month)
+    GIA_Ylms_rate = gravtk.gia(lmax=LMAX).from_GIA(GIA_FILE, GIA=GIA, mmax=MMAX)
+    gia_str = f'_{GIA_Ylms_rate.title}' if GIA else ''
     # monthly GIA calculated by gia_rate*time elapsed
     # finding change in GIA each month
-    for t in range(0,n_files):
-        GIA_Ylms.clm[:,:,t] = GIA_Ylms_rate['clm']*(GIA_Ylms.time[t]-2003.3)
-        GIA_Ylms.slm[:,:,t] = GIA_Ylms_rate['slm']*(GIA_Ylms.time[t]-2003.3)
+    GIA_Ylms = GIA_Ylms_rate.drift(GSM_Ylms.time, epoch=2003.3)
+    GIA_Ylms.month[:] = np.copy(GSM_Ylms.month)
     # save geocenter coefficients of monthly GIA variability
-    gia = geocenter().from_harmonics(GIA_Ylms)
+    gia = gravtk.geocenter().from_harmonics(GIA_Ylms)
 
     # GRACE GAD degree 1
-    GAD = geocenter()
+    GAD = gravtk.geocenter()
     GAD.time = np.copy(GAD_Ylms.time)
     GAD.month = np.copy(GAD_Ylms.month)
     GAD.C10 = np.zeros((n_files))
@@ -529,7 +517,8 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     ATM_Ylms.time[:] = np.copy(GSM_Ylms.time)
     ATM_Ylms.month[:] = np.copy(GSM_Ylms.month)
     if ATM:
-        atm_corr = read_ecmwf_corrections(base_dir,LMAX,ATM_Ylms.month)
+        atm_corr = gravtk.read_ecmwf_corrections(base_dir,
+            LMAX, ATM_Ylms.month)
         ATM_Ylms.clm[:,:,:] = np.copy(atm_corr['clm'])
         ATM_Ylms.slm[:,:,:] = np.copy(atm_corr['slm'])
         # removing the mean of the atmospheric jump correction coefficients
@@ -537,7 +526,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     # truncate to degree and order LMAX/MMAX
     ATM_Ylms = ATM_Ylms.truncate(lmax=LMAX, mmax=MMAX)
     # save geocenter coefficients of the atmospheric jump corrections
-    atm = geocenter().from_harmonics(ATM_Ylms)
+    atm = gravtk.geocenter().from_harmonics(ATM_Ylms)
 
     # read bottom pressure model if applicable
     # ECCO_kf080i: https://ecco.jpl.nasa.gov/drive/files/NearRealTime/KalmanFilter/
@@ -547,7 +536,8 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     if MODEL not in ('OMCT','MPIOM'):
         # read input data files for ascii (txt), netCDF4 (nc) or HDF5 (H5)
         MODEL_INDEX = os.path.expanduser(MODEL_INDEX)
-        OBP_Ylms = harmonics().from_index(MODEL_INDEX, format=DATAFORM)
+        OBP_Ylms = gravtk.harmonics().from_index(MODEL_INDEX,
+            format=DATAFORM)
         # reduce to GRACE/GRACE-FO months and truncate to degree and order
         OBP_Ylms = OBP_Ylms.subset(GSM_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
         # filter ocean bottom pressure coefficients
@@ -556,7 +546,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         # removing the mean of the ecco spherical harmonic coefficients
         OBP_Ylms.mean(apply=True)
         # converting ecco degree 1 harmonics to coefficients of mass
-        OBP = geocenter.from_harmonics(OBP_Ylms).scale(dfactor[1])
+        OBP = gravtk.geocenter.from_harmonics(OBP_Ylms).scale(dfactor[1])
 
     # Calculating cos/sin of phi arrays
     # output [m,phi]
@@ -615,20 +605,20 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
 
     # Calculating data matrices
     # GRACE Eustatic degree 1 from land variations
-    eustatic = geocenter()
+    eustatic = gravtk.geocenter()
     eustatic.C10 = np.zeros((n_files))
     eustatic.C11 = np.zeros((n_files))
     eustatic.S11 = np.zeros((n_files))
     # Allocate for G matrix parameters
     # G matrix calculates the GRACE ocean mass variations
-    G = geocenter()
+    G = gravtk.geocenter()
     G.C10 = np.zeros((n_files))
     G.C11 = np.zeros((n_files))
     G.S11 = np.zeros((n_files))
     # DMAT is the degree one matrix ((C10,C11,S11) x Time) in terms of mass
     DMAT = np.zeros((3,n_files))
     # degree 1 iterations
-    iteration = geocenter()
+    iteration = gravtk.geocenter()
     iteration.C10 = np.zeros((n_files,max_iter))
     iteration.C11 = np.zeros((n_files,max_iter))
     iteration.S11 = np.zeros((n_files,max_iter))
@@ -706,16 +696,18 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
                 # NOTE: this is an unscaled GRACE estimate that uses the
                 # buffered land function when solving the sea-level equation.
                 # possible improvement using scaled estimate with real coastlines
-                land_Ylms = gen_stokes(lmass*land_function, landsea.lon, landsea.lat,
-                    UNITS=1, LMIN=0, LMAX=EXPANSION, PLM=PLM, LOVE=(hl,kl,ll))
+                land_Ylms = gravtk.gen_stokes(lmass*land_function,
+                    landsea.lon, landsea.lat, UNITS=1, LMIN=0,
+                    LMAX=EXPANSION, PLM=PLM, LOVE=(hl,kl,ll))
                 # 2) calculate sea level fingerprints of land mass at time t
                 # use maximum of 3 iterations for computational efficiency
-                sea_level = sea_level_equation(land_Ylms.clm, land_Ylms.slm,
+                sea_level = gravtk.sea_level_equation(land_Ylms.clm, land_Ylms.slm,
                     landsea.lon, landsea.lat, land_function, LMAX=EXPANSION,
                     LOVE=(hl,kl,ll), BODY_TIDE_LOVE=0, FLUID_LOVE=0, ITERATIONS=3,
-                    POLAR=True, PLM=PLM, ASTYPE=np.float64, SCALE=1e-32, FILL_VALUE=0)
+                    POLAR=True, PLM=PLM, ASTYPE=np.float64, SCALE=1e-32,
+                    FILL_VALUE=0)
                 # 3) convert sea level fingerprints into spherical harmonics
-                slf_Ylms = gen_stokes(sea_level, landsea.lon, landsea.lat,
+                slf_Ylms = gravtk.gen_stokes(sea_level, landsea.lon, landsea.lat,
                     UNITS=1, LMIN=0, LMAX=1, PLM=PLM[:2,:2,:], LOVE=(hl,kl,ll))
                 # 4) convert the slf degree 1 harmonics to mass with dfactor
                 eustatic.C10[t] = slf_Ylms.clm[1,0]*dfactor[1]
@@ -727,9 +719,9 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
                 # 2) calculate total land mass at time t (GRACE*land function)
                 # NOTE: possible improvement using the sea-level equation to solve
                 # for the spatial pattern of sea level from the land water mass
-                land_Ylms = gen_stokes(lmass*land_function, landsea.lon,
-                    landsea.lat, UNITS=1, LMIN=0, LMAX=1, PLM=PLM[:2,:2,:],
-                    LOVE=(hl,kl,ll))
+                land_Ylms = gravtk.gen_stokes(lmass*land_function,
+                    landsea.lon, landsea.lat, UNITS=1, LMIN=0, LMAX=1,
+                    PLM=PLM[:2,:2,:], LOVE=(hl,kl,ll))
                 # 3) calculate ratio between the total land mass and the total mass
                 # of 1 cm of ocean height (negative as positive land = sea level drop)
                 # this converts the total land change to ocean height change
@@ -789,7 +781,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     # restore atmospheric jump corrections from Fagiolini (2015) if applicable
     # for each of the geocenter solutions (C10, C11, S11)
     # for the iterative case this will be the final iteration
-    DEG1 = geocenter()
+    DEG1 = gravtk.geocenter()
     DEG1.C10 = DMAT[0,:]/dfactor[1] + gia.C10[:] + atm.C10[:]
     DEG1.C11 = DMAT[1,:]/dfactor[1] + gia.C11[:] + atm.C11[:]
     DEG1.S11 = DMAT[2,:]/dfactor[1] + gia.S11[:] + atm.S11[:]
@@ -808,7 +800,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         # local version with all descriptor flags
         a1=(PROC,DREL,MODEL,slf_str,iter_str,slr_str,gia_str,AOD,ds_str,'txt')
         FILE1 = os.path.join(DIRECTORY,file_format.format(*a1))
-        fid1 = open(FILE1,'w')
+        fid1 = open(FILE1, mode='w', encoding='utf8')
         # print headers for cases with and without dealiasing
         print_header(fid1)
         print_harmonic(fid1,kl[1])
@@ -1169,7 +1161,7 @@ def print_global(fid,PROC,DREL,MODEL,AOD,GIA,SLR,S21,month):
     inst = 'University of Washington; University of California, Irvine'
     fid.write('    {0:22}: {1}\n'.format('creator_institution',inst))
     # date range and date created
-    calendar_year,calendar_month = grace_to_calendar(month)
+    calendar_year,calendar_month = gravtk.time.grace_to_calendar(month)
     start_time = '{0:4.0f}-{1:02.0f}'.format(calendar_year[0],calendar_month[0])
     fid.write('    {0:22}: {1}\n'.format('time_coverage_start', start_time))
     end_time = '{0:4.0f}-{1:02.0f}'.format(calendar_year[-1],calendar_month[-1])
@@ -1223,41 +1215,41 @@ def print_variables(fid,data_precision,data_units):
     fid.write('\n\n# End of YAML header\n')
 
 # PURPOSE: print a file log for the GRACE degree one analysis
-def output_log_file(arguments,output_files,n_iter):
+def output_log_file(input_arguments, output_files, n_iter):
     # format: calc_degree_one_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'calc_degree_one_run_{0}_PID-{1:d}.log'.format(*args)
-    DIRECTORY = os.path.join(arguments.directory,'geocenter')
+    DIRECTORY = os.path.join(input_arguments.directory,'geocenter')
     # create a unique log and open the log file
-    fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
-    for arg, value in sorted(vars(arguments).items()):
-        logging.info('{0}: {1}'.format(arg, value))
+    for arg, value in sorted(vars(input_arguments).items()):
+        logging.info(f'{arg}: {value}')
     # print number of iterations used in calculation
     if arguments.iterative:
         logging.info('\n\nNUMBER OF ITERATIONS: {0:d}'.format(n_iter))
     # print output files
     logging.info('\n\nOUTPUT FILES:')
     for f in output_files:
-        logging.info('{0}'.format(f))
+        logging.info(f)
     # close the log file
     fid.close()
 
 # PURPOSE: print a error file log for the GRACE degree one analysis
-def output_error_log_file(arguments):
+def output_error_log_file(input_arguments):
     # format: calc_degree_one_failed_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'calc_degree_one_failed_run_{0}_PID-{1:d}.log'.format(*args)
-    DIRECTORY = os.path.join(arguments.directory,'geocenter')
+    DIRECTORY = os.path.join(input_arguments.directory,'geocenter')
     # create a unique log and open the log file
-    fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
-    for arg, value in sorted(vars(arguments).items()):
-        logging.info('{0}: {1}'.format(arg, value))
+    for arg, value in sorted(vars(input_arguments).items()):
+        logging.info(f'{arg}: {value}')
     # print traceback error
     logging.info('\n\nTRACEBACK ERROR:')
     traceback.print_exc(file=fid)
@@ -1273,7 +1265,8 @@ def arguments():
             """,
         fromfile_prefix_chars="@"
     )
-    parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
+    parser.convert_arg_line_to_args = \
+        gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
@@ -1415,7 +1408,7 @@ def arguments():
         type=int, default=240,
         help='Spherical harmonic expansion for sea level fingerprints')
     # land-sea mask for calculating ocean mass and land water flux
-    land_mask_file = utilities.get_data_path(['data','land_fcn_300km.nc'])
+    land_mask_file = gravtk.utilities.get_data_path(['data','land_fcn_300km.nc'])
     parser.add_argument('--mask',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=land_mask_file,

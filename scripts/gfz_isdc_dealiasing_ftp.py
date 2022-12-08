@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_dealiasing_ftp.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 Syncs GRACE Level-1b dealiasing products from the GFZ Information
     System and Data Center (ISDC)
 Optionally outputs as monthly tar files
@@ -30,6 +30,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
     Updated 10/2021: using python logging for handling verbose output
@@ -54,7 +55,7 @@ import logging
 import tarfile
 import argparse
 import posixpath
-import gravity_toolkit.utilities
+import gravity_toolkit as gravtk
 
 # PURPOSE: syncs GRACE Level-1b dealiasing products from the GFZ data server
 # and optionally outputs as monthly tar files
@@ -92,7 +93,7 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, MONTHS=None, TAR=False,
     SUFFIX = dict(RL04='tar.gz',RL05='tar.gz',RL06='tgz')
 
     # find remote yearly directories for DREL
-    YRS,_ = gravity_toolkit.utilities.ftp_list([ftp.host,'grace',
+    YRS,_ = gravtk.utilities.ftp_list([ftp.host,'grace',
         'Level-1B', 'GFZ','AOD',DREL], timeout=TIMEOUT, basename=True,
         pattern=R1, sort=True)
     # for each year
@@ -103,25 +104,26 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, MONTHS=None, TAR=False,
             args = (Y, M, DREL.replace('RL',''), SUFFIX[DREL])
             FILE = 'AOD1B_{0}-{1:02d}_{2}.{3}'.format(*args)
             # check if output tar file exists (if TAR)
-            TEST = not os.access(os.path.join(grace_dir,FILE), os.F_OK)
+            local_tar_file = os.path.join(grace_dir,FILE)
+            TEST = not os.access(local_tar_file, os.F_OK)
             # compile regular expressions operators for file dates
             # will extract year and month and calendar day from the ascii file
             regex_pattern = r'AOD1B_({0})-({1:02d})-(\d+)_X_\d+.asc.gz$'
             R2 = re.compile(regex_pattern.format(Y,M), re.VERBOSE)
-            remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
+            remote_files,remote_mtimes = gravtk.utilities.ftp_list(
                 [ftp.host,'grace','Level-1B','GFZ','AOD',DREL,Y],
                 timeout=TIMEOUT, basename=True, pattern=R2, sort=True)
             file_count = len(remote_files)
             # if compressing into monthly tar files
             if TAR and (file_count > 0) and (TEST or CLOBBER):
                 # copy each gzip file and store within monthly tar files
-                tar = tarfile.open(name=os.path.join(grace_dir,FILE),mode='w:gz')
+                tar = tarfile.open(name=local_tar_file, mode='w:gz')
                 for fi,remote_mtime in zip(remote_files,remote_mtimes):
                     # remote version of each input file
                     remote = [ftp.host,'grace','Level-1B','GFZ','AOD',DREL,Y,fi]
                     logging.info(posixpath.join('ftp://',*remote))
                     # retrieve bytes from remote file
-                    remote_buffer = gravity_toolkit.utilities.from_ftp(remote,
+                    remote_buffer = gravtk.utilities.from_ftp(remote,
                         timeout=TIMEOUT)
                     # add file to tar
                     tar_info = tarfile.TarInfo(name=fi)
@@ -130,8 +132,8 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, MONTHS=None, TAR=False,
                     tar.addfile(tarinfo=tar_info, fileobj=remote_buffer)
                 # close tar file and set permissions level to MODE
                 tar.close()
-                logging.info(' --> {0}\n'.format(os.path.join(grace_dir,FILE)))
-                os.chmod(os.path.join(grace_dir,FILE), MODE)
+                logging.info(f' --> {local_tar_file}\n')
+                os.chmod(local_tar_file, MODE)
             elif (file_count > 0) and not TAR:
                 # copy each gzip file and keep as individual daily files
                 for fi,remote_mtime in zip(remote_files,remote_mtimes):
@@ -161,8 +163,8 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
         # check last modification time of local file
         local_mtime = os.stat(local_file).st_mtime
         # if remote file is newer: overwrite the local file
-        if (gravity_toolkit.utilities.even(remote_mtime) >
-            gravity_toolkit.utilities.even(local_mtime)):
+        if (gravtk.utilities.even(remote_mtime) >
+            gravtk.utilities.even(local_mtime)):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
@@ -239,7 +241,7 @@ def main():
 
     # check internet connection before attempting to run program
     HOST = 'isdcftp.gfz-potsdam.de'
-    if gravity_toolkit.utilities.check_ftp_connection(HOST):
+    if gravtk.utilities.check_ftp_connection(HOST):
         for DREL in args.release:
             gfz_isdc_dealiasing_ftp(args.directory, DREL=DREL,
                 YEAR=args.year, MONTHS=args.month, TAR=args.tar,

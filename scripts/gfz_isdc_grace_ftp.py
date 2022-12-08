@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_grace_ftp.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 Syncs GRACE/GRACE-FO data from the GFZ Information System and Data Center (ISDC)
 Syncs CSR/GFZ/JPL files for RL06 GAA/GAB/GAC/GAD/GSM
     GAA and GAB are GFZ/JPL only
@@ -40,6 +40,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 10/2022: fix version check for mission
     Updated 08/2022: moved regular expression function to utilities
@@ -73,8 +74,7 @@ import hashlib
 import logging
 import argparse
 import posixpath
-import gravity_toolkit.time
-import gravity_toolkit.utilities
+import gravity_toolkit as gravtk
 
 # PURPOSE: sync local GRACE/GRACE-FO files with GFZ ISDC server
 def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
@@ -119,9 +119,9 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     # compile regular expression operator for remote files
     R1 = re.compile(r'TN-13_GEOC_(CSR|GFZ|JPL)_(.*?).txt$', re.VERBOSE)
     # get filenames from remote directory
-    remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
-        [ftp.host,'grace-fo','DOCUMENTS','TECHNICAL_NOTES'], timeout=TIMEOUT,
-        basename=True, pattern=R1, sort=True)
+    remote_files,remote_mtimes = gravtk.utilities.ftp_list(
+        [ftp.host,'grace-fo','DOCUMENTS','TECHNICAL_NOTES'],
+        timeout=TIMEOUT, basename=True, pattern=R1, sort=True)
     # for each file on the remote server
     for fi,remote_mtime in zip(remote_files,remote_mtimes):
         # extract filename from regex object
@@ -137,9 +137,9 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     # compile regular expression operator for remote files
     R1 = re.compile(r'TN-(05|07|11)_C20_SLR_RL(.*?).txt$', re.VERBOSE)
     # get filenames from remote directory
-    remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
-        [ftp.host,'grace','DOCUMENTS','TECHNICAL_NOTES'], timeout=TIMEOUT,
-        basename=True, pattern=R1, sort=True)
+    remote_files,remote_mtimes = gravtk.utilities.ftp_list(
+        [ftp.host,'grace','DOCUMENTS','TECHNICAL_NOTES'],
+        timeout=TIMEOUT, basename=True, pattern=R1, sort=True)
     # for each file on the remote server
     for fi,remote_mtime in zip(remote_files,remote_mtimes):
         # extract filename from regex object
@@ -155,9 +155,9 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     # compile regular expression operator for remote files
     R1 = re.compile(r'TN-(14)_C30_C20_SLR_GSFC.txt$', re.VERBOSE)
     # get filenames from remote directory
-    remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
-        [ftp.host,'grace-fo','DOCUMENTS','TECHNICAL_NOTES'], timeout=TIMEOUT,
-        basename=True, pattern=R1, sort=True)
+    remote_files,remote_mtimes = gravtk.utilities.ftp_list(
+        [ftp.host,'grace-fo','DOCUMENTS','TECHNICAL_NOTES'],
+        timeout=TIMEOUT, basename=True, pattern=R1, sort=True)
     # for each file on the remote server
     for fi,remote_mtime in zip(remote_files,remote_mtimes):
         # extract filename from regex object
@@ -177,9 +177,9 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     # compile regular expression operator for remote files
     R1 = re.compile(r'({0}|{1}|{2})'.format(*ECMWF_files), re.VERBOSE)
     # get filenames from remote directory
-    remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
-        [ftp.host,'grace','DOCUMENTS','TECHNICAL_NOTES'], timeout=TIMEOUT,
-        basename=True, pattern=R1, sort=True)
+    remote_files,remote_mtimes = gravtk.utilities.ftp_list(
+        [ftp.host,'grace','DOCUMENTS','TECHNICAL_NOTES'],
+        timeout=TIMEOUT, basename=True, pattern=R1, sort=True)
     # for each file on the remote server
     for fi,remote_mtime in zip(remote_files,remote_mtimes):
         # extract filename from regex object
@@ -202,15 +202,17 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
             NAME = mi.upper().replace('-','_')
             R1 = re.compile(rf'{NAME}_SDS_NL_(\d+).pdf', re.VERBOSE)
             # find years for GRACE/GRACE-FO newsletters
-            years,_  = gravity_toolkit.utilities.ftp_list(
-                [ftp.host,mi,'DOCUMENTS','NEWSLETTER'], timeout=TIMEOUT,
-                basename=True, pattern=r'\d+', sort=True)
+            years,_  = gravtk.utilities.ftp_list(
+                [ftp.host,mi,'DOCUMENTS','NEWSLETTER'],
+                timeout=TIMEOUT, basename=True, pattern=r'\d+',
+                sort=True)
             # for each year of GRACE/GRACE-FO newsletters
             for Y in years:
                 # find GRACE/GRACE-FO newsletters
-                remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
-                    [ftp.host,mi,'DOCUMENTS','NEWSLETTER',Y], timeout=TIMEOUT,
-                    basename=True, pattern=R1, sort=True)
+                remote_files,remote_mtimes = gravtk.utilities.ftp_list(
+                    [ftp.host,mi,'DOCUMENTS','NEWSLETTER',Y],
+                    timeout=TIMEOUT, basename=True, pattern=R1,
+                    sort=True)
                 # for each file on the remote server
                 for fi,remote_mtime in zip(remote_files,remote_mtimes):
                     # extract filename from regex object
@@ -247,7 +249,7 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
                     # compile the regular expression operator to find files
                     R1 = re.compile(rf'({ds}-(.*?)(gz|txt|dif))')
                     # get filenames from remote directory
-                    remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
+                    remote_files,remote_mtimes = gravtk.utilities.ftp_list(
                         [ftp.host,mi,'Level-2',pr,drel_str], timeout=TIMEOUT,
                         basename=True, pattern=R1, sort=True)
                     for fi,remote_mtime in zip(remote_files,remote_mtimes):
@@ -258,21 +260,22 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
                             local_file, TIMEOUT=TIMEOUT, LIST=LIST,
                             CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
                     # regular expression operator for data product
-                    rx = gravity_toolkit.utilities.compile_regex_pattern(
+                    rx = gravtk.utilities.compile_regex_pattern(
                         pr, rl, ds, mission=shortname[mi])
                     # find local GRACE/GRACE-FO files to create index
                     granules = [f for f in os.listdir(local_dir) if rx.match(f)]
                     # reduce list of GRACE/GRACE-FO files to unique dates
-                    granules = gravity_toolkit.time.reduce_by_date(granules)
+                    granules = gravtk.time.reduce_by_date(granules)
                     # extend list of GRACE/GRACE-FO files with granules
                     grace_files.extend(granules)
 
                 # outputting GRACE/GRACE-FO filenames to index
-                with open(os.path.join(local_dir,'index.txt'),'w') as fid:
+                index_file = os.path.join(local_dir,'index.txt')
+                with open(index_file, mode='w', encoding='utf8') as fid:
                     for fi in sorted(grace_files):
                         print(fi, file=fid)
                 # change permissions of index file
-                os.chmod(os.path.join(local_dir,'index.txt'), MODE)
+                os.chmod(index_file, MODE)
 
     # close the ftp connection
     ftp.quit()
@@ -294,7 +297,7 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
         with open(local_file, 'rb') as local_buffer:
             local_hash = hashlib.md5(local_buffer.read()).hexdigest()
         # copy remote file contents to bytesIO object
-        remote_buffer = gravity_toolkit.utilities.from_ftp(remote_path,
+        remote_buffer = gravtk.utilities.from_ftp(remote_path,
             timeout=TIMEOUT)
         # generate checksum hash for remote file
         remote_hash = hashlib.md5(remote_buffer.getvalue()).hexdigest()
@@ -306,8 +309,8 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
         # check last modification time of local file
         local_mtime = os.stat(local_file).st_mtime
         # if remote file is newer: overwrite the local file
-        if (gravity_toolkit.utilities.even(remote_mtime) >
-            gravity_toolkit.utilities.even(local_mtime)):
+        if (gravtk.utilities.even(remote_mtime) >
+            gravtk.utilities.even(local_mtime)):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
@@ -403,7 +406,7 @@ def main():
 
     # check internet connection before attempting to run program
     HOST = 'isdcftp.gfz-potsdam.de'
-    if gravity_toolkit.utilities.check_ftp_connection(HOST):
+    if gravtk.utilities.check_ftp_connection(HOST):
         gfz_isdc_grace_ftp(args.directory, PROC=args.center,
             DREL=args.release, VERSION=args.version,
             NEWSLETTERS=args.newsletters, TIMEOUT=args.timeout,

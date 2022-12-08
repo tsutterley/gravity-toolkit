@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 itsg_graz_grace_sync.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 Syncs GRACE/GRACE-FO and auxiliary data from the ITSG GRAZ server
 
 CALLING SEQUENCE:
@@ -39,6 +39,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
     Updated 10/2021: using python logging for handling verbose output
@@ -54,7 +55,7 @@ import shutil
 import logging
 import argparse
 import posixpath
-import gravity_toolkit.utilities
+import gravity_toolkit as gravtk
 
 # PURPOSE: sync local GRACE/GRACE-FO files with ITSG GRAZ server
 def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
@@ -110,7 +111,7 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
     # sync ITSG GRAZ dealiasing products
     subdir = 'background' if (RELEASE == 'Grace2014') else 'monthly_background'
     REMOTE = [*HOST,release_directory,'monthly',subdir]
-    files,mtimes = gravity_toolkit.utilities.http_list(REMOTE,
+    files,mtimes = gravtk.utilities.http_list(REMOTE,
         timeout=TIMEOUT,pattern=R1,sort=True)
     # for each file on the remote directory
     for colname,remote_mtime in zip(files,mtimes):
@@ -130,7 +131,7 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
     # sync ITSG GRAZ data for truncation
     subdir = f'monthly_n{LMAX:d}'
     REMOTE = [*HOST,release_directory,'monthly',subdir]
-    files,mtimes = gravity_toolkit.utilities.http_list(REMOTE,
+    files,mtimes = gravtk.utilities.http_list(REMOTE,
         timeout=TIMEOUT,pattern=R1,sort=True)
     # local directory for output GRAZ data
     local_dir = os.path.join(DIRECTORY,'GRAZ',DREL[RELEASE],'GSM')
@@ -155,11 +156,12 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
         # find local GRACE files to create index
         grace_files=[fi for fi in os.listdir(local_dir) if R1.match(fi)]
         # outputting GRACE filenames to index
-        with open(os.path.join(local_dir,'index.txt'),'w') as fid:
+        index_file = os.path.join(local_dir,'index.txt')
+        with open(index_file, mode='w', encoding='utf8') as fid:
             for fi in sorted(grace_files):
                 print(fi, file=fid)
         # change permissions of index file
-        os.chmod(os.path.join(local_dir,'index.txt'), MODE)
+        os.chmod(index_file, MODE)
 
     # close log file and set permissions level to MODE
     if LOG:
@@ -177,8 +179,8 @@ def http_pull_file(remote_file,remote_mtime,local_file,
         # check last modification time of local file
         local_mtime = os.stat(local_file).st_mtime
         # if remote file is newer: overwrite the local file
-        if (gravity_toolkit.utilities.even(remote_mtime) >
-            gravity_toolkit.utilities.even(local_mtime)):
+        if (gravtk.utilities.even(remote_mtime) >
+            gravtk.utilities.even(local_mtime)):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
@@ -193,8 +195,8 @@ def http_pull_file(remote_file,remote_mtime,local_file,
         if not LIST:
             # Create and submit request. There are a wide range of exceptions
             # that can be thrown here, including HTTPError and URLError.
-            request = gravity_toolkit.utilities.urllib2.Request(remote_file)
-            response = gravity_toolkit.utilities.urllib2.urlopen(request,
+            request = gravtk.utilities.urllib2.Request(remote_file)
+            response = gravtk.utilities.urllib2.urlopen(request,
                 timeout=TIMEOUT)
             # chunked transfer encoding size
             CHUNK = 16 * 1024
@@ -259,7 +261,7 @@ def main():
 
     # check internet connection before attempting to run program
     HOST = posixpath.join('http://ftp.tugraz.at')
-    if gravity_toolkit.utilities.check_connection(HOST):
+    if gravtk.utilities.check_connection(HOST):
         # for each ITSG GRAZ release
         for RELEASE in args.release:
             itsg_graz_grace_sync(args.directory, RELEASE=RELEASE,

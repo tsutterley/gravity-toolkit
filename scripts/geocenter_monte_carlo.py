@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter_monte_carlo.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 
 CALLING SEQUENCE:
     python geocenter_monte_carlo.py --start 4 --end 237
@@ -15,6 +15,7 @@ COMMAND LINE OPTIONS:
     -M X, --missing X: Missing GRACE months in time series
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 05/2022: use argparse descriptions within documentation
     Updated 12/2021: adjust minimum x limit based on starting GRACE month
@@ -30,8 +31,7 @@ import matplotlib.font_manager
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.offsetbox import AnchoredText
-from gravity_toolkit.time import convert_calendar_decimal
-import gravity_toolkit.geocenter as geocenter
+import gravity_toolkit as gravtk
 
 # rebuilt the matplotlib fonts and set parameters
 matplotlib.font_manager._load_fontmanager()
@@ -65,7 +65,7 @@ def geocenter_monte_carlo(grace_dir,PROC,DREL,START_MON,END_MON,MISSING):
     # read geocenter file for processing center and model
     fargs = (PROC,DREL,model_str,input_flag,gia_str,delta_str,ds_str)
     grace_file = '{0}_{1}_{2}_{3}{4}{5}{6}.nc'.format(*fargs)
-    DEG1 = geocenter().from_netCDF4(os.path.join(grace_dir,grace_file))
+    DEG1 = gravtk.geocenter().from_netCDF4(os.path.join(grace_dir,grace_file))
     # setting Load Love Number (kl) to 0.021 to match Swenson et al. (2008)
     DEG1.to_cartesian(kl=0.021)
     # number of monte carlo runs
@@ -107,7 +107,7 @@ def geocenter_monte_carlo(grace_dir,PROC,DREL,START_MON,END_MON,MISSING):
 
         # add axis labels and adjust font sizes for axis ticks
         # vertical line denoting the accelerometer shutoff
-        acc = convert_calendar_decimal(2016,9,day=3,hour=12,minute=12)
+        acc = gravtk.time.convert_calendar_decimal(2016,9,day=3,hour=12,minute=12)
         ax[j].axvline(acc,color='0.5',ls='dashed',lw=0.5,dashes=(8,4))
         # vertical lines for end of the GRACE mission and start of GRACE-FO
         jj, = np.flatnonzero(DEG1.month == 186)

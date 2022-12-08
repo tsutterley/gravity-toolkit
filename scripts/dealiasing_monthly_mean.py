@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 dealiasing_monthly_mean.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (12/2022)
 
 Reads GRACE/GRACE-FO AOD1B datafiles for a specific product and outputs monthly
     the mean for a specific GRACE/GRACE-FO processing center and data release
@@ -48,6 +48,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 04/2022: use argparse descriptions within documentation
     Updated 12/2021: can use variable loglevels for verbose output
     Updated 10/2021: using python logging for handling verbose output
@@ -79,9 +80,7 @@ import logging
 import tarfile
 import argparse
 import numpy as np
-import gravity_toolkit.time
-import gravity_toolkit.utilities as utilities
-from gravity_toolkit.harmonics import harmonics
+import gravity_toolkit as gravtk
 
 # PURPOSE: calculate the Julian day from the year and the day of the year
 # http://scienceworld.wolfram.com/astronomy/JulianDate.html
@@ -132,10 +131,10 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
 
     # AOD1B data products
     product = {}
-    product['atm'] = 'Atmospheric loading from {0}'.format(ATMOSPHERE)
-    product['ocn'] = 'Oceanic loading from {0}'.format(OCEAN_MODEL)
+    product['atm'] = f'Atmospheric loading from {ATMOSPHERE}'
+    product['ocn'] = f'Oceanic loading from {OCEAN_MODEL}'
     product['glo'] = 'Global atmospheric and oceanic loading'
-    product['oba'] = 'Ocean bottom pressure from {0}'.format(OCEAN_MODEL)
+    product['oba'] = f'Ocean bottom pressure from {OCEAN_MODEL}'
 
     # GRACE AOD1B directory for data release
     aod1b_dir = os.path.join(base_dir,'AOD1B',DREL)
@@ -144,6 +143,10 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
     # recursively create output directory if not currently existing
     if not os.access(os.path.join(grace_dir,DSET),os.F_OK):
         os.makedirs(os.path.join(grace_dir,DSET), MODE)
+
+    # attributes for output files
+    attributes = {}
+    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
     # file formatting string if outputting to SHM format
     shm = '{0}-2_{1:4.0f}{2:03.0f}-{3:4.0f}{4:03.0f}_{5}_{6}_{7}_{8}00.gz'
     # center name if outputting to SHM format
@@ -166,17 +169,18 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
     end_yr = date_input[:,4]
     end_day = date_input[:,5].astype(np.int64)
     # output date file reduced to months with complete AOD
-    f_out = open(os.path.join(grace_dir,DSET,grace_datefile), 'w')
+    f_out = open(os.path.join(grace_dir,DSET,grace_datefile),
+        mode='w', encoding='utf8')
     # date file header information
     args = ('Mid-date','Month','Start_Day','End_Day','Total_Days')
-    print('{0} {1:>10} {2:>11} {3:>10} {4:>13}'.format(*args),file=f_out)
+    print('{0} {1:>10} {2:>11} {3:>10} {4:>13}'.format(*args), file=f_out)
 
     # for each GRACE/GRACE-FO month
     for t,gm in enumerate(grace_month):
         # check if GRACE/GRACE-FO month crosses years
         if (start_yr[t] != end_yr[t]):
             # check if start_yr is a Leap Year or Standard Year
-            dpy = gravity_toolkit.time.calendar_days(start_yr[t]).sum()
+            dpy = gravtk.time.calendar_days(start_yr[t]).sum()
             # list of Julian Days to read from both start and end year
             julian_days_to_read = []
             # add days to read from start and end years
@@ -200,7 +204,7 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
 
         # calendar dates to read
         JD = np.array(julian_days_to_read)
-        Y,M,D,h,m,s = gravity_toolkit.time.convert_julian(JD,
+        Y,M,D,h,m,s = gravtk.time.convert_julian(JD,
             astype='i', format='tuple')
         # find unique year and month pairs to read
         rx1='|'.join(['{0:d}-{1:02d}'.format(*p) for p in set(zip(Y,M))])
@@ -250,14 +254,14 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
             # print GRACE/GRACE-FO dates to file
             print(('{0:13.8f} {1:03d} {2:8.0f} {3:03d} {4:8.0f} {5:03d} '
                 '{6:8.0f}').format(date_input[t,0],gm,start_yr[t],start_day[t],
-                end_yr[t],end_day[t],date_input[t,6]),file=f_out)
+                end_yr[t],end_day[t],date_input[t,6]), file=f_out)
 
         # if there are new files, files to be rewritten or clobbered
         if COMPLETE and (TEST or CLOBBER):
             # if verbose: output information about the output file
-            logging.info('{0} ({1})'.format(FILE,OVERWRITE))
+            logging.info(f'{FILE} ({OVERWRITE})')
             # allocate for the mean output harmonics
-            Ylms = harmonics(lmax=LMAX, mmax=LMAX)
+            Ylms = gravtk.harmonics(lmax=LMAX, mmax=LMAX)
             nt = len(julian_days_to_read)*n_time
             Ylms.clm = np.zeros((LMAX+1,LMAX+1,nt))
             Ylms.slm = np.zeros((LMAX+1,LMAX+1,nt))
@@ -309,9 +313,9 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
                     YEAR = np.repeat(Y[count//n_time], n_time).astype('f')
                     MONTH = np.repeat(M[count//n_time], n_time).astype('f')
                     DAY = np.repeat(D[count//n_time], n_time).astype('f')
-                    Ylms.time[count:count+n_time] = \
-                        gravity_toolkit.time.convert_calendar_decimal(YEAR,
+                    tdec = gravtk.time.convert_calendar_decimal(YEAR,
                         MONTH, day=DAY, hour=hours)
+                    Ylms.time[count:count+n_time] = np.copy(tdec)
                     # add to day counter
                     count += n_time
 
@@ -325,31 +329,35 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
             mean_Ylms.release = DREL
             mean_Ylms.product = DSET
             # start and end time for month
-            start_time = gravity_toolkit.time.convert_julian(np.min(JD))
+            start_time = gravtk.time.convert_julian(np.min(JD))
             mean_Ylms.start_time = ['{0:4.0f}'.format(start_time['year']),
                 '{0:02.0f}'.format(start_time['month']),
                 '{0:02.0f}'.format(start_time['day'])]
-            end_time = gravity_toolkit.time.convert_julian(np.max(JD))
+            end_time = gravtk.time.convert_julian(np.max(JD))
             mean_Ylms.end_time = ['{0:4.0f}'.format(end_time['year']),
                 '{0:02.0f}'.format(end_time['month']),
                 '{0:02.0f}'.format(end_time['day'])]
+
             # output mean Ylms to file
             if (DATAFORM == 'ascii'):
                 # ascii (.txt)
                 mean_Ylms.to_ascii(os.path.join(grace_dir,DSET,FILE))
             elif (DATAFORM == 'netCDF4'):
                 # netcdf (.nc)
-                mean_Ylms.to_netCDF4(os.path.join(grace_dir,DSET,FILE))
+                mean_Ylms.to_netCDF4(os.path.join(grace_dir,DSET,FILE),
+                    **attributes)
             elif (DATAFORM == 'HDF5'):
                 # HDF5 (.H5)
-                mean_Ylms.to_HDF5(os.path.join(grace_dir,DSET,FILE))
+                mean_Ylms.to_HDF5(os.path.join(grace_dir,DSET,FILE),
+                    **attributes)
             elif (DATAFORM == 'SHM'):
-                mean_Ylms.to_SHM(os.path.join(grace_dir,DSET,FILE))
+                mean_Ylms.to_SHM(os.path.join(grace_dir,DSET,FILE),
+                    gzip=True)
             # set the permissions mode of the output file
             os.chmod(os.path.join(grace_dir,DSET,FILE), MODE)
-
+        # log if dataset is incomplete
         elif not COMPLETE:
-            logging.info('File {0} not output (incomplete)'.format(FILE))
+            logging.info(f'File {FILE} not output (incomplete)')
 
     # if outputting as spherical harmonic model files
     if (DATAFORM == 'SHM'):
@@ -357,19 +365,20 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
         grace_files = [fi for fi in os.listdir(os.path.join(grace_dir,DSET)) if
             re.match(r'{0}-2(.*?)\.gz'.format(DSET),fi)]
         # outputting GRACE filenames to index
-        with open(os.path.join(grace_dir,DSET,'index.txt'),'w') as fid:
+        index_file = os.path.join(grace_dir,DSET,'index.txt')
+        with open(index_file, mode='w', encoding='utf8') as fid:
             for fi in sorted(grace_files):
                 print(fi, file=fid)
         # change permissions of index file
-        os.chmod(os.path.join(grace_dir,DSET,'index.txt'), MODE)
+        os.chmod(index_file, MODE)
 
     # print completion flag
-    logging.info('Complete: {0}/{1}/{2}'.format(PROC,DREL,DSET))
+    logging.info(f'Complete: {PROC}/{DREL}/{DSET}')
     # close the output date file
     f_out.close()
 
 # PURPOSE: additional routines for the harmonics module
-class dealiasing(harmonics):
+class dealiasing(gravtk.harmonics):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.center=None
@@ -377,6 +386,7 @@ class dealiasing(harmonics):
         self.product=None
         self.start_time=[None]*3
         self.end_time=[None]*3
+        self.gzip=True
 
     def from_harmonics(self, temp):
         """
@@ -408,7 +418,10 @@ class dealiasing(harmonics):
         kwargs.setdefault('verbose',False)
         logging.info(self.filename)
         # open the output file
-        fid = gzip.open(self.filename, 'wt')
+        if self.gzip:
+            fid = gzip.open(self.filename, 'wt')
+        else:
+            fid = open(self.filename, mode='w', encoding='utf8')
         # print the header informat
         self.print_header(fid)
         self.print_harmonic(fid)
@@ -664,7 +677,7 @@ def arguments():
             """,
         fromfile_prefix_chars="@"
     )
-    parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
+    parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
