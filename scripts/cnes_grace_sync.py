@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 cnes_grace_sync.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 
 CNES/GRGS GRACE data download program for gravity field products
     https://grace.obs-mip.fr/
@@ -35,6 +35,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
     Updated 12/2021: can use variable loglevels for verbose output
@@ -104,7 +105,7 @@ import logging
 import tarfile
 import argparse
 import posixpath
-import gravity_toolkit.utilities
+import gravity_toolkit as gravtk
 
 # PURPOSE: sync local GRACE/GRACE-FO files with CNES server
 def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
@@ -170,7 +171,7 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
         # format: CNES_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
         LOGFILE = f'CNES_sync_{today}.log'
-        fid1 = open(os.path.join(DIRECTORY,LOGFILE),'w')
+        fid1 = open(os.path.join(DIRECTORY,LOGFILE), mode='w', encoding='utf8')
         logging.basicConfig(stream=fid1,level=logging.INFO)
         logging.info(f'CNES Sync Log ({today})')
     else:
@@ -194,19 +195,19 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
                 remote_tar_path.append(t)
                 # local copy of CNES data tar file
                 local_file = os.path.join(DIRECTORY, 'CNES', rl, t)
-                MD5 = gravity_toolkit.utilities.get_hash(local_file)
+                MD5 = gravtk.utilities.get_hash(local_file)
                 # copy remote tar file to local if new or updated
-                gravity_toolkit.utilities.from_http(remote_tar_path,
+                gravtk.utilities.from_http(remote_tar_path,
                     local=local_file, timeout=TIMEOUT, hash=MD5, chunk=16384,
                     verbose=True, fid=fid1, mode=MODE)
                 # Create and submit request to get modification time of file
                 remote_file = posixpath.join(*remote_tar_path)
-                request = gravity_toolkit.utilities.urllib2.Request(remote_file)
-                response = gravity_toolkit.utilities.urllib2.urlopen(request,
+                request = gravtk.utilities.urllib2.Request(remote_file)
+                response = gravtk.utilities.urllib2.urlopen(request,
                     timeout=TIMEOUT)
                 # change modification time to remote
                 time_string = response.headers['last-modified']
-                remote_mtime=gravity_toolkit.utilities.get_unix_time(time_string,
+                remote_mtime = gravtk.utilities.get_unix_time(time_string,
                     format='%a, %d %b %Y %H:%M:%S %Z')
                 # keep remote modification time of file and local access time
                 os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
@@ -226,13 +227,14 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
                 tar.close()
 
             # find GRACE files and sort by date
-            grace_files=[fi for fi in os.listdir(local_dir) if re.search(ds,fi)]
+            grace_files = [fi for fi in os.listdir(local_dir) if re.search(ds,fi)]
             # outputting GRACE filenames to index
-            with open(os.path.join(local_dir,'index.txt'),'w') as fid:
+            index_file = os.path.join(local_dir, 'index.txt')
+            with open(index_file, mode='w', encoding='utf8') as fid:
                 for fi in sorted(grace_files):
                     print(fi, file=fid)
             # change permissions of index file
-            os.chmod(os.path.join(local_dir,'index.txt'), MODE)
+            os.chmod(index_file, MODE)
 
     # close log file and set permissions level to MODE
     if LOG:
@@ -321,9 +323,10 @@ def main():
 
     # check internet connection before attempting to run program
     HOST = 'http://gravitegrace.get.obs-mip.fr'
-    if gravity_toolkit.utilities.check_connection(HOST):
-        cnes_grace_sync(args.directory, DREL=args.release, TIMEOUT=args.timeout,
-            LOG=args.log, CLOBBER=args.clobber, MODE=args.mode)
+    if gravtk.utilities.check_connection(HOST):
+        cnes_grace_sync(args.directory, DREL=args.release,
+            TIMEOUT=args.timeout, LOG=args.log,
+            CLOBBER=args.clobber, MODE=args.mode)
 
 # run main program
 if __name__ == '__main__':

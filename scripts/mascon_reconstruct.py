@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 mascon_reconstruct.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 
 Calculates the equivalent spherical harmonics from a mascon time series
 
@@ -74,6 +74,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use wrapper function for reading load Love numbers
         include utf-8 encoding in reads to be windows compliant
@@ -117,13 +118,7 @@ import logging
 import argparse
 import numpy as np
 import traceback
-
-import gravity_toolkit.utilities as utilities
-from gravity_toolkit.read_GIA_model import read_GIA_model
-from gravity_toolkit.read_love_numbers import load_love_numbers
-from gravity_toolkit.ocean_stokes import ocean_stokes
-from gravity_toolkit.harmonics import harmonics
-from gravity_toolkit.units import units
+import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -165,8 +160,8 @@ def mascon_reconstruct(DSET, LMAX, RAD,
     # Gaussian smoothing string for radius RAD
     gw_str = f'_r{RAD:0.0f}km' if (RAD != 0) else ''
     # input GIA spherical harmonic datafiles
-    GIA_Ylms_rate = read_GIA_model(GIA_FILE,GIA=GIA,LMAX=LMAX,MMAX=MMAX)
-    gia_str = '_{0}'.format(GIA_Ylms_rate['title']) if GIA else ''
+    GIA_Ylms_rate = gravtk.gia(lmax=LMAX).from_GIA(GIA_FILE, GIA=GIA, mmax=MMAX)
+    gia_str = f'_{GIA_Ylms_rate.title}' if GIA else ''
     # output string for both LMAX==MMAX and LMAX != MMAX cases
     MMAX = np.copy(LMAX) if not MMAX else MMAX
     order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
@@ -180,15 +175,15 @@ def mascon_reconstruct(DSET, LMAX, RAD,
     parser = re.compile(r'^(?!\#|\%|$)', re.VERBOSE)
 
     # create initial reconstruct index for calc_mascon.py
-    fid = open(RECONSTRUCT_FILE,'w')
+    fid = open(RECONSTRUCT_FILE, mode='w', encoding='utf8')
     # output file format
     file_format = '{0}{1}{2}{3}{4}_L{5:d}{6}{7}{8}_{9:03d}-{10:03d}.{11}'
 
     # read load love numbers
-    hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+    hl,kl,ll = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE)
     # Earth Parameters
-    factors = units(lmax=LMAX).harmonic(hl,kl,ll)
+    factors = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll)
     # Average Density of the Earth [g/cm^3]
     rho_e = factors.rho_e
     # Average Radius of the Earth [cm]
@@ -196,7 +191,8 @@ def mascon_reconstruct(DSET, LMAX, RAD,
     # Read Ocean function and convert to Ylms for redistribution
     if REDISTRIBUTE_MASCONS:
         # read Land-Sea Mask and convert to spherical harmonics
-        ocean_Ylms = ocean_stokes(LANDMASK,LMAX,MMAX=MMAX,LOVE=(hl,kl,ll))
+        ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX, MMAX=MMAX,
+            LOVE=(hl,kl,ll))
         ocean_str = '_OCN'
     else:
         # not distributing uniformly over ocean
@@ -205,17 +201,12 @@ def mascon_reconstruct(DSET, LMAX, RAD,
     # input mascon spherical harmonic datafiles
     with open(MASCON_FILE, mode='r', encoding='utf8') as f:
         mascon_files = [l for l in f.read().splitlines() if parser.match(l)]
+
+    # for each mascon file
     for k,fi in enumerate(mascon_files):
         # read mascon spherical harmonics
-        if (DATAFORM == 'ascii'):
-            # ascii (.txt)
-            Ylms=harmonics().from_ascii(os.path.expanduser(fi),date=False)
-        elif (DATAFORM == 'netCDF4'):
-            # netcdf (.nc)
-            Ylms=harmonics().from_netCDF4(os.path.expanduser(fi),date=False)
-        elif (DATAFORM == 'HDF5'):
-            # HDF5 (.H5)
-            Ylms=harmonics().from_HDF5(os.path.expanduser(fi),date=False)
+        Ylms = gravtk.harmonics().from_file(os.path.expanduser(fi),
+            format=DATAFORM, date=False)
         # Calculating the total mass of each mascon (1 cmwe uniform)
         total_area = 4.0*np.pi*(rad_e**3)*rho_e*Ylms.clm[0,0]/3.0
         # distribute mascon mass uniformly over the ocean
@@ -247,7 +238,7 @@ def mascon_reconstruct(DSET, LMAX, RAD,
         args = (mascon_name,dset_str,gia_str.upper(),atm_str,ocean_str,
             LMAX,order_str,gw_str,ds_str)
         file_input = '{0}{1}{2}{3}{4}_L{5:d}{6}{7}{8}.txt'.format(*args)
-        mascon_data_input=np.loadtxt(os.path.join(OUTPUT_DIRECTORY,file_input))
+        mascon_data_input = np.loadtxt(os.path.join(OUTPUT_DIRECTORY,file_input))
 
         # convert mascon time-series from Gt to cmwe
         mascon_sigma = 1e15*mascon_data_input[:,2]/total_area
@@ -260,13 +251,12 @@ def mascon_reconstruct(DSET, LMAX, RAD,
         args = (mascon_name,dset_str,gia_str.upper(),atm_str,ocean_str,
             LMAX,order_str,gw_str,ds_str,START,END,suffix[DATAFORM])
         FILE = file_format.format(*args)
+        # attributes for output files
+        attributes = {}
+        attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
         # output harmonics to file
-        if (DATAFORM == 'netCDF4'):
-            # netcdf (.nc)
-            mascon_Ylms.to_netCDF4(os.path.join(OUTPUT_DIRECTORY,FILE))
-        elif (DATAFORM == 'HDF5'):
-            # HDF5 (.H5)
-            mascon_Ylms.to_HDF5(os.path.join(OUTPUT_DIRECTORY,FILE))
+        mascon_Ylms.to_file(os.path.join(OUTPUT_DIRECTORY,FILE),
+            format=DATAFORM, **attributes)
         # print file name to index
         print(tilde_compress(os.path.join(OUTPUT_DIRECTORY,FILE)),file=fid)
         # change the permissions mode
@@ -274,7 +264,7 @@ def mascon_reconstruct(DSET, LMAX, RAD,
     # close the reconstruct index
     fid.close()
     # change the permissions mode of the index file
-    os.chmod(RECONSTRUCT_FILE,MODE)
+    os.chmod(RECONSTRUCT_FILE, MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -284,7 +274,7 @@ def arguments():
             """,
         fromfile_prefix_chars="@"
     )
-    parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
+    parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     parser.add_argument('--output-directory','-O',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
@@ -370,7 +360,7 @@ def arguments():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='Reconstructed mascon time series file')
     # land-sea mask for redistributing mascon mass
-    lsmask = utilities.get_data_path(['data','landsea_hd.nc'])
+    lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
         help='Land-sea mask for redistributing mascon mass')

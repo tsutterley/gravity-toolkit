@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_grace_sync.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 
 Syncs GRACE/GRACE-FO and auxiliary data from the NASA JPL PO.DAAC Drive Server
 Syncs CSR/GFZ/JPL files for RL04/RL05/RL06 GAA/GAB/GAC/GAD/GSM
@@ -70,6 +70,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 08/2022: moved regular expression function to utilities
         Dynamically select newest version of granules for index
@@ -179,8 +180,7 @@ import argparse
 import builtins
 import posixpath
 import lxml.etree
-import gravity_toolkit.time
-import gravity_toolkit.utilities
+import gravity_toolkit as gravtk
 
 # PURPOSE: sync local GRACE/GRACE-FO files with JPL PO.DAAC drive server
 def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
@@ -236,7 +236,7 @@ def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     # compile regular expression operator for remote files
     R1 = re.compile(r'TN-13_GEOC_(CSR|GFZ|JPL)_(.*?).txt', re.VERBOSE)
     # open connection with PO.DAAC drive server at remote directory
-    files,mtimes = gravity_toolkit.utilities.drive_list(PATH,
+    files,mtimes = gravtk.utilities.drive_list(PATH,
         timeout=TIMEOUT,build=False,parser=parser,pattern=R1,sort=True)
     # for each file on the remote server
     for colname,remote_mtime in zip(files,mtimes):
@@ -255,7 +255,7 @@ def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     # compile regular expression operator for remote files
     R1 = re.compile(r'TN-(05|07|11)_C20_SLR.txt', re.VERBOSE)
     # open connection with PO.DAAC drive server at remote directory
-    files,mtimes = gravity_toolkit.utilities.drive_list(PATH,
+    files,mtimes = gravtk.utilities.drive_list(PATH,
         timeout=TIMEOUT,build=False,parser=parser,pattern=R1,sort=True)
     # for each file on the remote server
     for colname,remote_mtime in zip(files,mtimes):
@@ -274,7 +274,7 @@ def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     # compile regular expression operator for remote files
     R1 = re.compile(r'TN-(14)_C30_C20_GSFC_SLR.txt', re.VERBOSE)
     # open connection with PO.DAAC drive server at remote directory
-    files,mtimes = gravity_toolkit.utilities.drive_list(PATH,
+    files,mtimes = gravtk.utilities.drive_list(PATH,
         timeout=TIMEOUT,build=False,parser=parser,pattern=R1,sort=True)
     # for each file on the remote server
     for colname,remote_mtime in zip(files,mtimes):
@@ -297,7 +297,7 @@ def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     # compile regular expression operator for remote files
     R1 = re.compile(r'({0}|{1}|{2})'.format(*ECMWF_files), re.VERBOSE)
     # open connection with PO.DAAC drive server at remote directory
-    files,mtimes = gravity_toolkit.utilities.drive_list(PATH,
+    files,mtimes = gravtk.utilities.drive_list(PATH,
         timeout=TIMEOUT,build=False,parser=parser,pattern=R1,sort=True)
     # for each file on the remote server
     for colname,remote_mtime in zip(files,mtimes):
@@ -323,8 +323,9 @@ def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
             NAME = mi.upper().replace('-','_')
             R1 = re.compile(rf'{NAME}_SDS_NL_(\d+).pdf', re.VERBOSE)
             # open connection with PO.DAAC drive server at remote directory
-            files,mtimes = gravity_toolkit.utilities.drive_list(PATH,
-                timeout=TIMEOUT,build=False,parser=parser,pattern=R1,sort=True)
+            files,mtimes = gravtk.utilities.drive_list(PATH,
+                timeout=TIMEOUT, build=False, parser=parser,
+                pattern=R1, sort=True)
             # for each file on the remote server
             for colname,remote_mtime in zip(files,mtimes):
                 # remote and local versions of the file
@@ -346,14 +347,14 @@ def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
             # check if AOD1B directory exists and recursively create if not
             os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
             # query CMR for dataset
-            ids,urls,mtimes = gravity_toolkit.utilities.cmr(
+            ids,urls,mtimes = gravtk.utilities.cmr(
                 mission='grace', level='L1B', center='GFZ', release=rl,
                 product='AOD1B', start_date='2002-01-01T00:00:00',
                 provider='PODAAC', endpoint='data')
             # for each id, url and modification time
             for id,url,mtime in zip(ids,urls,mtimes):
                 # retrieve GRACE/GRACE-FO files
-                granule = gravity_toolkit.utilities.url_split(url)[-1]
+                granule = gravtk.utilities.url_split(url)[-1]
                 http_pull_file(url, mtime, os.path.join(local_dir,granule),
                     TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
                     CHECKSUM=CHECKSUM, MODE=MODE)
@@ -378,32 +379,33 @@ def podaac_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
                     # print string of exact data product
                     logging.info(f'{mi} {pr}/{rl}/{ds}')
                     # query CMR for dataset
-                    ids,urls,mtimes = gravity_toolkit.utilities.cmr(
+                    ids,urls,mtimes = gravtk.utilities.cmr(
                         mission=mi, center=pr, release=rl, product=ds,
                         version=VERSION[i], provider='PODAAC', endpoint='data')
                     # regular expression operator for data product
-                    rx = gravity_toolkit.utilities.compile_regex_pattern(
+                    rx = gravtk.utilities.compile_regex_pattern(
                         pr, rl, ds, mission=shortname[mi])
                     # for each id, url and modification time
                     for id,url,mtime in zip(ids,urls,mtimes):
                         # retrieve GRACE/GRACE-FO files
-                        granule = gravity_toolkit.utilities.url_split(url)[-1]
+                        granule = gravtk.utilities.url_split(url)[-1]
                         http_pull_file(url, mtime, os.path.join(local_dir,granule),
                             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
                             CHECKSUM=CHECKSUM, MODE=MODE)
                     # find local GRACE/GRACE-FO files to create index
                     granules = [f for f in os.listdir(local_dir) if rx.match(f)]
                     # reduce list of GRACE/GRACE-FO files to unique dates
-                    granules = gravity_toolkit.time.reduce_by_date(granules)
+                    granules = gravtk.time.reduce_by_date(granules)
                     # extend list of GRACE/GRACE-FO files with granules
                     grace_files.extend(granules)
 
                 # outputting GRACE/GRACE-FO filenames to index
-                with open(os.path.join(local_dir,'index.txt'),'w') as fid:
+                index_file = os.path.join(local_dir,'index.txt')
+                with open(index_file, mode='w', encoding='utf8') as fid:
                     for fi in sorted(grace_files):
                         print(fi, file=fid)
                 # change permissions of index file
-                os.chmod(os.path.join(local_dir,'index.txt'), MODE)
+                os.chmod(index_file, MODE)
 
     # close log file and set permissions level to MODE
     if LOG:
@@ -420,17 +422,17 @@ def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
     if CHECKSUM and os.access(local_file, os.F_OK):
         # generate checksum hash for local file
         # open the local_file in binary read mode
-        local_hash = gravity_toolkit.utilities.get_hash(local_file)
+        local_hash = gravtk.utilities.get_hash(local_file)
         # Create and submit request.
         # There are a wide range of exceptions that can be thrown here
         # including HTTPError and URLError.
-        req=gravity_toolkit.utilities.urllib2.Request(remote_file)
-        resp=gravity_toolkit.utilities.urllib2.urlopen(req,timeout=TIMEOUT)
-        # copy remote file contents to bytesIO object
+        req = gravtk.utilities.urllib2.Request(remote_file)
+        resp = gravtk.utilities.urllib2.urlopen(req,timeout=TIMEOUT)
+        # copy gravtk file contents to bytesIO object
         remote_buffer = io.BytesIO(resp.read())
         remote_buffer.seek(0)
         # generate checksum hash for remote file
-        remote_hash = gravity_toolkit.utilities.get_hash(remote_buffer)
+        remote_hash = gravtk.utilities.get_hash(remote_buffer)
         # compare checksums
         if (local_hash != remote_hash):
             TEST = True
@@ -439,8 +441,8 @@ def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
         # check last modification time of local file
         local_mtime = os.stat(local_file).st_mtime
         # if remote file is newer: overwrite the local file
-        if (gravity_toolkit.utilities.even(remote_mtime) >
-            gravity_toolkit.utilities.even(local_mtime)):
+        if (gravtk.utilities.even(remote_mtime) >
+            gravtk.utilities.even(local_mtime)):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
@@ -465,8 +467,8 @@ def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
                 # Create and submit request.
                 # There are a range of exceptions that can be thrown here
                 # including HTTPError and URLError.
-                request = gravity_toolkit.utilities.urllib2.Request(remote_file)
-                response = gravity_toolkit.utilities.urllib2.urlopen(request,
+                request = gravtk.utilities.urllib2.Request(remote_file)
+                response = gravtk.utilities.urllib2.urlopen(request,
                     timeout=TIMEOUT)
                 # copy remote file contents to local file
                 with open(local_file, 'wb') as f:
@@ -574,12 +576,12 @@ def main():
 
     # build a urllib opener for PO.DAAC Drive
     # Add the username and password for NASA Earthdata Login system
-    gravity_toolkit.utilities.build_opener(args.user,args.webdav)
+    gravtk.utilities.build_opener(args.user,args.webdav)
 
     # check internet connection before attempting to run program
     # check JPL PO.DAAC Drive credentials before attempting to run program
     DRIVE = f'https://{HOST}/drive/files'
-    if gravity_toolkit.utilities.check_credentials(DRIVE):
+    if gravtk.utilities.check_credentials(DRIVE):
         podaac_grace_sync(args.directory, PROC=args.center,
             DREL=args.release, VERSION=args.version,
             AOD1B=args.aod1b, NEWSLETTERS=args.newsletters,

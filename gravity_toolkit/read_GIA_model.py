@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GIA_model.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 
 Reads GIA data files that can come in various formats depending on the group
 Outputs spherical harmonics for the GIA rates and the GIA model parameters
@@ -71,7 +71,7 @@ REFERENCES:
     B02406 (2011). https://doi.org/10.1029/2010JB007776
 
     W. R. Peltier, D. F. Argus, and R. Drummond, "Space geodesy constrains ice
-    age terminal deglaciation: The global ICE‐6G_C (VM5a) model." Journal of
+    age terminal deglaciation: The global ICE-6G_C (VM5a) model." Journal of
     Geophysical Research: Solid Earth, 120(1), 450-487 (2015).
     https://doi.org/10.1002/2014JB011176
 
@@ -96,6 +96,7 @@ REFERENCES:
     https://doi.org/10.1002/2016JB013844
 
 UPDATE HISTORY:
+    Updated 12/2022: made interited GIA model harmonics class
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: use logging for debugging level verbose output
     Updated 05/2022: output full citation for each GIA model group
@@ -138,9 +139,10 @@ from __future__ import print_function
 
 import os
 import re
+import copy
 import logging
 import numpy as np
-import gravity_toolkit.harmonics
+from gravity_toolkit.harmonics import harmonics
 
 def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     """
@@ -165,6 +167,7 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
             - ``'ascii'``: reformatted GIA in ascii format
             - ``'netCDF4'``: reformatted GIA in netCDF4 format
             - ``'HDF5'``: reformatted GIA in HDF5 format
+
     LMAX: int or NoneType, default from model
         maximum degree of spherical harmonics
     MMAX: int or NoneType, default None
@@ -176,6 +179,7 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
             - ``'ascii'``: output to ascii format (.txt)
             - ``'netCDF4'``: output to netCDF4 format (.nc)
             - ``'HDF5'``: output to HDF5 format (.H5)
+
     MODE: oct, default 0o775
         Permissions mode of output spherical harmonic files
 
@@ -613,7 +617,7 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         # log GIA file if debugging
         logging.debug(f'Reading GIA file: {input_file}')
         # reading GIA data from reformatted (simplified) ascii files
-        Ylms = gravity_toolkit.harmonics().from_ascii(input_file, date=False)
+        Ylms = harmonics().from_ascii(input_file, date=False)
         Ylms.truncate(LMAX)
         gia_Ylms.update(Ylms.to_dict())
         # copy filename (without extension) for parameters
@@ -628,7 +632,7 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         # log GIA file if debugging
         logging.debug(f'Reading GIA file: {input_file}')
         # reading GIA data from reformatted netCDF4 and HDF5 files
-        Ylms = gravity_toolkit.harmonics().from_file(input_file,
+        Ylms = harmonics().from_file(input_file,
             format=GIA, date=False)
         Ylms.truncate(LMAX)
         gia_Ylms.update(Ylms.to_dict())
@@ -689,14 +693,17 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     # output harmonics to ascii, netCDF4 or HDF5 file
     if DATAFORM in ('ascii', 'netCDF4', 'HDF5'):
         # convert dictionary to harmonics object
-        Ylms = gravity_toolkit.harmonics().from_dict(gia_Ylms)
+        Ylms = harmonics().from_dict(gia_Ylms)
+        # attributes for output files
+        attributes = {}
+        attributes['title'] = copy.copy(gia_Ylms['title'])
+        attributes['reference'] = copy.copy(gia_Ylms['reference'])
         # output harmonics to file
         suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
         args = (gia_Ylms['title'], LMAX, suffix[DATAFORM])
         output_file = 'stokes_{0}_L{1:d}.{2}'.format(*args)
         Ylms.to_file(os.path.join(os.path.dirname(input_file),output_file),
-            format=DATAFORM, title=gia_Ylms['title'],
-            reference=gia_Ylms['reference'], date=False)
+            format=DATAFORM, date=False, **attributes)
         # set permissions level of output file
         os.chmod(os.path.join(os.path.dirname(input_file),output_file),
             mode=kwargs['MODE'])
@@ -711,3 +718,90 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
 
     # return the harmonics and the parameters
     return gia_Ylms
+
+class gia(harmonics):
+    """
+    Data class for reading, writing and processing spherical harmonic data
+
+    Attributes
+    ----------
+    lmax: int
+        maximum degree of the spherical harmonic field
+    mmax: int
+        maximum order of the spherical harmonic field
+    clm: float
+        cosine spherical harmonics
+    slm: float
+        sine spherical harmonics
+    attributes: dict
+        attributes of harmonics variables
+    shape: tuple
+        dimensions of harmonics object
+    ndim: int
+        number of dimensions of harmonics object
+    filename: str
+        input or output filename
+    """
+    np.seterr(invalid='ignore')
+    # inherit harmonics class to read GIA models
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def from_GIA(self, filename, **kwargs):
+        """
+        Read a harmonics object from a GIA model file
+
+        Parameters
+        ----------
+        filename: str
+            full path of input GIA file
+        GIA: str or NoneType, default None
+            GIA model type to read and output
+
+            - ``'IJ05-R2'``: Ivins R2 GIA Models
+            - ``'W12a'``: Whitehouse GIA Models
+            - ``'SM09'``: Simpson/Milne GIA Models
+            - ``'ICE6G'``: ICE-6G GIA Models
+            - ``'Wu10'``: Wu (2010) GIA Correction
+            - ``'AW13-ICE6G'``: Geruo A ICE-6G GIA Models
+            - ``'AW13-IJ05'``: Geruo A IJ05-R2 GIA Models
+            - ``'Caron'``: Caron JPL GIA Assimilation
+            - ``'ICE6G-D'``: ICE-6G Version-D GIA Models
+            - ``'ascii'``: reformatted GIA in ascii format
+            - ``'netCDF4'``: reformatted GIA in netCDF4 format
+            - ``'HDF5'``: reformatted GIA in HDF5 format
+
+        mmax: int or NoneType, default None
+            Maximum order of spherical harmonics
+        verbose: bool, default False
+            print file and variable information
+        """
+        # set filename
+        self.case_insensitive_filename(filename)
+        # set default keyword arguments
+        kwargs.setdefault('GIA',None)
+        kwargs.setdefault('mmax',None)
+        kwargs.setdefault('verbose',False)
+        # catch case where MMAX is entered
+        if ('MMAX' in kwargs.keys()):
+            kwargs['mmax'] = np.copy(kwargs['mmax'])
+        # read data from GIA file
+        Ylms = read_GIA_model(self.filename, GIA=kwargs['GIA'],
+            LMAX=self.lmax, MMAX=kwargs['mmax'])
+        # Output file information
+        logging.info(self.filename)
+        logging.info(list(Ylms.keys()))
+        # copy variables for GIA model
+        self.clm = Ylms['clm'].copy()
+        self.slm = Ylms['slm'].copy()
+        # copy dimensions for GIA model
+        self.lmax = np.max(Ylms['l'])
+        self.mmax = np.max(Ylms['m'])
+        # copy information for GIA model
+        self.title = Ylms['title']
+        self.citation = Ylms['citation']
+        self.reference = Ylms['reference']
+        self.url = Ylms['url']
+        # assign shape and ndim attributes
+        self.update_dimensions()
+        return self

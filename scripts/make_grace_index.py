@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 make_grace_index.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 Creates index files of GRACE/GRACE-FO Level-2 data
 
 CALLING SEQUENCE:
@@ -23,6 +23,7 @@ PYTHON DEPENDENCIES:
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 08/2022: make the data product optional
     Written 08/2022
@@ -33,7 +34,7 @@ import sys
 import os
 import logging
 import argparse
-from gravity_toolkit.utilities import compile_regex_pattern
+import gravity_toolkit as gravtk
 
 # PURPOSE: Creates index files of GRACE/GRACE-FO data
 def make_grace_index(DIRECTORY, PROC=[], DREL=[], DSET=[],
@@ -61,7 +62,7 @@ def make_grace_index(DIRECTORY, PROC=[], DREL=[], DSET=[],
                     # print string of exact data product
                     logging.info(f'{mi} {pr}/{rl}/{ds}')
                     # regular expression operator for data product
-                    rx = compile_regex_pattern(pr, rl, ds,
+                    rx = gravtk.utilities.compile_regex_pattern(pr, rl, ds,
                         mission=shortname[mi], version=VERSION[i])
                     # find local GRACE/GRACE-FO files to create index
                     granules = [f for f in os.listdir(local_dir) if rx.match(f)]
@@ -69,11 +70,12 @@ def make_grace_index(DIRECTORY, PROC=[], DREL=[], DSET=[],
                     grace_files.extend(granules)
 
                 # outputting GRACE/GRACE-FO filenames to index
-                with open(os.path.join(local_dir,'index.txt'),'w') as fid:
+                index_file = os.path.join(local_dir,'index.txt')
+                with open(index_file, mode='w', encoding='utf8') as fid:
                     for fi in sorted(grace_files):
                         print(fi, file=fid)
                 # change permissions of index file
-                os.chmod(os.path.join(local_dir,'index.txt'), MODE)
+                os.chmod(index_file, MODE)
 
 # PURPOSE: create argument parser
 def arguments():

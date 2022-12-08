@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_mean_harmonics.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 
 Calculates the temporal mean of the GRACE/GRACE-FO spherical harmonics
     for a given date range from a set of parameters
@@ -72,6 +72,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: add option to replace degree 4 zonal harmonics with SLR
     Updated 04/2022: use argparse descriptions within documentation
@@ -115,9 +116,7 @@ import logging
 import argparse
 import numpy as np
 import traceback
-from gravity_toolkit.grace_input_months import grace_input_months
-from gravity_toolkit.harmonics import harmonics
-import gravity_toolkit.utilities as utilities
+import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -162,12 +161,12 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
     # replacing low-degree harmonics with SLR values if specified
     # include degree 1 (geocenter) harmonics if specified
     # correcting for Pole Tide Drift and Atmospheric Jumps if specified
-    input_Ylms = grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
+    input_Ylms = gravtk.grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
         START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX, SLR_21=SLR_21,
         SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C40=SLR_C40, SLR_C50=SLR_C50,
         DEG1_FILE=DEG1_FILE, MODEL_DEG1=MODEL_DEG1, ATM=ATM,
         POLE_TIDE=POLE_TIDE)
-    grace_Ylms = harmonics().from_dict(input_Ylms)
+    grace_Ylms = gravtk.harmonics().from_dict(input_Ylms)
     # descriptor string for processing parameters
     grace_str = input_Ylms['title']
     # calculate mean Ylms
@@ -196,13 +195,17 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
     if not os.access(DIRECTORY, os.F_OK):
         os.makedirs(DIRECTORY, MODE)
 
+    # attributes for output files
+    attributes = {}
+    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
     # output spherical harmonics for the static field
     if (MEANFORM == 'gfc'):
         # output mean field to gfc format
         mean_Ylms.to_gfc(MEAN_FILE, verbose=VERBOSE)
     else:
         # output mean field to specified file format
-        mean_Ylms.to_file(MEAN_FILE, format=MEANFORM, verbose=VERBOSE)
+        mean_Ylms.to_file(MEAN_FILE, format=MEANFORM,
+            verbose=VERBOSE, **attributes)
     # change the permissions mode
     os.chmod(MEAN_FILE, MODE)
 
@@ -210,7 +213,7 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
     return MEAN_FILE
 
 # PURPOSE: additional routines for the harmonics module
-class mean(harmonics):
+class mean(gravtk.harmonics):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.center=None
@@ -249,7 +252,7 @@ class mean(harmonics):
         kwargs.setdefault('verbose',False)
         logging.info(self.filename)
         # open the output file
-        fid = open(self.filename, 'w')
+        fid = open(self.filename, mode='w', encoding='utf8')
         # print the header informat
         self.print_header(fid)
         # output file format
@@ -283,37 +286,37 @@ class mean(harmonics):
         fid.write('{0} {1}\n'.format('end_of_head',75*'='))
 
 # PURPOSE: print a file log for the GRACE/GRACE-FO mean program
-def output_log_file(arguments,output_file):
+def output_log_file(input_arguments, output_file):
     # format: GRACE_mean_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_mean_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(arguments.directory)
-    fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = os.path.expanduser(input_arguments.directory)
+    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
-    for arg, value in sorted(vars(arguments).items()):
-        logging.info('{0}: {1}'.format(arg, value))
+    for arg, value in sorted(vars(input_arguments).items()):
+        logging.info(f'{arg}: {value}')
     # print output files
     logging.info('\n\nOUTPUT FILE:')
-    logging.info('{0}'.format(output_file))
+    logging.info(output_file)
     # close the log file
     fid.close()
 
 # PURPOSE: print a error file log for the GRACE/GRACE-FO mean program
-def output_error_log_file(arguments):
+def output_error_log_file(input_arguments):
     # format: GRACE_mean_failed_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_mean_failed_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(arguments.directory)
-    fid = utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = os.path.expanduser(input_arguments.directory)
+    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
-    for arg, value in sorted(vars(arguments).items()):
-        logging.info('{0}: {1}'.format(arg, value))
+    for arg, value in sorted(vars(input_arguments).items()):
+        logging.info(f'{arg}: {value}')
     # print traceback error
     logging.info('\n\nTRACEBACK ERROR:')
     traceback.print_exc(file=fid)
@@ -328,7 +331,7 @@ def arguments():
             """,
         fromfile_prefix_chars="@"
     )
-    parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
+    parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',

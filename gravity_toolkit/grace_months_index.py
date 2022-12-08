@@ -87,8 +87,8 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
         Permissions mode of output index file
     """
     # Output GRACE months file
-    grace_months_file = 'GRACE_months.txt'
-    fid = open(os.path.join(base_dir,grace_months_file), 'w')
+    grace_months_file = os.path.join(base_dir,'GRACE_months.txt')
+    fid = open(grace_months_file, mode='w', encoding='utf8')
 
     # Initial parameters
     # processing centers
@@ -190,7 +190,7 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
     # close months file
     fid.close()
     # set the permissions level of the output file
-    os.chmod(os.path.join(base_dir,grace_months_file), MODE)
+    os.chmod(grace_months_file, MODE)
 
 # PURPOSE: create argument parser
 def arguments():

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 combine_harmonics.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 Converts a file from the spherical harmonic domain into the spatial domain
 
 CALLING SEQUENCE:
@@ -68,6 +68,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 07/2022: create mask for output gridded variables
     Updated 04/2022: use wrapper function for reading load Love numbers
@@ -97,20 +98,12 @@ from __future__ import print_function
 import sys
 import os
 import re
+import copy
 import logging
 import argparse
 import traceback
 import numpy as np
-
-import gravity_toolkit.utilities as utilities
-from gravity_toolkit.read_love_numbers import load_love_numbers
-from gravity_toolkit.plm_holmes import plm_holmes
-from gravity_toolkit.gauss_weights import gauss_weights
-from gravity_toolkit.ocean_stokes import ocean_stokes
-from gravity_toolkit.harmonic_summation import harmonic_summation
-from gravity_toolkit.harmonics import harmonics
-from gravity_toolkit.spatial import spatial
-from gravity_toolkit.units import units
+import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -148,39 +141,26 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     if MMAX is None:
         MMAX = np.copy(LMAX)
 
-    # read input spherical harmonic coefficients from file in DATAFORM
-    if (DATAFORM == 'ascii'):
-        input_Ylms = harmonics().from_ascii(INPUT_FILE)
-    elif (DATAFORM == 'netCDF4'):
-        # read input netCDF4 file (.nc)
-        input_Ylms = harmonics().from_netCDF4(INPUT_FILE)
-    elif (DATAFORM == 'HDF5'):
-        # read input HDF5 file (.H5)
-        input_Ylms = harmonics().from_HDF5(INPUT_FILE)
+    # read input spherical harmonic coefficients from file
+    input_Ylms = gravtk.harmonics().from_file(INPUT_FILE, format=DATAFORM)
     # reform harmonic dimensions to be l,m,t
     # truncate to degree and order LMAX, MMAX
     input_Ylms = input_Ylms.truncate(lmax=LMAX, mmax=MMAX).expand_dims()
+
     # remove mean file from input Ylms
-    if MEAN_FILE and (DATAFORM == 'ascii'):
-        mean_Ylms = harmonics().from_ascii(MEAN_FILE,date=False)
-        input_Ylms.subtract(mean_Ylms)
-    elif MEAN_FILE and (DATAFORM == 'netCDF4'):
-        # read input netCDF4 file (.nc)
-        mean_Ylms = harmonics().from_netCDF4(MEAN_FILE,date=False)
-        input_Ylms.subtract(mean_Ylms)
-    elif MEAN_FILE and (DATAFORM == 'HDF5'):
-        # read input HDF5 file (.H5)
-        mean_Ylms = harmonics().from_HDF5(MEAN_FILE,date=False)
-        input_Ylms.subtract(mean_Ylms)
+    mean_Ylms = gravtk.harmonics().from_file(MEAN_FILE,
+        format=DATAFORM, date=False)
+    input_Ylms.subtract(mean_Ylms)
 
     # read arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+    hl,kl,ll = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE)
 
     # distribute total mass uniformly over the ocean
     if REDISTRIBUTE:
         # read Land-Sea Mask and convert to spherical harmonics
-        ocean_Ylms = ocean_stokes(LANDMASK, LMAX, MMAX=MMAX, LOVE=(hl,kl,ll))
+        ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX, MMAX=MMAX,
+            LOVE=(hl,kl,ll))
         # calculate ratio between total mass and a uniformly distributed
         # layer of water over the ocean
         ratio = input_Ylms.clm[0,0,:]/ocean_Ylms.clm[0,0]
@@ -198,12 +178,12 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
 
     # Gaussian smoothing
     if (RAD != 0):
-        wt = 2.0*np.pi*gauss_weights(RAD,LMAX)
+        wt = 2.0*np.pi*gravtk.gauss_weights(RAD,LMAX)
     else:
         wt = np.ones((LMAX+1))
 
     # Output spatial data
-    grid = spatial()
+    grid = gravtk.spatial()
     grid.time = np.copy(input_Ylms.time)
     grid.month = np.copy(input_Ylms.month)
     nt = len(input_Ylms.time)
@@ -242,25 +222,25 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     # dfactor computes the degree dependent coefficients
     if (UNITS == 1):
         # 1: cmwe, centimeters water equivalent
-        dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).cmwe
+        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).cmwe
     elif (UNITS == 2):
         # 2: mmGH, millimeters geoid height
-        dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).mmGH
+        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).mmGH
     elif (UNITS == 3):
         # 3: mmCU, millimeters elastic crustal deformation
-        dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).mmCU
+        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).mmCU
     elif (UNITS == 4):
         # 4: micGal, microGal gravity perturbations
-        dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).microGal
+        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).microGal
     elif (UNITS == 5):
         # 5: mbar, millibars equivalent surface pressure
-        dfactor = units(lmax=LMAX).harmonic(hl,kl,ll).mbar
+        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).mbar
     else:
         raise ValueError(f'Invalid units code {UNITS:d}')
 
     # Computing plms for converting to spatial domain
     theta = (90.0-grid.lat)*np.pi/180.0
-    PLM, dPLM = plm_holmes(LMAX, np.cos(theta))
+    PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(theta))
 
     # converting harmonics to truncated, smoothed coefficients in output units
     for t in range(nt):
@@ -268,33 +248,37 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
         Ylms = input_Ylms.index(t)
         Ylms.convolve(dfactor*wt)
         # convert spherical harmonics to output spatial grid
-        grid.data[:,:,t] = harmonic_summation(Ylms.clm, Ylms.slm,
+        grid.data[:,:,t] = gravtk.harmonic_summation(Ylms.clm, Ylms.slm,
             grid.lon, grid.lat, LMAX=LMAX, PLM=PLM).T
 
     # outputting data to file
     output_data(grid.squeeze(), FILENAME=OUTPUT_FILE,
         DATAFORM=DATAFORM, UNITS=UNITS)
-    # change output permissions level to MODE
-    os.chmod(OUTPUT_FILE,MODE)
 
 # PURPOSE: wrapper function for outputting data to file
-def output_data(data, FILENAME=None, DATAFORM=None, UNITS=None):
+def output_data(data, FILENAME=None, DATAFORM=None, UNITS=None, MODE=None):
     # output units and units longname
     unit_short = ['cmwe', 'mmGH', 'mmCU', 'microGal', 'mbar']
-    unit_name = ['Equivalent Water Thickness', 'Geoid Height',
-        'Elastic Crustal Uplift', 'Gravitational Undulation',
-        'Equivalent Surface Pressure']
+    unit_name = ['Equivalent_Water_Thickness', 'Geoid_Height',
+        'Elastic_Crustal_Uplift', 'Gravitational_Undulation',
+        'Equivalent_Surface_Pressure']
+    # attributes for output files
+    attributes = {}
+    attributes['units'] = copy.copy(unit_short[UNITS-1])
+    attributes['longname'] = copy.copy(unit_name[UNITS-1])
+    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+    # output to file
     if (DATAFORM == 'ascii'):
         # ascii (.txt)
         data.to_ascii(FILENAME)
     elif (DATAFORM == 'netCDF4'):
         # netcdf (.nc)
-        data.to_netCDF4(FILENAME, units=unit_short[UNITS-1],
-            longname=unit_name[UNITS-1])
+        data.to_netCDF4(FILENAME, **attributes)
     elif (DATAFORM == 'HDF5'):
         # HDF5 (.H5)
-        data.to_HDF5(FILENAME, units=unit_short[UNITS-1],
-            longname=unit_name[UNITS-1])
+        data.to_HDF5(FILENAME, **attributes)
+    # change output permissions level to MODE
+    os.chmod(FILENAME, MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -304,7 +288,7 @@ def arguments():
             """,
         fromfile_prefix_chars="@"
     )
-    parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
+    parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # input and output file
     parser.add_argument('infile',
@@ -360,7 +344,7 @@ def arguments():
         default=False, action='store_true',
         help='Redistribute total mass over the ocean')
     # land-sea mask for redistributing over the ocean
-    lsmask = utilities.get_data_path(['data','landsea_hd.nc'])
+    lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
         help='Land-sea mask for redistributing over the ocean')

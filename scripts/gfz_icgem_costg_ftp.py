@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_icgem_costg_ftp.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 Syncs GRACE/GRACE-FO/Swarm COST-G data from the GFZ International
     Centre for Global Earth Models (ICGEM)
 
@@ -38,6 +38,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
     Updated 10/2021: using python logging for handling verbose output
@@ -55,7 +56,7 @@ import hashlib
 import logging
 import argparse
 import posixpath
-import gravity_toolkit.utilities
+import gravity_toolkit as gravtk
 
 # PURPOSE: create and compile regular expression operator to find files
 def compile_regex_pattern(MISSION, DSET):
@@ -95,10 +96,10 @@ def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], RELEASE=None, TIMEOUT=None,
         # output to log file
         # format: GFZ_ICGEM_COST-G_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
-        LOGFILE = 'GFZ_ICGEM_COST-G_sync_{today}.log'
+        LOGFILE = f'GFZ_ICGEM_COST-G_sync_{today}.log'
         logging.basicConfig(filename=os.path.join(DIRECTORY,LOGFILE),
             level=logging.INFO)
-        logging.info('GFZ ICGEM COST-G Sync Log ({today})')
+        logging.info(f'GFZ ICGEM COST-G Sync Log ({today})')
     else:
         # standard output (terminal output)
         logging.basicConfig(level=logging.INFO)
@@ -129,7 +130,7 @@ def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], RELEASE=None, TIMEOUT=None,
         elif (MISSION == 'Grace-FO'):
             remote_path = [ftp.host,'02_COST-G',MISSION]
         # get filenames from remote directory
-        remote_files,remote_mtimes = gravity_toolkit.utilities.ftp_list(
+        remote_files,remote_mtimes = gravtk.utilities.ftp_list(
             remote_path, timeout=TIMEOUT, basename=True, pattern=R1,
             sort=True)
         # download the file from the ftp server
@@ -145,12 +146,13 @@ def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], RELEASE=None, TIMEOUT=None,
         # find local GRACE/GRACE-FO/Swarm files to create index
         grace_files=[fi for fi in os.listdir(local_dir) if R1.match(fi)]
         # write each file to an index
-        with open(os.path.join(local_dir,'index.txt'),'w') as fid:
+        index_file = os.path.join(local_dir,'index.txt')
+        with open(index_file, mode='w', encoding='utf8') as fid:
             # output GRACE/GRACE-FO/Swarm filenames to index
             for fi in sorted(grace_files):
                 print(fi, file=fid)
         # change permissions of index file
-        os.chmod(os.path.join(local_dir,'index.txt'), MODE)
+        os.chmod(index_file, MODE)
 
     # close the ftp connection
     ftp.quit()
@@ -172,7 +174,7 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
         with open(local_file, 'rb') as local_buffer:
             local_hash = hashlib.md5(local_buffer.read()).hexdigest()
         # copy remote file contents to bytesIO object
-        remote_buffer = gravity_toolkit.utilities.from_ftp(remote_path,
+        remote_buffer = gravtk.utilities.from_ftp(remote_path,
             timeout=TIMEOUT)
         # generate checksum hash for remote file
         remote_hash = hashlib.md5(remote_buffer.getvalue()).hexdigest()
@@ -184,8 +186,8 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
         # check last modification time of local file
         local_mtime = os.stat(local_file).st_mtime
         # if remote file is newer: overwrite the local file
-        if (gravity_toolkit.utilities.even(remote_mtime) >
-            gravity_toolkit.utilities.even(local_mtime)):
+        if (gravtk.utilities.even(remote_mtime) >
+            gravtk.utilities.even(local_mtime)):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
@@ -272,7 +274,7 @@ def main():
 
     # check internet connection before attempting to run program
     HOST = 'icgem.gfz-potsdam.de'
-    if gravity_toolkit.utilities.check_ftp_connection(HOST):
+    if gravtk.utilities.check_ftp_connection(HOST):
         for m in args.mission:
             gfz_icgem_costg_ftp(args.directory, MISSION=m,
                 RELEASE=args.release, TIMEOUT=args.timeout,

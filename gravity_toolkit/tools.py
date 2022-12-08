@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 tools.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 Jupyter notebook, user interface and plotting tools
 
 PYTHON DEPENDENCIES:
@@ -27,6 +27,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 06/2022: place matplotlib imports within try/except
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 06/2022: place ipython and tkinter imports within try/except
     Updated 05/2022: adjusted mask oceans function to be able to output mask
@@ -41,8 +42,6 @@ import colorsys
 import warnings
 import numpy as np
 import scipy.interpolate
-import matplotlib.cm as cm
-import matplotlib.colors as colors
 from gravity_toolkit.spatial import spatial
 from gravity_toolkit.utilities import get_data_path
 from gravity_toolkit.grace_find_months import grace_find_months
@@ -53,6 +52,13 @@ try:
 except (ImportError, ModuleNotFoundError) as e:
     warnings.filterwarnings("always")
     warnings.warn("ipywidgets not available")
+    warnings.warn("Some functions will throw an exception if called")
+try:
+    import matplotlib.cm as cm
+    import matplotlib.colors as colors
+except (ImportError, ModuleNotFoundError) as e:
+    warnings.filterwarnings("always")
+    warnings.warn("matplotlib not available")
     warnings.warn("Some functions will throw an exception if called")
 try:
     from tkinter import Tk, filedialog

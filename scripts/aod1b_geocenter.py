@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 aod1b_geocenter.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 Contributions by Hugo Lecomte (03/2021)
 
 Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
@@ -34,6 +34,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
     Updated 12/2021: can use variable loglevels for verbose output
@@ -67,8 +68,7 @@ import logging
 import tarfile
 import argparse
 import numpy as np
-from gravity_toolkit.geocenter import geocenter
-import gravity_toolkit.utilities as utilities
+import gravity_toolkit as gravtk
 
 # program module to read the degree 1 coefficients of the AOD1b data
 def aod1b_geocenter(base_dir,
@@ -174,7 +174,7 @@ def aod1b_geocenter(base_dir,
             # if verbose: output information about the geocenter file
             logging.info('{0}{1}'.format(os.path.join(output_dir,FILE),OVERWRITE))
             # open output monthly geocenter file
-            f = open(os.path.join(output_dir,FILE), 'w')
+            f = open(os.path.join(output_dir,FILE), mode='w', encoding='utf8')
             args = ('Geocenter time series',DREL,DSET)
             print('# {0} from {1} AOD1b {2} Product'.format(*args), file=f)
             print('# {0}'.format(product[DSET]), file=f)
@@ -195,7 +195,7 @@ def aod1b_geocenter(base_dir,
                 else:
                     fid = tar.extractfile(member)
                 # degree 1 spherical harmonics for day and hours
-                DEG1 = geocenter()
+                DEG1 = gravtk.geocenter()
                 DEG1.C10 = np.zeros((n_time))
                 DEG1.C11 = np.zeros((n_time))
                 DEG1.S11 = np.zeros((n_time))
@@ -250,7 +250,7 @@ def arguments():
             """,
         fromfile_prefix_chars="@"
     )
-    parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
+    parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',

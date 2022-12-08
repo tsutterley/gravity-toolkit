@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_cumulus.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 
 Syncs GRACE/GRACE-FO data from NASA JPL PO.DAAC Cumulus AWS S3 bucket
 S3 Cumulus syncs are only available in AWS instances in us-west-2
@@ -51,6 +51,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: added CMR queries for GRACE/GRACE-FO technical notes
         recursively create geocenter directory if not in file system
     Updated 08/2022: moved regular expression function to utilities
@@ -71,8 +72,7 @@ import time
 import shutil
 import logging
 import argparse
-import gravity_toolkit.time
-import gravity_toolkit.utilities
+import gravity_toolkit as gravtk
 
 # PURPOSE: sync local GRACE/GRACE-FO files with JPL PO.DAAC AWS S3 bucket
 def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
@@ -123,37 +123,37 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
             # for each unique version of data to sync
             for version in set(VERSION):
                 # query CMR for product metadata
-                urls = gravity_toolkit.utilities.cmr_metadata(
+                urls = gravtk.utilities.cmr_metadata(
                     mission='grace-fo', center=pr, release=rl,
                     version=version, provider='POCLOUD',
                     endpoint=ENDPOINT)
 
                 # TN-13 JPL degree 1 files
                 url, = [url for url in urls if R1.search(url)]
-                granule = gravity_toolkit.utilities.url_split(url)[-1]
+                granule = gravtk.utilities.url_split(url)[-1]
                 local_file = os.path.join(DIRECTORY,'geocenter',granule)
                 # access auxiliary data from endpoint
                 if (ENDPOINT == 'data'):
                     http_pull_file(url, mtime, local_file,
                         TIMEOUT=TIMEOUT, CLOBBER=CLOBBER, MODE=MODE)
                 elif (ENDPOINT == 's3'):
-                    bucket = gravity_toolkit.utilities.s3_bucket(url)
-                    key = gravity_toolkit.utilities.s3_key(url)
+                    bucket = gravtk.utilities.s3_bucket(url)
+                    key = gravtk.utilities.s3_key(url)
                     response = client.get_object(Bucket=bucket, Key=key)
                     s3_pull_file(response, mtime, local_file,
                         CLOBBER=CLOBBER, MODE=MODE)
 
                 # TN-14 SLR C2,0 and C3,0 files
                 url, = [url for url in urls if R2.search(url)]
-                granule = gravity_toolkit.utilities.url_split(url)[-1]
+                granule = gravtk.utilities.url_split(url)[-1]
                 local_file = os.path.join(DIRECTORY,granule)
                 # access auxiliary data from endpoint
                 if (ENDPOINT == 'data'):
                     http_pull_file(url, mtime, local_file,
                         TIMEOUT=TIMEOUT, CLOBBER=CLOBBER, MODE=MODE)
                 elif (ENDPOINT == 's3'):
-                    bucket = gravity_toolkit.utilities.s3_bucket(url)
-                    key = gravity_toolkit.utilities.s3_key(url)
+                    bucket = gravtk.utilities.s3_bucket(url)
+                    key = gravtk.utilities.s3_key(url)
                     response = client.get_object(Bucket=bucket, Key=key)
                     s3_pull_file(response, mtime, local_file,
                         CLOBBER=CLOBBER, MODE=MODE)
@@ -171,22 +171,22 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
             if not os.path.exists(local_dir):
                 os.makedirs(local_dir,MODE)
             # query CMR for dataset
-            ids,urls,mtimes = gravity_toolkit.utilities.cmr(
+            ids,urls,mtimes = gravtk.utilities.cmr(
                 mission='grace', level='L1B', center='GFZ', release=rl,
                 product='AOD1B', start_date='2002-01-01T00:00:00',
                 provider='POCLOUD', endpoint=ENDPOINT)
             # for each model id and url
             for id,url,mtime in zip(ids,urls,mtimes):
                 # retrieve GRACE/GRACE-FO files
-                granule = gravity_toolkit.utilities.url_split(url)[-1]
+                granule = gravtk.utilities.url_split(url)[-1]
                 local_file = os.path.join(local_dir,granule)
                 # access data from endpoint
                 if (ENDPOINT == 'data'):
                     http_pull_file(url, mtime, local_file,
                         TIMEOUT=TIMEOUT, CLOBBER=CLOBBER, MODE=MODE)
                 elif (ENDPOINT == 's3'):
-                    bucket = gravity_toolkit.utilities.s3_bucket(url)
-                    key = gravity_toolkit.utilities.s3_key(url)
+                    bucket = gravtk.utilities.s3_bucket(url)
+                    key = gravtk.utilities.s3_key(url)
                     response = client.get_object(Bucket=bucket, Key=key)
                     s3_pull_file(response, mtime, local_file,
                         CLOBBER=CLOBBER, MODE=MODE)
@@ -211,17 +211,17 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                     # print string of exact data product
                     logging.info(f'{mi} {pr}/{rl}/{ds}')
                     # query CMR for dataset
-                    ids,urls,mtimes = gravity_toolkit.utilities.cmr(
+                    ids,urls,mtimes = gravtk.utilities.cmr(
                         mission=mi, center=pr, release=rl, product=ds,
                         version=VERSION[i], provider='POCLOUD',
                         endpoint=ENDPOINT)
                     # regular expression operator for data product
-                    rx = gravity_toolkit.utilities.compile_regex_pattern(
+                    rx = gravtk.utilities.compile_regex_pattern(
                         pr, rl, ds, mission=shortname[mi])
                     # for each model id and url
                     for id,url,mtime in zip(ids,urls,mtimes):
                         # retrieve GRACE/GRACE-FO files
-                        granule = gravity_toolkit.utilities.url_split(url)[-1]
+                        granule = gravtk.utilities.url_split(url)[-1]
                         suffix = '.gz' if GZIP else ''
                         local_file = os.path.join(local_dir, f'{granule}{suffix}')
                         # access data from endpoint
@@ -230,24 +230,25 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                                 GZIP=GZIP, TIMEOUT=TIMEOUT,
                                 CLOBBER=CLOBBER, MODE=MODE)
                         elif (ENDPOINT == 's3'):
-                            bucket = gravity_toolkit.utilities.s3_bucket(url)
-                            key = gravity_toolkit.utilities.s3_key(url)
+                            bucket = gravtk.utilities.s3_bucket(url)
+                            key = gravtk.utilities.s3_key(url)
                             response = client.get_object(Bucket=bucket, Key=key)
                             s3_pull_file(response, mtime, local_file,
                                 GZIP=GZIP, CLOBBER=CLOBBER, MODE=MODE)
                     # find local GRACE/GRACE-FO files to create index
                     granules = sorted([f for f in os.listdir(local_dir) if rx.match(f)])
                     # reduce list of GRACE/GRACE-FO files to unique dates
-                    granules = gravity_toolkit.time.reduce_by_date(granules)
+                    granules = gravtk.time.reduce_by_date(granules)
                     # extend list of GRACE/GRACE-FO files with granules
                     grace_files.extend(granules)
 
                 # outputting GRACE/GRACE-FO filenames to index
-                with open(os.path.join(local_dir,'index.txt'),'w') as fid:
+                index_file = os.path.join(local_dir,'index.txt')
+                with open(index_file, mode='w', encoding='utf8') as fid:
                     for fi in sorted(grace_files):
                         print(fi, file=fid)
                 # change permissions of index file
-                os.chmod(os.path.join(local_dir,'index.txt'), MODE)
+                os.chmod(index_file, MODE)
 
     # close log file and set permissions level to MODE
     if LOG:
@@ -265,8 +266,8 @@ def http_pull_file(remote_file, remote_mtime, local_file,
         # check last modification time of local file
         local_mtime = os.stat(local_file).st_mtime
         # if remote file is newer: overwrite the local file
-        if (gravity_toolkit.utilities.even(remote_mtime) >
-            gravity_toolkit.utilities.even(local_mtime)):
+        if (gravtk.utilities.even(remote_mtime) >
+            gravtk.utilities.even(local_mtime)):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
@@ -282,8 +283,8 @@ def http_pull_file(remote_file, remote_mtime, local_file,
         # Create and submit request.
         # There are a range of exceptions that can be thrown here
         # including HTTPError and URLError.
-        request = gravity_toolkit.utilities.urllib2.Request(remote_file)
-        response = gravity_toolkit.utilities.urllib2.urlopen(request,
+        request = gravtk.utilities.urllib2.Request(remote_file)
+        response = gravtk.utilities.urllib2.urlopen(request,
             timeout=TIMEOUT)
         # copy remote file contents to local file
         if GZIP:
@@ -308,8 +309,8 @@ def s3_pull_file(response, remote_mtime, local_file,
         # check last modification time of local file
         local_mtime = os.stat(local_file).st_mtime
         # if remote file is newer: overwrite the local file
-        if (gravity_toolkit.utilities.even(remote_mtime) >
-            gravity_toolkit.utilities.even(local_mtime)):
+        if (gravtk.utilities.even(remote_mtime) >
+            gravtk.utilities.even(local_mtime)):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
@@ -412,7 +413,7 @@ def main():
     # NASA Earthdata hostname
     URS = 'urs.earthdata.nasa.gov'
     # check internet connection before attempting to run program
-    opener = gravity_toolkit.utilities.attempt_login(URS,
+    opener = gravtk.utilities.attempt_login(URS,
         username=args.user, password=args.password,
         netrc=args.netrc)
 
@@ -421,7 +422,7 @@ def main():
     # including HTTPError and URLError.
     HOST = 'https://archive.podaac.earthdata.nasa.gov/s3credentials'
     # get aws s3 client object
-    client = gravity_toolkit.utilities.s3_client(HOST, args.timeout)
+    client = gravtk.utilities.s3_client(HOST, args.timeout)
 
     # retrieve data objects from s3 client
     podaac_cumulus(client, args.directory, PROC=args.center,

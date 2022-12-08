@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 convert_harmonics.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 Converts a file from the spatial domain into the spherical harmonic domain
 
 CALLING SEQUENCE:
@@ -59,6 +59,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use wrapper function for reading load Love numbers
         use argparse descriptions within sphinx documentation
@@ -85,14 +86,7 @@ import logging
 import argparse
 import traceback
 import numpy as np
-
-import gravity_toolkit.utilities as utilities
-from gravity_toolkit.read_love_numbers import load_love_numbers
-from gravity_toolkit.gen_stokes import gen_stokes
-from gravity_toolkit.plm_holmes import plm_holmes
-from gravity_toolkit.harmonics import harmonics
-from gravity_toolkit.spatial import spatial
-from gravity_toolkit.time import calendar_to_grace
+import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -136,22 +130,22 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     # expand dimensions
     if (DATAFORM == 'ascii'):
         # ascii (.txt)
-        input_spatial = spatial(spacing=[dlon,dlat],nlat=nlat,
+        input_spatial = gravtk.spatial(spacing=[dlon,dlat],nlat=nlat,
             nlon=nlon,fill_value=FILL_VALUE).from_ascii(INPUT_FILE,
             header=HEADER).expand_dims()
     elif (DATAFORM == 'netCDF4'):
         # netcdf (.nc)
-        input_spatial = spatial().from_netCDF4(INPUT_FILE).expand_dims()
+        input_spatial = gravtk.spatial().from_netCDF4(INPUT_FILE).expand_dims()
     elif (DATAFORM == 'HDF5'):
         # HDF5 (.H5)
-        input_spatial = spatial().from_HDF5(INPUT_FILE).expand_dims()
+        input_spatial = gravtk.spatial().from_HDF5(INPUT_FILE).expand_dims()
     # convert missing values to zero
     input_spatial.replace_invalid(0.0)
     # input data shape
     nlat,nlon,nt = input_spatial.shape
 
     # read arrays of kl, hl, and ll Love Numbers
-    LOVE = load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+    LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE)
 
     # upper bound of spherical harmonic orders (default = LMAX)
@@ -160,35 +154,30 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
 
     # calculate associated Legendre polynomials
     th = (90.0 - input_spatial.lat)*np.pi/180.0
-    PLM, dPLM = plm_holmes(LMAX, np.cos(th))
+    PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(th))
 
     # create list of harmonics objects
     Ylms_list = []
     for i,t in enumerate(input_spatial.time):
         # convert spatial field to spherical harmonics
-        output_Ylms = gen_stokes(input_spatial.data[:,:,i].T,
+        output_Ylms = gravtk.gen_stokes(input_spatial.data[:,:,i].T,
             input_spatial.lon, input_spatial.lat, UNITS=UNITS,
             LMIN=0, LMAX=LMAX, MMAX=MMAX, PLM=PLM, LOVE=LOVE)
         output_Ylms.time = np.copy(t)
-        output_Ylms.month = calendar_to_grace(t)
+        output_Ylms.month = gravtk.time.calendar_to_grace(t)
         # append to list
         Ylms_list.append(output_Ylms)
     # convert Ylms list for output spherical harmonics
-    Ylms = harmonics().from_list(Ylms_list)
+    Ylms = gravtk.harmonics().from_list(Ylms_list)
     Ylms_list = None
 
+    # attributes for output files
+    attributes = {}
+    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
     # outputting data to file
-    if (DATAFORM == 'ascii'):
-        # ascii (.txt)
-        Ylms.to_ascii(OUTPUT_FILE)
-    elif (DATAFORM == 'netCDF4'):
-        # netCDF4 (.nc)
-        Ylms.to_netCDF4(OUTPUT_FILE)
-    elif (DATAFORM == 'HDF5'):
-        # HDF5 (.H5)
-        Ylms.to_HDF5(OUTPUT_FILE)
+    Ylms.to_file(OUTPUT_FILE, format=DATAFORM, **attributes)
     # change output permissions level to MODE
-    os.chmod(OUTPUT_FILE,MODE)
+    os.chmod(OUTPUT_FILE, MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -198,7 +187,7 @@ def arguments():
             """,
         fromfile_prefix_chars="@"
     )
-    parser.convert_arg_line_to_args = utilities.convert_arg_line_to_args
+    parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # input and output file
     parser.add_argument('infile',

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 esa_costg_swarm_sync.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 Syncs Swarm gravity field products from the ESA Swarm Science Server
     https://earth.esa.int/eogateway/missions/swarm/data
     https://www.esa.int/Applications/Observing_the_Earth/Swarm
@@ -29,6 +29,7 @@ PYTHON DEPENDENCIES:
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
 
 UPDATE HISTORY:
+    Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
     Updated 10/2021: using python logging for handling verbose output
@@ -47,7 +48,7 @@ import logging
 import argparse
 import posixpath
 import lxml.etree
-import gravity_toolkit.utilities
+import gravity_toolkit as gravtk
 
 # PURPOSE: sync local Swarm files with ESA server
 def esa_costg_swarm_sync(DIRECTORY, RELEASE=None, TIMEOUT=None, LOG=False,
@@ -78,7 +79,7 @@ def esa_costg_swarm_sync(DIRECTORY, RELEASE=None, TIMEOUT=None, LOG=False,
     # compile xml parsers for lxml
     XMLparser = lxml.etree.XMLParser()
     # create "opener" (OpenerDirector instance)
-    gravity_toolkit.utilities.build_opener(None, None,
+    gravtk.utilities.build_opener(None, None,
         authorization_header=False, urs=HOST)
     # All calls to urllib2.urlopen will now use handler
     # Make sure not to include the protocol in with the URL, or
@@ -100,11 +101,11 @@ def esa_costg_swarm_sync(DIRECTORY, RELEASE=None, TIMEOUT=None, LOG=False,
         prevmax = maxfiles
         # open connection with Swarm science server at remote directory
         # to list maxfiles number of files at position
-        parameters = gravity_toolkit.utilities.urlencode({'maxfiles':prevmax,
+        parameters = gravtk.utilities.urlencode({'maxfiles':prevmax,
             'pos':pos,'file':posixpath.join('swarm','Level2longterm','EGF')})
         url=posixpath.join(HOST,f'?do=list&{parameters}')
-        request = gravity_toolkit.utilities.urllib2.Request(url=url)
-        response = gravity_toolkit.utilities.urllib2.urlopen(request,
+        request = gravtk.utilities.urllib2.Request(url=url)
+        response = gravtk.utilities.urllib2.urlopen(request,
             timeout=TIMEOUT)
         table = json.loads(response.read().decode())
         # extend lists with new files
@@ -118,11 +119,12 @@ def esa_costg_swarm_sync(DIRECTORY, RELEASE=None, TIMEOUT=None, LOG=False,
     # find lines of valid files
     valid_lines = [i for i,f in enumerate(colnames) if R1.match(f)]
     # write each file to an index
-    fid = open(os.path.join(local_dir,'index.txt'),'w')
+    index_file = os.path.join(local_dir,'index.txt')
+    fid = open(index_file, mode='w', encoding='utf8')
     # for each data and header file
     for i in valid_lines:
         # remote and local versions of the file
-        parameters = gravity_toolkit.utilities.urlencode({'file':
+        parameters = gravtk.utilities.urlencode({'file':
             posixpath.join('swarm','Level2longterm','EGF',colnames[i])})
         remote_file = posixpath.join(HOST,
             f'?do=download&{parameters}')
@@ -134,7 +136,7 @@ def esa_costg_swarm_sync(DIRECTORY, RELEASE=None, TIMEOUT=None, LOG=False,
         # output Swarm filenames to index
         print(colnames[i], file=fid)
     # change permissions of index file
-    os.chmod(os.path.join(local_dir,'index.txt'), MODE)
+    os.chmod(index_file, MODE)
 
     # close log file and set permissions level to MODE
     if LOG:
@@ -151,17 +153,17 @@ def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
     if CHECKSUM and os.access(local_file, os.F_OK):
         # generate checksum hash for local file
         # open the local_file in binary read mode
-        local_hash = gravity_toolkit.utilities.get_hash(local_file)
+        local_hash = gravtk.utilities.get_hash(local_file)
         # Create and submit request.
         # There are a wide range of exceptions that can be thrown here
         # including HTTPError and URLError.
-        req=gravity_toolkit.utilities.urllib2.Request(remote_file)
-        resp=gravity_toolkit.utilities.urllib2.urlopen(req,timeout=TIMEOUT)
+        req = gravtk.utilities.urllib2.Request(remote_file)
+        resp = gravtk.utilities.urllib2.urlopen(req,timeout=TIMEOUT)
         # copy remote file contents to bytesIO object
         remote_buffer = io.BytesIO(resp.read())
         remote_buffer.seek(0)
         # generate checksum hash for remote file
-        remote_hash = gravity_toolkit.utilities.get_hash(remote_buffer)
+        remote_hash = gravtk.utilities.get_hash(remote_buffer)
         # compare checksums
         if (local_hash != remote_hash):
             TEST = True
@@ -170,8 +172,8 @@ def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
         # check last modification time of local file
         local_mtime = os.stat(local_file).st_mtime
         # if remote file is newer: overwrite the local file
-        if (gravity_toolkit.utilities.even(remote_mtime) >
-            gravity_toolkit.utilities.even(local_mtime)):
+        if (gravtk.utilities.even(remote_mtime) >
+            gravtk.utilities.even(local_mtime)):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
@@ -196,8 +198,8 @@ def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
                 # Create and submit request.
                 # There are a range of exceptions that can be thrown here
                 # including HTTPError and URLError.
-                request = gravity_toolkit.utilities.urllib2.Request(remote_file)
-                response = gravity_toolkit.utilities.urllib2.urlopen(request,
+                request = gravtk.utilities.urllib2.Request(remote_file)
+                response = gravtk.utilities.urllib2.urlopen(request,
                     timeout=TIMEOUT)
                 # copy remote file contents to local file
                 with open(local_file, 'wb') as f:
@@ -257,7 +259,7 @@ def main():
 
     # check internet connection before attempting to run program
     HOST = 'https://swarm-diss.eo.esa.int'
-    if gravity_toolkit.utilities.check_connection(HOST):
+    if gravtk.utilities.check_connection(HOST):
         esa_costg_swarm_sync(args.directory, RELEASE=args.release,
             TIMEOUT=args.timeout, LOG=args.log, LIST=args.list,
             CLOBBER=args.clobber, CHECKSUM=args.checksum, MODE=args.mode)

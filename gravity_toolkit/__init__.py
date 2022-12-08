@@ -18,6 +18,7 @@ Documentation is available at https://read-grace-harmonics.readthedocs.io
 import gravity_toolkit.geocenter
 import gravity_toolkit.mascons
 import gravity_toolkit.time
+import gravity_toolkit.tools
 import gravity_toolkit.utilities
 import gravity_toolkit.version
 from gravity_toolkit.clenshaw_summation import clenshaw_summation
@@ -47,7 +48,7 @@ from gravity_toolkit.plm_colombo import plm_colombo
 from gravity_toolkit.plm_holmes import plm_holmes
 from gravity_toolkit.plm_mohlenkamp import plm_mohlenkamp
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
-from gravity_toolkit.read_GIA_model import read_GIA_model
+from gravity_toolkit.read_GIA_model import read_GIA_model, gia
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 from gravity_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 from gravity_toolkit.read_love_numbers import read_love_numbers,load_love_numbers
