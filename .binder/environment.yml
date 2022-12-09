@@ -1,4 +1,4 @@
-name: gravity_toolkit 
+name: gravity_toolkit
 channels:
   - conda-forge
 dependencies:

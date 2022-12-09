@@ -74,20 +74,40 @@ import re
 import io
 import copy
 import gzip
-import h5py
 import time
 import uuid
 import logging
-import netCDF4
 import zipfile
+import warnings
 import numpy as np
 import gravity_toolkit.version
 from gravity_toolkit.utilities import get_git_revision_hash
 from gravity_toolkit.time import adjust_months,calendar_to_grace
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
-from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
+
+# attempt imports
+try:
+    from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
+except (ImportError, ModuleNotFoundError) as e:
+    warnings.filterwarnings("always")
+    warnings.warn("geoid_toolkit not available")
+    warnings.warn("Some functions will throw an exception if called")
+try:
+    import h5py
+except (ImportError, ModuleNotFoundError) as e:
+    warnings.filterwarnings("always")
+    warnings.warn("h5py not available")
+    warnings.warn("Some functions will throw an exception if called")
+try:
+    import netCDF4
+except (ImportError, ModuleNotFoundError) as e:
+    warnings.filterwarnings("always")
+    warnings.warn("netCDF4 not available")
+    warnings.warn("Some functions will throw an exception if called")
+# ignore warnings
+warnings.filterwarnings("ignore")
 
 class harmonics(object):
     """
