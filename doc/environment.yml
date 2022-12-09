@@ -21,7 +21,6 @@ dependencies:
   - scipy
   - sphinx
   - sphinx_rtd_theme
-  - texlive-core
   - tk
   - pip:
      - sphinx-argparse>=0.4
