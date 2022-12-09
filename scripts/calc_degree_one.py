@@ -236,8 +236,8 @@ import time
 import copy
 import shutil
 import logging
-import netCDF4
 import argparse
+import warnings
 import traceback
 import numpy as np
 import matplotlib.pyplot as plt
@@ -245,6 +245,16 @@ import matplotlib.cm as cm
 from matplotlib.offsetbox import AnchoredText
 from matplotlib.ticker import MultipleLocator
 import gravity_toolkit as gravtk
+
+# attempt imports
+try:
+    import netCDF4
+except (ImportError, ModuleNotFoundError) as e:
+    warnings.filterwarnings("always")
+    warnings.warn("netCDF4 not available")
+    warnings.warn("Some functions will throw an exception if called")
+# ignore warnings
+warnings.filterwarnings("ignore")
 
 # PURPOSE: keep track of threads
 def info(args):
