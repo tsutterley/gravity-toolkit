@@ -69,10 +69,19 @@ UPDATE HISTORY:
 from __future__ import print_function, division
 
 import time
-import h5py
 import logging
 import numpy as np
 import warnings
+
+# attempt imports
+try:
+    import h5py
+except (ImportError, ModuleNotFoundError) as e:
+    warnings.filterwarnings("always")
+    warnings.warn("h5py not available")
+    warnings.warn("Some functions will throw an exception if called")
+# ignore warnings
+warnings.filterwarnings("ignore")
 
 def hdf5_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
     """

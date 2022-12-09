@@ -71,9 +71,18 @@ from __future__ import print_function, division
 
 import time
 import logging
-import netCDF4
 import numpy as np
 import warnings
+
+# attempt imports
+try:
+    import netCDF4
+except (ImportError, ModuleNotFoundError) as e:
+    warnings.filterwarnings("always")
+    warnings.warn("netCDF4 not available")
+    warnings.warn("Some functions will throw an exception if called")
+# ignore warnings
+warnings.filterwarnings("ignore")
 
 def ncdf_stokes(clm1, slm1, linp, minp, tinp, month, **kwargs):
     """

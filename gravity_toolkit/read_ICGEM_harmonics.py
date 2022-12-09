@@ -41,7 +41,16 @@ UPDATE HISTORY:
     Written 12/2015
 """
 import warnings
-import geoid_toolkit.read_ICGEM_harmonics
+
+# attempt imports
+try:
+    import geoid_toolkit.read_ICGEM_harmonics
+except (ImportError, ModuleNotFoundError) as e:
+    warnings.filterwarnings("always")
+    warnings.warn("geoid_toolkit not available")
+    warnings.warn("Some functions will throw an exception if called")
+# ignore warnings
+warnings.filterwarnings("ignore")
 
 # PURPOSE: read spherical harmonic coefficients of a gravity model
 def read_ICGEM_harmonics(*args,**kwargs):

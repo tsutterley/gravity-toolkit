@@ -67,9 +67,19 @@ UPDATE HISTORY:
 """
 import os
 import re
+import warnings
 import numpy as np
 import gravity_toolkit.time
-from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
+
+# attempt imports
+try:
+    from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
+except (ImportError, ModuleNotFoundError) as e:
+    warnings.filterwarnings("always")
+    warnings.warn("geoid_toolkit not available")
+    warnings.warn("Some functions will throw an exception if called")
+# ignore warnings
+warnings.filterwarnings("ignore")
 
 # PURPOSE: read spherical harmonic coefficients of a gravity model
 def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):

@@ -57,16 +57,31 @@ import re
 import io
 import copy
 import gzip
-import h5py
 import time
 import uuid
 import logging
-import netCDF4
 import zipfile
+import warnings
 import numpy as np
 import gravity_toolkit.version
 from gravity_toolkit.utilities import get_git_revision_hash
 from gravity_toolkit.time import adjust_months, calendar_to_grace
+
+# attempt imports
+try:
+    import h5py
+except (ImportError, ModuleNotFoundError) as e:
+    warnings.filterwarnings("always")
+    warnings.warn("h5py not available")
+    warnings.warn("Some functions will throw an exception if called")
+try:
+    import netCDF4
+except (ImportError, ModuleNotFoundError) as e:
+    warnings.filterwarnings("always")
+    warnings.warn("netCDF4 not available")
+    warnings.warn("Some functions will throw an exception if called")
+# ignore warnings
+warnings.filterwarnings("ignore")
 
 class spatial(object):
     """
