@@ -1,6 +1,6 @@
-=======================
-legendre_polynomials.py
-=======================
+====================
+legendre_polynomials
+====================
 
 - Computes fully-normalized Legendre polynomials for an array of ``x`` values and their first derivative
 - Calculates Legendre polynomials for zonal harmonics (order 0)

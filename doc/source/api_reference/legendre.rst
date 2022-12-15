@@ -1,6 +1,6 @@
-===========
-legendre.py
-===========
+========
+legendre
+========
 
 - Computes associated Legendre functions of degree ``l`` evaluated for elements ``x``
 - ``l`` must be a scalar integer and ``x`` must contain real values ranging -1 <= ``x`` <= 1

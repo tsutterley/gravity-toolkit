@@ -1,6 +1,6 @@
-=====================
-clenshaw_summation.py
-=====================
+==================
+clenshaw_summation
+==================
 
 - Returns the spatial field for a series of spherical harmonics at a sequence of ungridded points
 - Uses a Clenshaw summation to calculate the spherical harmonic summation

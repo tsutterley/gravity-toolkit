@@ -336,7 +336,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         `doi: 10.1029/2007JB005338 <https://doi.org/10.1029/2007JB005338>`_
 
     .. [Wahr2015] J. Wahr, R. S. Nerem, and S. V. Bettadpur, "The pole tide
-        and its effect on GRACE time‐variable gravity measurements:
+        and its effect on GRACE time-variable gravity measurements:
         Implications for estimates of surface mass variations".
         *Journal of Geophysical Research: Solid Earth*, 120(6), 4597--4615, (2015).
         `doi: 10.1002/2015JB011986 <https://doi.org/10.1002/2015JB011986>`_

@@ -1,6 +1,6 @@
-==========
-spatial.py
-==========
+=======
+spatial
+=======
 
 Spatial data class for reading, writing and processing spatial data
 

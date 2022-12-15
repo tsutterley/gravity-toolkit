@@ -1,6 +1,6 @@
-====================
-grace_find_months.py
-====================
+=================
+grace_find_months
+=================
 
 - Finds the months available for a GRACE/GRACE-FO/Swarm product
 - Finds the all months missing from the product

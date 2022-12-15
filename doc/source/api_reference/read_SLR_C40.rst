@@ -1,6 +1,6 @@
-===============
-read_SLR_C40.py
-===============
+============
+read_SLR_C40
+============
 
 - Reads monthly degree 4 zonal spherical harmonic data files from satellite laser ranging (SLR)
 

@@ -1,6 +1,6 @@
-===============
-read_SLR_C30.py
-===============
+============
+read_SLR_C30
+============
 
 - Reads monthly degree 3 zonal spherical harmonic data files from satellite laser ranging (SLR)
 

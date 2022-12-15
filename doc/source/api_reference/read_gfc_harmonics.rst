@@ -1,6 +1,6 @@
-=====================
-read_gfc_harmonics.py
-=====================
+==================
+read_gfc_harmonics
+==================
 
 - Reads gfc files and extracts spherical harmonics for Swarm and GRAZ GRACE/GRACE-FO data
 - Parses date of GRACE/GRACE-FO data from filename

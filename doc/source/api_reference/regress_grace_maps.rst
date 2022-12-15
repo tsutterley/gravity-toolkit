@@ -1,6 +1,6 @@
-=====================
-regress_grace_maps.py
-=====================
+==================
+regress_grace_maps
+==================
 
 - Reads in GRACE/GRACE-FO spatial files and fits a regression model at each grid point
 

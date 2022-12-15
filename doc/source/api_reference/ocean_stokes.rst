@@ -1,6 +1,6 @@
-===============
-ocean_stokes.py
-===============
+============
+ocean_stokes
+============
 
 - Reads a land-sea mask and converts to a series of spherical harmonics
 - `netCDF4 land-sea mask files <https://doi.org/10.6084/m9.figshare.9702338>`_ from [Sutterley2020]_

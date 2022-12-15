@@ -46,7 +46,7 @@ Calling Sequence
 References
 ##########
 
-.. [Blewett2003] G. Blewitt, "Self‐consistency in reference frames, geocenter definition, and surface loading of the solid Earth", *Journal of Geophysical Research: Solid Earth*, 108(B2), 2103, (2003). `doi: 10.1029/2002JB002082 <https://doi.org/10.1029/2002JB002082>`_
+.. [Blewett2003] G. Blewitt, "Self-consistency in reference frames, geocenter definition, and surface loading of the solid Earth", *Journal of Geophysical Research: Solid Earth*, 108(B2), 2103, (2003). `doi: 10.1029/2002JB002082 <https://doi.org/10.1029/2002JB002082>`_
 
 .. [Farrell1972] W. E. Farrell, "Deformation of the Earth by surface loads", *Reviews of Geophysics*, 10(3), 761--797, (1972). `doi: 10.1029/RG010i003p00761 <https://doi.org/10.1029/RG010i003p00761>`_
 

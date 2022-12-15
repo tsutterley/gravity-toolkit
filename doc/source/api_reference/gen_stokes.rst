@@ -1,6 +1,6 @@
-=============
-gen_stokes.py
-=============
+==========
+gen_stokes
+==========
 
 - Converts data from the spatial domain to spherical harmonic coefficients
 

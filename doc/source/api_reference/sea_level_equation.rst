@@ -1,6 +1,6 @@
-=====================
-sea_level_equation.py
-=====================
+==================
+sea_level_equation
+==================
 
 - Solves the sea level equation with the option of including polar motion feedback
 

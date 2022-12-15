@@ -75,7 +75,7 @@ References
 
 .. [Tiwari2009] V. M. Tiwari, J. Wahr, and S. Swenson, "Dwindling groundwater resources in northern India, from satellite gravity observations", *Geophysical Research Letters*, 36(L18401), (2009). `doi: 10.1029/2009GL039401 <https://doi.org/10.1029/2009GL039401>`_
 
-.. [Velicogna2014] I. Velicogna, T. C. Sutterley, and M. R. van den Broeke, "Regional acceleration in ice mass loss from Greenland and Antarctica using GRACE time‐variable gravity data", *Geophysical Research Letters*, 119, 8130--8137, (2014). `doi: 10.1002/2014GL061052 <https://doi.org/10.1002/2014GL061052>`_
+.. [Velicogna2014] I. Velicogna, T. C. Sutterley, and M. R. van den Broeke, "Regional acceleration in ice mass loss from Greenland and Antarctica using GRACE time-variable gravity data", *Geophysical Research Letters*, 119, 8130--8137, (2014). `doi: 10.1002/2014GL061052 <https://doi.org/10.1002/2014GL061052>`_
 
 .. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan, "Time variability of the Earth's gravity field: Hydrological and oceanic effects and their possible detection using GRACE", *Journal of Geophysical Research*, 103(B12), 30205--30229, (1998). `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_
 

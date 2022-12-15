@@ -1,6 +1,6 @@
-===============
-read_SLR_CS2.py
-===============
+============
+read_SLR_CS2
+============
 
 - Reads monthly degree 2,m (figure axis and azimuthal dependence) spherical harmonic data files from satellite laser ranging (SLR)
 

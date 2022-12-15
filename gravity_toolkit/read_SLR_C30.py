@@ -50,7 +50,7 @@ REFERENCES:
         Increased Ice Sheet Losses and Mass-Driven Sea Level Rise",
         Geophysical Research Letters, 46(12), 6910-6917, (2019).
         https://doi.org/10.1029/2019GL082929
-    Loomis, Rachlin, Wiese, Landerer, and Luthcke, "Replacing GRACE/GRACE‐FO
+    Loomis, Rachlin, Wiese, Landerer, and Luthcke, "Replacing GRACE/GRACE-FO
         C30 with satellite laser ranging: Impacts on Antarctic Ice Sheet
         mass change". Geophysical Research Letters, 47, (2020).
         https://doi.org/10.1029/2019GL085488

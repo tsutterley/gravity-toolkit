@@ -1,6 +1,6 @@
-============
-geocenter.py
-============
+=========
+geocenter
+=========
 
 Data class for reading and processing geocenter data
 

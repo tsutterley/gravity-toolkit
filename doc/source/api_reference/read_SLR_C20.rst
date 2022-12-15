@@ -1,6 +1,6 @@
-===============
-read_SLR_C20.py
-===============
+============
+read_SLR_C20
+============
 
 - Reads monthly oblateness (degree 2 zonal) spherical harmonic data files from satellite laser ranging (SLR)
 

@@ -1,6 +1,6 @@
-==========
-mascons.py
-==========
+=======
+mascons
+=======
 
 Conversion routines for publicly available GRACE/GRACE-FO mascon solutions
 

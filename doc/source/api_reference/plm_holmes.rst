@@ -1,6 +1,6 @@
-=============
-plm_holmes.py
-=============
+==========
+plm_holmes
+==========
 
 - Computes fully-normalized associated Legendre Polynomials and their first derivative for a vector of ``x`` values using the Holmes and Featherstone recursion relation
 - Recursion relation is stable up to very high degree and order

@@ -38,8 +38,8 @@ PROGRAM DEPENDENCIES
     spatial.py: spatial data class for reading, writing and processing data
 
 REFERENCES:
-    T. C. Sutterley, I. Velicogna, and C.-W. Hsu, "Self‐Consistent Ice Mass
-        Balance and Regional Sea Level From Time‐Variable Gravity",
+    T. C. Sutterley, I. Velicogna, and C.-W. Hsu, "Self-Consistent Ice Mass
+        Balance and Regional Sea Level From Time-Variable Gravity",
     Earth and Space Science, 7, 2020. https://doi.org/10.1029/2019EA000860
 
 UPDATE HISTORY:
