@@ -1,6 +1,6 @@
-==============
-tsamplitude.py
-==============
+===========
+tsamplitude
+===========
 
 - Calculate the amplitude and phase of a harmonic function from calculated sine and cosine of a series of measurements
 

@@ -1,6 +1,6 @@
-===========
-tssmooth.py
-===========
+========
+tssmooth
+========
 
 - Computes the moving average of a time-series
 

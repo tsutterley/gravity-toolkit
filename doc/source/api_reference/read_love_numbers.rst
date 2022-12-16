@@ -1,6 +1,6 @@
-====================
-read_love_numbers.py
-====================
+=================
+read_love_numbers
+=================
 
 - Reads sets of load Love numbers computed using outputs from the Preliminary Reference Earth Model (PREM)
 - Linearly interpolates load love numbers for missing degrees

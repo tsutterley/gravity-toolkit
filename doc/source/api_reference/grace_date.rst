@@ -1,6 +1,6 @@
-=============
-grace_date.py
-=============
+==========
+grace_date
+==========
 
 - Reads GRACE/GRACE-FO index file from `podaac_grace_sync.py` or `gfz_isdc_grace_ftp.py`
 - Parses dates of each GRACE/GRACE-FO file and assigns the month number

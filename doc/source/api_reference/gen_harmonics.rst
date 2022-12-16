@@ -1,6 +1,6 @@
-================
-gen_harmonics.py
-================
+=============
+gen_harmonics
+=============
 
 - Converts data from the spatial domain to spherical harmonic coefficients
 - Does not compute the solid Earth elastic response or convert units

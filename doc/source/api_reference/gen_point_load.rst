@@ -1,6 +1,6 @@
-=================
-gen_point_load.py
-=================
+==============
+gen_point_load
+==============
 
 - Calculates gravitational spherical harmonic coefficients for point masses
 

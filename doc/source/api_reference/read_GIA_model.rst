@@ -1,6 +1,6 @@
-=================
-read_GIA_model.py
-=================
+==============
+read_GIA_model
+==============
 
 - Reads Glacial Isostatic Adjustment (GIA) files for given modeling group formats
 - Outputs spherical harmonics for the GIA rates and the GIA model parameters

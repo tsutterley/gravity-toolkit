@@ -228,7 +228,7 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         `https://doi.org/10.1029/2010JB007776 <https://doi.org/10.1029/2010JB007776>`_
     .. [Peltier2015] W. R. Peltier, D. F. Argus, and R. Drummond,
         "Space geodesy constrains ice age terminal deglaciation:
-        The global ICE‐6G_C (VM5a) model", *Journal of Geophysical Research:
+        The global ICE-6G_C (VM5a) model", *Journal of Geophysical Research:
         Solid Earth*, 120(1), 450-487 (2015).
         `https://doi.org/10.1002/2014JB011176 <https://doi.org/10.1002/2014JB011176>`_
     .. [Peltier2018] W. R. Peltier, D. F. Argus, and R. Drummond,

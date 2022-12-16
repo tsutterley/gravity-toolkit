@@ -1,6 +1,6 @@
-====================
-piecewise_regress.py
-====================
+=================
+piecewise_regress
+=================
 
 - Fits a synthetic signal to data over a time period by ordinary or weighted least-squares for breakpoint analysis
 

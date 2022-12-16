@@ -1,6 +1,6 @@
-=======================
-read_GRACE_harmonics.py
-=======================
+====================
+read_GRACE_harmonics
+====================
 
 - Reads GRACE/GRACE-FO files and extracts spherical harmonic data and drift rates (RL04)
 - Adds drift rates to clm and slm for Release-4 harmonics

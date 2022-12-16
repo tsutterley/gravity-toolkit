@@ -1,6 +1,6 @@
-====================
-gen_spherical_cap.py
-====================
+=================
+gen_spherical_cap
+=================
 
 - Calculates gravitational spherical harmonic coefficients for a spherical cap
 

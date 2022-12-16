@@ -101,8 +101,8 @@ def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
         OSURF Proj. No. 783210, 48 pp., (1981).
 
     .. [Swenson2002] S. Swenson and J. Wahr, "Methods for inferring regional
-        surface‐mass anomalies from Gravity Recovery and Climate Experiment
-        (GRACE) measurements of time‐variable gravity", *Journal of
+        surface-mass anomalies from Gravity Recovery and Climate Experiment
+        (GRACE) measurements of time-variable gravity", *Journal of
         Geophysical Research: Solid Earth*, 107(B9), 2193, (2002).
         `doi: 10.1029/2001JB000576 <https://doi.org/10.1029/2001JB000576>`_
     """

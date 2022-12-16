@@ -111,7 +111,7 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
     References
     ----------
     .. [Davis2004] J. L. Davis et al.,
-        "Climate‐driven deformation of the solid Earth from GRACE and GPS",
+        "Climate-driven deformation of the solid Earth from GRACE and GPS",
         *Geophysical Research Letters*, 31(L24605), (2004).
         `doi: 10.1029/2004GL021435 <https://doi.org/10.1029/2004GL021435>`_
 

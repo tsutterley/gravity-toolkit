@@ -1,6 +1,6 @@
-========
-tools.py
-========
+=====
+tools
+=====
 
 `User interface <https://ipywidgets.readthedocs.io/en/latest/>`_ and plotting tools for use in `Jupyter notebooks <https://jupyter.org/>`_
 
@@ -39,7 +39,7 @@ References
 
 .. [Seroussi2011] H. Seroussi, M. Morlighem, E. Rignot, E. Larour, D. Aubry, H. Ben Dhia, and S. S. Kristensen, "Ice flux divergence anomalies on 79north Glacier, Greenland", *Geophysical Research Letters*, 38(L09501), (2011). `doi: 10.1029/2011GL047338 <https://doi.org/10.1029/2011GL047338>`_
 
-.. [Swenson2006] S. Swenson and J. Wahr, "Post‐processing removal of correlated errors in GRACE data", *Geophysical Research Letters*, 33(L08402), (2006). `doi: 10.1029/2005GL025285 <https://doi.org/10.1029/2005GL025285>`_
+.. [Swenson2006] S. Swenson and J. Wahr, "Post-processing removal of correlated errors in GRACE data", *Geophysical Research Letters*, 33(L08402), (2006). `doi: 10.1029/2005GL025285 <https://doi.org/10.1029/2005GL025285>`_
 
-.. [Wahr2015] J. Wahr, R. S. Nerem, and S. V. Bettadpur, "The pole tide and its effect on GRACE time‐variable gravity measurements: Implications for estimates of surface mass variations". *Journal of Geophysical Research: Solid Earth*, 120(6), 4597--4615, (2015). `doi: 10.1002/2015JB011986 <https://doi.org/10.1002/2015JB011986>`_
+.. [Wahr2015] J. Wahr, R. S. Nerem, and S. V. Bettadpur, "The pole tide and its effect on GRACE time-variable gravity measurements: Implications for estimates of surface mass variations". *Journal of Geophysical Research: Solid Earth*, 120(6), 4597--4615, (2015). `doi: 10.1002/2015JB011986 <https://doi.org/10.1002/2015JB011986>`_
 

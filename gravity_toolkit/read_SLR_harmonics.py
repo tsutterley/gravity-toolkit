@@ -29,7 +29,7 @@ REFERENCES:
     Cheng, Ries, and Tapley, "Variations of the Earth's Figure Axis from
         Satellite Laser Ranging and GRACE", Journal of Geophysical Research,
         116, B01409, (2011). https://doi.org/10.1029/2010JB000850
-    Loomis, Rachlin, Wiese, Landerer, and Luthcke, "Replacing GRACE/GRACE‐FO
+    Loomis, Rachlin, Wiese, Landerer, and Luthcke, "Replacing GRACE/GRACE-FO
         C30 with satellite laser ranging: Impacts on Antarctic Ice Sheet
         mass change". Geophysical Research Letters, 47, (2020).
         https://doi.org/10.1029/2019GL085488
@@ -271,7 +271,7 @@ def read_GSFC_weekly_6x1(SLR_file, SCALE=1.0, HEADER=True):
     References
     ----------
     .. [Loomis2020] B. D. Loomis, K. E. Rachlin, D. N. Wiese, F. W. Landerer,
-        and S. B. Luthcke, "Replacing GRACE/GRACE‐FO *C*\ :sub:`30` with
+        and S. B. Luthcke, "Replacing GRACE/GRACE-FO *C*\ :sub:`30` with
         satellite laser ranging: Impacts on Antarctic Ice Sheet mass change".
         *Geophysical Research Letters*, 47, (2020).
         `doi: 10.1029/2019GL085488 <https://doi.org/10.1029/2019GL085488>`_

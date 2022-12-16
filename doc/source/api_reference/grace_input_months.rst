@@ -1,6 +1,6 @@
-=====================
-grace_input_months.py
-=====================
+==================
+grace_input_months
+==================
 
 - Reads GRACE/GRACE-FO/Swarm files for a specified spherical harmonic degree and order and for a specified date range
 

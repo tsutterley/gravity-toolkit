@@ -1,6 +1,6 @@
-=====================
-destripe_harmonics.py
-=====================
+==================
+destripe_harmonics
+==================
 
 - Filters spherical harmonic coefficients for correlated "striping" errors following [Swenson2006]_
 

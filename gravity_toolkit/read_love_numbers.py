@@ -42,7 +42,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 REFERENCES:
-    G. Blewitt, "Self‐consistency in reference frames, geocenter definition,
+    G. Blewitt, "Self-consistency in reference frames, geocenter definition,
         and surface loading of the solid Earth",
         Journal of Geophysical Research: Solid Earth, 108(B2), 2103, (2003)
     W. E. Farrell, "Deformation of the Earth by surface loads",
@@ -135,7 +135,7 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
 
     References
     ----------
-    .. [Blewett2003] G. Blewitt, "Self‐consistency in reference frames, geocenter
+    .. [Blewett2003] G. Blewitt, "Self-consistency in reference frames, geocenter
         definition, and surface loading of the solid Earth",
         *Journal of Geophysical Research: Solid Earth*, 108(B2), 2103, (2003).
         `doi: 10.1029/2002JB002082 <https://doi.org/10.1029/2002JB002082>`_
@@ -318,7 +318,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
 
     References
     ----------
-    .. [Blewett2003] G. Blewitt, "Self‐consistency in reference frames, geocenter
+    .. [Blewett2003] G. Blewitt, "Self-consistency in reference frames, geocenter
         definition, and surface loading of the solid Earth",
         *Journal of Geophysical Research: Solid Earth*, 108(B2), 2103, (2003).
         `doi: 10.1029/2002JB002082 <https://doi.org/10.1029/2002JB002082>`_

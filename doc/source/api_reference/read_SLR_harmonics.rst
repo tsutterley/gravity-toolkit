@@ -1,6 +1,6 @@
-=====================
-read_SLR_harmonics.py
-=====================
+==================
+read_SLR_harmonics
+==================
 
 - Reads 5\ |times|\ 5 spherical harmonic coefficients with 1 coefficient from degree 6 all calculated from satellite laser ranging (SLR) measurements
 - Calculated by the University of Texas Center for Space Research (CSR) and NASA Goddard Space Flight Center (GSFC)

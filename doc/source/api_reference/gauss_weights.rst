@@ -1,6 +1,6 @@
-================
-gauss_weights.py
-================
+=============
+gauss_weights
+=============
 
 - Computes the Gaussian weights as a function of degree
 - A normalized version of Christopher Jekeli's Gaussian averaging function

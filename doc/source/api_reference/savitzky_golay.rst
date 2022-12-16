@@ -1,6 +1,6 @@
-=================
-savitzky_golay.py
-=================
+==============
+savitzky_golay
+==============
 
 - Smooth and optionally differentiate data of non-uniform sampling with a Savitzky-Golay filter
 - A type of low-pass filter, particularly suited for smoothing noisy data

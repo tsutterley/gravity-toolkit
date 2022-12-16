@@ -11,11 +11,11 @@ most recently to the following work:
     I. Velicogna, Y. Mohajerani, G. A, F. Landerer, J. Mouginot, B. No\ |euml|\ l,
     E. Rignot, T. C. Sutterley, M. van den Broeke, J. M. van Wessem, and D. Wiese,
     "Continuity of ice sheet mass loss in Greenland and Antarctica from the GRACE
-    and GRACE Follow‐On missions", *Geophysical Research Letters*, 47,
+    and GRACE Follow-On missions", *Geophysical Research Letters*, 47,
     (2020). `doi:10.1029/2020GL087291 <https://doi.org/10.1029/2020GL087291>`_
 
-    T. C. Sutterley, I. Velicogna, and C.-W. Hsu, "Self‐Consistent Ice Mass Balance
-    and Regional Sea Level From Time‐Variable Gravity", *Earth and Space Science*, 7,
+    T. C. Sutterley, I. Velicogna, and C.-W. Hsu, "Self-Consistent Ice Mass Balance
+    and Regional Sea Level From Time-Variable Gravity", *Earth and Space Science*, 7,
     (2020). `doi:10.1029/2019EA000860 <https://doi.org/10.1029/2019EA000860>`_
 
     T. C. Sutterley and I. Velicogna, "Improved estimates of geocenter variability

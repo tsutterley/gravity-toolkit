@@ -1,6 +1,6 @@
-============
-tsregress.py
-============
+=========
+tsregress
+=========
 
 - Fits a synthetic signal to data over a time period by ordinary or weighted least-squares
 

@@ -90,7 +90,7 @@ def destripe_harmonics(clm1, slm1, LMIN=2, LMAX=60, MMAX=None,
     References
     ----------
     .. [Swenson2006] S. Swenson and J. Wahr,
-        "Post‐processing removal of correlated errors in GRACE data",
+        "Post-processing removal of correlated errors in GRACE data",
         *Geophysical Research Letters*, 33(L08402), (2006).
         `doi: 10.1029/2005GL025285 <https://doi.org/10.1029/2005GL025285>`_
     """
