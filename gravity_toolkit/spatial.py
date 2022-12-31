@@ -21,6 +21,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 12/2022: add software information to output HDF5 and netCDF4
+        make spatial objects iterable and with length
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 08/2022: fix output latitude HDF5 and netCDF4 attributes
         place index filename within try/except statement
@@ -64,7 +65,6 @@ import zipfile
 import warnings
 import numpy as np
 import gravity_toolkit.version
-from gravity_toolkit.utilities import get_git_revision_hash
 from gravity_toolkit.time import adjust_months, calendar_to_grace
 
 # attempt imports
@@ -141,6 +141,8 @@ class spatial(object):
         self.shape=[kwargs['nlat'],kwargs['nlon'],None]
         self.ndim=None
         self.filename=None
+        # iterator
+        self.__index__ = 0
 
     def case_insensitive_filename(self,filename):
         """
@@ -154,6 +156,8 @@ class spatial(object):
         # check if filename is open file object
         if isinstance(filename, io.IOBase):
             self.filename = copy.copy(filename)
+        elif isinstance(filename, type(None)):
+            self.filename = None
         else:
             # tilde-expand input filename
             self.filename = os.path.expanduser(filename)
@@ -857,9 +861,8 @@ class spatial(object):
         if kwargs['reference']:
             fileID.reference = kwargs['reference']
         # add software information
-        fileID.attrs['software_reference'] = gravity_toolkit.version.project_name
-        fileID.attrs['software_version'] = gravity_toolkit.version.full_version
-        fileID.attrs['software_revision'] = get_git_revision_hash()
+        fileID.software_reference = gravity_toolkit.version.project_name
+        fileID.software_version = gravity_toolkit.version.full_version
         # date created
         fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
         # Output NetCDF structure information
@@ -999,7 +1002,6 @@ class spatial(object):
         # add software information
         fileID.attrs['software_reference'] = gravity_toolkit.version.project_name
         fileID.attrs['software_version'] = gravity_toolkit.version.full_version
-        fileID.attrs['software_revision'] = get_git_revision_hash()
         # date created
         fileID.attrs['date_created'] = time.strftime('%Y-%m-%d',time.localtime())
         # Output HDF5 structure information
@@ -1655,3 +1657,43 @@ class spatial(object):
         if self.fill_value is not None:
             self.data[self.mask] = self.fill_value
         return self
+
+    def __len__(self):
+        """Number of months
+        """
+        return len(self.month)
+
+    def __iter__(self):
+        """Iterate over GRACE/GRACE-FO months
+        """
+        self.__index__ = 0
+        return self
+
+    def __next__(self):
+        """Get the next month of data
+        """
+        # output spatial object
+        temp = spatial(fill_value=self.fill_value)
+        # subset output spatial field and dates
+        try:
+            temp.data = self.data[:,:,self.__index__].copy()
+            temp.mask = self.mask[:,:,self.__index__].copy()
+            temp.time = self.time[self.__index__].copy()
+            temp.month = self.month[self.__index__].copy()
+        except IndexError as exc:
+            raise StopIteration from exc
+        # subset output spatial error
+        try:
+            temp.error = self.error[:,:,self.__index__].copy()
+        except AttributeError:
+            pass
+        # copy dimensions
+        temp.lon = self.lon.copy()
+        temp.lat = self.lat.copy()
+        # get spacing and dimensions
+        temp.update_spacing()
+        temp.update_extents()
+        temp.update_dimensions()
+        # add to index
+        self.__index__ += 1
+        return temp

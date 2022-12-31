@@ -887,7 +887,7 @@ def print_global(fid,PROC,DREL,MODEL,GIA,SLR,S21,month):
         'de-aliasing product.').format(MISSION[DREL],DREL))
     # get GIA parameters
     summary.append(('  Glacial Isostatic Adjustment (GIA) estimates from '
-        '{0} have been restored.').format(GIA['citation']))
+        '{0} have been restored.').format(GIA.citation))
     if (DREL == 'RL05'):
         summary.append(('  ECMWF corrections from Fagiolini et al. (2015) have '
         'been restored.'))
@@ -943,7 +943,7 @@ def print_global(fid,PROC,DREL,MODEL,GIA,SLR,S21,month):
         'output", Journal of Geophysical Research - Solid Earth, 113(B08410), '
         '(2008). https://doi.org/10.1029/2007JB005338'))
     # GIA citation
-    reference.append(GIA['reference'])
+    reference.append(GIA.reference)
     # ECMWF jump corrections citation
     if (DREL == 'RL05'):
         reference.append(('E. Fagiolini, F. Flechtner, M. Horwath, H. Dobslaw, '

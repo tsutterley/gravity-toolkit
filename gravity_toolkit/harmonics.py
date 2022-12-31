@@ -27,6 +27,8 @@ PROGRAM DEPENDENCIES:
 UPDATE HISTORY:
     Updated 12/2022: add software information to output HDF5 and netCDF4
         moved GIA model reader to be an inherited class of harmonics
+        make harmonics objects iterable and with length
+        added function for creating sized empty harmonic objects
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
         using internal netCDF4 and HDF5 readers and writers
@@ -81,7 +83,6 @@ import zipfile
 import warnings
 import numpy as np
 import gravity_toolkit.version
-from gravity_toolkit.utilities import get_git_revision_hash
 from gravity_toolkit.time import adjust_months,calendar_to_grace
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
@@ -154,6 +155,8 @@ class harmonics(object):
         self.shape=None
         self.ndim=None
         self.filename=None
+        # iterator
+        self.__index__ = 0
 
     def case_insensitive_filename(self,filename):
         """
@@ -167,6 +170,8 @@ class harmonics(object):
         # check if filename is open file object
         if isinstance(filename, io.IOBase):
             self.filename = copy.copy(filename)
+        elif isinstance(filename, type(None)):
+            self.filename = None
         else:
             # tilde-expand input filename
             self.filename = os.path.expanduser(filename)
@@ -872,9 +877,8 @@ class harmonics(object):
         if kwargs['reference']:
             fileID.reference = kwargs['reference']
         # add software information
-        fileID.attrs['software_reference'] = gravity_toolkit.version.project_name
-        fileID.attrs['software_version'] = gravity_toolkit.version.full_version
-        fileID.attrs['software_revision'] = get_git_revision_hash()
+        fileID.software_reference = gravity_toolkit.version.project_name
+        fileID.software_version = gravity_toolkit.version.full_version
         # date created
         fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
         # Output netCDF structure information
@@ -980,7 +984,6 @@ class harmonics(object):
         # add software information
         fileID.attrs['software_reference'] = gravity_toolkit.version.project_name
         fileID.attrs['software_version'] = gravity_toolkit.version.full_version
-        fileID.attrs['software_revision'] = get_git_revision_hash()
         # date created
         fileID.attrs['date_created'] = time.strftime('%Y-%m-%d',time.localtime())
         # Output HDF5 structure information
@@ -1252,12 +1255,34 @@ class harmonics(object):
         temp.update_dimensions()
         return temp
 
+    def zeros(self, lmax=None, mmax=None, nt=None):
+        """
+        Create an empty harmonics object
+        """
+        # assign maximum degree and order
+        if lmax is not None:
+            self.lmax = np.int64(lmax)
+        if mmax is not None:
+            self.mmax = np.int64(mmax)
+        # assign variables to self
+        if nt is not None:
+            self.clm = np.zeros((self.lmax+1, self.mmax+1, nt))
+            self.slm = np.zeros((self.lmax+1, self.mmax+1, nt))
+            self.time = np.zeros((nt))
+            self.month = np.zeros((nt), dtype=int)
+        else:
+            self.clm = np.zeros((self.lmax+1, self.mmax+1))
+            self.slm = np.zeros((self.lmax+1, self.mmax+1))
+        # assign ndim and shape attributes
+        self.update_dimensions()
+        return self
+
     def zeros_like(self):
         """
         Create a harmonics object using the dimensions of another
         """
         temp = harmonics(lmax=self.lmax, mmax=self.mmax)
-        # assign variables to self
+        # assign variables to temp
         for key in ['clm','slm','time','month']:
             try:
                 val = getattr(self, key)
@@ -1309,8 +1334,8 @@ class harmonics(object):
             (self.lmax-self.mmax))//2 + 1
         # restructured degree and order
         temp = harmonics(lmax=self.lmax, mmax=self.mmax)
-        temp.l = np.zeros((n_harm,), dtype=np.int32)
-        temp.m = np.zeros((n_harm,), dtype=np.int32)
+        temp.l = np.zeros((n_harm,), dtype=np.int64)
+        temp.m = np.zeros((n_harm,), dtype=np.int64)
         # get filenames if applicable
         if getattr(self, 'filename'):
             temp.filename = copy.copy(self.filename)
@@ -1742,3 +1767,29 @@ class harmonics(object):
                 self.amp[l,:] = np.sqrt(np.sum(var,axis=0))
         # return the harmonics object with degree amplitudes
         return self
+
+    def __len__(self):
+        """Number of months
+        """
+        return len(self.month)
+
+    def __iter__(self):
+        """Iterate over GRACE/GRACE-FO months
+        """
+        self.__index__ = 0
+        return self
+
+    def __next__(self):
+        """Get the next month of data
+        """
+        temp = harmonics(lmax=np.copy(self.lmax), mmax=np.copy(self.mmax))
+        try:
+            temp.time = self.time[self.__index__].copy()
+            temp.month = self.month[self.__index__].copy()
+            temp.clm = self.clm[:,:,self.__index__].copy()
+            temp.slm = self.slm[:,:,self.__index__].copy()
+        except IndexError as exc:
+            raise StopIteration from exc
+        # add to index
+        self.__index__ += 1
+        return temp

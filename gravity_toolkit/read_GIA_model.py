@@ -97,6 +97,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 12/2022: made interited GIA model harmonics class
+        set default parameters, title, reference and url as None
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: use logging for debugging level verbose output
     Updated 05/2022: output full citation for each GIA model group
@@ -253,6 +254,11 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     kwargs.setdefault('MODE', 0o775)
     # allocate for output Ylms
     gia_Ylms = {}
+    # set default parameters
+    gia_Ylms['citation'] = None
+    gia_Ylms['reference'] = None
+    gia_Ylms['url'] = None
+    gia_Ylms['title'] = None
 
     # GIA model citations and references
     if (GIA == 'IJ05-R2'):
