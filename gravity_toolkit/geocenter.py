@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (12/2022)
 Data class for reading and processing geocenter data
 
 PYTHON DEPENDENCIES:
@@ -15,6 +15,7 @@ PYTHON DEPENDENCIES:
         https://github.com/yaml/pyyaml
 
 UPDATE HISTORY:
+    Updated 12/2022: make geocenter objects iterable and with length
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 06/2022: drop external reader dependency for UCI format
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -102,6 +103,8 @@ class geocenter(object):
         self.filename=None
         # Average Radius of the Earth [mm]
         self.radius=copy.copy(kwargs['radius'])
+        # iterator
+        self.__index__ = 0
 
     def case_insensitive_filename(self,filename):
         """
@@ -1233,4 +1236,31 @@ class geocenter(object):
         temp.C10 = np.power(self.C10,power)
         temp.C11 = np.power(self.C11,power)
         temp.S11 = np.power(self.S11,power)
+        return temp
+
+    def __len__(self):
+        """Number of months
+        """
+        return len(self.month)
+
+    def __iter__(self):
+        """Iterate over GRACE/GRACE-FO months
+        """
+        self.__index__ = 0
+        return self
+
+    def __next__(self):
+        """Get the next month of data
+        """
+        temp = geocenter()
+        try:
+            temp.time = self.time[self.__index__].copy()
+            temp.month = self.month[self.__index__].copy()
+            temp.C10 = self.C10[self.__index__].copy()
+            temp.C11 = self.C11[self.__index__].copy()
+            temp.S11 = self.S11[self.__index__].copy()
+        except IndexError as exc:
+            raise StopIteration from exc
+        # add to index
+        self.__index__ += 1
         return temp

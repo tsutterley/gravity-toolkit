@@ -62,8 +62,8 @@ Dependencies
 References
 ##########
 
-    T. C. Sutterley, I. Velicogna, and C.-W. Hsu, "Self‐Consistent Ice Mass Balance
-    and Regional Sea Level From Time‐Variable Gravity", *Earth and Space Science*, 7,
+    T. C. Sutterley, I. Velicogna, and C.-W. Hsu, "Self-Consistent Ice Mass Balance
+    and Regional Sea Level From Time-Variable Gravity", *Earth and Space Science*, 7,
     (2020). `doi:10.1029/2019EA000860 <https://doi.org/10.1029/2019EA000860>`_
 
     T. C. Sutterley and I. Velicogna, "Improved estimates of geocenter variability

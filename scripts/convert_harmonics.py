@@ -60,6 +60,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 12/2022: single implicit import of gravity toolkit
+        iterate over spatial objects versus indexing
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use wrapper function for reading load Love numbers
         use argparse descriptions within sphinx documentation
@@ -158,18 +159,17 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
 
     # create list of harmonics objects
     Ylms_list = []
-    for i,t in enumerate(input_spatial.time):
+    for i,spatial_data in enumerate(input_spatial):
         # convert spatial field to spherical harmonics
-        output_Ylms = gravtk.gen_stokes(input_spatial.data[:,:,i].T,
-            input_spatial.lon, input_spatial.lat, UNITS=UNITS,
+        output_Ylms = gravtk.gen_stokes(spatial_data.data.T,
+            spatial_data.lon, spatial_data.lat, UNITS=UNITS,
             LMIN=0, LMAX=LMAX, MMAX=MMAX, PLM=PLM, LOVE=LOVE)
-        output_Ylms.time = np.copy(t)
-        output_Ylms.month = gravtk.time.calendar_to_grace(t)
+        output_Ylms.time = np.copy(spatial_data.time)
+        output_Ylms.month = gravtk.time.calendar_to_grace(spatial_data.time)
         # append to list
         Ylms_list.append(output_Ylms)
     # convert Ylms list for output spherical harmonics
-    Ylms = gravtk.harmonics().from_list(Ylms_list)
-    Ylms_list = None
+    Ylms = gravtk.harmonics().from_list(Ylms_list, clear=True)
 
     # attributes for output files
     attributes = {}

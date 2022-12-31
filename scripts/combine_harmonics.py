@@ -69,6 +69,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 12/2022: single implicit import of gravity toolkit
+        iterate over harmonics objects versus indexing
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 07/2022: create mask for output gridded variables
     Updated 04/2022: use wrapper function for reading load Love numbers
@@ -148,9 +149,10 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     input_Ylms = input_Ylms.truncate(lmax=LMAX, mmax=MMAX).expand_dims()
 
     # remove mean file from input Ylms
-    mean_Ylms = gravtk.harmonics().from_file(MEAN_FILE,
-        format=DATAFORM, date=False)
-    input_Ylms.subtract(mean_Ylms)
+    if MEAN_FILE:
+        mean_Ylms = gravtk.harmonics().from_file(MEAN_FILE,
+            format=DATAFORM, date=False)
+        input_Ylms.subtract(mean_Ylms)
 
     # read arrays of kl, hl, and ll Love Numbers
     hl,kl,ll = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
@@ -239,13 +241,12 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
         raise ValueError(f'Invalid units code {UNITS:d}')
 
     # Computing plms for converting to spatial domain
-    theta = (90.0-grid.lat)*np.pi/180.0
+    theta = (90.0 - grid.lat)*np.pi/180.0
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(theta))
 
     # converting harmonics to truncated, smoothed coefficients in output units
-    for t in range(nt):
-        # spherical harmonics for time t
-        Ylms = input_Ylms.index(t)
+    for t,Ylms in enumerate(input_Ylms):
+        # convolve spherical harmonics with degree dependent factors
         Ylms.convolve(dfactor*wt)
         # convert spherical harmonics to output spatial grid
         grid.data[:,:,t] = gravtk.harmonic_summation(Ylms.clm, Ylms.slm,
@@ -253,7 +254,7 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
 
     # outputting data to file
     output_data(grid.squeeze(), FILENAME=OUTPUT_FILE,
-        DATAFORM=DATAFORM, UNITS=UNITS)
+        DATAFORM=DATAFORM, UNITS=UNITS, MODE=MODE)
 
 # PURPOSE: wrapper function for outputting data to file
 def output_data(data, FILENAME=None, DATAFORM=None, UNITS=None, MODE=None):
