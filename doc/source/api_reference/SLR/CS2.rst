@@ -1,6 +1,6 @@
-============
-read_SLR_CS2
-============
+=======
+SLR.CS2
+=======
 
 - Reads monthly degree 2,m (figure axis and azimuthal dependence) spherical harmonic data files from satellite laser ranging (SLR)
 
@@ -14,11 +14,11 @@ Calling Sequence
 
 .. code-block:: python
 
-    from gravity_toolkit.read_SLR_CS2 import read_SLR_CS2
-    SLR_CS2 = read_SLR_CS2(SLR_file)
+    import gravity_toolkit.SLR
+    SLR_CS2 = gravity_toolkit.SLR.CS2(SLR_file)
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/read_SLR_CS2.py
+.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/SLR/CS2.py
 
-.. autofunction:: gravity_toolkit.read_SLR_CS2
+.. autofunction:: gravity_toolkit.SLR.CS2

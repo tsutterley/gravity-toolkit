@@ -35,6 +35,7 @@ missions
     :hidden:
     :caption: API Reference
 
+    api_reference/associated_legendre.rst
     api_reference/clenshaw_summation.rst
     api_reference/degree_amplitude.rst
     api_reference/destripe_harmonics.rst
@@ -58,28 +59,25 @@ missions
     api_reference/legendre_polynomials.rst
     api_reference/mascons.rst
     api_reference/ocean_stokes.rst
-    api_reference/piecewise_regress.rst
-    api_reference/plm_colombo.rst
-    api_reference/plm_holmes.rst
-    api_reference/plm_mohlenkamp.rst
     api_reference/read_gfc_harmonics.rst
     api_reference/read_GIA_model.rst
     api_reference/read_GRACE_harmonics.rst
     api_reference/read_love_numbers.rst
-    api_reference/read_SLR_C20.rst
-    api_reference/read_SLR_CS2.rst
-    api_reference/read_SLR_C30.rst
-    api_reference/read_SLR_C40.rst
-    api_reference/read_SLR_C50.rst
     api_reference/read_SLR_harmonics.rst
-    api_reference/savitzky_golay.rst
     api_reference/sea_level_equation.rst
+    api_reference/SLR/C20.rst
+    api_reference/SLR/CS2.rst
+    api_reference/SLR/C30.rst
+    api_reference/SLR/C40.rst
+    api_reference/SLR/C50.rst
     api_reference/spatial.rst
     api_reference/time.rst
+    api_reference/time_series/amplitude.rst
+    api_reference/time_series/piecewise.rst
+    api_reference/time_series/regress.rst
+    api_reference/time_series/savitzky_golay.rst
+    api_reference/time_series/smooth.rst
     api_reference/tools.rst
-    api_reference/tsamplitude.rst
-    api_reference/tsregress.rst
-    api_reference/tssmooth.rst
     api_reference/units.rst
     api_reference/utilities.rst
 

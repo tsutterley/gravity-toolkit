@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 u"""
-sea_level_equation.py (11/2022)
+sea_level_equation.py (01/2023)
 Solves the sea level equation with the option of including polar motion feedback
 Uses a Clenshaw summation to calculate the spherical harmonic summation
 
@@ -43,7 +43,8 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 PROGRAM DEPENDENCIES:
-    plm_holmes.py: Computes fully normalized associated Legendre polynomials
+    associated_legendre.py: Computes fully normalized associated
+        Legendre polynomials
     gen_harmonics.py: Computes spherical harmonic coefficients from a grid
     units.py: class for converting spherical harmonic data to specific units
     harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
@@ -89,6 +90,7 @@ REFERENCES:
         https://doi.org/10.1029/JB090iB11p09363
 
 UPDATE HISTORY:
+    Updated 01/2023: refactored associated legendre polynomials
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 10/2021: using python logging for handling verbose output
@@ -120,7 +122,7 @@ UPDATE HISTORY:
 import logging
 import numpy as np
 from gravity_toolkit.gen_harmonics import gen_harmonics
-from gravity_toolkit.plm_holmes import plm_holmes
+from gravity_toolkit.associated_legendre import plm_holmes
 from gravity_toolkit.units import units
 
 # PURPOSE: Computes Sea Level Fingerprints including polar motion feedback

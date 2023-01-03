@@ -27,9 +27,10 @@ UPDATE HISTORY:
     Updated 05/2013: converted to python
     Written 07/2012:
 """
-import numpy as np
+import warnings
+import gravity_toolkit.time_series
 
-def tsamplitude(bsin, bcos):
+def tsamplitude(*args):
     """
     Calculate the amplitude and phase of a harmonic function
 
@@ -47,6 +48,8 @@ def tsamplitude(bsin, bcos):
     ph: float
         phase from the harmonic functions in degrees
     """
-    ampl = np.sqrt(bsin**2.0 + bcos**2.0)
-    ph = 180.0*np.arctan2(bcos, bsin)/np.pi
-    return (ampl,ph)
+    warnings.filterwarnings("always")
+    warnings.warn("Deprecated. Please use gravity_toolkit.time_series instead",
+        DeprecationWarning)
+    # call renamed version to not break workflows
+    return gravity_toolkit.time_series.amplitude(*args)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_mascon.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (01/2023)
 
 Calculates a time-series of regional mass anomalies through a least-squares
     mascon procedure from GRACE/GRACE-FO time-variable gravity data
@@ -128,7 +128,7 @@ PROGRAM DEPENDENCIES:
     gauss_weights.py: Computes the Gaussian weights as a function of degree
     ocean_stokes.py: reads a land-sea mask and converts to spherical harmonics
     gen_stokes.py: converts a spatial field into spherical harmonic coefficients
-    tssmooth.py: smoothes a time-series using a 13-month Loess-type algorithm
+    time_series.smooth.py: smoothes a time-series using a Loess-type algorithm
     harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
     destripe_harmonics.py: calculates the decorrelation (destriping) filter
         and filters the GRACE/GRACE-FO coefficients for striping errors
@@ -156,6 +156,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 01/2023: refactored time series analysis functions
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: add option to replace degree 4 zonal harmonics with SLR
@@ -533,8 +534,8 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
                     # calculate GRACE Error (Noise of smoothed time-series)
                     # With Annual and Semi-Annual Terms
                     val1 = getattr(GRACE_Ylms, csharm)
-                    smth = gravtk.tssmooth(GRACE_Ylms.time, val1[l,m,:],
-                        HFWTH=HFWTH)
+                    smth = gravtk.time_series.smooth(GRACE_Ylms.time,
+                        val1[l,m,:], HFWTH=HFWTH)
                     # number of smoothed points
                     nsmth = len(smth['data'])
                     tsmth = np.mean(smth['time'])

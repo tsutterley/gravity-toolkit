@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 u"""
-test_time.py (0t/2020)
+test_time.py (01/2023)
 Verify time conversion and utility functions
 
 UPDATE HISTORY:
+    Updated 01/2023: single implicit import of gravity toolkit
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: added function to test GRACE months adjustments
         test date parser for cases when only a date and no units
@@ -12,8 +13,7 @@ UPDATE HISTORY:
 import pytest
 import warnings
 import numpy as np
-import gravity_toolkit.time
-import gravity_toolkit.utilities
+import gravity_toolkit as gravtk
 
 # parameterize calendar dates
 @pytest.mark.parametrize("YEAR", np.random.randint(1992,2020,size=2))
@@ -25,18 +25,18 @@ def test_julian(YEAR,MONTH):
     dpm_leap = np.array([31,29,31,30,31,30,31,31,30,31,30,31])
     dpm_stnd = np.array([31,28,31,30,31,30,31,31,30,31,30,31])
     DPM = dpm_stnd if np.mod(YEAR,4) else dpm_leap
-    assert (np.sum(DPM) == gravity_toolkit.time.calendar_days(YEAR).sum())
+    assert (np.sum(DPM) == gravtk.time.calendar_days(YEAR).sum())
     # calculate Modified Julian Day (MJD) from calendar date
     DAY = np.random.randint(1,DPM[MONTH-1]+1)
     HOUR = np.random.randint(0,23+1)
     MINUTE = np.random.randint(0,59+1)
     SECOND = 60.0*np.random.random_sample(1)
-    MJD = gravity_toolkit.time.convert_calendar_dates(YEAR, MONTH, DAY,
+    MJD = gravtk.time.convert_calendar_dates(YEAR, MONTH, DAY,
         hour=HOUR, minute=MINUTE, second=SECOND,
         epoch=(1858,11,17,0,0,0))
     # convert MJD to calendar date
     JD = np.squeeze(MJD) + 2400000.5
-    YY,MM,DD,HH,MN,SS = gravity_toolkit.time.convert_julian(JD,
+    YY,MM,DD,HH,MN,SS = gravtk.time.convert_julian(JD,
         format='tuple', astype=np.float64)
     # assert dates
     eps = np.finfo(np.float16).eps
@@ -57,14 +57,14 @@ def test_decimal_dates(YEAR,MONTH):
     dpm_leap = np.array([31,29,31,30,31,30,31,31,30,31,30,31])
     dpm_stnd = np.array([31,28,31,30,31,30,31,31,30,31,30,31])
     DPM = dpm_stnd if np.mod(YEAR,4) else dpm_leap
-    assert (np.sum(DPM) == gravity_toolkit.time.calendar_days(YEAR).sum())
+    assert (np.sum(DPM) == gravtk.time.calendar_days(YEAR).sum())
     # calculate Modified Julian Day (MJD) from calendar date
     DAY = np.random.randint(1,DPM[MONTH-1]+1)
     HOUR = np.random.randint(0,23+1)
     MINUTE = np.random.randint(0,59+1)
     SECOND = 60.0*np.random.random_sample(1)
     # calculate year-decimal time
-    tdec = gravity_toolkit.time.convert_calendar_decimal(YEAR, MONTH, day=DAY,
+    tdec = gravtk.time.convert_calendar_decimal(YEAR, MONTH, day=DAY,
         hour=HOUR, minute=MINUTE, second=SECOND)
     # day of the year 1 = Jan 1, 365 = Dec 31 (std)
     day_temp = np.mod(tdec, 1)*np.sum(DPM)
@@ -93,26 +93,26 @@ def test_decimal_dates(YEAR,MONTH):
 # PURPOSE: test UNIX time
 def test_unix_time():
     # ATLAS Standard Data Epoch
-    UNIX = gravity_toolkit.utilities.get_unix_time('2018-01-01 00:00:00')
+    UNIX = gravtk.utilities.get_unix_time('2018-01-01 00:00:00')
     assert (UNIX == 1514764800)
 
 # PURPOSE: test parsing time strings
 def test_parse_date_string():
     # time string for Modified Julian Days
     time_string = 'days since 1858-11-17T00:00:00'
-    epoch,to_secs = gravity_toolkit.time.parse_date_string(time_string)
+    epoch,to_secs = gravtk.time.parse_date_string(time_string)
     # check the epoch and the time unit conversion factors
     assert np.all(epoch == [1858,11,17,0,0,0])
     assert (to_secs == 86400.0)
     # time string for ATLAS Standard Data Epoch
     time_string = 'seconds since 2018-01-01T00:00:00'
-    epoch,to_secs = gravity_toolkit.time.parse_date_string(time_string)
+    epoch,to_secs = gravtk.time.parse_date_string(time_string)
     # check the epoch and the time unit conversion factors
     assert np.all(epoch == [2018,1,1,0,0,0])
     assert (to_secs == 1.0)
     # time string for unitless case
     time_string = '2000-01-01T12:00:00'
-    epoch,to_secs = gravity_toolkit.time.parse_date_string(time_string)
+    epoch,to_secs = gravtk.time.parse_date_string(time_string)
     # check the epoch and the time unit conversion factors
     assert np.all(epoch == [2000,1,1,12,0,0])
     assert (to_secs == 0.0)
@@ -190,5 +190,5 @@ def test_adjust_months(PROC):
     temp = np.array(12.0*(tdec-2002.0)+1,dtype='i')
     assert np.any(temp != months.astype('i'))
     # run months adjustment to fix special cases
-    temp = gravity_toolkit.time.adjust_months(temp)
+    temp = gravtk.time.adjust_months(temp)
     assert np.all(temp == months.astype('i'))

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_stokes.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (01/2023)
 
 Converts data from the spatial domain to spherical harmonic coefficients
 
@@ -36,13 +36,14 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 PROGRAM DEPENDENCIES:
-    plm_holmes.py: computes fully-normalized associated Legendre polynomials
+    associated_legendre.py: computes fully-normalized associated Legendre polynomials
     units.py: class for converting spherical harmonic data to specific units
     harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
     destripe_harmonics.py: calculates the decorrelation (destriping) filter
         and filters the GRACE/GRACE-FO coefficients for striping errors
 
 UPDATE HISTORY:
+    Updated 01/2023: refactored associated legendre polynomials
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: added UNITS list option for converting from custom units
@@ -70,7 +71,7 @@ UPDATE HISTORY:
 import numpy as np
 import gravity_toolkit.units
 import gravity_toolkit.harmonics
-from gravity_toolkit.plm_holmes import plm_holmes
+from gravity_toolkit.associated_legendre import plm_holmes
 
 def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     PLM=None, LOVE=None):

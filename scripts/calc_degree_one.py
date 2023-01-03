@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_degree_one.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (01/2023)
 
 Calculates degree 1 variations using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from ECCO and OMCT/MPIOM
@@ -131,7 +131,8 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
     read_GIA_model.py: reads harmonics for a glacial isostatic adjustment model
     read_love_numbers.py: reads Load Love Numbers from Han and Wahr (1995)
-    plm_holmes.py: Computes fully normalized associated Legendre polynomials
+    associated_legendre.py: Computes fully normalized associated
+        Legendre polynomials
     gauss_weights.py: Computes the Gaussian weights as a function of degree
     ocean_stokes.py: converts a land-sea mask to a series of spherical harmonics
     gen_stokes.py: converts a spatial field into a series of spherical harmonics
@@ -156,6 +157,7 @@ REFERENCES:
         https://doi.org/10.1029/2007JB005338
 
 UPDATE HISTORY:
+    Updated 01/2023: refactored associated legendre polynomials
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: add option to replace degree 4 zonal harmonics with SLR

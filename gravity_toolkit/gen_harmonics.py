@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_harmonics.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (01/2023)
 Converts data from the spatial domain to spherical harmonic coefficients
 Does not compute the solid Earth elastic response or convert units
 
@@ -33,7 +33,8 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 PROGRAM DEPENDENCIES:
-    plm_holmes.py: Computes fully normalized associated Legendre polynomials
+    associated_legendre.py: Computes fully normalized associated
+        Legendre polynomials
     fourier_legendre.py: Computes the Fourier coefficients of the associated
         Legendre functions
     harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
@@ -46,6 +47,7 @@ REFERENCES:
         Associated Legendre Functions", Journal of Geodesy (2002)
 
 UPDATE HISTORY:
+    Updated 01/2023: refactored associated legendre polynomials
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: merged integration and fourier harmonics programs
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -60,7 +62,7 @@ UPDATE HISTORY:
 """
 import numpy as np
 import gravity_toolkit.harmonics
-from gravity_toolkit.plm_holmes import plm_holmes
+from gravity_toolkit.associated_legendre import plm_holmes
 from gravity_toolkit.fourier_legendre import fourier_legendre
 
 def gen_harmonics(data, lon, lat, **kwargs):

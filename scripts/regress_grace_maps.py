@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 regress_grace_maps.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (01/2023)
 
 Reads in GRACE/GRACE-FO spatial files from grace_spatial_maps.py and
     fits a regression model at each grid point
@@ -54,12 +54,13 @@ PYTHON DEPENDENCIES:
         https://www.h5py.org/
 
 PROGRAM DEPENDENCIES:
-    tsregress.py: calculates trend coefficients using least-squares
-    tsamplitude.py: calculates the amplitude and phase of a harmonic function
+    time_series.regress.py: calculates trend coefficients using least-squares
+    time_series.amplitude.py: calculates the amplitude and phase of a harmonic
     spatial.py: spatial data class for reading, writing and processing data
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 01/2023: refactored time series analysis functions
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
@@ -250,7 +251,7 @@ def regress_grace_maps(LMAX, RAD,
     for i in range(nlat):
         for j in range(nlon):
             # Calculating the regression coefficients
-            tsbeta = gravtk.tsregress(grid.time, grid.data[i,j,:],
+            tsbeta = gravtk.time_series.regress(grid.time, grid.data[i,j,:],
                 ORDER=ORDER, CYCLES=CYCLES, CONF=0.95)
             # save regression components
             for k in range(0, ncomp):
@@ -309,7 +310,7 @@ def regress_grace_maps(LMAX, RAD,
             amp = dinput.zeros_like()
             ph = dinput.zeros_like()
             # calculating amplitude and phase of spatial field
-            amp.data,ph.data = gravtk.tsamplitude(
+            amp.data,ph.data = gravtk.time_series.amplitude(
                 out.data[:,:,j], out.data[:,:,j+1]
             )
             # convert phase from -180:180 to 0:360

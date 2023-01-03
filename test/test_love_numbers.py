@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 u"""
-test_love_numbers.py (12/2020)
+test_love_numbers.py (01/2023)
 UPDATE HISTORY:
+    Updated 01/2023: single implicit import of gravity toolkit
     Updated 12/2020: add linear interpolation to degree 1000
         add tests for Gegout and Wang load Love number sets
     Written 08/2020
@@ -9,8 +10,7 @@ UPDATE HISTORY:
 import os
 import warnings
 import pytest
-import gravity_toolkit.read_love_numbers
-from gravity_toolkit.utilities import get_data_path
+import gravity_toolkit as gravtk
 
 # PURPOSE: Define Load Love Numbers for lower degree harmonics
 def get_love_numbers():
@@ -27,9 +27,10 @@ def test_love_numbers():
     # valid low degree Love numbers for reference frame CF
     VALID = get_love_numbers()
     # path to load Love numbers file
-    love_numbers_file = get_data_path(['data','love_numbers'])
+    love_numbers_file = gravtk.utilities.get_data_path(
+        ['data','love_numbers'])
     # read load Love numbers and convert to reference frame CF
-    TEST = gravity_toolkit.read_love_numbers(love_numbers_file,
+    TEST = gravtk.read_love_numbers(love_numbers_file,
         LMAX=1000, HEADER=2, FORMAT='dict', REFERENCE='CF')
     assert all((v==t).all() for key in ['hl','kl','ll']
         for v,t in zip(VALID[key],TEST[key]))
@@ -38,19 +39,21 @@ def test_love_numbers():
 # PURPOSE: Check that Gegout (2005) Load Love Numbers can be read
 def test_Gegout_love_numbers():
     # path to load Love numbers file
-    love_numbers_file = get_data_path(['data','Load_Love2_CE.dat'])
+    love_numbers_file = gravtk.utilities.get_data_path(
+        ['data','Load_Love2_CE.dat'])
     COLUMNS = ['l','hl','ll','kl']
     # read load Love numbers and convert to reference frame CM
-    TEST = gravity_toolkit.read_love_numbers(love_numbers_file,
+    TEST = gravtk.read_love_numbers(love_numbers_file,
         HEADER=3, COLUMNS=COLUMNS, FORMAT='dict', REFERENCE='CM')
     assert (TEST['l'].max() == 1024)
 
 # PURPOSE: Check that Wang et al. (2012) Load Love Numbers can be read
 def test_Wang_love_numbers():
     # path to load Love numbers file (truncated from degree 46341)
-    love_numbers_file = get_data_path(['data','PREM-LLNs-truncated.dat'])
+    love_numbers_file = gravtk.utilities.get_data_path(
+        ['data','PREM-LLNs-truncated.dat'])
     COLUMNS = ['l','hl','ll','kl','nl','nk']
     # read load Love numbers and convert to reference frame CE
-    TEST = gravity_toolkit.read_love_numbers(love_numbers_file,
+    TEST = gravtk.read_love_numbers(love_numbers_file,
         HEADER=1, COLUMNS=COLUMNS, FORMAT='dict', REFERENCE='CE')
     assert (TEST['l'].max() == 5000)

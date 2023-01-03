@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 convert_harmonics.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (01/2023)
 Converts a file from the spatial domain into the spherical harmonic domain
 
 CALLING SEQUENCE:
@@ -50,7 +50,8 @@ PYTHON DEPENDENCIES:
 PROGRAM DEPENDENCIES:
     read_love_numbers.py: reads Load Love Numbers from Han and Wahr (1995)
     gen_stokes.py: converts a spatial field into a series of spherical harmonics
-    plm_holmes.py: Computes fully normalized associated Legendre polynomials
+    associated_legendre.py: Computes fully normalized associated
+        Legendre polynomials
     harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
     destripe_harmonics.py: calculates the decorrelation (destriping) filter
         and filters the GRACE/GRACE-FO coefficients for striping errors
@@ -59,6 +60,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 01/2023: refactored associated legendre polynomials
     Updated 12/2022: single implicit import of gravity toolkit
         iterate over spatial objects versus indexing
     Updated 11/2022: use f-strings for formatting verbose or ascii output

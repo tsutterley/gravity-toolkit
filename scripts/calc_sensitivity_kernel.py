@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_sensitivity_kernel.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (01/2023)
 
 Calculates spatial sensitivity kernels through a least-squares mascon procedure
 
@@ -54,7 +54,8 @@ PYTHON DEPENDENCIES:
 
 PROGRAM DEPENDENCIES:
     read_love_numbers.py: reads Load Love Numbers from Han and Wahr (1995)
-    plm_holmes.py: Computes fully normalized associated Legendre polynomials
+    associated_legendre.py: Computes fully normalized associated
+        Legendre polynomials
     gauss_weights.py: Computes the Gaussian weights as a function of degree
     ocean_stokes.py: reads a land-sea mask and converts to spherical harmonics
     gen_stokes.py: converts a spatial field into spherical harmonic coefficients
@@ -82,6 +83,7 @@ REFERENCES:
         https://doi.org/10.1029/2009GL039401
 
 UPDATE HISTORY:
+    Updated 01/2023: refactored associated legendre polynomials
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 07/2022: create mask for output gridded variables

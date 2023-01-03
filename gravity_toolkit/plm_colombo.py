@@ -42,6 +42,7 @@ UPDATE HISTORY:
     Updated 09/2013: new format for file headers
     Written 03/2013
 """
+import warnings
 import numpy as np
 
 def plm_colombo(LMAX, x, ASTYPE=np.float64):
@@ -85,6 +86,9 @@ def plm_colombo(LMAX, x, ASTYPE=np.float64):
         *Journal of Geodesy*, 76, 279--299, (2002).
         `doi: 10.1007/s00190-002-0216-2 <https://doi.org/10.1007/s00190-002-0216-2>`_
     """
+    warnings.filterwarnings("always")
+    warnings.warn("Deprecated. Please use gravity_toolkit.associated_legendre instead",
+        DeprecationWarning)
 
     # removing singleton dimensions of x
     x = np.atleast_1d(x).flatten().astype(ASTYPE)

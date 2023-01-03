@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 combine_harmonics.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (01/2023)
 Converts a file from the spherical harmonic domain into the spatial domain
 
 CALLING SEQUENCE:
@@ -56,7 +56,8 @@ PYTHON DEPENDENCIES:
 
 PROGRAM DEPENDENCIES:
     read_love_numbers.py: reads Load Love Numbers from Han and Wahr (1995)
-    plm_holmes.py: Computes fully normalized associated Legendre polynomials
+    associated_legendre.py: Computes fully normalized associated
+        Legendre polynomials
     gauss_weights.py: Computes the Gaussian weights as a function of degree
     ocean_stokes.py: reads a land-sea mask and converts to spherical harmonics
     harmonic_summation.py: calculates a spatial field from spherical harmonics
@@ -68,6 +69,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 01/2023: refactored associated legendre polynomials
     Updated 12/2022: single implicit import of gravity toolkit
         iterate over harmonics objects versus indexing
     Updated 11/2022: use f-strings for formatting verbose or ascii output

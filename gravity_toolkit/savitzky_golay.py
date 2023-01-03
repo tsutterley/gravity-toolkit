@@ -54,13 +54,10 @@ UPDATE HISTORY:
     Updated 08/2015: changed sys.exit to raise ValueError
     Written 06/2014
 """
-from __future__ import print_function, division
+import warnings
+import gravity_toolkit.time_series
 
-import numpy as np
-import scipy.special
-
-def savitzky_golay(t_in, y_in, WINDOW=None, ORDER=2, DERIV=0,
-    RATE=1, DATA_ERR=0):
+def savitzky_golay(*args, **kwargs):
     """
     Smooth and optionally differentiate data with a Savitzky-Golay
     filter [Savitzky1964]_ [Press2007]_
@@ -104,46 +101,8 @@ def savitzky_golay(t_in, y_in, WINDOW=None, ORDER=2, DERIV=0,
         Computing*, W.H. Press, S.A. Teukolsky, W. T. Vetterling,
         B.P. Flannery. Cambridge University Press, (2007).
     """
-
-    # verify that WINDOW is positive, odd and greater than ORDER+1
-    if WINDOW is None:
-        WINDOW = ORDER + -1*(ORDER % 2) + 3
-    if WINDOW % 2 != 1 or WINDOW < 1:
-        raise ValueError("WINDOW size must be a positive odd number")
-    if WINDOW < ORDER + 2:
-        raise ValueError("WINDOW is too small for the polynomials order")
-    # remove any singleton dimensions
-    t_in = np.squeeze(t_in)
-    y_in = np.squeeze(y_in)
-    nmax = len(t_in)
-
-    # order range
-    order_range = np.arange(ORDER+1)
-    # filter half-window
-    half_window = (WINDOW - 1) // 2
-    # output time-series (removing half-windows on ends)
-    t_out = t_in[half_window:nmax-half_window]
-    # output smoothed timeseries (or derivative)
-    y_out = np.zeros((nmax-2*half_window))
-    y_err = np.zeros((nmax-2*half_window))
-    for n in range(0, (nmax-(2*half_window))):
-        yran = y_in[n + np.arange(0, 2*half_window+1)]
-        # Vandermonde matrix for the time-series
-        b = np.mat([[(t_in[k]-t_in[n+half_window])**i for i in order_range]
-            for k in range(n, n+2*half_window+1)])
-        # compute the pseudoinverse of the design matrix
-        m=np.linalg.pinv(b).A[DERIV]*RATE**DERIV*scipy.special.factorial(DERIV)
-        # pad the signal at the extremes with values taken from the signal
-        firstvals = yran[0] - np.abs(yran[1:half_window+1][::-1] - yran[0])
-        lastvals = yran[-1] + np.abs(yran[-half_window-1:-1][::-1] - yran[-1])
-        yn = np.concatenate((firstvals, yran, lastvals))
-        # compute the convolution and use middle value
-        y_out[n] = np.convolve(m[::-1], yn, mode='valid')[half_window]
-        if (DATA_ERR != 0):
-            # if data error is known and of equal value
-            P_err = DATA_ERR*np.ones((4*half_window+1))
-            # compute the convolution and use middle value
-            y_err[n] = np.sqrt(np.convolve(m[::-1]**2, P_err**2,
-                mode='valid')[half_window])
-
-    return {'data':y_out, 'error':y_err, 'time':t_out}
+    warnings.filterwarnings("always")
+    warnings.warn("Deprecated. Please use gravity_toolkit.time_series instead",
+        DeprecationWarning)
+    # call renamed version to not break workflows
+    return gravity_toolkit.time_series.savitzky_golay(*args,**kwargs)

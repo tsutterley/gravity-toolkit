@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_spherical_cap.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (01/2023)
 Calculates gravitational spherical harmonic coefficients for a spherical cap
 
 Spherical cap derivation from Longman (1962), Farrell (1972), Pollack (1973)
@@ -43,7 +43,8 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 PROGRAM DEPENDENCIES:
-    plm_holmes.py: Computes fully-normalized associated Legendre polynomials
+    associated_legendre.py: Computes fully-normalized associated
+        Legendre polynomials
     legendre_polynomials.py: Computes fully normalized Legendre polynomials
     units.py: class for converting spherical harmonic data to specific units
     harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
@@ -63,6 +64,7 @@ REFERENCES:
         https://doi.org/10.1007/s00190-011-0522-7
 
 UPDATE HISTORY:
+    Updated 01/2023: refactored associated legendre polynomials
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: added UNITS list option for converting from custom units
@@ -92,7 +94,7 @@ UPDATE HISTORY:
 import numpy as np
 import gravity_toolkit.units
 import gravity_toolkit.harmonics
-from gravity_toolkit.plm_holmes import plm_holmes
+from gravity_toolkit.associated_legendre import plm_holmes
 from gravity_toolkit.legendre_polynomials import legendre_polynomials
 
 def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,

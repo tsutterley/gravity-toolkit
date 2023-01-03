@@ -118,11 +118,12 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
     read_GIA_model.py: reads harmonics for a glacial isostatic adjustment model
     read_love_numbers.py: reads Load Love Numbers from Han and Wahr (1995)
-    plm_holmes.py: Computes fully normalized associated Legendre polynomials
+    associated_legendre.py: Computes fully normalized associated
+        Legendre polynomials
     gauss_weights.py: Computes the Gaussian weights as a function of degree
     gen_stokes.py: converts a spatial field into a series of spherical harmonics
     sea_level_equation.py: pseudo-spectral sea level equation solver
-    tssmooth.py: smoothes a time-series using a 13-month Loess-type algorithm
+    time_series.smooth.py: smoothes a time-series using a Loess-type algorithm
     units.py: class for converting GRACE/GRACE-FO Level-2 data to specific units
     harmonics.py: class for processing GRACE/GRACE-FO spherical harmonic data
     destripe_harmonics.py: calculates the decorrelation (destriping) filter
@@ -146,6 +147,8 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 01/2023: refactored associated legendre polynomials
+        refactored time series analysis functions
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: add option to replace degree 4 zonal harmonics with SLR
@@ -494,7 +497,8 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
                     # calculate GRACE Error (Noise of smoothed time-series)
                     # With Annual and Semi-Annual Terms
                     val1 = getattr(GSM_Ylms, csharm)
-                    smth = gravtk.tssmooth(tdec, val1[l,m,:], HFWTH=HFWTH)
+                    smth = gravtk.time_series.smooth(tdec, val1[l,m,:],
+                        HFWTH=HFWTH)
                     # number of smoothed points
                     nsmth = len(smth['data'])
                     tsmth = np.mean(smth['time'])
