@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (01/2023)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
@@ -98,13 +98,17 @@ PYTHON DEPENDENCIES:
 PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
     grace_date.py: reads GRACE index file and calculates dates for each month
-    read_SLR_C20.py: reads C20 files from satellite laser ranging (CSR or GSFC)
-    read_SLR_C30.py: reads C30 files from satellite laser ranging (CSR or GSFC)
+    SLR.C20.py: reads C20 files from satellite laser ranging (CSR or GSFC)
+    SLR.CS2.py: reads C2,S2 files from satellite laser ranging (CSR or GSFC)
+    SLR.C30.py: reads C30 files from satellite laser ranging (CSR or GSFC)
+    SLR.C40.py: reads C40 files from satellite laser ranging (CSR or GSFC)
+    SLR.C50.py: reads C50 files from satellite laser ranging (CSR or GSFC)
     geocenter.py: data class for reading and processing geocenter data
     read_GRACE_harmonics.py: read spherical harmonic data from SHM files
     read_gfc_harmonics.py: reads spherical harmonic data from gfc files
 
 UPDATE HISTORY:
+    Updated 01/2023: refactored satellite laser ranging read functions
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 10/2022: tilde-expansion of input working data directory
     Updated 09/2022: use logging for debugging level verbose output
@@ -168,12 +172,8 @@ import copy
 import logging
 import numpy as np
 import gravity_toolkit.geocenter
+import gravity_toolkit.SLR
 from gravity_toolkit.grace_date import grace_date
-from gravity_toolkit.read_SLR_C20 import read_SLR_C20
-from gravity_toolkit.read_SLR_CS2 import read_SLR_CS2
-from gravity_toolkit.read_SLR_C30 import read_SLR_C30
-from gravity_toolkit.read_SLR_C40 import read_SLR_C40
-from gravity_toolkit.read_SLR_C50 import read_SLR_C50
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
 
@@ -414,9 +414,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     # SLR low-degree harmonic, geocenter and correction flags
     FLAGS = []
 
-    # Replacing C2,0 with SLR C2,0
-    # Running function read_SLR_C20.py
-    # reading SLR C2,0 file for given release if specified
+    # Replacing C2,0 with SLR values
     if (SLR_C20 == 'CSR'):
         if (DREL == 'RL04'):
             SLR_file = os.path.join(base_dir,'TN-05_C20_SLR.txt')
@@ -428,31 +426,30 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # log SLR file if debugging
         logging.debug(f'Reading SLR C20 file: {SLR_file}')
         # read SLR file
-        C20_input = read_SLR_C20(SLR_file)
+        C20_input = gravity_toolkit.SLR.C20(SLR_file)
         FLAGS.append('_wCSR_C20')
     elif (SLR_C20 == 'GFZ'):
         SLR_file = os.path.join(base_dir,f'GFZ_{DREL}_C20_SLR.dat')
         # log SLR file if debugging
         logging.debug(f'Reading SLR C20 file: {SLR_file}')
         # read SLR file
-        C20_input = read_SLR_C20(SLR_file)
+        C20_input = gravity_toolkit.SLR.C20(SLR_file)
         FLAGS.append('_wGFZ_C20')
     elif (SLR_C20 == 'GSFC'):
         SLR_file = os.path.join(base_dir,'TN-14_C30_C20_GSFC_SLR.txt')
         # log SLR file if debugging
         logging.debug(f'Reading SLR C20 file: {SLR_file}')
         # read SLR file
-        C20_input = read_SLR_C20(SLR_file)
+        C20_input = gravity_toolkit.SLR.C20(SLR_file)
         FLAGS.append('_wGSFC_C20')
 
-    # Replacing C2,1/S2,1 with SLR
-    # Running function read_SLR_CS2.py
+    # Replacing C2,1/S2,1 with SLR values
     if (kwargs['SLR_21'] == 'CSR'):
         SLR_file = os.path.join(base_dir,f'C21_S21_{DREL}.txt')
         # log SLR file if debugging
         logging.debug(f'Reading SLR C21/S21 file: {SLR_file}')
         # read SLR file
-        C21_input = read_SLR_CS2(SLR_file)
+        C21_input = gravity_toolkit.SLR.CS2(SLR_file)
         FLAGS.append('_wCSR_21')
     elif (kwargs['SLR_21'] == 'GFZ'):
         GravIS_file = 'GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat'
@@ -460,7 +457,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # log SLR file if debugging
         logging.debug(f'Reading SLR C21/S21 file: {SLR_file}')
         # read SLR file
-        C21_input = read_SLR_CS2(SLR_file)
+        C21_input = gravity_toolkit.SLR.CS2(SLR_file)
         FLAGS.append('_wGFZ_21')
     elif (kwargs['SLR_21'] == 'GSFC'):
         # calculate monthly averages from 7-day arcs
@@ -469,48 +466,48 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # log SLR file if debugging
         logging.debug(f'Reading SLR C21/S21 file: {SLR_file}')
         # read SLR file
-        C21_input = read_SLR_CS2(SLR_file, DATE=grace_Ylms['time'], ORDER=1)
+        C21_input = gravity_toolkit.SLR.CS2(SLR_file,
+            DATE=grace_Ylms['time'], ORDER=1)
         FLAGS.append('_wGSFC_21')
 
-    # Replacing C2,2/S2,2 with SLR
-    # Running function read_SLR_CS2.py
+    # Replacing C2,2/S2,2 with SLR values
     if (kwargs['SLR_22'] == 'CSR'):
         SLR_file = os.path.join(base_dir,f'C22_S22_{DREL}.txt')
         # log SLR file if debugging
         logging.debug(f'Reading SLR C22/S22 file: {SLR_file}')
         # read SLR file
-        C22_input = read_SLR_CS2(SLR_file)
+        C22_input = gravity_toolkit.SLR.CS2(SLR_file)
         FLAGS.append('_wCSR_22')
     elif (kwargs['SLR_22'] == 'GSFC'):
         SLR_file = os.path.join(base_dir,'gsfc_slr_5x5c61s61.txt')
         # log SLR file if debugging
         logging.debug(f'Reading SLR C22/S22 file: {SLR_file}')
         # read SLR file
-        C22_input = read_SLR_CS2(SLR_file, DATE=grace_Ylms['time'], ORDER=2)
+        C22_input = gravity_toolkit.SLR.CS2(SLR_file,
+            DATE=grace_Ylms['time'], ORDER=2)
         FLAGS.append('_wGSFC_22')
 
-    # Replacing C3,0 with SLR C3,0
-    # Running function read_SLR_C30.py
+    # Replacing C3,0 with SLR values
     if (kwargs['SLR_C30'] == 'CSR'):
         SLR_file = os.path.join(base_dir,'CSR_Monthly_5x5_Gravity_Harmonics.txt')
         # log SLR file if debugging
         logging.debug(f'Reading SLR C30 file: {SLR_file}')
         # read SLR file
-        C30_input = read_SLR_C30(SLR_file)
+        C30_input = gravity_toolkit.SLR.C30(SLR_file)
         FLAGS.append('_wCSR_C30')
     elif (kwargs['SLR_C30'] == 'LARES'):
         SLR_file = os.path.join(base_dir,'C30_LARES_filtered.txt')
         # log SLR file if debugging
         logging.debug(f'Reading SLR C30 file: {SLR_file}')
         # read SLR file
-        C30_input = read_SLR_C30(SLR_file)
+        C30_input = gravity_toolkit.SLR.C30(SLR_file)
         FLAGS.append('_wLARES_C30')
     elif (kwargs['SLR_C30'] == 'GSFC'):
         SLR_file = os.path.join(base_dir,'TN-14_C30_C20_GSFC_SLR.txt')
         # log SLR file if debugging
         logging.debug(f'Reading SLR C30 file: {SLR_file}')
         # read SLR file
-        C30_input = read_SLR_C30(SLR_file)
+        C30_input = gravity_toolkit.SLR.C30(SLR_file)
         FLAGS.append('_wGSFC_C30')
     elif (kwargs['SLR_C30'] == 'GFZ'):
         GravIS_file = 'GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat'
@@ -518,48 +515,47 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # log SLR file if debugging
         logging.debug(f'Reading SLR C30 file: {SLR_file}')
         # read SLR file
-        C30_input = read_SLR_C30(SLR_file)
+        C30_input = gravity_toolkit.SLR.C30(SLR_file)
         FLAGS.append('_wGFZ_C30')
 
-    # Replacing C4,0 with SLR C4,0
-    # Running function read_SLR_C40.py
+    # Replacing C4,0 with SLR values
     if (kwargs['SLR_C40'] == 'CSR'):
         SLR_file = os.path.join(base_dir,'CSR_Monthly_5x5_Gravity_Harmonics.txt')
         # log SLR file if debugging
         logging.debug(f'Reading SLR C40 file: {SLR_file}')
         # read SLR file
-        C40_input = read_SLR_C40(SLR_file)
+        C40_input = gravity_toolkit.SLR.C40(SLR_file)
         FLAGS.append('_wCSR_C40')
     elif (kwargs['SLR_C40'] == 'LARES'):
         SLR_file = os.path.join(base_dir,'C40_LARES_filtered.txt')
         # log SLR file if debugging
         logging.debug(f'Reading SLR C40 file: {SLR_file}')
         # read SLR file
-        C40_input = read_SLR_C40(SLR_file)
+        C40_input = gravity_toolkit.SLR.C40(SLR_file)
         FLAGS.append('_wLARES_C40')
     elif (kwargs['SLR_C40'] == 'GSFC'):
         SLR_file = os.path.join(base_dir,'gsfc_slr_5x5c61s61.txt')
         # log SLR file if debugging
         logging.debug(f'Reading SLR C40 file: {SLR_file}')
         # read SLR file
-        C40_input = read_SLR_C40(SLR_file, DATE=grace_Ylms['time'])
+        C40_input = gravity_toolkit.SLR.C40(SLR_file,
+            DATE=grace_Ylms['time'])
         FLAGS.append('_wGSFC_C40')
 
-    # Replacing C5,0 with SLR C5,0
-    # Running function read_SLR_C50.py
+    # Replacing C5,0 with SLR values
     if (kwargs['SLR_C50'] == 'CSR'):
         SLR_file = os.path.join(base_dir,'CSR_Monthly_5x5_Gravity_Harmonics.txt')
         # log SLR file if debugging
         logging.debug(f'Reading SLR C50 file: {SLR_file}')
         # read SLR file
-        C50_input = read_SLR_C50(SLR_file)
+        C50_input = gravity_toolkit.SLR.C50(SLR_file)
         FLAGS.append('_wCSR_C50')
     elif (kwargs['SLR_C50'] == 'LARES'):
         SLR_file = os.path.join(base_dir,'C50_LARES_filtered.txt')
         # log SLR file if debugging
         logging.debug(f'Reading SLR C50 file: {SLR_file}')
         # read SLR file
-        C50_input = read_SLR_C50(SLR_file)
+        C50_input = gravity_toolkit.SLR.C50(SLR_file)
         FLAGS.append('_wLARES_C50')
     elif (kwargs['SLR_C50'] == 'GSFC'):
         # SLR_file = os.path.join(base_dir,'GSFC_SLR_C20_C30_C50_GSM_replacement.txt')
@@ -567,7 +563,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # log SLR file if debugging
         logging.debug(f'Reading SLR C50 file: {SLR_file}')
         # read SLR file
-        C50_input = read_SLR_C50(SLR_file, DATE=grace_Ylms['time'])
+        C50_input = gravity_toolkit.SLR.C50(SLR_file,
+            DATE=grace_Ylms['time'])
         FLAGS.append('_wGSFC_C50')
 
     # Correcting for Degree 1 (geocenter variations)

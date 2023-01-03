@@ -50,6 +50,7 @@ UPDATE HISTORY:
     Updated 05/2015: added parameter MMAX for MMAX != LMAX
     Written 09/2013
 """
+import warnings
 import numpy as np
 
 def plm_mohlenkamp(LMAX, x, MMAX=None):
@@ -80,13 +81,16 @@ def plm_mohlenkamp(LMAX, x, MMAX=None):
     References
     ----------
     .. [Mohlenkamp2016] M. J. Mohlenkamp,
-        "A User’s Guide to Spherical Harmonics", (2016).
+        "A User's Guide to Spherical Harmonics", (2016).
         `[pdf] <http://www.ohiouniversityfaculty.com/mohlenka/research/uguide.pdf>`_
     .. [Szego1939] Gabor Szeg\ |ouml|\ , "Orthogonal Polynomials", 440 pp., (1939).
         `[pdf] <https://people.math.osu.edu/nevai.1/AT/SZEGO/szego=szego1975=ops=OCR.pdf>`_
 
     .. |ouml|    unicode:: U+00F6 .. LATIN SMALL LETTER O WITH DIAERESIS
     """
+    warnings.filterwarnings("always")
+    warnings.warn("Deprecated. Please use gravity_toolkit.associated_legendre instead",
+        DeprecationWarning)
 
     # Verify LMAX as integer
     LMAX = np.int64(LMAX)

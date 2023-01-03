@@ -53,6 +53,7 @@ UPDATE HISTORY:
     Written 05/2015
 """
 from __future__ import division
+import warnings
 import numpy as np
 
 def plm_holmes(LMAX, x, ASTYPE=np.float64):
@@ -92,6 +93,9 @@ def plm_holmes(LMAX, x, ASTYPE=np.float64):
         *Journal of Geodesy*, 76, 279--299, (2002).
         `doi: 10.1007/s00190-002-0216-2 <https://doi.org/10.1007/s00190-002-0216-2>`_
     """
+    warnings.filterwarnings("always")
+    warnings.warn("Deprecated. Please use gravity_toolkit.associated_legendre instead",
+        DeprecationWarning)
 
     # removing singleton dimensions of x
     x = np.atleast_1d(x).flatten().astype(ASTYPE)

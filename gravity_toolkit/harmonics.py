@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (01/2023)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -25,6 +25,8 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 01/2023: made amplitude a property of the harmonics class
+        added property for the complex form of the spherical harmonics
     Updated 12/2022: add software information to output HDF5 and netCDF4
         moved GIA model reader to be an inherited class of harmonics
         make harmonics objects iterable and with length
@@ -1731,42 +1733,41 @@ class harmonics(object):
         # return the destriped field
         return temp
 
-    def amplitude(self, mmax=None):
+    @property
+    def amplitude(self):
         """
-        Calculates the degree amplitude of a harmonics object
-
-        Parameters
-        ----------
-        mmax: int or NoneType, default None
-            maximum order of spherical harmonics
+        Degree amplitude of the spherical harmonics
         """
         # temporary matrix for squared harmonics
         temp = self.power(2)
-        # truncate to order mmax
-        if mmax is not None:
-            temp.truncate(self.lmax, mmax=mmax)
         # check if a single field or a temporal field
         if (self.ndim == 2):
             # allocate for degree amplitudes
-            self.amp = np.zeros((self.lmax+1))
+            amp = np.zeros((self.lmax+1))
             for l in range(self.lmax+1):
                 # truncate at mmax
-                m = np.arange(l,temp.mmax+1)
+                m = np.arange(0,temp.mmax+1)
                 # degree amplitude of spherical harmonic degree
-                self.amp[l] = np.sqrt(np.sum(temp.clm[l,m] + temp.slm[l,m]))
-
+                amp[l] = np.sqrt(np.sum(temp.clm[l,m] + temp.slm[l,m]))
         else:
             # allocate for degree amplitudes
             n = self.shape[-1]
-            self.amp = np.zeros((self.lmax+1,n))
+            amp = np.zeros((self.lmax+1,n))
             for l in range(self.lmax+1):
                 # truncate at mmax
-                m = np.arange(l,temp.mmax+1)
+                m = np.arange(0,temp.mmax+1)
                 # degree amplitude of spherical harmonic degree
                 var = temp.clm[l,m,:] + temp.slm[l,m,:]
-                self.amp[l,:] = np.sqrt(np.sum(var,axis=0))
-        # return the harmonics object with degree amplitudes
-        return self
+                amp[l,:] = np.sqrt(np.sum(var, axis=0))
+        # return the degree amplitudes
+        return amp
+
+    @property
+    def ilm(self):
+        """
+        Complex form of the spherical harmonics
+        """
+        return self.clm - self.slm*1j
 
     def __len__(self):
         """Number of months

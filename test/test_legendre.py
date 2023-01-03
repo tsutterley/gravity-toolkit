@@ -3,11 +3,11 @@ u"""
 test_legendre.py (11/2021)
 """
 import numpy as np
-import gravity_toolkit
+import gravity_toolkit as gravtk
 
 # PURPOSE: test unnormalized Legendre polynomials
 def test_unnormalized(l=3, x=[-1.0, -0.9, -0.8]):
-    obs = gravity_toolkit.legendre(l, x)
+    obs = gravtk.legendre(l, x)
     expected = np.array([
         [-1.00000, -0.47250, -0.08000],
         [0.00000, -1.99420, -1.98000],
@@ -18,7 +18,7 @@ def test_unnormalized(l=3, x=[-1.0, -0.9, -0.8]):
 
 # PURPOSE: test fully-normalized Legendre polynomials
 def test_normalized(l=3, x=[-1.0, -0.9, -0.8]):
-    obs = gravity_toolkit.legendre(l, x, NORMALIZE=True)
+    obs = gravtk.legendre(l, x, NORMALIZE=True)
     expected = np.array([
         [-2.64575, -1.25012, -0.21166],
         [-0.00000, 2.15398, 2.13864],
@@ -29,7 +29,7 @@ def test_normalized(l=3, x=[-1.0, -0.9, -0.8]):
 
 # PURPOSE: test fully-normalized zonal Legendre polynomials
 def test_zonal(l=3, x=[-1.0, -0.9, -0.8]):
-    obs,_ = gravity_toolkit.legendre_polynomials(l, x)
+    obs,_ = gravtk.legendre_polynomials(l, x)
     expected = np.array([
         [1.00000, 1.00000, 1.00000],
         [-1.73205, -1.55885, -1.38564],
@@ -40,11 +40,11 @@ def test_zonal(l=3, x=[-1.0, -0.9, -0.8]):
 
 # PURPOSE: compare fully-normalized Legendre polynomials
 def test_plms(l=240, x=0.1):
-    obs = gravity_toolkit.legendre(l, x, NORMALIZE=True)
+    obs = gravtk.legendre(l, x, NORMALIZE=True)
     # calculate associated Legendre polynomials
-    holmes,_ = gravity_toolkit.plm_holmes(l, x)
-    colombo,_ = gravity_toolkit.plm_colombo(l, x)
-    mohlenkamp = gravity_toolkit.plm_mohlenkamp(l, x)
+    holmes,_ = gravtk.plm_holmes(l, x)
+    colombo,_ = gravtk.plm_colombo(l, x)
+    mohlenkamp,_ = gravtk.plm_mohlenkamp(l, x)
     # compare Legendre polynomials
     assert np.isclose(obs, holmes[l,:]).all()
     assert np.isclose(holmes, colombo).all()

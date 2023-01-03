@@ -17,3 +17,5 @@ Calling Sequence
 .. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/harmonic_summation.py
 
 .. autofunction:: gravity_toolkit.harmonic_summation
+
+.. autofunction:: gravity_toolkit.harmonic_transform
