@@ -20,16 +20,16 @@ use of `Jupyter Notebooks <./Examples.html>`_.
     :align: center
 
     digraph {
-        G [label="GRACE/GRACE-FO\ntime-variable gravity" shape=box style="filled" color="darkorchid"]
-        A [label="Non-tidal Ocean and\nAtmospheric Variation" shape=box style="filled" color="darkorchid"]
-        I [label="Glacial Isostatic\nAdjustment" shape=box style="filled" color="darkorchid"]
-        W [label="Terrestrial Water\nStorage" shape=box style="filled" color="darkorchid"]
+        G [label="GRACE/GRACE-FO\ntime-variable gravity" shape=box style="filled" color="#7570b3"]
+        A [label="Non-tidal Ocean and\nAtmospheric Variation" shape=box style="filled" color="#7570b3"]
+        I [label="Glacial Isostatic\nAdjustment" shape=box style="filled" color="#7570b3"]
+        W [label="Terrestrial Water\nStorage" shape=box style="filled" color="#7570b3"]
         R [label="gravity-toolkit" shape=box style="filled" color="gray"]
-        S [label="Spatial Maps" shape=box style="filled" color="mediumseagreen"
+        S [label="Spatial Maps" shape=box style="filled" color="#1b9e77"
             URL="Spatial-Maps.html"]
-        T [label="Time Series Analysis" shape=box style="filled" color="mediumseagreen"
+        T [label="Time Series Analysis" shape=box style="filled" color="#1b9e77"
             URL="Time-Series-Analysis.html"]
-        D [label="Geocenter Variation" shape=box style="filled" color="mediumseagreen"
+        D [label="Geocenter Variation" shape=box style="filled" color="#1b9e77"
             URL="Geocenter-Variations.html"]
         G -> R
         A -> R
