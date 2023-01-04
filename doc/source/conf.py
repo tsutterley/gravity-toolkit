@@ -18,7 +18,7 @@ import datetime
 
 # -- Project information -----------------------------------------------------
 
-project = 'read-GRACE-harmonics'
+project = 'gravity-toolkit'
 year = datetime.date.today().year
 copyright = f"2019\u2013{year}, Tyler C. Sutterley"
 author = 'Tyler C. Sutterley'
@@ -59,8 +59,8 @@ pygments_style = 'native'
 
 # -- Options for HTML output -------------------------------------------------
 
-# html_title = "read-GRACE-harmonics"
-html_short_title = "read-GRACE-harmonics"
+# html_title = "gravity-toolkit"
+html_short_title = "gravity-toolkit"
 html_show_sourcelink = False
 html_show_sphinx = True
 html_show_copyright = True
@@ -75,7 +75,7 @@ html_theme_options = {}
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-repository_url = f"https://github.com/tsutterley/read-GRACE-harmonics"
+repository_url = f"https://github.com/tsutterley/gravity-toolkit"
 html_context = {
     "menu_links": [
         (

@@ -5,14 +5,14 @@ Background
 
 This documentation is intended to explain how to compute spatial and time series
 estimates using GRACE/GRACE-FO time-variable gravity measurements.
-``read-GRACE-harmonics`` is a Python-based geophysical software that reads
+``gravity-toolkit`` is a Python-based geophysical software that reads
 GRACE/GRACE-FO time-variable gravity solutions for estimating regional mass change.
 A suite of geophysical corrections can be applied to the gravity solutions to
 optimize the GRACE/GRACE-FO data for particular applications.
 This software was developed with the goal of supporting science applications for
 time-variable gravity.
-``read-GRACE-harmonics`` provides data access utilities for ascii, netCDF4, HDF5 and gfc file formats.
-``read-GRACE-harmonics`` also provides some very high-level plotting programs through the
+``gravity-toolkit`` provides data access utilities for ascii, netCDF4, HDF5 and gfc file formats.
+``gravity-toolkit`` also provides some very high-level plotting programs through the
 use of `Jupyter Notebooks <./Examples.html>`_.
 
 .. graphviz::
@@ -24,7 +24,7 @@ use of `Jupyter Notebooks <./Examples.html>`_.
         A [label="Non-tidal Ocean and\nAtmospheric Variation" shape=box style="filled" color="darkorchid"]
         I [label="Glacial Isostatic\nAdjustment" shape=box style="filled" color="darkorchid"]
         W [label="Terrestrial Water\nStorage" shape=box style="filled" color="darkorchid"]
-        R [label="read-GRACE-harmonics" shape=box style="filled" color="gray"]
+        R [label="gravity-toolkit" shape=box style="filled" color="gray"]
         S [label="Spatial Maps" shape=box style="filled" color="mediumseagreen"
             URL="Spatial-Maps.html"]
         T [label="Time Series Analysis" shape=box style="filled" color="mediumseagreen"
@@ -75,8 +75,8 @@ GRACE/GRACE-FO data is freely available in the US from
 the `NASA Physical Oceanography Distributed Active Archive Center (PO.DAAC) <https://podaac.jpl.nasa.gov/grace>`_ and
 internationally from the `GFZ Information System and Data Center (ISDC) <http://isdc.gfz-potsdam.de/grace-isdc/>`_.
 There are programs within this repository that can sync with both of these data archives:
-``podaac_grace_sync.py`` for `PO.DAAC <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/podaac_grace_sync.py>`_ and
-``gfz_isdc_grace_ftp.py`` for the `GFZ ISDC <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/gfz_isdc_grace_ftp.py>`_.
+``podaac_grace_sync.py`` for `PO.DAAC <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/podaac_grace_sync.py>`_ and
+``gfz_isdc_grace_ftp.py`` for the `GFZ ISDC <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/gfz_isdc_grace_ftp.py>`_.
 
 Geoid Height
 ############

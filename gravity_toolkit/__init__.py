@@ -13,7 +13,7 @@ matplotlib and cartopy
 It aims to be a simple and efficient solution for using harmonic data from
 the GRACE/GRACE-FO missions and to support their science applications
 
-Documentation is available at https://read-grace-harmonics.readthedocs.io
+Documentation is available at https://gravity-toolkit.readthedocs.io
 """
 import gravity_toolkit.geocenter
 import gravity_toolkit.mascons

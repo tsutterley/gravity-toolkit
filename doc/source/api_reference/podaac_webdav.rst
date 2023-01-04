@@ -6,7 +6,7 @@ podaac_webdav.py
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/podaac_webdav.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/podaac_webdav.py
 
 Calling Sequence
 ################

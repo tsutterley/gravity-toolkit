@@ -1,6 +1,6 @@
-====================
-read-GRACE-harmonics
-====================
+===============
+gravity-toolkit
+===============
 
 Python tools for obtaining and working with Level-2 spherical harmonic
 coefficients from the NASA/DLR Gravity Recovery and Climate Experiment (GRACE)

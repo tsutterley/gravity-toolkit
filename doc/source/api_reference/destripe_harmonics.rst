@@ -14,6 +14,6 @@ Calling Sequence
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/destripe_harmonics.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/destripe_harmonics.py
 
 .. autofunction:: gravity_toolkit.destripe_harmonics

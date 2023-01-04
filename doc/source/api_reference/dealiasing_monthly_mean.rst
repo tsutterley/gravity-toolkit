@@ -12,7 +12,7 @@ dealiasing_monthly_mean.py
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/dealiasing_monthly_mean.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/dealiasing_monthly_mean.py
 
 Calling Sequence
 ################

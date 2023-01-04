@@ -10,7 +10,7 @@ run_grace_date.py
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/run_grace_date.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/run_grace_date.py
 
 Calling Sequence
 ################

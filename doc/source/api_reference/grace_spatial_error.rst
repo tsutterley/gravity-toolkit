@@ -8,7 +8,7 @@ grace_spatial_error.py
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/grace_spatial_error.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/grace_spatial_error.py
 
 Calling Sequence
 ################

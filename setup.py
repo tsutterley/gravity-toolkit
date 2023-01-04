@@ -29,7 +29,7 @@ setup(
     description=description,
     long_description=long_description,
     long_description_content_type=long_description_content_type,
-    url='https://github.com/tsutterley/read-GRACE-harmonics',
+    url='https://github.com/tsutterley/gravity-toolkit',
     author='Tyler Sutterley',
     author_email='tsutterl@uw.edu',
     license='MIT',

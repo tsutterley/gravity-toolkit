@@ -7,7 +7,7 @@ esa_costg_swarm_sync.py
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/esa_costg_swarm_sync.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/esa_costg_swarm_sync.py
 
 Calling Sequence
 ################

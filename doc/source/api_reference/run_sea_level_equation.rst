@@ -7,7 +7,7 @@ run_sea_level_equation.py
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/run_sea_level_equation.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/run_sea_level_equation.py
 
 
 Calling Sequence

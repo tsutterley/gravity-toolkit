@@ -45,7 +45,7 @@ Convert a calendar date into decimal years
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/time.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/time.py
 
 
 General Methods

@@ -6,7 +6,7 @@ mascon_reconstruct.py
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/mascon_reconstruct.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/mascon_reconstruct.py
 
 Calling Sequence
 ################
