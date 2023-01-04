@@ -62,7 +62,7 @@ Converting a dictionary object to a harmonics object and removing the mean field
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/harmonics.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/harmonics.py
 
 General Attributes and Methods
 ==============================

@@ -1,6 +1,6 @@
-====================
-read-GRACE-harmonics
-====================
+===============
+gravity-toolkit
+===============
 
 |Language|
 |License|
@@ -13,20 +13,20 @@ read-GRACE-harmonics
 .. |Language| image:: https://img.shields.io/pypi/pyversions/gravity-toolkit?color=green
    :target: https://www.python.org/
 
-.. |License| image:: https://img.shields.io/github/license/tsutterley/read-grace-harmonics
-   :target: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/LICENSE
+.. |License| image:: https://img.shields.io/github/license/tsutterley/gravity-toolkit
+   :target: https://github.com/tsutterley/gravity-toolkit/blob/main/LICENSE
 
 .. |PyPI Version| image:: https://img.shields.io/pypi/v/gravity-toolkit.svg
    :target: https://pypi.python.org/pypi/gravity-toolkit/
 
-.. |Documentation Status| image:: https://readthedocs.org/projects/read-grace-harmonics/badge/?version=latest
-   :target: https://read-grace-harmonics.readthedocs.io/en/latest/?badge=latest
+.. |Documentation Status| image:: https://readthedocs.org/projects/gravity-toolkit/badge/?version=latest
+   :target: https://gravity-toolkit.readthedocs.io/en/latest/?badge=latest
 
 .. |Binder| image:: https://mybinder.org/badge_logo.svg
-   :target: https://mybinder.org/v2/gh/tsutterley/read-GRACE-harmonics/main
+   :target: https://mybinder.org/v2/gh/tsutterley/gravity-toolkit/main
 
 .. |Pangeo| image:: https://img.shields.io/static/v1.svg?logo=Jupyter&label=PangeoBinderAWS&message=us-west-2&color=orange
-   :target: https://aws-uswest2-binder.pangeo.io/v2/gh/tsutterley/read-GRACE-harmonics/main?urlpath=lab
+   :target: https://aws-uswest2-binder.pangeo.io/v2/gh/tsutterley/gravity-toolkit/main?urlpath=lab
 
 .. |zenodo| image:: https://zenodo.org/badge/107323776.svg
    :target: https://zenodo.org/badge/latestdoi/107323776
@@ -99,9 +99,9 @@ Download
 ########
 
 | The program homepage is:
-| https://github.com/tsutterley/read-GRACE-harmonics
+| https://github.com/tsutterley/gravity-toolkit
 | A zip archive of the latest version is available directly at:
-| https://github.com/tsutterley/read-GRACE-harmonics/archive/main.zip
+| https://github.com/tsutterley/gravity-toolkit/archive/main.zip
 
 Disclaimer
 ##########

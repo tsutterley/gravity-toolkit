@@ -42,8 +42,8 @@ Steps to Sync from PO.DAAC
 1. `Register with NASA Earthdata Login system <https://urs.earthdata.nasa.gov/users/new>`_
 2. `After registering, login to the system <https://urs.earthdata.nasa.gov/home>`_
 3. Add ``PO.DAAC Drive OPS`` `applications to Earthdata <https://wiki.earthdata.nasa.gov/display/EL/How+To+Pre-authorize+an+application>`_
-4. Retrieve your `JPL WebDAV password <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/podaac_webdav.py>`_ to access PO.DAAC servers
-5. `Sync time-variable gravity data <https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/podaac_grace_sync.py>`_
+4. Retrieve your `JPL WebDAV password <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/podaac_webdav.py>`_ to access PO.DAAC servers
+5. `Sync time-variable gravity data <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/podaac_grace_sync.py>`_
 
 Can also create a ``.netrc`` file for permanently storing NASA Earthdata and JPL WebDAV credentials:
 

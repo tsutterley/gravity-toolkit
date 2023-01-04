@@ -6,7 +6,7 @@ convert_harmonics.py
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/convert_harmonics.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/convert_harmonics.py
 
 Calling Sequence
 ################

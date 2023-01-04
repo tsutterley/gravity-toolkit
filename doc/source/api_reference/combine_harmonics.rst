@@ -6,7 +6,7 @@ combine_harmonics.py
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/combine_harmonics.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/combine_harmonics.py
 
 Calling Sequence
 ################

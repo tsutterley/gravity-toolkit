@@ -8,7 +8,7 @@ podaac_cumulus.py
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/podaac_cumulus.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/podaac_cumulus.py
 
 Calling Sequence
 ################

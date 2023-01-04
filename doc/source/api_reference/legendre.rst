@@ -16,6 +16,6 @@ Calling Sequence
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/legendre.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/legendre.py
 
 .. autofunction:: gravity_toolkit.legendre

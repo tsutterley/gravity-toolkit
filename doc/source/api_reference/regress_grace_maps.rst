@@ -6,7 +6,7 @@ regress_grace_maps
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/regress_grace_maps.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/regress_grace_maps.py
 
 Calling Sequence
 ################

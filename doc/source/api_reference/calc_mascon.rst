@@ -10,7 +10,7 @@ calc_mascon.py
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/calc_mascon.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/calc_mascon.py
 
 Calling Sequence
 ################

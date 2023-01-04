@@ -6,7 +6,7 @@ Conversion routines for publicly available GRACE/GRACE-FO mascon solutions
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/gravity_toolkit/mascons.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/mascons.py
 
 
 General Methods

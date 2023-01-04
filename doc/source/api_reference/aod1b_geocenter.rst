@@ -12,7 +12,7 @@ aod1b_geocenter.py
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/aod1b_geocenter.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/aod1b_geocenter.py
 
 Calling Sequence
 ################

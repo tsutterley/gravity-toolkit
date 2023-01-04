@@ -8,7 +8,7 @@ calc_harmonic_resolution.py
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/calc_harmonic_resolution.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/calc_harmonic_resolution.py
 
 Calling Sequence
 ################

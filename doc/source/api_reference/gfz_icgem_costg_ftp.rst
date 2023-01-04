@@ -7,7 +7,7 @@ gfz_icgem_costg_ftp.py
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/read-GRACE-harmonics/blob/main/scripts/gfz_icgem_costg_ftp.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/gfz_icgem_costg_ftp.py
 
 Calling Sequence
 ################
