@@ -727,7 +727,8 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
 
 class gia(harmonics):
     """
-    Data class for reading, writing and processing spherical harmonic data
+    Inheritance of ``harmonics`` class for reading Glacial
+    Isostatic Adjustment (GIA) spherical harmonic datasets
 
     Attributes
     ----------

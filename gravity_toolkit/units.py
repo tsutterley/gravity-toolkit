@@ -98,7 +98,7 @@ class units(object):
         hl: float
             Vertical Displacement load Love numbers
         kl: float
-            ravitational Potential load Love numbers
+            Gravitational Potential load Love numbers
         ll: float
             Horizontal Displacement load Love numbers
 
@@ -163,7 +163,7 @@ class units(object):
         hl: float
             Vertical Displacement load Love numbers
         kl: float
-            ravitational Potential load Love numbers
+            Gravitational Potential load Love numbers
         ll: float
             Horizontal Displacement load Love numbers
 

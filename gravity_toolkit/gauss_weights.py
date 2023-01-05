@@ -51,7 +51,7 @@ import numpy as np
 def gauss_weights(hw, LMAX, CUTOFF=1e-10):
     """
     Computes the Gaussian weights as a function of degree using
-    a normalized form from [Jekeli1981]_
+    a normalized form of [Jekeli1981]_
 
     Parameters
     ----------
@@ -79,7 +79,7 @@ def gauss_weights(hw, LMAX, CUTOFF=1e-10):
     rad_e = 6371.0
     if (hw < CUTOFF):
         # distance is smaller than cutoff
-        wl[:]=1.0/(2.0*np.pi)
+        wl[:] = 1.0/(2.0*np.pi)
     else:
         # calculate gaussian weights using recursion
         b = np.log(2.0)/(1.0 - np.cos(hw/rad_e))

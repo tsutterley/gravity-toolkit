@@ -20,5 +20,5 @@ Calling Sequence
 
 .. autofunction:: gravity_toolkit.read_GIA_model
 
-.. autoclass:: gravity_toolkit.read_GIA_model.gia
+.. autoclass:: gravity_toolkit.gia
    :members:

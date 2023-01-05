@@ -213,7 +213,7 @@ def fourier_legendre(lmax, mmax):
 def legendre_gradient(lmax, mmax):
     """
     Calculates functions for evaluating the integral of a
-        product of two fourier series
+    product of two fourier series
 
     Parameters
     ----------

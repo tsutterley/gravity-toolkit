@@ -96,7 +96,7 @@ def get_data_path(relpath):
 # PURPOSE: get the hash value of a file
 def get_hash(local, algorithm='MD5'):
     """
-    Get the hash value from a local file or BytesIO object
+    Get the hash value from a local file or ``BytesIO`` object
 
     Parameters
     ----------
@@ -129,7 +129,7 @@ def get_hash(local, algorithm='MD5'):
 # PURPOSE: get the git hash value
 def get_git_revision_hash(refname='HEAD', short=False):
     """
-    Get the git hash value for a particular reference
+    Get the ``git`` hash value for a particular reference
 
     Parameters
     ----------
@@ -152,7 +152,7 @@ def get_git_revision_hash(refname='HEAD', short=False):
 
 # PURPOSE: get the current git status
 def get_git_status():
-    """Get the status of a git repository as a boolean value
+    """Get the status of a ``git`` repository as a boolean value
     """
     # get path to .git directory from current file path
     filename = inspect.getframeinfo(inspect.currentframe()).filename
@@ -533,9 +533,9 @@ def http_list(HOST, timeout=None, context=ssl.SSLContext(),
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
     context: obj, default ssl.SSLContext()
-        SSL context for url opener object
+        SSL context for ``urllib`` opener object
     parser: obj, default lxml.etree.HTMLParser()
-        HTML parser for lxml
+        HTML parser for ``lxml``
     format: str, default '%Y-%m-%d %H:%M'
         format for input time string
     pattern: str, default ''
@@ -596,7 +596,7 @@ def from_http(HOST, timeout=None, context=ssl.SSLContext(),
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
     context: obj, default ssl.SSLContext()
-        SSL context for url opener object
+        SSL context for ``urllib`` opener object
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
     local: str or NoneType, default None
@@ -664,14 +664,14 @@ def attempt_login(urs, context=ssl.SSLContext(),
     password_manager=True, get_ca_certs=False, redirect=False,
     authorization_header=True, **kwargs):
     """
-    attempt to build a urllib opener for NASA Earthdata
+    Attempt to build a ``urllib`` opener for NASA Earthdata
 
     Parameters
     ----------
     urs: str
         Earthdata login URS 3 host
     context: obj, default ssl.SSLContext()
-        SSL context for url opener object
+        SSL context for ``urllib`` opener object
     password_manager: bool, default True
         Create password manager context using default realm
     get_ca_certs: bool, default False
@@ -743,7 +743,7 @@ def build_opener(username, password, context=ssl.SSLContext(),
     password_manager=False, get_ca_certs=False, redirect=False,
     authorization_header=True, urs='https://urs.earthdata.nasa.gov'):
     """
-    build urllib opener for NASA Earthdata with supplied credentials
+    Build ``urllib`` opener for NASA Earthdata with supplied credentials
 
     Parameters
     ----------
@@ -752,7 +752,7 @@ def build_opener(username, password, context=ssl.SSLContext(),
     password: str or NoneType, default None
         NASA Earthdata password
     context: obj, default ssl.SSLContext()
-        SSL context for url opener object
+        SSL context for ``urllib`` opener object
     password_manager: bool, default False
         Create password manager context using default realm
     get_ca_certs: bool, default False
@@ -956,7 +956,7 @@ def drive_list(HOST, username=None, password=None, build=True,
     urs: str, default 'podaac-tools.jpl.nasa.gov'
         JPL PO.DAAC or ECCO login URS 3 host
     parser: obj, default lxml.etree.HTMLParser()
-        HTML parser for lxml
+        HTML parser for ``lxml``
     pattern: str, default ''
         regular expression pattern for reducing list
     sort: bool, default False
@@ -1103,7 +1103,8 @@ def from_drive(HOST, username=None, password=None, build=True,
 # PURPOSE: retrieve shortnames for GRACE/GRACE-FO products
 def cmr_product_shortname(mission, center, release, level='L2', version='0'):
     """
-    Create a list of product shortnames for CMR queries
+    Create a list of product shortnames for NASA Common Metadata
+    Repository (CMR) queries
 
     Parameters
     ----------
@@ -1201,7 +1202,8 @@ def cmr_product_shortname(mission, center, release, level='L2', version='0'):
 
 def cmr_readable_granules(product, level='L2', solution='BA01', version='0'):
     """
-    Create readable granule names pattern for CMR queries
+    Create readable granule names pattern for NASA Common Metadata
+    Repository (CMR) queries
 
     Parameters
     ----------
@@ -1245,7 +1247,8 @@ def cmr_readable_granules(product, level='L2', solution='BA01', version='0'):
 # PURPOSE: filter the CMR json response for desired data files
 def cmr_filter_json(search_results, endpoint="data"):
     """
-    Filter the CMR json response for desired data files
+    Filter the NASA Common Metadata Repository (CMR) json
+    response for desired data files
 
     Parameters
     ----------
@@ -1292,7 +1295,8 @@ def cmr_filter_json(search_results, endpoint="data"):
 # PURPOSE: filter the CMR json response for desired metadata files
 def cmr_metadata_json(search_results, endpoint="data"):
     """
-    Filter the CMR json response for desired metadata files
+    Filter the NASA Common Metadata Repository (CMR) json response
+    for desired metadata files
 
     Parameters
     ----------
@@ -1540,7 +1544,7 @@ def compile_regex_pattern(PROC, DREL, DSET, mission=None,
     solution=r'BA01', version=r'\d+'):
     """
     Compile regular expressor operators for finding a specified
-    subset of GRACE/GRACE-FO level-2 spherical harmonic files
+    subset of GRACE/GRACE-FO Level-2 spherical harmonic files
 
     Parameters
     ----------
@@ -1655,7 +1659,7 @@ def from_figshare(directory, article='7388540', timeout=None,
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
     context: obj, default ssl.SSLContext()
-        SSL context for url opener object
+        SSL context for ``urllib`` opener object
     chunk: int, default 16384
         chunk size for transfer encoding
     verbose: bool, default False
@@ -1703,7 +1707,8 @@ def to_figshare(files, username=None, password=None, directory=None,
     get_ca_certs=False, verbose=False, chunk=8192):
     """
     Send files to figshare using secure `FTP uploader
-    <https://help.figshare.com/article/upload-large-datasets-and-bulk-upload-using-the-ftp-uploader-desktop-uploader-or-api>`_
+    <https://help.figshare.com/article/upload-large-datasets-and-
+    bulk-upload-using-the-ftp-uploader-desktop-uploader-or-api>`_
 
     Parameters
     ----------
@@ -1718,7 +1723,7 @@ def to_figshare(files, username=None, password=None, directory=None,
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
     context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
-        SSL context for url opener object
+        SSL context for ``urllib`` opener object
     get_ca_certs: bool, default False
         get list of loaded “certification authority” certificates
     verbose: bool, default False
@@ -1761,7 +1766,8 @@ def to_figshare(files, username=None, password=None, directory=None,
 def from_csr(directory, timeout=None, context=ssl.SSLContext(),
     chunk=16384, verbose=False, fid=sys.stdout, mode=0o775):
     """
-    Download `satellite laser ranging (SLR) <http://download.csr.utexas.edu/pub/slr/>`_
+    Download `satellite laser ranging (SLR)
+    <http://download.csr.utexas.edu/pub/slr/>`_
     files from the University of Texas Center for Space Research (UTCSR)
 
     Parameters
@@ -1771,7 +1777,7 @@ def from_csr(directory, timeout=None, context=ssl.SSLContext(),
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
     context: obj, default ssl.SSLContext()
-        SSL context for url opener object
+        SSL context for ``urllib`` opener object
     chunk: int, default 16384
         chunk size for transfer encoding
     verbose: bool, default False
@@ -1820,7 +1826,7 @@ def from_gfz(directory, timeout=None, chunk=8192, verbose=False,
     fid=sys.stdout, mode=0o775):
     """
     Download GravIS and satellite laser ranging (SLR) files from the
-        German Research Centre for Geosciences (GeoForschungsZentrum, GFZ)
+    German Research Centre for Geosciences (GeoForschungsZentrum, GFZ)
 
     Parameters
     ----------
@@ -1878,7 +1884,7 @@ def from_gsfc(directory,
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
     context: obj, default ssl.SSLContext()
-        SSL context for url opener object
+        SSL context for ``urllib`` opener object
     chunk: int, default 16384
         chunk size for transfer encoding
     verbose: bool, default False
@@ -1934,7 +1940,7 @@ def icgem_list(host='http://icgem.gfz-potsdam.de/tom_longtime',
     timeout: int or NoneType
         timeout in seconds for blocking operations
     parser: obj, default lxml.etree.HTMLParser()
-        HTML parser for lxml
+        HTML parser for ``lxml``
 
     Returns
     -------

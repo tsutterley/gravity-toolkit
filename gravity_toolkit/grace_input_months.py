@@ -189,9 +189,9 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
 
     Can replace low-degree harmonics with SLR values for months 179+
 
-    Can correct for ECMWF atmospheric "jumps" using GAE/GAF/GAG files
+    Can correct for ECMWF atmospheric "jumps" using GAE/GAF/GAG files [Fagiolini2015]_
 
-    Can correct for Pole Tide drift following Wahr et al. (2015)
+    Can correct for Pole Tide drift following [Wahr2015]_
 
     Parameters
     ----------
@@ -228,7 +228,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     SLR_C20: str
         Replaces C20 with SLR values
 
-            - ``'N'``: use original values
+            - ``None``: use original values
             - ``'CSR'``: use values from CSR (TN-07, TN-09, TN-11)
             - ``'GFZ'``: use values from GFZ
             - ``'GSFC'``: use values from GSFC (TN-14)

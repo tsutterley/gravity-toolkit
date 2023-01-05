@@ -2,7 +2,7 @@
 gfz_isdc_dealiasing_ftp.py
 ==========================
 
-- Syncs GRACE Level-1b dealiasing products from the GFZ Information System and Data Center (ISDC)
+- Syncs GRACE Level-1b dealiasing products from the `GFZ Information System and Data Center (ISDC) <http://isdc.gfz-potsdam.de/grace-isdc/>`_
 - Optionally outputs as monthly tar files
 
 `Source code`__
