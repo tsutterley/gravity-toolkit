@@ -1625,7 +1625,7 @@ class spatial(object):
 
     def replace_invalid(self, fill_value, mask=None):
         """
-        Replace the masked values with a new fill_value
+        Replace the masked values with a new ``fill_value``
 
         Parameters
         ----------
@@ -1652,7 +1652,7 @@ class spatial(object):
 
     def replace_masked(self):
         """
-        Replace the masked values with fill_value
+        Replace the masked values with ``fill_value``
         """
         if self.fill_value is not None:
             self.data[self.mask] = self.fill_value

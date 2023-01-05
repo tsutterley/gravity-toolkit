@@ -13,7 +13,7 @@ This software was developed with the goal of supporting science applications for
 time-variable gravity.
 ``gravity-toolkit`` provides data access utilities for ascii, netCDF4, HDF5 and gfc file formats.
 ``gravity-toolkit`` also provides some very high-level plotting programs through the
-use of `Jupyter Notebooks <./Examples.html>`_.
+use of `Jupyter Notebooks <../user_guide/Examples.html>`_.
 
 .. graphviz::
     :caption: Data Processing Framework

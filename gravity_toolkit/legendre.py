@@ -44,7 +44,7 @@ import numpy as np
 
 def legendre(l, x, NORMALIZE=False):
     """
-    Computes associated Legendre functions of degree ``l``
+    Computes associated Legendre functions for a particular degree
     following [Abramowitz1965]_ and [Jacobs1987]_
 
     Parameters

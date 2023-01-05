@@ -75,7 +75,7 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
 
     Shows the range of each month for each data center and release
 
-    Shows which months are missing for each dataset as \*\*missing\*\*
+    Shows which months are missing for each dataset as ``**missing**``
 
     Parameters
     ----------

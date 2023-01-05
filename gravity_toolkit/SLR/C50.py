@@ -65,14 +65,14 @@ import gravity_toolkit.read_SLR_harmonics
 # PURPOSE: read Degree 5 zonal data from Satellite Laser Ranging (SLR)
 def C50(SLR_file, C50_MEAN=0.0, DATE=None, HEADER=True):
     """
-    Reads C50 spherical harmonic coefficients from SLR measurements
+    Reads *C*\ :sub:`50` spherical harmonic coefficients from SLR measurements
 
     Parameters
     ----------
     SLR_file: str
         Satellite Laser Ranging file
     C50_MEAN: float, default 0.0
-        Mean C50 to add to LARES C50 anomalies
+        Mean *C*\ :sub:`50` to add to LARES *C*\ :sub:`50` anomalies
     DATE: float or NoneType, default None
         Mid-point of monthly solution for calculating 28-day arc averages
     HEADER: bool, default True

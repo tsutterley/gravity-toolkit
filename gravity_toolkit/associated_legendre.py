@@ -24,7 +24,7 @@ import numpy as np
 def associated_legendre(LMAX, x, method='holmes', MMAX=None, astype=np.float64):
     """
     Computes fully-normalized associated Legendre Polynomials and their
-        first derivative
+    first derivative
 
     Parameters
     ----------
@@ -63,7 +63,7 @@ def associated_legendre(LMAX, x, method='holmes', MMAX=None, astype=np.float64):
 def plm_colombo(LMAX, x, MMAX=None, astype=np.float64):
     """
     Computes fully-normalized associated Legendre Polynomials and their
-        first derivative using a Standard forward column method [Colombo1981]_
+    first derivative using a Standard forward column method [Colombo1981]_
 
     Parameters
     ----------
@@ -157,7 +157,7 @@ def plm_colombo(LMAX, x, MMAX=None, astype=np.float64):
 def plm_holmes(LMAX, x, MMAX=None, astype=np.float64):
     """
     Computes fully-normalized associated Legendre Polynomials and their
-    first derivative using Holmes and Featherstone relation [Holmes2002]_
+    first derivative using the recursion relation from [Holmes2002]_
 
     Parameters
     ----------
@@ -287,8 +287,8 @@ def plm_holmes(LMAX, x, MMAX=None, astype=np.float64):
 
 def plm_mohlenkamp(LMAX, x, MMAX=None, astype=np.float64):
     """
-    Computes fully-normalized associated Legendre Polynomials
-    using Martin Mohlenkamp's recursion relation [Mohlenkamp2016]_
+    Computes fully-normalized associated Legendre Polynomials and their
+    first derivative using the recursion relation from [Mohlenkamp2016]_
 
     Derived from [Szego1939]_ recurrence formula for Jacobi Polynomials
 

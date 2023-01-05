@@ -448,7 +448,7 @@ def calendar_days(year):
 # PURPOSE: convert times from seconds since epoch1 to time since epoch2
 def convert_delta_time(delta_time, epoch1=None, epoch2=None, scale=1.0):
     """
-    Convert delta time from seconds since epoch1 to time since epoch2
+    Convert delta time from seconds since ``epoch1`` to time since ``epoch2``
 
     Parameters
     ----------
@@ -472,7 +472,7 @@ def convert_delta_time(delta_time, epoch1=None, epoch2=None, scale=1.0):
 def convert_calendar_dates(year, month, day, hour=0.0, minute=0.0, second=0.0,
     epoch=(1992,1,1,0,0,0), scale=1.0):
     """
-    Calculate the time in time units since epoch from calendar dates
+    Calculate the time in time units since ``epoch`` from calendar dates
 
     Parameters
     ----------

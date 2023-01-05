@@ -115,7 +115,7 @@ import gravity_toolkit.time
 # PURPOSE: read oblateness data from Satellite Laser Ranging (SLR)
 def C20(SLR_file, AOD=True, HEADER=True):
     """
-    Reads C20 spherical harmonic coefficients from SLR measurements
+    Reads *C*\ :sub:`20` spherical harmonic coefficients from SLR measurements
 
     Parameters
     ----------

@@ -157,9 +157,10 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
     return Ylms
 
 # calculate spherical harmonics of degree l evaluated at (theta,phi)
-def spherical_harmonic_matrix(l,data,phi,theta,coeff):
+def spherical_harmonic_matrix(l, data, phi, theta, coeff):
     """
-    Calculates spherical harmonics of degree l evaluated at coordinates
+    Calculates the spherical harmonics for a particular degree
+    evaluated from data at coordinates
 
     Parameters
     ----------
@@ -190,4 +191,4 @@ def spherical_harmonic_matrix(l,data,phi,theta,coeff):
     # calculate spherical harmonics and multiply by coefficients and data
     Ylms = coeff*D*Pl*mphi
     # calculate the sum over all points and return harmonics for degree l
-    return np.sum(Ylms,axis=0)
+    return np.sum(Ylms, axis=0)
