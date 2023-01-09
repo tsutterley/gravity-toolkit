@@ -109,8 +109,9 @@ def read_SLR_CS2(*args, **kwargs):
     time: float
         date of SLR measurement
     """
-    warnings.filterwarnings("always")
+    warnings.filterwarnings("module")
     warnings.warn("Deprecated. Please use gravity_toolkit.SLR instead",
         DeprecationWarning)
+    warnings.filterwarnings("ignore")
     # call renamed version to not break workflows
     return gravity_toolkit.SLR.CS2(*args,**kwargs)

@@ -72,9 +72,8 @@ import warnings
 try:
     import h5py
 except (ImportError, ModuleNotFoundError) as e:
-    warnings.filterwarnings("always")
-    warnings.warn("h5py not available")
-    warnings.warn("Some functions will throw an exception if called")
+    warnings.filterwarnings("module")
+    warnings.warn("h5py not available", ImportWarning)
 # ignore warnings
 warnings.filterwarnings("ignore")
 
@@ -119,9 +118,10 @@ def hdf5_write(data, lon, lat, tim, **kwargs):
     kwargs.setdefault('DATE',True)
     kwargs.setdefault('CLOBBER',True)
     # set deprecation warning
-    warnings.filterwarnings("always")
+    warnings.filterwarnings("module")
     warnings.warn("Deprecated. Please use spatial.to_HDF5",
         DeprecationWarning)
+    warnings.filterwarnings("ignore")
 
     # setting HDF5 clobber attribute
     clobber = 'w' if kwargs['CLOBBER'] else 'w-'

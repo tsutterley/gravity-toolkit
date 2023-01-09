@@ -46,16 +46,16 @@ import warnings
 try:
     import geoid_toolkit.read_ICGEM_harmonics
 except (ImportError, ModuleNotFoundError) as e:
-    warnings.filterwarnings("always")
-    warnings.warn("geoid_toolkit not available")
-    warnings.warn("Some functions will throw an exception if called")
+    warnings.filterwarnings("module")
+    warnings.warn("geoid_toolkit not available", ImportWarning)
 # ignore warnings
 warnings.filterwarnings("ignore")
 
 # PURPOSE: read spherical harmonic coefficients of a gravity model
 def read_ICGEM_harmonics(*args,**kwargs):
-    warnings.filterwarnings("always")
-    warnings.warn("Deprecated. Please use geoid toolkit instead",
+    warnings.filterwarnings("module")
+    warnings.warn("Deprecated. Please use geoid-toolkit instead",
         DeprecationWarning)
+    warnings.filterwarnings("ignore")
     # call renamed version to not break workflows
     return geoid_toolkit.read_ICGEM_harmonics(*args,**kwargs)

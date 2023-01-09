@@ -138,8 +138,9 @@ def tssmooth(*args, **kwargs):
         *Geophysical Research Letters*, 36(L19503),
         `doi: 10.1029/2009GL040222 <https://doi.org/10.1029/2009GL040222>`_
     """
-    warnings.filterwarnings("always")
+    warnings.filterwarnings("module")
     warnings.warn("Deprecated. Please use gravity_toolkit.time_series instead",
         DeprecationWarning)
+    warnings.filterwarnings("ignore")
     # call renamed version to not break workflows
     return gravity_toolkit.time_series.smooth(*args, **kwargs)

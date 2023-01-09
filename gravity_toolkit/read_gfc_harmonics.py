@@ -75,9 +75,8 @@ import gravity_toolkit.time
 try:
     from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 except (ImportError, ModuleNotFoundError) as e:
-    warnings.filterwarnings("always")
-    warnings.warn("geoid_toolkit not available")
-    warnings.warn("Some functions will throw an exception if called")
+    warnings.filterwarnings("module")
+    warnings.warn("geoid_toolkit not available", ImportWarning)
 # ignore warnings
 warnings.filterwarnings("ignore")
 

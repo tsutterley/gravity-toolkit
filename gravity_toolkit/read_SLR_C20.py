@@ -135,8 +135,9 @@ def read_SLR_C20(*args, **kwargs):
     date: float
         date of SLR measurement
     """
-    warnings.filterwarnings("always")
+    warnings.filterwarnings("module")
     warnings.warn("Deprecated. Please use gravity_toolkit.SLR instead",
         DeprecationWarning)
+    warnings.filterwarnings("ignore")
     # call renamed version to not break workflows
     return gravity_toolkit.SLR.C20(*args,**kwargs)

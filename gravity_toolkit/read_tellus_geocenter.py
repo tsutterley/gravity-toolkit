@@ -114,9 +114,10 @@ def read_tellus_geocenter(geocenter_file, HEADER=True, JPL=False):
     time: float
         date of each month in year-decimal
     """
-    warnings.filterwarnings("always")
+    warnings.filterwarnings("module")
     warnings.warn("Deprecated. Please use gravity_toolkit.geocenter instead",
         DeprecationWarning)
+    warnings.filterwarnings("ignore")
     # call renamed version to not break workflows
     DEG1 = gravity_toolkit.geocenter().from_tellus(geocenter_file,
         header=HEADER, JPL=JPL)

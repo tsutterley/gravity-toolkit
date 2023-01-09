@@ -183,8 +183,9 @@ def tsregress(*args, **kwargs):
         2nd Edition, 488 pp., (2002).
         `doi: 10.1007/b97636 <https://doi.org/10.1007/b97636>`_
     """
-    warnings.filterwarnings("always")
+    warnings.filterwarnings("module")
     warnings.warn("Deprecated. Please use gravity_toolkit.time_series instead",
         DeprecationWarning)
+    warnings.filterwarnings("ignore")
     # call renamed version to not break workflows
     return gravity_toolkit.time_series.regress(*args, **kwargs)

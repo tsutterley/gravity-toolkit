@@ -71,9 +71,8 @@ import warnings
 try:
     import netCDF4
 except (ImportError, ModuleNotFoundError) as e:
-    warnings.filterwarnings("always")
-    warnings.warn("netCDF4 not available")
-    warnings.warn("Some functions will throw an exception if called")
+    warnings.filterwarnings("module")
+    warnings.warn("netCDF4 not available", ImportWarning)
 # ignore warnings
 warnings.filterwarnings("ignore")
 
@@ -118,9 +117,10 @@ def ncdf_write(data, lon, lat, tim, **kwargs):
     kwargs.setdefault('DATE',True)
     kwargs.setdefault('CLOBBER',True)
     # set deprecation warning
-    warnings.filterwarnings("always")
+    warnings.filterwarnings("module")
     warnings.warn("Deprecated. Please use spatial.to_netCDF4",
         DeprecationWarning)
+    warnings.filterwarnings("ignore")
 
     # setting NetCDF clobber attribute
     clobber = 'w' if kwargs['CLOBBER'] else 'a'
