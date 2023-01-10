@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (01/2023)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
@@ -9,6 +9,7 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/lxml
 
 UPDATE HISTORY:
+    Updated 01/2023: add default ssl context attribute with protocol
     Updated 12/2022: add variables for NASA DAAC and s3 providers
         add functions for managing and maintaining git repositories
     Updated 11/2022: add CMR queries for collection metadata
@@ -501,8 +502,11 @@ def from_ftp(HOST, username=None, password=None, timeout=None,
         remote_buffer.seek(0)
         return remote_buffer
 
+# default ssl context
+_default_ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+
 # PURPOSE: check internet connection
-def check_connection(HOST):
+def check_connection(HOST, context=_default_ssl_context):
     """
     Check internet connection with http host
 
@@ -510,17 +514,19 @@ def check_connection(HOST):
     ----------
     HOST: str
         remote http host
+    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
+        SSL context for ``urllib`` opener object
     """
     # attempt to connect to http host
     try:
-        urllib2.urlopen(HOST,timeout=20,context=ssl.SSLContext())
-    except urllib2.URLError:
-        raise RuntimeError('Check internet connection')
+        urllib2.urlopen(HOST, timeout=20, context=context)
+    except urllib2.URLError as exc:
+        raise RuntimeError('Check internet connection') from exc
     else:
         return True
 
 # PURPOSE: list a directory on an Apache http Server
-def http_list(HOST, timeout=None, context=ssl.SSLContext(),
+def http_list(HOST, timeout=None, context=_default_ssl_context,
     parser=lxml.etree.HTMLParser(), format='%Y-%m-%d %H:%M',
     pattern='', sort=False):
     """
@@ -532,7 +538,7 @@ def http_list(HOST, timeout=None, context=ssl.SSLContext(),
         remote http host path
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
-    context: obj, default ssl.SSLContext()
+    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
         SSL context for ``urllib`` opener object
     parser: obj, default lxml.etree.HTMLParser()
         HTML parser for ``lxml``
@@ -583,7 +589,7 @@ def http_list(HOST, timeout=None, context=ssl.SSLContext(),
         return (colnames,collastmod)
 
 # PURPOSE: download a file from a http host
-def from_http(HOST, timeout=None, context=ssl.SSLContext(),
+def from_http(HOST, timeout=None, context=_default_ssl_context,
     local=None, hash='', chunk=16384, verbose=False, fid=sys.stdout,
     mode=0o775):
     """
@@ -595,7 +601,7 @@ def from_http(HOST, timeout=None, context=ssl.SSLContext(),
         remote http host path split as list
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
-    context: obj, default ssl.SSLContext()
+    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
         SSL context for ``urllib`` opener object
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
@@ -660,7 +666,7 @@ def from_http(HOST, timeout=None, context=ssl.SSLContext(),
         return remote_buffer
 
 # PURPOSE: attempt to build an opener with netrc
-def attempt_login(urs, context=ssl.SSLContext(),
+def attempt_login(urs, context=_default_ssl_context,
     password_manager=True, get_ca_certs=False, redirect=False,
     authorization_header=True, **kwargs):
     """
@@ -670,7 +676,7 @@ def attempt_login(urs, context=ssl.SSLContext(),
     ----------
     urs: str
         Earthdata login URS 3 host
-    context: obj, default ssl.SSLContext()
+    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
         SSL context for ``urllib`` opener object
     password_manager: bool, default True
         Create password manager context using default realm
@@ -739,7 +745,7 @@ def attempt_login(urs, context=ssl.SSLContext(),
     raise RuntimeError('End of Retries: Check NASA Earthdata credentials')
 
 # PURPOSE: "login" to NASA Earthdata with supplied credentials
-def build_opener(username, password, context=ssl.SSLContext(),
+def build_opener(username, password, context=_default_ssl_context,
     password_manager=False, get_ca_certs=False, redirect=False,
     authorization_header=True, urs='https://urs.earthdata.nasa.gov'):
     """
@@ -751,7 +757,7 @@ def build_opener(username, password, context=ssl.SSLContext(),
         NASA Earthdata username
     password: str or NoneType, default None
         NASA Earthdata password
-    context: obj, default ssl.SSLContext()
+    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
         SSL context for ``urllib`` opener object
     password_manager: bool, default False
         Create password manager context using default realm
@@ -1392,7 +1398,7 @@ def cmr(mission=None, center=None, release=None, level='L2', product=None,
     # Create cookie jar for storing cookies
     cookie_jar = CookieJar()
     handler.append(urllib2.HTTPCookieProcessor(cookie_jar))
-    handler.append(urllib2.HTTPSHandler(context=ssl.SSLContext()))
+    handler.append(urllib2.HTTPSHandler(context=_default_ssl_context))
     # create "opener" (OpenerDirector instance)
     opener = urllib2.build_opener(*handler)
     # build CMR query
@@ -1505,7 +1511,7 @@ def cmr_metadata(mission=None, center=None, release=None, level='L2',
     # Create cookie jar for storing cookies
     cookie_jar = CookieJar()
     handler.append(urllib2.HTTPCookieProcessor(cookie_jar))
-    handler.append(urllib2.HTTPSHandler(context=ssl.SSLContext()))
+    handler.append(urllib2.HTTPSHandler(context=_default_ssl_context))
     # create "opener" (OpenerDirector instance)
     opener = urllib2.build_opener(*handler)
     # build CMR query
@@ -1644,7 +1650,7 @@ def compile_regex_pattern(PROC, DREL, DSET, mission=None,
 # https://doi.org/10.3390/rs11182108
 # https://doi.org/10.6084/m9.figshare.7388540
 def from_figshare(directory, article='7388540', timeout=None,
-    context=ssl.SSLContext(), chunk=16384, verbose=False, fid=sys.stdout,
+    context=_default_ssl_context, chunk=16384, verbose=False, fid=sys.stdout,
     pattern=r'(CSR|GFZ|JPL)_(RL\d+)_(.*?)_SLF_iter.txt$', mode=0o775):
     """
     Download [Sutterley2019]_ geocenter files from
@@ -1658,7 +1664,7 @@ def from_figshare(directory, article='7388540', timeout=None,
         figshare article number
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
-    context: obj, default ssl.SSLContext()
+    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
         SSL context for ``urllib`` opener object
     chunk: int, default 16384
         chunk size for transfer encoding
@@ -1763,7 +1769,7 @@ def to_figshare(files, username=None, password=None, directory=None,
 # PURPOSE: download satellite laser ranging files from CSR
 # http://download.csr.utexas.edu/pub/slr/geocenter/GCN_L1_L2_30d_CF-CM.txt
 # http://download.csr.utexas.edu/outgoing/cheng/gct2est.220_5s
-def from_csr(directory, timeout=None, context=ssl.SSLContext(),
+def from_csr(directory, timeout=None, context=_default_ssl_context,
     chunk=16384, verbose=False, fid=sys.stdout, mode=0o775):
     """
     Download `satellite laser ranging (SLR)
@@ -1776,7 +1782,7 @@ def from_csr(directory, timeout=None, context=ssl.SSLContext(),
         download directory
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
-    context: obj, default ssl.SSLContext()
+    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
         SSL context for ``urllib`` opener object
     chunk: int, default 16384
         chunk size for transfer encoding
@@ -1869,7 +1875,7 @@ def from_gfz(directory, timeout=None, chunk=8192, verbose=False,
 # https://earth.gsfc.nasa.gov/geo/data/slr
 def from_gsfc(directory,
     host='https://earth.gsfc.nasa.gov/sites/default/files/geo/slr-weekly',
-    timeout=None, context=ssl.SSLContext(), chunk=16384, verbose=False,
+    timeout=None, context=_default_ssl_context, chunk=16384, verbose=False,
     fid=sys.stdout, copy=False, mode=0o775):
     """
     Download `satellite laser ranging (SLR) <https://earth.gsfc.nasa.gov/geo/data/slr/>`_
@@ -1883,7 +1889,7 @@ def from_gsfc(directory,
         url for the GSFC SLR weekly fields
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
-    context: obj, default ssl.SSLContext()
+    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
         SSL context for ``urllib`` opener object
     chunk: int, default 16384
         chunk size for transfer encoding

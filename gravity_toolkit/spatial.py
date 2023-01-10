@@ -71,15 +71,13 @@ from gravity_toolkit.time import adjust_months, calendar_to_grace
 try:
     import h5py
 except (ImportError, ModuleNotFoundError) as e:
-    warnings.filterwarnings("always")
-    warnings.warn("h5py not available")
-    warnings.warn("Some functions will throw an exception if called")
+    warnings.filterwarnings("module")
+    warnings.warn("h5py not available", ImportWarning)
 try:
     import netCDF4
 except (ImportError, ModuleNotFoundError) as e:
-    warnings.filterwarnings("always")
-    warnings.warn("netCDF4 not available")
-    warnings.warn("Some functions will throw an exception if called")
+    warnings.filterwarnings("module")
+    warnings.warn("netCDF4 not available", ImportWarning)
 # ignore warnings
 warnings.filterwarnings("ignore")
 

@@ -101,8 +101,9 @@ def savitzky_golay(*args, **kwargs):
         Computing*, W.H. Press, S.A. Teukolsky, W. T. Vetterling,
         B.P. Flannery. Cambridge University Press, (2007).
     """
-    warnings.filterwarnings("always")
+    warnings.filterwarnings("module")
     warnings.warn("Deprecated. Please use gravity_toolkit.time_series instead",
         DeprecationWarning)
+    warnings.filterwarnings("ignore")
     # call renamed version to not break workflows
     return gravity_toolkit.time_series.savitzky_golay(*args,**kwargs)

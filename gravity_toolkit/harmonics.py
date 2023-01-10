@@ -94,21 +94,18 @@ from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 try:
     from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 except (ImportError, ModuleNotFoundError) as e:
-    warnings.filterwarnings("always")
-    warnings.warn("geoid_toolkit not available")
-    warnings.warn("Some functions will throw an exception if called")
+    warnings.filterwarnings("module")
+    warnings.warn("geoid_toolkit not available", ImportWarning)
 try:
     import h5py
 except (ImportError, ModuleNotFoundError) as e:
-    warnings.filterwarnings("always")
-    warnings.warn("h5py not available")
-    warnings.warn("Some functions will throw an exception if called")
+    warnings.filterwarnings("module")
+    warnings.warn("h5py not available", ImportWarning)
 try:
     import netCDF4
 except (ImportError, ModuleNotFoundError) as e:
-    warnings.filterwarnings("always")
-    warnings.warn("netCDF4 not available")
-    warnings.warn("Some functions will throw an exception if called")
+    warnings.filterwarnings("module")
+    warnings.warn("netCDF4 not available", ImportWarning)
 # ignore warnings
 warnings.filterwarnings("ignore")
 

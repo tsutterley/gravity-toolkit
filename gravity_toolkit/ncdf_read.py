@@ -86,9 +86,8 @@ import warnings
 try:
     import netCDF4
 except (ImportError, ModuleNotFoundError) as e:
-    warnings.filterwarnings("always")
-    warnings.warn("netCDF4 not available")
-    warnings.warn("Some functions will throw an exception if called")
+    warnings.filterwarnings("module")
+    warnings.warn("netCDF4 not available", ImportWarning)
 # ignore warnings
 warnings.filterwarnings("ignore")
 
@@ -127,9 +126,10 @@ def ncdf_read(filename, **kwargs):
     kwargs.setdefault('TIMENAME','time')
     kwargs.setdefault('COMPRESSION',None)
     # set deprecation warning
-    warnings.filterwarnings("always")
+    warnings.filterwarnings("module")
     warnings.warn("Deprecated. Please use spatial.from_netCDF4",
         DeprecationWarning)
+    warnings.filterwarnings("ignore")
 
     # Open the NetCDF4 file for reading
     if (kwargs['COMPRESSION'] == 'gzip'):

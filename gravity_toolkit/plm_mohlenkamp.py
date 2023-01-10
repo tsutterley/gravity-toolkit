@@ -88,9 +88,10 @@ def plm_mohlenkamp(LMAX, x, MMAX=None):
 
     .. |ouml|    unicode:: U+00F6 .. LATIN SMALL LETTER O WITH DIAERESIS
     """
-    warnings.filterwarnings("always")
+    warnings.filterwarnings("module")
     warnings.warn("Deprecated. Please use gravity_toolkit.associated_legendre instead",
         DeprecationWarning)
+    warnings.filterwarnings("ignore")
 
     # Verify LMAX as integer
     LMAX = np.int64(LMAX)

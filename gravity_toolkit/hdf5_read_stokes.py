@@ -73,9 +73,8 @@ import warnings
 try:
     import h5py
 except (ImportError, ModuleNotFoundError) as e:
-    warnings.filterwarnings("always")
-    warnings.warn("h5py not available")
-    warnings.warn("Some functions will throw an exception if called")
+    warnings.filterwarnings("module")
+    warnings.warn("h5py not available", ImportWarning)
 # ignore warnings
 warnings.filterwarnings("ignore")
 
@@ -108,9 +107,10 @@ def hdf5_read_stokes(filename, **kwargs):
     kwargs.setdefault('DATE',True)
     kwargs.setdefault('COMPRESSION',None)
     # set deprecation warning
-    warnings.filterwarnings("always")
+    warnings.filterwarnings("module")
     warnings.warn("Deprecated. Please use harmonics.from_HDF5",
         DeprecationWarning)
+    warnings.filterwarnings("ignore")
 
     # Open the HDF5 file for reading
     if (kwargs['COMPRESSION'] == 'gzip'):

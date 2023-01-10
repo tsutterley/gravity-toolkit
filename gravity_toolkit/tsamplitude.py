@@ -48,8 +48,9 @@ def tsamplitude(*args):
     ph: float
         phase from the harmonic functions in degrees
     """
-    warnings.filterwarnings("always")
+    warnings.filterwarnings("module")
     warnings.warn("Deprecated. Please use gravity_toolkit.time_series instead",
         DeprecationWarning)
+    warnings.filterwarnings("ignore")
     # call renamed version to not break workflows
     return gravity_toolkit.time_series.amplitude(*args)

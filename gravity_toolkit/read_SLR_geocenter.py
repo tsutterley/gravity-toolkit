@@ -125,7 +125,7 @@ def read_SLR_geocenter(geocenter_file, RADIUS=None, HEADER=0,
     time: float
         date of each month in year-decimal
     """
-    warnings.filterwarnings("always")
+    warnings.filterwarnings("module")
     warnings.warn("Deprecated. Please use gravity_toolkit.harmonics instead",
         DeprecationWarning)
     # call renamed version to not break workflows
@@ -170,9 +170,10 @@ def aod_corrected_SLR_geocenter(geocenter_file, DREL, RADIUS=None, HEADER=0,
     month: GRACE/GRACE-FO month
     time: date of each month in year-decimal
     """
-    warnings.filterwarnings("always")
+    warnings.filterwarnings("module")
     warnings.warn("Deprecated. Please use gravity_toolkit.geocenter instead",
         DeprecationWarning)
+    warnings.filterwarnings("ignore")
     # call renamed version to not break workflows
     DEG1 = gravity_toolkit.geocenter(radius=RADIUS).from_SLR(geocenter_file,
         AOD=True, release=DREL, header=HEADER, columns=COLUMNS)

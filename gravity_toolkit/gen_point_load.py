@@ -149,7 +149,7 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
     # for each degree l
     for l in range(LMAX+1):
         m1 = np.min([l,MMAX]) + 1
-        SPH = spherical_harmonic_matrix(l,D,phi,theta,dfactor[l])
+        SPH = spherical_harmonic_matrix(l, D, phi, theta, dfactor[l])
         # truncate to spherical harmonic order and save to output
         Ylms.clm[l,:m1] = SPH.real[:m1]
         Ylms.slm[l,:m1] = SPH.imag[:m1]
@@ -185,7 +185,7 @@ def spherical_harmonic_matrix(l, data, phi, theta, coeff):
     # spherical harmonic orders up to degree l
     m = np.arange(0,l+1)
     # calculate Euler's of spherical harmonic order multiplied by azimuth phi
-    mphi = np.exp(1j*np.dot(np.squeeze(phi)[:,np.newaxis],m[np.newaxis,:]))
+    mphi = np.exp(1j*np.dot(np.squeeze(phi)[:,np.newaxis], m[np.newaxis,:]))
     # reshape data to order
     D = np.kron(np.ones((1,l+1)), data[:,np.newaxis])
     # calculate spherical harmonics and multiply by coefficients and data
