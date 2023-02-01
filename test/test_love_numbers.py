@@ -8,7 +8,6 @@ UPDATE HISTORY:
     Written 08/2020
 """
 import os
-import warnings
 import pytest
 import gravity_toolkit as gravtk
 

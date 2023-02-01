@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonic_summation.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (02/2023)
 
 Returns the spatial field for a series of spherical harmonics
 
@@ -26,9 +26,13 @@ PYTHON DEPENDENCIES:
 PROGRAM DEPENDENCIES:
     associated_legendre.py: Computes fully-normalized associated
         Legendre polynomials
+    gauss_weights.py: Computes the Gaussian weights as a function of degree
+    units.py: class for converting spherical harmonic data to specific units
 
 UPDATE HISTORY:
+    Updated 02/2023: set custom units as top option in if/else statements
     Updated 01/2023: refactored associated legendre polynomials
+        added wrapper function for smoothing and converting to output units
         added fft-based transform function
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 07/2020: added function docstrings
@@ -37,6 +41,8 @@ UPDATE HISTORY:
 """
 import numpy as np
 from gravity_toolkit.associated_legendre import plm_holmes
+from gravity_toolkit.gauss_weights import gauss_weights
+from gravity_toolkit.units import units
 
 def harmonic_summation(clm1, slm1, lon, lat,
     LMIN=0, LMAX=60, MMAX=None, PLM=None):
@@ -90,9 +96,9 @@ def harmonic_summation(clm1, slm1, lon, lat,
 
     # Truncating harmonics to degree and order LMAX
     # removing coefficients below LMIN and above MMAX
-    mm = np.arange(0,MMAX+1)
-    clm = np.zeros((LMAX+1,MMAX+1))
-    slm = np.zeros((LMAX+1,MMAX+1))
+    mm = np.arange(0, MMAX+1)
+    clm = np.zeros((LMAX+1, MMAX+1))
+    slm = np.zeros((LMAX+1, MMAX+1))
     clm[LMIN:LMAX+1,mm] = clm1[LMIN:LMAX+1,mm]
     slm[LMIN:LMAX+1,mm] = slm1[LMIN:LMAX+1,mm]
     for k in range(0,thmax):
@@ -183,3 +189,135 @@ def harmonic_transform(clm1, slm1, lon, lat,
 
     # return output data
     return s
+
+def stokes_summation(clm1, slm1, lon, lat,
+    LMIN=0, LMAX=60, MMAX=None, RAD=0, UNITS=0, LOVE=None, PLM=None):
+    """
+    Converts data from spherical harmonic coefficients to a spatial field
+
+    Parameters
+    ----------
+    clm1: float
+        cosine spherical harmonic coefficients in output units
+    slm1: float
+        sine spherical harmonic coefficients in output units
+    lon: float
+        longitude array
+    lat: float
+        latitude array
+    LMIN: int, default 0
+        Lower bound of Spherical Harmonic Degrees
+    LMAX: int, default 60
+        Upper bound of Spherical Harmonic Degrees
+    MMAX: int or NoneType, default None
+        Upper bound of Spherical Harmonic Orders
+    RAD: float, default 0.0
+        Gaussian smoothing radius (km)
+    UNITS: int, default 0
+        Output data units
+
+            - ``1``: cm water equivalent thickness (cm w.e., g/cm\ :sup:`2`)
+            - ``2``: mm geoid height
+            - ``3``: mm elastic crustal deformation
+            - ``4``: microGal gravitational perturbation
+            - ``5``: mbar equivalent surface pressure
+            - ``6``: cm viscoelastic crustal uplift (GIA)
+            - list: custom degree-dependent unit conversion factor
+    LMAX: int, default 0
+        Upper bound of Spherical Harmonic Degrees
+    LOVE: tuple or NoneType, default None
+        Load Love numbers up to degree LMAX (``hl``, ``kl``, ``ll``)
+    PLM: float or NoneType, default None
+        Fully-normalized associated Legendre polynomials
+
+    Returns
+    -------
+    spatial: float
+        spatial field
+
+    References
+    ----------
+    .. [Davis2004] J. L. Davis et al.,
+        "Climate-driven deformation of the solid Earth from GRACE and GPS",
+        *Geophysical Research Letters*, 31(L24605), (2004).
+        `doi: 10.1029/2004GL021435 <https://doi.org/10.1029/2004GL021435>`_
+
+    .. [Holmes2002] S. A. Holmes and W. E. Featherstone,
+        "A unified approach to the Clenshaw summation and the recursive
+        computation of very high degree and order normalised associated
+        Legendre functions", *Journal of Geodesy*, 76, 279--299, (2002).
+        `doi: 10.1007/s00190-002-0216-2 <https://doi.org/10.1007/s00190-002-0216-2>`_
+
+    .. [Tscherning1982] C. C. Tscherning and K. Poder,
+        "Some Geodetic Applications of Clenshaw Summation",
+        *Bollettino di Geodesia e Scienze*, 4, 349--375, (1982).
+
+    .. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan, "Time
+        variabilityof the Earth's gravity field: Hydrological
+        and oceanic effects and their possible detection using GRACE",
+        *Journal of Geophysical Research*, 103(B12), 30205-30229, (1998).
+        `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_
+
+    .. [Wahr2000] J. Wahr, D. Wingham, and C. Bentley,
+        "A method of combining ICESat and GRACE satellite data to constrain
+        Antarctic mass balance", *Journal of Geophysical Research: Solid Earth*,
+        105(B7), 16279--16294, (2000).
+        `doi: 10.1029/2000JB900113 <https://doi.org/10.1029/2000JB900113>`_
+    """
+    # if LMAX is not specified, will use the size of the input harmonics
+    if (LMAX == 0):
+        LMAX = np.shape(clm1)[0]-1
+    # upper bound of spherical harmonic orders (default = LMAX)
+    if MMAX is None:
+        MMAX = np.copy(LMAX)
+
+    # Gaussian Smoothing
+    if (RAD != 0):
+        wl = 2.0*np.pi*gauss_weights(RAD, LMAX)
+    else:
+        # else = 1
+        wl = np.ones((LMAX+1))
+
+    # Setting units factor for output
+    # extract arrays of kl, hl, and ll Love Numbers
+    factors = units(lmax=LMAX).harmonic(*LOVE)
+    # dfactor computes the degree dependent coefficients
+    if isinstance(UNITS,(list,np.ndarray)):
+        # custom units
+        dfactor = np.copy(UNITS)
+    elif (UNITS == 0):
+        # 0: keep original scale
+        dfactor = factors.norm
+    elif (UNITS == 1):
+        # 1: cmH2O, centimeters water equivalent
+        dfactor = factors.cmwe
+    elif (UNITS == 2):
+        # 2: mmGH, mm geoid height
+        dfactor = factors.mmGH
+    elif (UNITS == 3):
+        # 3: mmCU, mm elastic crustal deformation
+        dfactor = factors.mmCU
+    elif (UNITS == 4):
+        # 4: micGal, microGal gravity perturbations
+        dfactor = factors.microGal
+    elif (UNITS == 5):
+        # 5: mbar, equivalent surface pressure
+        dfactor = factors.mbar
+    elif (UNITS == 6):
+        # 6: cmVCU, cm viscoelastic  crustal uplift (GIA ONLY)
+        dfactor = factors.cmVCU
+    else:
+        raise ValueError(f'Unknown units {UNITS}')
+
+    # truncate to degree and order
+    mm = np.arange(0, MMAX+1)
+    # smooth harmonics and convert to output units
+    clm = np.zeros((LMAX+1, MMAX+1))
+    slm = np.zeros((LMAX+1, MMAX+1))
+    for l in range(0, LMAX+1):# LMAX+1 to include LMAX
+        clm[l,:] = wl[l]*dfactor[l]*clm1[l,mm]
+        slm[l,:] = wl[l]*dfactor[l]*slm1[l,mm]
+
+    # return the spatial field
+    return harmonic_summation(clm, slm, lon, lat,
+        LMIN=LMIN, LMAX=LMAX, MMAX=MMAX, PLM=PLM)

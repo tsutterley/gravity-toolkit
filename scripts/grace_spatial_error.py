@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_error.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (02/2023)
 
 Calculates the GRACE/GRACE-FO errors following Wahr et al. (2006)
 
@@ -117,6 +117,7 @@ REFERENCES:
         http://dx.doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 02/2023: use get function to retrieve specific units
     Updated 01/2023: refactored associated legendre polynomials
         refactored time series analysis functions
     Updated 12/2022: single implicit import of gravity toolkit
@@ -373,21 +374,24 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
         'Equivalent_Surface_Pressure']
     # dfactor is the degree dependent coefficients
     # for specific spherical harmonic output units
+    factors = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll)
     if (UNITS == 1):
         # 1: cmwe, centimeters water equivalent
-        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).cmwe
+        dfactor = factors.get('cmwe')
     elif (UNITS == 2):
         # 2: mmGH, millimeters geoid height
-        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).mmGH
+        dfactor = factors.get('mmGH')
     elif (UNITS == 3):
         # 3: mmCU, millimeters elastic crustal deformation
-        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).mmCU
+        dfactor = factors.get('mmCU')
     elif (UNITS == 4):
         # 4: micGal, microGal gravity perturbations
-        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).microGal
+        dfactor = factors.get('microGal')
     elif (UNITS == 5):
-        # 5: mbar, millibar equivalent surface pressure
-        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).mbar
+        # 5: mbar, millibars equivalent surface pressure
+        dfactor = factors.get('mbar')
+    else:
+        raise ValueError(f'Invalid units code {UNITS:d}')
 
     # Computing plms for converting to spatial domain
     phi = delta.lon[np.newaxis,:]*np.pi/180.0

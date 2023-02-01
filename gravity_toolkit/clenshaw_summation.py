@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 clenshaw_summation.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (02/2023)
 Calculates the spatial field for a series of spherical harmonics for a
     sequence of ungridded points
 
@@ -49,6 +49,7 @@ REFERENCES:
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 02/2023: set custom units as top option in if/else statements
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: added UNITS list option for converting to custom units
@@ -157,7 +158,10 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
     # extract arrays of kl, hl, and ll Love Numbers
     factors = units(lmax=LMAX).harmonic(*LOVE)
     # dfactor computes the degree dependent coefficients
-    if (UNITS == 0):
+    if isinstance(UNITS, (list, np.ndarray)):
+        # custom units
+        dfactor = np.copy(UNITS)
+    elif (UNITS == 0):
         # 0: keep original scale
         dfactor = factors.norm
     elif (UNITS == 1):
@@ -178,9 +182,6 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
     elif (UNITS == 6):
         # 6: cmVCU, cm viscoelastic  crustal uplift (GIA ONLY)
         dfactor = factors.cmVCU
-    elif isinstance(UNITS,(list,np.ndarray)):
-        # custom units
-        dfactor = np.copy(UNITS)
     else:
         raise ValueError(f'Unknown units {UNITS}')
 

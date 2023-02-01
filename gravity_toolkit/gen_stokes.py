@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_stokes.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (02/2023)
 
 Converts data from the spatial domain to spherical harmonic coefficients
 
@@ -43,6 +43,7 @@ PROGRAM DEPENDENCIES:
         and filters the GRACE/GRACE-FO coefficients for striping errors
 
 UPDATE HISTORY:
+    Updated 02/2023: set custom units as top option in if/else statements
     Updated 01/2023: refactored associated legendre polynomials
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -163,7 +164,11 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     # Multiplying sin(th) with differentials of theta and phi
     # to calculate the integration factor at each latitude
     int_fact = np.zeros((nlat))
-    if (UNITS == 1):
+    if isinstance(UNITS, (list, np.ndarray)):
+        # custom units
+        dfactor = np.copy(UNITS)
+        int_fact[:] = np.sin(th)*dphi*dth
+    elif (UNITS == 1):
         # Default Parameter: Input in cm w.e. (g/cm^2)
         dfactor = factors.cmwe
         int_fact[:] = np.sin(th)*dphi*dth
@@ -175,10 +180,6 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     elif (UNITS == 3):
         # Input in kg/m^2 (mm w.e.)
         dfactor = factors.mmwe
-        int_fact[:] = np.sin(th)*dphi*dth
-    elif isinstance(UNITS,(list,np.ndarray)):
-        # custom units
-        dfactor = np.copy(UNITS)
         int_fact[:] = np.sin(th)*dphi*dth
     else:
         raise ValueError(f'Unknown units {UNITS}')

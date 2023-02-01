@@ -9,12 +9,10 @@ Tests harmonic programs using the Velicogna and Wahr (2013) Greenland synthetic
 Tests harmonic objects flatten, expansion and iteration routines
 """
 import os
-import warnings
 import pytest
 import inspect
 import numpy as np
 import gravity_toolkit as gravtk
-import matplotlib.pyplot as plt
 
 # path to test files
 filename = inspect.getframeinfo(inspect.currentframe()).filename
@@ -66,17 +64,22 @@ def test_harmonics():
     assert np.all(np.abs(difference_Ylms.slm) < harmonic_eps)
 
     # cmwe, centimeters water equivalent
+    smooth_Ylms = test_Ylms.copy()
     dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll)
     wt = 2.0*np.pi*gravtk.gauss_weights(RAD,LMAX)
-    test_Ylms.convolve(dfactor.cmwe*wt)
+    smooth_Ylms.convolve(dfactor.cmwe*wt)
     # convert harmonics back to spatial domain at same grid spacing
-    test_distribution = gravtk.harmonic_summation(test_Ylms.clm,
-        test_Ylms.slm, input_distribution.lon, input_distribution.lat,
+    test_distribution = gravtk.harmonic_summation(smooth_Ylms.clm,
+        smooth_Ylms.slm, input_distribution.lon, input_distribution.lat,
         LMAX=LMAX, PLM=PLM).T
     # convert harmonics using fast-fourier transform method
-    test_transform = gravtk.harmonic_transform(test_Ylms.clm,
-        test_Ylms.slm, input_distribution.lon, input_distribution.lat,
+    test_transform = gravtk.harmonic_transform(smooth_Ylms.clm,
+        smooth_Ylms.slm, input_distribution.lon, input_distribution.lat,
         LMAX=LMAX, PLM=PLM).T
+    # convert harmonics back to spatial domain using wrapper function
+    test_combine = gravtk.stokes_summation(test_Ylms.clm,
+        test_Ylms.slm, input_distribution.lon, input_distribution.lat,
+        LMAX=LMAX, PLM=PLM, UNITS=1, RAD=RAD, LOVE=(hl,kl,ll)).T
 
     # read input and output spatial distribution files
     distribution_file = 'out.combine.green_ice.0.5.2008.60.gz'
@@ -90,6 +93,7 @@ def test_harmonics():
     distribution_eps = np.finfo(np.float16).eps
     assert np.all(np.abs(difference_distribution) < distribution_eps)
     assert np.all(np.abs(difference_transform) < distribution_eps)
+    assert np.all(test_distribution == test_combine)
 
 # PURPOSE: test harmonic objects
 def test_iterate():

@@ -19,3 +19,5 @@ Calling Sequence
 .. autofunction:: gravity_toolkit.harmonic_summation
 
 .. autofunction:: gravity_toolkit.harmonic_transform
+
+.. autofunction:: gravity_toolkit.stokes_summation

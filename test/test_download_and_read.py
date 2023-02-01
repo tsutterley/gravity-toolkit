@@ -7,7 +7,6 @@ import os
 import pytest
 import shutil
 import inspect
-import warnings
 import posixpath
 import gravity_toolkit as gravtk
 from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter

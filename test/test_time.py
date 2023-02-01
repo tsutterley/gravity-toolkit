@@ -11,7 +11,6 @@ UPDATE HISTORY:
     Written 12/2020
 """
 import pytest
-import warnings
 import numpy as np
 import gravity_toolkit as gravtk
 
