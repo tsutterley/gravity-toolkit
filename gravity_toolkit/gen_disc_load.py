@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_disc_load.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (02/2023)
 Calculates gravitational spherical harmonic coefficients for a uniform disc load
 
 CALLING SEQUENCE:
@@ -55,6 +55,7 @@ REFERENCES:
         https://doi.org/10.1007/s00190-011-0522-7
 
 UPDATE HISTORY:
+    Updated 02/2023: set custom units as top option in if/else statements
     Updated 01/2023: refactored associated legendre polynomials
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -159,7 +160,10 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
     alpha = (1.0 - 1e10*area/(2.0*np.pi*rad_e**2))
 
     # Calculate factor to convert from input units into g/cm^2
-    if (UNITS == 1):
+    if isinstance(UNITS, (list, np.ndarray)):
+        # custom units
+        unit_conv = np.copy(UNITS)
+    elif (UNITS == 1):
         # Input data is in cm water equivalent (cmH2O)
         unit_conv = 1.0
     elif (UNITS == 2):
@@ -171,9 +175,6 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
         # 1 kg = 1000 g
         # 1 m^2 = 100*100 cm^2 = 1e4 cm^2
         unit_conv = 0.1
-    elif isinstance(UNITS,(list,np.ndarray)):
-        # custom units
-        unit_conv = np.copy(UNITS)
     else:
         raise ValueError(f'Unknown units {UNITS}')
 

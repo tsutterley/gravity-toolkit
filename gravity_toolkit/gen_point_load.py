@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_point_load.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (02/2023)
 Calculates gravitational spherical harmonic coefficients for point masses
 
 CALLING SEQUENCE:
@@ -47,6 +47,7 @@ REFERENCES:
         https://doi.org/10.1029/JB078i011p01760
 
 UPDATE HISTORY:
+    Updated 02/2023: set custom units as top option in if/else statements
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: added UNITS list option for converting from custom units
@@ -125,7 +126,11 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
     factors = gravity_toolkit.units(lmax=LMAX).spatial(*LOVE)
     # extract degree dependent factor for specific units
     int_fact = np.zeros((npts))
-    if (UNITS == 1):
+    if isinstance(UNITS, (list, np.ndarray)):
+        # custom units
+        dfactor = np.copy(UNITS)
+        int_fact[:] = 1.0
+    elif (UNITS == 1):
         # Default Parameter: Input in grams (g)
         dfactor = factors.cmwe/(factors.rad_e**2)
         int_fact[:] = 1.0
@@ -133,10 +138,6 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
         # Input in gigatonnes (Gt)
         dfactor = factors.cmwe/(factors.rad_e**2)
         int_fact[:] = 1e15
-    elif isinstance(UNITS,(list,np.ndarray)):
-        # custom units
-        dfactor = np.copy(UNITS)
-        int_fact[:] = 1.0
     else:
         raise ValueError(f'Unknown units {UNITS}')
     # flattened form of data converted to units
@@ -183,11 +184,11 @@ def spherical_harmonic_matrix(l, data, phi, theta, coeff):
     # calculate normalized legendre polynomials (points, order)
     Pl = legendre(l, np.cos(theta), NORMALIZE=True).T
     # spherical harmonic orders up to degree l
-    m = np.arange(0,l+1)
+    m = np.arange(0, l+1)
     # calculate Euler's of spherical harmonic order multiplied by azimuth phi
     mphi = np.exp(1j*np.dot(np.squeeze(phi)[:,np.newaxis], m[np.newaxis,:]))
     # reshape data to order
-    D = np.kron(np.ones((1,l+1)), data[:,np.newaxis])
+    D = np.kron(np.ones((1, l+1)), data[:,np.newaxis])
     # calculate spherical harmonics and multiply by coefficients and data
     Ylms = coeff*D*Pl*mphi
     # calculate the sum over all points and return harmonics for degree l

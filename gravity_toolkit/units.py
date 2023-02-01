@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 units.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (01/2023)
 
 Class for converting GRACE/GRACE-FO Level-2 data to specific units
 
@@ -9,6 +9,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 01/2023: added function to retrieve named units
     Updated 12/2022: set average Earth's density and radius as class properties
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 08/2020: made semi-major axis and ellipsoidal flattening arguments
@@ -64,6 +65,8 @@ class units(object):
         self.mmGH = None
         self.mmCU = None
         self.mmCH = None
+        self.cmVCU = None
+        self.mVCU = None
         self.microGal = None
         self.mbar = None
         self.Pa = None
@@ -181,3 +184,17 @@ class units(object):
         self.mmwe = 3.0*(1.0+kl[self.l])/(1.0+2.0*self.l)/(40.0*np.pi*self.rad_e*self.rho_e)
         # return the degree dependent unit conversions
         return self
+
+    def get(self, var):
+        """
+        Get the degree dependent factors for a specific unit
+
+        Parameters
+        ----------
+        var: str
+            Unit name for spherical harmonics or spatial fields
+        """
+        try:
+            return getattr(self, var)
+        except Exception as exc:
+            raise ValueError(f'Unknown units {var}') from exc

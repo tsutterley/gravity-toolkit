@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_maps.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (02/2023)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly spatial fields
@@ -148,6 +148,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 02/2023: use get function to retrieve specific units
     Updated 01/2023: refactored associated legendre polynomials
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -401,21 +402,22 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         'Equivalent_Surface_Pressure']
     # Setting units factor for output
     # dfactor computes the degree dependent coefficients
+    factors = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll)
     if (UNITS == 1):
         # 1: cmwe, centimeters water equivalent
-        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).cmwe
+        dfactor = factors.get('cmwe')
     elif (UNITS == 2):
-        # 2: mmGH, mm geoid height
-        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).mmGH
+        # 2: mmGH, millimeters geoid height
+        dfactor = factors.get('mmGH')
     elif (UNITS == 3):
-        # 3: mmCU, mm elastic crustal deformation
-        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).mmCU
+        # 3: mmCU, millimeters elastic crustal deformation
+        dfactor = factors.get('mmCU')
     elif (UNITS == 4):
         # 4: micGal, microGal gravity perturbations
-        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).microGal
+        dfactor = factors.get('microGal')
     elif (UNITS == 5):
         # 5: mbar, millibars equivalent surface pressure
-        dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll).mbar
+        dfactor = factors.get('mbar')
     else:
         raise ValueError(f'Invalid units code {UNITS:d}')
 
