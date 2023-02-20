@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 units.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (02/2023)
 
 Class for converting GRACE/GRACE-FO Level-2 data to specific units
 
@@ -9,6 +9,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 02/2023: fixed case where maximum spherical harmonic degree is 0
     Updated 01/2023: added function to retrieve named units
     Updated 12/2022: set average Earth's density and radius as class properties
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -71,7 +72,8 @@ class units(object):
         self.mbar = None
         self.Pa = None
         self.lmax = lmax
-        self.l = np.arange(self.lmax+1) if self.lmax else None
+        # calculate spherical harmonic degree (0 is falsy)
+        self.l = np.arange(self.lmax+1) if (self.lmax is not None) else None
 
     @property
     def b_axis(self):

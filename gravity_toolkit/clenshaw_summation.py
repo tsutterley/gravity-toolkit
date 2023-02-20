@@ -190,7 +190,7 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
     for m in range(LMAX, -1, -1):
         # convolve harmonics with unit factors and smoothing
         s_m_c[:,2*m:2*m+2] = clenshaw_s_m(t, dfactor*wl, m, clm, slm,
-            LMAX, SCALE=SCALE)
+            LMAX, ASTYPE=ASTYPE, SCALE=SCALE)
 
     # calculate cos(phi)
     cos_phi_2 = 2.0*np.cos(phi)

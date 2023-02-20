@@ -320,7 +320,7 @@ def main():
             DATAFORM=args.format,
             DATE=args.date,
             MODE=args.mode)
-    except Exception as e:
+    except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled

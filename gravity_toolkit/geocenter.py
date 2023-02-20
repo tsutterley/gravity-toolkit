@@ -48,7 +48,7 @@ import gravity_toolkit.time
 # attempt imports
 try:
     import netCDF4
-except (ImportError, ModuleNotFoundError) as e:
+except (ImportError, ModuleNotFoundError) as exc:
     warnings.filterwarnings("module")
     warnings.warn("netCDF4 not available", ImportWarning)
 # ignore warnings
@@ -985,14 +985,14 @@ class geocenter(object):
             self.Z = self.C10*self.radius*np.sqrt(3.0)/(1.0 + kl)
             self.X = self.C11*self.radius*np.sqrt(3.0)/(1.0 + kl)
             self.Y = self.S11*self.radius*np.sqrt(3.0)/(1.0 + kl)
-        except Exception as e:
+        except Exception as exc:
             pass
         # convert errors to cartesian geocenter
         try:
             self.Z_sigma = self.eC10*self.radius*np.sqrt(3.0)/(1.0 + kl)
             self.X_sigma = self.eC11*self.radius*np.sqrt(3.0)/(1.0 + kl)
             self.Y_sigma = self.eS11*self.radius*np.sqrt(3.0)/(1.0 + kl)
-        except Exception as e:
+        except Exception as exc:
             pass
         return self
 
@@ -1018,7 +1018,7 @@ class geocenter(object):
             self.eC10 *= (rho_e*rad_e)/(1.0 + kl)
             self.eC11 *= (rho_e*rad_e)/(1.0 + kl)
             self.eS11 *= (rho_e*rad_e)/(1.0 + kl)
-        except Exception as e:
+        except Exception as exc:
             pass
         return self
 
@@ -1041,7 +1041,7 @@ class geocenter(object):
             self.eC10 *= 10.0
             self.eC11 *= 10.0
             self.eS11 *= 10.0
-        except Exception as e:
+        except Exception as exc:
             pass
         return self
 
@@ -1063,7 +1063,7 @@ class geocenter(object):
             self.eC10 = (1.0 + kl)*self.Z_sigma/(self.radius*np.sqrt(3.0))
             self.eC11 = (1.0 + kl)*self.X_sigma/(self.radius*np.sqrt(3.0))
             self.eS11 = (1.0 + kl)*self.Y_sigma/(self.radius*np.sqrt(3.0))
-        except Exception as e:
+        except Exception as exc:
             pass
         return self
 
@@ -1089,7 +1089,7 @@ class geocenter(object):
             self.eC10 *= (1.0 + kl)/(rho_e*rad_e)
             self.eC11 *= (1.0 + kl)/(rho_e*rad_e)
             self.eS11 *= (1.0 + kl)/(rho_e*rad_e)
-        except Exception as e:
+        except Exception as exc:
             pass
         return self
 
@@ -1112,7 +1112,7 @@ class geocenter(object):
             self.eC10 /= 10.0
             self.eC11 /= 10.0
             self.eS11 /= 10.0
-        except Exception as e:
+        except Exception as exc:
             pass
         return self
 

@@ -376,7 +376,7 @@ def ftp_list(HOST, username=None, password=None, timeout=None,
     # try to connect to ftp host
     try:
         ftp = ftplib.FTP(HOST[0],timeout=timeout)
-    except (socket.gaierror,IOError) as e:
+    except (socket.gaierror,IOError) as exc:
         raise RuntimeError(f'Unable to connect to {HOST[0]}')
     else:
         ftp.login(username,password)
@@ -460,7 +460,7 @@ def from_ftp(HOST, username=None, password=None, timeout=None,
     try:
         # try to connect to ftp host
         ftp = ftplib.FTP(HOST[0],timeout=timeout)
-    except (socket.gaierror,IOError) as e:
+    except (socket.gaierror,IOError) as exc:
         raise RuntimeError(f'Unable to connect to {HOST[0]}')
     else:
         ftp.login(username,password)
@@ -564,7 +564,7 @@ def http_list(HOST, timeout=None, context=_default_ssl_context,
         # Create and submit request.
         request=urllib2.Request(posixpath.join(*HOST))
         response=urllib2.urlopen(request,timeout=timeout,context=context)
-    except (urllib2.HTTPError, urllib2.URLError) as e:
+    except (urllib2.HTTPError, urllib2.URLError) as exc:
         raise Exception('List error from {0}'.format(posixpath.join(*HOST)))
     else:
         # read and parse request for files (column names and modified times)
@@ -634,7 +634,7 @@ def from_http(HOST, timeout=None, context=_default_ssl_context,
         # Create and submit request.
         request = urllib2.Request(posixpath.join(*HOST))
         response = urllib2.urlopen(request,timeout=timeout,context=context)
-    except (urllib2.HTTPError, urllib2.URLError) as e:
+    except (urllib2.HTTPError, urllib2.URLError) as exc:
         raise Exception('Download error from {0}'.format(posixpath.join(*HOST)))
     else:
         # copy remote file contents to bytesIO object
@@ -710,7 +710,7 @@ def attempt_login(urs, context=_default_ssl_context,
         os.chmod(kwargs['netrc'], 0o600)
         # try retrieving credentials from netrc
         username, _, password = netrc.netrc(kwargs['netrc']).authenticators(urs)
-    except Exception as e:
+    except Exception as exc:
         # try retrieving credentials from environmental variables
         username, password = (kwargs['username'], kwargs['password'])
         pass
@@ -734,7 +734,7 @@ def attempt_login(urs, context=_default_ssl_context,
         HOST = 'https://archive.podaac.earthdata.nasa.gov/s3credentials'
         try:
             check_credentials(HOST)
-        except Exception as e:
+        except Exception as exc:
             pass
         else:
             return opener
@@ -992,7 +992,7 @@ def drive_list(HOST, username=None, password=None, build=True,
         # Create and submit request.
         request = urllib2.Request(posixpath.join(*HOST))
         tree = lxml.etree.parse(urllib2.urlopen(request,timeout=timeout),parser)
-    except (urllib2.HTTPError, urllib2.URLError) as e:
+    except (urllib2.HTTPError, urllib2.URLError) as exc:
         raise Exception('List error from {0}'.format(posixpath.join(*HOST)))
     else:
         # read and parse request for files (column names and modified times)
@@ -1075,7 +1075,7 @@ def from_drive(HOST, username=None, password=None, build=True,
         # Create and submit request.
         request = urllib2.Request(posixpath.join(*HOST))
         response = urllib2.urlopen(request,timeout=timeout)
-    except (urllib2.HTTPError, urllib2.URLError) as e:
+    except (urllib2.HTTPError, urllib2.URLError) as exc:
         raise Exception('Download error from {0}'.format(posixpath.join(*HOST)))
     else:
         # copy remote file contents to bytesIO object
@@ -1201,7 +1201,7 @@ def cmr_product_shortname(mission, center, release, level='L2', version='0'):
     # try to retrieve the shortname for a given mission
     try:
         cmr_shortnames = cmr_shortname[mission][level][center][release]
-    except Exception as e:
+    except Exception as exc:
         raise Exception('NASA CMR shortname not found')
     else:
         return cmr_shortnames

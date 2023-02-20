@@ -930,7 +930,7 @@ def main():
             FILE_PREFIX=args.file_prefix,
             VERBOSE=args.verbose,
             MODE=args.mode)
-    except Exception as e:
+    except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
