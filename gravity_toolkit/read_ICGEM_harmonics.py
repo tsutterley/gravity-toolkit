@@ -45,7 +45,7 @@ import warnings
 # attempt imports
 try:
     import geoid_toolkit.read_ICGEM_harmonics
-except (ImportError, ModuleNotFoundError) as e:
+except (ImportError, ModuleNotFoundError) as exc:
     warnings.filterwarnings("module")
     warnings.warn("geoid_toolkit not available", ImportWarning)
 # ignore warnings

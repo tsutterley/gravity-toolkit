@@ -49,24 +49,24 @@ from gravity_toolkit.grace_find_months import grace_find_months
 # imports with warnings if not present
 try:
     import ipywidgets
-except (ImportError, ModuleNotFoundError) as e:
+except (ImportError, ModuleNotFoundError) as exc:
     warnings.filterwarnings("module")
     warnings.warn("ipywidgets not available", ImportWarning)
 try:
     import matplotlib.cm as cm
     import matplotlib.colors as colors
-except (ImportError, ModuleNotFoundError) as e:
+except (ImportError, ModuleNotFoundError) as exc:
     warnings.filterwarnings("module")
     warnings.warn("matplotlib not available", ImportWarning)
 try:
     from tkinter import Tk, filedialog
-except (ImportError, ModuleNotFoundError) as e:
+except (ImportError, ModuleNotFoundError) as exc:
     warnings.filterwarnings("module")
     warnings.warn("tkinter not available", ImportWarning)
     filedialog = None
 try:
     import IPython.display
-except (ImportError, ModuleNotFoundError) as e:
+except (ImportError, ModuleNotFoundError) as exc:
     warnings.filterwarnings("module")
     warnings.warn("IPython.display not available", ImportWarning)
 # ignore warnings

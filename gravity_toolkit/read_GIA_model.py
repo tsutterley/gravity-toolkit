@@ -348,7 +348,7 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     elif (GIA == 'ICE6G-D'):
         # ICE6G-D: ICE-6G Version-D GIA Models
         prefix = 'ICE6G-D'
-        gia_Ylms['citation'] = 'Peltier_et_al._(1018)'
+        gia_Ylms['citation'] = 'Peltier_et_al._(2018)'
         gia_Ylms['reference'] = ('W. R. Peltier, D. F. Argus, and R. Drummond, '
             '"Comment on "An assessment of the ICE-6G_C (VM5a) glacial '
             'isostatic adjustment model" by Purcell et al.", Journal of '
@@ -646,7 +646,7 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         for att_name in ('title','citation','reference','url'):
             try:
                 gia_Ylms[att_name] = Ylms.attributes[att_name]
-            except Exception as e:
+            except Exception as exc:
                 gia_Ylms[att_name] = None
 
     # GIA model parameter strings

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (02/2023)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -25,6 +25,8 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 02/2023: fix expand case where data is a single degree
+        fixed case where maximum spherical harmonic degree is 0
     Updated 01/2023: made amplitude a property of the harmonics class
         added property for the complex form of the spherical harmonics
     Updated 12/2022: add software information to output HDF5 and netCDF4
@@ -93,17 +95,17 @@ from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
 # attempt imports
 try:
     from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
-except (ImportError, ModuleNotFoundError) as e:
+except (ImportError, ModuleNotFoundError) as exc:
     warnings.filterwarnings("module")
     warnings.warn("geoid_toolkit not available", ImportWarning)
 try:
     import h5py
-except (ImportError, ModuleNotFoundError) as e:
+except (ImportError, ModuleNotFoundError) as exc:
     warnings.filterwarnings("module")
     warnings.warn("h5py not available", ImportWarning)
 try:
     import netCDF4
-except (ImportError, ModuleNotFoundError) as e:
+except (ImportError, ModuleNotFoundError) as exc:
     warnings.filterwarnings("module")
     warnings.warn("netCDF4 not available", ImportWarning)
 # ignore warnings
@@ -148,8 +150,9 @@ class harmonics(object):
         self.month=None
         self.lmax=kwargs['lmax']
         self.mmax=kwargs['mmax']
-        self.l=np.arange(self.lmax+1) if self.lmax else None
-        self.m=np.arange(self.mmax+1) if self.mmax else None
+        # calculate spherical harmonic degree and order (0 is falsy)
+        self.l=np.arange(self.lmax+1) if (self.lmax is not None) else None
+        self.m=np.arange(self.mmax+1) if (self.mmax is not None) else None
         self.attributes=dict()
         self.shape=None
         self.ndim=None
@@ -1125,8 +1128,9 @@ class harmonics(object):
         """
         self.ndim = self.clm.ndim
         self.shape = self.clm.shape
-        self.l = np.arange(self.lmax+1) if self.lmax else None
-        self.m = np.arange(self.mmax+1) if self.mmax else None
+        # calculate spherical harmonic degree and order (0 is falsy)
+        self.l=np.arange(self.lmax+1) if (self.lmax is not None) else None
+        self.m=np.arange(self.mmax+1) if (self.mmax is not None) else None
         return self
 
     def add(self, temp):
@@ -1379,8 +1383,8 @@ class harmonics(object):
         date: bool, default True
             harmonics objects contain date information
         """
-        n_harm = (self.lmax**2 + 3*self.lmax - (self.lmax-self.mmax)**2 -
-            (self.lmax-self.mmax))//2 + 1
+        # number of harmonics
+        n_harm = len(self.l)
         # restructured degree and order
         temp = harmonics(lmax=self.lmax, mmax=self.mmax)
         # get filenames if applicable

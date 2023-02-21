@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_love_numbers.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (02/2023)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
 Linearly interpolates load love numbers for missing degrees
@@ -56,6 +56,7 @@ REFERENCES:
         103(B12), 30205-30229, (1998)
 
 UPDATE HISTORY:
+    Updated 02/2023: fix degree zero case and add load love number formatter
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: use logging for debugging level verbose output
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -207,6 +208,10 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
             # set interpolation flag for degree
             flag[l] = False
 
+    # return love numbers in output format
+    if (LMAX == 0):
+        return love_number_formatter(love, FORMAT=FORMAT)
+
     # if needing to linearly interpolate love numbers
     if np.any(flag):
         # linearly interpolate each load love number following Wahr (1998)
@@ -246,6 +251,34 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
         love[n][1] -= alpha
 
     # return love numbers in output format
+    return love_number_formatter(love, FORMAT=FORMAT)
+
+# PURPOSE: return load Love numbers in a particular format
+def love_number_formatter(love, FORMAT='tuple'):
+    """
+    Converts a dictionary of Load Love Numbers
+    to a particular output fomrat
+
+    Parameters
+    ----------
+    love: dict
+        Load Love numbers
+    FORMAT: str, default 'tuple'
+        Format of output variables
+
+            - ``'dict'``: dictionary with variable keys
+            - ``'tuple'``: tuple with variable order (``hl``, ``kl``, ``ll``)
+            - ``'zip'``: aggregated variable sets
+
+    Returns
+    -------
+    kl: float
+        Love number of Gravitational Potential
+    hl: float
+        Love number of Vertical Displacement
+    ll: float
+        Love number of Horizontal Displacement
+    """
     if (FORMAT == 'dict'):
         return love
     elif (FORMAT == 'tuple'):

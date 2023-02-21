@@ -409,7 +409,7 @@ def main():
             LANDMASK=args.mask,
             OUTPUT_DIRECTORY=args.output_directory,
             MODE=args.mode)
-    except Exception as e:
+    except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
