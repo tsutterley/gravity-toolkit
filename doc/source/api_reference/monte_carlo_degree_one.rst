@@ -23,6 +23,8 @@ Calling Sequence
         * ``0``: Han and Wahr (1995) values from PREM [Han1995]_
         * ``1``: Gegout (2005) values from PREM [Gegout2010]_
         * ``2``: Wang et al. (2012) values from PREM [Wang2012]_
+        * ``3``: Wang et al. (2012) values from PREM with hard sediment [Wang2012]_
+        * ``4``: Wang et al. (2012) values from PREM with soft sediment [Wang2012]_
 
     --kl -k : @after
         * ``None``: use derived values from [Trupin1992]_ [Blewett2003]_.
