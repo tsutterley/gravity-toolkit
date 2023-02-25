@@ -27,7 +27,6 @@ removed from the spherical harmonic coefficients [Wahr1998]_.
 Here, we use load Love numbers with parameters calculated from
 the Preliminary Reference Earth model (PREM) [Farrell1972]_ [Dziewonski1981]_.
 In order to help estimate the uncertainty in elastic deformation,
-
 ``grace_spatial_maps.py`` can use different sets of load Love numbers by adjusting the
 ``--love`` command line option.
 

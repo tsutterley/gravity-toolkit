@@ -57,6 +57,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 02/2023: fix degree zero case and add load love number formatter
+        added options for hard and soft PREM sediment cases
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: use logging for debugging level verbose output
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -327,6 +328,8 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
             - ``0``: [Han1995]_ values from PREM
             - ``1``: [Gegout2010]_ values from PREM
             - ``2``: [Wang2012]_ values from PREM
+            - ``3``: [Wang2012]_ values from PREM with hard sediment
+            - ``4``: [Wang2012]_ values from PREM with soft sediment
     REFERENCE: str
         Reference frame for calculating degree 1 love numbers [Blewett2003]_
 
@@ -391,6 +394,22 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
         love_numbers_file = get_data_path(['data','PREM-LLNs-truncated.dat'])
         header = 1
         columns = ['l','hl','ll','kl','nl','nk']
+    elif (LOVE_NUMBERS == 3):
+        # PREM hard outputs from Wang et al. (2012)
+        # case with 0.46 kilometers thick hard sediment
+        # https://doi.org/10.1016/j.cageo.2012.06.022
+        love_numbers_file = get_data_path(['data','PREMhard-LLNs-truncated.dat'])
+        header = 1
+        columns = ['l','hl','ll','kl','nl','nk']
+    elif (LOVE_NUMBERS == 4):
+        # PREM soft outputs from Wang et al. (2012)
+        # case with 0.52 kilometers thick soft sediment
+        # https://doi.org/10.1016/j.cageo.2012.06.022
+        love_numbers_file = get_data_path(['data','PREMsoft-LLNs-truncated.dat'])
+        header = 1
+        columns = ['l','hl','ll','kl','nl','nk']
+    else:
+        raise ValueError(f'Unknown Love Numbers Type {LOVE_NUMBERS:d}')
     # log load love numbers file if debugging
     logging.debug(f'Reading Love numbers file: {love_numbers_file}')
     # LMAX of load love numbers from Han and Wahr (1995) is 696.

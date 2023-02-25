@@ -88,4 +88,4 @@ None*.png
 Untitled.ipynb
 # Large data files #
 ####################
-PREM-LLNs-complete.dat
+*-complete.dat
