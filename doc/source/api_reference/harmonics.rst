@@ -6,11 +6,11 @@ Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 
  - Can read ascii, netCDF4, HDF5 files
  - Can read from an index of the above file types
- - Can merge a list of harmonics objects into a single object
+ - Can merge a list of ``harmonics`` objects into a single object
  - Can subset to a list of GRACE/GRACE-FO months
- - Can calculate the mean field of a harmonics object
- - Can filter harmonics for correlated "striping" errors
- - Can output harmonics objects to ascii, netCDF4 or HDF5 files
+ - Can calculate the mean field of a ``harmonics`` object
+ - Can filter ``harmonics`` for correlated "striping" errors
+ - Can output ``harmonics`` objects to ascii, netCDF4 or HDF5 files
 
 Calling Sequence
 ================

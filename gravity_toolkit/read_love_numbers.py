@@ -58,6 +58,7 @@ REFERENCES:
 UPDATE HISTORY:
     Updated 02/2023: fix degree zero case and add load love number formatter
         added options for hard and soft PREM sediment cases
+        added data class for load love numbers with attributes for model
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: use logging for debugging level verbose output
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -125,6 +126,7 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
             - ``'dict'``: dictionary with variable keys as listed above
             - ``'tuple'``: tuple with variable order (``hl``, ``kl``, ``ll``)
             - ``'zip'``: aggregated variable sets
+            - ``'class'``: ``love_numbers`` class
 
     Returns
     -------
@@ -270,6 +272,7 @@ def love_number_formatter(love, FORMAT='tuple'):
             - ``'dict'``: dictionary with variable keys
             - ``'tuple'``: tuple with variable order (``hl``, ``kl``, ``ll``)
             - ``'zip'``: aggregated variable sets
+            - ``'class'``: ``love_numbers`` class
 
     Returns
     -------
@@ -286,6 +289,8 @@ def love_number_formatter(love, FORMAT='tuple'):
         return (love['hl'], love['kl'], love['ll'])
     elif (FORMAT == 'zip'):
         return zip(love['hl'], love['kl'], love['ll'])
+    elif (FORMAT == 'class'):
+        return love_numbers().from_dict(love)
 
 # PURPOSE: read input file and extract contents
 def extract_love_numbers(love_numbers_file):
@@ -342,6 +347,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
             - ``'dict'``: dictionary with variable keys as listed above
             - ``'tuple'``: tuple with variable order (``hl``, ``kl``, ``ll``)
             - ``'zip'``: aggregated variable sets
+            - ``'class'``: ``love_numbers`` class
 
     Returns
     -------
@@ -380,18 +386,24 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
         # PREM outputs from Han and Wahr (1995)
         # https://doi.org/10.1111/j.1365-246X.1995.tb01819.x
         love_numbers_file = get_data_path(['data','love_numbers'])
+        model = 'PREM'
+        citation = 'Han and Wahr (1995)'
         header = 2
         columns = ['l','hl','kl','ll']
     elif (LOVE_NUMBERS == 1):
         # PREM outputs from Gegout (2005)
         # http://gemini.gsfc.nasa.gov/aplo/
         love_numbers_file = get_data_path(['data','Load_Love2_CE.dat'])
+        model = 'PREM'
+        citation = 'Gegout et al. (2010)'
         header = 3
         columns = ['l','hl','ll','kl']
     elif (LOVE_NUMBERS == 2):
         # PREM outputs from Wang et al. (2012)
         # https://doi.org/10.1016/j.cageo.2012.06.022
         love_numbers_file = get_data_path(['data','PREM-LLNs-truncated.dat'])
+        model = 'PREM'
+        citation = 'Wang et al. (2012)'
         header = 1
         columns = ['l','hl','ll','kl','nl','nk']
     elif (LOVE_NUMBERS == 3):
@@ -399,6 +411,8 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
         # case with 0.46 kilometers thick hard sediment
         # https://doi.org/10.1016/j.cageo.2012.06.022
         love_numbers_file = get_data_path(['data','PREMhard-LLNs-truncated.dat'])
+        model = 'PREMhard'
+        citation = 'Wang et al. (2012)'
         header = 1
         columns = ['l','hl','ll','kl','nl','nk']
     elif (LOVE_NUMBERS == 4):
@@ -406,6 +420,8 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
         # case with 0.52 kilometers thick soft sediment
         # https://doi.org/10.1016/j.cageo.2012.06.022
         love_numbers_file = get_data_path(['data','PREMsoft-LLNs-truncated.dat'])
+        model = 'PREMsoft'
+        citation = 'Wang et al. (2012)'
         header = 1
         columns = ['l','hl','ll','kl','nl','nk']
     else:
@@ -417,5 +433,174 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
     # however, as we are linearly extrapolating out, do not make
     # LMAX too much larger than 696
     # read arrays of kl, hl, and ll Love Numbers
-    return read_love_numbers(love_numbers_file, LMAX=LMAX, HEADER=header,
+    love = read_love_numbers(love_numbers_file, LMAX=LMAX, HEADER=header,
         COLUMNS=columns, REFERENCE=REFERENCE, FORMAT=FORMAT)
+    # append model and filename attributes to class
+    if (FORMAT == 'class'):
+        love.filename = os.path.basename(love_numbers_file)
+        love.reference=REFERENCE
+        love.model = model
+        love.citation = citation
+    # return the load love numbers
+    return love
+
+class love_numbers(object):
+    """
+    Data class for Load Love numbers
+
+    Attributes
+    ----------
+    lmax: int
+        maximum degree of the Load Love Numbers
+    l: int
+        Spherical harmonic degrees
+    kl: float
+        Love number of Gravitational Potential
+    hl: float
+        Love number of Vertical Displacement
+    ll: float
+        Love number of Horizontal Displacement
+    reference: str
+        Reference frame for degree 1 love numbers
+
+            - ``'CF'``: Center of Surface Figure
+            - ``'CM'``: Center of Mass of Earth System
+            - ``'CE'``: Center of Mass of Solid Earth
+
+    model: str
+        Reference Earth Model
+    citation: str
+        Citation for Reference Earth Model
+    filename: str
+        input filename of Load Love Numbers
+    """
+    np.seterr(invalid='ignore')
+    def __init__(self, **kwargs):
+        # set default keyword arguments
+        kwargs.setdefault('lmax',None)
+        # set default class attributes
+        self.hl=[]
+        self.kl=[]
+        self.ll=[]
+        self.lmax=kwargs['lmax']
+        # calculate spherical harmonic degree (0 is falsy)
+        self.l=np.arange(self.lmax+1) if (self.lmax is not None) else None
+        self.reference=None
+        self.model=None
+        self.citation=None
+        self.filename=None
+
+    def from_dict(self, d):
+        """
+        Convert a dict object to a ``love_numbers`` object
+
+        Parameters
+        ----------
+        d: dict
+            dictionary object to be converted
+        """
+        # retrieve each Load Love Number
+        for key in ('hl','kl','ll'):
+            setattr(self, key, d.get(key))
+        self.lmax = len(self.hl) - 1
+        # calculate spherical harmonic degree
+        self.update_dimensions()
+        return self
+
+    def to_dict(self):
+        """
+        Convert a ``love_numbers`` object to a dict object
+
+        Returns
+        -------
+        d: dict
+            output dictionary object
+        """
+        # retrieve each Load Love Number
+        d = {}
+        for key in ('hl','kl','ll'):
+            d[key] = getattr(self, key)
+        return d
+
+    def to_tuple(self):
+        """
+        Convert a ``love_numbers`` object to a tuple object
+
+        Returns
+        -------
+        t: tuple
+            output tuple object
+        """
+        # return Load Love Numbers
+        return (self.hl, self.kl, self.ll)
+
+    def transform(self, reference):
+        """
+        Calculate and apply calculate isomorphic parameters to
+        transform from the Center of Mass of the Solid Earth
+        Reference Frame [Blewett2003]_
+
+        Parameters
+        ----------
+        reference: str
+            Output reference frame for degree 1 love numbers
+
+                - ``'CF'``: Center of Surface Figure
+                - ``'CL'``: Center of Surface Lateral Figure
+                - ``'CH'``: Center of Surface Height Figure
+                - ``'CM'``: Center of Mass of Earth System
+                - ``'CE'``: Center of Mass of Solid Earth
+
+        References
+        ----------
+        .. [Blewett2003] G. Blewitt, "Self-consistency in reference frames, geocenter
+            definition, and surface loading of the solid Earth",
+            *Journal of Geophysical Research: Solid Earth*, 108(B2), 2103, (2003).
+            `doi: 10.1029/2002JB002082 <https://doi.org/10.1029/2002JB002082>`_
+        """
+        # calculate isomorphic parameters for different reference frames
+        # From Blewitt (2003), Wahr (1998), Trupin (1992) and Farrell (1972)
+        if (reference.upper() == 'CF'):
+            # Center of Surface Figure
+            alpha = (self.hl[1] + 2.0*self.ll[1])/3.0
+        elif (reference.upper() == 'CL'):
+            # Center of Surface Lateral Figure
+            alpha = self.ll[1].copy()
+        elif (reference.upper() == 'CH'):
+            # Center of Surface Height Figure
+            alpha = self.hl[1].copy()
+        elif (reference.upper() == 'CM'):
+            # Center of Mass of Earth System
+            alpha = 1.0
+        elif (reference.upper() == 'CE'):
+            # Center of Mass of Solid Earth
+            alpha = 0.0
+        else:
+            raise Exception(f'Invalid Reference Frame {reference}')
+        # apply isomorphic parameters
+        self.hl[1] -= alpha
+        self.kl[1] -= alpha
+        self.ll[1] -= alpha
+        # set reference attribute
+        self.reference = reference
+        return self
+
+    def update_dimensions(self):
+        """
+        Update the dimensions of the ``love_numbers`` object
+        """
+        # calculate spherical harmonic degree (0 is falsy)
+        self.l=np.arange(self.lmax+1) if (self.lmax is not None) else None
+        return self
+
+    def __len__(self):
+        """Number of degrees
+        """
+        return len(self.l)
+
+    def __iter__(self):
+        """Iterate over load love numbers variables
+        """
+        yield self.hl
+        yield self.kl
+        yield self.ll

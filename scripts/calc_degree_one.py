@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_degree_one.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (02/2023)
 
 Calculates degree 1 variations using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from ECCO and OMCT/MPIOM
@@ -53,6 +53,8 @@ COMMAND LINE OPTIONS:
         0: Han and Wahr (1995) values from PREM
         1: Gegout (2005) values from PREM
         2: Wang et al. (2012) values from PREM
+        3: Wang et al. (2012) values from PREM with hard sediment
+        4: Wang et al. (2012) values from PREM with soft sediment
     -k X, --kl X: Degree 1 Gravitational Load Love number
     -G X, --gia X: GIA model type to read
         IJ05-R2: Ivins R2 GIA Models
@@ -157,6 +159,7 @@ REFERENCES:
         https://doi.org/10.1029/2007JB005338
 
 UPDATE HISTORY:
+    Updated 02/2023: use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -403,17 +406,18 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     slr_str = ''.join([C21_str,C22_str,C30_str,C40_str,C50_str])
 
     # read load love numbers
-    hl,kl,ll = gravtk.load_love_numbers(EXPANSION,
-        LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE='CF')
+    LOVE = gravtk.load_love_numbers(EXPANSION,
+        LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE='CF',
+        FORMAT='class')
     # set gravitational load love number to a specific value
     if LOVE_K1:
-        kl[1] = np.copy(LOVE_K1)
+        LOVE.kl[1] = np.copy(LOVE_K1)
     # maximum spherical harmonic order
     if not MMAX:
         MMAX = np.copy(LMAX)
 
     # Earth Parameters
-    factors = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll)
+    factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
     rho_e = factors.rho_e# Average Density of the Earth [g/cm^3]
     rad_e = factors.rad_e# Average Radius of the Earth [cm]
     l = factors.l
@@ -452,7 +456,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     # eustatic ratio = -land total/ocean total
     ocean_Ylms = gravtk.gen_stokes(ocean_function,
         landsea.lon, landsea.lat, UNITS=1, LMIN=0, LMAX=1,
-        LOVE=(hl,kl,ll), PLM=PLM[:2,:2,:])
+        LOVE=LOVE, PLM=PLM[:2,:2,:])
 
     # Gaussian Smoothing (Jekeli, 1981)
     if (RAD != 0):
@@ -709,17 +713,17 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
                 # possible improvement using scaled estimate with real coastlines
                 land_Ylms = gravtk.gen_stokes(lmass*land_function,
                     landsea.lon, landsea.lat, UNITS=1, LMIN=0,
-                    LMAX=EXPANSION, PLM=PLM, LOVE=(hl,kl,ll))
+                    LMAX=EXPANSION, PLM=PLM, LOVE=LOVE)
                 # 2) calculate sea level fingerprints of land mass at time t
                 # use maximum of 3 iterations for computational efficiency
                 sea_level = gravtk.sea_level_equation(land_Ylms.clm, land_Ylms.slm,
                     landsea.lon, landsea.lat, land_function, LMAX=EXPANSION,
-                    LOVE=(hl,kl,ll), BODY_TIDE_LOVE=0, FLUID_LOVE=0, ITERATIONS=3,
+                    LOVE=LOVE, BODY_TIDE_LOVE=0, FLUID_LOVE=0, ITERATIONS=3,
                     POLAR=True, PLM=PLM, ASTYPE=np.float64, SCALE=1e-32,
                     FILL_VALUE=0)
                 # 3) convert sea level fingerprints into spherical harmonics
                 slf_Ylms = gravtk.gen_stokes(sea_level, landsea.lon, landsea.lat,
-                    UNITS=1, LMIN=0, LMAX=1, PLM=PLM[:2,:2,:], LOVE=(hl,kl,ll))
+                    UNITS=1, LMIN=0, LMAX=1, PLM=PLM[:2,:2,:], LOVE=LOVE)
                 # 4) convert the slf degree 1 harmonics to mass with dfactor
                 eustatic.C10[t] = slf_Ylms.clm[1,0]*dfactor[1]
                 eustatic.C11[t] = slf_Ylms.clm[1,1]*dfactor[1]
@@ -732,7 +736,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
                 # for the spatial pattern of sea level from the land water mass
                 land_Ylms = gravtk.gen_stokes(lmass*land_function,
                     landsea.lon, landsea.lat, UNITS=1, LMIN=0, LMAX=1,
-                    PLM=PLM[:2,:2,:], LOVE=(hl,kl,ll))
+                    PLM=PLM[:2,:2,:], LOVE=LOVE)
                 # 3) calculate ratio between the total land mass and the total mass
                 # of 1 cm of ocean height (negative as positive land = sea level drop)
                 # this converts the total land change to ocean height change
@@ -814,7 +818,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         fid1 = open(FILE1, mode='w', encoding='utf8')
         # print headers for cases with and without dealiasing
         print_header(fid1)
-        print_harmonic(fid1,kl[1])
+        print_harmonic(fid1,LOVE.kl[1])
         print_global(fid1,PROC,DREL,MODEL.replace('_',' '),AOD,GIA_Ylms_rate,
             SLR_C20,SLR_21,GSM_Ylms.month)
         print_variables(fid1,'single precision','fully normalized')

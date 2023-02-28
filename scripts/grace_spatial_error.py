@@ -28,6 +28,8 @@ COMMAND LINE OPTIONS:
         0: Han and Wahr (1995) values from PREM
         1: Gegout (2005) values from PREM
         2: Wang et al. (2012) values from PREM
+        3: Wang et al. (2012) values from PREM with hard sediment
+        4: Wang et al. (2012) values from PREM with soft sediment
     --reference X: Reference frame for load love numbers
         CF: Center of Surface Figure (default)
         CM: Center of Mass of Earth System
@@ -118,6 +120,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 02/2023: use get function to retrieve specific units
+        use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
         refactored time series analysis functions
     Updated 12/2022: single implicit import of gravity toolkit
@@ -222,8 +225,8 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
 
     # read arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
-        REFERENCE=REFERENCE)
+    LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+        REFERENCE=REFERENCE, FORMAT='class')
 
     # Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):
@@ -374,7 +377,7 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
         'Equivalent_Surface_Pressure']
     # dfactor is the degree dependent coefficients
     # for specific spherical harmonic output units
-    factors = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll)
+    factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
     if (UNITS == 1):
         # 1: cmwe, centimeters water equivalent
         dfactor = factors.get('cmwe')
@@ -395,7 +398,7 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
 
     # Computing plms for converting to spatial domain
     phi = delta.lon[np.newaxis,:]*np.pi/180.0
-    theta = (90.0-delta.lat)*np.pi/180.0
+    theta = (90.0 - delta.lat)*np.pi/180.0
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(theta))
     # square of legendre polynomials truncated to order MMAX
     mm = np.arange(0,MMAX+1)

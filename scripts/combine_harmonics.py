@@ -15,6 +15,8 @@ COMMAND LINE OPTIONS:
         0: Han and Wahr (1995) values from PREM
         1: Gegout (2005) values from PREM
         2: Wang et al. (2012) values from PREM
+        3: Wang et al. (2012) values from PREM with hard sediment
+        4: Wang et al. (2012) values from PREM with soft sediment
     --reference X: Reference frame for load love numbers
         CF: Center of Surface Figure (default)
         CM: Center of Mass of Earth System
@@ -70,6 +72,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 02/2023: use get function to retrieve specific units
+        use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
     Updated 12/2022: single implicit import of gravity toolkit
         iterate over harmonics objects versus indexing
@@ -158,14 +161,14 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
         input_Ylms.subtract(mean_Ylms)
 
     # read arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
-        REFERENCE=REFERENCE)
+    LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+        REFERENCE=REFERENCE, FORMAT='class')
 
     # distribute total mass uniformly over the ocean
     if REDISTRIBUTE:
         # read Land-Sea Mask and convert to spherical harmonics
-        ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX, MMAX=MMAX,
-            LOVE=(hl,kl,ll))
+        ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX,
+            MMAX=MMAX, LOVE=LOVE)
         # calculate ratio between total mass and a uniformly distributed
         # layer of water over the ocean
         ratio = input_Ylms.clm[0,0,:]/ocean_Ylms.clm[0,0]
@@ -225,7 +228,7 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
 
     # Setting units factor for output
     # dfactor computes the degree dependent coefficients
-    factors = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll)
+    factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
     if (UNITS == 1):
         # 1: cmwe, centimeters water equivalent
         dfactor = factors.get('cmwe')

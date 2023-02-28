@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GIA_model.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (02/2023)
 
 Reads GIA data files that can come in various formats depending on the group
 Outputs spherical harmonics for the GIA rates and the GIA model parameters
@@ -96,6 +96,7 @@ REFERENCES:
     https://doi.org/10.1002/2016JB013844
 
 UPDATE HISTORY:
+    Updated 02/2023: use monospaced text for harmonics objects in gia docstring
     Updated 12/2022: made interited GIA model harmonics class
         set default parameters, title, reference and url as None
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -756,7 +757,7 @@ class gia(harmonics):
 
     def from_GIA(self, filename, **kwargs):
         """
-        Read a harmonics object from a GIA model file
+        Read a ``harmonics`` object from a GIA model file
 
         Parameters
         ----------

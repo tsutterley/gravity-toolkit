@@ -34,12 +34,12 @@ def test_point_masses(NPTS):
     love_numbers_file = gravtk.utilities.get_data_path(
         ['data','love_numbers'])
     # read load Love numbers
-    hl,kl,ll = gravtk.read_love_numbers(love_numbers_file)
+    LOVE = gravtk.read_love_numbers(love_numbers_file)
     # calculate harmonics and degree amplitudes for each case
     grid_Ylms = gravtk.gen_stokes(data, lon, lat,
-        LMAX=60, UNITS=2, LOVE=(hl,kl,ll))
+        LMAX=60, UNITS=2, LOVE=LOVE)
     point_Ylms = gravtk.gen_point_load(MASS, LON, LAT,
-        LMAX=60, UNITS=2, LOVE=(hl,kl,ll))
+        LMAX=60, UNITS=2, LOVE=LOVE)
 
     # check that harmonic data is equal to machine precision
     difference_Ylms = grid_Ylms.copy()

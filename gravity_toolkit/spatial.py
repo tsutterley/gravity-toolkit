@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (02/2023)
 
 Data class for reading, writing and processing spatial data
 
@@ -20,6 +20,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 02/2023: use monospaced text to note spatial objects in docstrings
     Updated 12/2022: add software information to output HDF5 and netCDF4
         make spatial objects iterable and with length
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -102,7 +103,7 @@ class spatial(object):
     fill_value: float or NoneType, default None
         invalid value for spatial grid data
     attributes: dict
-        attributes of spatial variables
+        attributes of ``spatial`` variables
     extent: list, default [None,None,None,None]
         spatial grid bounds
         ``[minimum longitude, maximum longitude,
@@ -110,9 +111,9 @@ class spatial(object):
     spacing: list, default [None,None]
         grid step size ``[longitude,latitude]``
     shape: tuple
-        dimensions of spatial object
+        dimensions of ``spatial`` object
     ndim: int
-        number of dimensions of spatial object
+        number of dimensions of ``spatial`` object
     filename: str
         input or output filename
 
@@ -175,7 +176,7 @@ class spatial(object):
 
     def from_ascii(self, filename, date=True, **kwargs):
         """
-        Read a spatial object from an ascii file
+        Read a ``spatial`` object from an ascii file
 
         Parameters
         ----------
@@ -268,7 +269,7 @@ class spatial(object):
 
     def from_netCDF4(self, filename, **kwargs):
         """
-        Read a spatial object from a netCDF4 file
+        Read a ``spatial`` object from a netCDF4 file
 
         Parameters
         ----------
@@ -392,7 +393,7 @@ class spatial(object):
 
     def from_HDF5(self, filename, **kwargs):
         """
-        Read a spatial object from a HDF5 file
+        Read a ``spatial`` object from a HDF5 file
 
         Parameters
         ----------
@@ -522,7 +523,8 @@ class spatial(object):
 
     def from_index(self, filename, **kwargs):
         """
-        Read a spatial object from an index of ascii, netCDF4 or HDF5 files
+        Read a ``spatial`` object from an index of
+        ascii, netCDF4 or HDF5 files
 
         Parameters
         ----------
@@ -537,7 +539,7 @@ class spatial(object):
         date: bool, default True
             files contains date information
         sort: bool, default True
-            sort spatial objects by date information
+            sort ``spatial`` objects by date information
         **kwargs: dict
             keyword arguments for input readers
         """
@@ -572,18 +574,19 @@ class spatial(object):
 
     def from_list(self, object_list, **kwargs):
         """
-        Build a sorted spatial object from a list of other spatial objects
+        Build a sorted ``spatial`` object from a list of
+        other ``spatial`` objects
 
         Parameters
         ----------
         object_list: list
-            list of spatial objects to be merged
+            list of ``spatial`` objects to be merged
         date: bool, default True
             files contains date information
         sort: bool, default True
-            sort spatial objects by date information
+            sort ``spatial`` objects by date information
         clear: bool, default True
-            clear the spatial list from memory
+            clear the list of ``spatial`` objects from memory
         """
         # set default keyword arguments
         kwargs.setdefault('date',True)
@@ -640,7 +643,7 @@ class spatial(object):
 
     def from_file(self, filename, format=None, date=True, **kwargs):
         """
-        Read a spatial object from a specified format
+        Read a ``spatial`` object from a specified format
 
         Parameters
         ----------
@@ -676,7 +679,7 @@ class spatial(object):
 
     def from_dict(self, d, **kwargs):
         """
-        Convert a dict object to a spatial object
+        Convert a dict object to a ``spatial`` object
 
         Parameters
         ----------
@@ -700,14 +703,14 @@ class spatial(object):
 
     def to_ascii(self, filename, **kwargs):
         """
-        Write a spatial object to ascii file
+        Write a ``spatial`` object to ascii file
 
         Parameters
         ----------
         filename: str
             full path of output ascii file
         date: bool, default True
-            spatial objects contain date information
+            ``spatial`` objects contain date information
         verbose: bool, default False
             Output file and variable information
         """
@@ -731,7 +734,7 @@ class spatial(object):
 
     def to_netCDF4(self, filename, **kwargs):
         """
-        Write a spatial object to netCDF4 file
+        Write a ``spatial`` object to netCDF4 file
 
         Parameters
         ----------
@@ -762,7 +765,7 @@ class spatial(object):
         reference: str or NoneType, default None
             reference attribute of dataset
         date: bool, default True
-            spatial objects contain date information
+            ``spatial`` objects contain date information
         clobber: bool, default True
             Overwrite an existing netCDF4 file
         verbose: bool, default False
@@ -871,7 +874,7 @@ class spatial(object):
 
     def to_HDF5(self, filename, **kwargs):
         """
-        Write a spatial object to HDF5 file
+        Write a ``spatial`` object to HDF5 file
 
         Parameters
         ----------
@@ -902,7 +905,7 @@ class spatial(object):
         reference: str or NoneType, default None
             reference attribute of dataset
         date: bool, default True
-            spatial objects contain date information
+            ``spatial`` objects contain date information
         clobber: bool, default True
             Overwrite an existing HDF5 file
         verbose: bool, default False
@@ -1010,7 +1013,7 @@ class spatial(object):
 
     def to_index(self, filename, file_list, format=None, date=True, **kwargs):
         """
-        Write a spatial object to index of ascii, netCDF4 or HDF5 files
+        Write a ``spatial`` object to index of ascii, netCDF4 or HDF5 files
 
         Parameters
         ----------
@@ -1025,7 +1028,7 @@ class spatial(object):
                 - ``'netCDF4'``
                 - ``'HDF5'``
         date: bool, default True
-            spatial object contains date information
+            ``spatial`` object contains date information
         verbose: bool, default False
             print file and variable information
         kwargs: dict
@@ -1057,7 +1060,7 @@ class spatial(object):
 
     def to_file(self, filename, format=None, date=True, **kwargs):
         """
-        Write a spatial object to a specified format
+        Write a ``spatial`` object to a specified format
 
         Parameters
         ----------
@@ -1070,7 +1073,7 @@ class spatial(object):
                 - ``'netCDF4'``
                 - ``'HDF5'``
         date: bool, default True
-            spatial object contains date information
+            ``spatial`` object contains date information
         verbose: bool, default False
             print file and variable information
         kwargs: dict
@@ -1091,14 +1094,14 @@ class spatial(object):
 
     def to_masked_array(self):
         """
-        Convert a spatial object to a masked numpy array
+        Convert a ``spatial`` object to a masked numpy array
         """
         return np.ma.array(self.data, mask=self.mask,
             fill_value=self.fill_value)
 
     def update_spacing(self):
         """
-        Calculate the step size of spatial object
+        Calculate the step size of ``spatial`` object
         """
         # calculate degree spacing
         dlat = np.abs(self.lat[1] - self.lat[0])
@@ -1108,7 +1111,7 @@ class spatial(object):
 
     def update_extents(self):
         """
-        Calculate the bounds of spatial object
+        Calculate the bounds of ``spatial`` object
         """
         self.extent[0] = np.min(self.lon)
         self.extent[1] = np.max(self.lon)
@@ -1117,7 +1120,7 @@ class spatial(object):
 
     def update_dimensions(self):
         """
-        Update the dimensions of the spatial object
+        Update the dimensions of the ``spatial`` object
         """
         self.shape = np.shape(self.data)
         self.ndim = np.ndim(self.data)
@@ -1125,7 +1128,7 @@ class spatial(object):
 
     def update_mask(self):
         """
-        Update the mask of the spatial object
+        Update the mask of the ``spatial`` object
         """
         if self.fill_value is not None:
             self.mask |= (self.data == self.fill_value)
@@ -1135,7 +1138,7 @@ class spatial(object):
 
     def copy(self):
         """
-        Copy a spatial object to a new spatial object
+        Copy a ``spatial`` object to a new ``spatial`` object
         """
         temp = spatial(fill_value=self.fill_value)
         # copy attributes or update attributes dictionary
@@ -1160,7 +1163,7 @@ class spatial(object):
 
     def zeros_like(self):
         """
-        Create a spatial object using the dimensions of another
+        Create a ``spatial`` object using the dimensions of another
         """
         temp = spatial(fill_value=self.fill_value)
         # assign variables to self
@@ -1182,7 +1185,7 @@ class spatial(object):
 
     def expand_dims(self):
         """
-        Add a singleton dimension to a spatial object if non-existent
+        Add a singleton dimension to a ``spatial`` object if non-existent
         """
         # change time dimensions to be iterable
         self.time = np.atleast_1d(self.time)
@@ -1204,7 +1207,7 @@ class spatial(object):
 
     def squeeze(self):
         """
-        Remove singleton dimensions from a spatial object
+        Remove singleton dimensions from a ``spatial`` object
         """
         # squeeze singleton dimensions
         self.time = np.squeeze(self.time)
@@ -1224,14 +1227,14 @@ class spatial(object):
 
     def index(self, indice, date=True):
         """
-        Subset a spatial object to specific index
+        Subset a ``spatial`` object to specific index
 
         Parameters
         ----------
         indice: int
             index in matrix for subsetting
         date: bool, default True
-            spatial objects contain date information
+            ``spatial`` objects contain date information
         """
         # output spatial object
         temp = spatial(fill_value=self.fill_value)
@@ -1263,7 +1266,7 @@ class spatial(object):
 
     def subset(self, months):
         """
-        Subset a spatial object to specific GRACE/GRACE-FO months
+        Subset a ``spatial`` object to specific GRACE/GRACE-FO months
 
         Parameters
         ----------
@@ -1318,12 +1321,12 @@ class spatial(object):
 
     def offset(self, var):
         """
-        Offset a spatial object by a constant
+        Offset a ``spatial`` object by a constant
 
         Parameters
         ----------
         var: float
-            scalar value to which the spatial object will be offset
+            scalar value to which the ``spatial`` object will be offset
         """
         temp = self.copy()
         # offset by a single constant or a time-variable scalar
@@ -1357,12 +1360,12 @@ class spatial(object):
 
     def scale(self, var):
         """
-        Multiply a spatial object by a constant
+        Multiply a ``spatial`` object by a constant
 
         Parameters
         ----------
         var: float
-            scalar value to which the spatial object will be multiplied
+            scalar value to which the ``spatial`` object will be multiplied
         """
         temp = self.copy()
         # multiply by a single constant or a time-variable scalar
@@ -1397,12 +1400,12 @@ class spatial(object):
     def kfactor(self, var):
         """
         Calculate the scaling factor and scaling factor errors
-            from two spatial objects following [Landerer2012]_
+            from two ``spatial`` objects following [Landerer2012]_
 
         Parameters
         ----------
         var: float
-            spatial object to used for scaling
+            ``spatial`` object to used for scaling
 
         Returns
         -------
@@ -1458,9 +1461,9 @@ class spatial(object):
         Parameters
         ----------
         apply: bool, default False
-            remove the mean field from the input spatial data
+            remove the mean field from the input ``spatial`` object
         indices: int, default Ellipsis
-            indices of input spatial object to compute mean
+            indices of input ``spatial`` object to compute mean
         """
         # output spatial object
         temp = spatial(nlon=self.shape[0],nlat=self.shape[1],
@@ -1518,7 +1521,7 @@ class spatial(object):
 
     def transpose(self, axes=None):
         """
-        Reverse or permute the axes of a spatial object
+        Reverse or permute the axes of a ``spatial`` object
 
         Parameters
         ----------
@@ -1540,7 +1543,7 @@ class spatial(object):
 
     def sum(self, power=1):
         """
-        Compute summation of spatial field
+        Compute summation of a ``spatial`` object
 
         Parameters
         ----------
@@ -1566,12 +1569,12 @@ class spatial(object):
 
     def power(self, power):
         """
-        Raise a spatial object to a power
+        Raise a ``spatial`` object to a power
 
         Parameters
         ----------
         power: int
-            power to which the spatial object will be raised
+            power to which the ``spatial`` object will be raised
         """
         temp = self.copy()
         temp.data = np.power(self.data,power)
@@ -1581,7 +1584,7 @@ class spatial(object):
 
     def max(self):
         """
-        Compute maximum value of spatial field
+        Compute maximum value of a ``spatial`` object
         """
         # output spatial object
         temp = spatial(nlon=self.shape[0],nlat=self.shape[1],
@@ -1602,7 +1605,7 @@ class spatial(object):
 
     def min(self):
         """
-        Compute minimum value of spatial field
+        Compute minimum value of a ``spatial`` object
         """
         # output spatial object
         temp = spatial(nlon=self.shape[0],nlat=self.shape[1],

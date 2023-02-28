@@ -2,7 +2,7 @@
 read_love_numbers
 =================
 
-- Reads sets of load Love numbers computed using outputs from the Preliminary Reference Earth Model (PREM)
+- Reads sets of load Love numbers computed using outputs from the Preliminary Reference Earth Model (PREM) or other Earth models
 - Linearly interpolates load love numbers for missing degrees
 - Linearly extrapolates load love numbers beyond maximum degree of dataset
 - Applies isomorphic parameters for different reference frames
@@ -28,3 +28,6 @@ Calling Sequence
 .. autofunction:: gravity_toolkit.read_love_numbers.extract_love_numbers
 
 .. autofunction:: gravity_toolkit.read_love_numbers.load_love_numbers
+
+.. autoclass:: gravity_toolkit.love_numbers
+   :members:
