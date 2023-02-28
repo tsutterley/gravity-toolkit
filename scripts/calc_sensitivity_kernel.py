@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_sensitivity_kernel.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (02/2023)
 
 Calculates spatial sensitivity kernels through a least-squares mascon procedure
 
@@ -16,6 +16,8 @@ COMMAND LINE OPTIONS:
         0: Han and Wahr (1995) values from PREM
         1: Gegout (2005) values from PREM
         2: Wang et al. (2012) values from PREM
+        3: Wang et al. (2012) values from PREM with hard sediment
+        4: Wang et al. (2012) values from PREM with soft sediment
     --reference X: Reference frame for load love numbers
         CF: Center of Surface Figure (default)
         CM: Center of Mass of Earth System
@@ -83,6 +85,7 @@ REFERENCES:
         https://doi.org/10.1029/2009GL039401
 
 UPDATE HISTORY:
+    Updated 02/2023: use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -187,11 +190,11 @@ def calc_sensitivity_kernel(LMAX, RAD,
     output_files = []
 
     # read arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
-        REFERENCE=REFERENCE)
+    LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+        REFERENCE=REFERENCE, FORMAT='class')
 
     # Earth Parameters
-    factors = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll)
+    factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
     # Average Density of the Earth [g/cm^3]
     rho_e = factors.rho_e
     # Average Radius of the Earth [cm]
@@ -213,8 +216,8 @@ def calc_sensitivity_kernel(LMAX, RAD,
     # Read Ocean function and convert to Ylms for redistribution
     if REDISTRIBUTE_MASCONS:
         # read Land-Sea Mask and convert to spherical harmonics
-        ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX, MMAX=MMAX,
-            LOVE=(hl,kl,ll))
+        ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX,
+            MMAX=MMAX, LOVE=LOVE)
         ocean_str = '_OCN'
     else:
         # not distributing uniformly over ocean
@@ -305,9 +308,9 @@ def calc_sensitivity_kernel(LMAX, RAD,
                 # Mascon Spherical Harmonics
                 M_lm[ii,:] = np.copy(mascon_harm[l,m,:])
                 # degree dependent factor to convert to mass
-                fact[ii] = (2.0*l + 1.0)/(1.0 + kl[l])
+                fact[ii] = (2.0*l + 1.0)/(1.0 + LOVE.kl[l])
                 # degree dependent factor to convert from mass
-                fact_inv[ii] = coeff_inv*(1.0 + kl[l])/(2.0*l+1.0)
+                fact_inv[ii] = coeff_inv*(1.0 + LOVE.kl[l])/(2.0*l + 1.0)
                 # degree dependent smoothing
                 wt_lm[ii] = np.copy(wt[l])
                 # add 1 to counter

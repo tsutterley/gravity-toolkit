@@ -19,7 +19,7 @@ def get_love_numbers():
     hl = [-0.13273, -0.26052933922888, -0.99015777857079, -1.0499804506108]
     kl = [0.0, 0.02743231435436, -0.30252982142510, -0.19413374466744]
     ll = [0.0, 0.13026466961444, 0.023882296795977, 0.069842389427609]
-    return dict(hl=hl,kl=kl,ll=ll)
+    return dict(hl=hl, kl=kl, ll=ll)
 
 # PURPOSE: Check that Load Love Numbers match expected for reference frame
 def test_love_numbers():
@@ -43,8 +43,8 @@ def test_Gegout_love_numbers():
     COLUMNS = ['l','hl','ll','kl']
     # read load Love numbers and convert to reference frame CM
     TEST = gravtk.read_love_numbers(love_numbers_file,
-        HEADER=3, COLUMNS=COLUMNS, FORMAT='dict', REFERENCE='CM')
-    assert (TEST['l'].max() == 1024)
+        HEADER=3, COLUMNS=COLUMNS, FORMAT='class', REFERENCE='CM')
+    assert (TEST.lmax == 1024)
 
 # PURPOSE: Check that Wang et al. (2012) Load Love Numbers can be read
 def test_Wang_love_numbers():
@@ -54,5 +54,5 @@ def test_Wang_love_numbers():
     COLUMNS = ['l','hl','ll','kl','nl','nk']
     # read load Love numbers and convert to reference frame CE
     TEST = gravtk.read_love_numbers(love_numbers_file,
-        HEADER=1, COLUMNS=COLUMNS, FORMAT='dict', REFERENCE='CE')
-    assert (TEST['l'].max() == 5000)
+        HEADER=1, COLUMNS=COLUMNS, FORMAT='class', REFERENCE='CE')
+    assert (TEST.lmax == 5000)

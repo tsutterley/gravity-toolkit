@@ -27,6 +27,7 @@ PROGRAM DEPENDENCIES:
 UPDATE HISTORY:
     Updated 02/2023: fix expand case where data is a single degree
         fixed case where maximum spherical harmonic degree is 0
+        use monospaced text for harmonics objects in docstrings
     Updated 01/2023: made amplitude a property of the harmonics class
         added property for the complex form of the spherical harmonics
     Updated 12/2022: add software information to output HDF5 and netCDF4
@@ -130,11 +131,11 @@ class harmonics(object):
     month: int
         GRACE/GRACE-FO months variable of the spherical harmonics
     attributes: dict
-        attributes of harmonics variables
+        attributes of ``harmonics`` variables
     shape: tuple
-        dimensions of harmonics object
+        dimensions of ``harmonics`` object
     ndim: int
-        number of dimensions of harmonics object
+        number of dimensions of ``harmonics`` object
     filename: str
         input or output filename
     """
@@ -193,7 +194,7 @@ class harmonics(object):
 
     def from_ascii(self, filename, **kwargs):
         """
-        Read a harmonics object from an ascii file
+        Read a ``harmonics`` object from an ascii file
 
         Parameters
         ----------
@@ -275,7 +276,7 @@ class harmonics(object):
 
     def from_netCDF4(self, filename, **kwargs):
         """
-        Read a harmonics object from a netCDF4 file
+        Read a ``harmonics`` object from a netCDF4 file
 
         Parameters
         ----------
@@ -367,7 +368,7 @@ class harmonics(object):
 
     def from_HDF5(self, filename, **kwargs):
         """
-        Read a harmonics object from a HDF5 file
+        Read a ``harmonics`` object from a HDF5 file
 
         Parameters
         ----------
@@ -470,7 +471,7 @@ class harmonics(object):
 
     def from_gfc(self, filename, **kwargs):
         """
-        Read a harmonics object from a gfc gravity model file
+        Read a ``harmonics`` object from a gfc gravity model file
 
         Parameters
         ----------
@@ -525,7 +526,7 @@ class harmonics(object):
 
     def from_SHM(self, filename, **kwargs):
         """
-        Read a harmonics object from a spherical harmonic model file
+        Read a ``harmonics`` object from a spherical harmonic model file
 
         Parameters
         ----------
@@ -560,7 +561,7 @@ class harmonics(object):
 
     def from_index(self, filename, **kwargs):
         """
-        Read a harmonics object from an index of ascii, netCDF4 or HDF5 files
+        Read a ``harmonics`` object from an index of ascii, netCDF4 or HDF5 files
 
         Parameters
         ----------
@@ -575,7 +576,7 @@ class harmonics(object):
         date: bool, default True
             files contains date information
         sort: bool, default True
-            sort harmonics objects by date information
+            sort ``harmonics`` objects by date information
         """
         # set default keyword arguments
         kwargs.setdefault('format',None)
@@ -608,18 +609,19 @@ class harmonics(object):
 
     def from_list(self, object_list, **kwargs):
         """
-        Build a sorted harmonics object from a list of other harmonics objects
+        Build a sorted ``harmonics`` object from a list of
+        other ``harmonics`` objects
 
         Parameters
         ----------
         object_list: list
-            list of harmonics objects to be merged
+            list of ``harmonics`` objects to be merged
         date: bool, default True
             files contains date information
         sort: bool, default True
-            sort harmonics objects by date information
+            sort ``harmonics`` objects by date information
         clear: bool, default True
-            clear the harmonics list from memory
+            clear the list of ``harmonics`` objects from memory
         """
         # set default keyword arguments
         kwargs.setdefault('date',True)
@@ -670,7 +672,7 @@ class harmonics(object):
 
     def from_file(self, filename, format=None, date=True, **kwargs):
         """
-        Read a harmonics object from a specified format
+        Read a ``harmonics`` object from a specified format
 
         Parameters
         ----------
@@ -714,7 +716,7 @@ class harmonics(object):
 
     def from_dict(self, d, **kwargs):
         """
-        Convert a dict object to a harmonics object
+        Convert a dict object to a ``harmonics`` object
 
         Parameters
         ----------
@@ -736,14 +738,14 @@ class harmonics(object):
 
     def to_ascii(self, filename, date=True, **kwargs):
         """
-        Write a harmonics object to ascii file
+        Write a ``harmonics`` object to ascii file
 
         Parameters
         ----------
         filename: str
             full path of output ascii file
         date: bool, default True
-            harmonics objects contain date information
+            ``harmonics`` objects contain date information
         verbose: bool, default False
             Output file and variable information
         """
@@ -767,7 +769,7 @@ class harmonics(object):
 
     def to_netCDF4(self, filename, **kwargs):
         """
-        Write a harmonics object to netCDF4 file
+        Write a ``harmonics`` object to netCDF4 file
 
         Parameters
         ----------
@@ -792,7 +794,7 @@ class harmonics(object):
         reference: str or NoneType, default None
             reference attribute of dataset
         date: bool, default True
-            harmonics objects contain date information
+            ``harmonics`` objects contain date information
         clobber: bool, default True
             Overwrite an existing netCDF4 file
         verbose: bool, default False
@@ -891,7 +893,7 @@ class harmonics(object):
 
     def to_HDF5(self, filename, **kwargs):
         """
-        Write a harmonics object to HDF5 file
+        Write a ``harmonics`` object to HDF5 file
 
         Parameters
         ----------
@@ -916,7 +918,7 @@ class harmonics(object):
         reference: str or NoneType, default None
             reference attribute of dataset
         date: bool, default True
-            harmonics objects contain date information
+            ``harmonics`` objects contain date information
         clobber: bool, default True
             Overwrite an existing HDF5 file
         verbose: bool, default False
@@ -996,7 +998,7 @@ class harmonics(object):
 
     def to_index(self, filename, file_list, format=None, date=True, **kwargs):
         """
-        Write a harmonics object to index of ascii, netCDF4 or HDF5 files
+        Write a ``harmonics`` object to index of ascii, netCDF4 or HDF5 files
 
         Parameters
         ----------
@@ -1011,7 +1013,7 @@ class harmonics(object):
                 - ``'netCDF4'``
                 - ``'HDF5'``
         date: bool, default True
-            harmonics object contains date information
+            ``harmonics`` object contains date information
         verbose: bool, default False
             print file and variable information
         kwargs: dict
@@ -1043,7 +1045,7 @@ class harmonics(object):
 
     def to_file(self, filename, format=None, date=True, **kwargs):
         """
-        Write a harmonics object to a specified format
+        Write a ``harmonics`` object to a specified format
 
         Parameters
         ----------
@@ -1056,7 +1058,7 @@ class harmonics(object):
                 - ``'netCDF4'``
                 - ``'HDF5'``
         date: bool, default True
-            harmonics object contains date information
+            ``harmonics`` object contains date information
         verbose: bool, default False
             print file and variable information
         kwargs: dict
@@ -1077,7 +1079,7 @@ class harmonics(object):
 
     def to_dict(self):
         """
-        Convert a harmonics object to a dict object
+        Convert a ``harmonics`` object to a dict object
 
         Returns
         -------
@@ -1096,7 +1098,7 @@ class harmonics(object):
 
     def to_masked_array(self):
         """
-        Convert a harmonics object to a masked numpy array
+        Convert a ``harmonics`` object to a masked numpy array
         """
         # reassign shape and ndim attributes
         self.update_dimensions()
@@ -1124,7 +1126,7 @@ class harmonics(object):
 
     def update_dimensions(self):
         """
-        Update the dimensions of the harmonics object
+        Update the dimensions of the ``harmonics`` object
         """
         self.ndim = self.clm.ndim
         self.shape = self.clm.shape
@@ -1135,7 +1137,7 @@ class harmonics(object):
 
     def add(self, temp):
         """
-        Add two harmonics objects
+        Add two ``harmonics`` objects
 
         Parameters
         ----------
@@ -1161,7 +1163,7 @@ class harmonics(object):
 
     def subtract(self, temp):
         """
-        Subtract one harmonics object from another
+        Subtract one ``harmonics`` object from another
 
         Parameters
         ----------
@@ -1187,7 +1189,7 @@ class harmonics(object):
 
     def multiply(self, temp):
         """
-        Multiply two harmonics objects
+        Multiply two ``harmonics`` objects
 
         Parameters
         ----------
@@ -1213,7 +1215,7 @@ class harmonics(object):
 
     def divide(self, temp):
         """
-        Divide one harmonics object from another
+        Divide one ``harmonics`` object from another
 
         Parameters
         ----------
@@ -1244,7 +1246,7 @@ class harmonics(object):
 
     def copy(self):
         """
-        Copy a harmonics object to a new harmonics object
+        Copy a ``harmonics`` object to a new ``harmonics`` object
         """
         temp = harmonics(lmax=self.lmax, mmax=self.mmax)
         # try to assign variables to self
@@ -1260,7 +1262,7 @@ class harmonics(object):
 
     def zeros(self, lmax=None, mmax=None, nt=None):
         """
-        Create an empty harmonics object
+        Create an empty ``harmonics`` object
         """
         # assign maximum degree and order
         if lmax is not None:
@@ -1282,7 +1284,7 @@ class harmonics(object):
 
     def zeros_like(self):
         """
-        Create a harmonics object using the dimensions of another
+        Create a ``harmonics`` object using the dimensions of another
         """
         temp = harmonics(lmax=self.lmax, mmax=self.mmax)
         # assign variables to temp
@@ -1298,7 +1300,7 @@ class harmonics(object):
 
     def expand_dims(self):
         """
-        Add a singleton dimension to a harmonics object if non-existent
+        Add a singleton dimension to a ``harmonics`` object if non-existent
         """
         # change time dimensions to be iterable
         self.time = np.atleast_1d(self.time)
@@ -1313,7 +1315,7 @@ class harmonics(object):
 
     def squeeze(self):
         """
-        Remove singleton dimensions from a harmonics object
+        Remove singleton dimensions from a ``harmonics`` object
         """
         # squeeze singleton dimensions
         self.time = np.squeeze(self.time)
@@ -1326,12 +1328,12 @@ class harmonics(object):
 
     def flatten(self, date=True):
         """
-        Flatten harmonics matrices into arrays
+        Flatten ``harmonics`` matrices into arrays
 
         Parameters
         ----------
         date: bool, default True
-            harmonics objects contain date information
+            ``harmonics`` objects contain date information
         """
         n_harm = (self.lmax**2 + 3*self.lmax - (self.lmax-self.mmax)**2 -
             (self.lmax-self.mmax))//2 + 1
@@ -1376,12 +1378,12 @@ class harmonics(object):
 
     def expand(self, date=True):
         """
-        Expand flattened harmonics into matrices
+        Expand flattened ``harmonics`` into matrices
 
         Parameters
         ----------
         date: bool, default True
-            harmonics objects contain date information
+            ``harmonics`` objects contain date information
         """
         # number of harmonics
         n_harm = len(self.l)
@@ -1419,14 +1421,14 @@ class harmonics(object):
 
     def index(self, indice, date=True):
         """
-        Subset a harmonics object to specific index
+        Subset a ``harmonics`` object to specific index
 
         Parameters
         ----------
         indice: int
             index in matrix for subsetting
         date: bool, default True
-            harmonics objects contain date information
+            ``harmonics`` objects contain date information
         """
         # output harmonics object
         temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
@@ -1450,7 +1452,7 @@ class harmonics(object):
 
     def subset(self, months):
         """
-        Subset a harmonics object to specific GRACE/GRACE-FO months
+        Subset a ``harmonics`` object to specific GRACE/GRACE-FO months
 
         Parameters
         ----------
@@ -1495,7 +1497,7 @@ class harmonics(object):
 
     def truncate(self, lmax, lmin=0, mmax=None):
         """
-        Truncate or expand a harmonics object to a new degree and order
+        Truncate or expand a ``harmonics`` object to a new degree and order
 
         Parameters
         ----------
@@ -1542,9 +1544,9 @@ class harmonics(object):
         Parameters
         ----------
         apply: bool, default False
-            remove the mean field from the input harmonics
+            remove the mean field from the input ``harmonics`` object
         indices: int, default Ellipsis
-            indices of input harmonics object to compute mean
+            indices of input ``harmonics`` object to compute mean
         """
         temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
         # allocate for mean field
@@ -1575,12 +1577,12 @@ class harmonics(object):
 
     def scale(self, var):
         """
-        Multiply a harmonics object by a constant
+        Multiply a ``harmonics`` object by a constant
 
         Parameters
         ----------
         var: float
-            scalar value to which the harmonics object will be multiplied
+            scalar value to which the ``harmonics`` object will be multiplied
         """
         # reassign shape and ndim attributes
         self.update_dimensions()
@@ -1610,12 +1612,12 @@ class harmonics(object):
 
     def power(self, power):
         """
-        Raise a harmonics object to a power
+        Raise a ``harmonics`` object to a power
 
         Parameters
         ----------
         var: float
-            power to which the harmonics object will be raised
+            power to which the ``harmonics`` object will be raised
         """
         # reassign shape and ndim attributes
         self.update_dimensions()
@@ -1634,7 +1636,7 @@ class harmonics(object):
 
     def drift(self, t, epoch=2003.3):
         """
-        Integrate a harmonics rate field over time to calculate drift
+        Integrate a ``harmonics`` rate field over time to calculate drift
 
         Parameters
         ----------
@@ -1667,7 +1669,7 @@ class harmonics(object):
 
     def convolve(self, var):
         """
-        Convolve spherical harmonics with a degree-dependent array
+        Convolve ``harmonics`` with a degree-dependent array
 
         Parameters
         ----------
@@ -1697,7 +1699,7 @@ class harmonics(object):
         Parameters
         ----------
         kwargs: dict
-            keyword arguments for destripe_harmonics
+            keyword arguments for ``destripe_harmonics``
 
         References
         ----------

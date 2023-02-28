@@ -32,6 +32,8 @@ COMMAND LINE OPTIONS:
         0: Han and Wahr (1995) values from PREM
         1: Gegout (2005) values from PREM
         2: Wang et al. (2012) values from PREM
+        3: Wang et al. (2012) values from PREM with hard sediment
+        4: Wang et al. (2012) values from PREM with soft sediment
     --reference X: Reference frame for load love numbers
         CF: Center of Surface Figure (default)
         CM: Center of Mass of Earth System
@@ -149,6 +151,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 02/2023: use get function to retrieve specific units
+        use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -249,8 +252,8 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
 
     # read arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
-        REFERENCE=REFERENCE)
+    LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+        REFERENCE=REFERENCE, FORMAT='class')
 
     # Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):
@@ -315,7 +318,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     if REDISTRIBUTE_REMOVED:
         # read Land-Sea Mask and convert to spherical harmonics
         ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX, MMAX=MMAX,
-            LOVE=(hl,kl,ll))
+            LOVE=LOVE)
         ocean_str = '_OCN'
     else:
         ocean_str = ''
@@ -402,7 +405,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         'Equivalent_Surface_Pressure']
     # Setting units factor for output
     # dfactor computes the degree dependent coefficients
-    factors = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll)
+    factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
     if (UNITS == 1):
         # 1: cmwe, centimeters water equivalent
         dfactor = factors.get('cmwe')

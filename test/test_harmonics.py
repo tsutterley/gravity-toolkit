@@ -24,7 +24,7 @@ def test_harmonics():
     love_numbers_file = gravtk.utilities.get_data_path(
         ['data','love_numbers'])
     # read load Love numbers
-    hl,kl,ll = gravtk.read_love_numbers(love_numbers_file)
+    LOVE = gravtk.read_love_numbers(love_numbers_file, FORMAT='class')
 
     # read input spatial distribution file
     distribution_file = 'out.green_ice.grid.0.5.2008.cmh20.gz'
@@ -49,7 +49,7 @@ def test_harmonics():
     # convert to spherical harmonics
     test_Ylms = gravtk.gen_stokes(input_distribution.data,
         input_distribution.lon, input_distribution.lat, UNITS=1, LMAX=LMAX,
-        PLM=PLM, LOVE=(hl,kl,ll))
+        PLM=PLM, LOVE=LOVE)
 
     # read harmonics from file
     harmonics_file = 'out.geoid.green_ice.0.5.2008.60.gz'
@@ -65,7 +65,7 @@ def test_harmonics():
 
     # cmwe, centimeters water equivalent
     smooth_Ylms = test_Ylms.copy()
-    dfactor = gravtk.units(lmax=LMAX).harmonic(hl,kl,ll)
+    dfactor = gravtk.units(lmax=LMAX).harmonic(*LOVE)
     wt = 2.0*np.pi*gravtk.gauss_weights(RAD,LMAX)
     smooth_Ylms.convolve(dfactor.cmwe*wt)
     # convert harmonics back to spatial domain at same grid spacing
@@ -79,7 +79,7 @@ def test_harmonics():
     # convert harmonics back to spatial domain using wrapper function
     test_combine = gravtk.stokes_summation(test_Ylms.clm,
         test_Ylms.slm, input_distribution.lon, input_distribution.lat,
-        LMAX=LMAX, PLM=PLM, UNITS=1, RAD=RAD, LOVE=(hl,kl,ll)).T
+        LMAX=LMAX, PLM=PLM, UNITS=1, RAD=RAD, LOVE=LOVE).T
 
     # read input and output spatial distribution files
     distribution_file = 'out.combine.green_ice.0.5.2008.60.gz'

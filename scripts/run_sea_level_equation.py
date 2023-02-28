@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 u"""
-run_sea_level_equation.py (01/2023)
+run_sea_level_equation.py (02/2023)
 Solves the sea level equation with the option of including polar motion feedback
 Uses a Clenshaw summation to calculate the spherical harmonic summation
 
@@ -68,6 +68,7 @@ REFERENCES:
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 02/2023: use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -153,8 +154,8 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     land_function[indx,indy] = 1.0
 
     # read load love numbers
-    hl,kl,ll = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
-        REFERENCE=REFERENCE)
+    LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
+        REFERENCE=REFERENCE, FORMAT='class')
 
     # read spherical harmonic coefficients from input file format
     load_Ylms = gravtk.harmonics().from_file(INPUT_FILE,
@@ -181,7 +182,7 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
         # run pseudo-spectral sea level equation solver
         sea_level.data[:,:,i] = gravtk.sea_level_equation(Ylms.clm, Ylms.slm,
             landsea.lon, landsea.lat, land_function.T, LMAX=LMAX,
-            LOVE=(hl,kl,ll), BODY_TIDE_LOVE=BODY_TIDE_LOVE,
+            LOVE=LOVE, BODY_TIDE_LOVE=BODY_TIDE_LOVE,
             FLUID_LOVE=FLUID_LOVE, POLAR=POLAR, PLM=PLM,
             ITERATIONS=ITERATIONS, FILL_VALUE=0).T
         sea_level.mask[:,:,i] = (sea_level.data[:,:,i] == 0)

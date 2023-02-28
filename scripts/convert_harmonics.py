@@ -15,6 +15,8 @@ COMMAND LINE OPTIONS:
         0: Han and Wahr (1995) values from PREM
         1: Gegout (2005) values from PREM
         2: Wang et al. (2012) values from PREM
+        3: Wang et al. (2012) values from PREM with hard sediment
+        4: Wang et al. (2012) values from PREM with soft sediment
     --reference X: Reference frame for load love numbers
         CF: Center of Surface Figure (default)
         CM: Center of Mass of Earth System

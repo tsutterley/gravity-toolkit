@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (02/2023)
 Data class for reading and processing geocenter data
 
 PYTHON DEPENDENCIES:
@@ -15,6 +15,7 @@ PYTHON DEPENDENCIES:
         https://github.com/yaml/pyyaml
 
 UPDATE HISTORY:
+    Updated 02/2023: use monospaced text for geocenter objects in docstrings
     Updated 12/2022: make geocenter objects iterable and with length
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 06/2022: drop external reader dependency for UCI format
@@ -832,12 +833,12 @@ class geocenter(object):
 
     def copy(self, **kwargs):
         """
-        Copy a geocenter object to a new geocenter object
+        Copy a ``geocenter`` object to a new ``geocenter`` object
 
         Parameters
         ----------
             fields: list
-                default keys in geocenter object
+                default keys in ``geocenter`` object
         """
         # set default keyword arguments
         kwargs.setdefault('fields',['time','month',
@@ -855,7 +856,7 @@ class geocenter(object):
 
     def from_dict(self, temp, **kwargs):
         """
-        Convert a dictionary object to a geocenter object
+        Convert a dictionary object to a ``geocenter`` object
 
         Parameters
         ----------
@@ -878,14 +879,14 @@ class geocenter(object):
 
     def from_harmonics(self, temp, **kwargs):
         """
-        Convert a harmonics object to a geocenter object
+        Convert a ``harmonics`` object to a ``geocenter`` object
 
         Parameters
         ----------
         temp: obj
-            harmonics object to be converted
+            ``harmonics`` object to be converted
         fields: list
-            default keys in harmonics object
+            default keys in ``harmonics`` object
         """
         # reassign shape and ndim attributes
         temp.update_dimensions()
@@ -912,7 +913,7 @@ class geocenter(object):
 
     def from_matrix(self, clm, slm):
         """
-        Converts spherical harmonic matrices to a geocenter object
+        Converts spherical harmonic matrices to a ``geocenter`` object
 
         Parameters
         ----------
@@ -932,12 +933,12 @@ class geocenter(object):
 
     def to_dict(self, **kwargs):
         """
-        Convert a geocenter object to a dictionary object
+        Convert a ``geocenter`` object to a dictionary object
 
         Parameters
         ----------
         fields: obj
-            default attributes in geocenter object
+            default attributes in ``geocenter`` object
         """
         # output dictionary
         temp = {}
@@ -958,7 +959,7 @@ class geocenter(object):
 
     def to_matrix(self):
         """
-        Converts a geocenter object to spherical harmonic matrices
+        Converts a ``geocenter`` object to spherical harmonic matrices
         """
         # verify dimensions
         _,nt = np.shape(np.atleast_2d(self.C10))
@@ -1125,7 +1126,7 @@ class geocenter(object):
         apply: bool, default False
             remove the mean field from the input harmonics
         indices: int, default Ellipsis
-            indices of input harmonics object to compute mean
+            indices of input ``geocenter`` object to compute mean
         """
         temp = geocenter()
         # calculate mean static field
@@ -1150,12 +1151,12 @@ class geocenter(object):
 
     def add(self, temp):
         """
-        Add two geocenter objects
+        Add two ``geocenter`` objects
 
         Parameters
         ----------
         temp: obj
-            geocenter object to be added
+            ``geocenter`` object to be added
         """
         self.C10 += temp.C10
         self.C11 += temp.C11
@@ -1164,12 +1165,12 @@ class geocenter(object):
 
     def subtract(self, temp):
         """
-        Subtract one geocenter object from another
+        Subtract one ``geocenter`` object from another
 
         Parameters
         ----------
         temp: obj
-            geocenter object to be subtracted
+            ``geocenter`` object to be subtracted
         """
         self.C10 -= temp.C10
         self.C11 -= temp.C11
@@ -1178,12 +1179,12 @@ class geocenter(object):
 
     def multiply(self, temp):
         """
-        Multiply two geocenter objects
+        Multiply two ``geocenter`` objects
 
         Parameters
         ----------
         temp: obj
-            geocenter object to be multiplied
+            ``geocenter`` object to be multiplied
         """
         self.C10 *= temp.C10
         self.C11 *= temp.C11
@@ -1192,12 +1193,12 @@ class geocenter(object):
 
     def divide(self, temp):
         """
-        Divide one geocenter object from another
+        Divide one ``geocenter`` object from another
 
         Parameters
         ----------
         temp: obj
-            geocenter object to be divided
+            ``geocenter`` object to be divided
         """
         self.C10 /= temp.C10
         self.C11 /= temp.C11
@@ -1206,12 +1207,12 @@ class geocenter(object):
 
     def scale(self, var):
         """
-        Multiply a geocenter object by a constant
+        Multiply a ``geocenter`` object by a constant
 
         Parameters
         ----------
         var: float
-            scalar value to which the geocenter object will be multiplied
+            scalar value to which the ``geocenter`` object will be multiplied
         """
         temp = geocenter()
         temp.time = np.copy(self.time)
@@ -1224,12 +1225,12 @@ class geocenter(object):
 
     def power(self, power):
         """
-        Raise a geocenter object to a power
+        Raise a ``geocenter`` object to a power
 
         Parameters
         ----------
         power: float
-            power to which the geocenter object will be raised
+            power to which the ``geocenter`` object will be raised
         """
         temp = geocenter()
         temp.time = np.copy(self.time)
