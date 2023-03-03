@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -25,6 +25,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 03/2023: customizable file-level attributes to netCDF4 and HDF5
     Updated 02/2023: fix expand case where data is a single degree
         fixed case where maximum spherical harmonic degree is 0
         use monospaced text for harmonics objects in docstrings
@@ -362,8 +363,9 @@ class harmonics(object):
                 pass
         # Closing the NetCDF file
         fileID.close()
+        # remove singleton dimensions and
         # assign shape and ndim attributes
-        self.update_dimensions()
+        self.squeeze(update_dimensions=True)
         return self
 
     def from_HDF5(self, filename, **kwargs):
@@ -465,8 +467,9 @@ class harmonics(object):
                 pass
         # Closing the HDF5 file
         fileID.close()
+        # remove singleton dimensions and
         # assign shape and ndim attributes
-        self.update_dimensions()
+        self.squeeze(update_dimensions=True)
         return self
 
     def from_gfc(self, filename, **kwargs):
@@ -787,6 +790,10 @@ class harmonics(object):
             months variable units
         months_longname: str, default 'GRACE_month'
             months variable description
+        field_mapping: dict, default {}
+            mapping between input variables and output netCDF4
+        attributes: dict, default {}
+            output netCDF4 variable and file-level attributes
         title: str or NoneType, default None
             title attribute of dataset
         source: str or NoneType, default None
@@ -807,6 +814,8 @@ class harmonics(object):
         kwargs.setdefault('months_name','month')
         kwargs.setdefault('months_units','number')
         kwargs.setdefault('months_longname','GRACE_month')
+        kwargs.setdefault('field_mapping',{})
+        kwargs.setdefault('attributes',dict(ROOT={}))
         kwargs.setdefault('title',None)
         kwargs.setdefault('source',None)
         kwargs.setdefault('reference',None)
@@ -820,66 +829,80 @@ class harmonics(object):
         fileID = netCDF4.Dataset(self.filename, clobber, format="NETCDF4")
         # flatten harmonics
         temp = self.flatten(date=kwargs['date'])
-        # Defining the netCDF dimensions
-        n_harm = len(temp.l)
-        fields = ['l','m','clm','slm']
-        fileID.createDimension('lm', n_harm)
-        # defining netCDF temporal dimension
-        if kwargs['date']:
-            n_time = len(np.atleast_1d(temp.time))
-            fields.extend(['time','month'])
-            fileID.createDimension('time', n_time)
-            # convert time variables to arrays
-            temp.time = np.atleast_1d(temp.time)
-            temp.month = np.atleast_1d(temp.month)
-        # defining the netCDF variables
-        nc = {}
-        # degree and order
-        nc['l'] = fileID.createVariable('l', 'i', ('lm',))
-        nc['m'] = fileID.createVariable('m', 'i', ('lm',))
-        # spherical harmonics
-        if (kwargs['date'] and (n_time > 1)):
-            nc['clm'] = fileID.createVariable('clm', 'd', ('lm','time',))
-            nc['slm'] = fileID.createVariable('slm', 'd', ('lm','time',))
-        else:
-            nc['clm'] = fileID.createVariable('clm', 'd', ('lm',))
-            nc['slm'] = fileID.createVariable('slm', 'd', ('lm',))
-        if kwargs['date']:
-            # time (in decimal form)
-            nc['time'] = fileID.createVariable('time', 'd', ('time',))
-            # GRACE/GRACE-FO month (or integer date)
-            nc['month'] = fileID.createVariable(kwargs['months_name'],
-                'i', ('time',))
-        # filling netCDF variables
-        for key in fields:
-            nc[key][:] = getattr(temp,key)
-        # Defining attributes for degree and order
-        # SH degree long name
-        nc['l'].long_name = 'spherical_harmonic_degree'
-        # SH degree units
-        nc['l'].units = 'Wavenumber'
-        # SH order long name
-        nc['m'].long_name = 'spherical_harmonic_order'
-        # SH order units
-        nc['m'].units = 'Wavenumber'
-        # Defining attributes for harmonics
-        nc['clm'].long_name = 'cosine_spherical_harmonics'
-        nc['clm'].units = kwargs['units']
-        nc['slm'].long_name = 'sine_spherical_harmonics'
-        nc['slm'].units = kwargs['units']
-        if kwargs['date']:
-            # Defining attributes for date and month
-            nc['time'].long_name = kwargs['time_longname']
-            nc['time'].units = kwargs['time_units']
-            nc['month'].long_name = kwargs['months_longname']
-            nc['month'].units = kwargs['months_units']
-        # global variables of NetCDF4 file
+        # mapping between output keys and netCDF4 variable names
+        if not kwargs['field_mapping']:
+            kwargs['field_mapping']['l'] = 'l'
+            kwargs['field_mapping']['m'] = 'm'
+            kwargs['field_mapping']['clm'] = 'clm'
+            kwargs['field_mapping']['slm'] = 'slm'
+            if kwargs['date']:
+                kwargs['field_mapping']['time'] = 'time'
+                kwargs['field_mapping']['month'] = kwargs['months_name']
+        # create attributes dictionary for output variables
+        if not all(key in kwargs['attributes'] for key in kwargs['field_mapping']):
+            # Defining attributes for degree and order
+            kwargs['attributes'][kwargs['field_mapping']['l']] = {}
+            kwargs['attributes'][kwargs['field_mapping']['l']]['long_name'] = 'spherical_harmonic_degree'
+            kwargs['attributes'][kwargs['field_mapping']['l']]['units'] = 'Wavenumber'
+            kwargs['attributes'][kwargs['field_mapping']['m']] = {}
+            kwargs['attributes'][kwargs['field_mapping']['m']]['long_name'] = 'spherical_harmonic_order'
+            kwargs['attributes'][kwargs['field_mapping']['m']]['units'] = 'Wavenumber'
+            # Defining attributes for dataset
+            kwargs['attributes'][kwargs['field_mapping']['clm']] = {}
+            kwargs['attributes'][kwargs['field_mapping']['clm']]['long_name'] = 'cosine_spherical_harmonics'
+            kwargs['attributes'][kwargs['field_mapping']['clm']]['units'] = kwargs['units']
+            kwargs['attributes'][kwargs['field_mapping']['slm']] = {}
+            kwargs['attributes'][kwargs['field_mapping']['slm']]['long_name'] = 'sine_spherical_harmonics'
+            kwargs['attributes'][kwargs['field_mapping']['slm']]['units'] = kwargs['units']
+            # Defining attributes for date if applicable
+            if kwargs['date']:
+                # attributes for date and month (or integer date)
+                kwargs['attributes'][kwargs['field_mapping']['time']] = {}
+                kwargs['attributes'][kwargs['field_mapping']['time']]['long_name'] = kwargs['time_longname']
+                kwargs['attributes'][kwargs['field_mapping']['time']]['units'] = kwargs['time_units']
+                kwargs['attributes'][kwargs['field_mapping']['month']] = {}
+                kwargs['attributes'][kwargs['field_mapping']['month']]['long_name'] = kwargs['months_longname']
+                kwargs['attributes'][kwargs['field_mapping']['month']]['units'] = kwargs['months_units']
+        # add default global (file-level) attributes
         if kwargs['title']:
-            fileID.title = kwargs['title']
+            kwargs['attributes']['ROOT']['title'] = kwargs['title']
         if kwargs['source']:
-            fileID.source = kwargs['source']
+            kwargs['attributes']['ROOT']['source'] = kwargs['source']
         if kwargs['reference']:
-            fileID.reference = kwargs['reference']
+            kwargs['attributes']['ROOT']['reference'] = kwargs['reference']
+        # netCDF4 dimension variables
+        dimensions = []
+        dimensions.append('lm')
+        fileID.createDimension('lm', len(temp.l))
+        # defining netCDF4 temporal dimension
+        if kwargs['date']:
+            temp.expand_dims(update_dimensions=False)
+            dimensions.append('time')
+            fileID.createDimension('time', len(temp.time))
+        # defining and filling the netCDF variables
+        nc = {}
+        for field,key in kwargs['field_mapping'].items():
+            val = getattr(temp, field)
+            if field in ('l','m'):
+                dims = (dimensions[0],)
+            elif field in ('time','month'):
+                dims = (dimensions[1],)
+            else:
+                dims = tuple(dimensions)
+            # create netCDF4 variable
+            nc[key] = fileID.createVariable(key, val.dtype, dims)
+            nc[key][:] = val[:]
+            # filling netCDF dataset attributes
+            for att_name,att_val in kwargs['attributes'][key].items():
+                # skip variable attribute if None
+                if not att_val:
+                    continue
+                # skip variable attributes if in list
+                if att_name not in ('DIMENSION_LIST','CLASS','NAME'):
+                    nc[key].setncattr(att_name, att_val)
+        # global attributes of NetCDF4 file
+        for att_name,att_val in kwargs['attributes']['ROOT'].items():
+            fileID.setncattr(att_name, att_val)
         # add software information
         fileID.software_reference = gravity_toolkit.version.project_name
         fileID.software_version = gravity_toolkit.version.full_version
@@ -911,6 +934,10 @@ class harmonics(object):
             months variable units
         months_longname: str, default 'GRACE_month'
             months variable description
+        field_mapping: dict, default {}
+            mapping between input variables and output HDF5
+        attributes: dict, default {}
+            output HDF5 variable and file-level attributes
         title: str or NoneType, default None
             description attribute of dataset
         source: str or NoneType, default None
@@ -931,6 +958,8 @@ class harmonics(object):
         kwargs.setdefault('months_name','month')
         kwargs.setdefault('months_units','number')
         kwargs.setdefault('months_longname','GRACE_month')
+        kwargs.setdefault('field_mapping',{})
+        kwargs.setdefault('attributes',dict(ROOT={}))
         kwargs.setdefault('title',None)
         kwargs.setdefault('source',None)
         kwargs.setdefault('reference',None)
@@ -944,47 +973,66 @@ class harmonics(object):
         fileID = h5py.File(self.filename, clobber)
         # flatten harmonics
         temp = self.flatten(date=kwargs['date'])
-        fields = ['l','m','clm','slm']
-        # defining netCDF temporal dimension
         if kwargs['date']:
-            fields.extend(['time','month'])
-            # convert time variables to arrays
-            temp.time = np.atleast_1d(temp.time)
-            temp.month = np.atleast_1d(temp.month)
+            temp.expand_dims(update_dimensions=False)
+        # mapping between output keys and HDF5 variable names
+        if not kwargs['field_mapping']:
+            kwargs['field_mapping']['l'] = 'l'
+            kwargs['field_mapping']['m'] = 'm'
+            kwargs['field_mapping']['clm'] = 'clm'
+            kwargs['field_mapping']['slm'] = 'slm'
+            if kwargs['date']:
+                kwargs['field_mapping']['time'] = 'time'
+                kwargs['field_mapping']['month'] = kwargs['months_name']
+        # create attributes dictionary for output variables
+        if not all(key in kwargs['attributes'] for key in kwargs['field_mapping']):
+            # Defining attributes for degree and order
+            kwargs['attributes'][kwargs['field_mapping']['l']] = {}
+            kwargs['attributes'][kwargs['field_mapping']['l']]['long_name'] = 'spherical_harmonic_degree'
+            kwargs['attributes'][kwargs['field_mapping']['l']]['units'] = 'Wavenumber'
+            kwargs['attributes'][kwargs['field_mapping']['m']] = {}
+            kwargs['attributes'][kwargs['field_mapping']['m']]['long_name'] = 'spherical_harmonic_order'
+            kwargs['attributes'][kwargs['field_mapping']['m']]['units'] = 'Wavenumber'
+            # Defining attributes for dataset
+            kwargs['attributes'][kwargs['field_mapping']['clm']] = {}
+            kwargs['attributes'][kwargs['field_mapping']['clm']]['long_name'] = 'cosine_spherical_harmonics'
+            kwargs['attributes'][kwargs['field_mapping']['clm']]['units'] = kwargs['units']
+            kwargs['attributes'][kwargs['field_mapping']['slm']] = {}
+            kwargs['attributes'][kwargs['field_mapping']['slm']]['long_name'] = 'sine_spherical_harmonics'
+            kwargs['attributes'][kwargs['field_mapping']['slm']]['units'] = kwargs['units']
+            # Defining attributes for date if applicable
+            if kwargs['date']:
+                # attributes for date and month (or integer date)
+                kwargs['attributes'][kwargs['field_mapping']['time']] = {}
+                kwargs['attributes'][kwargs['field_mapping']['time']]['long_name'] = kwargs['time_longname']
+                kwargs['attributes'][kwargs['field_mapping']['time']]['units'] = kwargs['time_units']
+                kwargs['attributes'][kwargs['field_mapping']['month']] = {}
+                kwargs['attributes'][kwargs['field_mapping']['month']]['long_name'] = kwargs['months_longname']
+                kwargs['attributes'][kwargs['field_mapping']['month']]['units'] = kwargs['months_units']
+        # add default global (file-level) attributes
+        if kwargs['title']:
+            kwargs['attributes']['ROOT']['title'] = kwargs['title']
+        if kwargs['source']:
+            kwargs['attributes']['ROOT']['source'] = kwargs['source']
+        if kwargs['reference']:
+            kwargs['attributes']['ROOT']['reference'] = kwargs['reference']
         # Defining the HDF5 dataset variables
         h5 = {}
-        for key in fields:
-            val = getattr(temp, key)
+        for field,key in kwargs['field_mapping'].items():
+            val = getattr(temp, field)
             h5[key] = fileID.create_dataset(key, val.shape,
                 data=val, dtype=val.dtype, compression='gzip')
-        # filling HDF5 dataset attributes
-        # Defining attributes for degree and order
-        # degree long name
-        h5['l'].attrs['long_name'] = 'spherical_harmonic_degree'
-        # SH degree units
-        h5['l'].attrs['units'] = 'Wavenumber'
-        # order long name
-        h5['m'].attrs['long_name'] = 'spherical_harmonic_order'
-        # SH order units
-        h5['m'].attrs['units'] = 'Wavenumber'
-        # Defining attributes for dataset
-        h5['clm'].attrs['long_name'] = 'cosine_spherical_harmonics'
-        h5['clm'].attrs['units'] = kwargs['units']
-        h5['slm'].attrs['long_name'] = 'sine_spherical_harmonics'
-        h5['slm'].attrs['units'] = kwargs['units']
-        if kwargs['date']:
-            # Defining attributes for date and month (or integer date)
-            h5['time'].attrs['long_name'] = kwargs['time_longname']
-            h5['time'].attrs['units'] = kwargs['time_units']
-            h5['month'].attrs['long_name'] = kwargs['months_longname']
-            h5['month'].attrs['units'] = kwargs['months_units']
+            # filling HDF5 dataset attributes
+            for att_name,att_val in kwargs['attributes'][key].items():
+                # skip variable attribute if None
+                if not att_val:
+                    continue
+                # skip variable attributes if in list
+                if att_name not in ('DIMENSION_LIST','CLASS','NAME'):
+                    h5[key].attrs[att_name] = att_val
         # global attributes of HDF5 file
-        if kwargs['title']:
-            fileID.attrs['description'] = kwargs['title']
-        if kwargs['source']:
-            fileID.attrs['source'] = kwargs['source']
-        if kwargs['reference']:
-            fileID.attrs['reference'] = kwargs['reference']
+        for att_name,att_val in kwargs['attributes']['ROOT'].items():
+            fileID.attrs[att_name] = att_val
         # add software information
         fileID.attrs['software_reference'] = gravity_toolkit.version.project_name
         fileID.attrs['software_version'] = gravity_toolkit.version.full_version
@@ -1298,9 +1346,14 @@ class harmonics(object):
         temp.update_dimensions()
         return temp
 
-    def expand_dims(self):
+    def expand_dims(self, update_dimensions=True):
         """
         Add a singleton dimension to a ``harmonics`` object if non-existent
+
+        Parameters
+        ----------
+        update_dimensions: bool, default True
+            Update the degree and order dimensions
         """
         # change time dimensions to be iterable
         self.time = np.atleast_1d(self.time)
@@ -1309,13 +1362,26 @@ class harmonics(object):
         if (self.ndim == 2):
             self.clm = self.clm[:,:,None]
             self.slm = self.slm[:,:,None]
+        elif (self.ndim == 1):
+            self.clm = self.clm[:,None]
+            self.slm = self.slm[:,None]
         # reassign ndim and shape attributes
-        self.update_dimensions()
+        if update_dimensions:
+            self.update_dimensions()
+        else:
+            self.ndim = self.clm.ndim
+            self.shape = self.clm.shape
+        # return the expanded harmonics object
         return self
 
-    def squeeze(self):
+    def squeeze(self, update_dimensions=True):
         """
         Remove singleton dimensions from a ``harmonics`` object
+
+        Parameters
+        ----------
+        update_dimensions: bool, default True
+            Update the degree and order dimensions
         """
         # squeeze singleton dimensions
         self.time = np.squeeze(self.time)
@@ -1323,7 +1389,11 @@ class harmonics(object):
         self.clm = np.squeeze(self.clm)
         self.slm = np.squeeze(self.slm)
         # reassign ndim and shape attributes
-        self.update_dimensions()
+        if update_dimensions:
+            self.update_dimensions()
+        else:
+            self.ndim = self.clm.ndim
+            self.shape = self.clm.shape
         return self
 
     def flatten(self, date=True):

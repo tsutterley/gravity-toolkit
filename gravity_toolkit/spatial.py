@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
 
 Data class for reading, writing and processing spatial data
 
@@ -20,6 +20,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 03/2023: customizable file-level attributes to netCDF4 and HDF5
     Updated 02/2023: use monospaced text to note spatial objects in docstrings
     Updated 12/2022: add software information to output HDF5 and netCDF4
         make spatial objects iterable and with length
@@ -749,7 +750,7 @@ class spatial(object):
         field_mapping: dict, default {}
             mapping between input variables and output netCDF4
         attributes: dict, default {}
-            output netCDF4 variable attributes
+            output netCDF4 variable and file-level attributes
         units: str or NoneType, default: None
             data variable units
         longname: str or NoneType, default: None
@@ -778,7 +779,7 @@ class spatial(object):
         kwargs.setdefault('latname','lat')
         kwargs.setdefault('timename','time')
         kwargs.setdefault('field_mapping',{})
-        kwargs.setdefault('attributes',{})
+        kwargs.setdefault('attributes',dict(ROOT={}))
         kwargs.setdefault('units',None)
         kwargs.setdefault('longname',None)
         kwargs.setdefault('time_units','years')
@@ -802,7 +803,7 @@ class spatial(object):
             if kwargs['date']:
                 kwargs['field_mapping']['time'] = kwargs['timename']
         # create attributes dictionary for output variables
-        if not kwargs['attributes']:
+        if not all(key in kwargs['attributes'] for key in kwargs['field_mapping']):
             # Defining attributes for longitude and latitude
             kwargs['attributes'][kwargs['field_mapping']['lon']] = {}
             kwargs['attributes'][kwargs['field_mapping']['lon']]['long_name'] = 'longitude'
@@ -819,6 +820,13 @@ class spatial(object):
                 kwargs['attributes'][kwargs['field_mapping']['time']] = {}
                 kwargs['attributes'][kwargs['field_mapping']['time']]['long_name'] = kwargs['time_longname']
                 kwargs['attributes'][kwargs['field_mapping']['time']]['units'] = kwargs['time_units']
+        # add default global (file-level) attributes
+        if kwargs['title']:
+            kwargs['attributes']['ROOT']['title'] = kwargs['title']
+        if kwargs['source']:
+            kwargs['attributes']['ROOT']['source'] = kwargs['source']
+        if kwargs['reference']:
+            kwargs['attributes']['ROOT']['reference'] = kwargs['reference']
         # netCDF4 dimension variables
         dimensions = []
         dimensions.append('lat')
@@ -854,13 +862,9 @@ class spatial(object):
                 # skip variable attributes if in list
                 if att_name not in ('DIMENSION_LIST','CLASS','NAME','_FillValue'):
                     nc[key].setncattr(att_name, att_val)
-        # global variables of NetCDF4 file
-        if kwargs['title']:
-            fileID.title = kwargs['title']
-        if kwargs['source']:
-            fileID.source = kwargs['source']
-        if kwargs['reference']:
-            fileID.reference = kwargs['reference']
+        # global attributes of NetCDF4 file
+        for att_name,att_val in kwargs['attributes']['ROOT'].items():
+            fileID.setncattr(att_name, att_val)
         # add software information
         fileID.software_reference = gravity_toolkit.version.project_name
         fileID.software_version = gravity_toolkit.version.full_version
@@ -889,7 +893,7 @@ class spatial(object):
         field_mapping: dict, default {}
             mapping between input variables and output HDF5
         attributes: dict, default {}
-            output HDF5 variable attributes
+            output HDF5 variable and file-level attributes
         units: str or NoneType, default: None
             data variable units
         longname: str or NoneType, default: None
@@ -918,7 +922,7 @@ class spatial(object):
         kwargs.setdefault('latname','lat')
         kwargs.setdefault('timename','time')
         kwargs.setdefault('field_mapping',{})
-        kwargs.setdefault('attributes',{})
+        kwargs.setdefault('attributes',dict(ROOT={}))
         kwargs.setdefault('units',None)
         kwargs.setdefault('longname',None)
         kwargs.setdefault('time_units','years')
@@ -942,7 +946,7 @@ class spatial(object):
             if kwargs['date']:
                 kwargs['field_mapping']['time'] = kwargs['timename']
         # create attributes dictionary for output variables
-        if not kwargs['attributes']:
+        if not all(key in kwargs['attributes'] for key in kwargs['field_mapping']):
             # Defining attributes for longitude and latitude
             kwargs['attributes'][kwargs['field_mapping']['lon']] = {}
             kwargs['attributes'][kwargs['field_mapping']['lon']]['long_name'] = 'longitude'
@@ -959,6 +963,13 @@ class spatial(object):
                 kwargs['attributes'][kwargs['field_mapping']['time']] = {}
                 kwargs['attributes'][kwargs['field_mapping']['time']]['long_name'] = kwargs['time_longname']
                 kwargs['attributes'][kwargs['field_mapping']['time']]['units'] = kwargs['time_units']
+        # add default global (file-level) attributes
+        if kwargs['title']:
+            kwargs['attributes']['ROOT']['title'] = kwargs['title']
+        if kwargs['source']:
+            kwargs['attributes']['ROOT']['source'] = kwargs['source']
+        if kwargs['reference']:
+            kwargs['attributes']['ROOT']['reference'] = kwargs['reference']
         # HDF5 dimension variables
         dimensions = []
         dimensions.append('lat')
@@ -994,12 +1005,8 @@ class spatial(object):
             if (self.fill_value is not None):
                 h5[key].attrs['_FillValue'] = self.fill_value
         # global attributes of HDF5 file
-        if kwargs['title']:
-            fileID.attrs['description'] = kwargs['title']
-        if kwargs['source']:
-            fileID.attrs['source'] = kwargs['source']
-        if kwargs['reference']:
-            fileID.attrs['reference'] = kwargs['reference']
+        for att_name,att_val in kwargs['attributes']['ROOT'].items():
+            fileID.attrs[att_name] = att_val
         # add software information
         fileID.attrs['software_reference'] = gravity_toolkit.version.project_name
         fileID.attrs['software_version'] = gravity_toolkit.version.full_version
