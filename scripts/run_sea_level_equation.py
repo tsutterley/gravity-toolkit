@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 u"""
-run_sea_level_equation.py (02/2023)
+run_sea_level_equation.py (03/2023)
 Solves the sea level equation with the option of including polar motion feedback
 Uses a Clenshaw summation to calculate the spherical harmonic summation
 
@@ -68,6 +68,7 @@ REFERENCES:
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 03/2023: add root attributes to output netCDF4 and HDF5 files
     Updated 02/2023: use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
     Updated 12/2022: single implicit import of gravity toolkit
@@ -113,6 +114,7 @@ import logging
 import argparse
 import traceback
 import numpy as np
+import collections
 import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
@@ -138,6 +140,14 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     DATE=False,
     MODE=0o775):
 
+    # output attributes for spatial files
+    attributes = collections.OrderedDict()
+    attributes['lineage'] = os.path.basename(INPUT_FILE)
+    attributes['land_sea_mask'] = os.path.basename(LANDMASK)
+    attributes['title'] = 'Sea_Level_Fingerprint'
+    attributes['max_degree'] = LMAX
+    attributes['iterations'] = ITERATIONS
+
     # Land-Sea Mask with Antarctica from Rignot (2017) and Greenland from GEUS
     # 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
     # Open the land-sea NetCDF file for reading
@@ -156,6 +166,25 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     # read load love numbers
     LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE, FORMAT='class')
+    # add attributes for earth model and love numbers
+    attributes['earth_model'] = LOVE.model
+    attributes['earth_love_numbers'] = LOVE.citation
+    attributes['reference_frame'] = LOVE.reference
+    # add attributes for body tide love numbers
+    if (BODY_TIDE_LOVE == 0):
+        attributes['earth_body_tide'] = 'Wahr (1981)'
+    elif (BODY_TIDE_LOVE == 1):
+        attributes['earth_body_tide'] = 'Farrell (1972)'
+    # add attributes for fluid love numbers
+    if (FLUID_LOVE == 0):
+        attributes['earth_fluid_love'] = 'Han and Wahr (1989)'
+    elif FLUID_LOVE in (1,2):
+        attributes['earth_fluid_love'] = 'Munk and MacDonald (1960)'
+    elif (FLUID_LOVE == 3):
+        attributes['earth_fluid_love'] = 'Lambeck (1980)'
+    # add attribute for true polar wander
+    if POLAR:
+        attributes['polar_motion_feedback'] = 'Kendall et al. (2005)'
 
     # read spherical harmonic coefficients from input file format
     load_Ylms = gravtk.harmonics().from_file(INPUT_FILE,
@@ -192,13 +221,14 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     sea_level.time = np.copy(load_Ylms.time) if DATE else None
     # remove singleton dimensions if necessary
     sea_level.squeeze()
+    # add attributes to output spatial field
+    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+    sea_level.attributes['ROOT'] = attributes
 
     # attributes for output files
-    attributes = {}
-    attributes['units'] = 'centimeters'
-    attributes['longname'] = 'Equivalent_Water_Thickness'
-    attributes['title'] = 'Sea_Level_Fingerprint'
-    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+    kwargs = {}
+    kwargs['units'] = 'centimeters'
+    kwargs['longname'] = 'Equivalent_Water_Thickness'
     # save as output DATAFORM
     if (DATAFORM == 'ascii'):
         # ascii (.txt)
@@ -208,10 +238,10 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
         sea_level.to_ascii(OUTPUT_FILE, date=DATE)
     elif (DATAFORM == 'netCDF4'):
         # netCDF4 (.nc)
-        sea_level.to_netCDF4(OUTPUT_FILE, date=DATE, **attributes)
+        sea_level.to_netCDF4(OUTPUT_FILE, date=DATE, **kwargs)
     elif (DATAFORM == 'HDF5'):
         # HDF5 (.H5)
-        sea_level.to_HDF5(OUTPUT_FILE, date=DATE, **attributes)
+        sea_level.to_HDF5(OUTPUT_FILE, date=DATE, **kwargs)
     # set the permissions mode of the output file
     os.chmod(OUTPUT_FILE, MODE)
 
@@ -304,7 +334,7 @@ def main():
     args,_ = parser.parse_known_args()
 
     # create logger
-    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
     # try to run the analysis with listed parameters

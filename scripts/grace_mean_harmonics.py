@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_mean_harmonics.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (03/2023)
 
 Calculates the temporal mean of the GRACE/GRACE-FO spherical harmonics
     for a given date range from a set of parameters
@@ -72,6 +72,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 03/2023: add root attributes to output netCDF4 and HDF5 files
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: add option to replace degree 4 zonal harmonics with SLR
@@ -116,6 +117,7 @@ import logging
 import argparse
 import numpy as np
 import traceback
+import collections
 import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
@@ -150,9 +152,19 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
     VERBOSE=0,
     MODE=0o775):
 
+    # attributes for output files
+    attributes = collections.OrderedDict()
+    attributes['generating_institute'] = PROC
+    attributes['product_release'] = DREL
+    attributes['product_name'] = DSET
+    attributes['product_type'] = 'gravity_field'
+
     # output string for both LMAX==MMAX and LMAX != MMAX cases
     MMAX = np.copy(LMAX) if not MMAX else MMAX
     order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
+    # add attributes for LMAX and MMAX
+    attributes['max_degree'] = LMAX
+    attributes['max_order'] = MMAX
 
     # data formats for output: ascii, netCDF4, HDF5, gfc
     suffix = dict(ascii='txt',netCDF4='nc',HDF5='H5',gfc='gfc')[MEANFORM]
@@ -178,10 +190,6 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
     # calculate RMS of harmonic errors
     mean_Ylms.eclm = np.sqrt(np.sum(input_Ylms['eclm']**2,axis=2)/nt)
     mean_Ylms.eslm = np.sqrt(np.sum(input_Ylms['eslm']**2,axis=2)/nt)
-    # product information
-    mean_Ylms.center = PROC
-    mean_Ylms.release = DREL
-    mean_Ylms.product = DSET
 
     # default output filename if not entering via parameter file
     if not MEAN_FILE:
@@ -195,17 +203,19 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
     if not os.access(DIRECTORY, os.F_OK):
         os.makedirs(DIRECTORY, MODE)
 
-    # attributes for output files
-    attributes = {}
-    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
     # output spherical harmonics for the static field
     if (MEANFORM == 'gfc'):
         # output mean field to gfc format
+        mean_Ylms.attributes['ROOT'] = attributes
         mean_Ylms.to_gfc(MEAN_FILE, verbose=VERBOSE)
     else:
+        # add attributes from input GRACE fields
+        attributes.update(input_Ylms.get('attributes'))
+        attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
         # output mean field to specified file format
+        mean_Ylms.attributes['ROOT'] = attributes
         mean_Ylms.to_file(MEAN_FILE, format=MEANFORM,
-            verbose=VERBOSE, **attributes)
+            verbose=VERBOSE)
     # change the permissions mode
     os.chmod(MEAN_FILE, MODE)
 
@@ -271,14 +281,11 @@ class mean(gravtk.harmonics):
     def print_header(self, fid):
         # print header
         fid.write('{0} {1}\n'.format('begin_of_head',73*'='))
-        fid.write('{0:30}{1}\n'.format('product_type','gravity_field'))
-        fid.write('{0:30}{1}\n'.format('center',self.center))
-        fid.write('{0:30}{1}\n'.format('release',self.release))
-        fid.write('{0:30}{1}\n'.format('product',self.product))
+        for att_name,att_val in self.attributes['ROOT'].items():
+            fid.write('{0:30}{1}\n'.format(att_name, att_val))
         fid.write('{0:30}{1:+16.10E}\n'.format('earth_gravity_constant',
             3.986004415E+14))
         fid.write('{0:30}{1:+16.10E}\n'.format('radius',6.378136300E+06))
-        fid.write('{0:30}{1:d}\n'.format('max_degree',self.lmax))
         fid.write('{0:30}{1}\n'.format('errors','uncalibrated'))
         fid.write('{0:30}{1}\n'.format('norm','fully_normalized'))
         args = ('key','L','M','C','S','sigma C','sigma S')
@@ -449,7 +456,7 @@ def main():
     args,_ = parser.parse_known_args()
 
     # create logger
-    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
     # try to run the analysis with listed parameters

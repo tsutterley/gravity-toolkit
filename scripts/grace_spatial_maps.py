@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_maps.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly spatial fields
@@ -150,6 +150,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 03/2023: add root attributes to output netCDF4 and HDF5 files
     Updated 02/2023: use get function to retrieve specific units
         use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
@@ -190,6 +191,7 @@ import logging
 import numpy as np
 import argparse
 import traceback
+import collections
 import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
@@ -245,6 +247,13 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     if not os.access(OUTPUT_DIRECTORY, os.F_OK):
         os.makedirs(OUTPUT_DIRECTORY, mode=MODE, exist_ok=True)
 
+    # output attributes for spatial files
+    attributes = collections.OrderedDict()
+    attributes['generating_institute'] = PROC
+    attributes['product_release'] = DREL
+    attributes['product_name'] = DSET
+    attributes['product_type'] = 'gravity_field'
+    attributes['title'] = 'GRACE/GRACE-FO Spatial Data'
     # list object of output files for file logs (full path)
     output_files = []
 
@@ -254,11 +263,16 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # read arrays of kl, hl, and ll Love Numbers
     LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE, FORMAT='class')
+    # add attributes for earth model and love numbers
+    attributes['earth_model'] = LOVE.model
+    attributes['earth_love_numbers'] = LOVE.citation
+    attributes['reference_frame'] = LOVE.reference
 
     # Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):
         wt = 2.0*np.pi*gravtk.gauss_weights(RAD,LMAX)
         gw_str = f'_r{RAD:0.0f}km'
+        attributes['smoothing_radius'] = f'{RAD:0.0f} km'
     else:
         # else = 1
         wt = np.ones((LMAX+1))
@@ -267,6 +281,9 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # flag for spherical harmonic order
     MMAX = np.copy(LMAX) if not MMAX else MMAX
     order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
+    # add attributes for LMAX and MMAX
+    attributes['max_degree'] = LMAX
+    attributes['max_order'] = MMAX
 
     # reading GRACE months for input date range
     # replacing low-degree harmonics with SLR values if specified
@@ -279,7 +296,9 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         POLE_TIDE=POLE_TIDE)
     # convert to harmonics object and remove mean if specified
     GRACE_Ylms = gravtk.harmonics().from_dict(Ylms)
-    GRACE_Ylms.directory = Ylms['directory']
+    # add attributes for input GRACE/GRACE-FO spherical harmonics
+    for att_name, att_val in Ylms['attributes'].items():
+        attributes[att_name] = att_val
     # use a mean file for the static field to remove
     if MEAN_FILE:
         # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
@@ -287,23 +306,28 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
             format=MEANFORM, date=False)
         # remove the input mean
         GRACE_Ylms.subtract(mean_Ylms)
+        attributes['lineage'].append(os.path.basename(MEAN_FILE))
     else:
         GRACE_Ylms.mean(apply=True)
-    # date information of GRACE/GRACE-FO coefficients
-    nfiles = len(GRACE_Ylms.time)
 
     # filter GRACE/GRACE-FO coefficients
     if DESTRIPE:
         # destriping GRACE/GRACE-FO coefficients
         ds_str = '_FL'
         GRACE_Ylms = GRACE_Ylms.destripe()
+        attributes['filtering'] = 'Destriped'
     else:
         # using standard GRACE/GRACE-FO harmonics
         ds_str = ''
 
     # input GIA spherical harmonic datafiles
     GIA_Ylms_rate = gravtk.gia(lmax=LMAX).from_GIA(GIA_FILE, GIA=GIA, mmax=MMAX)
-    gia_str = f'_{GIA_Ylms_rate.title}' if GIA else ''
+    # output GIA string for filename
+    if GIA:
+        gia_str = f'_{GIA_Ylms_rate.title}'
+        attributes['GIA'] = (GIA_Ylms_rate.citation, os.path.basename(GIA_FILE))
+    else:
+        gia_str = ''
     # monthly GIA calculated by gia_rate*time elapsed
     # finding change in GIA each month
     GIA_Ylms = GIA_Ylms_rate.drift(GRACE_Ylms.time, epoch=2003.3)
@@ -317,8 +341,8 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # Read Ocean function and convert to Ylms for redistribution
     if REDISTRIBUTE_REMOVED:
         # read Land-Sea Mask and convert to spherical harmonics
-        ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX, MMAX=MMAX,
-            LOVE=LOVE)
+        ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX,
+            MMAX=MMAX, LOVE=LOVE)
         ocean_str = '_OCN'
     else:
         ocean_str = ''
@@ -340,12 +364,14 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
                 # HDF5 (.H5)
                 Ylms = gravtk.harmonics().from_file(REMOVE_FILE,
                     format=REMOVEFORM)
+                attributes['lineage'].append(os.path.basename(REMOVE_FILE))
             elif REMOVEFORM in ('index-ascii','index-netCDF4','index-HDF5'):
                 # read from index file
                 _,removeform = REMOVEFORM.split('-')
                 # index containing files in data format
                 Ylms = gravtk.harmonics().from_index(REMOVE_FILE,
                     format=removeform)
+                attributes['lineage'].extend(os.path.basename(Ylms.filename))
             # reduce to GRACE/GRACE-FO months and truncate to degree and order
             Ylms = Ylms.subset(GRACE_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
             # distribute removed Ylms uniformly over the ocean
@@ -423,15 +449,20 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         dfactor = factors.get('mbar')
     else:
         raise ValueError(f'Invalid units code {UNITS:d}')
+    # add attributes for earth parameters
+    attributes['earth_radius'] = f'{factors.rad_e:0.3f} cm'
+    attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
+    attributes['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
+    # add attributes to output spatial object
+    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+    grid.attributes['ROOT'] = attributes
 
     # output file format
     file_format = '{0}{1}_L{2:d}{3}{4}{5}_{6:03d}.{7}'
-    # attributes for output files
-    attributes = {}
-    attributes['units'] = copy.copy(unit_list[UNITS-1])
-    attributes['longname'] = copy.copy(unit_name[UNITS-1])
-    attributes['title'] = 'GRACE/GRACE-FO Spatial Data'
-    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+    # keyword arguments for output files
+    kwargs = {}
+    kwargs['units'] = copy.copy(unit_list[UNITS-1])
+    kwargs['longname'] = copy.copy(unit_name[UNITS-1])
     # converting harmonics to truncated, smoothed coefficients in units
     # combining harmonics to calculate output spatial fields
     for i,grace_month in enumerate(GRACE_Ylms.month):
@@ -456,15 +487,8 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         fargs = (FILE_PREFIX,unit_list[UNITS-1],LMAX,order_str,gw_str,
             ds_str,grace_month,suffix[DATAFORM])
         FILE = os.path.join(OUTPUT_DIRECTORY,file_format.format(*fargs))
-        if (DATAFORM == 'ascii'):
-            # ascii (.txt)
-            grid.to_ascii(FILE, date=True, verbose=VERBOSE)
-        elif (DATAFORM == 'netCDF4'):
-            # netCDF4
-            grid.to_netCDF4(FILE, date=True, verbose=VERBOSE, **attributes)
-        elif (DATAFORM == 'HDF5'):
-            # HDF5
-            grid.to_HDF5(FILE, date=True, verbose=VERBOSE, **attributes)
+        grid.to_file(FILE, format=DATAFORM, date=True, verbose=VERBOSE,
+            **kwargs)
         # set the permissions mode of the output files
         os.chmod(FILE, MODE)
         # add file to list
@@ -730,7 +754,7 @@ def main():
     args,_ = parser.parse_known_args()
 
     # create logger
-    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
     # try to run the analysis with listed parameters

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_error.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
 
 Calculates the GRACE/GRACE-FO errors following Wahr et al. (2006)
 
@@ -119,6 +119,7 @@ REFERENCES:
         http://dx.doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 03/2023: add root attributes to output netCDF4 and HDF5 files
     Updated 02/2023: use get function to retrieve specific units
         use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
@@ -169,6 +170,7 @@ import logging
 import numpy as np
 import argparse
 import traceback
+import collections
 import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
@@ -218,6 +220,13 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     if not os.access(OUTPUT_DIRECTORY, os.F_OK):
         os.makedirs(OUTPUT_DIRECTORY, mode=MODE, exist_ok=True)
 
+    # output attributes for spatial files
+    attributes = collections.OrderedDict()
+    attributes['generating_institute'] = PROC
+    attributes['product_release'] = DREL
+    attributes['product_name'] = DSET
+    attributes['product_type'] = 'gravity_field'
+    attributes['title'] = 'GRACE/GRACE-FO Spatial Error'
     # list object of output files for file logs (full path)
     output_files = []
 
@@ -227,11 +236,16 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # read arrays of kl, hl, and ll Love Numbers
     LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE, FORMAT='class')
+    # add attributes for earth model and love numbers
+    attributes['earth_model'] = LOVE.model
+    attributes['earth_love_numbers'] = LOVE.citation
+    attributes['reference_frame'] = LOVE.reference
 
     # Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):
         wt = 2.0*np.pi*gravtk.gauss_weights(RAD,LMAX)
         gw_str = f'_r{RAD:0.0f}km'
+        attributes['smoothing_radius'] = f'{RAD:0.0f} km'
     else:
         # else = 1
         wt = np.ones((LMAX+1))
@@ -242,6 +256,9 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
     # atmospheric ECMWF "jump" flag (if ATM)
     atm_str = '_wATM' if ATM else ''
+    # add attributes for LMAX and MMAX
+    attributes['max_degree'] = LMAX
+    attributes['max_order'] = MMAX
 
     # reading GRACE months for input date range
     # replacing low-degree harmonics with SLR values if specified
@@ -254,8 +271,10 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
         POLE_TIDE=POLE_TIDE)
     # convert to harmonics object and remove mean if specified
     GRACE_Ylms = gravtk.harmonics().from_dict(Ylms)
-    # full path to directory for specific GRACE/GRACE-FO product
-    GRACE_Ylms.directory = Ylms['directory']
+    # add attributes for input GRACE/GRACE-FO spherical harmonics
+    for att_name, att_val in Ylms['attributes'].items():
+        attributes[att_name] = att_val
+
     # use a mean file for the static field to remove
     if MEAN_FILE:
         # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
@@ -263,23 +282,25 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
             format=MEANFORM, date=False)
         # remove the input mean
         GRACE_Ylms.subtract(mean_Ylms)
+        attributes['lineage'].append(os.path.basename(MEAN_FILE))
     else:
         GRACE_Ylms.mean(apply=True)
-    # date information of GRACE/GRACE-FO coefficients
-    nfiles = len(GRACE_Ylms.time)
-
-    # default file prefix
-    if not FILE_PREFIX:
-        FILE_PREFIX = '{0}_{1}_{2}{3}_'.format(PROC,DREL,DSET,Ylms['title'])
 
     # filter GRACE/GRACE-FO coefficients
     if DESTRIPE:
         # destriping GRACE/GRACE-FO coefficients
         ds_str = '_FL'
         GRACE_Ylms = GRACE_Ylms.destripe()
+        attributes['filtering'] = 'Destriped'
     else:
         # using standard GRACE/GRACE-FO harmonics
         ds_str = ''
+
+    # full path to directory for specific GRACE/GRACE-FO product
+    GRACE_Ylms.directory = Ylms['directory']
+    # default file prefix
+    if not FILE_PREFIX:
+        FILE_PREFIX = '{0}_{1}_{2}{3}_'.format(PROC,DREL,DSET,Ylms['title'])
 
     # calculating GRACE error (Wahr et al 2006)
     # output GRACE error file (for both LMAX==MMAX and LMAX != MMAX cases)
@@ -326,13 +347,13 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
                     val2[l,m] = np.sqrt(np.sum(smth['noise']**2)/nsmth)
 
         # attributes for output files
-        attributes = {}
-        attributes['title'] = 'GRACE/GRACE-FO Spherical Harmonic Errors'
-        attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+        kwargs = {}
+        kwargs['title'] = 'GRACE/GRACE-FO Spherical Harmonic Errors'
+        kwargs['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
         # save GRACE/GRACE-FO delta harmonics to file
         delta_Ylms.time = np.copy(tsmth)
         delta_Ylms.month = np.int64(nsmth)
-        delta_Ylms.to_file(DELTA_FILE, format=DATAFORM, **attributes)
+        delta_Ylms.to_file(DELTA_FILE, format=DATAFORM, **kwargs)
         # set the permissions mode of the output harmonics file
         os.chmod(DELTA_FILE, MODE)
         # append delta harmonics file to output files list
@@ -395,6 +416,13 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
         dfactor = factors.get('mbar')
     else:
         raise ValueError(f'Invalid units code {UNITS:d}')
+    # add attributes for earth parameters
+    attributes['earth_radius'] = f'{factors.rad_e:0.3f} cm'
+    attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
+    attributes['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
+    # add attributes to output spatial object
+    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+    delta.attributes['ROOT'] = attributes
 
     # Computing plms for converting to spatial domain
     phi = delta.lon[np.newaxis,:]*np.pi/180.0
@@ -424,29 +452,19 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
         d_sin[:,k] = np.sum(PLM2[:,:,k]*Ylms.slm, axis=0)
 
     # Multiplying by c/s(phi#m) to get spatial maps (lon,lat)
-    delta.data=np.sqrt(np.dot(ccos.T,d_cos) + np.dot(ssin.T,d_sin)).T
+    delta.data = np.sqrt(np.dot(ccos.T,d_cos) + np.dot(ssin.T,d_sin)).T
 
     # output file format
     file_format = '{0}{1}_L{2:d}{3}{4}{5}_ERR_{6:03d}-{7:03d}.{8}'
     # attributes for output files
-    attributes = {}
-    attributes['units'] = copy.copy(unit_list[UNITS-1])
-    attributes['longname'] = copy.copy(unit_name[UNITS-1])
-    attributes['title'] = 'GRACE/GRACE-FO Spatial Error'
-    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+    kwargs = {}
+    kwargs['units'] = copy.copy(unit_list[UNITS-1])
+    kwargs['longname'] = copy.copy(unit_name[UNITS-1])
     # output error file to ascii, netCDF4 or HDF5
     fargs = (FILE_PREFIX,unit_list[UNITS-1],LMAX,order_str,gw_str,ds_str,
         GRACE_Ylms.month[0],GRACE_Ylms.month[-1],suffix[DATAFORM])
     FILE = os.path.join(OUTPUT_DIRECTORY,file_format.format(*fargs))
-    if (DATAFORM == 'ascii'):
-        # ascii (.txt)
-        delta.to_ascii(FILE, date=False, verbose=VERBOSE)
-    elif (DATAFORM == 'netCDF4'):
-        # netCDF4
-        delta.to_netCDF4(FILE, date=False, verbose=VERBOSE, **attributes)
-    elif (DATAFORM == 'HDF5'):
-        # HDF5
-        delta.to_HDF5(FILE, date=False, verbose=VERBOSE, **attributes)
+    delta.to_file(FILE, format=DATAFORM, date=False, verbose=VERBOSE, **kwargs)
     # set the permissions mode of the output files
     os.chmod(FILE, MODE)
     # add file to list
@@ -672,7 +690,7 @@ def main():
     args,_ = parser.parse_known_args()
 
     # create logger
-    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
     # try to run the analysis with listed parameters

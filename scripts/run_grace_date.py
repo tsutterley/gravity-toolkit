@@ -77,7 +77,7 @@ import gravity_toolkit as gravtk
 
 def run_grace_date(base_dir, PROC, DREL, VERBOSE=0, MODE=0o775):
     # create logger
-    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=loglevels[VERBOSE])
 
     # allocate python dictionaries for each processing center

@@ -728,7 +728,7 @@ def main():
     args,_ = parser.parse_known_args()
 
     # create logger for verbosity level
-    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
     for DSET in args.product:
