@@ -26,6 +26,8 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 03/2023: customizable file-level attributes to netCDF4 and HDF5
+        add attributes fetching to the from_dict and to_dict functions
+        retrieve all root attributes from HDF5 and netCDF4 datasets
     Updated 02/2023: fix expand case where data is a single degree
         fixed case where maximum spherical harmonic degree is 0
         use monospaced text for harmonics objects in docstrings
@@ -139,6 +141,8 @@ class harmonics(object):
         number of dimensions of ``harmonics`` object
     filename: str
         input or output filename
+    flattened: bool
+        ``harmonics`` object is compressed into arrays
     """
     np.seterr(invalid='ignore')
     def __init__(self, **kwargs):
@@ -159,6 +163,7 @@ class harmonics(object):
         self.shape=None
         self.ndim=None
         self.filename=None
+        self.flattened=False
         # iterator
         self.__index__ = 0
 
@@ -354,18 +359,14 @@ class harmonics(object):
                     ]
             except (KeyError,ValueError,AttributeError):
                 pass
-        # attempt to get global netCDF4 attributes
-        for att_name in ['title','description','source','reference']:
-            try:
-                s, = [s for s in fileID.ncattrs() if re.match(att_name,s,re.I)]
-                self.attributes[att_name] = fileID.getncattr(s)
-            except (ValueError, KeyError, AttributeError):
-                pass
+        # get global netCDF4 attributes
+        self.attributes['ROOT'] = {}
+        for att_name in fileID.ncattrs():
+            self.attributes['ROOT'][att_name] = fileID.getncattr(att_name)
         # Closing the NetCDF file
         fileID.close()
-        # remove singleton dimensions and
         # assign shape and ndim attributes
-        self.squeeze(update_dimensions=True)
+        self.update_dimensions()
         return self
 
     def from_HDF5(self, filename, **kwargs):
@@ -459,17 +460,14 @@ class harmonics(object):
                     ]
             except (KeyError, AttributeError):
                 pass
-        # attempt to get global HDF5 attributes
-        for att_name in ['title','description','source','reference']:
-            try:
-                self.attributes[att_name] = fileID.attrs[att_name]
-            except (ValueError, KeyError, AttributeError):
-                pass
+        # get global HDF5 attributes
+        self.attributes['ROOT'] = {}
+        for att_name,att_val in fileID.attrs.items():
+            self.attributes['ROOT'][att_name] = att_val
         # Closing the HDF5 file
         fileID.close()
-        # remove singleton dimensions and
         # assign shape and ndim attributes
-        self.squeeze(update_dimensions=True)
+        self.update_dimensions()
         return self
 
     def from_gfc(self, filename, **kwargs):
@@ -719,7 +717,7 @@ class harmonics(object):
 
     def from_dict(self, d, **kwargs):
         """
-        Convert a dict object to a ``harmonics`` object
+        Convert a ``dict`` object to a ``harmonics`` object
 
         Parameters
         ----------
@@ -735,6 +733,8 @@ class harmonics(object):
         # maximum degree and order
         self.lmax = np.max(d['l'])
         self.mmax = np.max(d['m'])
+        # add attributes to root if in dictionary
+        self.attributes['ROOT'] = d.get('attributes')
         # assign shape and ndim attributes
         self.update_dimensions()
         return self
@@ -815,7 +815,8 @@ class harmonics(object):
         kwargs.setdefault('months_units','number')
         kwargs.setdefault('months_longname','GRACE_month')
         kwargs.setdefault('field_mapping',{})
-        kwargs.setdefault('attributes',dict(ROOT={}))
+        attributes = self.attributes.get('ROOT') or {}
+        kwargs.setdefault('attributes',dict(ROOT=attributes))
         kwargs.setdefault('title',None)
         kwargs.setdefault('source',None)
         kwargs.setdefault('reference',None)
@@ -959,7 +960,8 @@ class harmonics(object):
         kwargs.setdefault('months_units','number')
         kwargs.setdefault('months_longname','GRACE_month')
         kwargs.setdefault('field_mapping',{})
-        kwargs.setdefault('attributes',dict(ROOT={}))
+        attributes = self.attributes.get('ROOT') or {}
+        kwargs.setdefault('attributes',dict(ROOT=attributes))
         kwargs.setdefault('title',None)
         kwargs.setdefault('source',None)
         kwargs.setdefault('reference',None)
@@ -1127,7 +1129,7 @@ class harmonics(object):
 
     def to_dict(self):
         """
-        Convert a ``harmonics`` object to a dict object
+        Convert a ``harmonics`` object to a ``dict`` object
 
         Returns
         -------
@@ -1136,7 +1138,7 @@ class harmonics(object):
         """
         # assign dictionary variables from self
         d = {}
-        for key in ['l','m','clm','slm','time','month']:
+        for key in ['l','m','clm','slm','time','month','attributes']:
             try:
                 d[key] = getattr(self, key)
             except (AttributeError, KeyError):
@@ -1359,10 +1361,10 @@ class harmonics(object):
         self.time = np.atleast_1d(self.time)
         self.month = np.atleast_1d(self.month)
         # output harmonics with a third dimension
-        if (self.ndim == 2):
+        if (self.ndim == 2) and not self.flattened:
             self.clm = self.clm[:,:,None]
             self.slm = self.slm[:,:,None]
-        elif (self.ndim == 1):
+        elif (self.ndim == 1) and self.flattened:
             self.clm = self.clm[:,None]
             self.slm = self.slm[:,None]
         # reassign ndim and shape attributes
@@ -1443,6 +1445,8 @@ class harmonics(object):
         # assign ndim and shape attributes
         temp.ndim = temp.clm.ndim
         temp.shape = temp.clm.shape
+        # update flattened attribute
+        temp.flattened = True
         # return the flattened arrays
         return temp
 
@@ -1484,6 +1488,8 @@ class harmonics(object):
             else:
                 temp.clm[l,m,:] = self.clm[lm,:]
                 temp.slm[l,m,:] = self.slm[lm,:]
+        # update flattened attribute
+        temp.flattened = False
         # assign ndim and shape attributes
         temp.update_dimensions()
         # return the expanded harmonics object

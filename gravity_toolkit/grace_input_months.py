@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (03/2023)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
@@ -62,6 +62,7 @@ OUTPUTS:
     m: spherical harmonic order to MMAX
     title: string denoting low degree zonals, geocenter and corrections
     directory: directory of exact GRACE/GRACE-FO product
+    attributes: Attributes of input files and corrections
 
 OPTIONS:
     MMAX: Upper bound of Spherical Harmonic Orders (default=LMAX)
@@ -108,6 +109,7 @@ PROGRAM DEPENDENCIES:
     read_gfc_harmonics.py: reads spherical harmonic data from gfc files
 
 UPDATE HISTORY:
+    Updated 03/2023: added attributes for input files and corrections
     Updated 01/2023: refactored satellite laser ranging read functions
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 10/2022: tilde-expansion of input working data directory
@@ -170,6 +172,7 @@ import re
 import gzip
 import copy
 import logging
+import collections
 import numpy as np
 import gravity_toolkit.geocenter
 import gravity_toolkit.SLR
@@ -236,11 +239,15 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         Use Degree 1 coefficients
 
             - ``None``: No degree 1 replacement
-            - ``'Tellus'``: `GRACE/GRACE-FO TN-13 coefficients from PO.DAAC <https://grace.jpl.nasa.gov/data/get-data/geocenter/>`_ [Sun2016]_
-            - ``'SLR'``: `Satellite laser ranging coefficients from CSR <ftp://ftp.csr.utexas.edu/pub/slr/geocenter/>`_ [Cheng2013]_
-            - ``'UCI'``: `GRACE/GRACE-FO coefficients from Sutterley and Velicogna <https://doi.org/10.6084/m9.figshare.7388540>`_ [Sutterley2019]_
+            - ``'Tellus'``: `GRACE/GRACE-FO TN-13 coefficients from PO.DAAC
+                <https://grace.jpl.nasa.gov/data/get-data/geocenter/>`_ [Sun2016]_
+            - ``'SLR'``: `Satellite laser ranging coefficients from CSR
+                <ftp://ftp.csr.utexas.edu/pub/slr/geocenter/>`_ [Cheng2013]_
+            - ``'UCI'``: `GRACE/GRACE-FO coefficients from Sutterley and Velicogna
+                <https://doi.org/10.6084/m9.figshare.7388540>`_ [Sutterley2019]_
             - ``'Swenson'``: GRACE-derived coefficients from Sean Swenson [Swenson2008]_
-            - ``'GFZ'``: `GRACE/GRACE-FO coefficients from GFZ GravIS <http://gravis.gfz-potsdam.de/corrections>`_
+            - ``'GFZ'``: `GRACE/GRACE-FO coefficients from GFZ GravIS
+                <http://gravis.gfz-potsdam.de/corrections>`_
     MMAX: int or NoneType, default None
         Upper bound of Spherical Harmonic Orders
     SLR_21: str or NoneType, default ''
@@ -287,15 +294,15 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     Returns
     -------
     clm: float
-        GRACE/GRACE-FO/Swarm cosine spherical harmonics to degree/order ``LMAX`` and ``MMAX``
+        cosine spherical harmonics to degree/order ``LMAX`` and ``MMAX``
     slm: float
-        GRACE/GRACE-FO/Swarm sine spherical harmonics to degree/order ``LMAX`` and ``MMAX``
+        sine spherical harmonics to degree/order ``LMAX`` and ``MMAX``
     eclm: float
-        GRACE/GRACE-FO/Swarm uncalibrated cosine spherical harmonic errors
+        uncalibrated cosine spherical harmonic errors
     eslm: float
-        GRACE/GRACE-FO/Swarm uncalibrated sine spherical harmonic errors
+        uncalibrated sine spherical harmonic errors
     time: float
-        time of each GRACE/GRACE-FO/Swarm measurement (mid-month)
+        time of each measurement (mid-month)
     month: int
         GRACE/GRACE-FO months of input datasets
     l: int
@@ -307,6 +314,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         replacement, geocenter usage and corrections
     directory: str
         Directory of exact GRACE/GRACE-FO/Swarm product
+    attributes: dict
+        Attributes of input files and corrections
 
     References
     ----------
@@ -379,11 +388,19 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     # output dimensions
     grace_Ylms['l'] = np.arange(LMAX+1)
     grace_Ylms['m'] = np.arange(MMAX+1)
-    # input directory for product
-    grace_Ylms['directory'] = copy.copy(grace_dir)
+
+    # attributes for processing run
+    attributes = collections.OrderedDict()
+    # input GRACE/GRACE-FO and correction files
+    attributes['lineage'] = [None]*n_cons
 
     # associate GRACE/GRACE-FO files with each GRACE/GRACE-FO month
-    grace_files=grace_date(base_dir,PROC=PROC,DREL=DREL,DSET=DSET,OUTPUT=False)
+    grace_files = grace_date(base_dir,
+        PROC=PROC,
+        DREL=DREL,
+        DSET=DSET,
+        OUTPUT=False
+    )
 
     # importing data from GRACE/GRACE-FO files
     for i,grace_month in enumerate(months):
@@ -408,6 +425,9 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # copy date variables
         grace_Ylms['time'][i] = np.copy(Ylms['time'])
         grace_Ylms['month'][i] = np.int64(grace_month)
+        # copy input file basename
+        attributes['lineage'][i] = os.path.basename(infile)
+
     # single accelerometer months
     single_acc_months = np.copy(grace_Ylms['month'][grace_Ylms['month'] > 176])
 
@@ -428,6 +448,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # read SLR file
         C20_input = gravity_toolkit.SLR.C20(SLR_file)
         FLAGS.append('_wCSR_C20')
+        attributes['SLR C20'] = ('CSR',os.path.basename(SLR_file))
     elif (SLR_C20 == 'GFZ'):
         SLR_file = os.path.join(base_dir,f'GFZ_{DREL}_C20_SLR.dat')
         # log SLR file if debugging
@@ -435,6 +456,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # read SLR file
         C20_input = gravity_toolkit.SLR.C20(SLR_file)
         FLAGS.append('_wGFZ_C20')
+        attributes['SLR C20'] = ('GFZ',os.path.basename(SLR_file))
     elif (SLR_C20 == 'GSFC'):
         SLR_file = os.path.join(base_dir,'TN-14_C30_C20_GSFC_SLR.txt')
         # log SLR file if debugging
@@ -442,6 +464,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # read SLR file
         C20_input = gravity_toolkit.SLR.C20(SLR_file)
         FLAGS.append('_wGSFC_C20')
+        attributes['SLR C20'] = ('GSFC',os.path.basename(SLR_file))
 
     # Replacing C2,1/S2,1 with SLR values
     if (kwargs['SLR_21'] == 'CSR'):
@@ -451,6 +474,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # read SLR file
         C21_input = gravity_toolkit.SLR.CS2(SLR_file)
         FLAGS.append('_wCSR_21')
+        attributes['SLR 21'] = ('CSR',os.path.basename(SLR_file))
     elif (kwargs['SLR_21'] == 'GFZ'):
         GravIS_file = 'GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat'
         SLR_file = os.path.join(base_dir,GravIS_file)
@@ -459,9 +483,9 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # read SLR file
         C21_input = gravity_toolkit.SLR.CS2(SLR_file)
         FLAGS.append('_wGFZ_21')
+        attributes['SLR 21'] = ('GFZ GravIS',os.path.basename(SLR_file))
     elif (kwargs['SLR_21'] == 'GSFC'):
         # calculate monthly averages from 7-day arcs
-        # SLR_file = os.path.join(base_dir,'GSFC_C21_S21.txt')
         SLR_file = os.path.join(base_dir,'gsfc_slr_5x5c61s61.txt')
         # log SLR file if debugging
         logging.debug(f'Reading SLR C21/S21 file: {SLR_file}')
@@ -469,6 +493,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         C21_input = gravity_toolkit.SLR.CS2(SLR_file,
             DATE=grace_Ylms['time'], ORDER=1)
         FLAGS.append('_wGSFC_21')
+        attributes['SLR 21'] = ('GSFC',os.path.basename(SLR_file))
 
     # Replacing C2,2/S2,2 with SLR values
     if (kwargs['SLR_22'] == 'CSR'):
@@ -478,6 +503,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # read SLR file
         C22_input = gravity_toolkit.SLR.CS2(SLR_file)
         FLAGS.append('_wCSR_22')
+        attributes['SLR 22'] = ('CSR',os.path.basename(SLR_file))
     elif (kwargs['SLR_22'] == 'GSFC'):
         SLR_file = os.path.join(base_dir,'gsfc_slr_5x5c61s61.txt')
         # log SLR file if debugging
@@ -486,6 +512,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         C22_input = gravity_toolkit.SLR.CS2(SLR_file,
             DATE=grace_Ylms['time'], ORDER=2)
         FLAGS.append('_wGSFC_22')
+        attributes['SLR 22'] = ('GSFC',os.path.basename(SLR_file))
 
     # Replacing C3,0 with SLR values
     if (kwargs['SLR_C30'] == 'CSR'):
@@ -495,6 +522,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # read SLR file
         C30_input = gravity_toolkit.SLR.C30(SLR_file)
         FLAGS.append('_wCSR_C30')
+        attributes['SLR C30'] = ('CSR',os.path.basename(SLR_file))
     elif (kwargs['SLR_C30'] == 'LARES'):
         SLR_file = os.path.join(base_dir,'C30_LARES_filtered.txt')
         # log SLR file if debugging
@@ -502,13 +530,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # read SLR file
         C30_input = gravity_toolkit.SLR.C30(SLR_file)
         FLAGS.append('_wLARES_C30')
-    elif (kwargs['SLR_C30'] == 'GSFC'):
-        SLR_file = os.path.join(base_dir,'TN-14_C30_C20_GSFC_SLR.txt')
-        # log SLR file if debugging
-        logging.debug(f'Reading SLR C30 file: {SLR_file}')
-        # read SLR file
-        C30_input = gravity_toolkit.SLR.C30(SLR_file)
-        FLAGS.append('_wGSFC_C30')
+        attributes['SLR_C30'] = ('CSR LARES',os.path.basename(SLR_file))
     elif (kwargs['SLR_C30'] == 'GFZ'):
         GravIS_file = 'GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat'
         SLR_file = os.path.join(base_dir,GravIS_file)
@@ -517,6 +539,15 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # read SLR file
         C30_input = gravity_toolkit.SLR.C30(SLR_file)
         FLAGS.append('_wGFZ_C30')
+        attributes['SLR C30'] = ('GFZ GravIS',os.path.basename(SLR_file))
+    elif (kwargs['SLR_C30'] == 'GSFC'):
+        SLR_file = os.path.join(base_dir,'TN-14_C30_C20_GSFC_SLR.txt')
+        # log SLR file if debugging
+        logging.debug(f'Reading SLR C30 file: {SLR_file}')
+        # read SLR file
+        C30_input = gravity_toolkit.SLR.C30(SLR_file)
+        FLAGS.append('_wGSFC_C30')
+        attributes['SLR C30'] = ('GSFC',os.path.basename(SLR_file))
 
     # Replacing C4,0 with SLR values
     if (kwargs['SLR_C40'] == 'CSR'):
@@ -526,6 +557,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # read SLR file
         C40_input = gravity_toolkit.SLR.C40(SLR_file)
         FLAGS.append('_wCSR_C40')
+        attributes['SLR C40'] = ('CSR',os.path.basename(SLR_file))
     elif (kwargs['SLR_C40'] == 'LARES'):
         SLR_file = os.path.join(base_dir,'C40_LARES_filtered.txt')
         # log SLR file if debugging
@@ -533,6 +565,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # read SLR file
         C40_input = gravity_toolkit.SLR.C40(SLR_file)
         FLAGS.append('_wLARES_C40')
+        attributes['SLR C40'] = ('CSR LARES',os.path.basename(SLR_file))
     elif (kwargs['SLR_C40'] == 'GSFC'):
         SLR_file = os.path.join(base_dir,'gsfc_slr_5x5c61s61.txt')
         # log SLR file if debugging
@@ -541,6 +574,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         C40_input = gravity_toolkit.SLR.C40(SLR_file,
             DATE=grace_Ylms['time'])
         FLAGS.append('_wGSFC_C40')
+        attributes['SLR C40'] = ('GSFC',os.path.basename(SLR_file))
 
     # Replacing C5,0 with SLR values
     if (kwargs['SLR_C50'] == 'CSR'):
@@ -550,6 +584,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # read SLR file
         C50_input = gravity_toolkit.SLR.C50(SLR_file)
         FLAGS.append('_wCSR_C50')
+        attributes['SLR C50'] = ('CSR',os.path.basename(SLR_file))
     elif (kwargs['SLR_C50'] == 'LARES'):
         SLR_file = os.path.join(base_dir,'C50_LARES_filtered.txt')
         # log SLR file if debugging
@@ -557,6 +592,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # read SLR file
         C50_input = gravity_toolkit.SLR.C50(SLR_file)
         FLAGS.append('_wLARES_C50')
+        attributes['SLR C50'] = ('CSR LARES',os.path.basename(SLR_file))
     elif (kwargs['SLR_C50'] == 'GSFC'):
         # SLR_file = os.path.join(base_dir,'GSFC_SLR_C20_C30_C50_GSM_replacement.txt')
         SLR_file = os.path.join(base_dir,'gsfc_slr_5x5c61s61.txt')
@@ -566,6 +602,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         C50_input = gravity_toolkit.SLR.C50(SLR_file,
             DATE=grace_Ylms['time'])
         FLAGS.append('_wGSFC_C50')
+        attributes['SLR C50'] = ('GSFC',os.path.basename(SLR_file))
 
     # Correcting for Degree 1 (geocenter variations)
     # reading degree 1 file for given release if specified
@@ -587,6 +624,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         logging.debug(f'Reading Geocenter file: {DEG1_file}')
         DEG1_input = gravity_toolkit.geocenter().from_tellus(DEG1_file,JPL=JPL)
         FLAGS.append(f'_w{DEG1}_DEG1')
+        attributes['geocenter'] = ('JPL Tellus',os.path.basename(DEG1_file))
     elif (DEG1 == 'SLR'):
         # CSR Satellite Laser Ranging (SLR) degree 1
         # # SLR-derived degree-1 mass variations
@@ -615,6 +653,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         DEG1_input = gravity_toolkit.geocenter(radius=6.378136e9).from_SLR(
             DEG1_file, AOD=True, release=DREL, header=15, columns=COLUMNS)
         FLAGS.append(f'_w{DEG1}_DEG1')
+        attributes['geocenter'] = ('CSR SLR',os.path.basename(DEG1_file))
     elif DEG1 in ('SLF','UCI'):
         # degree one files from Sutterley and Velicogna (2019)
         # default: iterated and with self-attraction and loading effects
@@ -628,6 +667,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         logging.debug(f'Reading Geocenter file: {DEG1_file}')
         DEG1_input = gravity_toolkit.geocenter().from_UCI(DEG1_file)
         FLAGS.append(f'_w{DEG1}_DEG1')
+        attributes['geocenter'] = ('UCI',os.path.basename(DEG1_file))
     elif (DEG1 == 'Swenson'):
         # degree 1 coefficients provided by Sean Swenson in mm w.e.
         default_geocenter = os.path.join(base_dir,'geocenter',
@@ -638,6 +678,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         logging.debug(f'Reading Geocenter file: {DEG1_file}')
         DEG1_input = gravity_toolkit.geocenter().from_swenson(DEG1_file)
         FLAGS.append(f'_w{DEG1}_DEG1')
+        attributes['geocenter'] = ('Swenson',os.path.basename(DEG1_file))
     elif (DEG1 == 'GFZ'):
         # degree 1 coefficients provided by GFZ GravIS
         # http://gravis.gfz-potsdam.de/corrections
@@ -649,13 +690,16 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         logging.debug(f'Reading Geocenter file: {DEG1_file}')
         DEG1_input = gravity_toolkit.geocenter().from_gravis(DEG1_file)
         FLAGS.append(f'_w{DEG1}_DEG1')
+        attributes['geocenter'] = ('GFZ GravIS',os.path.basename(DEG1_file))
 
     # atmospheric flag if correcting ECMWF "jumps" (using GAE/GAF/GAG files)
     if kwargs['ATM']:
         FLAGS.append('_wATM')
+        attributes['atmospheric_correction'] = 'Fagiolini et al. (2015)'
     # pole tide flag if correcting for pole tide drift (Wahr et al. 2015)
     if kwargs['POLE_TIDE']:
         FLAGS.append('_wPT')
+        attributes['pole_tide_correction'] = 'Wahr et al. (2015)'
     # full output string (SLR, geocenter and correction flags)
     grace_Ylms['title'] = ''.join(FLAGS)
 
@@ -795,6 +839,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     if kwargs['ATM']:
         # read ECMWF correction files from Fagiolini et al. (2015)
         atm_corr = read_ecmwf_corrections(base_dir,LMAX,months,MMAX=MMAX)
+        # add files to lineage attribute
+        attributes['lineage'].extend(atm_corr['files'])
         # Removing GAE/GAF/GAG from RL05 GSM Products
         if (DSET == 'GSM'):
             for m in range(0,MMAX+1):# MMAX+1 to include l
@@ -808,10 +854,12 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
                     grace_Ylms['clm'][l,m,:] += atm_corr['clm'][l,m,:]
                     grace_Ylms['slm'][l,m,:] += atm_corr['slm'][l,m,:]
 
-    # return the harmonic solutions with possible low-degree replacements
-    # return the harmonic dimensions (spectral and temporal)
-    # return string specifying processing and correction flags
-    # return directory of exact GRACE/GRACE-FO product
+    # input directory for product
+    grace_Ylms['directory'] = copy.copy(grace_dir)
+    # append attributes to output dictionary
+    grace_Ylms['attributes'] = attributes
+
+    # return the harmonic solutions and associated attributes
     return grace_Ylms
 
 # PURPOSE: read atmospheric jump corrections from Fagiolini et al. (2015)
@@ -836,6 +884,8 @@ def read_ecmwf_corrections(base_dir, LMAX, months, MMAX=None):
         atmospheric correction cosine spherical harmonics
     slm: float
         atmospheric correction sine spherical harmonics
+    files: list
+        atmospheric correction files
 
     References
     ----------
@@ -887,6 +937,7 @@ def read_ecmwf_corrections(base_dir, LMAX, months, MMAX=None):
     atm_corr = {}
     atm_corr['clm'] = np.zeros((LMAX+1,LMAX+1,n_cons))
     atm_corr['slm'] = np.zeros((LMAX+1,LMAX+1,n_cons))
+    atm_corr['files'] = sorted(corr_file.values())
     # for each considered date
     for i,grace_month in enumerate(months):
         # remove correction based on dates

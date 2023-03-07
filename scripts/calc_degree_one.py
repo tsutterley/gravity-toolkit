@@ -1462,7 +1462,7 @@ def main():
     args,_ = parser.parse_known_args()
 
     # create logger
-    loglevels = [logging.CRITICAL,logging.INFO,logging.DEBUG]
+    loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
     # try to run the analysis with listed parameters

@@ -21,6 +21,8 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 03/2023: customizable file-level attributes to netCDF4 and HDF5
+        add attributes fetching to from_dict function
+        retrieve all root attributes from HDF5 and netCDF4 datasets
     Updated 02/2023: use monospaced text to note spatial objects in docstrings
     Updated 12/2022: add software information to output HDF5 and netCDF4
         make spatial objects iterable and with length
@@ -360,14 +362,10 @@ class spatial(object):
                         fileID.variables[key].getncattr(attr)
                 except (KeyError,ValueError,AttributeError):
                     pass
-        # attempt to get global netCDF4 attributes
-        for att_name in ['title','description','source','reference']:
-            try:
-                ncattr, = [s for s in fileID.ncattrs()
-                    if re.match(att_name,s,re.I)]
-                self.attributes[att_name] = fileID.getncattr(ncattr)
-            except (ValueError, KeyError, AttributeError):
-                pass
+        # get global netCDF4 attributes
+        self.attributes['ROOT'] = {}
+        for att_name in fileID.ncattrs():
+            self.attributes['ROOT'][att_name] = fileID.getncattr(att_name)
         # Closing the NetCDF file
         fileID.close()
         # switching data array to lat/lon if lon/lat
@@ -492,12 +490,10 @@ class spatial(object):
                     self.attributes[field][attr] = fileID[key].attrs[attr]
                 except (KeyError, AttributeError):
                     pass
-        # attempt to get global HDF5 attributes
-        for att_name in ['title','description','source','reference']:
-            try:
-                self.attributes[att_name] = fileID.attrs[att_name]
-            except (ValueError, KeyError, AttributeError):
-                pass
+        # get global HDF5 attributes
+        self.attributes['ROOT'] = {}
+        for att_name,att_val in fileID.attrs.items():
+            self.attributes['ROOT'][att_name] = att_val
         # Closing the HDF5 file
         fileID.close()
         # switching data array to lat/lon if lon/lat
@@ -680,7 +676,7 @@ class spatial(object):
 
     def from_dict(self, d, **kwargs):
         """
-        Convert a dict object to a ``spatial`` object
+        Convert a ``dict`` object to a ``spatial`` object
 
         Parameters
         ----------
@@ -688,13 +684,15 @@ class spatial(object):
             dictionary object to be converted
         """
         # assign variables to self
-        for key in ['lon','lat','data','error','time','month']:
+        for key in ['lon','lat','data','error','time','month','directory']:
             try:
                 setattr(self, key, d[key].copy())
             except (AttributeError, KeyError):
                 pass
         # create output mask for data
-        self.mask = np.zeros_like(self.data,dtype=bool)
+        self.mask = np.zeros_like(self.data, dtype=bool)
+        # add attributes to root if in dictionary
+        self.attributes['ROOT'] = d.get('attributes')
         # get spacing and dimensions
         self.update_spacing()
         self.update_extents()
@@ -779,7 +777,8 @@ class spatial(object):
         kwargs.setdefault('latname','lat')
         kwargs.setdefault('timename','time')
         kwargs.setdefault('field_mapping',{})
-        kwargs.setdefault('attributes',dict(ROOT={}))
+        attributes = self.attributes.get('ROOT') or {}
+        kwargs.setdefault('attributes',dict(ROOT=attributes))
         kwargs.setdefault('units',None)
         kwargs.setdefault('longname',None)
         kwargs.setdefault('time_units','years')
@@ -922,7 +921,8 @@ class spatial(object):
         kwargs.setdefault('latname','lat')
         kwargs.setdefault('timename','time')
         kwargs.setdefault('field_mapping',{})
-        kwargs.setdefault('attributes',dict(ROOT={}))
+        attributes = self.attributes.get('ROOT') or {}
+        kwargs.setdefault('attributes',dict(ROOT=attributes))
         kwargs.setdefault('units',None)
         kwargs.setdefault('longname',None)
         kwargs.setdefault('time_units','years')
