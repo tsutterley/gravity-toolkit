@@ -28,6 +28,7 @@ UPDATE HISTORY:
     Updated 03/2023: customizable file-level attributes to netCDF4 and HDF5
         add attributes fetching to the from_dict and to_dict functions
         retrieve all root attributes from HDF5 and netCDF4 datasets
+        only attempt to squeeze from final dimension in harmonics objects
     Updated 02/2023: fix expand case where data is a single degree
         fixed case where maximum spherical harmonic degree is 0
         use monospaced text for harmonics objects in docstrings
@@ -365,8 +366,9 @@ class harmonics(object):
             self.attributes['ROOT'][att_name] = fileID.getncattr(att_name)
         # Closing the NetCDF file
         fileID.close()
+        # remove singleton dimensions and
         # assign shape and ndim attributes
-        self.update_dimensions()
+        self.squeeze(update_dimensions=True)
         return self
 
     def from_HDF5(self, filename, **kwargs):
@@ -466,8 +468,9 @@ class harmonics(object):
             self.attributes['ROOT'][att_name] = att_val
         # Closing the HDF5 file
         fileID.close()
+        # remove singleton dimensions and
         # assign shape and ndim attributes
-        self.update_dimensions()
+        self.squeeze(update_dimensions=True)
         return self
 
     def from_gfc(self, filename, **kwargs):
@@ -1386,10 +1389,13 @@ class harmonics(object):
             Update the degree and order dimensions
         """
         # squeeze singleton dimensions
-        self.time = np.squeeze(self.time)
-        self.month = np.squeeze(self.month)
-        self.clm = np.squeeze(self.clm)
-        self.slm = np.squeeze(self.slm)
+        try:
+            self.clm = np.squeeze(self.clm, axis=-1)
+            self.slm = np.squeeze(self.slm, axis=-1)
+            self.time = np.squeeze(self.time)
+            self.month = np.squeeze(self.month)
+        except ValueError as exc:
+            pass
         # reassign ndim and shape attributes
         if update_dimensions:
             self.update_dimensions()
