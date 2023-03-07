@@ -61,3 +61,6 @@ General Attributes and Methods
 
 .. autoclass:: gravity_toolkit.spatial
    :members:
+
+.. autoclass:: gravity_toolkit.scaling_factors
+   :members:

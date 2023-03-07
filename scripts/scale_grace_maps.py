@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 scale_grace_maps.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly scaled spatial fields, estimated scaling errors,
@@ -104,8 +104,6 @@ COMMAND LINE OPTIONS:
         index-HDF5
     --redistribute-removed: redistribute removed mass fields over the ocean
     --scale-file X: scaling factor file
-    --error-file X: scaling factor error file
-    --power-file X: scaling factor power file
     --log: Output log of files created for each job
     -V, --verbose: verbose output of processing run
     -M X, --mode X: Permissions mode of the files created
@@ -157,6 +155,8 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 03/2023: use new scaling_factors inheritance of spatial class
+        single input file with scaling factor variables
     Updated 02/2023: use love numbers class with additional attributes
     Updated 01/2023: refactored time series analysis functions
     Updated 12/2022: single implicit import of gravity toolkit
@@ -234,8 +234,6 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     REMOVE_FORMAT=None,
     REDISTRIBUTE_REMOVED=False,
     SCALE_FILE=None,
-    ERROR_FILE=None,
-    POWER_FILE=None,
     LANDMASK=None,
     OUTPUT_DIRECTORY=None,
     FILE_PREFIX=None,
@@ -294,22 +292,19 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         nlon = np.int64((360.0/dlon))
         nlat = np.int64((180.0/dlat))
 
+    # field mapping for input spatial variables
+    field_mapping = dict(lon='lon', lat='lat', data='kfactor',
+        error='error', magnitude='power')
     # read data for input scale files (ascii, netCDF4, HDF5)
     if (DATAFORM == 'ascii'):
-        kfactor = gravtk.spatial(spacing=[dlon,dlat], nlat=nlat,
-            nlon=nlon).from_ascii(SCALE_FILE, date=False)
-        k_error = gravtk.spatial(spacing=[dlon,dlat], nlat=nlat,
-            nlon=nlon).from_ascii(ERROR_FILE, date=False)
-        k_power = gravtk.spatial(spacing=[dlon,dlat], nlat=nlat,
-            nlon=nlon).from_ascii(POWER_FILE, date=False)
+        kfactor = gravtk.scaling_factors(spacing=[dlon,dlat], nlat=nlat,
+            nlon=nlon).from_ascii(SCALE_FILE)
     elif (DATAFORM == 'netCDF4'):
-        kfactor = gravtk.spatial().from_netCDF4(SCALE_FILE, date=False)
-        k_error = gravtk.spatial().from_netCDF4(ERROR_FILE, date=False)
-        k_power = gravtk.spatial().from_netCDF4(POWER_FILE, date=False)
+        kfactor = gravtk.scaling_factors().from_netCDF4(SCALE_FILE,
+            date=False, field_mapping=field_mapping)
     elif (DATAFORM == 'HDF5'):
-        kfactor = gravtk.spatial().from_HDF5(SCALE_FILE, date=False)
-        k_error = gravtk.spatial().from_HDF5(ERROR_FILE, date=False)
-        k_power = gravtk.spatial().from_HDF5(POWER_FILE, date=False)
+        kfactor = gravtk.scaling_factors().from_HDF5(SCALE_FILE,
+            date=False, field_mapping=field_mapping)
     # input data shape
     nlat,nlon = kfactor.shape
 
@@ -324,7 +319,6 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         POLE_TIDE=POLE_TIDE)
     # create harmonics object from GRACE/GRACE-FO data
     GRACE_Ylms = gravtk.harmonics().from_dict(Ylms)
-    GRACE_Ylms.directory = Ylms['directory']
     # use a mean file for the static field to remove
     if MEAN_FILE:
         # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
@@ -409,6 +403,7 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     fargs = (PROC,DREL,DSET,LMAX,order_str,ds_str,atm_str,GRACE_Ylms.month[0],
         GRACE_Ylms.month[-1], suffix[DATAFORM])
     delta_format = '{0}_{1}_{2}_DELTA_CLM_L{3:d}{4}{5}{6}_{7:03d}-{8:03d}.{9}'
+    GRACE_Ylms.directory = Ylms['directory']
     DELTA_FILE = os.path.join(GRACE_Ylms.directory,delta_format.format(*fargs))
     # check full path of the GRACE directory for delta file
     # if file was previously calculated: will read file
@@ -541,8 +536,13 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     scaled_power = grid.sum(power=2.0).power(0.5)
     # calculate residual leakage errors
     # scaled by ratio of GRACE and synthetic power
-    ratio = scaled_power.scale(k_power.power(-1).data)
-    error = k_error.scale(ratio.data)
+    ratio = scaled_power.scale(np.power(kfactor.magnitude,-1))
+    # replace invalid values with 0
+    ratio = np.nan_to_num(ratio.data, nan=0.0, posinf=0.0, neginf=0.0)
+    error = grid.copy()
+    error.data = kfactor.error*ratio
+    error.mask = np.copy(kfactor.mask)
+    error.update_mask()
 
     # output monthly error files to ascii, netCDF4 or HDF5
     fargs = (FILE_PREFIX, 'ERROR_', unit_str, LMAX, order_str, gw_str,
@@ -845,16 +845,10 @@ def arguments():
     parser.add_argument('--redistribute-removed',
         default=False, action='store_true',
         help='Redistribute removed mass fields over the ocean')
-    # scaling factor files
+    # scaling factor file
     parser.add_argument('--scale-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         required=True, help='Scaling factor file')
-    parser.add_argument('--error-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        required=True, help='Scaling factor error file')
-    parser.add_argument('--power-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        required=True, help='Scaling factor power file')
     # land-sea mask for redistributing fluxes
     lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
@@ -928,8 +922,6 @@ def main():
             REMOVE_FORMAT=args.remove_format,
             REDISTRIBUTE_REMOVED=args.redistribute_removed,
             SCALE_FILE=args.scale_file,
-            ERROR_FILE=args.error_file,
-            POWER_FILE=args.power_file,
             LANDMASK=args.mask,
             OUTPUT_DIRECTORY=args.output_directory,
             FILE_PREFIX=args.file_prefix,
