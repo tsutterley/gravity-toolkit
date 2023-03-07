@@ -29,6 +29,8 @@ UPDATE HISTORY:
         add attributes fetching to the from_dict and to_dict functions
         retrieve all root attributes from HDF5 and netCDF4 datasets
         only attempt to squeeze from final dimension in harmonics objects
+        add indexing of filenames to harmonics object iterator
+        use copy.copy and not numpy.copy in copy harmonics object function
     Updated 02/2023: fix expand case where data is a single degree
         fixed case where maximum spherical harmonic degree is 0
         use monospaced text for harmonics objects in docstrings
@@ -1302,11 +1304,16 @@ class harmonics(object):
         Copy a ``harmonics`` object to a new ``harmonics`` object
         """
         temp = harmonics(lmax=self.lmax, mmax=self.mmax)
+        # copy attributes or update attributes dictionary
+        if isinstance(self.attributes, list):
+            setattr(temp,'attributes',self.attributes)
+        elif isinstance(self.attributes, dict):
+            temp.attributes.update(self.attributes)
         # try to assign variables to self
         for key in ['clm','slm','time','month','shape','ndim','filename']:
             try:
                 val = getattr(self, key)
-                setattr(temp, key, np.copy(val))
+                setattr(temp, key, copy.copy(val))
             except AttributeError:
                 pass
         # assign ndim and shape attributes
@@ -1523,8 +1530,8 @@ class harmonics(object):
             temp.month = self.month[indice].copy()
         # subset filenames if applicable
         if getattr(self, 'filename'):
-            if isinstance(self.filename, list):
-                temp.filename = self.filename[indice]
+            if isinstance(self.filename, (list, tuple, np.ndarray)):
+                temp.filename = str(self.filename[indice])
             elif isinstance(self.filename, str):
                 temp.filename = copy.copy(self.filename)
         # assign ndim and shape attributes
@@ -1569,7 +1576,7 @@ class harmonics(object):
             # subset filenames if applicable
             if getattr(self, 'filename'):
                 if isinstance(self.filename, list):
-                    temp.filename.append(self.filename[i])
+                    temp.filename.append(str(self.filename[i]))
                 elif isinstance(self.filename, str):
                     temp.filename.append(self.filename)
         # assign ndim and shape attributes
@@ -1876,6 +1883,12 @@ class harmonics(object):
             temp.slm = self.slm[:,:,self.__index__].copy()
         except IndexError as exc:
             raise StopIteration from exc
+        # subset filename if applicable
+        if getattr(self, 'filename'):
+            if isinstance(self.filename, (list, tuple, np.ndarray)):
+                temp.filename = str(self.filename[self.__index__])
+            elif isinstance(self.filename, str):
+                temp.filename = copy.copy(self.filename)
         # add to index
         self.__index__ += 1
         return temp

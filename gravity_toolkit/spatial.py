@@ -23,6 +23,9 @@ UPDATE HISTORY:
     Updated 03/2023: customizable file-level attributes to netCDF4 and HDF5
         add attributes fetching to from_dict function
         retrieve all root attributes from HDF5 and netCDF4 datasets
+        fix indexing of filenames in single string case
+        add indexing of filenames to spatial object iterator
+        use copy.copy and not numpy.copy in copy spatial object function
     Updated 02/2023: use monospaced text to note spatial objects in docstrings
     Updated 12/2022: add software information to output HDF5 and netCDF4
         make spatial objects iterable and with length
@@ -1149,16 +1152,16 @@ class spatial(object):
         """
         temp = spatial(fill_value=self.fill_value)
         # copy attributes or update attributes dictionary
-        if isinstance(self.attributes,list):
+        if isinstance(self.attributes, list):
             setattr(temp,'attributes',self.attributes)
-        elif isinstance(self.attributes,dict):
+        elif isinstance(self.attributes, dict):
             temp.attributes.update(self.attributes)
         # assign variables to self
         var = ['lon','lat','data','mask','error','time','month','filename']
         for key in var:
             try:
                 val = getattr(self, key)
-                setattr(temp, key, np.copy(val))
+                setattr(temp, key, copy.copy(val))
             except AttributeError:
                 pass
         # get spacing and dimensions
@@ -1260,11 +1263,12 @@ class spatial(object):
         if date:
             temp.time = self.time[indice].copy()
             temp.month = self.month[indice].copy()
-        # subset filenames
-        try:
-            temp.filename = self.filename[indice] if getattr(self, 'filename') else None
-        except IndexError:
-            pass
+        # subset filenames if applicable
+        if getattr(self, 'filename'):
+            if isinstance(self.filename, (list, tuple, np.ndarray)):
+                temp.filename = str(self.filename[indice])
+            elif isinstance(self.filename, str):
+                temp.filename = copy.copy(self.filename)
         # get spacing and dimensions
         temp.update_spacing()
         temp.update_extents()
@@ -1320,9 +1324,12 @@ class spatial(object):
             # copy time dimensions
             temp.time[t] = self.time[i].copy()
             temp.month[t] = self.month[i].copy()
-            # subset filenmaes
+            # subset filename
             if getattr(self, 'filename'):
-                temp.filename.append(self.filename[i])
+                if isinstance(self.filename, (list, tuple, np.ndarray)):
+                    temp.filename.append(str(self.filename[i]))
+                elif isinstance(self.filename, str):
+                    temp.filename.append(self.filename)
         # remove singleton dimensions if importing a single value
         return temp.squeeze()
 
@@ -1695,6 +1702,12 @@ class spatial(object):
             temp.error = self.error[:,:,self.__index__].copy()
         except AttributeError:
             pass
+        # subset filename
+        if getattr(self, 'filename'):
+            if isinstance(self.filename, (list, tuple, np.ndarray)):
+                temp.filename = str(self.filename[self.__index__])
+            elif isinstance(self.filename, str):
+                temp.filename = copy.copy(self.filename)
         # copy dimensions
         temp.lon = self.lon.copy()
         temp.lat = self.lat.copy()
