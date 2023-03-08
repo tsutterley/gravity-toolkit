@@ -805,7 +805,7 @@ class spatial(object):
             if kwargs['date']:
                 kwargs['field_mapping']['time'] = kwargs['timename']
         # create attributes dictionary for output variables
-        if not all(key in kwargs['attributes'] for key in kwargs['field_mapping']):
+        if not all(key in kwargs['attributes'] for key in kwargs['field_mapping'].values()):
             # Defining attributes for longitude and latitude
             kwargs['attributes'][kwargs['field_mapping']['lon']] = {}
             kwargs['attributes'][kwargs['field_mapping']['lon']]['long_name'] = 'longitude'
@@ -949,7 +949,7 @@ class spatial(object):
             if kwargs['date']:
                 kwargs['field_mapping']['time'] = kwargs['timename']
         # create attributes dictionary for output variables
-        if not all(key in kwargs['attributes'] for key in kwargs['field_mapping']):
+        if not all(key in kwargs['attributes'] for key in kwargs['field_mapping'].values()):
             # Defining attributes for longitude and latitude
             kwargs['attributes'][kwargs['field_mapping']['lon']] = {}
             kwargs['attributes'][kwargs['field_mapping']['lon']]['long_name'] = 'longitude'
@@ -1411,63 +1411,6 @@ class spatial(object):
         temp.update_mask()
         return temp
 
-    def kfactor(self, var):
-        """
-        Calculate the scaling factor and scaling factor errors
-            from two ``spatial`` objects following [Landerer2012]_
-
-        Parameters
-        ----------
-        var: float
-            ``spatial`` object to used for scaling
-
-        Returns
-        -------
-        temp: obj
-            scaling factor and scaling factor error
-
-        References
-        ----------
-        .. [Landerer2012] F. W. Landerer and S. C. Swenson,
-            "Accuracy of scaled GRACE terrestrial water storage estimates",
-            *Water Resources Research*, 48(W04531), (2012).
-            `doi: 10.1029/2011WR011453 <https://doi.org/10.1029/2011WR011453>`_
-        """
-        # copy to not modify original inputs
-        temp1 = self.copy()
-        temp2 = var.copy()
-        # expand dimensions and replace invalid values with 0
-        temp1.expand_dims().replace_invalid(0.0)
-        temp2.expand_dims().replace_invalid(0.0)
-        # dimensions of input spatial object
-        nlat,nlon,nt = temp1.shape
-        # allocate for scaling factor and scaling factor error
-        temp = spatial(nlat=nlat, nlon=nlon, fill_value=0.0)
-        temp.data = np.zeros((nlat, nlon))
-        temp.error = np.zeros((nlat, nlon))
-        # copy latitude and longitude variables
-        temp.lon = np.copy(temp1.lon)
-        temp.lat = np.copy(temp1.lat)
-        # find valid data points and set mask
-        temp.mask = np.any(temp1.mask | temp2.mask, axis=2)
-        indy,indx = np.nonzero(np.logical_not(temp.mask))
-        # calculate point-based scaling factors as centroids
-        val1 = np.sum(temp1.data[indy,indx,:]*temp2.data[indy,indx,:],axis=1)
-        val2 = np.sum(temp1.data[indy,indx,:]**2,axis=1)
-        temp.data[indy,indx] = val1/val2
-        # calculate difference between scaled and original
-        variance = temp1.scale(temp.data).offset(-temp2.data)
-        # calculate scaling factor errors as RMS of variance
-        temp.error = np.sqrt((variance.sum(power=2).data)/nt)
-        # get spacing and dimensions
-        temp.update_spacing()
-        temp.update_extents()
-        temp.update_dimensions()
-        # update mask
-        temp.update_mask()
-        # return the scaling factors and scaling factor errors
-        return temp
-
     def mean(self, apply=False, indices=Ellipsis):
         """
         Compute mean spatial field and remove from data if specified
@@ -1718,3 +1661,243 @@ class spatial(object):
         # add to index
         self.__index__ += 1
         return temp
+
+# PURPOSE: additional routines for the spatial module
+# for outputting scaling factor data
+class scaling_factors(spatial):
+    """
+    Inheritance of ``spatial`` class for outputting scaling factors
+
+    Attributes
+    ----------
+    data: float
+        spatial scaling factor data
+    error: float
+        spatial scaling factor errors
+    magnitude: float
+        spatial magnitude of the original data
+    mask: bool
+        spatial grid mask
+    x: float
+        x-coordinate array
+    y: float
+        y-coordinate array
+    lon: float
+        grid longitudes
+    lat: float
+        grid latitudes
+    fill_value: float or NoneType, default None
+        invalid value for spatial grid data
+    attributes: dict
+        attributes of spatial variables
+    extent: list, default [None,None,None,None]
+        spatial grid bounds
+        ``[minimum x, maximum x, minimum y, maximum y]``
+    spacing: list, default [None,None]
+        grid step size ``[x, y]``
+    shape: tuple
+        dimensions of spatial object
+    ndim: int
+        number of dimensions of spatial object
+    filename: str
+        input or output filename
+
+    """
+    np.seterr(invalid='ignore')
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.error = None
+        self.magnitude = None
+
+    def from_ascii(self, filename, date=True, **kwargs):
+        """
+        Read a ``scaling_factors`` object from an ascii file
+
+        Parameters
+        ----------
+        filename: str
+            full path of input ascii file
+        date: bool, default True
+            ascii file has date information
+        compression: str or NoneType, default None
+            file compression type
+
+                - ``'gzip'``
+                - ``'zip'``
+                - ``'bytes'``
+        columns: list, default ['lon','lat','kfactor','error','magnitude']
+            variable names for each column
+        header: int, default 0
+            Number of rows of header lines to skip
+        verbose: bool, default False
+            print file and variable information
+        """
+        # set filename
+        self.case_insensitive_filename(filename)
+        # set default parameters
+        kwargs.setdefault('verbose',False)
+        kwargs.setdefault('compression',None)
+        default_columns = ['lon','lat','kfactor','error','magnitude']
+        kwargs.setdefault('columns',default_columns)
+        kwargs.setdefault('header',0)
+        # open the ascii file and extract contents
+        logging.info(self.filename)
+        if (kwargs['compression'] == 'gzip'):
+            # read input ascii data from gzip compressed file and split lines
+            with gzip.open(self.filename,'r') as f:
+                file_contents = f.read().decode('ISO-8859-1').splitlines()
+        elif (kwargs['compression'] == 'zip'):
+            # read input ascii data from zipped file and split lines
+            base,_ = os.path.splitext(self.filename)
+            with zipfile.ZipFile(self.filename) as z:
+                file_contents = z.read(base).decode('ISO-8859-1').splitlines()
+        elif (kwargs['compression'] == 'bytes'):
+            # read input file object and split lines
+            file_contents = self.filename.read().splitlines()
+        else:
+            # read input ascii file (.txt, .asc) and split lines
+            with open(self.filename, mode='r', encoding='utf8') as f:
+                file_contents = f.read().splitlines()
+        # compile regular expression operator for extracting numerical values
+        # from input ascii files of spatial data
+        regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[EeD][+-]?\d+)?'
+        rx = re.compile(regex_pattern, re.VERBOSE)
+        # output spatial dimensions
+        if (None not in self.extent):
+            self.lat = np.linspace(self.extent[3],self.extent[2],self.shape[0])
+            self.lon = np.linspace(self.extent[0],self.extent[1],self.shape[1])
+        else:
+            self.lat = np.zeros((self.shape[0]))
+            self.lon = np.zeros((self.shape[1]))
+        # output spatial data
+        self.data = np.zeros((self.shape[0],self.shape[1]))
+        self.mask = np.zeros((self.shape[0],self.shape[1]),dtype=bool)
+        # remove time from list of column names if not date
+        columns = [c for c in kwargs['columns'] if (c != 'time')]
+        # extract spatial data array and convert to matrix
+        # for each line in the file
+        header = kwargs['header']
+        for line in file_contents[header:]:
+            # extract columns of interest and assign to dict
+            # convert fortran exponentials if applicable
+            d = {c:r.replace('D','E') for c,r in zip(columns,rx.findall(line))}
+            # convert line coordinates to integers
+            ilon = np.int64(np.float64(d['lon'])/self.spacing[0])
+            ilat = np.int64((90.0-np.float64(d['lat']))//self.spacing[1])
+            # get scaling factor, error and magnitude
+            self.data[ilat,ilon] = np.float64(d['data'])
+            self.error[ilat,ilon] = np.float64(d['error'])
+            self.magnitude[ilat,ilon] = np.float64(d['magnitude'])
+            # set mask
+            self.mask[ilat,ilon] = False
+            # set latitude and longitude
+            self.lon[ilon] = np.float64(d['lon'])
+            self.lat[ilat] = np.float64(d['lat'])
+        # get spacing and dimensions
+        self.update_spacing()
+        self.update_extents()
+        self.update_dimensions()
+        self.update_mask()
+        return self
+
+    def to_ascii(self, filename, **kwargs):
+        """
+        Write a ``scaling_factors`` object to ascii file
+
+        Parameters
+        ----------
+        filename: str
+            full path of output ascii file
+        verbose: bool, default False
+            Output file and variable information
+        """
+        self.filename = os.path.expanduser(filename)
+        # set default verbosity and parameters
+        kwargs.setdefault('verbose',False)
+        logging.info(self.filename)
+        # open the output file
+        fid = open(self.filename, mode='w', encoding='utf8')
+        # write to file for each valid latitude and longitude
+        ii,jj = np.nonzero((self.data != self.fill_value) & (~self.mask))
+        for i,j in zip(ii,jj):
+            print((f'{self.lon[j]:10.4f} {self.lat[i]:10.4f} '
+                  f'{self.data[i,j]:12.4f} {self.error[i,j]:12.4f} '
+                  f'{self.magnitude[i,j]:12.4f}'), file=fid)
+        # close the output file
+        fid.close()
+
+    def kfactor(self, var):
+        """
+        Calculate the scaling factor and scaling factor errors
+        from two ``spatial`` or ``scaling_factors`` objects
+        following [Landerer2012]_
+
+        Parameters
+        ----------
+        var: float
+            ``spatial`` object to used for scaling
+
+        Returns
+        -------
+        temp: obj
+            scaling factor, scaling error and magnitude
+
+        References
+        ----------
+        .. [Landerer2012] F. W. Landerer and S. C. Swenson,
+            "Accuracy of scaled GRACE terrestrial water storage estimates",
+            *Water Resources Research*, 48(W04531), (2012).
+            `doi: 10.1029/2011WR011453 <https://doi.org/10.1029/2011WR011453>`_
+        """
+        # copy to not modify original inputs
+        temp1 = self.copy()
+        temp2 = var.copy()
+        # expand dimensions and replace invalid values with 0
+        temp1.expand_dims().replace_invalid(0.0)
+        temp2.expand_dims().replace_invalid(0.0)
+        # dimensions of input spatial object
+        nlat,nlon,nt = temp1.shape
+        # allocate for scaling factor and scaling factor error
+        temp = scaling_factors(nlat=nlat, nlon=nlon, fill_value=0.0)
+        temp.data = np.zeros((nlat, nlon))
+        temp.error = np.zeros((nlat, nlon))
+        # copy latitude and longitude variables
+        temp.lon = np.copy(temp1.lon)
+        temp.lat = np.copy(temp1.lat)
+        # find valid data points and set mask
+        temp.mask = np.any(temp1.mask | temp2.mask, axis=2)
+        indy,indx = np.nonzero(np.logical_not(temp.mask))
+        # calculate point-based scaling factors as centroids
+        val1 = np.sum(temp1.data[indy,indx,:]*temp2.data[indy,indx,:],axis=1)
+        val2 = np.sum(temp1.data[indy,indx,:]**2,axis=1)
+        temp.data[indy,indx] = val1/val2
+        # calculate difference between scaled and original
+        variance = temp1.scale(temp.data).offset(-temp2.data)
+        # calculate scaling factor errors as RMS of variance
+        temp.error = np.sqrt((variance.sum(power=2).data)/nt)
+        # calculate magnitude of original data
+        temp.magnitude = temp2.sum(power=2.0).power(0.5).data[:]
+        # get spacing and dimensions
+        temp.update_spacing()
+        temp.update_extents()
+        temp.update_dimensions()
+        # update mask
+        temp.update_mask()
+        # return the scaling factors and scaling factor errors
+        return temp
+
+    def update_mask(self):
+        """
+        Update the mask of the ``scaling_factors`` object
+        """
+        if self.fill_value is not None:
+            self.mask |= (self.data == self.fill_value)
+            self.mask |= np.isnan(self.data)
+            self.data[self.mask] = self.fill_value
+            # replace fill values within scaling factor errors
+            if getattr(self, 'error') is not None:
+                self.error[self.mask] = self.fill_value
+            # replace fill values within scaling factor magnitudes
+            if getattr(self, 'magnitude') is not None:
+                self.magnitude[self.mask] = self.fill_value
+        return self

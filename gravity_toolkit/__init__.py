@@ -53,7 +53,7 @@ from gravity_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 from gravity_toolkit.read_love_numbers import read_love_numbers, load_love_numbers, love_numbers
 from gravity_toolkit.read_SLR_harmonics import read_SLR_harmonics, convert_weekly
 from gravity_toolkit.sea_level_equation import sea_level_equation
-from gravity_toolkit.spatial import spatial
+from gravity_toolkit.spatial import spatial, scaling_factors
 from gravity_toolkit.units import units
 # get version number
 __version__ = gravity_toolkit.version.version
