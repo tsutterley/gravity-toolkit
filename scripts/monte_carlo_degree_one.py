@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 monte_carlo_degree_one.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
 
 Calculates degree 1 errors using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from OMCT/MPIOM in a Monte Carlo scheme
@@ -149,6 +149,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 03/2023: place matplotlib import within try/except statement
     Updated 02/2023: use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
         refactored time series analysis functions
@@ -203,13 +204,17 @@ import argparse
 import warnings
 import traceback
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from matplotlib.offsetbox import AnchoredText
-from matplotlib.ticker import MultipleLocator
 import gravity_toolkit as gravtk
 
 # attempt imports
+try:
+    import matplotlib.pyplot as plt
+    import matplotlib.cm as cm
+    import matplotlib.offsetbox
+    from matplotlib.ticker import MultipleLocator
+except (ImportError, ModuleNotFoundError) as exc:
+    warnings.filterwarnings("module")
+    warnings.warn("matplotlib not available", ImportWarning)
 try:
     import netCDF4
 except (ImportError, ModuleNotFoundError) as exc:
@@ -831,8 +836,9 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
         # add axis labels and adjust font sizes for axis ticks
         for i,lbl in enumerate(['C10','C11','S11']):
             # axis label
-            ax[i].add_artist(AnchoredText(lbl, pad=0.0, frameon=False, loc=2,
-                prop=dict(size=16,weight='bold')))
+            artist = matplotlib.offsetbox.AnchoredText(lbl, pad=0.0,
+                frameon=False, loc=2, prop=dict(size=16,weight='bold'))
+            ax[i].add_artist(artist)
             # axes tick adjustments
             for tick in ax[i].xaxis.get_major_ticks():
                 tick.label.set_fontsize(14)

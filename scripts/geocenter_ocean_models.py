@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter_ocean_models.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (03/2023)
 Plots the GRACE/GRACE-FO geocenter time series comparing results
     using different ocean bottom pressure estimates
 
@@ -19,6 +19,7 @@ COMMAND LINE OPTIONS:
     -O X, --ocean X: ocean bottom pressure products to use
 
 UPDATE HISTORY:
+    Updated 03/2023: place matplotlib import within try/except statement
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 05/2022: use argparse descriptions within documentation
@@ -35,14 +36,26 @@ from __future__ import print_function
 
 import os
 import argparse
+import warnings
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.rcParams['font.family'] = 'sans-serif'
-matplotlib.rcParams['font.sans-serif'] = ['Helvetica']
-matplotlib.rcParams['mathtext.default'] = 'regular'
-from matplotlib.offsetbox import AnchoredText
 import gravity_toolkit as gravtk
+
+# attempt imports
+try:
+    import matplotlib
+    import matplotlib.font_manager
+    import matplotlib.pyplot as plt
+    import matplotlib.offsetbox
+    # rebuilt the matplotlib fonts and set parameters
+    matplotlib.font_manager._load_fontmanager()
+    matplotlib.rcParams['font.family'] = 'sans-serif'
+    matplotlib.rcParams['font.sans-serif'] = ['Helvetica']
+    matplotlib.rcParams['mathtext.default'] = 'regular'
+except (ImportError, ModuleNotFoundError) as exc:
+    warnings.filterwarnings("module")
+    warnings.warn("matplotlib not available", ImportWarning)
+# ignore warnings
+warnings.filterwarnings("ignore")
 
 # PURPOSE: plots the GRACE/GRACE-FO geocenter time series
 # comparing results using different ocean bottom pressure estimates
@@ -103,8 +116,9 @@ def geocenter_ocean_models(grace_dir,PROC,DREL,MODEL,START_MON,END_MON,MISSING):
             color='0.5',ls='dashed',alpha=0.15)
         # axis label
         ax[j].set_title(ylabels[key], style='italic', fontsize=14)
-        ax[j].add_artist(AnchoredText(axes_labels[key], pad=0.,
-            prop=dict(size=16,weight='bold'), frameon=False, loc=2))
+        artist = matplotlib.offsetbox.AnchoredText(axes_labels[key], pad=0.,
+            prop=dict(size=16,weight='bold'), frameon=False, loc=2)
+        ax[j].add_artist(artist)
         ax[j].set_xlabel('Time [Yr]', fontsize=14)
         # set ticks
         xmin = 2002 + (START_MON + 1.0)//12.0

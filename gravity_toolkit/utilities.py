@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (03/2023)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
@@ -9,6 +9,7 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/lxml
 
 UPDATE HISTORY:
+    Updated 03/2023: place boto3 import within try/except statement
     Updated 01/2023: add default ssl context attribute with protocol
     Updated 12/2022: add variables for NASA DAAC and s3 providers
         add functions for managing and maintaining git repositories
@@ -49,7 +50,6 @@ import re
 import io
 import ssl
 import json
-import boto3
 import netrc
 import ftplib
 import shutil
@@ -74,6 +74,15 @@ else:
     from http.cookiejar import CookieJar
     from urllib.parse import urlencode
     import urllib.request as urllib2
+
+# attempt imports
+try:
+    import boto3
+except (ImportError, ModuleNotFoundError) as exc:
+    warnings.filterwarnings("module")
+    warnings.warn("boto3 not available", ImportWarning)
+# ignore warnings
+warnings.filterwarnings("ignore")
 
 # PURPOSE: get absolute path within a package from a relative path
 def get_data_path(relpath):

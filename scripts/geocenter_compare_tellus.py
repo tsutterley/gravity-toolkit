@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter_compare_tellus.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (03/2023)
 Plots the GRACE/GRACE-FO geocenter time series for different
     GRACE/GRACE-FO processing centers comparing with the
     JPL GRACE Tellus product
@@ -17,6 +17,7 @@ COMMAND LINE OPTIONS:
     -M X, --missing X: Missing GRACE months in time series
 
 UPDATE HISTORY:
+    Updated 03/2023: place matplotlib import within try/except statement
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 05/2022: use argparse descriptions within documentation
@@ -28,18 +29,25 @@ from __future__ import print_function
 
 import os
 import argparse
+import warnings
 import numpy as np
-import matplotlib
-import matplotlib.font_manager
-import matplotlib.pyplot as plt
-from matplotlib.offsetbox import AnchoredText
 import gravity_toolkit as gravtk
-
-# rebuilt the matplotlib fonts and set parameters
-matplotlib.font_manager._load_fontmanager()
-matplotlib.rcParams['font.family'] = 'sans-serif'
-matplotlib.rcParams['font.sans-serif'] = ['Helvetica']
-matplotlib.rcParams['mathtext.default'] = 'regular'
+# attempt imports
+try:
+    import matplotlib
+    import matplotlib.font_manager
+    import matplotlib.pyplot as plt
+    import matplotlib.offsetbox
+    # rebuilt the matplotlib fonts and set parameters
+    matplotlib.font_manager._load_fontmanager()
+    matplotlib.rcParams['font.family'] = 'sans-serif'
+    matplotlib.rcParams['font.sans-serif'] = ['Helvetica']
+    matplotlib.rcParams['mathtext.default'] = 'regular'
+except (ImportError, ModuleNotFoundError) as exc:
+    warnings.filterwarnings("module")
+    warnings.warn("matplotlib not available", ImportWarning)
+# ignore warnings
+warnings.filterwarnings("ignore")
 
 # PURPOSE: plots the GRACE/GRACE-FO geocenter time series
 def geocenter_compare_tellus(grace_dir,DREL,START_MON,END_MON,MISSING):
@@ -162,8 +170,9 @@ def geocenter_compare_tellus(grace_dir,DREL,START_MON,END_MON,MISSING):
             vs._dashes = (4,2)
             # axis label
             ax[j].set_title(ylabels[key], style='italic', fontsize=14)
-            ax[j].add_artist(AnchoredText(axes_labels[key], pad=0.,
-                prop=dict(size=16,weight='bold'), frameon=False, loc=2))
+            artist = matplotlib.offsetbox.AnchoredText(axes_labels[key], pad=0.,
+                prop=dict(size=16, weight='bold'), frameon=False, loc=2)
+            ax[j].add_artist(artist)
             ax[j].set_xlabel('Time [Yr]', fontsize=14)
             # set ticks
             xmin = 2002 + (START_MON + 1.0)//12.0

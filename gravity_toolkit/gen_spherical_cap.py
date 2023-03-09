@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_spherical_cap.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
 Calculates gravitational spherical harmonic coefficients for a spherical cap
 
 Spherical cap derivation from Longman (1962), Farrell (1972), Pollack (1973)
@@ -64,6 +64,7 @@ REFERENCES:
         https://doi.org/10.1007/s00190-011-0522-7
 
 UPDATE HISTORY:
+    Updated 03/2023: simplified unit degree factors using units class
     Updated 02/2023: set custom units as top option in if/else statements
     Updated 01/2023: refactored associated legendre polynomials
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -167,14 +168,12 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     if MMAX is None:
         MMAX = np.copy(LMAX)
 
-    # Earth Parameters
-    factors = gravity_toolkit.units(lmax=LMAX)
-    rho_e = factors.rho_e# Average Density of the Earth [g/cm^3]
-    rad_e = factors.rad_e# Average Radius of the Earth [cm]
-
     # convert lon and lat to radians
     phi = lon*np.pi/180.0# Longitude in radians
     th = (90.0 - lat)*np.pi/180.0# Colatitude in radians
+
+    # Earth Parameters
+    factors = gravity_toolkit.units(lmax=LMAX).spatial(*LOVE)
 
     # Converting input area into an equivalent spherical cap radius
     # Following Jacob et al. (2012) Equation 4 and 5
@@ -189,11 +188,11 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
         # radius in centimeters
         radius_cm = np.sqrt(AREA/np.pi)
         # Calculating angular radius of spherical cap
-        alpha = (radius_cm/rad_e)
+        alpha = (radius_cm/factors.rad_e)
     elif (RAD_KM != 0):
         # if given spherical cap radius in kilometers
         # Calculating angular radius of spherical cap
-        alpha = (1e5*RAD_KM)/rad_e
+        alpha = (1e5*RAD_KM)/factors.rad_e
     else:
         raise ValueError('Input RAD_CAP, AREA or RAD_KM of spherical cap')
 
@@ -207,7 +206,7 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     elif (UNITS == 2):
         # Input data is in gigatonnes (Gt)
         # calculate spherical cap area from angular radius
-        area = np.pi*(alpha*rad_e)**2
+        area = np.pi*(alpha*factors.rad_e)**2
         # the 1.e15 converts from gigatons/cm^2 to cm of water
         # 1 g/cm^3 = 1000 kg/m^3 = density water
         # 1 Gt = 1 Pg = 1.e15 g
@@ -220,22 +219,9 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     else:
         raise ValueError(f'Unknown units {UNITS}')
 
-    # Coefficient for calculating Stokes coefficients for a spherical cap
-    # From Jacob et al (2012), Farrell (1972) and Longman (1962)
-    coeff = 3.0/(rad_e*rho_e)
-
-    # extract arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = LOVE
-
-    # calculate array of l values ranging from 0 to LMAX (harmonic degrees)
-    # LMAX+1 as there are LMAX+1 elements between 0 and LMAX
-    l = np.arange(LMAX+1)
     # calculate SH degree dependent factors to convert from coefficients
     # of mass into normalized geoid coefficients
-    # NOTE: these are not the normal factors for converting to geoid due
-    # to the square of the denominator
-    # kl[l] is the Load Love Number of degree l
-    dfactor = (1.0 + kl[l])/((1.0 + 2.0*l)**2)
+    dfactor = 4.0*np.pi*factors.cmwe/(1.0 + 2.0*factors.l)
 
     # Calculating plms of the spherical caps
     # From Longman et al. (1962)
@@ -261,7 +247,7 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     # this would be the plm for the center of the spherical cap
     # used to rotate the spherical cap to point lat/lon
     if PLM is None:
-        plmout,dplm = plm_holmes(LMAX, np.cos(th))
+        plmout,_ = plm_holmes(LMAX, np.cos(th))
         # truncate precomputed plms to order
         plmout = np.squeeze(plmout[:,:MMAX+1,:])
     else:
@@ -297,9 +283,9 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
         # to get a field of spherical harmonics
         yclm[l,m] = plm[l,m]*dcos[m]
         yslm[l,m] = plm[l,m]*dsin[m]
-        # multiplying by coefficients to convert to geoid coefficients
-        Ylms.clm[l,m] = coeff*dfactor[l]*yclm[l,m]
-        Ylms.slm[l,m] = coeff*dfactor[l]*yslm[l,m]
+        # multiplying by factors to convert to geoid coefficients
+        Ylms.clm[l,m] = dfactor[l]*yclm[l,m]
+        Ylms.slm[l,m] = dfactor[l]*yslm[l,m]
 
     # return the output spherical harmonics object
     return Ylms

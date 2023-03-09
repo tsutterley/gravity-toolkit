@@ -2,7 +2,6 @@ name: gravity-docs
 channels:
   - conda-forge
 dependencies:
-  - boto3
   - docutils<0.18
   - fontconfig
   - freetype
@@ -10,8 +9,6 @@ dependencies:
   - graphviz
   - lxml
   - markupsafe==2.0.1
-  - matplotlib
-  - notebook
   - numpy
   - numpydoc
   - pip
@@ -21,7 +18,6 @@ dependencies:
   - scipy
   - sphinx
   - sphinx_rtd_theme
-  - tk
   - pip:
      - sphinx-argparse>=0.4
      - ..

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_degree_one.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
 
 Calculates degree 1 variations using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from ECCO and OMCT/MPIOM
@@ -159,6 +159,7 @@ REFERENCES:
         https://doi.org/10.1029/2007JB005338
 
 UPDATE HISTORY:
+    Updated 03/2023: place matplotlib import within try/except statement
     Updated 02/2023: use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
     Updated 12/2022: single implicit import of gravity toolkit
@@ -245,13 +246,17 @@ import argparse
 import warnings
 import traceback
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from matplotlib.offsetbox import AnchoredText
-from matplotlib.ticker import MultipleLocator
 import gravity_toolkit as gravtk
 
 # attempt imports
+try:
+    import matplotlib.pyplot as plt
+    import matplotlib.cm as cm
+    import matplotlib.offsetbox
+    from matplotlib.ticker import MultipleLocator
+except (ImportError, ModuleNotFoundError) as exc:
+    warnings.filterwarnings("module")
+    warnings.warn("matplotlib not available", ImportWarning)
 try:
     import netCDF4
 except (ImportError, ModuleNotFoundError) as exc:
@@ -942,8 +947,9 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         fig_labels = ['C10','C11','S11']
         for i in range(3):
             # axis label
-            ax[i].add_artist(AnchoredText(fig_labels[i], pad=0.,
-                prop=dict(size=16,weight='bold'), frameon=False, loc=2))
+            artist = matplotlib.offsetbox.AnchoredText(fig_labels[i], pad=0.,
+                prop=dict(size=16,weight='bold'), frameon=False, loc=2)
+            ax[i].add_artist(artist)
             # axes tick adjustments
             for tick in ax[i].xaxis.get_major_ticks():
                 tick.label.set_fontsize(14)
@@ -993,8 +999,9 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         fig_labels = ['C10','C11','S11']
         for i in range(3):
             # axis label
-            ax[i].add_artist(AnchoredText(fig_labels[i], pad=0.,
-                prop=dict(size=16,weight='bold'), frameon=False, loc=2))
+            artist = matplotlib.offsetbox.AnchoredText(fig_labels[i], pad=0.,
+                prop=dict(size=16,weight='bold'), frameon=False, loc=2)
+            ax[i].add_artist(artist)
             # axes tick adjustments
             for tick in ax[i].xaxis.get_major_ticks():
                 tick.label.set_fontsize(14)
