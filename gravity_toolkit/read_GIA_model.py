@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GIA_model.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
 
 Reads GIA data files that can come in various formats depending on the group
 Outputs spherical harmonics for the GIA rates and the GIA model parameters
@@ -96,6 +96,7 @@ REFERENCES:
     https://doi.org/10.1002/2016JB013844
 
 UPDATE HISTORY:
+    Updated 03/2023: case insensitive searching for HDF5 and netCDF4 attributes
     Updated 02/2023: use monospaced text for harmonics objects in gia docstring
     Updated 12/2022: made interited GIA model harmonics class
         set default parameters, title, reference and url as None
@@ -639,15 +640,16 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         # log GIA file if debugging
         logging.debug(f'Reading GIA file: {input_file}')
         # reading GIA data from reformatted netCDF4 and HDF5 files
-        Ylms = harmonics().from_file(input_file,
-            format=GIA, date=False)
+        Ylms = harmonics().from_file(input_file, format=GIA, date=False)
         Ylms.truncate(LMAX)
         gia_Ylms.update(Ylms.to_dict())
         # copy title and reference for model
         for att_name in ('title','citation','reference','url'):
             try:
-                gia_Ylms[att_name] = Ylms.attributes[att_name]
-            except Exception as exc:
+                s, = [s for s in Ylms.attributes['ROOT'].keys() if
+                    re.match(att_name,s,re.I)]
+                gia_Ylms[att_name] = Ylms.attributes['ROOT'][s]
+            except (ValueError, KeyError, AttributeError):
                 gia_Ylms[att_name] = None
 
     # GIA model parameter strings

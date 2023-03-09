@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_disc_load.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
 Calculates gravitational spherical harmonic coefficients for a uniform disc load
 
 CALLING SEQUENCE:
@@ -55,6 +55,7 @@ REFERENCES:
         https://doi.org/10.1007/s00190-011-0522-7
 
 UPDATE HISTORY:
+    Updated 03/2023: simplified unit degree factors using units class
     Updated 02/2023: set custom units as top option in if/else statements
     Updated 01/2023: refactored associated legendre polynomials
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -146,18 +147,16 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
     if MMAX is None:
         MMAX = np.copy(LMAX)
 
-    # Earth Parameters
-    factors = gravity_toolkit.units(lmax=LMAX)
-    rho_e = factors.rho_e# Average Density of the Earth [g/cm^3]
-    rad_e = factors.rad_e# Average Radius of the Earth [cm]
-
     # convert lon and lat to radians
     phi = lon*np.pi/180.0# Longitude in radians
     th = (90.0 - lat)*np.pi/180.0# Colatitude in radians
 
+    # Earth Parameters
+    factors = gravity_toolkit.units(lmax=LMAX).spatial(*LOVE)
+
     # convert input area into cm^2 and then divide by area of a half sphere
     # alpha will be 1 - the ratio of the input area with the half sphere
-    alpha = (1.0 - 1e10*area/(2.0*np.pi*rad_e**2))
+    alpha = (1.0 - 1e10*area/(2.0*np.pi*factors.rad_e**2))
 
     # Calculate factor to convert from input units into g/cm^2
     if isinstance(UNITS, (list, np.ndarray)):
@@ -178,23 +177,9 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
     else:
         raise ValueError(f'Unknown units {UNITS}')
 
-    # Coefficient for calculating Stokes coefficients for a disc load
-    # From Jacob et al (2012), Farrell (1972) and Longman (1962)
-    coeff = 3.0/(rad_e*rho_e)
-
-    # extract arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = LOVE
-
-    # calculate array of l values ranging from 0 to LMAX (harmonic degrees)
-    # LMAX+1 as there are LMAX+1 elements between 0 and LMAX
-    l = np.arange(LMAX+1)
-
     # calculate SH degree dependent factors to convert from coefficients
     # of mass into normalized geoid coefficients
-    # NOTE: these are not the normal factors for converting to geoid due
-    # to the square of the denominator
-    # kl[l] is the Load Love Number of degree l
-    dfactor = (1.0 + kl[l])/((1.0 + 2.0*l)**2)
+    dfactor = 4.0*np.pi*factors.cmwe/(1.0 + 2.0*factors.l)
 
     # Calculating plms of the disc
     # allocating for constructed array
@@ -216,7 +201,7 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
     # this would be the plm for the center of the disc load
     # used to rotate the disc load to point lat/lon
     if PLM is None:
-        plmout,dplm = plm_holmes(LMAX, np.cos(th))
+        plmout,_ = plm_holmes(LMAX, np.cos(th))
         # truncate precomputed plms to order
         plmout = np.squeeze(plmout[:,:MMAX+1,:])
     else:
@@ -252,9 +237,9 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
         # to get a field of spherical harmonics
         yclm[l,m] = plm[l,m]*dcos[m]
         yslm[l,m] = plm[l,m]*dsin[m]
-        # multiplying by coefficients to convert to geoid coefficients
-        Ylms.clm[l,m] = coeff*dfactor[l]*yclm[l,m]
-        Ylms.slm[l,m] = coeff*dfactor[l]*yslm[l,m]
+        # multiplying by factors to convert to geoid coefficients
+        Ylms.clm[l,m] = dfactor[l]*yclm[l,m]
+        Ylms.slm[l,m] = dfactor[l]*yslm[l,m]
 
     # return the output spherical harmonics object
     return Ylms
