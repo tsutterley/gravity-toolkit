@@ -49,7 +49,6 @@ from gravity_toolkit.ocean_stokes import ocean_stokes
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
 from gravity_toolkit.read_GIA_model import read_GIA_model, gia
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
-from gravity_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 from gravity_toolkit.read_love_numbers import read_love_numbers, load_love_numbers, love_numbers
 from gravity_toolkit.read_SLR_harmonics import read_SLR_harmonics, convert_weekly
 from gravity_toolkit.sea_level_equation import sea_level_equation
