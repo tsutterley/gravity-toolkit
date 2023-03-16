@@ -157,6 +157,7 @@ REFERENCES:
 UPDATE HISTORY:
     Updated 03/2023: use new scaling_factors inheritance of spatial class
         single input file with scaling factor variables
+        updated inputs to spatial from_ascii function
     Updated 02/2023: use love numbers class with additional attributes
     Updated 01/2023: refactored time series analysis functions
     Updated 12/2022: single implicit import of gravity toolkit
@@ -297,8 +298,8 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         error='error', magnitude='power')
     # read data for input scale files (ascii, netCDF4, HDF5)
     if (DATAFORM == 'ascii'):
-        kfactor = gravtk.scaling_factors(spacing=[dlon,dlat], nlat=nlat,
-            nlon=nlon).from_ascii(SCALE_FILE)
+        kfactor = gravtk.scaling_factors().from_ascii(SCALE_FILE,
+            spacing=[dlon,dlat], nlat=nlat, nlon=nlon)
     elif (DATAFORM == 'netCDF4'):
         kfactor = gravtk.scaling_factors().from_netCDF4(SCALE_FILE,
             date=False, field_mapping=field_mapping)

@@ -28,9 +28,10 @@ def test_harmonics():
 
     # read input spatial distribution file
     distribution_file = 'out.green_ice.grid.0.5.2008.cmh20.gz'
-    input_distribution = gravtk.spatial(spacing=[0.5,0.5], nlat=361,
-        nlon=721, extent=[0,360.0,-90,90]).from_ascii(
-        os.path.join(filepath,distribution_file),date=False,compression='gzip')
+    input_distribution = gravtk.spatial().from_ascii(
+        os.path.join(filepath,distribution_file), date=False,
+        spacing=[0.5,0.5], nlat=361, nlon=721, extent=[0,360.0,-90,90],
+        compression='gzip')
 
     # spherical harmonic parameters
     # maximum spherical harmonic degree
@@ -83,9 +84,10 @@ def test_harmonics():
 
     # read input and output spatial distribution files
     distribution_file = 'out.combine.green_ice.0.5.2008.60.gz'
-    output_distribution = gravtk.spatial(spacing=[0.5,0.5], nlat=361,
-        nlon=721, extent=[0,360.0,-90,90]).from_ascii(
-        os.path.join(filepath,distribution_file),date=False,compression='gzip')
+    output_distribution = gravtk.spatial().from_ascii(
+        os.path.join(filepath,distribution_file), date=False,
+        spacing=[0.5,0.5], nlat=361, nlon=721, extent=[0,360.0,-90,90],
+        compression='gzip')
 
     # check that data is equal to machine precision
     difference_distribution = test_distribution - output_distribution.data

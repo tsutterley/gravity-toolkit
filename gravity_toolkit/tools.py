@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 tools.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (03/2023)
 Jupyter notebook, user interface and plotting tools
 
 PYTHON DEPENDENCIES:
@@ -27,6 +27,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 03/2023: add wrap longitudes function to change convention
     Updated 06/2022: place matplotlib imports within try/except
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 06/2022: place ipython and tkinter imports within try/except
@@ -1093,6 +1094,20 @@ def custom_colormap(N, map_name, **kwargs):
     cm.register_cmap(name=map_name, cmap=cmap)
     # return the colormap
     return cmap
+
+# PURPOSE: adjusts longitudes to be -180:180
+def wrap_longitudes(lon):
+    """
+    Wraps longitudes to range from -180 to +180
+
+    Parameters
+    ----------
+    lon: float
+        longitude (degrees east)
+    """
+    phi = np.arctan2(np.sin(lon*np.pi/180.0), np.cos(lon*np.pi/180.0))
+    # convert phi from radians to degrees
+    return phi*180.0/np.pi
 
 # PURPOSE: parallels the matplotlib basemap shiftgrid function
 def shift_grid(lon0, data, lon, CYCLIC=360.0):

@@ -31,6 +31,7 @@ UPDATE HISTORY:
         only attempt to squeeze from final dimension in harmonics objects
         add indexing of filenames to harmonics object iterator
         use copy.copy and not numpy.copy in copy harmonics object function
+        convert shape and ndim to harmonic class properties
     Updated 02/2023: fix expand case where data is a single degree
         fixed case where maximum spherical harmonic degree is 0
         use monospaced text for harmonics objects in docstrings
@@ -138,10 +139,6 @@ class harmonics(object):
         GRACE/GRACE-FO months variable of the spherical harmonics
     attributes: dict
         attributes of ``harmonics`` variables
-    shape: tuple
-        dimensions of ``harmonics`` object
-    ndim: int
-        number of dimensions of ``harmonics`` object
     filename: str
         input or output filename
     flattened: bool
@@ -163,8 +160,6 @@ class harmonics(object):
         self.l=np.arange(self.lmax+1) if (self.lmax is not None) else None
         self.m=np.arange(self.mmax+1) if (self.mmax is not None) else None
         self.attributes=dict()
-        self.shape=None
-        self.ndim=None
         self.filename=None
         self.flattened=False
         # iterator
@@ -258,9 +253,6 @@ class harmonics(object):
             l1,m1 = np.array([l1,m1],dtype=np.int64)
             self.lmax = np.copy(l1) if (l1 > self.lmax) else self.lmax
             self.mmax = np.copy(m1) if (m1 > self.mmax) else self.mmax
-        # output spherical harmonics dimensions array
-        self.l = np.arange(self.lmax+1)
-        self.m = np.arange(self.mmax+1)
         # output spherical harmonics data
         self.clm = np.zeros((self.lmax+1,self.mmax+1))
         self.slm = np.zeros((self.lmax+1,self.mmax+1))
@@ -279,7 +271,7 @@ class harmonics(object):
             # convert fortran exponentials if applicable
             self.clm[ll,mm] = np.float64(clm1.replace('D','E'))
             self.slm[ll,mm] = np.float64(slm1.replace('D','E'))
-        # assign shape and ndim attributes
+        # assign degree and order fields
         self.update_dimensions()
         return self
 
@@ -369,7 +361,7 @@ class harmonics(object):
         # Closing the NetCDF file
         fileID.close()
         # remove singleton dimensions and
-        # assign shape and ndim attributes
+        # assign degree and order fields
         self.squeeze(update_dimensions=True)
         return self
 
@@ -471,7 +463,7 @@ class harmonics(object):
         # Closing the HDF5 file
         fileID.close()
         # remove singleton dimensions and
-        # assign shape and ndim attributes
+        # assign degree and order fields
         self.squeeze(update_dimensions=True)
         return self
 
@@ -515,8 +507,6 @@ class harmonics(object):
         self.slm = Ylms['slm'].copy()
         self.lmax = np.int64(Ylms['max_degree'])
         self.mmax = np.int64(Ylms['max_degree'])
-        self.l = np.arange(self.lmax+1)
-        self.m = np.arange(self.mmax+1)
         # copy date variables
         if kwargs['date']:
             self.time = Ylms['time'].copy()
@@ -526,7 +516,7 @@ class harmonics(object):
         self.GM = np.float64(Ylms['earth_gravity_constant'])
         self.R = np.float64(Ylms['radius'])
         self.tide = Ylms['tide_system']
-        # assign shape and ndim attributes
+        # assign degree and order fields
         self.update_dimensions()
         return self
 
@@ -561,7 +551,7 @@ class harmonics(object):
         self.month = np.int64(calendar_to_grace(self.time))
         # copy header information for gravity model
         self.header = Ylms['header']
-        # assign shape and ndim attributes
+        # assign degree and order fields
         self.update_dimensions()
         return self
 
@@ -643,9 +633,6 @@ class harmonics(object):
         # truncate to maximum degree and order
         self.lmax = np.min([d.lmax for d in object_list])
         self.mmax = np.min([d.mmax for d in object_list])
-        # output degree and order
-        self.l = np.arange(self.lmax+1)
-        self.m = np.arange(self.mmax+1)
         # create output harmonics
         self.clm = np.zeros((self.lmax+1,self.mmax+1,n))
         self.slm = np.zeros((self.lmax+1,self.mmax+1,n))
@@ -668,7 +655,7 @@ class harmonics(object):
         # adjust months to fix special cases if necessary
         if kwargs['date']:
             self.month = adjust_months(self.month)
-        # assign shape and ndim attributes
+        # assign degree and order fields
         self.update_dimensions()
         # clear the input list to free memory
         if kwargs['clear']:
@@ -740,7 +727,7 @@ class harmonics(object):
         self.mmax = np.max(d['m'])
         # add attributes to root if in dictionary
         self.attributes['ROOT'] = d.get('attributes')
-        # assign shape and ndim attributes
+        # assign degree and order fields
         self.update_dimensions()
         return self
 
@@ -1155,10 +1142,10 @@ class harmonics(object):
         """
         Convert a ``harmonics`` object to a masked numpy array
         """
-        # reassign shape and ndim attributes
+        # assign degree and order fields
         self.update_dimensions()
         # verify dimensions and get shape
-        ndim_prev = self.ndim
+        ndim_prev = np.copy(self.ndim)
         self.expand_dims()
         l1,m1,nt = self.shape
         # create single triangular matrices with harmonics
@@ -1181,10 +1168,8 @@ class harmonics(object):
 
     def update_dimensions(self):
         """
-        Update the dimensions of the ``harmonics`` object
+        Update the dimension variables of the ``harmonics`` object
         """
-        self.ndim = self.clm.ndim
-        self.shape = self.clm.shape
         # calculate spherical harmonic degree and order (0 is falsy)
         self.l=np.arange(self.lmax+1) if (self.lmax is not None) else None
         self.m=np.arange(self.mmax+1) if (self.mmax is not None) else None
@@ -1199,7 +1184,7 @@ class harmonics(object):
         temp: obj
             harmonic object to be added
         """
-        # reassign shape and ndim attributes
+        # assign degree and order fields
         self.update_dimensions()
         temp.update_dimensions()
         l1 = self.lmax+1 if (temp.lmax > self.lmax) else temp.lmax+1
@@ -1225,7 +1210,7 @@ class harmonics(object):
         temp: obj
             harmonic object to be subtracted
         """
-        # reassign shape and ndim attributes
+        # assign degree and order fields
         self.update_dimensions()
         temp.update_dimensions()
         l1 = self.lmax+1 if (temp.lmax > self.lmax) else temp.lmax+1
@@ -1251,7 +1236,7 @@ class harmonics(object):
         temp: obj
             harmonic object to be multiplied
         """
-        # reassign shape and ndim attributes
+        # assign degree and order fields
         self.update_dimensions()
         temp.update_dimensions()
         l1 = self.lmax+1 if (temp.lmax > self.lmax) else temp.lmax+1
@@ -1277,7 +1262,7 @@ class harmonics(object):
         temp: obj
             harmonic object to be divided
         """
-        # reassign shape and ndim attributes
+        # assign degree and order fields
         self.update_dimensions()
         temp.update_dimensions()
         l1 = self.lmax+1 if (temp.lmax > self.lmax) else temp.lmax+1
@@ -1310,13 +1295,13 @@ class harmonics(object):
         elif isinstance(self.attributes, dict):
             temp.attributes.update(self.attributes)
         # try to assign variables to self
-        for key in ['clm','slm','time','month','shape','ndim','filename']:
+        for key in ['clm','slm','time','month','filename']:
             try:
                 val = getattr(self, key)
                 setattr(temp, key, copy.copy(val))
             except AttributeError:
                 pass
-        # assign ndim and shape attributes
+        # assign degree and order fields
         temp.update_dimensions()
         return temp
 
@@ -1338,7 +1323,7 @@ class harmonics(object):
         else:
             self.clm = np.zeros((self.lmax+1, self.mmax+1))
             self.slm = np.zeros((self.lmax+1, self.mmax+1))
-        # assign ndim and shape attributes
+        # assign degree and order fields
         self.update_dimensions()
         return self
 
@@ -1354,7 +1339,7 @@ class harmonics(object):
                 setattr(temp, key, np.zeros_like(val))
             except AttributeError:
                 pass
-        # assign ndim and shape attributes
+        # assign degree and order fields
         temp.update_dimensions()
         return temp
 
@@ -1377,12 +1362,9 @@ class harmonics(object):
         elif (self.ndim == 1) and self.flattened:
             self.clm = self.clm[:,None]
             self.slm = self.slm[:,None]
-        # reassign ndim and shape attributes
+        # assign degree and order fields
         if update_dimensions:
             self.update_dimensions()
-        else:
-            self.ndim = self.clm.ndim
-            self.shape = self.clm.shape
         # return the expanded harmonics object
         return self
 
@@ -1403,7 +1385,7 @@ class harmonics(object):
             self.month = np.squeeze(self.month)
         except ValueError as exc:
             pass
-        # reassign ndim and shape attributes
+        # assign degree and order fields
         if update_dimensions:
             self.update_dimensions()
         else:
@@ -1455,9 +1437,6 @@ class harmonics(object):
                     temp.slm[lm,:] = self.slm[l,m,:]
                 # add 1 to lm counter variable
                 lm += 1
-        # assign ndim and shape attributes
-        temp.ndim = temp.clm.ndim
-        temp.shape = temp.clm.shape
         # update flattened attribute
         temp.flattened = True
         # return the flattened arrays
@@ -1503,7 +1482,7 @@ class harmonics(object):
                 temp.slm[l,m,:] = self.slm[lm,:]
         # update flattened attribute
         temp.flattened = False
-        # assign ndim and shape attributes
+        # assign degree and order fields
         temp.update_dimensions()
         # return the expanded harmonics object
         return temp
@@ -1520,7 +1499,7 @@ class harmonics(object):
             ``harmonics`` objects contain date information
         """
         # output harmonics object
-        temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
+        temp = harmonics(lmax=np.copy(self.lmax), mmax=np.copy(self.mmax))
         # subset output harmonics
         temp.clm = self.clm[:,:,indice].copy()
         temp.slm = self.slm[:,:,indice].copy()
@@ -1534,7 +1513,7 @@ class harmonics(object):
                 temp.filename = str(self.filename[indice])
             elif isinstance(self.filename, str):
                 temp.filename = copy.copy(self.filename)
-        # assign ndim and shape attributes
+        # assign degree and order fields
         temp.update_dimensions()
         # return the subsetted object
         return temp
@@ -1560,7 +1539,7 @@ class harmonics(object):
         # indices to sort data objects
         months_list = [i for i,m in enumerate(self.month) if m in months]
         # output harmonics object
-        temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
+        temp = harmonics(lmax=np.copy(self.lmax), mmax=np.copy(self.mmax))
         # create output harmonics
         temp.clm = np.zeros((temp.lmax+1,temp.mmax+1,n))
         temp.slm = np.zeros((temp.lmax+1,temp.mmax+1,n))
@@ -1579,7 +1558,7 @@ class harmonics(object):
                     temp.filename.append(str(self.filename[i]))
                 elif isinstance(self.filename, str):
                     temp.filename.append(self.filename)
-        # assign ndim and shape attributes
+        # assign degree and order fields
         temp.update_dimensions()
         # remove singleton dimensions if importing a single value
         return temp.squeeze()
@@ -1621,7 +1600,7 @@ class harmonics(object):
             self.slm = np.zeros((self.lmax+1,self.mmax+1))
             self.clm[lmin:l1,:m1] = temp.clm[lmin:l1,:m1].copy()
             self.slm[lmin:l1,:m1] = temp.slm[lmin:l1,:m1].copy()
-        # reassign ndim and shape attributes
+        # assign degree and order fields
         self.update_dimensions()
         # return the truncated or expanded harmonics object
         return self
@@ -1637,7 +1616,7 @@ class harmonics(object):
         indices: int, default Ellipsis
             indices of input ``harmonics`` object to compute mean
         """
-        temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
+        temp = harmonics(lmax=np.copy(self.lmax), mmax=np.copy(self.mmax))
         # allocate for mean field
         temp.clm = np.zeros((temp.lmax+1,temp.mmax+1))
         temp.slm = np.zeros((temp.lmax+1,temp.mmax+1))
@@ -1659,7 +1638,7 @@ class harmonics(object):
                 setattr(temp, key, np.mean(val[indices]))
             except:
                 continue
-        # assign ndim and shape attributes
+        # assign degree and order fields
         temp.update_dimensions()
         # return the mean field
         return temp
@@ -1673,7 +1652,7 @@ class harmonics(object):
         var: float
             scalar value to which the ``harmonics`` object will be multiplied
         """
-        # reassign shape and ndim attributes
+        # assign degree and order fields
         self.update_dimensions()
         temp = harmonics(lmax=self.lmax, mmax=self.mmax)
         temp.time = np.copy(self.time)
@@ -1695,7 +1674,7 @@ class harmonics(object):
             for i,v in enumerate(var):
                 temp.clm[:,:,i] = v*self.clm[:,:,i]
                 temp.slm[:,:,i] = v*self.slm[:,:,i]
-        # assign ndim and shape attributes
+        # assign degree and order fields
         temp.update_dimensions()
         return temp
 
@@ -1708,7 +1687,7 @@ class harmonics(object):
         var: float
             power to which the ``harmonics`` object will be raised
         """
-        # reassign shape and ndim attributes
+        # assign degree and order fields
         self.update_dimensions()
         temp = harmonics(lmax=self.lmax, mmax=self.mmax)
         temp.time = np.copy(self.time)
@@ -1719,7 +1698,7 @@ class harmonics(object):
         for key in ['clm','slm']:
             val = getattr(self, key)
             setattr(temp, key, np.power(val,power))
-        # assign ndim and shape attributes
+        # assign degree and order fields
         temp.update_dimensions()
         return temp
 
@@ -1734,7 +1713,7 @@ class harmonics(object):
         epoch: float
             reference epoch for times
         """
-        # reassign shape and ndim attributes
+        # assign degree and order fields
         self.update_dimensions()
         temp = harmonics(lmax=self.lmax, mmax=self.mmax)
         # allocate for drift field
@@ -1752,7 +1731,7 @@ class harmonics(object):
         for i,ti in enumerate(t):
             temp.clm[:,:,i] = self.clm*(ti - epoch)
             temp.slm[:,:,i] = self.slm*(ti - epoch)
-        # assign ndim and shape attributes
+        # assign degree and order fields
         temp.update_dimensions()
         return temp
 
@@ -1765,7 +1744,7 @@ class harmonics(object):
         var: float
             degree dependent array for convolution
         """
-        # reassign shape and ndim attributes
+        # assign degree and order fields
         self.update_dimensions()
         # check if a single field or a temporal field
         if (self.ndim == 2):
@@ -1797,9 +1776,9 @@ class harmonics(object):
             *Geophysical Research Letters*, 33(L08402), (2006).
             `doi: 10.1029/2005GL025285 <https://doi.org/10.1029/2005GL025285>`_
         """
-        # reassign shape and ndim attributes
+        # assign degree and order fields
         self.update_dimensions()
-        temp = harmonics(lmax=np.copy(self.lmax),mmax=np.copy(self.mmax))
+        temp = harmonics(lmax=np.copy(self.lmax), mmax=np.copy(self.mmax))
         temp.time = np.copy(self.time)
         temp.month = np.copy(self.month)
         # get filenames if applicable
@@ -1820,7 +1799,7 @@ class harmonics(object):
                     LMIN=1, LMAX=self.lmax, MMAX=self.mmax, **kwargs)
                 temp.clm[:,:,i] = Ylms['clm'].copy()
                 temp.slm[:,:,i] = Ylms['slm'].copy()
-        # assign ndim and shape attributes
+        # assign degree and order fields
         temp.update_dimensions()
         # return the destriped field
         return temp
@@ -1853,6 +1832,23 @@ class harmonics(object):
                 amp[l,:] = np.sqrt(np.sum(var, axis=0))
         # return the degree amplitudes
         return amp
+
+    @property
+    def dtype(self):
+        """Main data type of ``harmonics`` object"""
+        return self.clm.dtype
+
+    @property
+    def shape(self):
+        """Dimensions of ``harmonics`` object
+        """
+        return np.shape(self.clm)
+
+    @property
+    def ndim(self):
+        """Number of dimensions in ``harmonics`` object
+        """
+        return np.ndim(self.clm)
 
     @property
     def ilm(self):

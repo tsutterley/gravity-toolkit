@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 aod1b_oblateness.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (03/2023)
 Contributions by Hugo Lecomte (03/2021)
 
 Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
@@ -36,6 +36,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 03/2023: debug-level logging of member names and header lines
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
@@ -113,7 +114,8 @@ def aod1b_oblateness(base_dir,
     fstr = '{0:4d}-{1:02d}-{2:02d}T{3:02d}:00:00 {4:+16.8E}'
 
     # set number of hours in a file
-    # set the ocean model for a given release
+    # set the atmospheric and ocean model for a given release
+    # set the maximum degree and order of a release
     if DREL in ('RL01','RL02','RL03','RL04','RL05'):
         # for 00, 06, 12 and 18
         n_time = 4
@@ -186,6 +188,8 @@ def aod1b_oblateness(base_dir,
 
             # Iterate over every member within the tar file
             for member in tar.getmembers():
+                # track tar file members
+                logging.debug(member.name)
                 # get calendar day from file
                 DD,SFX = fx.findall(member.name).pop()
                 DD = np.int64(DD)
@@ -206,6 +210,8 @@ def aod1b_oblateness(base_dir,
                     file_contents = fid.readline().decode('ISO-8859-1')
                     # find file header for data product
                     if bool(hx.search(file_contents)):
+                        # track file header lines
+                        logging.debug(file_contents)
                         # extract hour from header and convert to float
                         HH, = re.findall(r'(\d+):\d+:\d+',file_contents)
                         hours[c] = np.int64(HH)

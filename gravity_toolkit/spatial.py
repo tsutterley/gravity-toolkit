@@ -26,6 +26,9 @@ UPDATE HISTORY:
         fix indexing of filenames in single string case
         add indexing of filenames to spatial object iterator
         use copy.copy and not numpy.copy in copy spatial object function
+        fix mask and shape of subsetted spatial grid objects
+        add extend_matrix function and add error output to from_list
+        convert spacing, extent, shape and ndim to spatial class properties
     Updated 02/2023: use monospaced text to note spatial objects in docstrings
     Updated 12/2022: add software information to output HDF5 and netCDF4
         make spatial objects iterable and with length
@@ -77,12 +80,12 @@ from gravity_toolkit.time import adjust_months, calendar_to_grace
 # attempt imports
 try:
     import h5py
-except (ImportError, ModuleNotFoundError) as e:
+except (ImportError, ModuleNotFoundError) as exc:
     warnings.filterwarnings("module")
     warnings.warn("h5py not available", ImportWarning)
 try:
     import netCDF4
-except (ImportError, ModuleNotFoundError) as e:
+except (ImportError, ModuleNotFoundError) as exc:
     warnings.filterwarnings("module")
     warnings.warn("netCDF4 not available", ImportWarning)
 # ignore warnings
@@ -110,16 +113,6 @@ class spatial(object):
         invalid value for spatial grid data
     attributes: dict
         attributes of ``spatial`` variables
-    extent: list, default [None,None,None,None]
-        spatial grid bounds
-        ``[minimum longitude, maximum longitude,
-        minimum latitude, maximum latitude]``
-    spacing: list, default [None,None]
-        grid step size ``[longitude,latitude]``
-    shape: tuple
-        dimensions of ``spatial`` object
-    ndim: int
-        number of dimensions of ``spatial`` object
     filename: str
         input or output filename
 
@@ -127,10 +120,6 @@ class spatial(object):
     np.seterr(invalid='ignore')
     def __init__(self, **kwargs):
         # set default keyword arguments
-        kwargs.setdefault('spacing',[None,None])
-        kwargs.setdefault('nlat',None)
-        kwargs.setdefault('nlon',None)
-        kwargs.setdefault('extent',[None]*4)
         kwargs.setdefault('fill_value',None)
         # set default class attributes
         self.data=None
@@ -141,10 +130,6 @@ class spatial(object):
         self.month=None
         self.fill_value=kwargs['fill_value']
         self.attributes=dict()
-        self.extent=kwargs['extent']
-        self.spacing=kwargs['spacing']
-        self.shape=[kwargs['nlat'],kwargs['nlon'],None]
-        self.ndim=None
         self.filename=None
         # iterator
         self.__index__ = 0
@@ -196,6 +181,16 @@ class spatial(object):
                 - ``'gzip'``
                 - ``'zip'``
                 - ``'bytes'``
+        spacing: list, default [None,None]
+            grid step size ``[longitude,latitude]``
+        extent: list, default [None,None,None,None]
+            spatial grid bounds
+            ``[minimum longitude, maximum longitude,
+            minimum latitude, maximum latitude]``
+        nlat: int or NoneType, default None
+            length of latitude dimension
+        nlon
+            length of longitude dimension
         columns: list, default ['lon','lat','data','time']
             variable names for each column
         header: int, default 0
@@ -208,6 +203,10 @@ class spatial(object):
         # set default parameters
         kwargs.setdefault('verbose',False)
         kwargs.setdefault('compression',None)
+        kwargs.setdefault('spacing',[None,None])
+        kwargs.setdefault('nlat',None)
+        kwargs.setdefault('nlon',None)
+        kwargs.setdefault('extent',[None]*4)
         kwargs.setdefault('columns',['lon','lat','data','time'])
         kwargs.setdefault('header',0)
         # open the ascii file and extract contents
@@ -233,15 +232,29 @@ class spatial(object):
         regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[EeD][+-]?\d+)?'
         rx = re.compile(regex_pattern, re.VERBOSE)
         # output spatial dimensions
-        if (None not in self.extent):
-            self.lat = np.linspace(self.extent[3],self.extent[2],self.shape[0])
-            self.lon = np.linspace(self.extent[0],self.extent[1],self.shape[1])
+        if (None not in kwargs['extent']) and kwargs['nlat'] and kwargs['nlon']:
+            extent = kwargs.get('extent')
+            self.lat = np.linspace(extent[3], extent[2], kwargs['nlat'])
+            self.lon = np.linspace(extent[0], extent[1], kwargs['nlon'])
+            dlon = np.abs(self.lon[1] - self.lon[0])
+            dlat = np.abs(self.lat[1] - self.lat[0])
+        elif (None not in kwargs['extent']) and (None not in kwargs['spacing']):
+            extent = kwargs.get('extent')
+            dlon, dlat = kwargs.get('spacing')
+            self.lat = np.arange(extent[3], extent[2] - dlat, dlat)
+            self.lon = np.arange(extent[0], extent[1] + dlon, dlon)
+        elif kwargs['nlat'] and kwargs['nlon'] and (None not in kwargs['spacing']):
+            dlon, dlat = kwargs.get('spacing')
+            self.lat = np.zeros((kwargs['nlat']))
+            self.lon = np.zeros((kwargs['nlon']))
         else:
-            self.lat = np.zeros((self.shape[0]))
-            self.lon = np.zeros((self.shape[1]))
+            raise ValueError('Unknown dimensions for input ``spatial`` object')
+        # get spatial dimensions
+        nlat = len(self.lat)
+        nlon = len(self.lon)
         # output spatial data
-        self.data = np.zeros((self.shape[0],self.shape[1]))
-        self.mask = np.zeros((self.shape[0],self.shape[1]),dtype=bool)
+        self.data = np.zeros((nlat, nlon))
+        self.mask = np.zeros((nlat, nlon), dtype=bool)
         # remove time from list of column names if not date
         columns = [c for c in kwargs['columns'] if (c != 'time')]
         # extract spatial data array and convert to matrix
@@ -252,10 +265,10 @@ class spatial(object):
             # convert fortran exponentials if applicable
             d = {c:r.replace('D','E') for c,r in zip(columns,rx.findall(line))}
             # convert line coordinates to integers
-            ilon = np.int64(np.float64(d['lon'])/self.spacing[0])
-            ilat = np.int64((90.0-np.float64(d['lat']))//self.spacing[1])
-            self.data[ilat,ilon] = np.float64(d['data'])
-            self.mask[ilat,ilon] = False
+            ilon = np.int64(np.float64(d['lon'])/dlon)
+            ilat = np.int64((90.0 - np.float64(d['lat']))//dlat)
+            self.data[ilat, ilon] = np.float64(d['data'])
+            self.mask[ilat, ilon] = False
             self.lon[ilon] = np.float64(d['lon'])
             self.lat[ilat] = np.float64(d['lat'])
             # if the ascii file contains date variables
@@ -266,10 +279,7 @@ class spatial(object):
         if date:
             # adjust months to fix special cases if necessary
             self.month = adjust_months(self.month)
-        # get spacing and dimensions
-        self.update_spacing()
-        self.update_extents()
-        self.update_dimensions()
+        # update mask
         self.update_mask()
         return self
 
@@ -386,10 +396,7 @@ class spatial(object):
             self.month = calendar_to_grace(self.time)
             # adjust months to fix special cases if necessary
             self.month = adjust_months(self.month)
-        # get spacing and dimensions
-        self.update_spacing()
-        self.update_extents()
-        self.update_dimensions()
+        # update mask
         self.update_mask()
         return self
 
@@ -514,10 +521,7 @@ class spatial(object):
             self.month = calendar_to_grace(self.time)
             # adjust months to fix special cases if necessary
             self.month = adjust_months(self.month)
-        # get spacing and dimensions
-        self.update_spacing()
-        self.update_extents()
-        self.update_dimensions()
+        # update mask
         self.update_mask()
         return self
 
@@ -599,13 +603,14 @@ class spatial(object):
             list_sort = np.argsort([d.time for d in object_list],axis=None)
         else:
             list_sort = np.arange(n)
-        # extract dimensions and grid spacing
-        self.spacing = object_list[0].spacing
-        self.extent = object_list[0].extent
-        self.shape = object_list[0].shape
+        # extract grid spacing
+        shape = object_list[0].shape
         # create output spatial grid and mask
-        self.data = np.zeros((self.shape[0],self.shape[1],n))
-        self.mask = np.zeros((self.shape[0],self.shape[1],n),dtype=bool)
+        self.data = np.zeros((shape[0], shape[1], n))
+        self.mask = np.zeros((shape[0], shape[1], n),dtype=bool)
+        # add error if in original list attributes
+        if hasattr(object_list[0], 'error'):
+            self.error = np.zeros((shape[0], shape[1], n))
         self.fill_value = object_list[0].fill_value
         self.lon = object_list[0].lon.copy()
         self.lat = object_list[0].lat.copy()
@@ -620,6 +625,8 @@ class spatial(object):
         for t,i in enumerate(list_sort):
             self.data[:,:,t] = object_list[i].data[:,:].copy()
             self.mask[:,:,t] |= object_list[i].mask[:,:]
+            if hasattr(object_list[i], 'error'):
+                self.error[:,:,t] = object_list[i].error[:,:].copy()
             if kwargs['date']:
                 self.time[t] = np.atleast_1d(object_list[i].time)
                 self.month[t] = np.atleast_1d(object_list[i].month)
@@ -632,8 +639,7 @@ class spatial(object):
         # adjust months to fix special cases if necessary
         if kwargs['date']:
             self.month = adjust_months(self.month)
-        # update the dimensions
-        self.update_dimensions()
+        # update mask
         self.update_mask()
         # clear the input list to free memory
         if kwargs['clear']:
@@ -696,10 +702,7 @@ class spatial(object):
         self.mask = np.zeros_like(self.data, dtype=bool)
         # add attributes to root if in dictionary
         self.attributes['ROOT'] = d.get('attributes')
-        # get spacing and dimensions
-        self.update_spacing()
-        self.update_extents()
-        self.update_dimensions()
+        # update mask
         self.update_mask()
         return self
 
@@ -1109,33 +1112,6 @@ class spatial(object):
         return np.ma.array(self.data, mask=self.mask,
             fill_value=self.fill_value)
 
-    def update_spacing(self):
-        """
-        Calculate the step size of ``spatial`` object
-        """
-        # calculate degree spacing
-        dlat = np.abs(self.lat[1] - self.lat[0])
-        dlon = np.abs(self.lon[1] - self.lon[0])
-        self.spacing = (dlon,dlat)
-        return self
-
-    def update_extents(self):
-        """
-        Calculate the bounds of ``spatial`` object
-        """
-        self.extent[0] = np.min(self.lon)
-        self.extent[1] = np.max(self.lon)
-        self.extent[2] = np.min(self.lat)
-        self.extent[3] = np.max(self.lat)
-
-    def update_dimensions(self):
-        """
-        Update the dimensions of the ``spatial`` object
-        """
-        self.shape = np.shape(self.data)
-        self.ndim = np.ndim(self.data)
-        return self
-
     def update_mask(self):
         """
         Update the mask of the ``spatial`` object
@@ -1164,10 +1140,7 @@ class spatial(object):
                 setattr(temp, key, copy.copy(val))
             except AttributeError:
                 pass
-        # get spacing and dimensions
-        temp.update_spacing()
-        temp.update_extents()
-        temp.update_dimensions()
+        # update mask
         temp.replace_masked()
         return temp
 
@@ -1186,10 +1159,7 @@ class spatial(object):
                 setattr(temp, key, np.zeros_like(val))
             except AttributeError:
                 pass
-        # get spacing and dimensions
-        temp.update_spacing()
-        temp.update_extents()
-        temp.update_dimensions()
+        # update mask
         temp.replace_masked()
         return temp
 
@@ -1206,14 +1176,56 @@ class spatial(object):
             # try expanding mask variable
             try:
                 self.mask = self.mask[:,:,None]
-            except Exception as e:
+            except Exception as exc:
                 pass
-        # get spacing and dimensions
-        self.update_spacing()
-        self.update_extents()
-        self.update_dimensions()
+        # update mask
         self.update_mask()
         return self
+
+    # PURPOSE: Extend a global matrix
+    def extend_matrix(self):
+        """
+        Extends a global matrix to wrap along longitudes
+
+        Returns
+        -------
+        temp: float
+            extended matrix
+        """
+        temp = self.copy()
+        # shape of the original data object
+        ny, nx, *_ = self.shape
+        # extended longitude array [x-1,x0,...,xN,xN+1]
+        temp.lon = np.zeros((nx+2), dtype=self.lon.dtype)
+        temp.lon[0] = self.lon[0] - self.spacing[0]
+        temp.lon[1:-1] = self.lon[:]
+        temp.lon[-1] = self.lon[-1] + self.spacing[1]
+        # attempt to extend possible data variables
+        for key in ['data','mask','error']:
+            try:
+                # get the original data variable
+                var = getattr(self, key)
+                # extended data matrices along longitude axis
+                if (self.ndim == 2):
+                    tmp = np.zeros((ny, nx+2), dtype=var.dtype)
+                    tmp[:,0] = var[:,-1]
+                    tmp[:,1:-1] = var[:,:]
+                    tmp[:,-1] = var[:,0]
+                elif (self.ndim == 3):
+                    nt = _.pop()
+                    var = getattr(self, key)
+                    tmp = np.zeros((ny, nx+2, nt), dtype=var.dtype)
+                    tmp[:,0,:] = var[:,-1,:]
+                    tmp[:,1:-1,:] = var[:,:,:]
+                    tmp[:,-1,:] = var[:,0,:]
+                # set the output extended data variable
+                setattr(temp, key, tmp)
+            except Exception as exc:
+                pass
+        # update mask
+        temp.update_mask()
+        # return the extended spatial object
+        return temp
 
     def squeeze(self):
         """
@@ -1226,12 +1238,9 @@ class spatial(object):
         # try squeezing mask variable
         try:
             self.mask = np.squeeze(self.mask)
-        except Exception as e:
+        except Exception as exc:
             pass
-        # get spacing and dimensions
-        self.update_spacing()
-        self.update_extents()
-        self.update_dimensions()
+        # update mask
         self.update_mask()
         return self
 
@@ -1254,7 +1263,7 @@ class spatial(object):
         # subset output spatial error
         try:
             temp.error = self.error[:,:,indice].copy()
-        except AttributeError:
+        except AttributeError as exc:
             pass
         # copy dimensions
         temp.lon = self.lon.copy()
@@ -1269,11 +1278,8 @@ class spatial(object):
                 temp.filename = str(self.filename[indice])
             elif isinstance(self.filename, str):
                 temp.filename = copy.copy(self.filename)
-        # get spacing and dimensions
-        temp.update_spacing()
-        temp.update_extents()
-        temp.update_dimensions()
-        return temp
+        # remove singleton dimensions if importing a single value
+        return temp.squeeze()
 
     def subset(self, months):
         """
@@ -1296,11 +1302,11 @@ class spatial(object):
         # indices to sort data objects
         months_list = [i for i,m in enumerate(self.month) if m in months]
         # output spatial object
-        temp = spatial(nlon=self.shape[0],nlat=self.shape[1],
+        temp = spatial(nlat=self.shape[0], nlon=self.shape[1],
             fill_value=self.fill_value)
         # create output spatial object
         temp.data = np.zeros((temp.shape[0],temp.shape[1],n))
-        temp.mask = np.zeros((temp.shape[0],temp.shape[1],n))
+        temp.mask = np.zeros((temp.shape[0],temp.shape[1],n), dtype=bool)
         # create output spatial error
         try:
             getattr(self, 'error')
@@ -1364,10 +1370,6 @@ class spatial(object):
         elif (np.ndim(var) == 3) and (self.ndim == 3):
             for i,t in enumerate(self.time):
                 temp.data[:,:,i] = self.data[:,:,i] + var[:,:,i]
-        # get spacing and dimensions
-        temp.update_spacing()
-        temp.update_extents()
-        temp.update_dimensions()
         # update mask
         temp.update_mask()
         return temp
@@ -1403,10 +1405,6 @@ class spatial(object):
         elif (np.ndim(var) == 3) and (self.ndim == 3):
             for i,t in enumerate(self.time):
                 temp.data[:,:,i] = var[:,:,i]*self.data[:,:,i]
-        # get spacing and dimensions
-        temp.update_spacing()
-        temp.update_extents()
-        temp.update_dimensions()
         # update mask
         temp.update_mask()
         return temp
@@ -1441,10 +1439,6 @@ class spatial(object):
         if apply:
             for i,t in enumerate(self.time):
                 self.data[:,:,i] -= temp.data[:,:]
-        # get spacing and dimensions
-        temp.update_spacing()
-        temp.update_extents()
-        temp.update_dimensions()
         # update mask
         temp.update_mask()
         return temp
@@ -1470,11 +1464,8 @@ class spatial(object):
             temp.lon = temp.lon[::-1].copy()
             temp.data = temp.data[:,::-1,:].copy()
             temp.mask = temp.mask[:,::-1,:].copy()
-        # squeeze output spatial object
-        # get spacing and dimensions
-        # update mask
-        temp.squeeze()
-        return temp
+        # remove singleton dimensions if importing a single value
+        return temp.squeeze()
 
     def transpose(self, axes=None):
         """
@@ -1490,10 +1481,6 @@ class spatial(object):
         # copy dimensions and reverse order
         temp.data = np.transpose(temp.data, axes=axes)
         temp.mask = np.transpose(temp.mask, axes=axes)
-        # get spacing and dimensions
-        temp.update_spacing()
-        temp.update_extents()
-        temp.update_dimensions()
         # update mask
         temp.update_mask()
         return temp
@@ -1516,10 +1503,6 @@ class spatial(object):
         # create output summation spatial object
         temp.data = np.sum(np.power(self.data,power),axis=2)
         temp.mask = np.any(self.mask,axis=2)
-        # get spacing and dimensions
-        temp.update_spacing()
-        temp.update_extents()
-        temp.update_dimensions()
         # update mask
         temp.update_mask()
         return temp
@@ -1535,8 +1518,6 @@ class spatial(object):
         """
         temp = self.copy()
         temp.data = np.power(self.data,power)
-        # assign ndim and shape attributes
-        temp.update_dimensions()
         return temp
 
     def max(self):
@@ -1552,10 +1533,6 @@ class spatial(object):
         # create output maximum spatial object
         temp.data = np.max(self.data,axis=2)
         temp.mask = np.any(self.mask,axis=2)
-        # get spacing and dimensions
-        temp.update_spacing()
-        temp.update_extents()
-        temp.update_dimensions()
         # update mask
         temp.update_mask()
         return temp
@@ -1573,10 +1550,6 @@ class spatial(object):
         # create output minimum spatial object
         temp.data = np.min(self.data,axis=2)
         temp.mask = np.any(self.mask,axis=2)
-        # get spacing and dimensions
-        temp.update_spacing()
-        temp.update_extents()
-        temp.update_dimensions()
         # update mask
         temp.update_mask()
         return temp
@@ -1616,6 +1589,44 @@ class spatial(object):
             self.data[self.mask] = self.fill_value
         return self
 
+
+    @property
+    def dtype(self):
+        """Main data type of ``spatial`` object"""
+        return self.data.dtype
+
+    @property
+    def spacing(self):
+        """Step size of ``spatial`` object ``[longitude,latitude]``
+        """
+        dlat = np.abs(self.lat[1] - self.lat[0])
+        dlon = np.abs(self.lon[1] - self.lon[0])
+        return (dlon,dlat)
+
+    @property
+    def extent(self):
+        """Bounds of ``spatial`` object
+        ``[minimum longitude, maximum longitude,
+        minimum latitude, maximum latitude]``
+        """
+        lonmin = np.min(self.lon)
+        lonmax = np.max(self.lon)
+        latmin = np.min(self.lat)
+        latmax = np.max(self.lat)
+        return [lonmin, lonmax, latmin, latmax]
+
+    @property
+    def shape(self):
+        """Dimensions of ``spatial`` object
+        """
+        return np.shape(self.data)
+
+    @property
+    def ndim(self):
+        """Number of dimensions in ``spatial`` object
+        """
+        return np.ndim(self.data)
+
     def __len__(self):
         """Number of months
         """
@@ -1643,7 +1654,7 @@ class spatial(object):
         # subset output spatial error
         try:
             temp.error = self.error[:,:,self.__index__].copy()
-        except AttributeError:
+        except AttributeError as exc:
             pass
         # subset filename
         if getattr(self, 'filename'):
@@ -1654,10 +1665,6 @@ class spatial(object):
         # copy dimensions
         temp.lon = self.lon.copy()
         temp.lat = self.lat.copy()
-        # get spacing and dimensions
-        temp.update_spacing()
-        temp.update_extents()
-        temp.update_dimensions()
         # add to index
         self.__index__ += 1
         return temp
@@ -1701,7 +1708,6 @@ class scaling_factors(spatial):
         number of dimensions of spatial object
     filename: str
         input or output filename
-
     """
     np.seterr(invalid='ignore')
     def __init__(self, **kwargs):
@@ -1737,6 +1743,10 @@ class scaling_factors(spatial):
         # set default parameters
         kwargs.setdefault('verbose',False)
         kwargs.setdefault('compression',None)
+        kwargs.setdefault('spacing',[None,None])
+        kwargs.setdefault('nlat',None)
+        kwargs.setdefault('nlon',None)
+        kwargs.setdefault('extent',[None]*4)
         default_columns = ['lon','lat','kfactor','error','magnitude']
         kwargs.setdefault('columns',default_columns)
         kwargs.setdefault('header',0)
@@ -1763,15 +1773,29 @@ class scaling_factors(spatial):
         regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[EeD][+-]?\d+)?'
         rx = re.compile(regex_pattern, re.VERBOSE)
         # output spatial dimensions
-        if (None not in self.extent):
-            self.lat = np.linspace(self.extent[3],self.extent[2],self.shape[0])
-            self.lon = np.linspace(self.extent[0],self.extent[1],self.shape[1])
+        if (None not in kwargs['extent']) and kwargs['nlat'] and kwargs['nlon']:
+            extent = kwargs.get('extent')
+            self.lat = np.linspace(extent[3], extent[2], kwargs['nlat'])
+            self.lon = np.linspace(extent[0], extent[1], kwargs['nlon'])
+            dlon = np.abs(self.lon[1] - self.lon[0])
+            dlat = np.abs(self.lat[1] - self.lat[0])
+        elif (None not in kwargs['extent']) and (None not in kwargs['spacing']):
+            extent = kwargs.get('extent')
+            dlon, dlat = kwargs.get('spacing')
+            self.lat = np.arange(extent[3], extent[2] - dlat, dlat)
+            self.lon = np.arange(extent[0], extent[1] + dlon, dlon)
+        elif kwargs['nlat'] and kwargs['nlon'] and (None not in kwargs['spacing']):
+            dlon, dlat = kwargs.get('spacing')
+            self.lat = np.zeros((kwargs['nlat']))
+            self.lon = np.zeros((kwargs['nlon']))
         else:
-            self.lat = np.zeros((self.shape[0]))
-            self.lon = np.zeros((self.shape[1]))
+            raise ValueError('Unknown dimensions for input ``spatial`` object')
+        # get spatial dimensions
+        nlat = len(self.lat)
+        nlon = len(self.lon)
         # output spatial data
-        self.data = np.zeros((self.shape[0],self.shape[1]))
-        self.mask = np.zeros((self.shape[0],self.shape[1]),dtype=bool)
+        self.data = np.zeros((nlat, nlon))
+        self.mask = np.zeros((nlat, nlon), dtype=bool)
         # remove time from list of column names if not date
         columns = [c for c in kwargs['columns'] if (c != 'time')]
         # extract spatial data array and convert to matrix
@@ -1782,8 +1806,8 @@ class scaling_factors(spatial):
             # convert fortran exponentials if applicable
             d = {c:r.replace('D','E') for c,r in zip(columns,rx.findall(line))}
             # convert line coordinates to integers
-            ilon = np.int64(np.float64(d['lon'])/self.spacing[0])
-            ilat = np.int64((90.0-np.float64(d['lat']))//self.spacing[1])
+            ilon = np.int64(np.float64(d['lon'])/dlon)
+            ilat = np.int64((90.0-np.float64(d['lat']))//dlat)
             # get scaling factor, error and magnitude
             self.data[ilat,ilon] = np.float64(d['data'])
             self.error[ilat,ilon] = np.float64(d['error'])
@@ -1793,10 +1817,7 @@ class scaling_factors(spatial):
             # set latitude and longitude
             self.lon[ilon] = np.float64(d['lon'])
             self.lat[ilat] = np.float64(d['lat'])
-        # get spacing and dimensions
-        self.update_spacing()
-        self.update_extents()
-        self.update_dimensions()
+        # update mask
         self.update_mask()
         return self
 
@@ -1830,7 +1851,7 @@ class scaling_factors(spatial):
         """
         Calculate the scaling factor and scaling factor errors
         from two ``spatial`` or ``scaling_factors`` objects
-        following [Landerer2012]_
+        following [Landerer2012]_ and [Hsu2017]_
 
         Parameters
         ----------
@@ -1848,6 +1869,10 @@ class scaling_factors(spatial):
             "Accuracy of scaled GRACE terrestrial water storage estimates",
             *Water Resources Research*, 48(W04531), (2012).
             `doi: 10.1029/2011WR011453 <https://doi.org/10.1029/2011WR011453>`_
+        .. [Hsu2017] C.-W. Hsu and I. Velicogna, "Detection of Sea Level
+            Fingerprints derived from GRACE gravity data",
+            *Geophysical Research Letters*, 44, 8953--8961, (2017).
+            `doi: 10.1002/2017GL074070 <https://doi.org/10.1002/2017GL074070>`_
         """
         # copy to not modify original inputs
         temp1 = self.copy()
@@ -1877,10 +1902,6 @@ class scaling_factors(spatial):
         temp.error = np.sqrt((variance.sum(power=2).data)/nt)
         # calculate magnitude of original data
         temp.magnitude = temp2.sum(power=2.0).power(0.5).data[:]
-        # get spacing and dimensions
-        temp.update_spacing()
-        temp.update_extents()
-        temp.update_dimensions()
         # update mask
         temp.update_mask()
         # return the scaling factors and scaling factor errors

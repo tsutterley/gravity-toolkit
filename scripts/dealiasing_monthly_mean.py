@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 dealiasing_monthly_mean.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (03/2023)
 
 Reads GRACE/GRACE-FO AOD1B datafiles for a specific product and outputs monthly
     the mean for a specific GRACE/GRACE-FO processing center and data release
@@ -48,6 +48,9 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 03/2023: read data into flattened harmonics objects
+        debug-level logging of member names and header lines
+        convert shape and ndim to harmonic class properties
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 04/2022: use argparse descriptions within documentation
     Updated 12/2021: can use variable loglevels for verbose output
@@ -110,14 +113,14 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
     # set the ocean model for a given release
     if DREL in ('RL01','RL02','RL03','RL04','RL05'):
         # for 00, 06, 12 and 18
-        n_time = 4
+        nt = 4
         ATMOSPHERE = 'ECMWF'
         OCEAN_MODEL = 'OMCT'
         default_center = 'EIGEN'
         default_lmax = 100
     elif DREL in ('RL06',):
         # for 00, 03, 06, 09, 12, 15, 18 and 21
-        n_time = 8
+        nt = 8
         ATMOSPHERE = 'ECMWF'
         OCEAN_MODEL = 'MPIOM'
         default_center = 'GFZOP'
@@ -252,9 +255,10 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
         # print GRACE/GRACE-FO dates if there is a complete month of AOD
         if COMPLETE:
             # print GRACE/GRACE-FO dates to file
-            print(('{0:13.8f} {1:03d} {2:8.0f} {3:03d} {4:8.0f} {5:03d} '
-                '{6:8.0f}').format(date_input[t,0],gm,start_yr[t],start_day[t],
-                end_yr[t],end_day[t],date_input[t,6]), file=f_out)
+            print((f'{date_input[t,0]:13.8f} {gm:03d} '
+                f'{start_yr[t]:8.0f} {start_day[t]:03d} '
+                f'{end_yr[t]:8.0f} {end_day[t]:03d} '
+                f'{date_input[t,6]:8.0f}'), file=f_out)
 
         # if there are new files, files to be rewritten or clobbered
         if COMPLETE and (TEST or CLOBBER):
@@ -262,10 +266,20 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
             logging.info(f'{FILE} ({OVERWRITE})')
             # allocate for the mean output harmonics
             Ylms = gravtk.harmonics(lmax=LMAX, mmax=LMAX)
-            nt = len(julian_days_to_read)*n_time
-            Ylms.clm = np.zeros((LMAX+1,LMAX+1,nt))
-            Ylms.slm = np.zeros((LMAX+1,LMAX+1,nt))
-            Ylms.time = np.zeros((nt))
+            # number of time points
+            n_time = len(julian_days_to_read)*nt
+            # flattened harmonics object
+            YLMS = gravtk.harmonics(lmax=default_lmax, mmax=default_lmax,
+                flattened=True)
+            YLMS.l = np.zeros((n_harm), dtype=int)
+            YLMS.m = np.zeros((n_harm), dtype=int)
+            YLMS.clm = np.zeros((n_harm, n_time))
+            YLMS.slm = np.zeros((n_harm, n_time))
+            # calendar dates
+            years = np.zeros((n_time), dtype=int)
+            months = np.zeros((n_time), dtype=int)
+            days = np.zeros((n_time), dtype=int)
+            hours = np.zeros((n_time), dtype=int)
             count = 0
             # for each tar file
             for fi in sorted(input_tar_files):
@@ -274,51 +288,56 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
                 # for each ascii file within the tar file that matches fx
                 monthly_members=[m for m in tar.getmembers() if fx.match(m.name)]
                 for member in monthly_members:
+                    # track tar file members
+                    logging.debug(member.name)
                     # extract member name
-                    YMD,SFX = fx.findall(member.name).pop()
+                    YMD, SFX = fx.findall(member.name).pop()
+                    YY, MM, DD = re.findall(r'\d+', YMD)
                     # open datafile for day
                     if (SFX == '.gz'):
                         fid = gzip.GzipFile(fileobj=tar.extractfile(member))
                     else:
                         fid = tar.extractfile(member)
                     # create counters for hour in dataset
-                    hours = np.zeros((n_time))
                     c = 0
                     # while loop ends when dataset is read
-                    while (c < n_time):
+                    while (c < nt):
                         # read line
                         file_contents=fid.readline().decode('ISO-8859-1')
                         # find file header for data product
                         if bool(hx.search(file_contents)):
+                            # track file header lines
+                            logging.debug(file_contents)
                             # extract hour from header and convert to float
                             HH, = re.findall(r'(\d+):\d+:\d+',file_contents)
-                            hours[c] = np.int64(HH)
+                            # convert dates to int and save to arrays
+                            years[count] = np.int64(YY)
+                            months[count] = np.int64(MM)
+                            days[count] = np.int64(DD)
+                            hours[count] = np.int64(HH)
                             # read each line of spherical harmonics
                             for k in range(0,n_harm):
                                 file_contents=fid.readline().decode('ISO-8859-1')
                                 # find numerical instances in the data line
                                 line_contents = rx.findall(file_contents)
                                 # spherical harmonic degree and order
-                                l1 = np.int64(line_contents[0])
-                                m1 = np.int64(line_contents[1])
-                                # spherical harmonic data saved to output Ylms
-                                if (l1 <= LMAX) & (m1 <= LMAX):
-                                    Ylms.clm[l1,m1,c]+=np.float64(line_contents[2])
-                                    Ylms.slm[l1,m1,c]+=np.float64(line_contents[3])
+                                YLMS.l[k] = np.int64(line_contents[0])
+                                YLMS.m[k] = np.int64(line_contents[1])
+                                # extract spherical harmonics
+                                YLMS.clm[k,count] = np.float64(line_contents[2])
+                                YLMS.slm[k,count] = np.float64(line_contents[3])
                             # add 1 to hour counter
                             c += 1
+                            count += 1
                     # close the input file for day
                     fid.close()
-                    # year fraction of the particular date and times
-                    YEAR = np.repeat(Y[count//n_time], n_time).astype('f')
-                    MONTH = np.repeat(M[count//n_time], n_time).astype('f')
-                    DAY = np.repeat(D[count//n_time], n_time).astype('f')
-                    tdec = gravtk.time.convert_calendar_decimal(YEAR,
-                        MONTH, day=DAY, hour=hours)
-                    Ylms.time[count:count+n_time] = np.copy(tdec)
-                    # add to day counter
-                    count += n_time
 
+            # calculate times for flattened harmonics
+            YLMS.time = gravtk.time.convert_calendar_decimal(
+                years, months, day=days, hour=hours)
+            YLMS.month = gravtk.time.calendar_to_grace(YLMS.time)
+            # convert to expanded form and truncate to LMAX
+            Ylms = YLMS.expand(date=True).truncate(LMAX)
             # calculate mean harmonics for GRACE/GRACE-FO month
             # convert from harmonics object to dealiasing object
             mean_Ylms = dealiasing().from_harmonics(Ylms.mean())
@@ -330,13 +349,13 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
             mean_Ylms.product = DSET
             # start and end time for month
             start_time = gravtk.time.convert_julian(np.min(JD))
-            mean_Ylms.start_time = ['{0:4.0f}'.format(start_time['year']),
-                '{0:02.0f}'.format(start_time['month']),
-                '{0:02.0f}'.format(start_time['day'])]
+            mean_Ylms.start_time = [f"{start_time['year']:4.0f}",
+                f"{start_time['month']:02.0f}",
+                f"{start_time['day']:02.0f}"]
             end_time = gravtk.time.convert_julian(np.max(JD))
-            mean_Ylms.end_time = ['{0:4.0f}'.format(end_time['year']),
-                '{0:02.0f}'.format(end_time['month']),
-                '{0:02.0f}'.format(end_time['day'])]
+            mean_Ylms.end_time = [f"{end_time['year']:4.0f}",
+                f"{end_time['month']:02.0f}",
+                f"{end_time['day']:02.0f}"]
 
             # output mean Ylms to file
             if (DATAFORM == 'ascii'):
@@ -394,14 +413,14 @@ class dealiasing(gravtk.harmonics):
         """
         self = dealiasing(lmax=temp.lmax, mmax=temp.mmax)
         # try to assign variables to self
-        for key in ['clm','slm','time','month','shape','ndim','filename',
+        for key in ['clm','slm','time','month','filename',
             'center','release','product','start_time','end_time']:
             try:
                 val = getattr(temp, key)
                 setattr(self, key, np.copy(val))
             except AttributeError:
                 pass
-        # assign ndim and shape attributes
+        # assign degree and order fields
         self.update_dimensions()
         return self
 

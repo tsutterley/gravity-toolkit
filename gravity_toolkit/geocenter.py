@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
 Data class for reading and processing geocenter data
 
 PYTHON DEPENDENCIES:
@@ -15,6 +15,7 @@ PYTHON DEPENDENCIES:
         https://github.com/yaml/pyyaml
 
 UPDATE HISTORY:
+    Updated 03/2023: convert shape and ndim to harmonic class properties
     Updated 02/2023: use monospaced text for geocenter objects in docstrings
     Updated 12/2022: make geocenter objects iterable and with length
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -888,7 +889,7 @@ class geocenter(object):
         fields: list
             default keys in ``harmonics`` object
         """
-        # reassign shape and ndim attributes
+        # assign degree and order fields
         temp.update_dimensions()
         # set default keyword arguments
         kwargs.setdefault('fields',['time','month','filename'])

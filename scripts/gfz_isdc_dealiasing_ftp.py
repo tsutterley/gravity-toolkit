@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_dealiasing_ftp.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (03/2023)
 Syncs GRACE Level-1b dealiasing products from the GFZ Information
     System and Data Center (ISDC)
 Optionally outputs as monthly tar files
@@ -30,6 +30,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 03/2023: increase default year range to sync
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
@@ -139,8 +140,8 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, MONTHS=None, TAR=False,
                 for fi,remote_mtime in zip(remote_files,remote_mtimes):
                     # remote and local version of each input file
                     remote = [ftp.host,'grace','Level-1B','GFZ','AOD',DREL,Y,fi]
-                    local = os.path.join(grace_dir,fi)
-                    ftp_mirror_file(ftp,remote,remote_mtime,local,
+                    local_file = os.path.join(grace_dir,fi)
+                    ftp_mirror_file(ftp,remote,remote_mtime,local_file,
                         CLOBBER=CLOBBER,MODE=MODE)
 
     # close the ftp connection
@@ -203,7 +204,7 @@ def arguments():
         help='GRACE/GRACE-FO data release')
     # years to download
     parser.add_argument('--year','-Y',
-        type=int, nargs='+', default=range(2000,2021),
+        type=int, nargs='+', default=range(2000,2023),
         help='Years of data to sync')
     # months to download
     parser.add_argument('--month','-m',

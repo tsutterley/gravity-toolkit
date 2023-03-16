@@ -97,6 +97,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 03/2023: case insensitive searching for HDF5 and netCDF4 attributes
+        convert shape and ndim to harmonic class properties
     Updated 02/2023: use monospaced text for harmonics objects in gia docstring
     Updated 12/2022: made interited GIA model harmonics class
         set default parameters, title, reference and url as None
@@ -745,10 +746,6 @@ class gia(harmonics):
         sine spherical harmonics
     attributes: dict
         attributes of harmonics variables
-    shape: tuple
-        dimensions of harmonics object
-    ndim: int
-        number of dimensions of harmonics object
     filename: str
         input or output filename
     """
@@ -812,6 +809,6 @@ class gia(harmonics):
         self.citation = Ylms['citation']
         self.reference = Ylms['reference']
         self.url = Ylms['url']
-        # assign shape and ndim attributes
+        # assign degree and order fields
         self.update_dimensions()
         return self

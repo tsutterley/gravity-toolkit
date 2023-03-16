@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_date.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (03/2023)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
@@ -46,7 +46,8 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
-    Updated 11/2022: use f-strings for formatting verbose or ascii output
+    Updated 03/2023: use f-strings for formatting output date lines
+    Updated 11/2022: use f-strings for formatting verbose output
     Updated 09/2022: raise exception if index file cannot be found
         use logging for debugging level verbose output
     Updated 08/2022: moved file parsing functions to time module
@@ -267,9 +268,10 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
         grace_files[mon[t]] = os.path.join(grace_dir,infile)
         # print to GRACE dates ascii file (NOTE: tot_days will be rounded)
         if OUTPUT:
-            print(('{0:13.8f} {1:03d} {2:8.0f} {3:03.0f} {4:8.0f} {5:03.0f} '
-                '{6:8.0f}').format(tdec[t],mon[t],start_yr[t],start_day[t],
-                end_yr[t],end_day[t],tot_days[t]), file=fid)
+            print((f'{tdec[t]:13.8f} {mon[t]:03d} '
+                f'{start_yr[t]:8.0f} {start_day[t]:03.0f} '
+                f'{end_yr[t]:8.0f} {end_day[t]:03.0f} '
+                f'{tot_days[t]:8.0f}'), file=fid)
 
     # close date file
     # set permissions level of output date file
