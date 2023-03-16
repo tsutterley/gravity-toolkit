@@ -325,7 +325,8 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # output GIA string for filename
     if GIA:
         gia_str = f'_{GIA_Ylms_rate.title}'
-        attributes['GIA'] = (GIA_Ylms_rate.citation, os.path.basename(GIA_FILE))
+        attributes['GIA'] = (str(GIA_Ylms_rate.citation),
+                             os.path.basename(GIA_FILE))
     else:
         gia_str = ''
     # monthly GIA calculated by gia_rate*time elapsed
@@ -371,7 +372,9 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
                 # index containing files in data format
                 Ylms = gravtk.harmonics().from_index(REMOVE_FILE,
                     format=removeform)
-                attributes['lineage'].extend(os.path.basename(Ylms.filename))
+                attributes['lineage'].extend(
+                    [os.path.basename(f) for f in Ylms.filename]
+                )
             # reduce to GRACE/GRACE-FO months and truncate to degree and order
             Ylms = Ylms.subset(GRACE_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
             # distribute removed Ylms uniformly over the ocean

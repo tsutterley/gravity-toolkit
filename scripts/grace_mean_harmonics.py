@@ -73,6 +73,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 03/2023: add root attributes to output netCDF4 and HDF5 files
+        convert shape and ndim to harmonic class properties
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: add option to replace degree 4 zonal harmonics with SLR
@@ -238,14 +239,14 @@ class mean(gravtk.harmonics):
         """
         self = mean(lmax=temp.lmax, mmax=temp.mmax)
         # try to assign variables to self
-        for key in ['clm','slm','eclm','eslm','shape','ndim','filename',
+        for key in ['clm','slm','eclm','eslm','filename',
             'center','release','product']:
             try:
                 val = getattr(temp, key)
                 setattr(self, key, np.copy(val))
             except AttributeError:
                 pass
-        # assign ndim and shape attributes
+        # assign degree and order fields
         self.update_dimensions()
         return self
 

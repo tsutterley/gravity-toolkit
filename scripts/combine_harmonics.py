@@ -221,10 +221,6 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     # output spatial grid
     grid.data = np.zeros((nlat,nlon,nt))
     grid.mask = np.zeros((nlat,nlon,nt), dtype=bool)
-    # update attributes
-    grid.update_spacing()
-    grid.update_extents()
-    grid.update_dimensions()
 
     # Setting units factor for output
     # dfactor computes the degree dependent coefficients

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 convert_harmonics.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (03/2023)
 Converts a file from the spatial domain into the spherical harmonic domain
 
 CALLING SEQUENCE:
@@ -62,6 +62,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 03/2023: updated inputs to spatial from_ascii function
     Updated 01/2023: refactored associated legendre polynomials
     Updated 12/2022: single implicit import of gravity toolkit
         iterate over spatial objects versus indexing
@@ -135,9 +136,9 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     # expand dimensions
     if (DATAFORM == 'ascii'):
         # ascii (.txt)
-        input_spatial = gravtk.spatial(spacing=[dlon,dlat],nlat=nlat,
-            nlon=nlon,fill_value=FILL_VALUE).from_ascii(INPUT_FILE,
-            header=HEADER).expand_dims()
+        input_spatial = gravtk.spatial(fill_value=FILL_VALUE).from_ascii(
+            INPUT_FILE, header=HEADER, spacing=[dlon,dlat], nlat=nlat,
+            nlon=nlon).expand_dims()
     elif (DATAFORM == 'netCDF4'):
         # netcdf (.nc)
         input_spatial = gravtk.spatial().from_netCDF4(INPUT_FILE).expand_dims()

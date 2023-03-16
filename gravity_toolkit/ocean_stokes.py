@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ocean_stokes.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (03/2023)
 
 Reads a land-sea mask and converts to a series of spherical harmonics
 
@@ -43,6 +43,7 @@ REFERENCES:
     Earth and Space Science, 7, 2020. https://doi.org/10.1029/2019EA000860
 
 UPDATE HISTORY:
+    Updated 03/2023: fixed docstring summary of ocean stokes function
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 01/2021: added option VARNAME to generalize input masks
@@ -62,7 +63,7 @@ from gravity_toolkit.gen_stokes import gen_stokes
 def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
     SIMPLIFY=False):
     """
-    Converts data from spherical harmonic coefficients to a spatial field
+    Reads a land-sea mask and converts to a series of spherical harmonics
 
     Parameters
     ----------
@@ -99,7 +100,7 @@ def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
         date=False, varname=VARNAME)
     # create land function
     nth,nphi = landsea.shape
-    land_function = np.zeros((nth,nphi),dtype=np.float64)
+    land_function = np.zeros((nth,nphi), dtype=np.float64)
     # combine land and island levels for land function
     indx,indy = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))
     land_function[indx,indy] = 1.0
@@ -109,14 +110,14 @@ def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
     # ocean function reciprocal of land function
     ocean_function = 1.0 - land_function
     # convert to spherical harmonics (1 cm w.e.)
-    ocean_Ylms = gen_stokes(ocean_function.T,landsea.lon,landsea.lat,
-        UNITS=1,LMIN=0,LMAX=LMAX,MMAX=MMAX,LOVE=LOVE)
+    Ylms = gen_stokes(ocean_function.T, landsea.lon, landsea.lat,
+        UNITS=1, LMIN=0, LMAX=LMAX, MMAX=MMAX, LOVE=LOVE)
     # return the spherical harmonic coefficients
-    return ocean_Ylms
+    return Ylms
 
 def find_isolated_points(mask):
     """
-    Simplify mask by removing isolated points
+    Simplify a mask by removing isolated points
 
     Parameters
     ----------

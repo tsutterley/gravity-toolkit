@@ -110,6 +110,7 @@ missions
     api_reference/calc_sensitivity_kernel.rst
     api_reference/combine_harmonics.rst
     api_reference/convert_harmonics.rst
+    api_reference/dealiasing_global_uplift.rst
     api_reference/dealiasing_monthly_mean.rst
     api_reference/grace_mean_harmonics.rst
     api_reference/grace_spatial_error.rst

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 regress_grace_maps.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (03/2023)
 
 Reads in GRACE/GRACE-FO spatial files from grace_spatial_maps.py and
     fits a regression model at each grid point
@@ -60,6 +60,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 03/2023: updated inputs to spatial from_ascii function
     Updated 01/2023: refactored time series analysis functions
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -212,8 +213,8 @@ def regress_grace_maps(LMAX, RAD,
         input_file = os.path.join(OUTPUT_DIRECTORY,input_format.format(*fargs))
         # read GRACE/GRACE-FO spatial file
         if (DATAFORM == 'ascii'):
-            dinput = gravtk.spatial(spacing=[dlon,dlat], nlon=nlon,
-                nlat=nlat).from_ascii(input_file)
+            dinput = gravtk.spatial().from_ascii(input_file,
+                spacing=[dlon,dlat], nlon=nlon, nlat=nlat)
         elif (DATAFORM == 'netCDF4'):
             # netcdf (.nc)
             dinput = gravtk.spatial().from_netCDF4(input_file)
