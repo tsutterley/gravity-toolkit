@@ -385,7 +385,7 @@ def regress_grace_maps(LMAX, RAD,
             UNITS=key, LONGNAME=LONGNAME, TITLE=nu,
             VERBOSE=VERBOSE, MODE=MODE)
         # add output files to list object
-        output_files.append(os.path.join(OUTPUT_DIRECTORY,f7))
+        output_files.append(file7)
 
     # return the list of output files
     return output_files
