@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 u"""
-plot_IIpp_grid_maps.py
+plot_ASE_grid_movie.py
 Written by Tyler Sutterley (03/2023)
-Creates GMT-like plots for the Antarctic Peninsula (IIpp basin)
+Creates a GMT-like animations for sub-regions of Antarctica
 on a polar stereographic south (3031) projection
 
 Grounded ice and islands from Eric Rignot grounded ice image
-Glacial drainage basins updated from Rignot et al. (2012) and IMBIE-2 (2016)
+glacial drainage basins updated from Rignot et al. (2012)
 2003-2004 MODIS mosaic of Antarctica (MOA) from NSIDC (Haran et al., 2013)
     https://nsidc.org/data/moa/
 
@@ -32,7 +32,8 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 03/2023: switch from parameter files to argparse arguments
-        updated inputs to spatial from_ascii function
+        updated inputs to spatial from_file function
+        merged regional animation programs into a single program
     Updated 07/2022: place some imports behind try/except statements
     Updated 05/2022: use argparse descriptions within documentation
         use mask, shift grid and interpolation functions from tools
@@ -41,30 +42,31 @@ UPDATE HISTORY:
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 10/2020: using spatial utilities for reading
         using argparse to set command-line parameters
+    Updated 04/2020: remove deprecated latex portions
     Updated 10/2019: changing Y/N flags to True/False
     Updated 09/2019: added parameter for specifying if netCDF4 or HDF5
     Updated 04/2019: set cap style of cartopy geoaxes outline patch
     Updated 03/2019: replacing matplotlib basemap with cartopy
-    Updated 02/2019: saving metadata to output figure
     Updated 12/2018: added parameter CBEXTEND for colorbar extension triangles
-    Updated 05/2018: using __future__ print function for python3 compatibility
-    Updated 10/2017: generalizations for different grids. new BOUNDARY parameter
-        use subplots to adjust bounds. read coastal shapefiles
-        don't plot ice sheet if plotting basins.  added IMBIE-2 sub-basins
+    Updated 09/2018: determine bitrate automatically from the underlying utility
+        use version 2 of the Antarctic boundaries from NSIDC
+    Updated 10/2017: added IMBIE-2 sub-basins
+    Updated 09/2017: use __future__ print_function. read coastal shapefiles
+        using matplotlib animation module to create movie directly
     Updated 04/2017: version 2 of the Antarctic boundaries file (NSIDC)
     Updated 03/2017: minor change to np.zeros_like
     Updated 02/2017: direction="in" for matplotlib2.0 color bar ticks
-    Updated 10/2016: added IMBIE-2 basin delineations
     Updated 06/2016: reducing MODIS mosaic when importing with GDAL
     Updated 05/2015: minor update to read and plot of drainage basins
         updates to parallel new plot_AIS_grid_movie.py code
-    Written 07/2014
+    Written 11/2014
 """
 from __future__ import print_function
 
 import sys
 import os
 import copy
+import time
 import logging
 import argparse
 import warnings
@@ -84,6 +86,7 @@ try:
     import matplotlib.cm as cm
     import matplotlib.colors as colors
     import matplotlib.ticker as ticker
+    import matplotlib.animation as animation
     import matplotlib.offsetbox as offsetbox
     matplotlib.rcParams['axes.linewidth'] = 2.0
     matplotlib.rcParams['font.family'] = 'sans-serif'
@@ -105,6 +108,11 @@ except ModuleNotFoundError:
 # ignore warnings
 warnings.filterwarnings("ignore")
 
+# output file information
+suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
+# output units
+unit_list = ['cmwe', 'mmGH', 'mmCU', u'\\u03BCGal', 'mbar']
+
 # Antarctic 2012 basins
 # region directory, filename, title and data type
 region_dir = ['masks','Rignot_ANT']
@@ -123,15 +131,74 @@ IMBIE_title = ('A-Ap','Ap-B','B-C','C-Cp','Cp-D','D-Dp','Dp-E','E-Ep','Ep-F',
 
 # background image mosaics
 # MODIS mosaic of Antarctica
-image_file = ['MOA','moa125_2009_hp1_v1.1.tif']
+image_file = ['MOA','moa125_2004_hp1_v1.1.tif']
 
 # Coastlines for antarctica (islands)
 coast_file = ['masks','IceBoundaries_Antarctica_v02',
     'ant_ice_sheet_islands_v2.shp']
 
-# Antarctic Peninsula bounds
-xlimits = np.array([-2710000,-1830000])
-ylimits = np.array([760000,1780000])
+# regional plot parameters
+# figure size
+region_figsize = {}
+# font sizes
+region_fontsize = {}
+region_labelsize = {}
+# x and y limit (projected)
+region_xlimit = {}
+region_ylimit = {}
+# axis = position and dimensions [left, bottom, width, height]
+# length = length of lines demarking the colorbar
+region_cb_axis = {}
+region_cb_length = {}
+# plot scale parameters (Xmin,Ymin,dx,dy,masked)
+region_plotscale = {}
+# subplot adjustments
+region_sub_adjust = {}
+
+# Amundsen Sea Embayment (ASE)
+region_figsize['ASE'] = (10,9.5)
+region_fontsize['ASE'] = 24
+region_labelsize['ASE'] = 24
+region_xlimit['ASE'] = np.array([-1900000, -900000])
+region_ylimit['ASE'] =  np.array([-900000, 200000])
+region_cb_axis['ASE'] = [0.865, 0.015, 0.035, 0.94]
+region_cb_length['ASE'] = 26
+region_plotscale['ASE'] = (-1870e3,-845e3,200e3,25010,False)
+region_sub_adjust['ASE'] = dict(left=0.01, right=0.855, bottom=0.01, top=0.96)
+
+# Antarctic Peninsula (IIpp)
+region_figsize['IIpp'] = (10,10)
+region_fontsize['IIpp'] = 24
+region_labelsize['IIpp'] = 24
+region_xlimit['IIpp'] = np.array([-2710000,-1830000])
+region_ylimit['IIpp'] = np.array([760000,1780000])
+region_cb_axis['IIpp'] = [0.87, 0.015, 0.0325, 0.94]
+region_cb_length['IIpp'] = 23
+region_plotscale['IIpp'] = (-2685e3,809e3,200e3,25010,False)
+region_sub_adjust['IIpp'] = dict(left=0.01, right=0.86, bottom=0.01, top=0.96)
+
+# Totten/Moscow/Frost (CpD)
+region_figsize['CpD'] = (9.5,10)
+region_fontsize['CpD'] = 24
+region_labelsize['CpD'] = 24
+region_xlimit['CpD'] = np.array([1200000,2650000])
+region_ylimit['CpD'] = np.array([-1800000,0])
+region_cb_axis['CpD'] = [0.855, 0.015, 0.04, 0.94]
+region_cb_length['CpD'] = 27
+region_plotscale['CpD'] = (1230e3,-1740e3,200e3,28420,False)
+region_sub_adjust['CpD'] = dict(left=0.01, right=0.84, bottom=0.01, top=0.96)
+
+# Queen Maud Land (QML)
+region_figsize['QML'] = (9.5,4.625)
+region_fontsize['QML'] = 20
+region_labelsize['QML'] = 24
+region_xlimit['QML'] = np.array([-940000,2400000])
+region_ylimit['QML'] = np.array([530000,2300000])
+region_cb_axis['QML'] = [0.87, 0.03, 0.03, 0.90]
+region_cb_length['QML'] = 21
+region_plotscale['QML'] = (1705e3,2125e3,600e3,50e3,False)
+region_sub_adjust['QML'] = dict(left=0.01, right=0.85, bottom=0.01, top=0.95)
+
 # cartopy transform for polar stereographic south
 try:
     projection = ccrs.Stereographic(central_longitude=0.0,
@@ -143,10 +210,11 @@ except (NameError,ValueError) as exc:
 def info(title):
     print(os.path.basename(sys.argv[0]))
     print(title)
-    print('module name: {0}'.format(__name__))
+    print(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        print('parent process: {0:d}'.format(os.getppid()))
-    print('process id: {0:d}'.format(os.getpid()))
+        print(f'parent process: {os.getppid():d}')
+    print(f'process id: {os.getpid():d}')
+
 
 # PURPOSE: plot Rignot 2012 drainage basin polylines
 def plot_rignot_basins(ax, base_dir):
@@ -203,6 +271,21 @@ def plot_IMBIE2_subbasins(ax, base_dir):
             ax.plot(points[p1:p2,0], points[p1:p2,1], c='k',
                 transform=projection)
 
+# PURPOSE: plot Amundsen Sea basins from Mouginot et al. (2014)
+def plot_amundsen_basins(ax, base_dir):
+    # read Amundsen Sea basin polylines from shapefile
+    basin_shapefile = os.path.join(base_dir,'masks','Basins_Admunsen',
+        'Basins_admunsen_match_coastline_and_IS.shp')
+    basin_title = ['pope_smith','haynes','thwaites','pine_island','kohler']
+    shape_input = shapefile.Reader(basin_shapefile)
+    shape_entities = shape_input.shapes()
+    # for each shape entity
+    for i,ent in enumerate(shape_entities):
+        # extract lat/lon coordinates for record
+        points = np.array(ent.points)
+        ax.plot(points[:,0], points[:,1], c='k',
+            transform=ccrs.PlateCarree())
+
 # PURPOSE: plot Antarctic grounded ice delineation
 def plot_grounded_ice(ax, base_dir, START=1):
     shape_input = shapefile.Reader(os.path.join(base_dir,*coast_file))
@@ -216,7 +299,7 @@ def plot_grounded_ice(ax, base_dir, START=1):
             transform=projection)
 
 # PURPOSE: plot MODIS mosaic of Antarctica as background image
-def plot_image_mosaic(ax, base_dir, MASKED=True):
+def plot_image_mosaic(ax, base_dir, xlimits, ylimits, MASKED=True):
     # read MODIS mosaic of Antarctica
     ds = osgeo.gdal.Open(os.path.join(base_dir,*image_file))
     # get dimensions
@@ -281,14 +364,16 @@ def add_plot_scale(ax,X,Y,dx,dy,masked,fc1='w',fc2='k'):
     ax.text(X+0.5*dx, Y+1.3*dy, 'km', ha='center', va='bottom',
         fontsize=12, color=fc2, zorder=6)
 
-# plot grid program
-def plot_grid(base_dir, FILENAME,
+# animate grid program
+def animate_grid(base_dir, FILENAME,
+    REGION=None,
     DATAFORM=None,
     MASK=None,
     INTERPOLATION=None,
     DDEG=None,
     INTERVAL=None,
     SCALE_FACTOR=1.0,
+    FILL_VALUE=-9999.0,
     COLOR_MAP=None,
     CPT_FILE=None,
     PLOT_RANGE=None,
@@ -309,7 +394,6 @@ def plot_grid(base_dir, FILENAME,
     GRID=None,
     DRAW_SCALE=False,
     FIGURE_FILE=None,
-    FIGURE_FORMAT=None,
     FIGURE_DPI=None,
     MODE=0o775):
 
@@ -360,16 +444,22 @@ def plot_grid(base_dir, FILENAME,
         order = 3
 
     # input ascii/netCDF4/HDF5 file
-    if (DATAFORM == 'ascii'):
+    # read spatial file in data format
+    if DATAFORM in ('ascii', 'netCDF4', 'HDF5'):
         # ascii (.txt)
-        dinput = gravtk.spatial().from_ascii(FILENAME, date=False,
-            spacing=[dlon,dlat], nlat=nlat, nlon=nlon)
-    elif (DATAFORM == 'netCDF4'):
         # netCDF4 (.nc)
-        dinput = gravtk.spatial().from_netCDF4(FILENAME, date=False)
-    elif (DATAFORM == 'HDF5'):
         # HDF5 (.H5)
-        dinput = gravtk.spatial().from_HDF5(FILENAME, date=False)
+        dinput = gravtk.spatial().from_file(FILENAME,
+            format=DATAFORM, date=True, spacing=[dlon, dlat],
+            nlat=nlat, nlon=nlon)
+    elif DATAFORM in ('index-ascii', 'index-netCDF4', 'index-HDF5'):
+        # read from index file
+        _,dataform = DATAFORM.split('-')
+        dinput = gravtk.spatial().from_index(FILENAME,
+            format=dataform, date=True, spacing=[dlon, dlat],
+            nlat=nlat, nlon=nlon)
+    # replace invalid with a new fill value
+    dinput.replace_invalid(fill_value=FILL_VALUE)
 
     # create masked array if missing values
     if MASK is not None:
@@ -395,14 +485,26 @@ def plot_grid(base_dir, FILENAME,
     if (np.sign(dlat) == -1):
         dinput = dinput.reverse(axis=0)
 
+    # create movie writer objects
+    FFMpegWriter = animation.writers['ffmpeg']
+    metadata = dict(title=os.path.basename(sys.argv[0]), artist='Matplotlib',
+        date_created=time.strftime('%Y-%m-%d',time.localtime()))
+    # bitrate to be determined automatically by underlying utility
+    writer = FFMpegWriter(fps=8, metadata=metadata, bitrate=-1,
+        extra_args=['-vcodec','libx264'])
+
     # setup stereographic map
-    f1,ax1 = plt.subplots(num=1, nrows=1, ncols=1, figsize=(10,10),
+    fig, ax1 = plt.subplots(num=1, nrows=1, ncols=1,
+        figsize=region_figsize[REGION],
         subplot_kw=dict(projection=projection))
     # WGS84 Ellipsoid parameters
     a_axis = 6378137.0# [m] semimajor axis of the ellipsoid
     flat = 1.0/298.257223563# flattening of the ellipsoid
     # (4pi/3)R^3 = (4pi/3)(a^2)b = (4pi/3)(a^3)(1 -f)
     rad_e = a_axis*(1.0 - flat)**(1.0/3.0)
+    # region x and y limits
+    xlimits = region_xlimit[REGION]
+    ylimits = region_ylimit[REGION]
 
     # plot image of MODIS mosaic of Antarctica as base layer
     if BASEMAP:
@@ -421,35 +523,15 @@ def plot_grid(base_dir, FILENAME,
     lonsin = points[:,0].reshape(my,mx)
     latsin = points[:,1].reshape(my,mx)
 
-    # interpolate to image coordinates
-    if (INTERVAL == 1) and (np.max(dinput.lon) > 180):# (0:360, 90:-90)
-        shift_data,lon180 = gravtk.tools.shift_grid(180.0,dinput.data,dinput.lon)
-        shift_mask,lon180 = gravtk.tools.shift_grid(180.0,dinput.mask,dinput.lon)
-        img = gravtk.tools.interp_grid(shift_data,lon180,dinput.lat,lonsin,latsin,order)
-        msk = gravtk.tools.interp_grid(shift_mask,lon180,dinput.lat,lonsin,latsin,order)
-    elif (INTERVAL == 2) and (np.max(dinput.lon) > 180):# DDEG/2
-        shift_data,lon180 = gravtk.tools.shift_grid(180.0+dlon,dinput.data,dinput.lon)
-        shift_mask,lon180 = gravtk.tools.shift_grid(180.0+dlon,dinput.mask,dinput.lon)
-        img = gravtk.tools.interp_grid(shift_data,lon180,dinput.lat,lonsin,latsin,order)
-        msk = gravtk.tools.interp_grid(shift_mask,lon180,dinput.lat,lonsin,latsin,order)
-    else:# -180:180 or modification of there of
-        img = gravtk.tools.interp_grid(dinput.data,dinput.lon,dinput.lat,lonsin,latsin,order)
-        msk = gravtk.tools.interp_grid(dinput.mask,dinput.lon,dinput.lat,lonsin,latsin,order)
-    # create masked array of image
-    img = np.ma.array(img, mask=msk.astype(bool))
-
-    # plot only grounded points
+    # only plot grounded points
     if MASK is not None:
-        img = gravtk.tools.mask_oceans(lonsin, latsin,
-            data=img, order=order, iceshelves=False)
-    # plot image with transparency using normalization
-    im = ax1.imshow(img, interpolation='nearest', cmap=cmap,
-        extent=(xlimits[0],xlimits[1],ylimits[0],ylimits[1]),
-        norm=norm, alpha=ALPHA, origin='lower', transform=projection)
+        mask = gravtk.tools.mask_oceans(lonsin,latsin,order=order)
 
-    # create mesh lon/lat
-    lon, lat = np.meshgrid(dinput.lon,dinput.lat)
-    data = dinput.to_masked_array()
+    # add place holder for figure image
+    im = ax1.imshow(np.zeros((my,mx)), interpolation='nearest', cmap=cmap,
+        norm=norm, extent=(xlimits[0],xlimits[1],ylimits[0],ylimits[1]),
+        alpha=ALPHA, origin='lower', transform=projection, animated=True)
+
     # plot line contours
     if CONTOURS:
         clevs = np.arange(CONTOUR_RANGE[0],
@@ -457,23 +539,8 @@ def plot_grid(base_dir, FILENAME,
             CONTOUR_RANGE[2])
         # remove 0 (will plot in red)
         reduce_clevs = clevs[np.nonzero(clevs)]
-        # plot contours
-        ax1.contour(lon,lat,data,reduce_clevs,colors='0.2',linestyles='solid',
-            transform=ccrs.PlateCarree())
-        ax1.contour(lon,lat,data,[0],colors='red',linestyles='solid',
-            linewidths=1.5,transform=ccrs.PlateCarree())
-
-    # plot line contour for global average
-    if MEAN_CONTOUR and CONTOURS:
-        # calculate areas of each grid cell
-        dphi,dth = (dlon*np.pi/180.0,dlat*np.pi/180.0)
-        indy,indx = np.nonzero(np.logical_not(data.mask))
-        area = (rad_e**2)*dth*dphi*np.cos(lat[indy,indx]*np.pi/180.0)
-        # calculate average
-        ave = np.sum(area*data[indy,indx])/np.sum(area)
-        # plot line contour of global average
-        ax1.contour(lon,lat,data,[ave],colors='blue',linestyles='solid',
-            linewidths=1.5,transform=ccrs.PlateCarree())
+        # create mesh lon/lat
+        lon, lat = np.meshgrid(dinput.lon,dinput.lat)
 
     # add basins based on BASIN_TYPE (Rignot 2012, IMBIE-2, IMBIE-2 subbasins)
     if (BASIN_TYPE == 'Rignot'):
@@ -485,12 +552,14 @@ def plot_grid(base_dir, FILENAME,
     elif (BASIN_TYPE == 'IMBIE-2_subbasin'):
         plot_IMBIE2_subbasins(ax1, base_dir)
         start_indice = 1
+    elif (BASIN_TYPE == 'Amundsen'):
+        plot_amundsen_basins(ax1, base_dir)
+        start_indice = 0
     else:
         start_indice = 0
     # add glaciers/ice caps/islands
     plot_grounded_ice(ax1, base_dir, START=start_indice)
 
-    # draw lat/lon grid lines
     if DRAW_GRID_LINES:
         # meridian and parallel grid spacing
         llx,lly = (GRID[0],GRID[0]) if (len(GRID) == 1) else (GRID[0],GRID[1])
@@ -501,24 +570,24 @@ def plot_grid(base_dir, FILENAME,
         gl.xlocator = ticker.FixedLocator(grid_meridians)
         gl.ylocator = ticker.FixedLocator(grid_parallels)
 
-    # Add colorbar and adjust size
-    # pad = distance from main plot axis
+    # Add colorbar
+    # Add an axes at position rect [left, bottom, width, height]
+    cbar_ax = fig.add_axes(region_cb_axis[REGION])
     # extend = add extension triangles to upper and lower bounds
     # options: neither, both, min, max
-    # shrink = percent size of colorbar
-    # aspect = lengthXwidth aspect of colorbar
-    cbar = plt.colorbar(im, ax=ax1, pad=0.025, extend=CBEXTEND,
-        extendfrac=0.0375, shrink=0.97, aspect=22.5, drawedges=False)
+    cbar = fig.colorbar(im, cax=cbar_ax, extend=CBEXTEND,
+        extendfrac=0.0375, drawedges=False)
     # rasterized colorbar to remove lines
     cbar.solids.set_rasterized(True)
     # Add label to the colorbar
-    cbar.ax.set_ylabel(CBTITLE, labelpad=10, fontsize=24)
-    cbar.ax.set_title(CBUNITS, fontsize=24, va='bottom')
+    cbar.ax.set_ylabel(CBTITLE, labelpad=10, fontsize=region_fontsize[REGION])
+    cbar.ax.set_title(CBUNITS, fontsize=region_fontsize[REGION], va='bottom')
     # Set the tick levels for the colorbar
     cbar.set_ticks(levels)
     cbar.set_ticklabels([CBFORMAT.format(ct) for ct in levels])
     # ticks lines all the way across
-    cbar.ax.tick_params(which='both', width=1, length=29, labelsize=24,
+    cbar.ax.tick_params(which='both', width=1,
+        length=region_cb_length[REGION], labelsize=region_fontsize[REGION],
         direction='in')
 
     # x and y limits, axis = equal
@@ -531,48 +600,113 @@ def plot_grid(base_dir, FILENAME,
 
     # add main title
     if TITLE is not None:
-        ax1.set_title(TITLE.replace('-',u'\u2013'), fontsize=24)
+        ax1.set_title(TITLE.replace('-',u'\u2013'),
+            fontsize=region_fontsize[REGION])
     # Add figure label
     if LABEL is not None:
         if BASEMAP:
             at = offsetbox.AnchoredText(LABEL,
                 loc=2, pad=0, frameon=True,
-                prop=dict(size=24,weight='bold'))
+                prop=dict(size=region_labelsize[REGION], weight='bold'))
             at.patch.set_boxstyle("Square,pad=0.25")
             at.patch.set_edgecolor("white")
         else:
             at = offsetbox.AnchoredText(LABEL,
                 loc=2, pad=0, frameon=False,
-                prop=dict(size=24,weight='bold'))
+                prop=dict(size=region_labelsize[REGION], weight='bold'))
         ax1.axes.add_artist(at)
 
     # draw map scale to corners
     if DRAW_SCALE:
-        add_plot_scale(ax1,-2685e3,809e3,200e3,25010,False)
+        add_plot_scale(ax1, *region_plotscale[REGION])
+
+    # add date label (year-calendar month e.g. 2002-01)
+    # if plotting with a background mosaic: use a white time label
+    # else: use a black time label
+    text_color = 'w' if BASEMAP else 'k'
+    time_text = ax1.text(0.025, 0.025, '', transform=ax1.transAxes,
+        color=text_color, size=region_labelsize[REGION],
+        ha='left', va='baseline', usetex=True)
+
     # stronger linewidth on frame
     ax1.spines['geo'].set_linewidth(2.0)
     ax1.spines['geo'].set_zorder(10)
     ax1.spines['geo'].set_capstyle('projecting')
-
     # adjust subplot within figure
-    f1.subplots_adjust(left=0.02,right=0.98,bottom=0.02,top=0.96)
-    # output to file
+    fig.subplots_adjust(**region_sub_adjust[REGION])
+
+    # replace data and contours to create movie frames
     # create output directory if non-existent
     if not os.access(os.path.dirname(FIGURE_FILE), os.F_OK):
         os.makedirs(os.path.dirname(FIGURE_FILE), MODE)
-    # save to file
-    logging.info(FIGURE_FILE)
-    plt.savefig(FIGURE_FILE,
-        metadata={'Title':os.path.basename(sys.argv[0])},
-        dpi=FIGURE_DPI, format=FIGURE_FORMAT)
-    plt.clf()
+    # create image for each frame
+    with writer.saving(fig, FIGURE_FILE, FIGURE_DPI):
+        # for each input file
+        for t,gm in enumerate(dinput.month):
+            # data for time t converted to a masked array
+            data = dinput.subset(gm).to_masked_array()
+            # interpolate to image coordinates
+            if (INTERVAL == 1) and (np.max(dinput.lon) > 180):# (0:360, 90:-90)
+                shift_data,lon180 = gravtk.tools.shift_grid(180.0,data.data,dinput.lon)
+                shift_mask,lon180 = gravtk.tools.shift_grid(180.0,data.mask,dinput.lon)
+                img = gravtk.tools.interp_grid(shift_data,lon180,data.lat,lonsin,latsin,order)
+                msk = gravtk.tools.interp_grid(shift_mask,lon180,data.lat,lonsin,latsin,order)
+            elif (INTERVAL == 2) and (np.max(dinput.lon) > 180):# DDEG/2
+                shift_data,lon180 = gravtk.tools.shift_grid(180.0+dlon,data.data,dinput.lon)
+                shift_mask,lon180 = gravtk.tools.shift_grid(180.0+dlon,data.mask,dinput.lon)
+                img = gravtk.tools.interp_grid(shift_data,lon180,dinput.lat,lonsin,latsin,order)
+                msk = gravtk.tools.interp_grid(shift_mask,lon180,dinput.lat,lonsin,latsin,order)
+            else:# -180:180 or modification of there of
+                img = gravtk.tools.interp_grid(data.data,dinput.lon,dinput.lat,lonsin,latsin,order)
+                msk = gravtk.tools.interp_grid(data.mask,dinput.lon,dinput.lat,lonsin,latsin,order)
+            # create masked array of image
+            img = np.ma.array(img, mask=msk.astype(bool))
+            # only plot grounded points
+            if MASK is not None:
+                # update image mask for grounded points
+                img.mask |= mask
+                # replace data with updated mask
+                img.data[img.mask] = img.fill_value
+            # set data to image with transparency using normalization
+            im.set_data(img)
+            # plot line contours
+            contours = []
+            if CONTOURS and (np.sum(data**2) > 0):
+                # plot line contours
+                contours.append(ax1.contour(lon, lat, data, reduce_clevs,
+                    colors='0.2', linestyles='solid',
+                    transform=ccrs.PlateCarree()))
+                contours.append(ax1.contour(lon, lat, data, 0,
+                    colors='red', linestyles='solid', linewidths=1.5,
+                    transform=ccrs.PlateCarree()))
+            # plot line contour for global average
+            if MEAN_CONTOUR and CONTOURS:
+                # calculate areas of each grid cell
+                dphi,dth = (dlon*np.pi/180.0,dlat*np.pi/180.0)
+                indy,indx = np.nonzero(np.logical_not(data.mask))
+                area = (rad_e**2)*dth*dphi*np.cos(lat[indy,indx]*np.pi/180.0)
+                # calculate average
+                ave = np.sum(area*data[indy,indx])/np.sum(area)
+                # plot line contour of global average
+                contours.append(ax1.contour(lon, lat, data, [ave],
+                    colors='blue', linestyles='solid', linewidths=1.5,
+                    transform=ccrs.PlateCarree()))
+            # add date label (year-calendar month e.g. 2002-01)
+            year = np.floor(dinput.time[t]).astype(np.int64)
+            calendar_month = np.int64(((gm-1) % 12)+1)
+            date_label=r'\textbf{{{0:4d}--{1:02d}}}'.format(year,calendar_month)
+            time_text.set_text(date_label)
+            # add to movie
+            writer.grab_frame()
+            # clear figure axes of any contour collections
+            [c.remove() for cntr in contours for c in cntr.collections]
     # change the permissions mode
     os.chmod(FIGURE_FILE, MODE)
 
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
-        description="""Creates GMT-like plots of the Antarctic Peninsula
+        description="""Creates GMT-like animations of sub-regions of Antarctica
             on a polar stereographic south (EPSG 3031) projection
             """,
         fromfile_prefix_chars="@"
@@ -587,6 +721,10 @@ def arguments():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
+    # plot regions
+    parser.add_argument('--region','-r',
+        metavar='REGION', type=str, choices=sorted(region_figsize.keys()),
+        required=True, help='Region to plot')
     # Input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--format','-F',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
@@ -680,9 +818,6 @@ def arguments():
     parser.add_argument('--figure-file','-O',
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='Output figure file')
-    parser.add_argument('--figure-format','-f',
-        type=str, default='png', choices=('pdf','png','jpg','svg'),
-        help='Output figure format')
     parser.add_argument('--figure-dpi','-d',
         type=int, default=180,
         help='Output figure resolution in dots per inch (dpi)')
@@ -711,7 +846,8 @@ def main():
     try:
         info(args)
         # run plot program with parameters
-        plot_grid(args.directory, args.infile,
+        animate_grid(args.directory, args.infile,
+            REGION=args.region,
             DATAFORM=args.format,
             DDEG=args.spacing,
             INTERVAL=args.interval,
@@ -737,7 +873,6 @@ def main():
             GRID=args.grid_lines,
             DRAW_SCALE=args.draw_scale,
             FIGURE_FILE=args.figure_file,
-            FIGURE_FORMAT=args.figure_format,
             FIGURE_DPI=args.figure_dpi,
             MODE=args.mode)
     except Exception as exc:

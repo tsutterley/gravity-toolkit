@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 u"""
-plot_QML_grid_maps.py
+plot_AIS_regional_maps.py
 Written by Tyler Sutterley (03/2023)
-Creates GMT-like plots for Queen Maud Land (QML) in Antarctica
+Creates GMT-like plots for sub-regions of Antarctica
 on a polar stereographic south (3031) projection
 
 Grounded ice and islands from Eric Rignot grounded ice image
@@ -33,6 +33,7 @@ PYTHON DEPENDENCIES:
 UPDATE HISTORY:
     Updated 03/2023: switch from parameter files to argparse arguments
         updated inputs to spatial from_ascii function
+        merged regional plot programs into a single program
     Updated 07/2022: place some imports behind try/except statements
     Updated 05/2022: use argparse descriptions within documentation
         use mask, shift grid and interpolation functions from tools
@@ -130,9 +131,68 @@ image_file = ['MOA','moa125_2004_hp1_v1.1.tif']
 coast_file = ['masks','IceBoundaries_Antarctica_v02',
     'ant_ice_sheet_islands_v2.shp']
 
-# Queen Maud Land bounds
-xlimits = np.array([-940000, 2400000])
-ylimits = np.array([530000, 2300000])
+# regional plot parameters
+# figure size
+region_figsize = {}
+# font sizes
+region_fontsize = {}
+region_labelsize = {}
+# x and y limit (projected)
+region_xlimit = {}
+region_ylimit = {}
+# axis = position and dimensions [left, bottom, width, height]
+# length = length of lines demarking the colorbar
+region_cb_axis = {}
+region_cb_length = {}
+# plot scale parameters (Xmin,Ymin,dx,dy,masked)
+region_plotscale = {}
+# subplot adjustments
+region_sub_adjust = {}
+
+# Amundsen Sea Embayment (ASE)
+region_figsize['ASE'] = (10,9.5)
+region_fontsize['ASE'] = 24
+region_labelsize['ASE'] = 24
+region_xlimit['ASE'] = np.array([-1900000, -900000])
+region_ylimit['ASE'] =  np.array([-900000, 200000])
+region_cb_axis['ASE'] = [0.865, 0.015, 0.035, 0.94]
+region_cb_length['ASE'] = 26
+region_plotscale['ASE'] = (-1870e3,-845e3,200e3,25010,False)
+region_sub_adjust['ASE'] = dict(left=0.01, right=0.855, bottom=0.01, top=0.96)
+
+# Antarctic Peninsula (IIpp)
+region_figsize['IIpp'] = (10,10)
+region_fontsize['IIpp'] = 24
+region_labelsize['IIpp'] = 24
+region_xlimit['IIpp'] = np.array([-2710000,-1830000])
+region_ylimit['IIpp'] = np.array([760000,1780000])
+region_cb_axis['IIpp'] = [0.87, 0.015, 0.0325, 0.94]
+region_cb_length['IIpp'] = 23
+region_plotscale['IIpp'] = (-2685e3,809e3,200e3,25010,False)
+region_sub_adjust['IIpp'] = dict(left=0.01, right=0.86, bottom=0.01, top=0.96)
+
+# Totten/Moscow/Frost (CpD)
+region_figsize['CpD'] = (9.5,10)
+region_fontsize['CpD'] = 24
+region_labelsize['CpD'] = 24
+region_xlimit['CpD'] = np.array([1200000,2650000])
+region_ylimit['CpD'] = np.array([-1800000,0])
+region_cb_axis['CpD'] = [0.855, 0.015, 0.04, 0.94]
+region_cb_length['CpD'] = 27
+region_plotscale['CpD'] = (1230e3,-1740e3,200e3,28420,False)
+region_sub_adjust['CpD'] = dict(left=0.01, right=0.84, bottom=0.01, top=0.96)
+
+# Queen Maud Land (QML)
+region_figsize['QML'] = (9.5,4.625)
+region_fontsize['QML'] = 20
+region_labelsize['QML'] = 24
+region_xlimit['QML'] = np.array([-940000,2400000])
+region_ylimit['QML'] = np.array([530000,2300000])
+region_cb_axis['QML'] = [0.87, 0.03, 0.03, 0.90]
+region_cb_length['QML'] = 21
+region_plotscale['QML'] = (1705e3,2125e3,600e3,50e3,False)
+region_sub_adjust['QML'] = dict(left=0.01, right=0.85, bottom=0.01, top=0.95)
+
 # cartopy transform for polar stereographic south
 try:
     projection = ccrs.Stereographic(central_longitude=0.0,
@@ -144,10 +204,10 @@ except (NameError,ValueError) as exc:
 def info(title):
     print(os.path.basename(sys.argv[0]))
     print(title)
-    print('module name: {0}'.format(__name__))
+    print(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        print('parent process: {0:d}'.format(os.getppid()))
-    print('process id: {0:d}'.format(os.getpid()))
+        print(f'parent process: {os.getppid():d}')
+    print(f'process id: {os.getpid():d}')
 
 # PURPOSE: plot Rignot 2012 drainage basin polylines
 def plot_rignot_basins(ax, base_dir):
@@ -204,6 +264,21 @@ def plot_IMBIE2_subbasins(ax, base_dir):
             ax.plot(points[p1:p2,0], points[p1:p2,1], c='k',
                 transform=projection)
 
+# PURPOSE: plot Amundsen Sea basins from Mouginot et al. (2014)
+def plot_amundsen_basins(ax, base_dir):
+    # read Amundsen Sea basin polylines from shapefile
+    basin_shapefile = os.path.join(base_dir,'masks','Basins_Admunsen',
+        'Basins_admunsen_match_coastline_and_IS.shp')
+    basin_title = ['pope_smith','haynes','thwaites','pine_island','kohler']
+    shape_input = shapefile.Reader(basin_shapefile)
+    shape_entities = shape_input.shapes()
+    # for each shape entity
+    for i,ent in enumerate(shape_entities):
+        # extract lat/lon coordinates for record
+        points = np.array(ent.points)
+        ax.plot(points[:,0], points[:,1], c='k',
+            transform=ccrs.PlateCarree())
+
 # PURPOSE: plot Antarctic grounded ice delineation
 def plot_grounded_ice(ax, base_dir, START=1):
     shape_input = shapefile.Reader(os.path.join(base_dir,*coast_file))
@@ -217,7 +292,7 @@ def plot_grounded_ice(ax, base_dir, START=1):
             transform=projection)
 
 # PURPOSE: plot MODIS mosaic of Antarctica as background image
-def plot_image_mosaic(ax, base_dir, MASKED=True):
+def plot_image_mosaic(ax, base_dir, xlimits, ylimits, MASKED=True):
     # read MODIS mosaic of Antarctica
     ds = osgeo.gdal.Open(os.path.join(base_dir,*image_file))
     # get dimensions
@@ -269,7 +344,7 @@ def plot_image_mosaic(ax, base_dir, MASKED=True):
 # PURPOSE: add a plot scale
 def add_plot_scale(ax,X,Y,dx,dy,masked,fc1='w',fc2='k'):
     if masked:
-        x1,x2,y1,y2 = [X-0.3*dx,X+1.2*dx,Y-3.5*dy,Y+3.4*dy]
+        x1,x2,y1,y2 = [X-0.1*dx,X+1.15*dx,Y-1.8*dy,Y+2.4*dy]
         ax.fill([x1,x2,x2,x1,x1], [y1,y1,y2,y2,y1], fc1, zorder=4)
     for i,c in enumerate([fc1,fc2,fc1,fc2]):
         x1,x2,y1,y2 = [X+0.25*i*dx,X+0.25*(i+1)*dx,Y,Y+dy]
@@ -284,6 +359,7 @@ def add_plot_scale(ax,X,Y,dx,dy,masked,fc1='w',fc2='k'):
 
 # plot grid program
 def plot_grid(base_dir, FILENAME,
+    REGION=None,
     DATAFORM=None,
     MASK=None,
     INTERPOLATION=None,
@@ -397,18 +473,22 @@ def plot_grid(base_dir, FILENAME,
         dinput = dinput.reverse(axis=0)
 
     # setup stereographic map
-    f1,ax1 = plt.subplots(num=1, nrows=1, ncols=1, figsize=(9.5,4.5),
+    fig,ax1 = plt.subplots(num=1, nrows=1, ncols=1,
+        figsize=region_figsize[REGION],
         subplot_kw=dict(projection=projection))
     # WGS84 Ellipsoid parameters
     a_axis = 6378137.0# [m] semimajor axis of the ellipsoid
     flat = 1.0/298.257223563# flattening of the ellipsoid
     # (4pi/3)R^3 = (4pi/3)(a^2)b = (4pi/3)(a^3)(1 -f)
     rad_e = a_axis*(1.0 - flat)**(1.0/3.0)
+    # region x and y limits
+    xlimits = region_xlimit[REGION]
+    ylimits = region_ylimit[REGION]
 
     # plot image of MODIS mosaic of Antarctica as base layer
     if BASEMAP:
         # plot MODIS mosaic of Antarctica
-        plot_image_mosaic(ax1, base_dir)
+        plot_image_mosaic(ax1, base_dir, xlimits, ylimits)
 
     # calculate image coordinates
     mx = np.int64((xlimits[1]-xlimits[0])/1000.)+1
@@ -486,6 +566,9 @@ def plot_grid(base_dir, FILENAME,
     elif (BASIN_TYPE == 'IMBIE-2_subbasin'):
         plot_IMBIE2_subbasins(ax1, base_dir)
         start_indice = 1
+    elif (BASIN_TYPE == 'Amundsen'):
+        plot_amundsen_basins(ax1, base_dir)
+        start_indice = 0
     else:
         start_indice = 0
     # add glaciers/ice caps/islands
@@ -504,21 +587,22 @@ def plot_grid(base_dir, FILENAME,
 
     # Add colorbar
     # Add an axes at position rect [left, bottom, width, height]
-    cbar_ax = f1.add_axes([0.88, 0.03, 0.03, 0.90])
+    cbar_ax = fig.add_axes(region_cb_axis[REGION])
     # extend = add extension triangles to upper and lower bounds
     # options: neither, both, min, max
-    cbar = f1.colorbar(im, cax=cbar_ax, extend=CBEXTEND,
+    cbar = fig.colorbar(im, cax=cbar_ax, extend=CBEXTEND,
         extendfrac=0.0375, drawedges=False)
     # rasterized colorbar to remove lines
     cbar.solids.set_rasterized(True)
     # Add label to the colorbar
-    cbar.ax.set_ylabel(CBTITLE, labelpad=10, fontsize=18)
-    cbar.ax.set_title(CBUNITS, fontsize=18, va='bottom')
+    cbar.ax.set_ylabel(CBTITLE, labelpad=10, fontsize=region_fontsize[REGION])
+    cbar.ax.set_title(CBUNITS, fontsize=region_fontsize[REGION], va='bottom')
     # Set the tick levels for the colorbar
     cbar.set_ticks(levels)
     cbar.set_ticklabels([CBFORMAT.format(ct) for ct in levels])
     # ticks lines all the way across
-    cbar.ax.tick_params(which='both', width=1, length=21, labelsize=18,
+    cbar.ax.tick_params(which='both', width=1,
+        length=region_cb_length[REGION], labelsize=region_fontsize[REGION],
         direction='in')
 
     # x and y limits, axis = equal
@@ -531,31 +615,33 @@ def plot_grid(base_dir, FILENAME,
 
     # add main title
     if TITLE is not None:
-        ax1.set_title(TITLE.replace('-',u'\u2013'), fontsize=18)
+        ax1.set_title(TITLE.replace('-',u'\u2013'),
+            fontsize=region_fontsize[REGION])
     # Add figure label
     if LABEL is not None:
         if BASEMAP:
             at = offsetbox.AnchoredText(LABEL,
                 loc=2, pad=0, frameon=True,
-                prop=dict(size=18,weight='bold'))
+                prop=dict(size=region_labelsize[REGION], weight='bold'))
             at.patch.set_boxstyle("Square,pad=0.25")
             at.patch.set_edgecolor("white")
         else:
             at = offsetbox.AnchoredText(LABEL,
                 loc=2, pad=0, frameon=False,
-                prop=dict(size=18,weight='bold'))
+                prop=dict(size=region_labelsize[REGION], weight='bold'))
         ax1.axes.add_artist(at)
 
     # draw map scale to corners
     if DRAW_SCALE:
-        add_plot_scale(ax1,1705e3,2125e3,600e3,50e3,False)
+        add_plot_scale(ax1, *region_plotscale[REGION])
+
     # stronger linewidth on frame
     ax1.spines['geo'].set_linewidth(2.0)
     ax1.spines['geo'].set_zorder(10)
     ax1.spines['geo'].set_capstyle('projecting')
 
     # adjust subplot within figure
-    f1.subplots_adjust(left=0.02,right=0.85,bottom=0.02,top=0.96)
+    fig.subplots_adjust(**region_sub_adjust[REGION])
     # output to file
     # create output directory if non-existent
     if not os.access(os.path.dirname(FIGURE_FILE), os.F_OK):
@@ -572,7 +658,7 @@ def plot_grid(base_dir, FILENAME,
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
-        description="""Creates GMT-like plots of Queen Maud Land
+        description="""Creates GMT-like plots of sub-regions of Antarctica
             on a polar stereographic south (EPSG 3031) projection
             """,
         fromfile_prefix_chars="@"
@@ -587,6 +673,10 @@ def arguments():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         default=os.getcwd(),
         help='Working data directory')
+    # plot regions
+    parser.add_argument('--region','-r',
+        metavar='REGION', type=str, choices=sorted(region_figsize.keys()),
+        required=True, help='Region to plot')
     # Input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--format','-F',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
@@ -712,6 +802,7 @@ def main():
         info(args)
         # run plot program with parameters
         plot_grid(args.directory, args.infile,
+            REGION=args.region,
             DATAFORM=args.format,
             DDEG=args.spacing,
             INTERVAL=args.interval,
