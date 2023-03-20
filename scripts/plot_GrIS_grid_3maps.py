@@ -636,7 +636,10 @@ def arguments():
         type=float, nargs='+',
         help='Plot boundary for normalization')
     # color palette table or named color map
-    cmap_set = set(cm.datad.keys()) | set(cm.cmaps_listed.keys())
+    try:
+        cmap_set = set(cm.datad.keys()) | set(cm.cmaps_listed.keys())
+    except (ValueError, NameError) as exc:
+        cmap_set = []
     parser.add_argument('--colormap','-m',
         metavar='COLORMAP', type=str, default='viridis',
         choices=sorted(cmap_set),
