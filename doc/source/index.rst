@@ -117,7 +117,31 @@ missions
     api_reference/grace_spatial_maps.rst
     api_reference/mascon_reconstruct.rst
     api_reference/monte_carlo_degree_one.rst
+    api_reference/quick_mascon_regress.rst
     api_reference/regress_grace_maps.rst
     api_reference/run_grace_date.rst
     api_reference/run_sea_level_equation.rst
     api_reference/scale_grace_maps.rst
+
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+    :caption: Graphing
+
+    api_reference/plot_AIS_grid_maps.rst
+    api_reference/plot_AIS_grid_3maps.rst
+    api_reference/plot_AIS_grid_4maps.rst
+    api_reference/plot_AIS_grid_movie.rst
+    api_reference/plot_AIS_GrIS_maps.rst
+    api_reference/plot_AIS_regional_maps.rst
+    api_reference/plot_AIS_regional_movie.rst
+    api_reference/plot_global_grid_maps.rst
+    api_reference/plot_global_grid_3maps.rst
+    api_reference/plot_global_grid_4maps.rst
+    api_reference/plot_global_grid_5maps.rst
+    api_reference/plot_global_grid_9maps.rst
+    api_reference/plot_global_grid_movie.rst
+    api_reference/plot_GrIS_grid_maps.rst
+    api_reference/plot_GrIS_grid_3maps.rst
+    api_reference/plot_GrIS_grid_movie.rst
+    api_reference/quick_mascon_plot.rst
