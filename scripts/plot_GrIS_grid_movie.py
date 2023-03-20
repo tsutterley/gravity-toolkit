@@ -2,7 +2,7 @@
 u"""
 plot_GrIS_grid_movie.py
 Written by Tyler Sutterley (03/2023)
-Creates an animation of GMT-like plots for the Greenland Ice Sheet
+Creates GMT-like animations for the Greenland Ice Sheet
 on a NSIDC polar stereographic north (3413) projection
 
 Greenland ice sheet and glacier outlines from OSU Greenland Ice Mapping Project

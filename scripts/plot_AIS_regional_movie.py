@@ -2,7 +2,7 @@
 u"""
 plot_ASE_grid_movie.py
 Written by Tyler Sutterley (03/2023)
-Creates a GMT-like animations for sub-regions of Antarctica
+Creates GMT-like animations for sub-regions of Antarctica
 on a polar stereographic south (3031) projection
 
 Grounded ice and islands from Eric Rignot grounded ice image

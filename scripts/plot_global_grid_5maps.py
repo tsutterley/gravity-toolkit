@@ -2,7 +2,7 @@
 u"""
 plot_global_grid_5maps.py
 Written by Tyler Sutterley (03/2023)
-Creates 5 global GMT-like plots in a Plate Carree (Equirectangular) projection
+Creates 5 GMT-like plots in a Plate Carree (Equirectangular) projection
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
