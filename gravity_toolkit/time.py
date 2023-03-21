@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 u"""
 time.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (03/2023)
+Contributions by Hugo Lecomte
+
 Utilities for calculating time operations
 
 PYTHON DEPENDENCIES:
@@ -11,6 +13,7 @@ PYTHON DEPENDENCIES:
         https://dateutil.readthedocs.io/en/stable/
 
 UPDATE HISTORY:
+    Updated 03/2023: added regex formatting for CNES GRGS harmonics
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 10/2022: added more time parsing for longer periods
     Updated 08/2022: added file parsing functions from GRACE date utilities
@@ -147,9 +150,11 @@ def parse_grace_file(granule):
     # JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
     # GRGS: French Centre National D'Etudes Spatiales (CNES)
     # COSTG: International Combined Time-variable Gravity Fields
-    args = r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC|GRGS|COSTG'
-    regex_pattern = (r'(.*?)-2_(\d{{4}})(\d{{3}})-(\d{{4}})(\d{{3}})_'
-        r'(.*?)_({0})_(.*?)_(\d+)(.*?)(\.gz|\.gfc)?$').format(args)
+    # GRGS: CNES Groupe de Recherche de Geodesie Spatiale
+    centers = r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC|GRGS|COSTG|GRGS'
+    suffixes = r'\.gz|\.gfc|\.txt'
+    regex_pattern = (r'(.*?)-2_(\d{4})(\d{3})-(\d{4})(\d{3})_'
+        rf'(.*?)_({centers})_(.*?)_(\d+)(.*?)({suffixes})?$')
     rx = re.compile(regex_pattern, re.VERBOSE)
     # extract parameters from input filename
     PFX,SY,SD,EY,ED,AUX,PRC,F1,DRL,F2,SFX = rx.findall(file_basename).pop()

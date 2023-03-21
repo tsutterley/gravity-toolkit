@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 u"""
 units.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
+Contributions by Hugo Lecomte
 
 Class for converting GRACE/GRACE-FO Level-2 data to specific units
 
@@ -9,6 +10,8 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 03/2023: include option to not compensate for elastic deformation
+        include option to include effects for Earth's oblateness
     Updated 02/2023: fixed case where maximum spherical harmonic degree is 0
     Updated 01/2023: added function to retrieve named units
     Updated 12/2022: set average Earth's density and radius as class properties
@@ -93,7 +96,7 @@ class units(object):
         """
         return 0.75*self.GM/(self.G*np.pi*self.rad_e**3)
 
-    def harmonic(self, hl, kl, ll):
+    def harmonic(self, hl, kl, ll, **kwargs):
         """
         Calculates degree dependent factors for converting spherical
         harmonic units from [Wahr1998]_
@@ -106,6 +109,10 @@ class units(object):
             Gravitational Potential load Love numbers
         ll: float
             Horizontal Displacement load Love numbers
+        include_elastic: bool, default True
+            Include compensation for elastic response
+        include_ellipsoidal: bool, default False
+            Include consideration for Earth's oblateness
 
         Attributes
         ----------
@@ -132,19 +139,29 @@ class units(object):
         Pa: float
             pascals equivalent surface pressure
         """
+        # set default keyword arguments
+        kwargs.setdefault('include_elastic', True)
+        kwargs.setdefault('include_ellipsoidal', False)
+        fraction = np.ones((self.lmax+1))
+        # compensate for elastic deformation within the solid earth
+        if kwargs['include_elastic']:
+            fraction += kl[self.l]
+        # include effects for Earth's oblateness
+        if kwargs['include_ellipsoidal']:
+            fraction /= (1.0 - self.flat)
         # degree dependent coefficients
         # norm, fully normalized spherical harmonics
         self.norm = np.ones((self.lmax+1))
         # cmwe, centimeters water equivalent [g/cm^2]
-        self.cmwe = self.rho_e*self.rad_e*(2.0*self.l+1.0)/(1.0+kl[self.l])/3.0
+        self.cmwe = self.rho_e*self.rad_e*(2.0*self.l+1.0)/fraction/3.0
         # mmwe, millimeters water equivalent [kg/m^2]
-        self.mmwe = 10.0*self.rho_e*self.rad_e*(2.0*self.l+1.0)/(1.0+kl[self.l])/3.0
+        self.mmwe = 10.0*self.rho_e*self.rad_e*(2.0*self.l+1.0)/fraction/3.0
         # mmGH, millimeters geoid height
         self.mmGH = np.ones((self.lmax+1))*(10.0*self.rad_e)
         # mmCU, millimeters elastic crustal deformation (uplift)
-        self.mmCU = 10.0*self.rad_e*hl[self.l]/(1.0+kl[self.l])
+        self.mmCU = 10.0*self.rad_e*hl[self.l]/fraction
         # mmCH, millimeters elastic crustal deformation (horizontal)
-        self.mmCH = 10.0*self.rad_e*ll[self.l]/(1.0+kl[self.l])
+        self.mmCH = 10.0*self.rad_e*ll[self.l]/fraction
         # cmVCU, centimeters viscoelastic crustal uplift
         self.cmVCU = self.rad_e*(2.0*self.l+1.0)/2.0
         # mVCU, meters viscoelastic crustal uplift
@@ -152,38 +169,59 @@ class units(object):
         # microGal, microGal gravity perturbations
         self.microGal = 1.e6*self.GM*(self.l+1.0)/(self.rad_e**2.0)
         # mbar, millibar equivalent surface pressure
-        self.mbar = self.g_wmo*self.rho_e*self.rad_e*(2.0*self.l+1.0)/(1.0+kl[self.l])/3e3
+        self.mbar = self.g_wmo*self.rho_e*self.rad_e*(2.0*self.l+1.0)/fraction/3e3
         # Pa, pascals equivalent surface pressure
-        self.Pa = self.g_wmo*self.rho_e*self.rad_e*(2.0*self.l+1.0)/(1.0+kl[self.l])/30.0
+        self.Pa = self.g_wmo*self.rho_e*self.rad_e*(2.0*self.l+1.0)/fraction/30.0
         # return the degree dependent unit conversions
         return self
 
-    def spatial(self, hl, kl, ll):
+    def spatial(self, hl, kl, ll, **kwargs):
         """
         Calculates degree dependent factors for converting spatial units
         from [Wahr1998]_
 
         Parameters
         ----------
+
         hl: float
             Vertical Displacement load Love numbers
         kl: float
             Gravitational Potential load Love numbers
         ll: float
             Horizontal Displacement load Love numbers
+        include_elastic: bool, default True
+            Include compensation for elastic response
 
         Attributes
         ----------
+        norm: float
+            fully normalized spherical harmonics
         cmwe: float
             centimeters water equivalent
         mmwe: float
             millimeters water equivalent
+        mmGH: float
+            millimeters geoid height
+        microGal: float
+            microGal gravity perturbations
         """
+        # set default keyword arguments
+        kwargs.setdefault('include_elastic', True)
+        fraction = np.ones((self.lmax+1))
+        # compensate for elastic deformation within the solid earth
+        if kwargs['include_elastic']:
+            fraction += kl[self.l]
         # degree dependent coefficients
+        # norm, fully normalized spherical harmonics
+        self.norm = np.ones((self.lmax+1))
         # cmwe, centimeters water equivalent [g/cm^2]
-        self.cmwe = 3.0*(1.0+kl[self.l])/(1.0+2.0*self.l)/(4.0*np.pi*self.rad_e*self.rho_e)
+        self.cmwe = 3.0*fraction/(1.0+2.0*self.l)/(4.0*np.pi*self.rad_e*self.rho_e)
         # mmwe, millimeters water equivalent [kg/m^2]
-        self.mmwe = 3.0*(1.0+kl[self.l])/(1.0+2.0*self.l)/(40.0*np.pi*self.rad_e*self.rho_e)
+        self.mmwe = 3.0*fraction/(1.0+2.0*self.l)/(40.0*np.pi*self.rad_e*self.rho_e)
+        # mmGH, millimeters geoid height
+        self.mmGH = np.ones((self.lmax+1))/(4.0*np.pi*self.rad_e)
+        # microGal, microGal gravity perturbations
+        self.microGal = (self.rad_e**2.0)/(4.0*np.pi*1.e6*self.GM)/(self.l+1.0)
         # return the degree dependent unit conversions
         return self
 
