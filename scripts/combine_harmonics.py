@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 combine_harmonics.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
 Converts a file from the spherical harmonic domain into the spatial domain
 
 CALLING SEQUENCE:
@@ -71,6 +71,8 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 03/2023: add index ascii/netCDF4/HDF5 datatypes as possible inputs
+        add descriptive file-level attributes to output netCDF4/HDF5 files
     Updated 02/2023: use get function to retrieve specific units
         use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
@@ -143,13 +145,27 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     DIRECTORY = os.path.abspath(os.path.dirname(OUTPUT_FILE))
     if not os.access(DIRECTORY, os.F_OK):
         os.makedirs(DIRECTORY,MODE,exist_ok=True)
+    # attributes for output files
+    attributes = dict(ROOT={})
+    attributes['ROOT']['product_type'] = 'gravity_field'
+    attributes['ROOT']['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
 
     # upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:
         MMAX = np.copy(LMAX)
 
     # read input spherical harmonic coefficients from file
-    input_Ylms = gravtk.harmonics().from_file(INPUT_FILE, format=DATAFORM)
+    if DATAFORM in ('ascii', 'netCDF4', 'HDF5'):
+        dataform = copy.copy(DATAFORM)
+        attributes['ROOT']['lineage'] = os.path.basename(INPUT_FILE)
+        input_Ylms = gravtk.harmonics().from_file(INPUT_FILE,
+            format=DATAFORM)
+    elif DATAFORM in ('index-ascii', 'index-netCDF4', 'index-HDF5'):
+        # read from index file
+        _,dataform = DATAFORM.split('-')
+        attributes['ROOT']['lineage'] = [os.path.basename(f) for f in INPUT_FILE]
+        input_Ylms = gravtk.harmonics().from_index(INPUT_FILE,
+            format=dataform)
     # reform harmonic dimensions to be l,m,t
     # truncate to degree and order LMAX, MMAX
     input_Ylms = input_Ylms.truncate(lmax=LMAX, mmax=MMAX).expand_dims()
@@ -163,6 +179,13 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     # read arrays of kl, hl, and ll Love Numbers
     LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE, FORMAT='class')
+    # add attributes for earth parameters
+    attributes['ROOT']['earth_model'] = LOVE.model
+    attributes['ROOT']['earth_love_numbers'] = LOVE.citation
+    attributes['ROOT']['reference_frame'] = LOVE.reference
+    # add attributes for maximum degree and order
+    attributes['ROOT']['max_degree'] = LMAX
+    attributes['ROOT']['max_order'] = MMAX
 
     # distribute total mass uniformly over the ocean
     if REDISTRIBUTE:
@@ -225,23 +248,21 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     # Setting units factor for output
     # dfactor computes the degree dependent coefficients
     factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
-    if (UNITS == 1):
-        # 1: cmwe, centimeters water equivalent
-        dfactor = factors.get('cmwe')
-    elif (UNITS == 2):
-        # 2: mmGH, millimeters geoid height
-        dfactor = factors.get('mmGH')
-    elif (UNITS == 3):
-        # 3: mmCU, millimeters elastic crustal deformation
-        dfactor = factors.get('mmCU')
-    elif (UNITS == 4):
-        # 4: micGal, microGal gravity perturbations
-        dfactor = factors.get('microGal')
-    elif (UNITS == 5):
-        # 5: mbar, millibars equivalent surface pressure
-        dfactor = factors.get('mbar')
-    else:
-        raise ValueError(f'Invalid units code {UNITS:d}')
+    # output units and units longname
+    # 1: cmwe, centimeters water equivalent
+    # 2: mmGH, millimeters geoid height
+    # 3: mmCU, millimeters elastic crustal deformation
+    # 4: micGal, microGal gravity perturbations
+    # 5: mbar, millibars equivalent surface pressure
+    unit_short = ['cmwe', 'mmGH', 'mmCU', 'microGal', 'mbar']
+    unit_name = ['Equivalent_Water_Thickness', 'Geoid_Height',
+        'Elastic_Crustal_Uplift', 'Gravitational_Undulation',
+        'Equivalent_Surface_Pressure']
+    dfactor = factors.get(unit_short[UNITS-1])
+    # add attributes for earth parameters
+    attributes['ROOT']['earth_radius'] = f'{factors.rad_e:0.3f} cm'
+    attributes['ROOT']['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
+    attributes['ROOT']['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
 
     # Computing plms for converting to spatial domain
     theta = (90.0 - grid.lat)*np.pi/180.0
@@ -256,33 +277,12 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
             grid.lon, grid.lat, LMAX=LMAX, PLM=PLM).T
 
     # outputting data to file
-    output_data(grid.squeeze(), FILENAME=OUTPUT_FILE,
-        DATAFORM=DATAFORM, UNITS=UNITS, MODE=MODE)
+    grid.squeeze().to_file(filename=OUTPUT_FILE, format=dataform,
+        units=unit_short[UNITS-1], longname=unit_name[UNITS-1],
+        attributes=attributes)
 
-# PURPOSE: wrapper function for outputting data to file
-def output_data(data, FILENAME=None, DATAFORM=None, UNITS=None, MODE=None):
-    # output units and units longname
-    unit_short = ['cmwe', 'mmGH', 'mmCU', 'microGal', 'mbar']
-    unit_name = ['Equivalent_Water_Thickness', 'Geoid_Height',
-        'Elastic_Crustal_Uplift', 'Gravitational_Undulation',
-        'Equivalent_Surface_Pressure']
-    # attributes for output files
-    attributes = {}
-    attributes['units'] = copy.copy(unit_short[UNITS-1])
-    attributes['longname'] = copy.copy(unit_name[UNITS-1])
-    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
-    # output to file
-    if (DATAFORM == 'ascii'):
-        # ascii (.txt)
-        data.to_ascii(FILENAME)
-    elif (DATAFORM == 'netCDF4'):
-        # netcdf (.nc)
-        data.to_netCDF4(FILENAME, **attributes)
-    elif (DATAFORM == 'HDF5'):
-        # HDF5 (.H5)
-        data.to_HDF5(FILENAME, **attributes)
     # change output permissions level to MODE
-    os.chmod(FILENAME, MODE)
+    os.chmod(OUTPUT_FILE, MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -359,8 +359,11 @@ def arguments():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         help='Mean file to remove from the harmonic data')
     # input and output data format (ascii, netCDF4, HDF5)
+    choices = []
+    choices.extend(['ascii','netCDF4','HDF5'])
+    choices.extend(['index-ascii','index-netCDF4','index-HDF5'])
     parser.add_argument('--format','-F',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
+        type=str, default='netCDF4', choices=choices,
         help='Input and output data format')
     # print information about each input and output file
     parser.add_argument('--verbose','-V',

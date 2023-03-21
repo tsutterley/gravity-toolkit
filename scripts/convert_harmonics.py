@@ -63,6 +63,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 03/2023: updated inputs to spatial from_ascii function
+        add descriptive file-level attributes to output netCDF4/HDF5 files
     Updated 01/2023: refactored associated legendre polynomials
     Updated 12/2022: single implicit import of gravity toolkit
         iterate over spatial objects versus indexing
@@ -88,6 +89,7 @@ from __future__ import print_function
 import sys
 import os
 import re
+import copy
 import logging
 import argparse
 import traceback
@@ -121,6 +123,15 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     DIRECTORY = os.path.abspath(os.path.dirname(OUTPUT_FILE))
     if not os.access(DIRECTORY, os.F_OK):
         os.makedirs(DIRECTORY,MODE,exist_ok=True)
+    # attributes for output files
+    attributes = {}
+    attributes['product_type'] = 'gravity_field'
+    attributes['lineage'] = os.path.basename(INPUT_FILE)
+    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+
+    # upper bound of spherical harmonic orders (default = LMAX)
+    if MMAX is None:
+        MMAX = np.copy(LMAX)
 
     # Grid spacing
     dlon,dlat = (DDEG,DDEG) if (np.ndim(DDEG) == 0) else (DDEG[0],DDEG[1])
@@ -152,11 +163,20 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
 
     # read arrays of kl, hl, and ll Love Numbers
     LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
-        REFERENCE=REFERENCE)
+        REFERENCE=REFERENCE, FORMAT='class')
+    # add attributes for earth parameters
+    attributes['earth_model'] = LOVE.model
+    attributes['earth_love_numbers'] = LOVE.citation
+    attributes['reference_frame'] = LOVE.reference
+    # add attributes for maximum degree and order
+    attributes['max_degree'] = LMAX
+    attributes['max_order'] = MMAX
 
-    # upper bound of spherical harmonic orders (default = LMAX)
-    if MMAX is None:
-        MMAX = np.copy(LMAX)
+    # add attributes for earth parameters
+    factors = gravtk.units(lmax=LMAX)
+    attributes['earth_radius'] = f'{factors.rad_e:0.3f} cm'
+    attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
+    attributes['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
 
     # calculate associated Legendre polynomials
     th = (90.0 - input_spatial.lat)*np.pi/180.0
@@ -175,12 +195,11 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
         Ylms_list.append(output_Ylms)
     # convert Ylms list for output spherical harmonics
     Ylms = gravtk.harmonics().from_list(Ylms_list, clear=True)
+    # copy attribute to output harmonics
+    Ylms.attributes['ROOT'] = copy.copy(attributes)
 
-    # attributes for output files
-    attributes = {}
-    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
     # outputting data to file
-    Ylms.to_file(OUTPUT_FILE, format=DATAFORM, **attributes)
+    Ylms.to_file(OUTPUT_FILE, format=DATAFORM)
     # change output permissions level to MODE
     os.chmod(OUTPUT_FILE, MODE)
 

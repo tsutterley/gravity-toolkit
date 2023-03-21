@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 u"""
-test_units.py (01/2023)
+test_units.py (03/2023)
 Verify spherical harmonic and spatial unit factors
 
 UPDATE HISTORY:
+    Updated 03/2023: include explicit comparison with some units
     Written 01/2023
 """
 import pytest
@@ -19,9 +20,13 @@ def test_harmonic_units(LMAX):
         FORMAT='class')
     factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
     # cmwe, centimeters water equivalent
+    cmwe = factors.rho_e*factors.rad_e*(2.0*factors.l+1.0)/(1.0+LOVE.kl)/3.0
     assert np.all(factors.get('cmwe') == factors.cmwe)
+    assert np.all(cmwe == factors.cmwe)
     # mmGH, mm geoid height
+    mmGH = np.ones((LMAX + 1))*(10.0*factors.rad_e)
     assert np.all(factors.get('mmGH') == factors.mmGH)
+    assert np.all(mmGH == factors.mmGH)
     # mmCU, mm elastic crustal deformation
     assert np.all(factors.get('mmCU') == factors.mmCU)
     # microGal, microGal gravity perturbations

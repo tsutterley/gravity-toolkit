@@ -47,6 +47,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 03/2023: use f-strings for formatting output date lines
+        added regex formatting for CNES GRGS harmonics
     Updated 11/2022: use f-strings for formatting verbose output
     Updated 09/2022: raise exception if index file cannot be found
         use logging for debugging level verbose output
@@ -131,6 +132,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
             - ``'GRAZ'``: Institute of Geodesy from GRAZ University of Technology
             - ``'COSTG'``: Combination Service for Time-variable Gravity Fields
             - ``'Swarm'``: Time-variable gravity data from Swarm satellites
+            - ``'GRGS'``: CNES Groupe de Recherche de Geodesie Spatiale
     DREL: str, default ''
         GRACE/GRACE-FO/Swarm data release
     DSET: str, default ''

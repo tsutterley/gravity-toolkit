@@ -42,6 +42,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 03/2023: added regex formatting for CNES GRGS harmonics
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 10/2022: make keyword arguments part of kwargs dictionary
     Updated 05/2022: updated comments
@@ -192,6 +193,8 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
         # clm and slm drift rates for RL04
         drift_c = np.zeros((LMAX+1,MMAX+1))
         drift_s = np.zeros((LMAX+1,MMAX+1))
+    # set default degree 0 harmonics for intercomparability between centers
+    grace_L2_input['clm'][0, 0] = 1.0
 
     # extract GRACE and GRACE-FO file headers
     # replace colons in header if within quotations
@@ -305,9 +308,11 @@ def parse_file(input_file):
     # JPLMSC: NASA Jet Propulsion Laboratory (mascon solutions)
     # GRGS: French Centre National D'Etudes Spatiales (CNES)
     # COSTG: International Combined Time-variable Gravity Fields
-    args = r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC|GRGS|COSTG'
-    regex_pattern = (r'(.*?)-2_(\d{{4}})(\d{{3}})-(\d{{4}})(\d{{3}})_'
-        r'(.*?)_({0})_(.*?)_(\d+)(.*?)(\.gz|\.gfc)?$').format(args)
+    # GRGS: CNES Groupe de Recherche de Geodesie Spatiale
+    centers = r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC|GRGS|COSTG|GRGS'
+    suffixes = r'\.gz|\.gfc|\.txt'
+    regex_pattern = (r'(.*?)-2_(\d{4})(\d{3})-(\d{4})(\d{3})_'
+        rf'(.*?)_({centers})_(.*?)_(\d+)(.*?)({suffixes})?$')
     rx = re.compile(regex_pattern, re.VERBOSE)
     # extract parameters from input filename
     if isinstance(input_file, io.IOBase):
