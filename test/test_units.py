@@ -64,6 +64,10 @@ def test_spatial_units(LMAX):
         FORMAT='class')
     factors = gravtk.units(lmax=LMAX).spatial(*LOVE)
     # cmwe, centimeters water equivalent
+    cmwe = 3.0*(1.0+LOVE.kl)/(1.0+2.0*factors.l)/(4.0*np.pi*factors.rad_e*factors.rho_e)
     assert np.all(factors.get('cmwe') == factors.cmwe)
+    assert np.all(cmwe == factors.cmwe)
     # mmwe, millimeters water equivalent
+    mmwe = 3.0*(1.0+LOVE.kl)/(1.0+2.0*factors.l)/(40.0*np.pi*factors.rad_e*factors.rho_e)
     assert np.all(factors.get('mmwe') == factors.mmwe)
+    assert np.all(mmwe == factors.mmwe)
