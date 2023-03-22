@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GRACE_harmonics.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (03/2023)
 Contributions by Hugo Lecomte
 
 Reads GRACE files and extracts spherical harmonic data and drift rates (RL04)
@@ -43,6 +43,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 03/2023: added regex formatting for CNES GRGS harmonics
+        improve typing for variables in docstrings
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 10/2022: make keyword arguments part of kwargs dictionary
     Updated 05/2022: updated comments
@@ -96,17 +97,17 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
         start date of range as Julian day
     end: float
         end date of range as Julian day
-    l: int
+    l: np.ndarray
         spherical harmonic degree to LMAX
-    m: int
+    m: np.ndarray
         spherical harmonic order to MMAX
-    clm: float
+    clm: np.ndarray
         cosine spherical harmonics coefficients
-    slm: float
+    slm: np.ndarray
         sine spherical harmonics coefficients
-    eclm: float
+    eclm: np.ndarray
         cosine spherical harmonic uncalibrated standard deviations
-    eslm: float
+    eslm: np.ndarray
         sine spherical harmonic uncalibrated standard deviations
     header: str
         Header text from the GRACE/GRACE-FO file

@@ -110,6 +110,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 03/2023: added attributes for input files and corrections
+        improve typing for variables in docstrings
     Updated 01/2023: refactored satellite laser ranging read functions
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 10/2022: tilde-expansion of input working data directory
@@ -293,21 +294,21 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
 
     Returns
     -------
-    clm: float
+    clm: np.ndarray
         cosine spherical harmonics to degree/order ``LMAX`` and ``MMAX``
-    slm: float
+    slm: np.ndarray
         sine spherical harmonics to degree/order ``LMAX`` and ``MMAX``
-    eclm: float
+    eclm: np.ndarray
         uncalibrated cosine spherical harmonic errors
-    eslm: float
+    eslm: np.ndarray
         uncalibrated sine spherical harmonic errors
-    time: float
+    time: np.ndarray
         time of each measurement (mid-month)
-    month: int
+    month: np.ndarray
         GRACE/GRACE-FO months of input datasets
-    l: int
+    l: np.ndarray
         spherical harmonic degree to ``LMAX``
-    m: int
+    m: np.ndarray
         spherical harmonic order to ``MMAX``
     title: str
         Processing string denoting low degree zonals

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_love_numbers.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
 Linearly interpolates load love numbers for missing degrees
@@ -56,6 +56,7 @@ REFERENCES:
         103(B12), 30205-30229, (1998)
 
 UPDATE HISTORY:
+    Updated 03/2023: improve typing for variables in docstrings
     Updated 02/2023: fix degree zero case and add load love number formatter
         added options for hard and soft PREM sediment cases
         added data class for load love numbers with attributes for model
@@ -130,11 +131,11 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
 
     Returns
     -------
-    kl: float
-        Love number of Gravitational Potential
-    hl: float
+    hl: np.ndarray
         Love number of Vertical Displacement
-    ll: float
+    kl: np.ndarray
+        Love number of Gravitational Potential
+    ll: np.ndarray
         Love number of Horizontal Displacement
 
     References
@@ -276,11 +277,11 @@ def love_number_formatter(love, FORMAT='tuple'):
 
     Returns
     -------
-    kl: float
-        Love number of Gravitational Potential
-    hl: float
+    hl: np.ndarray
         Love number of Vertical Displacement
-    ll: float
+    kl: np.ndarray
+        Love number of Gravitational Potential
+    ll: np.ndarray
         Love number of Horizontal Displacement
     """
     if (FORMAT == 'dict'):
@@ -351,11 +352,11 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
 
     Returns
     -------
-    kl: float
-        Love number of Gravitational Potential
-    hl: float
+    hl: np.ndarray
         Love number of Vertical Displacement
-    ll: float
+    kl: np.ndarray
+        Love number of Gravitational Potential
+    ll: np.ndarray
         Love number of Horizontal Displacement
 
     References
@@ -452,13 +453,13 @@ class love_numbers(object):
     ----------
     lmax: int
         maximum degree of the Load Love Numbers
-    l: int
+    l: np.ndarray
         Spherical harmonic degrees
-    kl: float
-        Love number of Gravitational Potential
-    hl: float
+    hl: np.ndarray or List
         Love number of Vertical Displacement
-    ll: float
+    kl: np.ndarray or List
+        Love number of Gravitational Potential
+    ll: np.ndarray or List
         Love number of Horizontal Displacement
     reference: str
         Reference frame for degree 1 love numbers

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_gfc_harmonics.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (03/2023)
 Contributions by Hugo Lecomte
 
 Reads gfc files and extracts spherical harmonics for Swarm and
@@ -55,6 +55,7 @@ PROGRAM DEPENDENCIES:
     calculate_tidal_offset.py: calculates the C20 offset for a tidal system
 
 UPDATE HISTORY:
+    Updated 03/2023: improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: forked from read_ICGEM_harmonics in geoid toolkit
         use gravity toolkit time modules and reorganize structure
@@ -107,17 +108,17 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         Julian dates of the start date
     end: float
         Julian dates of the start date
-    l: int
+    l: np.ndarray
         spherical harmonic degree to maximum degree of data
-    m: int
+    m: np.ndarray
         spherical harmonic order to maximum degree of data
-    clm: float
+    clm: np.ndarray
         cosine spherical harmonics of input data
-    slm: float
+    slm: np.ndarray
         sine spherical harmonics of input data
-    eclm: float
+    eclm: np.ndarray
         cosine spherical harmonic standard deviations of type errors
-    eslm: float
+    eslm: np.ndarray
         sine spherical harmonic standard deviations of type errors
     modelname: str
         name of the gravity model
@@ -132,7 +133,11 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
     norm: str
         normalization of the spherical harmonics
     tide_system: str
-        Permanent tide system of gravity model (``'mean_tide'``, ``'zero_tide'``, ``'tide_free'``)
+        Permanent tide system of gravity model
+
+            - ``'mean_tide'``
+            - ``'zero_tide'``
+            - ``'tide_free'``
 
     Reference
     ---------

@@ -56,6 +56,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 03/2023: simplified unit degree factors using units class
+        improve typing for variables in docstrings
     Updated 02/2023: set custom units as top option in if/else statements
     Updated 01/2023: refactored associated legendre polynomials
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -85,11 +86,11 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
 
     Parameters
     ----------
-    data: float
+    data: np.ndarray
         data magnitude (Gt)
-    lon: float
+    lon: np.ndarray
         longitude of disc center
-    lat: float
+    lat: np.ndarray
         latitude of disc center
     area: float
         area of disc (km\ :sup:`2`)
@@ -104,20 +105,20 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
             - ``2``: gigatonnes of mass (Gt)
             - ``3``:  mm water equivalent thickness (mm w.e., kg/m\ :sup:`2`)
             - list: custom unit conversion factor
-    PLM: float or NoneType, default None
+    PLM: np.ndarray or NoneType, default None
         Legendre polynomials for ``cos(theta)`` (disc center)
     LOVE: tuple or NoneType, default None
         Load Love numbers up to degree LMAX (``hl``, ``kl``, ``ll``)
 
     Returns
     -------
-    clm: float
+    clm: np.ndarray
         cosine spherical harmonic coefficients (geodesy normalization)
-    slm: float
+    slm: np.ndarray
         sine spherical harmonic coefficients (geodesy normalization)
-    l: int
+    l: np.ndarray
         spherical harmonic degree to LMAX
-    m: int
+    m: np.ndarray
         spherical harmonic order to MMAX
 
     References

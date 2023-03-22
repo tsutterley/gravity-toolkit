@@ -65,6 +65,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 03/2023: simplified unit degree factors using units class
+        improve typing for variables in docstrings
     Updated 02/2023: set custom units as top option in if/else statements
     Updated 01/2023: refactored associated legendre polynomials
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -106,11 +107,11 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
 
     Parameters
     ----------
-    data: float
+    data: np.ndarray
         data magnitude
-    lon: float
+    lon: np.ndarray
         longitude of spherical cap center
-    lat: float
+    lat: np.ndarray
         latitude of spherical cap center
     LMAX: int, default 60
         Upper bound of Spherical Harmonic Degrees
@@ -125,20 +126,20 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
             - ``2``: gigatonnes of mass (Gt)
             - ``3``: mm water equivalent thickness (mm w.e., kg/m\ :sup:`2`)
             - list: custom unit conversion factor
-    PLM: float, default 0
+    PLM: np.ndarray, default 0
         Input Legendre polynomials
     LOVE: tuple or NoneType, default None
         Input load Love numbers up to degree LMAX (``hl``, ``kl``, ``ll``)
 
     Returns
     -------
-    clm: float
+    clm: np.ndarray
         cosine spherical harmonic coefficients
-    slm: float
+    slm: np.ndarray
         sine spherical harmonic coefficients
-    l: int
+    l: np.ndarray
         spherical harmonic degree to LMAX
-    m: int
+    m: np.ndarray
         spherical harmonic order to MMAX
 
     References

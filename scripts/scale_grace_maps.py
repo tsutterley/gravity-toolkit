@@ -158,6 +158,7 @@ UPDATE HISTORY:
     Updated 03/2023: use new scaling_factors inheritance of spatial class
         single input file with scaling factor variables
         updated inputs to spatial from_ascii function
+        use attributes from units class for writing to netCDF4/HDF5 files
     Updated 02/2023: use love numbers class with additional attributes
     Updated 01/2023: refactored time series analysis functions
     Updated 12/2022: single implicit import of gravity toolkit
@@ -263,8 +264,8 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     MMAX = np.copy(LMAX) if not MMAX else MMAX
     order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
     # output spatial units
-    unit_str = 'cmwe'
-    unit_name = 'Equivalent_Water_Thickness'
+    units = 'cmwe'
+    units_name, units_longname = gravtk.units.get_attributes(units)
     # invalid value
     fill_value = -9999.0
 
@@ -506,13 +507,13 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     grid.replace_invalid(fill_value, mask=kfactor.mask)
 
     # output monthly files to ascii, netCDF4 or HDF5
-    fargs = (FILE_PREFIX, '', unit_str, LMAX, order_str, gw_str,
+    fargs = (FILE_PREFIX, '', units, LMAX, order_str, gw_str,
         ds_str, grid.month[0], grid.month[-1], suffix[DATAFORM])
     FILE = os.path.join(OUTPUT_DIRECTORY,file_format.format(*fargs))
     # attributes for output files
     attributes = {}
-    attributes['units'] = copy.copy(unit_str)
-    attributes['longname'] = copy.copy(unit_name)
+    attributes['units'] = copy.copy(units_name)
+    attributes['longname'] = copy.copy(units_longname)
     attributes['title'] = 'GRACE/GRACE-FO Spatial Data'
     attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
     if (DATAFORM == 'ascii'):
@@ -542,7 +543,7 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     error.update_mask()
 
     # output monthly error files to ascii, netCDF4 or HDF5
-    fargs = (FILE_PREFIX, 'ERROR_', unit_str, LMAX, order_str, gw_str,
+    fargs = (FILE_PREFIX, 'ERROR_', units, LMAX, order_str, gw_str,
         ds_str, grid.month[0], grid.month[-1], suffix[DATAFORM])
     FILE = os.path.join(OUTPUT_DIRECTORY,file_format.format(*fargs))
     # attributes for output files
@@ -596,7 +597,7 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     delta.replace_invalid(fill_value, mask=kfactor.mask)
 
     # output monthly files to ascii, netCDF4 or HDF5
-    fargs = (FILE_PREFIX, 'DELTA_', unit_str, LMAX, order_str, gw_str,
+    fargs = (FILE_PREFIX, 'DELTA_', units, LMAX, order_str, gw_str,
         ds_str, grid.month[0], grid.month[-1], suffix[DATAFORM])
     FILE = os.path.join(OUTPUT_DIRECTORY,file_format.format(*fargs))
     # attributes for output files

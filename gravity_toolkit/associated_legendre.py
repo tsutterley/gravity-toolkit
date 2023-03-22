@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 u"""
 associated_legendre.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (03/2023)
 
 Computes fully-normalized associated Legendre Polynomials
 
 UPDATE HISTORY:
+    Updated 03/2023: improve typing for variables in docstrings
     Updated 01/2023: refactored associated legendre polynomials
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -21,7 +22,11 @@ UPDATE HISTORY:
 from __future__ import division
 import numpy as np
 
-def associated_legendre(LMAX, x, method='holmes', MMAX=None, astype=np.float64):
+def associated_legendre(LMAX, x,
+        method='holmes',
+        MMAX=None,
+        astype=np.float64
+    ):
     """
     Computes fully-normalized associated Legendre Polynomials and their
     first derivative
@@ -30,7 +35,7 @@ def associated_legendre(LMAX, x, method='holmes', MMAX=None, astype=np.float64):
     ----------
     LMAX: int
         maximum degree of Legrendre polynomials
-    x: float
+    x: np.ndarray
         elements ranging from -1 to 1
 
         Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
@@ -42,14 +47,14 @@ def associated_legendre(LMAX, x, method='holmes', MMAX=None, astype=np.float64):
             - ``'mohlenkamp'``
     MMAX: int or NoneType, default None
         maximum order of Associated Legrendre polynomials
-    astype: obj, default np.float64
+    astype: np.dtype, default np.float64
         output variable data type
 
     Returns
     -------
-    plms: float
+    plms: np.ndarray
         fully-normalized Legendre polynomials
-    dplms: float
+    dplms: np.ndarray
         first derivative of Legendre polynomials
     """
     if (method.lower() == 'colombo'):
@@ -60,7 +65,10 @@ def associated_legendre(LMAX, x, method='holmes', MMAX=None, astype=np.float64):
         return plm_mohlenkamp(LMAX, x, MMAX=MMAX, astype=astype)
     raise ValueError(f'Unknown method {method}')
 
-def plm_colombo(LMAX, x, MMAX=None, astype=np.float64):
+def plm_colombo(LMAX, x,
+        MMAX=None,
+        astype=np.float64
+    ):
     """
     Computes fully-normalized associated Legendre Polynomials and their
     first derivative using a Standard forward column method [Colombo1981]_
@@ -69,20 +77,20 @@ def plm_colombo(LMAX, x, MMAX=None, astype=np.float64):
     ----------
     LMAX: int
         maximum degree of Legrendre polynomials
-    x: float
+    x: np.ndarray
         elements ranging from -1 to 1
 
         Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
     MMAX: int or NoneType, default None
         maximum order of Associated Legrendre polynomials
-    astype: obj, default np.float64
+    astype: np.dtype, default np.float64
         output variable data type
 
     Returns
     -------
-    plms: float
+    plms: np.ndarray
         fully-normalized Legendre polynomials
-    dplms: float
+    dplms: np.ndarray
         first derivative of Legendre polynomials
 
     References
@@ -154,7 +162,10 @@ def plm_colombo(LMAX, x, MMAX=None, astype=np.float64):
     # truncating orders to MMAX
     return plm[:,:MMAX+1,:], dplm[:,:MMAX+1,:]
 
-def plm_holmes(LMAX, x, MMAX=None, astype=np.float64):
+def plm_holmes(LMAX, x,
+        MMAX=None,
+        astype=np.float64
+    ):
     """
     Computes fully-normalized associated Legendre Polynomials and their
     first derivative using the recursion relation from [Holmes2002]_
@@ -163,20 +174,20 @@ def plm_holmes(LMAX, x, MMAX=None, astype=np.float64):
     ----------
     LMAX: int
         maximum degree of Legrendre polynomials
-    x: float
+    x: np.ndarray
         elements ranging from -1 to 1
 
         Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
     MMAX: int or NoneType, default None
         maximum order of Associated Legrendre polynomials
-    astype: obj, default np.float64
+    astype: np.dtype, default np.float64
         output variable data type
 
     Returns
     -------
-    plms: float
+    plms: np.ndarray
         fully-normalized Legendre polynomials
-    dplms: float
+    dplms: np.ndarray
         first derivative of Legendre polynomials
 
     References
@@ -285,7 +296,10 @@ def plm_holmes(LMAX, x, MMAX=None, astype=np.float64):
     # truncating orders to MMAX
     return plm[:,:MMAX+1,:], dplm[:,:MMAX+1,:]
 
-def plm_mohlenkamp(LMAX, x, MMAX=None, astype=np.float64):
+def plm_mohlenkamp(LMAX, x,
+        MMAX=None,
+        astype=np.float64
+    ):
     """
     Computes fully-normalized associated Legendre Polynomials and their
     first derivative using the recursion relation from [Mohlenkamp2016]_
@@ -296,18 +310,20 @@ def plm_mohlenkamp(LMAX, x, MMAX=None, astype=np.float64):
     ----------
     LMAX: int
         maximum degree of Legrendre polynomials
-    x: float
+    x: np.ndarray
         elements ranging from -1 to 1
 
         Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
     MMAX: int or NoneType, default None
         maximum order of Associated Legrendre polynomials
+    astype: np.dtype, default np.float64
+        output variable data type
 
     Returns
     -------
-    plms: float
+    plms: np.ndarray
         fully-normalized Legendre polynomials
-    dplms: float
+    dplms: np.ndarray
         first derivative of Legendre polynomials
 
     References

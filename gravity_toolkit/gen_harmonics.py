@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_harmonics.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (03/2023)
 Converts data from the spatial domain to spherical harmonic coefficients
 Does not compute the solid Earth elastic response or convert units
 
@@ -47,6 +47,7 @@ REFERENCES:
         Associated Legendre Functions", Journal of Geodesy (2002)
 
 UPDATE HISTORY:
+    Updated 03/2023: improve typing for variables in docstrings
     Updated 01/2023: refactored associated legendre polynomials
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: merged integration and fourier harmonics programs
@@ -71,17 +72,17 @@ def gen_harmonics(data, lon, lat, **kwargs):
 
     Parameters
     ----------
-    data: float
+    data: np.ndarray
         data magnitude
-    lon: float
+    lon: np.ndarray
         longitude array
-    lat: float
+    lat: np.ndarray
         latitude array
     LMAX: int, default 60
         Upper bound of Spherical Harmonic Degrees
     MMAX: int or NoneType, default None
         Upper bound of Spherical Harmonic Orders
-    PLM: float, default 0
+    PLM: np.ndarray, default 0
         Fully normalized associated Legendre polynomials or
         Fourier coefficients of Legendre polynomials
     METHOD: str, default 'integration'
@@ -92,13 +93,13 @@ def gen_harmonics(data, lon, lat, **kwargs):
 
     Returns
     -------
-    clm: float
+    clm: np.ndarray
         cosine spherical harmonic coefficients (4-pi normalized)
-    slm: float
+    slm: np.ndarray
         sine spherical harmonic coefficients (4-pi normalized)
-    l: int
+    l: np.ndarray
         spherical harmonic degree to LMAX
-    m: int
+    m: np.ndarray
         spherical harmonic order to MMAX
     """
     # set default keyword arguments

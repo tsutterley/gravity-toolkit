@@ -44,6 +44,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 03/2023: fixed docstring summary of ocean stokes function
+        improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 01/2021: added option VARNAME to generalize input masks
@@ -82,13 +83,13 @@ def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
 
     Returns
     -------
-    clm: float
+    clm: np.ndarray
         cosine spherical harmonic coefficients
-    slm: float
+    slm: np.ndarray
         sine spherical harmonic coefficients
-    l: int
+    l: np.ndarray
         spherical harmonic degree to LMAX
-    m: int
+    m: np.ndarray
         spherical harmonic order to MMAX
     """
     # maximum spherical harmonic order
@@ -121,12 +122,12 @@ def find_isolated_points(mask):
 
     Parameters
     ----------
-    mask: int
+    mask: np.ndarray
         land-sea mask
 
     Returns
     -------
-    isolated: int
+    isolated: np.ndarray
         simplified land-sea mask
     """
     nth,_ = mask.shape

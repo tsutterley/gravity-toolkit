@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 legendre_polynomials.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (03/2023)
 
 Computes fully normalized Legendre polynomials for an array of x values
     and their first derivative
@@ -33,6 +33,7 @@ REFERENCES:
         http://www.springerlink.com/content/978-3-211-33544-4
 
 UPDATE HISTORY:
+    Updated 03/2023: improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 09/2020: verify dimensions of x variable
@@ -44,7 +45,7 @@ UPDATE HISTORY:
 """
 import numpy as np
 
-def legendre_polynomials(lmax,x,ASTYPE=np.float64):
+def legendre_polynomials(lmax, x, ASTYPE=np.float64):
     """
     Computes fully-normalized Legendre polynomials and their first derivative
     following [HofmannWellenhof2006]_
@@ -53,18 +54,18 @@ def legendre_polynomials(lmax,x,ASTYPE=np.float64):
     ----------
     lmax: int
         maximum degree of Legrendre polynomials
-    x: float
+    x: np.ndarray
         elements ranging from -1 to 1
 
         Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
-    ASTYPE: obj, default np.float64
+    ASTYPE: np.dtype, default np.float64
         output variable data type
 
     Returns
     -------
-    pl: float
+    pl: np.ndarray
         fully-normalized Legendre polynomials
-    dpl: float
+    dpl: np.ndarray
         first derivative of Legendre polynomials
 
     References

@@ -67,6 +67,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 03/2023: attributes from units class for output netCDF4/HDF5 files
     Written 03/2023
 """
 from __future__ import print_function, division
@@ -224,8 +225,9 @@ def dealiasing_global_uplift(base_dir,
     attributes['lat']['units'] = 'degrees_north'
     # Defining attributes for dataset
     attributes['z'] = {}
-    attributes['z']['long_name'] = 'Elastic_Crustal_Uplift'
-    attributes['z']['units'] = 'mm'
+    units_name, units_longname = gravtk.units.get_attributes(UNITS)
+    attributes['z']['long_name'] = units_longname
+    attributes['z']['units'] = units_name
     # Defining attributes for date
     attributes['time'] = {}
     attributes['time']['long_name'] = 'time'

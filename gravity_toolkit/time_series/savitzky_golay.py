@@ -56,7 +56,7 @@ UPDATE HISTORY:
     Updated 08/2015: changed sys.exit to raise ValueError
     Written 06/2014
 """
-from __future__ import print_function, division
+from __future__ import division
 
 import numpy as np
 import scipy.special

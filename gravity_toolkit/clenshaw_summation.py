@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 clenshaw_summation.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
 Calculates the spatial field for a series of spherical harmonics for a
     sequence of ungridded points
 
@@ -49,6 +49,7 @@ REFERENCES:
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 03/2023: improve typing for variables in docstrings
     Updated 02/2023: set custom units as top option in if/else statements
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -67,25 +68,31 @@ import numpy as np
 from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.units import units
 
-def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
-    ASTYPE=np.longdouble, SCALE=1e-280):
+def clenshaw_summation(clm, slm, lon, lat,
+        RAD=0,
+        UNITS=0,
+        LMAX=0,
+        LOVE=None,
+        ASTYPE=np.longdouble,
+        SCALE=1e-280
+    ):
     """
     Calculates the spatial field for a series of spherical harmonics for a
     sequence of ungridded points
 
     Parameters
     ----------
-    clm: float
+    clm: np.ndarray
         cosine spherical harmonic coefficients
-    slm: float
+    slm: np.ndarray
         sine spherical harmonic coefficients
-    lon: float
+    lon: np.ndarray
         longitude of points
-    lat: float
+    lat: np.ndarray
         latitude of points
-    RAD: float, default 0.0
+    RAD: int or float, default 0
         Gaussian smoothing radius (km)
-    UNITS: int, default 0
+    UNITS: int, str, list or np.ndarray, default 0
         Output data units
 
             - ``1``: cm water equivalent thickness (cm w.e., g/cm\ :sup:`2`)
@@ -99,14 +106,14 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
         Upper bound of Spherical Harmonic Degrees
     LOVE: tuple or NoneType, default None
         Load Love numbers up to degree LMAX (``hl``, ``kl``, ``ll``)
-    ASTYPE: obj, default np.longdouble
+    ASTYPE: np.dtype, default np.longdouble
         floating point precision for calculating Clenshaw summation
     SCALE: float, default 1e-280
         scaling factor to prevent underflow in Clenshaw summation
 
     Returns
     -------
-    spatial: float
+    spatial: np.ndarray
         calculated spatial field for latitude and longitude
 
     References
@@ -158,30 +165,15 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
     # extract arrays of kl, hl, and ll Love Numbers
     factors = units(lmax=LMAX).harmonic(*LOVE)
     # dfactor computes the degree dependent coefficients
-    if isinstance(UNITS, (list, np.ndarray)):
+    if isinstance(UNITS, (list,np.ndarray)):
         # custom units
         dfactor = np.copy(UNITS)
-    elif (UNITS == 0):
-        # 0: keep original scale
-        dfactor = factors.norm
-    elif (UNITS == 1):
-        # 1: cmH2O, centimeters water equivalent
-        dfactor = factors.cmwe
-    elif (UNITS == 2):
-        # 2: mmGH, mm geoid height
-        dfactor = factors.mmGH
-    elif (UNITS == 3):
-        # 3: mmCU, mm elastic crustal deformation
-        dfactor = factors.mmCU
-    elif (UNITS == 4):
-        # 4: micGal, microGal gravity perturbations
-        dfactor = factors.microGal
-    elif (UNITS == 5):
-        # 5: mbar, equivalent surface pressure
-        dfactor = factors.mbar
-    elif (UNITS == 6):
-        # 6: cmVCU, cm viscoelastic  crustal uplift (GIA ONLY)
-        dfactor = factors.cmVCU
+    elif isinstance(UNITS, str):
+        # named units
+        dfactor = factors.get(UNITS)
+    elif isinstance(UNITS, int):
+        # use named unit codes
+        dfactor = factors.get(units.bycode(UNITS))
     else:
         raise ValueError(f'Unknown units {UNITS}')
 
@@ -218,23 +210,37 @@ def clenshaw_summation(clm, slm, lon, lat, RAD=0, UNITS=0, LMAX=0, LOVE=None,
 
 # PURPOSE: compute conditioned arrays for Clenshaw summation from the
 # fully-normalized associated Legendre's function for an order m
-def clenshaw_s_m(t, f, m, clm1, slm1, lmax, ASTYPE=np.longdouble, SCALE=1e-280):
+def clenshaw_s_m(t, f, m, clm1, slm1, lmax,
+        ASTYPE=np.longdouble,
+        SCALE=1e-280
+    ):
     """
     Compute conditioned arrays for Clenshaw summation from the fully-normalized
     associated Legendre's function for an order m
 
     Parameters
     ----------
-    t: elements ranging from -1 to 1, typically cos(th)
-    f: degree dependent factors
-    m: spherical harmonic order
-    clm1: cosine spherical harmonics
-    slm1: sine spherical harmonics
-    lmax: maximum spherical harmonic degree
+    t: np.ndarray
+        elements ranging from -1 to 1, typically cos(th)
+    f: np.ndarray
+        degree dependent factors
+    m: int
+        spherical harmonic order
+    clm1: np.ndarray
+        cosine spherical harmonics
+    slm1: np.ndarray
+        sine spherical harmonics
+    lmax: int
+        maximum spherical harmonic degree
+    ASTYPE: np.dtype, default np.longdouble
+        floating point precision for calculating Clenshaw summation
+    SCALE: float, default 1e-280
+        scaling factor to prevent underflow in Clenshaw summation
 
     Returns
     -------
-    s_m_c: conditioned array for clenshaw summation
+    s_m_c: np.ndarray
+        conditioned array for clenshaw summation
     """
     # allocate for output matrix
     N = len(t)
