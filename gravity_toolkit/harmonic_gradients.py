@@ -2,7 +2,7 @@
 u"""
 harmonic_gradients.py
 Original IDL code calc_grad.pro written by Sean Swenson
-Adapted by Tyler Sutterley (10/2022)
+Adapted by Tyler Sutterley (03/2023)
 
 Calculates the zonal and meridional gradients of a scalar field
 from a series of spherical harmonics
@@ -29,6 +29,7 @@ PROGRAM DEPENDENCIES:
         Legendre functions
 
 UPDATE HISTORY:
+    Updated 03/2023: improve typing for variables in docstrings
     Updated 10/2022: cleaned up program for public release
     Updated 07/2020: added function docstrings
     Updated 06/2019: using Python3 compatible division
@@ -47,13 +48,13 @@ def harmonic_gradients(clm1, slm1, lon, lat,
 
     Parameters
     ----------
-    clm1: float
+    clm1: np.ndarray
         cosine spherical harmonic coefficients in output units
-    slm1: float
+    slm1: np.ndarray
         sine spherical harmonic coefficients in output units
-    lon: float
+    lon: np.ndarray
         longitude array
-    lat: float
+    lat: np.ndarray
         latitude array
     LMIN: int, default 0
         Lower bound of Spherical Harmonic Degrees
@@ -64,7 +65,7 @@ def harmonic_gradients(clm1, slm1, lon, lat,
 
     Returns
     -------
-    gradients: float
+    gradients: np.ndarray
         zonal and meridional gradient fields
     """
 

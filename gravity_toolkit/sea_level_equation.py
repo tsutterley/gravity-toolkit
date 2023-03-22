@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 u"""
-sea_level_equation.py (01/2023)
+sea_level_equation.py (03/2023)
 Solves the sea level equation with the option of including polar motion feedback
 Uses a Clenshaw summation to calculate the spherical harmonic summation
 
@@ -90,6 +90,7 @@ REFERENCES:
         https://doi.org/10.1029/JB090iB11p09363
 
 UPDATE HISTORY:
+    Updated 03/2023: improve typing for variables in docstrings
     Updated 01/2023: refactored associated legendre polynomials
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -138,15 +139,15 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
 
     Parameters
     ----------
-    loadClm: float
+    loadClm: np.ndarray
         Cosine spherical harmonic coefficients
-    loadSlm: float
+    loadSlm: np.ndarray
         Sine spherical harmonic coefficients
-    glon: float
+    glon: np.ndarray
         longitude of the land-sea mask
-    glat: float
+    glat: np.ndarray
         latitude of the land-sea mask
-    land_function: int
+    land_function: np.ndarray
         land-sea mask with land=1
     LMAX: int, default 0
         Maximum spherical harmonic degree
@@ -170,18 +171,18 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
         Include polar feedback
     ITERATIONS: int, default 6
         Maximum number of iterations for the solver
-    PLM: float or NoneType, default None
+    PLM: np.ndarray or NoneType, default None
         Legendre polynomials
     FILL_VALUE: float, default 0
         Invalid value used over land points
-    ASTYPE: obj, default np.longdouble
+    ASTYPE: np.dtype, default np.longdouble
         Floating point precision for calculating Clenshaw summation
     SCALE: float, default 1e-280
         Scaling factor to prevent underflow in Clenshaw summation
 
     Returns
     -------
-    sea_level: float
+    sea_level: np.ndarray
         spatial field calculated using sea level solver
 
     References
@@ -444,7 +445,35 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
 
 # PURPOSE: compute Clenshaw summation of the fully normalized associated
 # Legendre's function for constant order m
-def clenshaw_s_m(t, m, clm1, slm1, lmax, ASTYPE=np.longdouble, SCALE=1e-280):
+def clenshaw_s_m(t, m, clm1, slm1, lmax,
+    ASTYPE=np.longdouble, SCALE=1e-280
+    ):
+    """
+    Compute conditioned arrays for Clenshaw summation from the fully-normalized
+    associated Legendre's function for an order m
+
+    Parameters
+    ----------
+    t: np.ndarray
+        elements ranging from -1 to 1, typically cos(th)
+    m: int
+        spherical harmonic order
+    clm1: np.ndarray
+        cosine spherical harmonics
+    slm1: np.ndarray
+        sine spherical harmonics
+    lmax: int
+        maximum spherical harmonic degree
+    ASTYPE: np.dtype, default np.longdouble
+        floating point precision for calculating Clenshaw summation
+    SCALE: float, default 1e-280
+        scaling factor to prevent underflow in Clenshaw summation
+
+    Returns
+    -------
+    s_m_c: np.ndarray
+        conditioned array for clenshaw summation
+    """
     # allocate for output matrix
     N = len(t)
     s_m = np.zeros((N,2),dtype=ASTYPE)

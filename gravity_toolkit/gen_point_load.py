@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_point_load.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
 Calculates gravitational spherical harmonic coefficients for point masses
 
 CALLING SEQUENCE:
@@ -47,6 +47,7 @@ REFERENCES:
         https://doi.org/10.1029/JB078i011p01760
 
 UPDATE HISTORY:
+    Updated 03/2023: improve typing for variables in docstrings
     Updated 02/2023: set custom units as top option in if/else statements
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -66,11 +67,11 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
 
     Parameters
     ----------
-    data: float
+    data: np.ndarray
         data magnitude
-    lon: float
+    lon: np.ndarray
         longitude of points
-    lat: float
+    lat: np.ndarray
         latitude of points
     LMAX: int, default 60
         Upper bound of Spherical Harmonic Degrees
@@ -87,13 +88,13 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
 
     Returns
     -------
-    clm: float
+    clm: np.ndarray
         cosine spherical harmonic coefficients
-    slm: float
+    slm: np.ndarray
         sine spherical harmonic coefficients
-    l: int
+    l: np.ndarray
         spherical harmonic degree to LMAX
-    m: int
+    m: np.ndarray
         spherical harmonic order to MMAX
 
     References
@@ -167,18 +168,18 @@ def spherical_harmonic_matrix(l, data, phi, theta, coeff):
     ----------
     l: int
         spherical harmonic degree
-    data: float
+    data: np.ndarray
         data magnitude in grams
-    phi: float
+    phi: np.ndarray
         longitude of points in radians
-    theta: float
+    theta: np.ndarray
         colatitude of points in radians
-    coeff: float
+    coeff: np.ndarray
         degree-dependent factor for converting units
 
     Returns
     -------
-    Ylms: float
+    Ylms: np.ndarray
         spherical harmonic coefficients in Eulerian form
     """
     # calculate normalized legendre polynomials (points, order)

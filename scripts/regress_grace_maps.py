@@ -61,6 +61,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 03/2023: updated inputs to spatial from_ascii function
+        use attributes from units class for writing to netCDF4/HDF5 files
     Updated 01/2023: refactored time series analysis functions
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -140,10 +141,13 @@ def regress_grace_maps(LMAX, RAD,
     # distributing removed mass uniformly over ocean
     ocean_str = '_OCN' if REDISTRIBUTE_REMOVED else ''
     # input and output spatial units
-    unit_list = ['cmwe', 'mmGH', 'mmCU', u'\u03BCGal', 'mbar']
-    unit_name = ['Equivalent_Water_Thickness', 'Geoid_Height',
-        'Elastic_Crustal_Uplift', 'Gravitational_Undulation',
-        'Equivalent_Surface_Pressure']
+    # 1: cmwe, centimeters water equivalent
+    # 2: mmGH, millimeters geoid height
+    # 3: mmCU, millimeters elastic crustal deformation
+    # 4: micGal, microGal gravity perturbations
+    # 5: mbar, millibars equivalent surface pressure
+    units = gravtk.units.bycode(UNITS)
+    units_name, units_longname = gravtk.units.get_attributes(units)
 
     # input file format
     input_format = '{0}{1}_L{2:d}{3}{4}{5}_{6:03d}.{7}'
@@ -208,7 +212,7 @@ def regress_grace_maps(LMAX, RAD,
     spatial_list = []
     for t,grace_month in enumerate(months):
         # input GRACE/GRACE-FO spatial file
-        fargs = (FILE_PREFIX, unit_list[UNITS-1], LMAX, order_str,
+        fargs = (FILE_PREFIX, units, LMAX, order_str,
             gw_str, ds_str, grace_month, suffix)
         input_file = os.path.join(OUTPUT_DIRECTORY,input_format.format(*fargs))
         # read GRACE/GRACE-FO spatial file
@@ -273,15 +277,15 @@ def regress_grace_maps(LMAX, RAD,
     # Output spatial files
     for i in range(0,ncomp):
         # output spatial file name
-        f1 = (FILE_PREFIX, unit_list[UNITS-1], LMAX, order_str,
+        f1 = (FILE_PREFIX, units, LMAX, order_str,
             gw_str, ds_str, coef_str[i], '', START, END, suffix)
-        f2 = (FILE_PREFIX, unit_list[UNITS-1], LMAX, order_str,
+        f2 = (FILE_PREFIX, units, LMAX, order_str,
             gw_str, ds_str, coef_str[i], '_ERROR', START, END, suffix)
         file1 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f1))
         file2 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f2))
         # full attributes
-        UNITS_TITLE = f'{unit_list[UNITS-1]}{unit_suffix[i]}'
-        LONGNAME = unit_name[UNITS-1]
+        UNITS_TITLE = f'{units_name}{unit_suffix[i]}'
+        LONGNAME = units_longname
         FILE_TITLE = f'GRACE/GRACE-FO_Spatial_Data_{unit_longname[i]}'
         # output regression fit to file
         output = out.index(i, date=False)
@@ -327,23 +331,23 @@ def regress_grace_maps(LMAX, RAD,
             ph.error = (180.0/np.pi)*np.sqrt(comp1**2 + comp2**2)
 
             # output file names for amplitude, phase and errors
-            f3 = (FILE_PREFIX, unit_list[UNITS-1], LMAX, order_str,
+            f3 = (FILE_PREFIX, units, LMAX, order_str,
                 gw_str, ds_str, flag, '', START, END, suffix)
-            f4 = (FILE_PREFIX, unit_list[UNITS-1], LMAX, order_str,
+            f4 = (FILE_PREFIX, units, LMAX, order_str,
                 gw_str, ds_str, flag,'_PHASE', START, END, suffix)
             file3 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f3))
             file4 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f4))
             # output spatial error file name
-            f5 = (FILE_PREFIX, unit_list[UNITS-1], LMAX, order_str,
+            f5 = (FILE_PREFIX, units, LMAX, order_str,
                 gw_str, ds_str, flag, '_ERROR', START, END, suffix)
-            f6 = (FILE_PREFIX, unit_list[UNITS-1], LMAX, order_str,
+            f6 = (FILE_PREFIX, units, LMAX, order_str,
                 gw_str, ds_str, flag, '_PHASE_ERROR', START, END, suffix)
             file5 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f5))
             file6 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f6))
             # full attributes
-            AMP_UNITS = unit_list[UNITS-1]
+            AMP_UNITS = units_name
             PH_UNITS = 'degrees'
-            LONGNAME = unit_name[UNITS-1]
+            LONGNAME = units_longname
             AMP_TITLE = f'GRACE/GRACE-FO_Spatial_Data_{amp_title[flag]}'
             PH_TITLE = f'GRACE/GRACE-FO_Spatial_Data_{ph_title[flag]}'
             # Output seasonal amplitude and phase to files
@@ -375,8 +379,8 @@ def regress_grace_maps(LMAX, RAD,
     for key,fs in FS.items():
         # output file names for fit significance
         signif_str = f'{key}_'
-        f7 = (FILE_PREFIX, unit_list[UNITS-1], LMAX, order_str,
-            gw_str, ds_str, signif_str, coef_str[ORDER], START, END, suffix)
+        f7 = (FILE_PREFIX, units, LMAX, order_str, gw_str, ds_str,
+            signif_str, coef_str[ORDER], START, END, suffix)
         file7 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f7))
         # full attributes
         LONGNAME = signif_longname[key]

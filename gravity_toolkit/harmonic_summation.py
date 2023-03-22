@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonic_summation.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (03/2023)
 
 Returns the spatial field for a series of spherical harmonics
 
@@ -30,6 +30,8 @@ PROGRAM DEPENDENCIES:
     units.py: class for converting spherical harmonic data to specific units
 
 UPDATE HISTORY:
+    Updated 03/2023: allow units inputs to be strings for named types
+        improve typing for variables in docstrings
     Updated 02/2023: set custom units as top option in if/else statements
     Updated 01/2023: refactored associated legendre polynomials
         added wrapper function for smoothing and converting to output units
@@ -197,13 +199,13 @@ def stokes_summation(clm1, slm1, lon, lat,
 
     Parameters
     ----------
-    clm1: float
+    clm1: np.ndarray
         cosine spherical harmonic coefficients in output units
-    slm1: float
+    slm1: np.ndarray
         sine spherical harmonic coefficients in output units
-    lon: float
+    lon: np.ndarray
         longitude array
-    lat: float
+    lat: np.ndarray
         latitude array
     LMIN: int, default 0
         Lower bound of Spherical Harmonic Degrees
@@ -227,12 +229,12 @@ def stokes_summation(clm1, slm1, lon, lat,
         Upper bound of Spherical Harmonic Degrees
     LOVE: tuple or NoneType, default None
         Load Love numbers up to degree LMAX (``hl``, ``kl``, ``ll``)
-    PLM: float or NoneType, default None
+    PLM: np.ndarray or NoneType, default None
         Fully-normalized associated Legendre polynomials
 
     Returns
     -------
-    spatial: float
+    spatial: np.ndarray
         spatial field
 
     References
@@ -282,30 +284,15 @@ def stokes_summation(clm1, slm1, lon, lat,
     # extract arrays of kl, hl, and ll Love Numbers
     factors = units(lmax=LMAX).harmonic(*LOVE)
     # dfactor computes the degree dependent coefficients
-    if isinstance(UNITS,(list,np.ndarray)):
+    if isinstance(UNITS, (list,np.ndarray)):
         # custom units
         dfactor = np.copy(UNITS)
-    elif (UNITS == 0):
-        # 0: keep original scale
-        dfactor = factors.norm
-    elif (UNITS == 1):
-        # 1: cmH2O, centimeters water equivalent
-        dfactor = factors.cmwe
-    elif (UNITS == 2):
-        # 2: mmGH, mm geoid height
-        dfactor = factors.mmGH
-    elif (UNITS == 3):
-        # 3: mmCU, mm elastic crustal deformation
-        dfactor = factors.mmCU
-    elif (UNITS == 4):
-        # 4: micGal, microGal gravity perturbations
-        dfactor = factors.microGal
-    elif (UNITS == 5):
-        # 5: mbar, equivalent surface pressure
-        dfactor = factors.mbar
-    elif (UNITS == 6):
-        # 6: cmVCU, cm viscoelastic  crustal uplift (GIA ONLY)
-        dfactor = factors.cmVCU
+    elif isinstance(UNITS, str):
+        # named units
+        dfactor = factors.get(UNITS)
+    elif isinstance(UNITS, int):
+        # use named unit codes
+        dfactor = factors.get(units.bycode(UNITS))
     else:
         raise ValueError(f'Unknown units {UNITS}')
 

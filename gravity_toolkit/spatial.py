@@ -29,6 +29,7 @@ UPDATE HISTORY:
         fix mask and shape of subsetted spatial grid objects
         add extend_matrix function and add error output to from_list
         convert spacing, extent, shape and ndim to spatial class properties
+        improve typing for variables in docstrings
     Updated 02/2023: use monospaced text to note spatial objects in docstrings
     Updated 12/2022: add software information to output HDF5 and netCDF4
         make spatial objects iterable and with length
@@ -97,17 +98,17 @@ class spatial(object):
 
     Attributes
     ----------
-    data: float
+    data: np.ndarray
         spatial grid data
-    mask: bool
+    mask: np.ndarray
         spatial grid mask
-    lon: float
+    lon: np.ndarray
         grid longitudes
-    lat: float
+    lat: np.ndarray
         grid latitudes
-    time: float
+    time: np.ndarray
         time variable of the spatial data
-    month: int
+    month: np.ndarray
         GRACE/GRACE-FO months variable of the spatial data
     fill_value: float or NoneType, default None
         invalid value for spatial grid data
@@ -189,7 +190,7 @@ class spatial(object):
             minimum latitude, maximum latitude]``
         nlat: int or NoneType, default None
             length of latitude dimension
-        nlon
+        nlon: int or NoneType, default None
             length of longitude dimension
         columns: list, default ['lon','lat','data','time']
             variable names for each column
@@ -1714,7 +1715,7 @@ class scaling_factors(spatial):
         self.error = None
         self.magnitude = None
 
-    def from_ascii(self, filename, date=True, **kwargs):
+    def from_ascii(self, filename, **kwargs):
         """
         Read a ``scaling_factors`` object from an ascii file
 
@@ -1722,14 +1723,22 @@ class scaling_factors(spatial):
         ----------
         filename: str
             full path of input ascii file
-        date: bool, default True
-            ascii file has date information
         compression: str or NoneType, default None
             file compression type
 
                 - ``'gzip'``
                 - ``'zip'``
                 - ``'bytes'``
+        spacing: list, default [None,None]
+            grid step size ``[longitude,latitude]``
+        extent: list, default [None,None,None,None]
+            spatial grid bounds
+            ``[minimum longitude, maximum longitude,
+            minimum latitude, maximum latitude]``
+        nlat: int or NoneType, default None
+            length of latitude dimension
+        nlon: int or NoneType, default None
+            length of longitude dimension
         columns: list, default ['lon','lat','kfactor','error','magnitude']
             variable names for each column
         header: int, default 0
@@ -1854,7 +1863,7 @@ class scaling_factors(spatial):
 
         Parameters
         ----------
-        var: float
+        var: obj
             ``spatial`` object to used for scaling
 
         Returns

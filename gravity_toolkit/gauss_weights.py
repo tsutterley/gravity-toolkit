@@ -2,7 +2,7 @@
 u"""
 gauss_weights.py
 Original IDL code gauss_weights.pro written by Sean Swenson
-Adapted by Tyler Sutterley (04/2022)
+Adapted by Tyler Sutterley (03/2023)
 
 Computes the Gaussian weights as a function of degree
 A normalized version of Jekeli's Gaussian averaging function
@@ -38,6 +38,7 @@ NOTES:
             alpha = alog(2.)/(1.-cos(rad/6371.))
 
 UPDATE HISTORY:
+    Updated 03/2023: improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: added option for setting minimum value threshold
     Updated 07/2020: added function docstrings
@@ -64,7 +65,7 @@ def gauss_weights(hw, LMAX, CUTOFF=1e-10):
 
     Returns
     -------
-    wl: float
+    wl: np.ndarray
         degree dependent weighting function
 
     References

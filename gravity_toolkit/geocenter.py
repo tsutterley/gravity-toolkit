@@ -16,6 +16,7 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 03/2023: convert shape and ndim to harmonic class properties
+        improve typing for variables in docstrings
     Updated 02/2023: use monospaced text for geocenter objects in docstrings
     Updated 12/2022: make geocenter objects iterable and with length
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -62,21 +63,21 @@ class geocenter(object):
 
     Attributes
     ----------
-    C10: float
+    C10: np.ndarray
         cosine spherical harmonics of degree 1 and order 0
-    C11: float
+    C11: np.ndarray
         cosine spherical harmonics of degree 1 and order 1
-    S11: float
+    S11: np.ndarray
         sine spherical harmonics of degree 1 and order 1
-    X: float
+    X: np.ndarray
         X-component of Cartesian geocenter coordinates
-    Y: float
+    Y: np.ndarray
         Y-component of Cartesian geocenter coordinates
-    Z: float
+    Z: np.ndarray
         Z-component of Cartesian geocenter coordinates
-    time: float
+    time: np.ndarray
         time variable of the spherical harmonics
-    month: int
+    month: np.ndarray
         GRACE/GRACE-FO months variable of the spherical harmonics
     radius: float, default 6371000.790009159
         Average Radius of the Earth [mm]
@@ -861,7 +862,7 @@ class geocenter(object):
 
         Parameters
         ----------
-        temp: obj
+        temp: dict
             dictionary object to be converted
         fields: list
             default keys in dictionary
@@ -918,9 +919,9 @@ class geocenter(object):
 
         Parameters
         ----------
-        clm: float
+        clm: np.ndarray
             cosine spherical harmonics of degree 1
-        slm: float
+        slm: np.ndarray
             sine spherical harmonics of degree 1
         """
         # verify dimensions
@@ -938,7 +939,7 @@ class geocenter(object):
 
         Parameters
         ----------
-        fields: obj
+        fields: list
             default attributes in ``geocenter`` object
         """
         # output dictionary

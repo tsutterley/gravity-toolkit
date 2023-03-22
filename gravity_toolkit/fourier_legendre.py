@@ -2,7 +2,7 @@
 u"""
 fourier_legendre.py
 Original IDL code gen_plms.pro written by Sean Swenson
-Adapted by Tyler Sutterley (10/2022)
+Adapted by Tyler Sutterley (03/2023)
 
 Computes Fourier coefficients of the associated Legendre functions
 
@@ -20,6 +20,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 03/2023: improve typing for variables in docstrings
     Updated 10/2022: add polynomial function for calculating gradients
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: cleaned up program for public release
@@ -43,7 +44,7 @@ def fourier_legendre(lmax, mmax):
 
     Returns
     -------
-    plm: float
+    plm: np.ndarray
         Fourier coefficients
     """
 
@@ -224,9 +225,9 @@ def legendre_gradient(lmax, mmax):
 
     Returns
     -------
-    vlm: float
+    vlm: np.ndarray
         Fourier coefficients for meridional gradients
-    wlm: float
+    wlm: np.ndarray
         Fourier coefficients for zonal gradients
     """
 

@@ -14,6 +14,7 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 03/2023: added regex formatting for CNES GRGS harmonics
+        improve typing for variables in docstrings
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 10/2022: added more time parsing for longer periods
     Updated 08/2022: added file parsing functions from GRACE date utilities
@@ -289,7 +290,7 @@ def adjust_months(grace_month):
 
     Parameters
     ----------
-    grace_month: int
+    grace_month: np.ndarray
         GRACE/GRACE-FO months
 
     Notes
@@ -351,16 +352,16 @@ def calendar_to_grace(year,month=1,around=np.floor):
 
     Parameters
     ----------
-    year: float
+    year: np.ndarray
         calendar year
-    month: int, default 1
+    month: np.ndarray, default 1
         calendar month
     around: obj, default np.floor
         method of rounding to nearest method
 
     Returns
     -------
-    grace_month: int
+    grace_month: np.ndarray
         GRACE/GRACE-FO month
     """
     grace_month = around(12.0*(year - 2002.0)) + month
@@ -373,14 +374,14 @@ def grace_to_calendar(grace_month):
 
     Parameters
     ----------
-    grace_month: int
+    grace_month: np.ndarray
         GRACE/GRACE-FO month
 
     Returns
     -------
-    year: int
+    year: np.ndarray
         calendar year
-    month: int
+    month: np.ndarray
         calendar month
     """
     year = np.array(2002 + (grace_month-1)//12).astype(int)
@@ -394,12 +395,12 @@ def calendar_to_julian(year_decimal):
 
     Parameters
     ----------
-    year: float
+    year: np.ndarray
         calendar year
 
     Returns
     -------
-    JD: float
+    JD: np.ndarray
         Julian Day (days since 01-01-4713 BCE at 12:00:00)
     """
     # calculate year
@@ -425,12 +426,12 @@ def calendar_days(year):
 
     Parameters
     ----------
-    year: int
+    year: np.ndarray
         calendar year
 
     Returns
     -------
-    dpm: float
+    dpm: np.ndarray
         number of days for each month
     """
     # Rules in the Gregorian calendar for a year to be a leap year:
@@ -457,7 +458,7 @@ def convert_delta_time(delta_time, epoch1=None, epoch2=None, scale=1.0):
 
     Parameters
     ----------
-    delta_time: float
+    delta_time: np.ndarray
         seconds since epoch1
     epoch1: tuple or NoneType, default None
         epoch for input delta_time
@@ -481,17 +482,17 @@ def convert_calendar_dates(year, month, day, hour=0.0, minute=0.0, second=0.0,
 
     Parameters
     ----------
-    year: float
+    year: np.ndarray
         calendar year
-    month: float
+    month: np.ndarray
         month of the year
-    day: float
+    day: np.ndarray
         day of the month
-    hour: float, default 0.0
+    hour: np.ndarray or float, default 0.0
         hour of the day
-    minute: float, default 0.0
+    minute: np.ndarray or float, default 0.0
         minute of the hour
-    second: float, default 0.0
+    second: np.ndarray or float, default 0.0
         second of the minute
     epoch: tuple, default (1992,1,1,0,0,0)
         epoch for output delta_time
@@ -500,7 +501,7 @@ def convert_calendar_dates(year, month, day, hour=0.0, minute=0.0, second=0.0,
 
     Returns
     -------
-    delta_time: float
+    delta_time: np.ndarray
         days since epoch
     """
     # calculate date in Modified Julian Days (MJD) from calendar date
@@ -524,24 +525,24 @@ def convert_calendar_decimal(year, month, day=None, hour=None, minute=None,
 
     Parameters
     ----------
-    year: float
+    year: np.ndarray
         calendar year
-    month: float
+    month: np.ndarray
         calendar month
-    day: float or NoneType, default None
+    day: np.ndarray or NoneType, default None
         day of the month
-    hour: float or NoneType, default None
+    hour: np.ndarray or NoneType, default None
         hour of the day
-    minute: float or NoneType, default None
+    minute: np.ndarray or NoneType, default None
         minute of the hour
-    second: float or NoneType, default None
+    second: np.ndarray or NoneType, default None
         second of the minute
-    DofY: float or NoneType, default None
+    DofY: np.ndarray or NoneType, default None
         day of the year (January 1 = 1)
 
     Returns
     -------
-    t_date: float
+    t_date: np.ndarray
         date in decimal-year format
 
     References
@@ -671,9 +672,9 @@ def convert_julian(JD, **kwargs):
 
     Parameters
     ----------
-    JD: float
+    JD: np.ndarray
         Julian Day (days since 01-01-4713 BCE at 12:00:00)
-    astype: str or NoneType, default None
+    astype: str, np.dtype or NoneType, default None
         convert output to variable type
     format: str, default 'dict'
         format of output variables
@@ -684,17 +685,17 @@ def convert_julian(JD, **kwargs):
 
     Returns
     -------
-    year: float
+    year: np.ndarray
         calendar year
-    month: float
+    month: np.ndarray
         calendar month
-    day: float
+    day: np.ndarray
         day of the month
-    hour: float
+    hour: np.ndarray
         hour of the day
-    minute: float
+    minute: np.ndarray
         minute of the hour
-    second: float
+    second: np.ndarray
         second of the minute
 
     References

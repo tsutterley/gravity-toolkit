@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 mascons.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (03/2023)
 Conversion routines for publicly available GRACE/GRACE-FO mascon solutions
 
 PYTHON DEPENDENCIES:
@@ -12,6 +12,7 @@ REFERENCES:
     mascon2grid.m written by Felix Landerer and David Wiese (JPL)
 
 UPDATE HISTORY:
+    Updated 03/2023: improve typing for variables in docstrings
     Updated 11/2022: use lowercase keyword arguments
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 10/2021: publicly released version
@@ -34,28 +35,28 @@ def to_gsfc(gdata, lon, lat, lon_center, lat_center, lon_span, lat_span):
 
     Parameters
     ----------
-    gdata: float
+    gdata: np.ndarray
         gridded data
-    lon: float
+    lon: np.ndarray
         column vector of defined longitude points
-    lat: float
+    lat: np.ndarray
         column vector of defined latitude points
-    lon_center: float
+    lon_center: np.ndarray
         mascon longitudinal center points
-    lat_center: float
+    lat_center: np.ndarray
         mascon latitudinal center points
-    lon_span: float
+    lon_span: np.ndarray
         mascon longitudinal central angles
-    lat_span: float
+    lat_span: np.ndarray
         mascon latitudinal central angles
 
     Returns
     -------
-    data: float
+    data: np.ndarray
         row vector of mascons
-    lat_center: float
+    lat_center: np.ndarray
         row vector of latitude values for mascon centers
-    lon_center: float
+    lon_center: np.ndarray
         row vector of longitude values for mascon centers
 
     References
@@ -123,26 +124,26 @@ def to_jpl(gdata, lon, lat, lon_bound, lat_bound):
 
     Parameters
     ----------
-    gdata: float
+    gdata: np.ndarray
         gridded data
-    lon: float
+    lon: np.ndarray
         column vector of defined longitude points
-    lat: float
+    lat: np.ndarray
         column vector of defined latitude points
-    lon_bound: float
+    lon_bound: np.ndarray
         mascon longitudinal bounds from coordinate file
-    lat_bound: float
+    lat_bound: np.ndarray
         mascon latitudinal bounds from coordinate file
 
     Returns
     -------
-    data: float
+    data: np.ndarray
         row vector of mascons
-    mask: float
+    mask: np.ndarray
         row vector of mask values showing if mascon has no data
-    lat: float
+    lat: np.ndarray
         row vector of latitude values for mascons
-    lon: float
+    lon: np.ndarray
         row vector of longitude values for mascons
 
     References
@@ -198,24 +199,24 @@ def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
 
     Parameters
     ----------
-    mscdata: float
+    mscdata: np.ndarray
         row vector of mascons
-    grid_spacing: float
+    grid_spacing: np.ndarray
         spacing of the lat/lon grid
     lon_center: float
-        mascon longitudinal center points
-    lat_center: float
+        mascon np.ndarray center points
+    lat_center: np.ndarray
         mascon latitudinal center points
-    lon_span: float
+    lon_span: np.ndarray
         mascon longitudinal central angles
-    lat_span: float
+    lat_span: np.ndarray
         mascon latitudinal central angles
     transpose: bool, default False
         transpose output matrix (lon/lat)
 
     Returns
     -------
-    mdata: float
+    mdata: np.ndarray
         distributed mass grid
 
     References
@@ -291,20 +292,20 @@ def from_jpl(mscdata, grid_spacing, lon_bound, lat_bound, **kwargs):
 
     Parameters
     ----------
-    mscdata: float
+    mscdata: np.ndarray
         row vector of mascons
-    grid_spacing: float
+    grid_spacing: np.ndarray
         spacing of lat/lon grid
-    lon_bound: float
+    lon_bound: np.ndarray
         mascon longitudinal bounds from coordinate file
-    lat_bound: float
+    lat_bound: np.ndarray
         mascon latitudinal bounds from coordinate file
     transpose: bool, default False
         transpose output matrix (lon/lat)
 
     Returns
     -------
-    mdata: float
+    mdata: np.ndarray
         distributed mass grid
 
     References

@@ -3,7 +3,7 @@ u"""
 destripe_harmonics.py
 Original Fortran program remove_errors.f written by Isabella Velicogna
 Adapted by Chia-Wei Hsu (05/2018)
-Updated by Tyler Sutterley (04/2022)
+Updated by Tyler Sutterley (03/2023)
 
 Filters spherical harmonic coefficients for correlated "striping" errors
 
@@ -45,6 +45,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025285
 
 UPDATE HISTORY:
+    Updated 03/2023: improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: replaced numpy bool to prevent deprecation warning
@@ -55,19 +56,25 @@ UPDATE HISTORY:
     Updated 05/2015: added parameter MMAX for MMAX != LMAX
     Updated 02/2014: generalization for GRACE GUI and other routines
 """
-from __future__ import print_function
 import numpy as np
 
-def destripe_harmonics(clm1, slm1, LMIN=2, LMAX=60, MMAX=None,
-    ROUND=True, NARROW=False):
+def destripe_harmonics(
+        clm1,
+        slm1,
+        LMIN=2,
+        LMAX=60,
+        MMAX=None,
+        ROUND=True,
+        NARROW=False,
+    ):
     """
     Filters spherical harmonic coefficients for correlated striping errors
 
     Parameters
     ----------
-    clm1: float
+    clm1: np.ndarray
         cosine spherical harmonic coefficients
-    slm1: float
+    slm1: np.ndarray
         sine spherical harmonic coefficients
     LMIN: int, default 2
         Lower bound of Spherical Harmonic Degrees
@@ -82,9 +89,9 @@ def destripe_harmonics(clm1, slm1, LMIN=2, LMAX=60, MMAX=None,
 
     Returns
     -------
-    clm: float
+    clm: np.ndarray
         filtered cosine spherical harmonic coefficients
-    slm: float
+    slm: np.ndarray
         filtered sine spherical harmonic coefficients
 
     References

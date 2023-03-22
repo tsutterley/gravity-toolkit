@@ -73,6 +73,7 @@ PROGRAM DEPENDENCIES:
 UPDATE HISTORY:
     Updated 03/2023: add index ascii/netCDF4/HDF5 datatypes as possible inputs
         add descriptive file-level attributes to output netCDF4/HDF5 files
+        use attributes from units class for writing to netCDF4/HDF5 files
     Updated 02/2023: use get function to retrieve specific units
         use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
@@ -254,11 +255,9 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     # 3: mmCU, millimeters elastic crustal deformation
     # 4: micGal, microGal gravity perturbations
     # 5: mbar, millibars equivalent surface pressure
-    unit_short = ['cmwe', 'mmGH', 'mmCU', 'microGal', 'mbar']
-    unit_name = ['Equivalent_Water_Thickness', 'Geoid_Height',
-        'Elastic_Crustal_Uplift', 'Gravitational_Undulation',
-        'Equivalent_Surface_Pressure']
-    dfactor = factors.get(unit_short[UNITS-1])
+    units = gravtk.units.bycode(UNITS)
+    units_name, units_longname = gravtk.units.get_attributes(units)
+    dfactor = factors.get(units)
     # add attributes for earth parameters
     attributes['ROOT']['earth_radius'] = f'{factors.rad_e:0.3f} cm'
     attributes['ROOT']['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
@@ -278,7 +277,7 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
 
     # outputting data to file
     grid.squeeze().to_file(filename=OUTPUT_FILE, format=dataform,
-        units=unit_short[UNITS-1], longname=unit_name[UNITS-1],
+        units=units_name, longname=units_longname,
         attributes=attributes)
 
     # change output permissions level to MODE

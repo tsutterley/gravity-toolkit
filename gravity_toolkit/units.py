@@ -12,6 +12,8 @@ PYTHON DEPENDENCIES:
 UPDATE HISTORY:
     Updated 03/2023: include option to not compensate for elastic deformation
         include option to include effects for Earth's oblateness
+        added functions for getting unit attributes for known types
+        improve typing for variables in docstrings
     Updated 02/2023: fixed case where maximum spherical harmonic degree is 0
     Updated 01/2023: added function to retrieve named units
     Updated 12/2022: set average Earth's density and radius as class properties
@@ -21,6 +23,8 @@ UPDATE HISTORY:
     Updated 04/2020: include earth parameters as attributes
     Written 03/2020
 """
+from __future__ import annotations
+
 import numpy as np
 
 class units(object):
@@ -46,7 +50,11 @@ class units(object):
         spherical harmonic degree up to ``lmax``
     """
     np.seterr(invalid='ignore')
-    def __init__(self, lmax=None, a_axis=6.378137e8, flat=1.0/298.257223563):
+    def __init__(self,
+                 lmax: int | None = None,
+                 a_axis: float = 6.378137e8,
+                 flat: float = 1.0/298.257223563
+        ):
         # Earth Parameters
         # universal gravitational constant [dyn*cm^2/g^2]
         self.G = 6.67430e-8
@@ -79,19 +87,19 @@ class units(object):
         self.l = np.arange(self.lmax+1) if (self.lmax is not None) else None
 
     @property
-    def b_axis(self):
+    def b_axis(self) -> float:
         """semi-minor axis of the Earth's ellipsoid in cm
         """
         return (1.0 - self.flat)*self.a_axis
 
     @property
-    def rad_e(self):
+    def rad_e(self) -> float:
         """average radius of the Earth in cm with the same volume as the ellipsoid
         """
         return self.a_axis*(1.0 - self.flat)**(1.0/3.0)
 
     @property
-    def rho_e(self):
+    def rho_e(self) -> float:
         """average density of the Earth in g/cm\ :sup:`3`
         """
         return 0.75*self.GM/(self.G*np.pi*self.rad_e**3)
@@ -225,7 +233,7 @@ class units(object):
         # return the degree dependent unit conversions
         return self
 
-    def get(self, var):
+    def get(self, var: str):
         """
         Get the degree dependent factors for a specific unit
 
@@ -236,5 +244,56 @@ class units(object):
         """
         try:
             return getattr(self, var)
+        except Exception as exc:
+            raise ValueError(f'Unknown units {var}') from exc
+
+    @staticmethod
+    def bycode(var: int) -> str:
+        """
+        Get the name for a units code
+
+        Parameters
+        ----------
+        var: int
+            Named unit code for spherical harmonics or spatial fields
+        """
+        named_units = [
+            'norm', # 0: keep original scale
+            'cmwe', # 1: cmwe, centimeters water equivalent
+            'mmGH', # 2: mmGH, mm geoid height
+            'mmCU', # 3: mmCU, mm elastic crustal deformation
+            'microGal', # 4: microGal, microGal gravity perturbations
+            'mbar', # 5: mbar, equivalent surface pressure
+            'cmVCU' # 6: cmVCU, cm viscoelastic crustal uplift (GIA)
+        ]
+        try:
+            return named_units[var]
+        except Exception as exc:
+            raise ValueError(f'Unknown units code {var}') from exc
+
+    @staticmethod
+    def get_attributes(var: str) -> str:
+        """
+        Get the variable attributes for a specific unit name
+
+        Parameters
+        ----------
+        var: tuple
+            Units and descriptive longname
+        """
+        named_attributes = dict(
+            norm=('1', 'Fully-Normalized'),
+            mmwe=('mm', 'Equivalent_Water_Thickness'),
+            cmwe=('cm', 'Equivalent_Water_Thickness'),
+            mmGH=('mm', 'Geoid_Height'),
+            mmCU=('mm','Elastic_Crustal_Uplift'),
+            mmCH=('mm','Horizontal_Elastic_Crustal_Deformation'),
+            microGal=(u'\u03BCGal', 'Gravitational_Undulation'),
+            mbar=('mbar', 'Equivalent_Surface_Pressure'),
+            cmVCU=('cm', 'Viscoelastic_Crustal_Uplift'),
+            mVCU=('meters', 'Viscoelastic_Crustal_Uplift')
+        )
+        try:
+            return named_attributes[var]
         except Exception as exc:
             raise ValueError(f'Unknown units {var}') from exc

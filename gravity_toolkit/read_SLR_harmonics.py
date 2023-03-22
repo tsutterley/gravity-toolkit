@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_harmonics.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (03/2023)
 
 Reads in low-degree spherical harmonic coefficients calculated from
     Satellite Laser Ranging (SLR) measurements
@@ -50,6 +50,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 03/2023: improve typing for variables in docstrings
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
         include utf-8 encoding in reads to be windows compliant
@@ -66,7 +67,7 @@ UPDATE HISTORY:
     Updated 10/2017: include the 6,0 and 6,1 coefficients in output Ylms
     Written 10/2017
 """
-from __future__ import print_function, division
+from __future__ import division
 
 import os
 import re
@@ -110,17 +111,17 @@ def read_CSR_monthly_6x1(SLR_file, SCALE=1e-10, HEADER=True):
 
     Returns
     -------
-    clm: float
+    clm: np.ndarray
         Cosine spherical harmonic coefficients
-    slm: float
+    slm: np.ndarray
         Sine spherical harmonic coefficients
-    error/clm: float
+    error/clm: np.ndarray
         Cosine spherical harmonic coefficient uncertainty
-    error/slm: float
+    error/slm: np.ndarray
         Sine spherical harmonic coefficients uncertainty
-    MJD: float
+    MJD: np.ndarray
         output date as Modified Julian Day
-    time: float
+    time: np.ndarray
         output date in year-decimal
 
     References
@@ -259,13 +260,13 @@ def read_GSFC_weekly_6x1(SLR_file, SCALE=1.0, HEADER=True):
 
     Returns
     -------
-    clm: float
+    clm: np.ndarray
         Cosine spherical harmonic coefficients
-    slm: float
+    slm: np.ndarray
         Sine spherical harmonic coefficients
-    MJD: float
+    MJD: np.ndarray
         output date as Modified Julian Day
-    time: float
+    time: np.ndarray
         output date in year-decimal
 
     References
@@ -355,11 +356,11 @@ def convert_weekly(t_in, d_in, DATE=[], NEIGHBORS=28):
 
     Returns
     -------
-    time: float
+    time: np.ndarray
         output date in year-decimal
-    month: int
+    month: np.ndarray
         GRACE/GRACE-FO month
-    data: float
+    data: np.ndarray
         monthly spherical harmonic coefficients
     """
     # duplicate time and harmonics

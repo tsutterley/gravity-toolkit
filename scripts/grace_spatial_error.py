@@ -120,6 +120,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 03/2023: add root attributes to output netCDF4 and HDF5 files
+        use attributes from units class for writing to netCDF4/HDF5 files
     Updated 02/2023: use get function to retrieve specific units
         use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
@@ -390,32 +391,19 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
         nlon = len(delta.lon)
         nlat = len(delta.lat)
 
-    # Earth Parameters
     # output spatial units
-    unit_list = ['cmwe', 'mmGH', 'mmCU', u'\u03BCGal', 'mbar']
-    unit_name = ['Equivalent_Water_Thickness', 'Geoid_Height',
-        'Elastic_Crustal_Uplift', 'Gravitational_Undulation',
-        'Equivalent_Surface_Pressure']
     # dfactor is the degree dependent coefficients
     # for specific spherical harmonic output units
     factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
-    if (UNITS == 1):
-        # 1: cmwe, centimeters water equivalent
-        dfactor = factors.get('cmwe')
-    elif (UNITS == 2):
-        # 2: mmGH, millimeters geoid height
-        dfactor = factors.get('mmGH')
-    elif (UNITS == 3):
-        # 3: mmCU, millimeters elastic crustal deformation
-        dfactor = factors.get('mmCU')
-    elif (UNITS == 4):
-        # 4: micGal, microGal gravity perturbations
-        dfactor = factors.get('microGal')
-    elif (UNITS == 5):
-        # 5: mbar, millibars equivalent surface pressure
-        dfactor = factors.get('mbar')
-    else:
-        raise ValueError(f'Invalid units code {UNITS:d}')
+    # 1: cmwe, centimeters water equivalent
+    # 2: mmGH, millimeters geoid height
+    # 3: mmCU, millimeters elastic crustal deformation
+    # 4: micGal, microGal gravity perturbations
+    # 5: mbar, millibars equivalent surface pressure
+    units = gravtk.units.bycode(UNITS)
+    dfactor = factors.get(units)
+    # output spatial units and descriptive units longname
+    units_name, units_longname = gravtk.units.get_attributes(units)
     # add attributes for earth parameters
     attributes['earth_radius'] = f'{factors.rad_e:0.3f} cm'
     attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
@@ -456,15 +444,12 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
 
     # output file format
     file_format = '{0}{1}_L{2:d}{3}{4}{5}_ERR_{6:03d}-{7:03d}.{8}'
-    # attributes for output files
-    kwargs = {}
-    kwargs['units'] = copy.copy(unit_list[UNITS-1])
-    kwargs['longname'] = copy.copy(unit_name[UNITS-1])
     # output error file to ascii, netCDF4 or HDF5
-    fargs = (FILE_PREFIX,unit_list[UNITS-1],LMAX,order_str,gw_str,ds_str,
+    fargs = (FILE_PREFIX,units,LMAX,order_str,gw_str,ds_str,
         GRACE_Ylms.month[0],GRACE_Ylms.month[-1],suffix[DATAFORM])
     FILE = os.path.join(OUTPUT_DIRECTORY,file_format.format(*fargs))
-    delta.to_file(FILE, format=DATAFORM, date=False, verbose=VERBOSE, **kwargs)
+    delta.to_file(FILE, format=DATAFORM, date=False, verbose=VERBOSE,
+        units=units_name, longname=units_longname)
     # set the permissions mode of the output files
     os.chmod(FILE, MODE)
     # add file to list

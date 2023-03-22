@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 legendre.py
-Written by Tyler Sutterley (04/2022)
+Written by Tyler Sutterley (03/2023)
 Computes associated Legendre functions of degree l evaluated for elements x
 l must be a scalar integer and x must contain real values ranging -1 <= x <= 1
 Parallels the MATLAB legendre function
@@ -30,6 +30,7 @@ REFERENCES:
     J. A. Jacobs, "Geomagnetism", Academic Press, 1987, Ch.4.
 
 UPDATE HISTORY:
+    Updated 03/2023: improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: modify normalization to prevent high degree overflows
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -51,7 +52,7 @@ def legendre(l, x, NORMALIZE=False):
     ----------
     l: int
         degree of Legrendre polynomials
-    x: float
+    x: np.ndarray
         elements ranging from -1 to 1
 
         Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
@@ -60,7 +61,8 @@ def legendre(l, x, NORMALIZE=False):
 
     Returns
     -------
-    Pl: legendre polynomials of degree ``l``
+    Pl: np.ndarray
+        legendre polynomials of degree ``l``
 
     References
     ----------

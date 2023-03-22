@@ -2,7 +2,7 @@
 u"""
 gen_averaging_kernel.py
 Original IDL code gen_wclms_me.pro written by Sean Swenson
-Adapted by Tyler Sutterley (04/2022)
+Adapted by Tyler Sutterley (03/2023)
 
 Generates averaging kernel coefficients which minimize the total error
 
@@ -43,6 +43,7 @@ REFERENCES:
         107(B9), (2002). https://doi.org/10.1029/2001JB000576
 
 UPDATE HISTORY:
+    Updated 03/2023: improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 08/2021: using units module for Earth parameters
     Updated 04/2020: reading load love numbers outside of this function
@@ -63,13 +64,13 @@ def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
 
     Parameters
     ----------
-    gclm: float
+    gclm: np.ndarray
         cosine spherical harmonics of exact averaging kernel
-    gslm: float
+    gslm: np.ndarray
         sine spherical harmonics of exact averaging kernel
-    eclm: float
+    eclm: np.ndarray
         measurement error in the cosine harmonics
-    eslm: float
+    eslm: np.ndarray
         measurement error in the sine harmonics
     sigma: float
         variance of the surface mass signal
@@ -89,9 +90,9 @@ def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
 
     Returns
     -------
-    clm: float
+    clm: np.ndarray
         cosine coefficients of the averaging kernel
-    slm: float
+    slm: np.ndarray
         sine coefficients of the averaging kernel
 
     References

@@ -98,6 +98,7 @@ REFERENCES:
 UPDATE HISTORY:
     Updated 03/2023: case insensitive searching for HDF5 and netCDF4 attributes
         convert shape and ndim to harmonic class properties
+        improve typing for variables in docstrings
     Updated 02/2023: use monospaced text for harmonics objects in gia docstring
     Updated 12/2022: made interited GIA model harmonics class
         set default parameters, title, reference and url as None
@@ -139,8 +140,6 @@ UPDATE HISTORY:
     Updated 12/2012: changed the naming scheme for Simpson and Whitehouse
     Updated 09/2012: combined several GIA read programs into this standard
 """
-from __future__ import print_function
-
 import os
 import re
 import copy
@@ -189,13 +188,13 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
 
     Returns
     -------
-    clm: float
+    clm: np.ndarray
         cosine spherical harmonic coefficients
-    slm: float
+    slm: np.ndarray
         sine spherical harmonic coefficients
-    l: int
+    l: np.ndarray
         spherical harmonic degree
-    m: int
+    m: np.ndarray
         spherical harmonic order
     title: str
         parameters of GIA model
@@ -740,9 +739,9 @@ class gia(harmonics):
         maximum degree of the spherical harmonic field
     mmax: int
         maximum order of the spherical harmonic field
-    clm: float
+    clm: np.ndarray
         cosine spherical harmonics
-    slm: float
+    slm: np.ndarray
         sine spherical harmonics
     attributes: dict
         attributes of harmonics variables

@@ -28,6 +28,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 03/2023: add wrap longitudes function to change convention
+        improve typing for variables in docstrings
     Updated 06/2022: place matplotlib imports within try/except
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 06/2022: place ipython and tkinter imports within try/except
@@ -1102,7 +1103,7 @@ def wrap_longitudes(lon):
 
     Parameters
     ----------
-    lon: float
+    lon: np.ndarray
         longitude (degrees east)
     """
     phi = np.arctan2(np.sin(lon*np.pi/180.0), np.cos(lon*np.pi/180.0))
@@ -1118,21 +1119,21 @@ def shift_grid(lon0, data, lon, CYCLIC=360.0):
 
     Parameters
     ----------
-    lon0: float
+    lon0: np.ndarray
         Starting longitude for shifted grid
         lon0 (_type_): _description_
-    data: float
+    data: np.ndarray
         data grid to be shifted
-    lon: float
+    lon: np.ndarray
         longitude array to be shifted
     CYCLIC: float, default 360.0
         width of periodic domain
 
     Returns
     -------
-    shift_data: float
+    shift_data: np.ndarray
         shifted data grid
-    shift_lon: float
+    shift_lon: np.ndarray
         shifted longitude array
     """
     start_idx = 0 if (np.fabs(lon[-1]-lon[0]-CYCLIC) > 1.e-4) else 1
@@ -1163,15 +1164,15 @@ def interp_grid(data, xin, yin, xout, yout, order=0):
 
     Parameters
     ----------
-    datain: float
+    datain: np.ndarray
         input data grid to be interpolated
-    xin: float
+    xin: np.ndarray
         input x-coordinate array (monotonically increasing)
-    yin: float
+    yin: np.ndarray
         input y-coordinate array (monotonically increasing)
-    xout: float
+    xout: np.ndarray
         output x-coordinate array
-    yout: float
+    yout: np.ndarray
         output y-coordinate array
     order: int, default 0
         interpolation order
@@ -1181,7 +1182,7 @@ def interp_grid(data, xin, yin, xout, yout, order=0):
 
     Returns
     -------
-    interp_data: float
+    interp_data: np.ndarray
         interpolated data grid
     """
     if (order == 0):
@@ -1212,11 +1213,11 @@ def mask_oceans(xin, yin, data=None, order=0, lakes=False,
 
     Parameters
     ----------
-    xin: float
+    xin: np.ndarray
         input x-coordinate array (monotonically increasing)
-    yin: float
+    yin: np.ndarray
         input y-coordinate array (monotonically increasing)
-    data: float or NoneType
+    data: np.ndarray or NoneType
         input data grid to be masked
     order: int, default 0
         interpolation order
@@ -1236,9 +1237,9 @@ def mask_oceans(xin, yin, data=None, order=0, lakes=False,
 
     Returns
     -------
-    mask: bool
+    mask: np.ndarray
         mask grid
-    datain: float
+    datain: np.ndarray
         masked data grid
     """
     # read in land/sea mask

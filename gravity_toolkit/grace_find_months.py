@@ -49,8 +49,6 @@ UPDATE HISTORY:
     Updated 09/2013: missing periods for for CNES
     Written 05/2013
 """
-from __future__ import print_function
-
 import os
 import numpy as np
 from gravity_toolkit.grace_date import grace_date

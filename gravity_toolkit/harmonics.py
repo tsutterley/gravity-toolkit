@@ -32,6 +32,7 @@ UPDATE HISTORY:
         add indexing of filenames to harmonics object iterator
         use copy.copy and not numpy.copy in copy harmonics object function
         convert shape and ndim to harmonic class properties
+        improve typing for variables in docstrings
     Updated 02/2023: fix expand case where data is a single degree
         fixed case where maximum spherical harmonic degree is 0
         use monospaced text for harmonics objects in docstrings
@@ -129,13 +130,13 @@ class harmonics(object):
         maximum degree of the spherical harmonic field
     mmax: int
         maximum order of the spherical harmonic field
-    clm: float
+    clm: np.ndarray
         cosine spherical harmonics
-    slm: float
+    slm: np.ndarray
         sine spherical harmonics
-    time: float
+    time: np.ndarray
         time variable of the spherical harmonics
-    month: int
+    month: np.ndarray
         GRACE/GRACE-FO months variable of the spherical harmonics
     attributes: dict
         attributes of ``harmonics`` variables
@@ -1649,7 +1650,7 @@ class harmonics(object):
 
         Parameters
         ----------
-        var: float
+        var: float or np.ndarray
             scalar value to which the ``harmonics`` object will be multiplied
         """
         # assign degree and order fields
@@ -1708,7 +1709,7 @@ class harmonics(object):
 
         Parameters
         ----------
-        t: float
+        t: np.ndarray
             times for calculating drift
         epoch: float
             reference epoch for times
@@ -1741,7 +1742,7 @@ class harmonics(object):
 
         Parameters
         ----------
-        var: float
+        var: np.ndarray
             degree dependent array for convolution
         """
         # assign degree and order fields
