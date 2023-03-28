@@ -10,6 +10,8 @@ Jupyter Notebooks providing demonstrations of the functionality within ``gravity
     Creates an animation of spatial maps using data derived from the monthly GRACE/GRACE-FO Level-2 spherical harmonic product
 - Creating Spatial Error Maps |github error| |nbviewer error|
     Creates spatial maps of estimated GRACE/GRACE-FO errors derived from the monthly Level-2 spherical harmonic product
+- Creating Spatial Maps of Estimated Geostrophic Currents |github geostrophic| |nbviewer geostrophic|
+    Creates an animation of geostrophic current maps using data derived from the monthly GRACE/GRACE-FO Level-2 spherical harmonic product
 - Creating Harmonic Plots |github harmonic| |nbviewer harmonic|
     Creates an animation of triangle plots that visualize the GRACE/GRACE-FO Level-2 spherical harmonic product
 
@@ -24,6 +26,12 @@ Jupyter Notebooks providing demonstrations of the functionality within ``gravity
 
 .. |nbviewer error| image:: https://raw.githubusercontent.com/jupyter/design/master/logos/Badges/nbviewer_badge.svg
   :target: https://nbviewer.jupyter.org/github/tsutterley/gravity-toolkit/blob/main/notebooks/GRACE-Spatial-Error.ipynb
+
+.. |github geostrophic| image:: https://img.shields.io/badge/GitHub-view-6f42c1?style=flat&logo=Github
+  :target: https://github.com/tsutterley/gravity-toolkit/blob/main/notebooks/GRACE-Geostrophic-Maps.ipynb
+
+.. |nbviewer geostrophic| image:: https://raw.githubusercontent.com/jupyter/design/master/logos/Badges/nbviewer_badge.svg
+  :target: https://nbviewer.jupyter.org/github/tsutterley/gravity-toolkit/blob/main/notebooks/GRACE-Geostrophic-Maps.ipynb
 
 .. |github harmonic| image:: https://img.shields.io/badge/GitHub-view-6f42c1?style=flat&logo=Github
    :target: https://github.com/tsutterley/gravity-toolkit/blob/main/notebooks/GRACE-Harmonic-Plots.ipynb

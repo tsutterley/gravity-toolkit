@@ -17,3 +17,5 @@ Calling Sequence
 .. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/harmonic_gradients.py
 
 .. autofunction:: gravity_toolkit.harmonic_gradients
+
+.. autofunction:: gravity_toolkit.geostrophic_currents
