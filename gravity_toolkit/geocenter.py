@@ -17,6 +17,7 @@ PYTHON DEPENDENCIES:
 UPDATE HISTORY:
     Updated 03/2023: convert shape and ndim to harmonic class properties
         improve typing for variables in docstrings
+        set case insensitive filename to None if filename is empty
     Updated 02/2023: use monospaced text for geocenter objects in docstrings
     Updated 12/2022: make geocenter objects iterable and with length
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -120,7 +121,7 @@ class geocenter(object):
         # check if filename is open file object
         if isinstance(filename, io.IOBase):
             self.filename = copy.copy(filename)
-        elif isinstance(filename, type(None)):
+        elif isinstance(filename, type(None)) or not bool(filename):
             self.filename = None
         else:
             # tilde-expand input filename

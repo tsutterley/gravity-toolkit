@@ -13,6 +13,7 @@ UPDATE HISTORY:
     Updated 03/2023: include option to not compensate for elastic deformation
         include option to include effects for Earth's oblateness
         added functions for getting unit attributes for known types
+        added output for Earth's average angular velocity (omega)
         improve typing for variables in docstrings
     Updated 02/2023: fixed case where maximum spherical harmonic degree is 0
     Updated 01/2023: added function to retrieve named units
@@ -46,6 +47,8 @@ class units(object):
         Gravitational Constant of the Earth in cm\ :sup:`3`/s\ :sup:`2`
     g_wmo: float
         standard gravitational acceleration in cm/s\ :sup:`2`
+    omega: float
+        Angular velocity of the Earth in radians/s
     l: int
         spherical harmonic degree up to ``lmax``
     """
@@ -70,6 +73,8 @@ class units(object):
         self.flat = flat
         # standard gravitational acceleration (World Meteorological Organization)
         self.g_wmo = 980.665
+        # average angular velocity of the Earth [rad/s]
+        self.omega = 7292115e-11
         # Degree dependent parameters
         self.norm = None
         self.cmwe = None

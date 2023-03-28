@@ -30,6 +30,7 @@ UPDATE HISTORY:
         add extend_matrix function and add error output to from_list
         convert spacing, extent, shape and ndim to spatial class properties
         improve typing for variables in docstrings
+        set case insensitive filename to None if filename is empty
     Updated 02/2023: use monospaced text to note spatial objects in docstrings
     Updated 12/2022: add software information to output HDF5 and netCDF4
         make spatial objects iterable and with length
@@ -147,7 +148,7 @@ class spatial(object):
         # check if filename is open file object
         if isinstance(filename, io.IOBase):
             self.filename = copy.copy(filename)
-        elif isinstance(filename, type(None)):
+        elif isinstance(filename, type(None)) or not bool(filename):
             self.filename = None
         else:
             # tilde-expand input filename
@@ -1588,7 +1589,6 @@ class spatial(object):
         if self.fill_value is not None:
             self.data[self.mask] = self.fill_value
         return self
-
 
     @property
     def dtype(self):

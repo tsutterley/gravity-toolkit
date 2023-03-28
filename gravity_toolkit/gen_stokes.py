@@ -120,7 +120,7 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     References
     ----------
     .. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan, "Time
-        variabilityof the Earth's gravity field: Hydrological
+        variability of the Earth's gravity field: Hydrological
         and oceanic effects and their possible detection using GRACE",
         *Journal of Geophysical Research*, 103(B12), 30205-30229, (1998).
         `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_

@@ -33,6 +33,7 @@ UPDATE HISTORY:
         use copy.copy and not numpy.copy in copy harmonics object function
         convert shape and ndim to harmonic class properties
         improve typing for variables in docstrings
+        set case insensitive filename to None if filename is empty
     Updated 02/2023: fix expand case where data is a single degree
         fixed case where maximum spherical harmonic degree is 0
         use monospaced text for harmonics objects in docstrings
@@ -166,7 +167,7 @@ class harmonics(object):
         # iterator
         self.__index__ = 0
 
-    def case_insensitive_filename(self,filename):
+    def case_insensitive_filename(self, filename):
         """
         Searches a directory for a filename without case dependence
 
@@ -178,7 +179,7 @@ class harmonics(object):
         # check if filename is open file object
         if isinstance(filename, io.IOBase):
             self.filename = copy.copy(filename)
-        elif isinstance(filename, type(None)):
+        elif isinstance(filename, type(None)) or not bool(filename):
             self.filename = None
         else:
             # tilde-expand input filename
