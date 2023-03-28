@@ -27,6 +27,12 @@ original works, which is allowed under the
 `publisher's permissions policies for authors <https://www.agu.org/Publish-with-AGU/Publish/Author-Resources/Policies/Permission-policy>`_
 or through the `Creative Commons licensing <http://creativecommons.org/licenses/by/4.0/>`_ of the work.
 
+If you have used ``gravity-toolkit`` in your work, please consider citing our library:
+
+    T. C. Sutterley, et al., "gravity-toolkit: Python tools for obtaining and
+    working with data from the GRACE and GRACE Follow-On missions", (2020).
+    `doi: 10.5281/zenodo.7713980 <https://doi.org/10.5281/zenodo.7713980>`_
+
 Contributors
 ############
 

@@ -32,6 +32,7 @@ PROGRAM DEPENDENCIES:
 UPDATE HISTORY:
     Updated 03/2023: allow units inputs to be strings for named types
         improve typing for variables in docstrings
+        minor refactor in line ordering for readability
     Updated 02/2023: set custom units as top option in if/else statements
     Updated 01/2023: refactored associated legendre polynomials
         added wrapper function for smoothing and converting to output units
@@ -89,11 +90,8 @@ def harmonic_summation(clm1, slm1, lon, lat,
     th = (90.0 - np.squeeze(lat))*np.pi/180.0
     thmax = len(th)
 
-    # Calculate fourier coefficients from legendre coefficients
-    d_cos = np.zeros((MMAX+1,thmax))# [m,th]
-    d_sin = np.zeros((MMAX+1,thmax))# [m,th]
+    # if plms are not pre-computed: calculate Legendre polynomials
     if PLM is None:
-        # if plms are not pre-computed: calculate Legendre polynomials
         PLM, dPLM = plm_holmes(LMAX, np.cos(th))
 
     # Truncating harmonics to degree and order LMAX
@@ -103,6 +101,9 @@ def harmonic_summation(clm1, slm1, lon, lat,
     slm = np.zeros((LMAX+1, MMAX+1))
     clm[LMIN:LMAX+1,mm] = clm1[LMIN:LMAX+1,mm]
     slm[LMIN:LMAX+1,mm] = slm1[LMIN:LMAX+1,mm]
+    # Calculate fourier coefficients from legendre coefficients
+    d_cos = np.zeros((MMAX+1,thmax))# [m,th]
+    d_sin = np.zeros((MMAX+1,thmax))# [m,th]
     for k in range(0,thmax):
         # summation over all spherical harmonic degrees
         d_cos[:,k] = np.sum(PLM[:,mm,k]*clm[:,mm],axis=0)
@@ -165,13 +166,13 @@ def harmonic_transform(clm1, slm1, lon, lat,
     th = (90.0 - np.squeeze(lat))*np.pi/180.0
     thmax = len(th)
 
+    # if plms are not pre-computed: calculate Legendre polynomials
+    if PLM is None:
+        PLM, dPLM = plm_holmes(LMAX, np.cos(th))
+
     # combined Ylms and Fourier coefficients (complex)
     Ylms = np.zeros((LMAX+1,MMAX+1),dtype=np.complex128)
     delta_M = np.zeros((MMAX+1,thmax),dtype=np.complex128)# [m,th]
-    if PLM is None:
-        # if plms are not pre-computed: calculate Legendre polynomials
-        PLM, dPLM = plm_holmes(LMAX, np.cos(th))
-
     # Real (cosine) and imaginary (sine) components
     # Truncating harmonics to degree and order LMAX
     # removing coefficients below LMIN and above MMAX
@@ -200,9 +201,9 @@ def stokes_summation(clm1, slm1, lon, lat,
     Parameters
     ----------
     clm1: np.ndarray
-        cosine spherical harmonic coefficients in output units
+        cosine spherical harmonic coefficients
     slm1: np.ndarray
-        sine spherical harmonic coefficients in output units
+        sine spherical harmonic coefficients
     lon: np.ndarray
         longitude array
     lat: np.ndarray
@@ -255,7 +256,7 @@ def stokes_summation(clm1, slm1, lon, lat,
         *Bollettino di Geodesia e Scienze*, 4, 349--375, (1982).
 
     .. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan, "Time
-        variabilityof the Earth's gravity field: Hydrological
+        variability of the Earth's gravity field: Hydrological
         and oceanic effects and their possible detection using GRACE",
         *Journal of Geophysical Research*, 103(B12), 30205-30229, (1998).
         `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_

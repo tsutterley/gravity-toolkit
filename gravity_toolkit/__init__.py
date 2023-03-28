@@ -52,7 +52,10 @@ from gravity_toolkit.grace_input_months import (
 )
 from gravity_toolkit.grace_months_index import grace_months_index
 from gravity_toolkit.harmonics import harmonics
-from gravity_toolkit.harmonic_gradients import harmonic_gradients
+from gravity_toolkit.harmonic_gradients import (
+    harmonic_gradients,
+    geostrophic_currents
+)
 from gravity_toolkit.harmonic_summation import (
     harmonic_summation,
     harmonic_transform,
