@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 monte_carlo_degree_one.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (04/2023)
 
 Calculates degree 1 errors using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from OMCT/MPIOM in a Monte Carlo scheme
@@ -88,6 +88,12 @@ COMMAND LINE OPTIONS:
     --mean-format X: Input data format for GRACE/GRACE-FO mean file
     --error-file X: Additional error files to use in monte carlo analysis
     --iterative: Iterate degree one solutions
+    -s X, --solver X: Least squares solver for degree one solutions
+        inv: matrix inversion
+        lstsq: least squares solution
+        gelsy: complete orthogonal factorization
+        gelss: singular value decomposition (SVD)
+        gelsd: singular value decomposition (SVD) with divide and conquer method
     --fingerprint: Redistribute land-water flux using sea level fingerprints
     -e X, --expansion X: Spherical harmonic expansion for sea level fingerprints
     --mask X: Land-sea mask for calculating ocean mass and land water flux
@@ -100,6 +106,8 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
         https://numpy.org
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    scipy: Scientific Tools for Python
+        https://scipy.org
     dateutil: powerful extensions to datetime
         https://dateutil.readthedocs.io/en/stable/
     netCDF4: Python interface to the netCDF C library
@@ -149,6 +157,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 04/2023: add options for least-squares solver
     Updated 03/2023: place matplotlib import within try/except statement
     Updated 02/2023: use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
@@ -204,6 +213,7 @@ import argparse
 import warnings
 import traceback
 import numpy as np
+import scipy.linalg
 import gravity_toolkit as gravtk
 
 # attempt imports
@@ -289,6 +299,7 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     MEAN_FILE=None,
     MEANFORM=None,
     ERROR_FILES=[],
+    SOLVER=None,
     FINGERPRINT=False,
     EXPANSION=None,
     LANDMASK=None,
@@ -700,13 +711,17 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
             CMAT = np.array([eustatic.C10,eustatic.C11,eustatic.S11])
             # G Matrix for time t
             GMAT = np.array([G.C10, G.C11, G.S11])
-            # calculate inversion for degree 1 solutions
+            # calculate degree 1 solution for iteration
             # this is mathematically equivalent to an iterative procedure
             # whereby the initial degree one coefficients are used to update
             # the G Matrix until (C10, C11, S11) converge
-            DMAT = np.dot(np.linalg.inv(IMAT), (CMAT-GMAT))
-            # could also use pseudo-inverse in least-squares
-            #DMAT = np.linalg.lstsq(IMAT,(CMAT-GMAT),rcond=-1)[0]
+            if (SOLVER == 'inv'):
+                DMAT = np.dot(np.linalg.inv(IMAT), (CMAT-GMAT))
+            elif (SOLVER == 'lstsq'):
+                DMAT = np.linalg.lstsq(IMAT, (CMAT-GMAT), rcond=-1)[0]
+            elif SOLVER in ('gelsd', 'gelsy', 'gelss'):
+                DMAT, res, rnk, s = scipy.linalg.lstsq(IMAT, (CMAT-GMAT),
+                    lapack_driver=SOLVER)
             # save geocenter for iteration and time t after restoring GIA+ATM
             iteration.C10[t,n_iter] = DMAT[0]+gia.C10[t]+atm.C10[t]
             iteration.C11[t,n_iter] = DMAT[1]+gia.C11[t]+atm.C11[t]
@@ -1256,6 +1271,11 @@ def arguments():
         type=lambda p: os.path.abspath(os.path.expanduser(p)),
         nargs='+', default=[],
         help='Additional error files to use in Monte Carlo analysis')
+    # least squares solver
+    choices = ('inv','lstsq','gelsd', 'gelsy', 'gelss')
+    parser.add_argument('--solver','-s',
+        type=str, default='lstsq', choices=choices,
+        help='Least squares solver for degree one solutions')
     # run with sea level fingerprints
     parser.add_argument('--fingerprint',
         default=False, action='store_true',
@@ -1332,6 +1352,7 @@ def main():
             MEAN_FILE=args.mean_file,
             MEANFORM=args.mean_format,
             ERROR_FILES=args.error_file,
+            SOLVER=args.solver,
             FINGERPRINT=args.fingerprint,
             EXPANSION=args.expansion,
             LANDMASK=args.mask,

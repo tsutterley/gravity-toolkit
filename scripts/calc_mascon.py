@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_mascon.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (04/2023)
 
 Calculates a time-series of regional mass anomalies through a least-squares
     mascon procedure from GRACE/GRACE-FO time-variable gravity data
@@ -93,6 +93,12 @@ COMMAND LINE OPTIONS:
     --fit-method X: method for fitting sensitivity kernel to harmonics
         1: mass coefficients
         2: geoid coefficients
+    -s X, --solver X: Least squares solver for sensitivity kernels
+        inv: matrix inversion
+        lstsq: least squares solution
+        gelsy: complete orthogonal factorization
+        gelss: singular value decomposition (SVD)
+        gelsd: singular value decomposition (SVD) with divide and conquer method
     --remove-file X: Monthly files to be removed from the GRACE/GRACE-FO data
     --remove-format X: Input data format for files to be removed
         ascii
@@ -112,6 +118,8 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
         https://numpy.org
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    scipy: Scientific Tools for Python
+        https://scipy.org
     dateutil: powerful extensions to datetime
         https://dateutil.readthedocs.io/en/stable/
     netCDF4: Python interface to the netCDF C library
@@ -158,6 +166,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 04/2023: add options for least-squares solver
     Updated 02/2023: use love numbers class with additional attributes
     Updated 01/2023: refactored time series analysis functions
     Updated 12/2022: single implicit import of gravity toolkit
@@ -245,8 +254,9 @@ import re
 import time
 import logging
 import argparse
-import numpy as np
 import traceback
+import numpy as np
+import scipy.linalg
 import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
@@ -289,6 +299,7 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     MASCON_FORMAT=None,
     REDISTRIBUTE_MASCONS=False,
     FIT_METHOD=0,
+    SOLVER=None,
     REMOVE_FILES=None,
     REMOVE_FORMAT=None,
     REDISTRIBUTE_REMOVED=False,
@@ -639,7 +650,7 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         for i in range(n_harm):
             MA_lm[i,:] = M_lm[i,:]*wt_lm[i]*fact[i]
         fit_factor = wt_lm*fact
-    else:
+    elif (FIT_METHOD == 2):
         # Fitting Sensitivity Kernel as geoid coefficients
         for i in range(n_harm):
             MA_lm[:,:] = M_lm[i,:]*wt_lm[i]
@@ -653,8 +664,14 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         kern_i[i] = 1.0*fit_factor[i]
         # spherical harmonics solution for the
         # mascon sensitivity kernels
-        # Least Squares Solutions: Inv(X'.X).(X'.Y)
-        kern_lm = np.linalg.lstsq(MA_lm,kern_i,rcond=-1)[0]
+        if (SOLVER == 'inv'):
+            kern_lm = np.dot(np.linalg.inv(MA_lm), kern_i)
+        elif (SOLVER == 'lstsq'):
+            kern_lm = np.linalg.lstsq(MA_lm, kern_i, rcond=-1)[0]
+        elif SOLVER in ('gelsd', 'gelsy', 'gelss'):
+            kern_lm, res, rnk, s = scipy.linalg.lstsq(MA_lm, kern_i,
+                lapack_driver=SOLVER)
+        # calculate the sensitivity kernel for each mascon
         for k in range(n_mas):
             A_lm[i,k] = kern_lm[k]*total_area[k]
 
@@ -913,6 +930,11 @@ def arguments():
     parser.add_argument('--fit-method',
         type=int, default=1, choices=(1,2),
         help='Method for fitting sensitivity kernel to harmonics')
+    # least squares solver
+    choices = ('inv','lstsq','gelsd', 'gelsy', 'gelss')
+    parser.add_argument('--solver','-s',
+        type=str, default='lstsq', choices=choices,
+        help='Least squares solver for sensitivity kernel solutions')
     # monthly files to be removed from the GRACE/GRACE-FO data
     parser.add_argument('--remove-file',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='+',
@@ -1004,6 +1026,7 @@ def main():
             MASCON_FORMAT=args.mascon_format,
             REDISTRIBUTE_MASCONS=args.redistribute_mascons,
             FIT_METHOD=args.fit_method,
+            SOLVER=args.solver,
             REMOVE_FILES=args.remove_file,
             REMOVE_FORMAT=args.remove_format,
             REDISTRIBUTE_REMOVED=args.redistribute_removed,
