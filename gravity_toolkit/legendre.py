@@ -22,7 +22,6 @@ OPTIONS:
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
-    scipy: Scientific Tools for Python (https://docs.scipy.org/doc/)
 
 REFERENCES:
     M. Abramowitz and I.A. Stegun, "Handbook of Mathematical Functions",

@@ -698,7 +698,7 @@ class widgets:
     def set_removefile(self, sender):
         """function for updating removed file list
         """
-        if self.remove_file.value:
+        if self.remove_label.value:
             self.remove_files = self.remove_label.value.split(',')
         else:
             self.remove_files = []

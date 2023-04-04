@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_sensitivity_kernel.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (04/2023)
 
 Calculates spatial sensitivity kernels through a least-squares mascon procedure
 
@@ -32,7 +32,13 @@ COMMAND LINE OPTIONS:
     --fit-method X: method for fitting sensitivity kernel to harmonics
         1: mass coefficients
         2: geoid coefficients
-    -s, --spatial: Output spatial grid file for each mascon
+    -s X, --solver X: Least squares solver for sensitivity kernels
+        inv: matrix inversion
+        lstsq: least squares solution
+        gelsy: complete orthogonal factorization
+        gelss: singular value decomposition (SVD)
+        gelsd: singular value decomposition (SVD) with divide and conquer method
+    -o, --spatial: Output spatial grid file for each mascon
     -S X, --spacing X: spatial resolution of output data (dlon,dlat)
     -I X, --interval X: Output grid interval
         1: global
@@ -47,6 +53,8 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
         https://numpy.org
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
+    scipy: Scientific Tools for Python
+        https://scipy.org
     netCDF4: Python interface to the netCDF C library
         https://unidata.github.io/netcdf4-python/netCDF4/index.html
     h5py: Pythonic interface to the HDF5 binary data format.
@@ -85,6 +93,7 @@ REFERENCES:
         https://doi.org/10.1029/2009GL039401
 
 UPDATE HISTORY:
+    Updated 04/2023: add options for least-squares solver
     Updated 02/2023: use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
     Updated 12/2022: single implicit import of gravity toolkit
@@ -143,8 +152,9 @@ import re
 import time
 import logging
 import argparse
-import numpy as np
 import traceback
+import numpy as np
+import scipy.linalg
 import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
@@ -167,6 +177,7 @@ def calc_sensitivity_kernel(LMAX, RAD,
     MASCON_FILE=None,
     REDISTRIBUTE_MASCONS=False,
     FIT_METHOD=0,
+    SOLVER=None,
     LANDMASK=None,
     SPATIAL=False,
     DDEG=None,
@@ -324,7 +335,7 @@ def calc_sensitivity_kernel(LMAX, RAD,
             MA_lm[i,:] = M_lm[i,:]*wt_lm[i]*fact[i]
         fit_factor = wt_lm*fact
         inv_fit_factor = np.copy(fact_inv)
-    else:
+    elif (FIT_METHOD == 2):
         # Fitting Sensitivity Kernel as geoid coefficients
         for i in range(n_harm):
             MA_lm[:,:] = M_lm[i,:]*wt_lm[i]
@@ -339,8 +350,14 @@ def calc_sensitivity_kernel(LMAX, RAD,
         kern_i[i] = 1.0*fit_factor[i]
         # spherical harmonics solution for the
         # mascon sensitivity kernels
-        # Least Squares Solutions: Inv(X'.X).(X'.Y)
-        kern_lm = np.linalg.lstsq(MA_lm, kern_i, rcond=-1)[0]
+        if (SOLVER == 'inv'):
+            kern_lm = np.dot(np.linalg.inv(MA_lm), kern_i)
+        elif (SOLVER == 'lstsq'):
+            kern_lm = np.linalg.lstsq(MA_lm, kern_i, rcond=-1)[0]
+        elif SOLVER in ('gelsd', 'gelsy', 'gelss'):
+            kern_lm, res, rnk, s = scipy.linalg.lstsq(MA_lm, kern_i,
+                lapack_driver=SOLVER)
+        # calculate the sensitivity kernel for each mascon
         for k in range(n_mas):
             A_lm[i,k] = kern_lm[k]*total_area[k]
     # free up larger variables
@@ -546,13 +563,18 @@ def arguments():
     parser.add_argument('--fit-method',
         type=int, default=1, choices=(1,2),
         help='Method for fitting sensitivity kernel to harmonics')
+    # least squares solver
+    choices = ('inv','lstsq','gelsd', 'gelsy', 'gelss')
+    parser.add_argument('--solver','-s',
+        type=str, default='lstsq', choices=choices,
+        help='Least squares solver for sensitivity kernel solutions')
     # land-sea mask for redistributing mascon mass
     lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
         type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
         help='Land-sea mask for redistributing mascon mass')
     # output spatial grid
-    parser.add_argument('--spatial','-s',
+    parser.add_argument('--spatial','-o',
         default=False, action='store_true',
         help='Output spatial grid file for each mascon')
     # output grid parameters
@@ -608,6 +630,7 @@ def main():
             MASCON_FILE=args.mascon_file,
             REDISTRIBUTE_MASCONS=args.redistribute_mascons,
             FIT_METHOD=args.fit_method,
+            SOLVER=args.solver,
             LANDMASK=args.mask,
             SPATIAL=args.spatial,
             DDEG=args.spacing,

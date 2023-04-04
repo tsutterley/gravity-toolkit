@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_degree_one.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (04/2023)
 
 Calculates degree 1 variations using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from ECCO and OMCT/MPIOM
@@ -101,6 +101,12 @@ COMMAND LINE OPTIONS:
     --mean-file X: GRACE/GRACE-FO mean file to remove from the harmonic data
     --mean-format X: Input data format for GRACE/GRACE-FO mean file
     --iterative: Iterate degree one solutions
+    -s X, --solver X: Least squares solver for degree one solutions
+        inv: matrix inversion
+        lstsq: least squares solution
+        gelsy: complete orthogonal factorization
+        gelss: singular value decomposition (SVD)
+        gelsd: singular value decomposition (SVD) with divide and conquer method
     --fingerprint: Redistribute land-water flux using sea level fingerprints
     -e X, --expansion X: Spherical harmonic expansion for sea level fingerprints
     --mask X: Land-sea mask for calculating ocean mass and land water flux
@@ -113,6 +119,8 @@ COMMAND LINE OPTIONS:
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
         https://numpy.org
+    scipy: Scientific Tools for Python
+        https://scipy.org
     dateutil: powerful extensions to datetime
         https://dateutil.readthedocs.io/en/stable/
     netCDF4: Python interface to the netCDF C library
@@ -159,6 +167,7 @@ REFERENCES:
         https://doi.org/10.1029/2007JB005338
 
 UPDATE HISTORY:
+    Updated 04/2023: add options for least-squares solver
     Updated 03/2023: place matplotlib import within try/except statement
     Updated 02/2023: use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
@@ -246,6 +255,7 @@ import argparse
 import warnings
 import traceback
 import numpy as np
+import scipy.linalg
 import gravity_toolkit as gravtk
 
 # attempt imports
@@ -366,6 +376,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     MEANFORM=None,
     MODEL_INDEX=None,
     ITERATIVE=False,
+    SOLVER=None,
     FINGERPRINT=False,
     EXPANSION=None,
     LANDMASK=None,
@@ -769,15 +780,19 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
 
             # G Matrix for time t
             GMAT = np.array([G.C10[t], G.C11[t], G.S11[t]])
-            # calculate inversion for degree 1 solutions
+            # calculate degree 1 solution for iteration
             # this is mathematically equivalent to an iterative procedure
             # whereby the initial degree one coefficients are used to update
             # the G Matrix until (C10, C11, S11) converge
             # for OMCT/MPIOM: min(eustatic from land - measured ocean)
             # for ECCO: min((OBP-GAD) + eustatic from land - measured ocean)
-            DMAT[:,t] = np.dot(np.linalg.inv(IMAT), (CMAT-GMAT))
-            # could also use pseudo-inverse in least-squares
-            #DMAT[:,t] = np.linalg.lstsq(IMAT,(CMAT-GMAT),rcond=-1)[0]
+            if (SOLVER == 'inv'):
+                DMAT[:,t] = np.dot(np.linalg.inv(IMAT), (CMAT-GMAT))
+            elif (SOLVER == 'lstsq'):
+                DMAT[:,t] = np.linalg.lstsq(IMAT, (CMAT-GMAT), rcond=-1)[0]
+            elif SOLVER in ('gelsd', 'gelsy', 'gelss'):
+                DMAT[:,t], res, rnk, s = scipy.linalg.lstsq(IMAT, (CMAT-GMAT),
+                    lapack_driver=SOLVER)
             # save geocenter for iteration and time t after restoring GIA+ATM
             iteration.C10[t,n_iter] = DMAT[0,t]/dfactor[1]+gia.C10[t]+atm.C10[t]
             iteration.C11[t,n_iter] = DMAT[1,t]/dfactor[1]+gia.C11[t]+atm.C11[t]
@@ -1424,6 +1439,11 @@ def arguments():
     parser.add_argument('--iterative',
         default=False, action='store_true',
         help='Iterate degree one solutions')
+    # least squares solver
+    choices = ('inv','lstsq','gelsd', 'gelsy', 'gelss')
+    parser.add_argument('--solver','-s',
+        type=str, default='lstsq', choices=choices,
+        help='Least squares solver for degree one solutions')
     # run with sea level fingerprints
     parser.add_argument('--fingerprint',
         default=False, action='store_true',
@@ -1505,6 +1525,7 @@ def main():
             MEAN_FILE=args.mean_file,
             MEANFORM=args.mean_format,
             ITERATIVE=args.iterative,
+            SOLVER=args.solver,
             FINGERPRINT=args.fingerprint,
             EXPANSION=args.expansion,
             LANDMASK=args.mask,

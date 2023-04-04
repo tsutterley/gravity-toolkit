@@ -31,6 +31,7 @@ Calling Sequence
         * ``'CE'``: Center of Mass of Solid Earth
 
     --units -U : @after
+        * ``0``: no unit conversion
         * ``1``: cm of water thickness
         * ``2``: mm of geoid height
         * ``3``: mm of elastic crustal deformation

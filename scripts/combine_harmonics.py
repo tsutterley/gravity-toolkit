@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 combine_harmonics.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (04/2023)
 Converts a file from the spherical harmonic domain into the spatial domain
 
 CALLING SEQUENCE:
@@ -24,11 +24,12 @@ COMMAND LINE OPTIONS:
     -R X, --radius X: Gaussian smoothing radius (km)
     -d, --destripe: use a decorrelation filter (destriping filter)
     -U X, --units X: output units
-        1: cm of water thickness
-        2: mm of geoid height
-        3: mm of elastic crustal deformation [Davis 2004]
-        4: microGal gravitational perturbation
-        5: millibars equivalent surface pressure
+        0: norm, no unit conversion
+        1: cmwe, centimeters water equivalent
+        2: mmGH, millimeters geoid height
+        3: mmCU, millimeters elastic crustal deformation
+        4: micGal, microGal gravity perturbations
+        5: mbar, millibars equivalent surface pressure
     -S X, --spacing X: spatial resolution of output data (dlon,dlat)
     -I X, --interval X: output grid interval
         1: (0:360, 90:-90)
@@ -71,6 +72,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 04/2023: allow units argument to be set to 0 for no unit conversion
     Updated 03/2023: add index ascii/netCDF4/HDF5 datatypes as possible inputs
         add descriptive file-level attributes to output netCDF4/HDF5 files
         use attributes from units class for writing to netCDF4/HDF5 files
@@ -250,6 +252,7 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     # dfactor computes the degree dependent coefficients
     factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
     # output units and units longname
+    # 0: norm, no unit conversion
     # 1: cmwe, centimeters water equivalent
     # 2: mmGH, millimeters geoid height
     # 3: mmCU, millimeters elastic crustal deformation
@@ -331,7 +334,7 @@ def arguments():
         help='Verbose output of run')
     # output units
     parser.add_argument('--units','-U',
-        type=int, default=1, choices=[1,2,3,4,5],
+        type=int, default=1, choices=[0,1,2,3,4,5],
         help='Output units')
     # output grid parameters
     parser.add_argument('--spacing','-S',
