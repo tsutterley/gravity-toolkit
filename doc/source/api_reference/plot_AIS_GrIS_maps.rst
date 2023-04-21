@@ -1,7 +1,6 @@
-
-======================
-plot_AIS_GrIS_maps.rst
-======================
+=====================
+plot_AIS_GrIS_maps.py
+=====================
 
 - Creates GMT-like plots for the Greenland and Antarctic ice sheets
 

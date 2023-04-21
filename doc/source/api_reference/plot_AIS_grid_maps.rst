@@ -1,6 +1,6 @@
-======================
-plot_AIS_grid_maps.rst
-======================
+=====================
+plot_AIS_grid_maps.py
+=====================
 
 - Creates GMT-like plots for the Antarctic Ice Sheet on a polar stereographic south (3031) projection
 

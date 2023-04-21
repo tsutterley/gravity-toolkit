@@ -629,7 +629,7 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
                 l = np.arange(2,LMAX+1)
                 pcos[:,i] = np.sum(plmout[l,:,i]*(GRACE_Ylms.clm[l,:]+Ylms.clm[l,:]), axis=0)
                 psin[:,i] = np.sum(plmout[l,:,i]*(GRACE_Ylms.slm[l,:]+Ylms.slm[l,:]), axis=0)
-            # Multiplying by c/s(phi#m) to get surface density in cmH2Oeq (lon,lat)
+            # Multiplying by c/s(phi#m) to get surface density in cmwe (lon,lat)
             # ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
             # The summation over spherical harmonic order is in this multiplication
             rmass = np.dot(np.transpose(ccos),pcos) + np.dot(np.transpose(ssin),psin)

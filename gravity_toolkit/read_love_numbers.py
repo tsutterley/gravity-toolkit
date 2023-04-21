@@ -4,17 +4,17 @@ read_love_numbers.py
 Written by Tyler Sutterley (03/2023)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
-Linearly interpolates load love numbers for missing degrees
-Linearly extrapolates load love numbers beyond maximum degree of dataset
+Linearly interpolates load Love/Shida numbers for missing degrees
+Linearly extrapolates load Love/Shida numbers beyond maximum degree of dataset
 
 INPUTS:
-    love_numbers_file: Elastic load Love numbers file
+    love_numbers_file: Elastic load Love/Shida numbers file
         computed using Preliminary Reference Earth Model (PREM) outputs
 
 OUTPUTS:
-    kl: Love number of Gravitational Potential
     hl: Love number of Vertical Displacement
-    ll: Love number of Horizontal Displacement
+    kl: Love number of Gravitational Potential
+    ll: Love (Shida) number of Horizontal Displacement
 
 OPTIONS:
     LMAX: truncate or interpolate to maximum spherical harmonic degree
@@ -24,7 +24,7 @@ OPTIONS:
         hl: vertical displacement
         kl: gravitational potential
         ll: horizontal displacement
-    REFERENCE: Reference frame for calculating degree 1 love numbers
+    REFERENCE: Reference frame for calculating degree 1 Love/Shida numbers
         CF: Center of Surface Figure
         CL: Center of Surface Lateral Figure
         CH: Center of Surface Height Figure
@@ -91,17 +91,17 @@ import logging
 import numpy as np
 from gravity_toolkit.utilities import get_data_path
 
-# PURPOSE: read load love numbers from PREM
+# PURPOSE: read load Love/Shida numbers from PREM
 def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
     COLUMNS=['l','hl','kl','ll'], REFERENCE='CE', FORMAT='tuple'):
     """
-    Reads PREM load Love numbers file and applies isomorphic
+    Reads PREM load Love/Shida numbers file and applies isomorphic
     parameters [Dziewonski1981]_ [Blewett2003]_
 
     Parameters
     ----------
     love_numbers_file: str
-        Elastic load Love numbers file
+        Elastic load Love/Shida numbers file
     LMAX: int or NoneType, default None
         Truncate or interpolate to maximum spherical harmonic degree
     HEADER: int, default 2
@@ -114,7 +114,7 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
             - ``'kl'``: gravitational potential
             - ``'ll'``: horizontal displacement
     REFERENCE: str, default 'CE'
-        Reference frame of degree 1 love numbers
+        Reference frame of degree 1 Love/Shida numbers
 
             - ``'CF'``: Center of Surface Figure
             - ``'CL'``: Center of Surface Lateral Figure
@@ -136,7 +136,7 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
     kl: np.ndarray
         Love number of Gravitational Potential
     ll: np.ndarray
-        Love number of Horizontal Displacement
+        Love (Shida) number of Horizontal Displacement
 
     References
     ----------
@@ -172,7 +172,7 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
         *Computers & Geosciences*, 49, 190--199, (2012).
         `doi: 10.1016/j.cageo.2012.06.022 <https://doi.org/10.1016/j.cageo.2012.06.022>`_
     """
-    # Input load love number data file and read contents
+    # Input load Love/Shida number data file and read contents
     file_contents = extract_love_numbers(love_numbers_file)
 
     # compile regular expression operator to find numerical instances
@@ -183,13 +183,13 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
     if LMAX is None:
         LMAX = np.int64(rx.findall(file_contents[-1])[COLUMNS.index('l')])
 
-    # dictionary of output love numbers
+    # dictionary of output Love/Shida numbers
     love = {}
     # spherical harmonic degree
     love['l'] = np.arange(LMAX+1)
     # vertical displacement hl
     # gravitational potential kl
-    # horizontal displacement ll
+    # horizontal displacement ll (Shida number)
     for n in ('hl','kl','ll'):
         love[n] = np.zeros((LMAX+1))
     # check if needing to interpolate between degrees
@@ -203,31 +203,31 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
         l = np.int64(love_numbers[COLUMNS.index('l')])
         # truncate to spherical harmonic degree LMAX
         if (l <= LMAX):
-            # convert love numbers to float
+            # convert Love/Shida numbers to float
             # vertical displacement hl
             # gravitational potential kl
-            # horizontal displacement ll
+            # horizontal displacement ll (Shida number)
             for n in ('hl','kl','ll'):
                 love[n][l] = np.float64(love_numbers[COLUMNS.index(n)])
             # set interpolation flag for degree
             flag[l] = False
 
-    # return love numbers in output format
+    # return Love/Shida numbers in output format
     if (LMAX == 0):
         return love_number_formatter(love, FORMAT=FORMAT)
 
-    # if needing to linearly interpolate love numbers
+    # if needing to linearly interpolate Love/Shida numbers
     if np.any(flag):
-        # linearly interpolate each load love number following Wahr (1998)
+        # linearly interpolate following Wahr (1998)
         for n in ('hl','kl','ll'):
             love[n][flag] = np.interp(love['l'][flag],
                 love['l'][~flag], love[n][~flag])
 
-    # if needing to linearly extrapolate love numbers
+    # if needing to linearly extrapolate Love/Shida numbers
     # NOTE: use caution if extrapolating far beyond the
-    # maximum degree of the love numbers dataset
+    # maximum degree of the Love/Shida numbers dataset
     for lint in range(l,LMAX+1):
-        # linearly extrapolate each load love number
+        # linearly extrapolate to maximum degree
         for n in ('hl','kl','ll'):
             love[n][lint] = 2.0*love[n][lint-1] - love[n][lint-2]
 
@@ -254,19 +254,19 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
     for n in ('hl','kl','ll'):
         love[n][1] -= alpha
 
-    # return love numbers in output format
+    # return Love/Shida numbers in output format
     return love_number_formatter(love, FORMAT=FORMAT)
 
-# PURPOSE: return load Love numbers in a particular format
+# PURPOSE: return load Love/Shida numbers in a particular format
 def love_number_formatter(love, FORMAT='tuple'):
     """
-    Converts a dictionary of Load Love Numbers
+    Converts a dictionary of Load Love/Shida Numbers
     to a particular output fomrat
 
     Parameters
     ----------
     love: dict
-        Load Love numbers
+        Load Love/Shida numbers
     FORMAT: str, default 'tuple'
         Format of output variables
 
@@ -282,7 +282,7 @@ def love_number_formatter(love, FORMAT='tuple'):
     kl: np.ndarray
         Love number of Gravitational Potential
     ll: np.ndarray
-        Love number of Horizontal Displacement
+        Love (Shida) number of Horizontal Displacement
     """
     if (FORMAT == 'dict'):
         return love
@@ -296,31 +296,31 @@ def love_number_formatter(love, FORMAT='tuple'):
 # PURPOSE: read input file and extract contents
 def extract_love_numbers(love_numbers_file):
     """
-    Read load love number file and extract contents
+    Read load Love/Shida number file and extract contents
 
     Parameters
     ----------
     love_numbers_file: str
-        Elastic load Love numbers file
+        Elastic load Love/Shida numbers file
     """
-    # check if input love numbers are a string or bytesIO object
+    # check if input Love/Shida numbers are a string or bytesIO object
     if isinstance(love_numbers_file, str):
         # tilde expansion of load love number data file
         love_numbers_file = os.path.expanduser(love_numbers_file)
-        # check that load love number data file is present in file system
+        # check that load Love/Shida number data file is present in file system
         if not os.access(love_numbers_file, os.F_OK):
             raise FileNotFoundError(f'{love_numbers_file} not found')
-        # Input load love number data file and read contents
+        # Input load Love/Shida number data file and read contents
         with open(love_numbers_file, mode='r', encoding='utf8') as f:
             return f.read().splitlines()
     elif isinstance(love_numbers_file, io.IOBase):
-        # read contents from load love number data
+        # read contents from load Love/Shida number data
         return love_numbers_file.read().decode('utf8').splitlines()
 
-# PURPOSE: read load love numbers for a range of spherical harmonic degrees
+# PURPOSE: read load Love/Shida numbers for a range of spherical harmonic degrees
 def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
     """
-    Wrapper function for reading PREM load Love numbers for a
+    Wrapper function for reading PREM load Love/Shida numbers for a
     range of spherical harmonic degrees and applying
     isomorphic parameters [Blewett2003]_
 
@@ -329,7 +329,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
     LMAX: int
         maximum spherical harmonic degree
     LOVE_NUMBERS: int, default 0
-        Treatment of the Load Love numbers
+        Treatment of the Load Love/Shida numbers
 
             - ``0``: [Han1995]_ values from PREM
             - ``1``: [Gegout2010]_ values from PREM
@@ -337,7 +337,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
             - ``3``: [Wang2012]_ values from PREM with hard sediment
             - ``4``: [Wang2012]_ values from PREM with soft sediment
     REFERENCE: str
-        Reference frame for calculating degree 1 love numbers [Blewett2003]_
+        Reference frame for calculating degree 1 Love/Shida numbers [Blewett2003]_
 
             - ``'CF'``: Center of Surface Figure (default)
             - ``'CM'``: Center of Mass of Earth System
@@ -357,7 +357,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
     kl: np.ndarray
         Love number of Gravitational Potential
     ll: np.ndarray
-        Love number of Horizontal Displacement
+        Love (Shida) number of Horizontal Displacement
 
     References
     ----------
@@ -382,7 +382,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
         *Computers & Geosciences*, 49, 190--199, (2012).
         `doi: 10.1016/j.cageo.2012.06.022 <https://doi.org/10.1016/j.cageo.2012.06.022>`_
     """
-    # load love numbers file
+    # load Love/Shida numbers file
     if (LOVE_NUMBERS == 0):
         # PREM outputs from Han and Wahr (1995)
         # https://doi.org/10.1111/j.1365-246X.1995.tb01819.x
@@ -427,13 +427,13 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
         columns = ['l','hl','ll','kl','nl','nk']
     else:
         raise ValueError(f'Unknown Love Numbers Type {LOVE_NUMBERS:d}')
-    # log load love numbers file if debugging
-    logging.debug(f'Reading Love numbers file: {love_numbers_file}')
-    # LMAX of load love numbers from Han and Wahr (1995) is 696.
+    # log load Love/Shida numbers file if debugging
+    logging.debug(f'Reading Love/Shida numbers file: {love_numbers_file}')
+    # LMAX of load Love/Shida numbers from Han and Wahr (1995) is 696.
     # from Wahr (2007) linearly interpolating kl works
     # however, as we are linearly extrapolating out, do not make
     # LMAX too much larger than 696
-    # read arrays of kl, hl, and ll Love Numbers
+    # read arrays of kl, hl, and ll Love/Shida Numbers
     love = read_love_numbers(love_numbers_file, LMAX=LMAX, HEADER=header,
         COLUMNS=columns, REFERENCE=REFERENCE, FORMAT=FORMAT)
     # append model and filename attributes to class
@@ -447,12 +447,12 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
 
 class love_numbers(object):
     """
-    Data class for Load Love numbers
+    Data class for Load Love/Shida numbers
 
     Attributes
     ----------
     lmax: int
-        maximum degree of the Load Love Numbers
+        maximum degree of the Load Love/Shida Numbers
     l: np.ndarray
         Spherical harmonic degrees
     hl: np.ndarray or List
@@ -460,9 +460,9 @@ class love_numbers(object):
     kl: np.ndarray or List
         Love number of Gravitational Potential
     ll: np.ndarray or List
-        Love number of Horizontal Displacement
+        Love (Shida) number of Horizontal Displacement
     reference: str
-        Reference frame for degree 1 love numbers
+        Reference frame for degree 1 Love/Shida numbers
 
             - ``'CF'``: Center of Surface Figure
             - ``'CM'``: Center of Mass of Earth System
@@ -473,7 +473,7 @@ class love_numbers(object):
     citation: str
         Citation for Reference Earth Model
     filename: str
-        input filename of Load Love Numbers
+        input filename of Load Love/Shida Numbers
     """
     np.seterr(invalid='ignore')
     def __init__(self, **kwargs):
@@ -500,7 +500,7 @@ class love_numbers(object):
         d: dict
             dictionary object to be converted
         """
-        # retrieve each Load Love Number
+        # retrieve each Load Love/Shida Number
         for key in ('hl','kl','ll'):
             setattr(self, key, d.get(key))
         self.lmax = len(self.hl) - 1
@@ -517,7 +517,7 @@ class love_numbers(object):
         d: dict
             output dictionary object
         """
-        # retrieve each Load Love Number
+        # retrieve each Load Love/Shida Number
         d = {}
         for key in ('hl','kl','ll'):
             d[key] = getattr(self, key)
@@ -532,7 +532,7 @@ class love_numbers(object):
         t: tuple
             output tuple object
         """
-        # return Load Love Numbers
+        # return Load Love/Shida Numbers
         return (self.hl, self.kl, self.ll)
 
     def transform(self, reference):
@@ -544,7 +544,7 @@ class love_numbers(object):
         Parameters
         ----------
         reference: str
-            Output reference frame for degree 1 love numbers
+            Output reference frame for degree 1 Love/Shida numbers
 
                 - ``'CF'``: Center of Surface Figure
                 - ``'CL'``: Center of Surface Lateral Figure
@@ -600,7 +600,7 @@ class love_numbers(object):
         return len(self.l)
 
     def __iter__(self):
-        """Iterate over load love numbers variables
+        """Iterate over load Love/Shida numbers variables
         """
         yield self.hl
         yield self.kl

@@ -1,6 +1,6 @@
-==========================
-plot_AIS_regional_maps.rst
-==========================
+=========================
+plot_AIS_regional_maps.py
+=========================
 
 - Creates GMT-like plots for sub-regions of Antarctica on a polar stereographic south (3031) projection
 

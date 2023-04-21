@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_point_load.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (04/2023)
 Calculates gravitational spherical harmonic coefficients for point masses
 
 CALLING SEQUENCE:
@@ -47,6 +47,7 @@ REFERENCES:
         https://doi.org/10.1029/JB078i011p01760
 
 UPDATE HISTORY:
+    Updated 04/2023: allow love numbers to be None for custom units case
     Updated 03/2023: improve typing for variables in docstrings
     Updated 02/2023: set custom units as top option in if/else statements
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -122,10 +123,8 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
     phi = np.pi*lon.flatten()/180.0
     theta = np.pi*(90.0 - lat.flatten())/180.0
 
-    # SH Degree dependent factors to convert into fully normalized SH's
-    # use splat operator to extract arrays of kl, hl, and ll Love Numbers
-    factors = gravity_toolkit.units(lmax=LMAX).spatial(*LOVE)
     # extract degree dependent factor for specific units
+    factors = gravity_toolkit.units(lmax=LMAX)
     int_fact = np.zeros((npts))
     if isinstance(UNITS, (list, np.ndarray)):
         # custom units
@@ -133,11 +132,11 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
         int_fact[:] = 1.0
     elif (UNITS == 1):
         # Default Parameter: Input in grams (g)
-        dfactor = factors.cmwe/(factors.rad_e**2)
+        dfactor = factors.spatial(*LOVE).cmwe/(factors.rad_e**2)
         int_fact[:] = 1.0
     elif (UNITS == 2):
         # Input in gigatonnes (Gt)
-        dfactor = factors.cmwe/(factors.rad_e**2)
+        dfactor = factors.spatial(*LOVE).cmwe/(factors.rad_e**2)
         int_fact[:] = 1e15
     else:
         raise ValueError(f'Unknown units {UNITS}')

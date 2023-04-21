@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 clenshaw_summation.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (04/2023)
 Calculates the spatial field for a series of spherical harmonics for a
     sequence of ungridded points
 
@@ -49,6 +49,7 @@ REFERENCES:
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 04/2023: allow love numbers to be None for custom units case
     Updated 03/2023: improve typing for variables in docstrings
     Updated 02/2023: set custom units as top option in if/else statements
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -162,18 +163,17 @@ def clenshaw_summation(clm, slm, lon, lat,
         wl = np.ones((LMAX+1))
 
     # Setting units factor for output
-    # extract arrays of kl, hl, and ll Love Numbers
-    factors = units(lmax=LMAX).harmonic(*LOVE)
-    # dfactor computes the degree dependent coefficients
+    # dfactor is the degree dependent coefficients
+    factors = units(lmax=LMAX)
     if isinstance(UNITS, (list,np.ndarray)):
         # custom units
         dfactor = np.copy(UNITS)
     elif isinstance(UNITS, str):
         # named units
-        dfactor = factors.get(UNITS)
+        dfactor = factors.harmonic(*LOVE).get(UNITS)
     elif isinstance(UNITS, int):
         # use named unit codes
-        dfactor = factors.get(units.bycode(UNITS))
+        dfactor = factors.harmonic(*LOVE).get(units.bycode(UNITS))
     else:
         raise ValueError(f'Unknown units {UNITS}')
 

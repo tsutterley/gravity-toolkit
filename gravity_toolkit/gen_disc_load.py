@@ -164,7 +164,7 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
         # custom units
         unit_conv = np.copy(UNITS)
     elif (UNITS == 1):
-        # Input data is in cm water equivalent (cmH2O)
+        # Input data is in cm water equivalent (cmwe)
         unit_conv = 1.0
     elif (UNITS == 2):
         # Input data is in gigatonnes (Gt)
@@ -213,8 +213,8 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
     # MMAX+1 as there are MMAX+1 elements between 0 and MMAX
     m = np.arange(MMAX+1)
     # Multiplying by the units conversion factor (unit_conv) to
-    # convert from the input units into cmH2O equivalent
-    # Multiplying point mass data (converted to cmH2O) with sin/cos of m*phis
+    # convert from the input units into cmwe
+    # Multiplying point mass data (converted to cmwe) with sin/cos of m*phis
     # data normally is 1 for a uniform 1cm water equivalent layer
     # but can be a mass point if reconstructing a spherical harmonic field
     # NOTE: NOT a matrix multiplication as data (and phi) is a single point

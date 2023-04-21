@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_stokes.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (04/2023)
 
 Converts data from the spatial domain to spherical harmonic coefficients
 
@@ -43,6 +43,7 @@ PROGRAM DEPENDENCIES:
         and filters the GRACE/GRACE-FO coefficients for striping errors
 
 UPDATE HISTORY:
+    Updated 04/2023: allow love numbers to be None for custom units case
     Updated 03/2023: improve typing for variables in docstrings
     Updated 02/2023: set custom units as top option in if/else statements
     Updated 01/2023: refactored associated legendre polynomials
@@ -156,14 +157,11 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     sz = np.shape(data)
     data = data.T if (sz[0] == nlat) else np.copy(data)
 
-    # SH Degree dependent factors to convert into fully normalized SH's
-    # use splat operator to extract arrays of kl, hl, and ll Love Numbers
-    factors = gravity_toolkit.units(lmax=LMAX).spatial(*LOVE)
-
     # extract degree dependent factor for specific units
     # calculate integration factors for theta and phi
     # Multiplying sin(th) with differentials of theta and phi
     # to calculate the integration factor at each latitude
+    factors = gravity_toolkit.units(lmax=LMAX)
     int_fact = np.zeros((nlat))
     if isinstance(UNITS, (list, np.ndarray)):
         # custom units
@@ -171,16 +169,16 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
         int_fact[:] = np.sin(th)*dphi*dth
     elif (UNITS == 1):
         # Default Parameter: Input in cm w.e. (g/cm^2)
-        dfactor = factors.cmwe
+        dfactor = factors.spatial(*LOVE).cmwe
         int_fact[:] = np.sin(th)*dphi*dth
     elif (UNITS == 2):
         # Input in gigatonnes (Gt)
-        dfactor = factors.cmwe
+        dfactor = factors.spatial(*LOVE).cmwe
         # rad_e: Average Radius of the Earth [cm]
         int_fact[:] = 1e15/(factors.rad_e**2)
     elif (UNITS == 3):
         # Input in kg/m^2 (mm w.e.)
-        dfactor = factors.mmwe
+        dfactor = factors.spatial(*LOVE).mmwe
         int_fact[:] = np.sin(th)*dphi*dth
     else:
         raise ValueError(f'Unknown units {UNITS}')

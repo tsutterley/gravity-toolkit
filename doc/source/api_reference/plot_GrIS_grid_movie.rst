@@ -1,6 +1,6 @@
-========================
-plot_GrIS_grid_movie.rst
-========================
+=======================
+plot_GrIS_grid_movie.py
+=======================
 
 - Creates GMT-like animations for the Greenland Ice Sheet on a NSIDC polar stereographic north (3413) projection
 
