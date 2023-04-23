@@ -43,6 +43,7 @@ REFERENCES:
         107(B9), (2002). https://doi.org/10.1029/2001JB000576
 
 UPDATE HISTORY:
+    Updated 04/2023: allow love numbers to be None for mass units case
     Updated 03/2023: improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 08/2021: using units module for Earth parameters
@@ -112,10 +113,16 @@ def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
         MMAX = np.copy(LMAX)
 
     # Earth Parameters
+    factors = gravity_toolkit.units(lmax=LMAX)
     # extract arrays of kl, hl, and ll Love Numbers
-    dfactor = gravity_toolkit.units(lmax=LMAX).harmonic(*LOVE)
+    if (UNITS == 0):
+        # Input coefficients are fully-normalized
+        dfactor = factors.harmonic(*LOVE).cmwe
+    elif (UNITS == 1):
+        # Inputs coefficients are mass (cmwe)
+        dfactor = np.ones((LMAX+1))
     # average radius of the earth (km)
-    rad_e = dfactor.rad_e/1e5
+    rad_e = factors.rad_e/1e5
 
     # allocate for gaussian function
     gl = np.zeros((LMAX+1))
@@ -157,13 +164,8 @@ def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
     wslm = np.zeros((LMAX+1,MMAX+1))
     # for each spherical harmonic degree
     for l in range(0,LMAX+1):# equivalent to 0:lmax
-        if (UNITS == 0):
-            # Input coefficients are fully-normalized
-            cmwe = dfactor.cmwe[l]
-            ldivg = (cmwe**2)/(gl[l]*sigma_0**2)
-        elif (UNITS == 1):
-            # Inputs coefficients are mass (cmwe)
-            ldivg = 1.0/(gl[l]*sigma_0**2)
+        # inverse of smoothed signal variance in output units
+        ldivg = (dfactor[l]**2)/(gl[l]*sigma_0**2)
         # for each valid spherical harmonic order
         mm = np.min([MMAX,l])
         for m in range(0,mm+1):

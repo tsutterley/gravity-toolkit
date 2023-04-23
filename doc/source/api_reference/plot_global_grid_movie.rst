@@ -1,6 +1,6 @@
-==========================
-plot_global_grid_movie.rst
-==========================
+=========================
+plot_global_grid_movie.py
+=========================
 
 - Creates GMT-like animations on a global Plate Carr\ |eacute|\e (Equirectangular) projection
 

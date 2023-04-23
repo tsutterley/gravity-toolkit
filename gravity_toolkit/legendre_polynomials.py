@@ -72,7 +72,8 @@ def legendre_polynomials(lmax, x, ASTYPE=np.float64):
     ----------
     .. [HofmannWellenhof2006] B. Hofmann-Wellenhof and H. Moritz,
         *Physical Geodesy*, 2nd Edition, 403 pp., (2006).
-        `doi: 10.1007/978-3-211-33545-1 <https://doi.org/10.1007/978-3-211-33545-1>`_
+        `doi: 10.1007/978-3-211-33545-1
+        <https://doi.org/10.1007/978-3-211-33545-1>`_
     """
     # verify dimensions
     x = np.atleast_1d(x).flatten().astype(ASTYPE)

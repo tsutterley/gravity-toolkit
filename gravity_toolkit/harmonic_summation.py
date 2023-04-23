@@ -30,6 +30,7 @@ PROGRAM DEPENDENCIES:
     units.py: class for converting spherical harmonic data to specific units
 
 UPDATE HISTORY:
+    Updated 04/2023: allow love numbers to be None for custom units case
     Updated 03/2023: allow units inputs to be strings for named types
         improve typing for variables in docstrings
         minor refactor in line ordering for readability
@@ -282,18 +283,17 @@ def stokes_summation(clm1, slm1, lon, lat,
         wl = np.ones((LMAX+1))
 
     # Setting units factor for output
-    # extract arrays of kl, hl, and ll Love Numbers
-    factors = units(lmax=LMAX).harmonic(*LOVE)
-    # dfactor computes the degree dependent coefficients
+    # dfactor is the degree dependent coefficients
+    factors = units(lmax=LMAX)
     if isinstance(UNITS, (list,np.ndarray)):
         # custom units
         dfactor = np.copy(UNITS)
     elif isinstance(UNITS, str):
         # named units
-        dfactor = factors.get(UNITS)
+        dfactor = factors.harmonic(*LOVE).get(UNITS)
     elif isinstance(UNITS, int):
         # use named unit codes
-        dfactor = factors.get(units.bycode(UNITS))
+        dfactor = factors.harmonic(*LOVE).get(units.bycode(UNITS))
     else:
         raise ValueError(f'Unknown units {UNITS}')
 

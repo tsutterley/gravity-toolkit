@@ -1,6 +1,6 @@
-==========================
-plot_global_grid_4maps.rst
-==========================
+=========================
+plot_global_grid_4maps.py
+=========================
 
 - Creates 4 GMT-like plots on a global Plate Carr\ |eacute|\e (Equirectangular) projection
 

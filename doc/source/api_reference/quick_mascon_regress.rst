@@ -1,6 +1,6 @@
-========================
-quick_mascon_regress.rst
-========================
+=======================
+quick_mascon_regress.py
+=======================
 
 - Creates a regression summary file for a mascon time series file
 

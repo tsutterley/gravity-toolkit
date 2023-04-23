@@ -1,6 +1,6 @@
-=====================
-quick_mascon_plot.rst
-=====================
+====================
+quick_mascon_plot.py
+====================
 
 - Plots a mascon time series file for a particular format
 
