@@ -250,7 +250,7 @@ class geocenter(object):
         n_mon = file_lines - count
         # date and GRACE/GRACE-FO month
         dinput['time'] = np.zeros((n_mon))
-        dinput['month'] = np.zeros((n_mon),dtype=int)
+        dinput['month'] = np.zeros((n_mon), dtype=int)
         # monthly spherical harmonic replacement solutions
         dinput['C10'] = np.zeros((n_mon))
         dinput['C11'] = np.zeros((n_mon))

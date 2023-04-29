@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 piecewise.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (04/2023)
 
 Fits a synthetic signal to data over a time period by ordinary or weighted
     least-squares for breakpoint analysis
@@ -51,6 +51,7 @@ OPTIONS:
         array if unequal for weighted least squares
     WEIGHT: Set if measurement errors for use in weighted least squares
     CYCLES: list of cyclical terms (0.5=semi-annual, 1=annual)
+    TERMS: list of extra terms
     STDEV: standard deviation of output error
     CONF: confidence interval of output error
     AICc: use second order AIC
@@ -60,6 +61,7 @@ PYTHON DEPENDENCIES:
     scipy: Scientific Tools for Python (https://docs.scipy.org/doc/)
 
 UPDATE HISTORY:
+    Updated 04/2023: option to include extra fit terms in the design matrix
     Updated 01/2023: refactored time series analysis functions
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -95,8 +97,8 @@ import scipy.stats
 import scipy.special
 
 def piecewise(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
-    CYCLES=[0.5,1.0], DATA_ERR=0, WEIGHT=False, STDEV=0, CONF=0,
-    AICc=False):
+    CYCLES=[0.5,1.0], TERMS=[], DATA_ERR=0, WEIGHT=False,
+    STDEV=0, CONF=0, AICc=False):
     """
     Fits a synthetic signal to data over a time period by ordinary or
     weighted least-squares for breakpoint analysis [Toms2003]_
@@ -113,6 +115,8 @@ def piecewise(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
         breakpoint indice of piecewise regression
     CYCLES: list, default [0.5, 1.0]
         list of cyclical terms in fractions of year
+    TERMS: list, default []
+        list of extra fit terms
     DATA_ERR: float or list
         data precision
 
@@ -205,6 +209,9 @@ def piecewise(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
     for c in CYCLES:
         DMAT.append(np.sin(2.0*np.pi*t_in/np.float64(c)))
         DMAT.append(np.cos(2.0*np.pi*t_in/np.float64(c)))
+    # add additional terms to the design matrix
+    for t in TERMS:
+        DMAT.append(t)
     # take the transpose of the design matrix
     DMAT = np.transpose(DMAT)
 

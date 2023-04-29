@@ -118,6 +118,7 @@ missions
     api_reference/mascon_reconstruct.rst
     api_reference/monte_carlo_degree_one.rst
     api_reference/quick_mascon_regress.rst
+    api_reference/piecewise_grace_maps.rst
     api_reference/regress_grace_maps.rst
     api_reference/run_grace_date.rst
     api_reference/run_sea_level_equation.rst

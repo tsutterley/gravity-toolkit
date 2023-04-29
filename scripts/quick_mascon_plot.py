@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 quick_mascon_plot.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (04/2023)
 Plots a mascon time series file for a particular format
 
 COMMAND LINE OPTIONS:
@@ -11,7 +11,8 @@ COMMAND LINE OPTIONS:
     -f X, --figure-format X: Output figure format
     -d X, --figure-dpi X: Output figure resolution in dots per inch
     -H X, --header X: Number of rows of header text to skip
-    -R X, --region X: Region label for title
+    -m X, --marker X: Plot markers
+    -t X, --title X: Plot title
     -T X, --time X: Time label for x-axis
     -U X, --units X: Units label for y-axis
     -L X, --legend X: Legend labels for each time series
@@ -33,6 +34,7 @@ PROGRAM DEPENDENCIES:
     time_series.regress.py: calculates trend coefficients using least-squares
 
 UPDATE HISTORY:
+    Updated 04/2023: add option to include plot markers on time series plots
     Updated 03/2023: place matplotlib import behind try/except statement
     Updated 01/2023: refactored time series analysis functions
     Updated 12/2022: single implicit import of gravity toolkit
@@ -64,8 +66,8 @@ except ModuleNotFoundError:
 warnings.filterwarnings("ignore")
 
 # PURPOSE: read mascon time series file and create plot
-def run_plot(i,f,individual=False,header=0,region=None,time=None,units=None,
-    legend=None,error=False,monthly=True):
+def run_plot(i,f,individual=False,header=0,marker=None,title=None,
+    time=None,units=None,legend=None,error=False,monthly=True):
     """
     Plots a mascon time series file for a particular format
 
@@ -78,7 +80,8 @@ def run_plot(i,f,individual=False,header=0,region=None,time=None,units=None,
     -----------------
     individual: Create individual plots or combine into single
     header: Number of rows of header text to skip
-    region: Region label for title
+    marker: Plot marker
+    title: Region label for title
     time: Time label for x-axis
     units: Units label for y-axis
     legend: Legend labels for each time series
@@ -130,7 +133,7 @@ def run_plot(i,f,individual=False,header=0,region=None,time=None,units=None,
         if error:
             err = np.copy(dinput[:,3])
     # plot all dates
-    l, = plt.plot(tdec,data,label=legend)
+    l, = plt.plot(tdec,data,label=legend,marker=marker,markersize=5)
     if error:
         plt.fill_between(tdec, data-err, y2=data+err,
             color=l.get_color(), alpha=0.25)
@@ -146,7 +149,7 @@ def run_plot(i,f,individual=False,header=0,region=None,time=None,units=None,
         # add labels
         plt.xlabel(time)
         plt.ylabel(units)
-        plt.title(region)
+        plt.title(title)
         # use a tight layout to minimize whitespace
         plt.tight_layout()
 
@@ -176,9 +179,11 @@ def arguments():
     parser.add_argument('--header','-H',
         type=int, default=0,
         help='Number of rows of header text to skip')
-    parser.add_argument('--region','-R',
+    parser.add_argument('--marker','-m',
+        type=str, help='Plot marker')
+    parser.add_argument('--title','-t',
         type=lambda x: ' '.join(str.split(x,"_")),
-        help='Region label for title')
+        help='Plot title')
     parser.add_argument('--time','-T',
         type=str, default='Time [Yr]',
         help='Time label for x-axis')
@@ -211,8 +216,9 @@ def main():
     for i,f in enumerate(args.file):
         legend = args.legend[i] if args.legend else None
         run_plot(i, f, individual=args.individual, header=args.header,
-            region=args.region, time=args.time, units=args.units,
-            legend=legend, error=args.error, monthly=args.all)
+            marker=args.marker, title=args.title, time=args.time,
+            units=args.units, legend=legend, error=args.error,
+            monthly=args.all)
     # add legend if applicable
     if args.legend:
         lgd = plt.legend(loc=3,frameon=False)

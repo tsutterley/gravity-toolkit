@@ -119,7 +119,7 @@ def C50(SLR_file, C50_MEAN=0.0, DATE=None, HEADER=True):
         n_mon = file_lines - count
         # date and GRACE/GRACE-FO month
         dinput['time'] = np.zeros((n_mon))
-        dinput['month'] = np.zeros((n_mon),dtype=int)
+        dinput['month'] = np.zeros((n_mon), dtype=int)
         # monthly spherical harmonic replacement solutions
         dinput['data'] = np.zeros((n_mon))
         # monthly spherical harmonic formal standard deviations

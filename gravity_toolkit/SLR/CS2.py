@@ -236,7 +236,7 @@ def CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
         n_mon = file_lines - count
         # date and GRACE/GRACE-FO month
         dinput['time'] = np.zeros((n_mon))
-        dinput['month'] = np.zeros((n_mon),dtype=int)
+        dinput['month'] = np.zeros((n_mon), dtype=int)
         # monthly spherical harmonic replacement solutions
         dinput['C2m'] = np.zeros((n_mon))
         dinput['S2m'] = np.zeros((n_mon))
