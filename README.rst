@@ -6,8 +6,6 @@ gravity-toolkit
 |License|
 |PyPI Version|
 |Documentation Status|
-|Binder|
-|Pangeo|
 |zenodo|
 
 .. |Language| image:: https://img.shields.io/pypi/pyversions/gravity-toolkit?color=green
@@ -21,12 +19,6 @@ gravity-toolkit
 
 .. |Documentation Status| image:: https://readthedocs.org/projects/gravity-toolkit/badge/?version=latest
    :target: https://gravity-toolkit.readthedocs.io/en/latest/?badge=latest
-
-.. |Binder| image:: https://mybinder.org/badge_logo.svg
-   :target: https://mybinder.org/v2/gh/tsutterley/gravity-toolkit/main
-
-.. |Pangeo| image:: https://img.shields.io/static/v1.svg?logo=Jupyter&label=PangeoBinderAWS&message=us-west-2&color=orange
-   :target: https://aws-uswest2-binder.pangeo.io/v2/gh/tsutterley/gravity-toolkit/main?urlpath=lab
 
 .. |zenodo| image:: https://zenodo.org/badge/107323776.svg
    :target: https://zenodo.org/badge/latestdoi/107323776

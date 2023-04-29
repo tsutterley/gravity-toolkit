@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 u"""
-regress_grace_maps.py
+piecewise_grace_maps.py
 Written by Tyler Sutterley (03/2023)
 
-Reads in GRACE/GRACE-FO spatial files and fits a regression model
-    at each grid point
+Reads in GRACE/GRACE-FO spatial files and fits a piecewise regression
+    model at each grid point for breakpoint analysis
 
 COMMAND LINE OPTIONS:
     --help: list the command line options
@@ -12,6 +12,7 @@ COMMAND LINE OPTIONS:
     -P X, --file-prefix X: prefix string for input and output files
     -S X, --start X: starting GRACE month for time series regression
     -E X, --end X: ending GRACE month for time series regression
+    -B X, --breakpoint X: breakpoint GRACE month for piecewise regression
     -N X, --missing X: Missing GRACE/GRACE-FO months
     -l X, --lmax X: maximum spherical harmonic degree
     -m X, --mmax X: maximum spherical harmonic order
@@ -34,7 +35,6 @@ COMMAND LINE OPTIONS:
         netCDF4
         HDF5
     --redistribute-removed: redistribute removed mass fields over the ocean
-    --order X: regression fit polynomial order
     --cycles X: regression fit cyclical terms
     --log: Output log of files created for each job
     -V, --verbose: verbose output of processing run
@@ -54,12 +54,13 @@ PYTHON DEPENDENCIES:
         https://www.h5py.org/
 
 PROGRAM DEPENDENCIES:
-    time_series.regress.py: calculates trend coefficients using least-squares
+    time_series.piecewise.py: calculates piecewise trend coefficients
     time_series.amplitude.py: calculates the amplitude and phase of a harmonic
     spatial.py: spatial data class for reading, writing and processing data
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 04/2023: updated for public release
     Updated 03/2023: updated inputs to spatial from_ascii function
         use attributes from units class for writing to netCDF4/HDF5 files
     Updated 01/2023: refactored time series analysis functions
@@ -110,9 +111,10 @@ def info(args):
     logging.info(f'process id: {os.getpid():d}')
 
 # program module to run with specified parameters
-def regress_grace_maps(LMAX, RAD,
+def piecewise_grace_maps(LMAX, RAD,
     START=None,
     END=None,
+    BREAKPOINT=None,
     MISSING=None,
     MMAX=None,
     DESTRIPE=False,
@@ -122,7 +124,6 @@ def regress_grace_maps(LMAX, RAD,
     BOUNDS=None,
     DATAFORM=None,
     REDISTRIBUTE_REMOVED=False,
-    ORDER=None,
     CYCLES=None,
     OUTPUT_DIRECTORY=None,
     FILE_PREFIX=None,
@@ -176,15 +177,10 @@ def regress_grace_maps(LMAX, RAD,
         nlon = len(lon)
         nlat = len(lat)
 
-    # Setting output parameters for each fit type
-    coef_str = ['x{0:d}'.format(o) for o in range(ORDER+1)]
-    unit_suffix = [' yr^{0:d}'.format(-o) if o else '' for o in range(ORDER+1)]
-    if (ORDER == 0):# Mean
-        unit_longname = ['Mean']
-    elif (ORDER == 1):# Trend
-        unit_longname = ['Constant','Trend']
-    elif (ORDER == 2):# Quadratic
-        unit_longname = ['Constant','Linear','Quadratic']
+    # Setting output parameters
+    coef_str = ['x0', 'px1', 'px1']
+    unit_suffix = ['', ' yr^-1', ' yr^-1']
+    unit_longname = ['Constant', 'Piecewise Trend', 'Piecewise Trend']
     # filename strings for cyclical terms
     cyclic_str = {}
     cyclic_str['SEMI'] = ['SS','SC']
@@ -233,10 +229,21 @@ def regress_grace_maps(LMAX, RAD,
     # concatenate list to single spatial object
     grid = gravtk.spatial().from_list(spatial_list)
     spatial_list = None
+    # find index of breakpoint within GRACE/GRACE-FO months
+    if BREAKPOINT not in grid.month:
+        raise ValueError(f'{BREAKPOINT} not found in GRACE/GRACE-FO months')
+    breakpoint_index, = np.nonzero(grid.month == BREAKPOINT)
 
     # Fitting seasonal components
     ncomp = len(coef_str)
     ncycles = 2*len(CYCLES)
+    # output start and end months with breakpoint
+    output_start = np.zeros((ncomp), dtype=int) + START
+    output_end = np.zeros((ncomp), dtype=int) + END
+    # first piecewise (index 1) ends with BREAKPOINT
+    output_end[1] = BREAKPOINT
+    # second piecewise (index 2) starts with BREAKPOINT
+    output_start[2] = BREAKPOINT
 
     # Allocating memory for output variables
     out = dinput.zeros_like()
@@ -256,8 +263,8 @@ def regress_grace_maps(LMAX, RAD,
     for i in range(nlat):
         for j in range(nlon):
             # Calculating the regression coefficients
-            tsbeta = gravtk.time_series.regress(grid.time, grid.data[i,j,:],
-                ORDER=ORDER, CYCLES=CYCLES, CONF=0.95)
+            tsbeta = gravtk.time_series.piecewise(grid.time, grid.data[i,j,:],
+                BREAKPOINT=breakpoint_index, CYCLES=CYCLES, CONF=0.95)
             # save regression components
             for k in range(0, ncomp):
                 out.data[i,j,k] = tsbeta['beta'][k]
@@ -277,10 +284,10 @@ def regress_grace_maps(LMAX, RAD,
     # Output spatial files
     for i in range(0,ncomp):
         # output spatial file name
-        f1 = (FILE_PREFIX, units, LMAX, order_str,
-            gw_str, ds_str, coef_str[i], '', START, END, suffix)
-        f2 = (FILE_PREFIX, units, LMAX, order_str,
-            gw_str, ds_str, coef_str[i], '_ERROR', START, END, suffix)
+        f1 = (FILE_PREFIX, units, LMAX, order_str, gw_str, ds_str,
+            coef_str[i], '', output_start[i], output_end[i], suffix)
+        f2 = (FILE_PREFIX, units, LMAX, order_str, gw_str, ds_str,
+            coef_str[i], '_ERROR', output_start[i], output_end[i], suffix)
         file1 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f1))
         file2 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f2))
         # full attributes
@@ -310,7 +317,7 @@ def regress_grace_maps(LMAX, RAD,
         # output amplitude and phase of cyclical components
         for i,flag in enumerate(amp_str):
             # Indice pointing to the cyclical components
-            j = 1 + ORDER + 2*i
+            j = 3 + 2*i
             # Allocating memory for output amplitude and phase
             amp = dinput.zeros_like()
             ph = dinput.zeros_like()
@@ -380,7 +387,7 @@ def regress_grace_maps(LMAX, RAD,
         # output file names for fit significance
         signif_str = f'{key}_'
         f7 = (FILE_PREFIX, units, LMAX, order_str, gw_str, ds_str,
-            signif_str, coef_str[ORDER], START, END, suffix)
+            signif_str, 'px1', START, END, suffix)
         file7 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f7))
         # full attributes
         LONGNAME = signif_longname[key]
@@ -490,6 +497,9 @@ def arguments():
     parser.add_argument('--end','-E',
         type=int, default=232,
         help='Ending GRACE/GRACE-FO month for time series regression')
+    parser.add_argument('--breakpoint','-B',
+        type=int, default=129,
+        help='Breakpoint GRACE/GRACE-FO month for piecewise regression')
     MISSING = [6,7,18,109,114,125,130,135,140,141,146,151,156,162,166,167,
         172,177,178,182,187,188,189,190,191,192,193,194,195,196,197,200,201]
     parser.add_argument('--missing','-N',
@@ -526,12 +536,6 @@ def arguments():
         default=False, action='store_true',
         help='Redistribute removed mass fields over the ocean')
     # regression parameters
-    # 0: mean
-    # 1: trend
-    # 2: acceleration
-    parser.add_argument('--order',
-        type=int, default=2,
-        help='Regression fit polynomial order')
     # regression fit cyclical terms
     parser.add_argument('--cycles',
         type=float, default=[0.5,1.0,161.0/365.25], nargs='+',
@@ -566,12 +570,13 @@ def main():
     # try to run the analysis with listed parameters
     try:
         info(args)
-        # run regress_grace_maps algorithm with parameters
-        output_files = regress_grace_maps(
+        # run piecewise_grace_maps algorithm with parameters
+        output_files = piecewise_grace_maps(
             args.lmax,
             args.radius,
             START=args.start,
             END=args.end,
+            BREAKPOINT=args.breakpoint,
             MISSING=args.missing,
             MMAX=args.mmax,
             DESTRIPE=args.destripe,
@@ -581,7 +586,6 @@ def main():
             BOUNDS=args.bounds,
             DATAFORM=args.format,
             REDISTRIBUTE_REMOVED=args.redistribute_removed,
-            ORDER=args.order,
             CYCLES=args.cycles,
             OUTPUT_DIRECTORY=args.output_directory,
             FILE_PREFIX=args.file_prefix,

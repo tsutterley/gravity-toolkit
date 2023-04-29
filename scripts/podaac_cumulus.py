@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_cumulus.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (04/2023)
 
 Syncs GRACE/GRACE-FO data from NASA JPL PO.DAAC Cumulus AWS S3 bucket
 S3 Cumulus syncs are only available in AWS instances in us-west-2
@@ -51,6 +51,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 04/2023: different openers for s3 and data endpoints
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: added CMR queries for GRACE/GRACE-FO technical notes
         recursively create geocenter directory if not in file system
@@ -412,19 +413,25 @@ def main():
 
     # NASA Earthdata hostname
     URS = 'urs.earthdata.nasa.gov'
-    # check internet connection before attempting to run program
-    opener = gravtk.utilities.attempt_login(URS,
-        username=args.user, password=args.password,
-        netrc=args.netrc)
-
-    # Create and submit request to create AWS session
+    # host for retrieving AWS S3 credentials
+    HOST = 'https://archive.podaac.earthdata.nasa.gov/s3credentials'
     # There are a range of exceptions that can be thrown here
     # including HTTPError and URLError.
-    HOST = 'https://archive.podaac.earthdata.nasa.gov/s3credentials'
-    # get aws s3 client object
-    client = gravtk.utilities.s3_client(HOST, args.timeout)
+    if (args.endpoint == 's3'):
+        # build opener for s3 client access
+        opener = gravtk.utilities.attempt_login(URS,
+            username=args.user, password=args.password,
+            netrc=args.netrc)
+        # Create and submit request to create AWS session
+        client = gravtk.utilities.s3_client(HOST, args.timeout)
+    else:
+        # build opener for data client access
+        opener = gravtk.utilities.attempt_login(URS,
+            username=args.user, password=args.password,
+            netrc=args.netrc, authorization_header=False)
+        client = None
 
-    # retrieve data objects from s3 client
+    # retrieve data objects from s3 client or data endpoints
     podaac_cumulus(client, args.directory, PROC=args.center,
         DREL=args.release, VERSION=args.version, AOD1B=args.aod1b,
         ENDPOINT=args.endpoint, TIMEOUT=args.timeout,

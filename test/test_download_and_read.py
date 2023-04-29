@@ -12,12 +12,34 @@ import gravity_toolkit as gravtk
 from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
 
 # PURPOSE: Download a GRACE file from PO.DAAC and check that read program runs
+@pytest.mark.skip(reason='PO.DAAC Drive retired on April 24, 2023')
 def test_podaac_download_and_read(username,webdav):
     HOST=['https://podaac-tools.jpl.nasa.gov','drive','files','allData','grace',
         'L2','CSR','RL06','GSM-2_2002095-2002120_GRAC_UTCSR_BA01_0600.gz']
     # download and read as virtual file object
     FILE = gravtk.utilities.from_drive(HOST,username=username,
         password=webdav,verbose=True)
+    Ylms = gravtk.read_GRACE_harmonics(FILE, 60)
+    keys = ['time', 'start', 'end', 'clm', 'slm', 'eclm', 'eslm', 'header']
+    test = dict(start=2452369.5, end=2452394.5)
+    assert all((key in Ylms.keys()) for key in keys)
+    assert all((Ylms[key] == val) for key,val in test.items())
+    assert (Ylms['clm'][2,0] == -0.484169355584e-03)
+
+# PURPOSE: Download a GRACE file from PO.DAAC Cumulus and check that read program runs
+def test_podaac_cumulus_download_and_read(username,password):
+    # find the path to the data files
+    ids, urls, mtimes = gravtk.utilities.cmr(
+        mission='grace', center='CSR', release='RL06', level='L2',
+        product='GSM', start_date='2002-04-01', end_date='2002-04-30',
+        provider='POCLOUD', endpoint='data')
+    # build opener for data client access
+    URS = 'urs.earthdata.nasa.gov'
+    opener = gravtk.utilities.attempt_login(URS,
+        username=username, password=password,
+        authorization_header=False, verbose=True)
+    # download and read as virtual file object
+    FILE = gravtk.utilities.from_http(urls[0], context=None, verbose=True)
     Ylms = gravtk.read_GRACE_harmonics(FILE, 60)
     keys = ['time', 'start', 'end', 'clm', 'slm', 'eclm', 'eslm', 'header']
     test = dict(start=2452369.5, end=2452394.5)

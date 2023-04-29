@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 regress.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (04/2023)
 
 Fits a synthetic signal to data over a time period by ordinary or weighted
     least-squares
@@ -46,6 +46,7 @@ OPTIONS:
     RELATIVE: relative period
     ORDER: maximum polynomial order in fit (0=constant, 1=linear, 2=quadratic)
     CYCLES: list of cyclical terms (0.5=semi-annual, 1=annual)
+    TERMS: list of extra terms
     STDEV: standard deviation of output error
     CONF: confidence interval of output error
     AICc: use second order AIC
@@ -55,6 +56,7 @@ PYTHON DEPENDENCIES:
     scipy: Scientific Tools for Python (https://docs.scipy.org/doc/)
 
 UPDATE HISTORY:
+    Updated 04/2023: option to include extra fit terms in the design matrix
     Updated 01/2023: refactored time series analysis functions
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -102,8 +104,9 @@ import numpy as np
 import scipy.stats
 import scipy.special
 
-def regress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], DATA_ERR=0,
-    WEIGHT=False, RELATIVE=Ellipsis, STDEV=0, CONF=0, AICc=True):
+def regress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], TERMS=[],
+    DATA_ERR=0, WEIGHT=False, RELATIVE=Ellipsis, STDEV=0, CONF=0,
+    AICc=True):
     """
     Fits a synthetic signal to data over a time period by
     ordinary or weighted least-squares
@@ -122,6 +125,8 @@ def regress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], DATA_ERR=0,
             * ``2``: quadratic
     CYCLES: list, default [0.5, 1.0]
         list of cyclical terms
+    TERMS: list, default []
+        list of extra fit terms
     DATA_ERR: float or list
         Data precision
 
@@ -201,6 +206,7 @@ def regress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], DATA_ERR=0,
         t_rel = t_in[RELATIVE].mean()
 
     # create design matrix based on polynomial order and harmonics
+    # with any additional fit terms
     DMAT = []
     # add polynomial orders (0=constant, 1=linear, 2=quadratic)
     for o in range(ORDER+1):
@@ -209,6 +215,9 @@ def regress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], DATA_ERR=0,
     for c in CYCLES:
         DMAT.append(np.sin(2.0*np.pi*t_in/np.float64(c)))
         DMAT.append(np.cos(2.0*np.pi*t_in/np.float64(c)))
+    # add additional terms to the design matrix
+    for t in TERMS:
+        DMAT.append(t)
     # take the transpose of the design matrix
     DMAT = np.transpose(DMAT)
 

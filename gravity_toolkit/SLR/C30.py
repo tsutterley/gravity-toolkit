@@ -140,7 +140,7 @@ def C30(SLR_file, C30_MEAN=9.5717395773300e-07, HEADER=True):
         n_mon = file_lines - count
         # date and GRACE/GRACE-FO month
         dinput['time'] = np.zeros((n_mon))
-        dinput['month'] = np.zeros((n_mon),dtype=int)
+        dinput['month'] = np.zeros((n_mon), dtype=int)
         # monthly spherical harmonic replacement solutions
         dinput['data'] = np.zeros((n_mon))
         # monthly spherical harmonic formal standard deviations
@@ -215,7 +215,7 @@ def C30(SLR_file, C30_MEAN=9.5717395773300e-07, HEADER=True):
         n_mon = file_lines - count
         # date and GRACE/GRACE-FO month
         dinput['time'] = np.zeros((n_mon))
-        dinput['month'] = np.zeros((n_mon),dtype=int)
+        dinput['month'] = np.zeros((n_mon), dtype=int)
         # monthly spherical harmonic replacement solutions
         dinput['data'] = np.zeros((n_mon))
         # monthly spherical harmonic formal standard deviations

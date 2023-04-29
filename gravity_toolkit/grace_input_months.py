@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (04/2023)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
@@ -109,6 +109,7 @@ PROGRAM DEPENDENCIES:
     read_gfc_harmonics.py: reads spherical harmonic data from gfc files
 
 UPDATE HISTORY:
+    Updated 04/2023: use release-03 GFZ GravIS SLR and geocenter files
     Updated 03/2023: added attributes for input files and corrections
         improve typing for variables in docstrings
     Updated 01/2023: refactored satellite laser ranging read functions
@@ -477,7 +478,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         FLAGS.append('_wCSR_21')
         attributes['SLR 21'] = ('CSR',os.path.basename(SLR_file))
     elif (kwargs['SLR_21'] == 'GFZ'):
-        GravIS_file = 'GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat'
+        GravIS_file = 'GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0003.dat'
         SLR_file = os.path.join(base_dir,GravIS_file)
         # log SLR file if debugging
         logging.debug(f'Reading SLR C21/S21 file: {SLR_file}')
@@ -533,7 +534,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         FLAGS.append('_wLARES_C30')
         attributes['SLR_C30'] = ('CSR LARES',os.path.basename(SLR_file))
     elif (kwargs['SLR_C30'] == 'GFZ'):
-        GravIS_file = 'GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat'
+        GravIS_file = 'GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0003.dat'
         SLR_file = os.path.join(base_dir,GravIS_file)
         # log SLR file if debugging
         logging.debug(f'Reading SLR C30 file: {SLR_file}')
@@ -684,7 +685,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # degree 1 coefficients provided by GFZ GravIS
         # http://gravis.gfz-potsdam.de/corrections
         default_geocenter = os.path.join(base_dir,'geocenter',
-            'GRAVIS-2B_GFZOP_GEOCENTER_0002.dat')
+            'GRAVIS-2B_GFZOP_GEOCENTER_0003.dat')
         # read degree one files from GFZ GravIS
         DEG1_file = kwargs.get('DEG1_FILE') or default_geocenter
         # log geocenter file if debugging
