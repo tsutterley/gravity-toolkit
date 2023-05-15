@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 regress_grace_maps.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 
 Reads in GRACE/GRACE-FO spatial files and fits a regression model
     at each grid point
@@ -60,6 +60,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 05/2023: split S2 tidal aliasing terms into GRACE and GRACE-FO eras
     Updated 03/2023: updated inputs to spatial from_ascii function
         use attributes from units class for writing to netCDF4/HDF5 files
     Updated 01/2023: refactored time series analysis functions
@@ -176,38 +177,6 @@ def regress_grace_maps(LMAX, RAD,
         nlon = len(lon)
         nlat = len(lat)
 
-    # Setting output parameters for each fit type
-    coef_str = ['x{0:d}'.format(o) for o in range(ORDER+1)]
-    unit_suffix = [' yr^{0:d}'.format(-o) if o else '' for o in range(ORDER+1)]
-    if (ORDER == 0):# Mean
-        unit_longname = ['Mean']
-    elif (ORDER == 1):# Trend
-        unit_longname = ['Constant','Trend']
-    elif (ORDER == 2):# Quadratic
-        unit_longname = ['Constant','Linear','Quadratic']
-    # filename strings for cyclical terms
-    cyclic_str = {}
-    cyclic_str['SEMI'] = ['SS','SC']
-    cyclic_str['ANN'] = ['AS','AC']
-    cyclic_str['S2'] = ['S2S','S2C']
-    # unit longnames for cyclical terms
-    cyclic_longname = {}
-    cyclic_longname['SEMI'] = ['Semi-Annual Sine', 'Semi-Annual Cosine']
-    cyclic_longname['ANN'] = ['Annual Sine', 'Annual Cosine']
-    cyclic_longname['S2'] = ['S2 Tidal Alias Sine', 'S2 Tidal Alias Cosine']
-    amp_str = []
-    for i,c in enumerate(CYCLES):
-        if (c == 0.5):
-            flag = 'SEMI'
-        elif (c == 1.0):
-            flag = 'ANN'
-        elif (c == (161.0/365.25)):
-            flag = 'S2'
-        coef_str.extend(cyclic_str[flag])
-        unit_longname.extend(cyclic_longname[flag])
-        unit_suffix.extend(['',''])
-        amp_str.append(flag)
-
     # input data spatial object
     spatial_list = []
     for t,grace_month in enumerate(months):
@@ -234,9 +203,62 @@ def regress_grace_maps(LMAX, RAD,
     grid = gravtk.spatial().from_list(spatial_list)
     spatial_list = None
 
+    # Setting output parameters for each fit type
+    coef_str = ['x{0:d}'.format(o) for o in range(ORDER+1)]
+    unit_suffix = [' yr^{0:d}'.format(-o) if o else '' for o in range(ORDER+1)]
+    if (ORDER == 0):# Mean
+        unit_longname = ['Mean']
+    elif (ORDER == 1):# Trend
+        unit_longname = ['Constant','Trend']
+    elif (ORDER == 2):# Quadratic
+        unit_longname = ['Constant','Linear','Quadratic']
+
+    # amplitude string for cyclical components
+    amp_str = []
+    # extra terms for S2 tidal aliasing components or custom fits
+    TERMS = []
+    for i,c in enumerate(CYCLES):
+        if (c == 0.5):
+            coef_str.extend(['SS','SC'])
+            amp_str.append('SEMI')
+            unit_longname.extend(['Semi-Annual Sine', 'Semi-Annual Cosine'])
+            unit_suffix.extend(['',''])
+        elif (c == 1.0):
+            coef_str.extend(['AS','AC'])
+            amp_str.append('ANN')
+            unit_longname.extend(['Annual Sine', 'Annual Cosine'])
+            unit_suffix.extend(['',''])
+        elif (c == (161.0/365.25)):
+            # create custom terms for S2 tidal aliasing during GRACE period
+            ii, = np.nonzero(grid.time < 2018.0)
+            S2sin = np.zeros_like(grid.time)
+            S2cos = np.zeros_like(grid.time)
+            S2sin[ii] = np.sin(2.0*np.pi*grid.time[ii]/np.float64(c))
+            S2cos[ii] = np.cos(2.0*np.pi*grid.time[ii]/np.float64(c))
+            TERMS.append(S2sin)
+            TERMS.append(S2cos)
+            coef_str.extend(['S2SGRC','S2CGRC'])
+            amp_str.append('S2GRC')
+            unit_longname.extend(['S2 Tidal Alias Sine', 'S2 Tidal Alias Cosine'])
+            unit_suffix.extend(['',''])
+            # create custom terms for S2 tidal aliasing during GRACE-FO period
+            ii, = np.nonzero(grid.time >= 2018.0)
+            S2sin = np.zeros_like(grid.time)
+            S2cos = np.zeros_like(grid.time)
+            S2sin[ii] = np.sin(2.0*np.pi*grid.time[ii]/np.float64(c))
+            S2cos[ii] = np.cos(2.0*np.pi*grid.time[ii]/np.float64(c))
+            TERMS.append(S2sin)
+            TERMS.append(S2cos)
+            coef_str.extend(['S2SGFO','S2CGFO'])
+            amp_str.append('S2GFO')
+            unit_longname.extend(['S2 Tidal Alias Sine', 'S2 Tidal Alias Cosine'])
+            unit_suffix.extend(['',''])
+            # remove the original S2 tidal aliasing term from CYCLES list
+            CYCLES.remove(c)
+
     # Fitting seasonal components
     ncomp = len(coef_str)
-    ncycles = 2*len(CYCLES)
+    ncycles = 2*len(CYCLES) + len(TERMS)
 
     # Allocating memory for output variables
     out = dinput.zeros_like()
@@ -257,7 +279,7 @@ def regress_grace_maps(LMAX, RAD,
         for j in range(nlon):
             # Calculating the regression coefficients
             tsbeta = gravtk.time_series.regress(grid.time, grid.data[i,j,:],
-                ORDER=ORDER, CYCLES=CYCLES, CONF=0.95)
+                ORDER=ORDER, CYCLES=CYCLES, TERMS=TERMS, CONF=0.95)
             # save regression components
             for k in range(0, ncomp):
                 out.data[i,j,k] = tsbeta['beta'][k]
@@ -302,10 +324,10 @@ def regress_grace_maps(LMAX, RAD,
     # if fitting coefficients with cyclical components
     if (ncycles > 0):
         # output spatial titles for amplitudes
-        amp_title = {'ANN':'Annual Amplitude','SEMI':'Semi-Annual Amplitude',
-            'S2':'S2 Tidal Alias Amplitude'}
-        ph_title = {'ANN':'Annual Phase','SEMI':'Semi-Annual Phase',
-            'S2':'S2 Tidal Alias Phase'}
+        amp_title = dict(ANN='Annual Amplitude',SEMI='Semi-Annual Amplitude',
+            S2GRC='S2 Tidal Alias Amplitude',S2GFO='S2 Tidal Alias Amplitude')
+        ph_title = dict(ANN='Annual Phase',SEMI='Semi-Annual Phase',
+            S2GRC='S2 Tidal Alias Phase',S2GFO='S2 Tidal Alias Phase')
 
         # output amplitude and phase of cyclical components
         for i,flag in enumerate(amp_str):

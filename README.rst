@@ -56,11 +56,11 @@ References
 
     T. C. Sutterley, I. Velicogna, and C.-W. Hsu, "Self-Consistent Ice Mass Balance
     and Regional Sea Level From Time-Variable Gravity", *Earth and Space Science*, 7,
-    (2020). `doi:10.1029/2019EA000860 <https://doi.org/10.1029/2019EA000860>`_
+    (2020). `doi: 10.1029/2019EA000860 <https://doi.org/10.1029/2019EA000860>`_
 
     T. C. Sutterley and I. Velicogna, "Improved estimates of geocenter variability
     from time-variable gravity and ocean model outputs", *Remote Sensing*, 11(18),
-    2108, (2019). `doi:10.3390/rs11182108 <https://doi.org/10.3390/rs11182108>`_
+    2108, (2019). `doi: 10.3390/rs11182108 <https://doi.org/10.3390/rs11182108>`_
 
     J. Wahr, S. C. Swenson, and I. Velicogna, "Accuracy of GRACE mass estimates",
     *Geophysical Research Letters*, 33(6), L06401, (2006).
@@ -81,11 +81,11 @@ Data Repositories
 
     T. C. Sutterley, I. Velicogna, and C.-W. Hsu, "Ice Mass and Regional Sea Level
     Estimates from Time-Variable Gravity", (2020).
-    `doi:10.6084/m9.figshare.9702338 <https://doi.org/10.6084/m9.figshare.9702338>`_
+    `doi: 10.6084/m9.figshare.9702338 <https://doi.org/10.6084/m9.figshare.9702338>`_
 
     T. C. Sutterley and I. Velicogna, "Geocenter Estimates from Time-Variable
     Gravity and Ocean Model Outputs", (2019).
-    `doi:10.6084/m9.figshare.7388540 <https://doi.org/10.6084/m9.figshare.7388540>`_
+    `doi: 10.6084/m9.figshare.7388540 <https://doi.org/10.6084/m9.figshare.7388540>`_
 
 Download
 ########

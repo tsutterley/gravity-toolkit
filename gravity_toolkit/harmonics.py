@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -25,6 +25,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 05/2023: use reify decorators for complex form and amplitude
     Updated 03/2023: customizable file-level attributes to netCDF4 and HDF5
         add attributes fetching to the from_dict and to_dict functions
         retrieve all root attributes from HDF5 and netCDF4 datasets
@@ -101,6 +102,7 @@ from gravity_toolkit.time import adjust_months,calendar_to_grace
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
+from gravity_toolkit.utilities import reify
 
 # attempt imports
 try:
@@ -1806,7 +1808,7 @@ class harmonics(object):
         # return the destriped field
         return temp
 
-    @property
+    @reify
     def amplitude(self):
         """
         Degree amplitude of the spherical harmonics
@@ -1852,7 +1854,7 @@ class harmonics(object):
         """
         return np.ndim(self.clm)
 
-    @property
+    @reify
     def ilm(self):
         """
         Complex form of the spherical harmonics

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (04/2023)
+Written by Tyler Sutterley (05/2023)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
@@ -9,6 +9,7 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/lxml
 
 UPDATE HISTORY:
+    Updated 05/2023: add reify decorator for evaluation of properties
     Updated 04/2023: use release-03 GFZ GravIS SLR and geocenter files
     Updated 03/2023: place boto3 import within try/except statement
     Updated 01/2023: add default ssl context attribute with protocol
@@ -103,6 +104,21 @@ def get_data_path(relpath):
         return os.path.join(filepath,*relpath)
     elif isinstance(relpath,str):
         return os.path.join(filepath,relpath)
+
+class reify(object):
+    """Class decorator that puts the result of the method it
+    decorates into the instance"""
+    def __init__(self, wrapped):
+        self.wrapped = wrapped
+        self.__name__ = wrapped.__name__
+        self.__doc__ = wrapped.__doc__
+
+    def __get__(self, inst, objtype=None):
+        if inst is None:
+            return self
+        val = self.wrapped(inst)
+        setattr(inst, self.wrapped.__name__, val)
+        return val
 
 # PURPOSE: get the hash value of a file
 def get_hash(local, algorithm='MD5'):

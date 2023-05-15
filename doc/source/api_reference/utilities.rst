@@ -19,6 +19,9 @@ General Methods
 
 .. autofunction:: gravity_toolkit.utilities.get_data_path
 
+.. autoclass:: gravity_toolkit.utilities.reify
+    :members:
+
 .. autofunction:: gravity_toolkit.utilities.get_hash
 
 .. autofunction:: gravity_toolkit.utilities.get_git_revision_hash
