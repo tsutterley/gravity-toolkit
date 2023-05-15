@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_find_months.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (05/2023)
 
 Parses date index file from grace_date program
 Finds the months available for a GRACE/GRACE-FO/Swarm product
@@ -36,6 +36,7 @@ PROGRAM DEPENDENCIES:
     grace_date.py: reads GRACE index file and calculates dates for each month
 
 UPDATE HISTORY:
+    Updated 05/2023: use formatting for reading from date file
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -109,22 +110,30 @@ def grace_find_months(base_dir, PROC, DREL, DSET='GSM'):
     if not os.access(date_file, os.F_OK):
         grace_date(base_dir, PROC=PROC, DREL=DREL, DSET=DSET, OUTPUT=True)
 
-    # read GRACE/GRACE-FO date ascii file from grace_date.py
+    # names and formats of GRACE/GRACE-FO date ascii file
+    names = ('t','mon','styr','stday','endyr','endday','total')
+    formats = ('f','i','i','i','i','i','i')
+    dtype = np.dtype({'names':names, 'formats':formats})
+    # read GRACE/GRACE-FO date ascii file
     # skip the header row and extract dates (decimal format) and months
-    date_input = np.loadtxt(date_file, skiprows=1)
-    tdec = date_input[:,0]
-    months = date_input[:,1].astype(np.int64)
+    date_input = np.loadtxt(date_file, skiprows=1, dtype=dtype)
+    # date info dictionary
+    var_info = {}
+    var_info['time'] = date_input['t']
+    var_info['months'] = date_input['mon']
+    var_info['start'] = np.min(date_input['mon'])
+    var_info['end'] = np.max(date_input['mon'])
 
     # array of all possible months (or in case of CNES RL01/2: 10-day sets)
-    all_months = np.arange(1,months.max(),dtype=np.int64)
+    all_months = np.arange(1, var_info['end'], dtype=np.int64)
     # missing months (values in all_months but not in months)
-    missing = sorted(set(all_months)-set(months))
+    var_info['missing'] = sorted(set(all_months) - set(date_input['mon']))
     # If CNES RL01/2: simply convert into numpy array
     # else: remove months 1-3 and convert into numpy array
     if ((PROC == 'CNES') & (DREL in ('RL01','RL02'))):
-        missing = np.array(missing,dtype=np.int64)
+        var_info['missing'] = np.array(var_info['missing'], dtype=np.int64)
     else:
-        missing = np.array(missing[3:],dtype=np.int64)
+        var_info['missing'] = np.array(var_info['missing'][3:], dtype=np.int64)
 
-    return {'time':tdec, 'start':months[0], 'end':months[-1], 'months':months,
-        'missing':missing}
+    # return the date information dictionary
+    return var_info

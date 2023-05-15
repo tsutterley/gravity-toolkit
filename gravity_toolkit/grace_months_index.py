@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_months_index.py
-Written by Tyler Sutterley (11/2022)
+Written by Tyler Sutterley (05/2023)
 
 Creates a file with the start and end days for each dataset
 Shows the range of each month for (CSR/GFZ/JPL) (RL04/RL05/RL06)
@@ -40,6 +40,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 05/2023: use formatting for reading from date file
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 05/2022: use argparse descriptions within documentation
         use new GSFC release 6 version 2 mascons as the default
@@ -108,34 +109,19 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
         for pr in PROC:
             # Setting the data directory for processing center and release
             grace_dir = os.path.join(base_dir, pr, rl, DSET)
-            # read GRACE date ascii file
-            # file created in read_grace.py or grace_dates.py
-            grace_date_file = f'{pr}_{rl}_DATES.txt'
-            if os.access(os.path.join(grace_dir,grace_date_file), os.F_OK):
-                # skip the header line
-                date_input = np.loadtxt(os.path.join(grace_dir,grace_date_file),
-                    skiprows=1)
-                # number of months
-                nmon = np.shape(date_input)[0]
-
+            # read GRACE/GRACE-FO date ascii file
+            grace_date_file = os.path.join(grace_dir,f'{pr}_{rl}_DATES.txt')
+            # names and formats of GRACE/GRACE-FO date ascii file
+            names = ('t','mon','styr','stday','endyr','endday','total')
+            formats = ('f','i','i','i','i','i','i')
+            dtype = np.dtype({'names':names, 'formats':formats})
+            # check that the GRACE/GRACE-FO date file exists
+            if os.access(grace_date_file, os.F_OK):
                 # Setting the dictionary key e.g. 'CSR_RL04'
                 var_name = f'{pr}_{rl}'
-
-                # Creating a python dictionary for each dataset with parameters:
-                # month #, start year, start day, end year, end day
-                # Purpose is to get all of the dates loaded for each dataset
-                # Adding data to dictionary for data processing and release
-                var_info[var_name] = {}
-                # allocate for output variables
-                var_info[var_name]['mon'] = np.zeros((nmon),dtype=np.int64)
-                var_info[var_name]['styr'] = np.zeros((nmon),dtype=np.int64)
-                var_info[var_name]['stday'] = np.zeros((nmon),dtype=np.int64)
-                var_info[var_name]['endyr'] = np.zeros((nmon),dtype=np.int64)
-                var_info[var_name]['endday'] = np.zeros((nmon),dtype=np.int64)
-                # place output variables in dictionary
-                for i,key in enumerate(['mon','styr','stday','endyr','endday']):
-                    # first column is date in decimal form (start at 1 not 0)
-                    var_info[var_name][key] = date_input[:,i+1].astype(np.int64)
+                # skip the header line
+                var_info[var_name] = np.loadtxt(grace_date_file,
+                    skiprows=1, dtype=dtype)
                 # Finding the maximum month measured
                 if (var_info[var_name]['mon'].max() > max_mon):
                     # if the maximum month in this dataset is greater

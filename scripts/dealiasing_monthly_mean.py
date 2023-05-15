@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 dealiasing_monthly_mean.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 
 Reads GRACE/GRACE-FO AOD1B datafiles for a specific product and outputs monthly
     the mean for a specific GRACE/GRACE-FO processing center and data release
@@ -48,6 +48,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 05/2023: use formatting for reading from date file
     Updated 03/2023: read data into flattened harmonics objects
         debug-level logging of member names and header lines
         convert shape and ndim to harmonic class properties
@@ -103,7 +104,7 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
     aod1b_products = dict(GAA='atm',GAB='ocn',GAC='glo',GAD='oba')
     # compile regular expressions operator for the clm/slm headers
     # for the specific AOD1b product
-    hx = re.compile(r'^DATA.*SET.*{0}'.format(aod1b_products[DSET]),re.VERBOSE)
+    hx = re.compile(fr'^DATA.*SET.*{aod1b_products[DSET]}',re.VERBOSE)
     # compile regular expression operator to find numerical instances
     # will extract the data from the file
     regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
@@ -163,16 +164,20 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
         CENTER = default_center
 
     # read input DATE file from GSM data product
-    grace_datefile = '{0}_{1}_DATES.txt'.format(PROC, DREL)
-    date_input = np.loadtxt(os.path.join(grace_dir,'GSM',grace_datefile),
-        skiprows=1)
-    grace_month = date_input[:,1].astype(np.int64)
-    start_yr = date_input[:,2]
-    start_day = date_input[:,3].astype(np.int64)
-    end_yr = date_input[:,4]
-    end_day = date_input[:,5].astype(np.int64)
+    grace_date_file = f'{PROC}_{DREL}_DATES.txt'
+    # names and formats of GRACE/GRACE-FO date ascii file
+    names = ('t','mon','styr','stday','endyr','endday','total')
+    formats = ('f','i','i','i','i','i','i')
+    dtype = np.dtype({'names':names, 'formats':formats})
+    date_input = np.loadtxt(os.path.join(grace_dir,'GSM',grace_date_file),
+        skiprows=1, dtype=dtype)
+    grace_month = date_input['mon']
+    start_yr = date_input['styr']
+    start_day = date_input['stday']
+    end_yr = date_input['endyr']
+    end_day = date_input['endday']
     # output date file reduced to months with complete AOD
-    f_out = open(os.path.join(grace_dir,DSET,grace_datefile),
+    f_out = open(os.path.join(grace_dir,DSET,grace_date_file),
         mode='w', encoding='utf8')
     # date file header information
     args = ('Mid-date','Month','Start_Day','End_Day','Total_Days')

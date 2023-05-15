@@ -1,5 +1,7 @@
+boto3
 future
 lxml
+matplotlib
 numpy
 python-dateutil
 pyyaml
