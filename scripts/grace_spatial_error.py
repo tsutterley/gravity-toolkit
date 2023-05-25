@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_error.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 
 Calculates the GRACE/GRACE-FO errors following Wahr et al. (2006)
 
@@ -119,6 +119,7 @@ REFERENCES:
         http://dx.doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: add root attributes to output netCDF4 and HDF5 files
         use attributes from units class for writing to netCDF4/HDF5 files
     Updated 02/2023: use get function to retrieve specific units
@@ -168,6 +169,7 @@ import re
 import copy
 import time
 import logging
+import pathlib
 import numpy as np
 import argparse
 import traceback
@@ -176,7 +178,7 @@ import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(pathlib.Path(sys.argv[0]).name)
     logging.info(args)
     logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
@@ -218,8 +220,8 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     MODE=0o775):
 
     # recursively create output directory if not currently existing
-    if not os.access(OUTPUT_DIRECTORY, os.F_OK):
-        os.makedirs(OUTPUT_DIRECTORY, mode=MODE, exist_ok=True)
+    OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
+    OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
 
     # output attributes for spatial files
     attributes = collections.OrderedDict()
@@ -279,11 +281,12 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # use a mean file for the static field to remove
     if MEAN_FILE:
         # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
+        MEAN_FILE = pathlib.Path(MEAN_FILE).expanduser().absolute()
         mean_Ylms = gravtk.harmonics().from_file(MEAN_FILE,
             format=MEANFORM, date=False)
         # remove the input mean
         GRACE_Ylms.subtract(mean_Ylms)
-        attributes['lineage'].append(os.path.basename(MEAN_FILE))
+        attributes['lineage'].append(MEAN_FILE.name)
     else:
         GRACE_Ylms.mean(apply=True)
 
@@ -298,7 +301,7 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
         ds_str = ''
 
     # full path to directory for specific GRACE/GRACE-FO product
-    GRACE_Ylms.directory = Ylms['directory']
+    GRACE_Ylms.directory = pathlib.Path(Ylms['directory']).expanduser().absolute()
     # default file prefix
     if not FILE_PREFIX:
         FILE_PREFIX = '{0}_{1}_{2}{3}_'.format(PROC,DREL,DSET,Ylms['title'])
@@ -308,18 +311,18 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     fargs = (PROC,DREL,DSET,LMAX,order_str,ds_str,atm_str,GRACE_Ylms.month[0],
         GRACE_Ylms.month[-1],suffix[DATAFORM])
     delta_format = '{0}_{1}_{2}_DELTA_CLM_L{3:d}{4}{5}{6}_{7:03d}-{8:03d}.{9}'
-    DELTA_FILE = os.path.join(GRACE_Ylms.directory,delta_format.format(*fargs))
-    # full path of the GRACE directory
-    # if file was previously calculated, will read file
-    # else will calculate the GRACE error
-    if not os.access(DELTA_FILE, os.F_OK):
+    DELTA_FILE = GRACE_Ylms.directory.joinpath(delta_format.format(*fargs))
+    # check full path of the GRACE directory for delta file
+    # if file was previously calculated: will read file
+    # else: will calculate the GRACE/GRACE-FO error
+    if not DELTA_FILE.exists():
         # add output delta file to list object
         output_files.append(DELTA_FILE)
 
         # Delta coefficients of GRACE time series (Error components)
-        delta_Ylms = gravtk.harmonics(lmax=LMAX,mmax=MMAX)
-        delta_Ylms.clm = np.zeros((LMAX+1,MMAX+1))
-        delta_Ylms.slm = np.zeros((LMAX+1,MMAX+1))
+        delta_Ylms = gravtk.harmonics(lmax=LMAX, mmax=MMAX)
+        delta_Ylms.clm = np.zeros((LMAX+1, MMAX+1))
+        delta_Ylms.slm = np.zeros((LMAX+1, MMAX+1))
         # Smoothing Half-Width (CNES is a 10-day solution)
         # 365/10/2 = 18.25 (next highest is 19)
         # All other solutions are monthly solutions (HFWTH for annual = 6)
@@ -350,21 +353,23 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
         # attributes for output files
         kwargs = {}
         kwargs['title'] = 'GRACE/GRACE-FO Spherical Harmonic Errors'
-        kwargs['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+        kwargs['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
         # save GRACE/GRACE-FO delta harmonics to file
         delta_Ylms.time = np.copy(tsmth)
         delta_Ylms.month = np.int64(nsmth)
         delta_Ylms.to_file(DELTA_FILE, format=DATAFORM, **kwargs)
         # set the permissions mode of the output harmonics file
-        os.chmod(DELTA_FILE, MODE)
+        DELTA_FILE.chmod(mode=MODE)
         # append delta harmonics file to output files list
         output_files.append(DELTA_FILE)
     else:
-        # read GRACE DELTA spherical harmonics datafile
-        delta_Ylms = gravtk.harmonics().from_file(DELTA_FILE, format=DATAFORM)
-        # truncate grace delta clm and slm to d/o LMAX/MMAX
+        # read GRACE/GRACE-FO delta harmonics from file
+        delta_Ylms = gravtk.harmonics().from_file(DELTA_FILE,
+            format=DATAFORM)
+        # truncate GRACE/GRACE-FO delta clm and slm to d/o LMAX/MMAX
         delta_Ylms = delta_Ylms.truncate(lmax=LMAX, mmax=MMAX)
-        nsmth = np.int64(delta_Ylms.time)
+        tsmth = np.squeeze(delta_Ylms.time)
+        nsmth = np.int64(delta_Ylms.month)
 
     # Output spatial data object
     delta = gravtk.spatial()
@@ -386,8 +391,8 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     elif (INTERVAL == 3):
         # non-global grid set with BOUNDS parameter
         minlon,maxlon,minlat,maxlat = BOUNDS.copy()
-        delta.lon = np.arange(minlon+dlon/2.0,maxlon+dlon/2.0,dlon)
-        delta.lat = np.arange(maxlat-dlat/2.0,minlat-dlat/2.0,-dlat)
+        delta.lon = np.arange(minlon+dlon/2.0, maxlon+dlon/2.0, dlon)
+        delta.lat = np.arange(maxlat-dlat/2.0, minlat-dlat/2.0, -dlat)
         nlon = len(delta.lon)
         nlat = len(delta.lat)
 
@@ -409,7 +414,7 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
     attributes['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
     # add attributes to output spatial object
-    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+    attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
     delta.attributes['ROOT'] = attributes
 
     # Computing plms for converting to spatial domain
@@ -426,15 +431,15 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     ssin = np.sin(np.dot(m,phi))**2
 
     # truncate delta harmonics to spherical harmonic range
-    Ylms = delta_Ylms.truncate(LMAX,lmin=LMIN,mmax=MMAX)
+    Ylms = delta_Ylms.truncate(LMAX, lmin=LMIN, mmax=MMAX)
     # convolve delta harmonics with degree dependent factors
     # smooth harmonics and convert to output units
     Ylms = Ylms.convolve(dfactor*wt).power(2.0).scale(1.0/nsmth)
     # Calculate fourier coefficients
-    d_cos = np.zeros((MMAX+1,nlat))# [m,th]
-    d_sin = np.zeros((MMAX+1,nlat))# [m,th]
+    d_cos = np.zeros((MMAX+1, nlat))# [m,th]
+    d_sin = np.zeros((MMAX+1, nlat))# [m,th]
     # Calculating delta spatial values
-    for k in range(0,nlat):
+    for k in range(0, nlat):
         # summation over all spherical harmonic degrees
         d_cos[:,k] = np.sum(PLM2[:,:,k]*Ylms.clm, axis=0)
         d_sin[:,k] = np.sum(PLM2[:,:,k]*Ylms.slm, axis=0)
@@ -447,13 +452,13 @@ def grace_spatial_error(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # output error file to ascii, netCDF4 or HDF5
     fargs = (FILE_PREFIX,units,LMAX,order_str,gw_str,ds_str,
         GRACE_Ylms.month[0],GRACE_Ylms.month[-1],suffix[DATAFORM])
-    FILE = os.path.join(OUTPUT_DIRECTORY,file_format.format(*fargs))
-    delta.to_file(FILE, format=DATAFORM, date=False, verbose=VERBOSE,
-        units=units_name, longname=units_longname)
+    OUTPUT_FILE = OUTPUT_DIRECTORY.joinpath(file_format.format(*fargs))
+    delta.to_file(OUTPUT_FILE, format=DATAFORM, date=False,
+        verbose=VERBOSE, units=units_name, longname=units_longname)
     # set the permissions mode of the output files
-    os.chmod(FILE, MODE)
+    OUTPUT_FILE.chmod(mode=MODE)
     # add file to list
-    output_files.append(FILE)
+    output_files.append(OUTPUT_FILE)
 
     # return the list of output files
     return output_files
@@ -464,8 +469,8 @@ def output_log_file(input_arguments, output_files):
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_error_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(input_arguments.output_directory)
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = pathlib.Path(input_arguments.output_directory)
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -484,8 +489,8 @@ def output_error_log_file(input_arguments):
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_error_failed_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(input_arguments.output_directory)
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = pathlib.Path(input_arguments.output_directory)
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -509,12 +514,10 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     parser.add_argument('--output-directory','-O',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Output directory for spatial files')
     parser.add_argument('--file-prefix','-P',
         type=str,
@@ -615,7 +618,7 @@ def arguments():
         choices=['Tellus','SLR','SLF','UCI','Swenson','GFZ'],
         help='Update Degree 1 coefficients with SLR or derived values')
     parser.add_argument('--geocenter-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Specific geocenter file if not default')
     parser.add_argument('--interpolate-geocenter',
         default=False, action='store_true',
@@ -645,7 +648,7 @@ def arguments():
         help='Input/output data format')
     # mean file to remove
     parser.add_argument('--mean-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='GRACE/GRACE-FO mean file to remove from the harmonic data')
     # input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--mean-format',

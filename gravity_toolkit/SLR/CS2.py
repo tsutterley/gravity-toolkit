@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 CS2.py
-Written by Hugo Lecomte and Tyler Sutterley (01/2023)
+Written by Hugo Lecomte and Tyler Sutterley (05/2023)
 
 Reads monthly degree 2,m (figure axis and azimuthal dependence)
     spherical harmonic data files from satellite laser ranging (SLR)
@@ -65,6 +65,7 @@ REFERENCES:
         https://doi.org/10.1007/s00190-021-01492-x
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 01/2023: refactored satellite laser ranging read functions
     Updated 04/2022: updated docstrings to numpy documentation format
         include utf-8 encoding in reads to be windows compliant
@@ -76,8 +77,8 @@ UPDATE HISTORY:
     Updated 04/2021: use adjust_months function to fix special months cases
     Written 11/2020
 """
-import os
 import re
+import pathlib
 import numpy as np
 import gravity_toolkit.time
 import gravity_toolkit.read_SLR_harmonics
@@ -116,12 +117,14 @@ def CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
     """
 
     # check that SLR file exists
-    if not os.access(os.path.expanduser(SLR_file), os.F_OK):
-        raise FileNotFoundError('SLR file not found in file system')
-    # output dictionary with input data
-    dinput = {}
+    SLR_file = pathlib.Path(SLR_file).expanduser().absolute()
+    if not SLR_file.exists():
+        raise FileNotFoundError(f'{str(SLR_file)} not found in file system')
 
-    if bool(re.search(r'GSFC_C2(\d)_S2(\d)',SLR_file,re.I)):
+    # output dictionary with data variables
+    dinput = {}
+    # determine source of input file
+    if bool(re.search(r'GSFC_C2(\d)_S2(\d)', SLR_file.name, re.I)):
         # 7-day arc SLR file produced by GSFC
         # input variable names and types
         dtype = {}
@@ -131,7 +134,7 @@ def CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
         # Column 1: Approximate mid-point of 7-day solution (years)
         # Column 2: Solution from SLR (normalized)
         # Column 3: Solution from SLR (normalized)
-        content = np.loadtxt(os.path.expanduser(SLR_file),dtype=dtype)
+        content = np.loadtxt(SLR_file, dtype=dtype)
         # duplicate time and harmonics
         tdec = np.repeat(content['time'],7)
         c2m = np.repeat(content['C2'],7)
@@ -154,7 +157,7 @@ def CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
             dinput['S2m'][i] = np.mean(s2m[isort])
         # GRACE/GRACE-FO month
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
-    elif bool(re.search(r'gsfc_slr_5x5c61s61',SLR_file,re.I)):
+    elif bool(re.search(r'gsfc_slr_5x5c61s61', SLR_file.name, re.I)):
         # read 5x5 + 6,1 file from GSFC and extract coefficients
         Ylms = gravity_toolkit.read_SLR_harmonics(SLR_file, HEADER=True)
         # duplicate time and harmonics
@@ -179,7 +182,7 @@ def CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
             dinput['S2m'][i] = np.mean(s2m[isort])
         # GRACE/GRACE-FO month
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
-    elif bool(re.search(r'C2(\d)_S2(\d)_(RL\d{2})',SLR_file,re.I)):
+    elif bool(re.search(r'C2(\d)_S2(\d)_(RL\d{2})', SLR_file.name, re.I)):
         # SLR RL06 file produced by CSR
         # input variable names and types
         dtype = {}
@@ -196,7 +199,7 @@ def CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
         # Column 6: Mean value of Atmosphere-Ocean De-aliasing model (1E-10)
         # Column 7: Mean value of Atmosphere-Ocean De-aliasing model (1E-10)
         # Columns 8-9: Start and end dates of data used in solution
-        content = np.loadtxt(os.path.expanduser(SLR_file),dtype=dtype)
+        content = np.loadtxt(SLR_file, dtype=dtype)
         # date and GRACE/GRACE-FO month
         dinput['time'] = content['time'].copy()
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
@@ -206,7 +209,7 @@ def CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
         # scale SLR solution sigmas
         dinput['eC2m'] = content['eC2']*10**-10
         dinput['eS2m'] = content['eS2']*10**-10
-    elif bool(re.search(r'GRAVIS-2B_GFZOP',SLR_file,re.I)):
+    elif bool(re.search(r'GRAVIS-2B_GFZOP', SLR_file.name, re.I)):
         # Combined GRACE/SLR solution file produced by GFZ
         # Column  1: MJD of BEGINNING of solution data span
         # Column  2: Year and fraction of year of BEGINNING of solution span
@@ -216,7 +219,7 @@ def CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
         # Column 12: Replacement S(2,1)
         # Column 13: Replacement S(2,1) - mean S(2,1) (1.0E-10)
         # Column 14: S(2,1) formal standard deviation (1.0E-12)
-        with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
+        with SLR_file.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         # number of lines contained in the file
         file_lines = len(file_contents)

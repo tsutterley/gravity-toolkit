@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 esa_costg_swarm_sync.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (05/2023)
 Syncs Swarm gravity field products from the ESA Swarm Science Server
     https://earth.esa.int/eogateway/missions/swarm/data
     https://www.esa.int/Applications/Observing_the_Earth/Swarm
@@ -29,6 +29,7 @@ PYTHON DEPENDENCIES:
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
@@ -45,6 +46,7 @@ import json
 import time
 import shutil
 import logging
+import pathlib
 import argparse
 import posixpath
 import lxml.etree
@@ -54,19 +56,19 @@ import gravity_toolkit as gravtk
 def esa_costg_swarm_sync(DIRECTORY, RELEASE=None, TIMEOUT=None, LOG=False,
     LIST=False, CLOBBER=False, CHECKSUM=False, MODE=0o775):
 
-    # local directory for exact data product
-    local_dir = os.path.join(DIRECTORY,'Swarm',RELEASE,'GSM')
     # check if directory exists and recursively create if not
-    os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
+    DIRECTORY = pathlib.Path(DIRECTORY).expanduser().absolute()
+    # local directory for exact data product
+    local_dir = DIRECTORY.joinpath('Swarm',RELEASE,'GSM')
+    local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
 
     # create log file with list of synchronized files (or print to terminal)
     if LOG:
         # output to log file
         # format: ESA_Swarm_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
-        LOGFILE = f'ESA_Swarm_sync_{today}.log'
-        logging.basicConfig(filename=os.path.join(DIRECTORY,LOGFILE),
-            level=logging.INFO)
+        LOGFILE = DIRECTORY.joinpath(f'ESA_Swarm_sync_{today}.log')
+        logging.basicConfig(filename=LOGFILE, level=logging.INFO)
         logging.info(f'ESA Swarm Sync Log ({today})')
     else:
         # standard output (terminal output)
@@ -119,8 +121,8 @@ def esa_costg_swarm_sync(DIRECTORY, RELEASE=None, TIMEOUT=None, LOG=False,
     # find lines of valid files
     valid_lines = [i for i,f in enumerate(colnames) if R1.match(f)]
     # write each file to an index
-    index_file = os.path.join(local_dir,'index.txt')
-    fid = open(index_file, mode='w', encoding='utf8')
+    index_file = local_dir.joinpath(local_dir,'index.txt')
+    fid = index_file.open(mode='w', encoding='utf8')
     # for each data and header file
     for i in valid_lines:
         # remote and local versions of the file
@@ -128,7 +130,7 @@ def esa_costg_swarm_sync(DIRECTORY, RELEASE=None, TIMEOUT=None, LOG=False,
             posixpath.join('swarm','Level2longterm','EGF',colnames[i])})
         remote_file = posixpath.join(HOST,
             f'?do=download&{parameters}')
-        local_file = os.path.join(local_dir,colnames[i])
+        local_file = local_dir.joinpath(colnames[i])
         # check that file is not in file system unless overwriting
         http_pull_file(remote_file, collastmod[i], local_file,
             TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER,
@@ -136,11 +138,11 @@ def esa_costg_swarm_sync(DIRECTORY, RELEASE=None, TIMEOUT=None, LOG=False,
         # output Swarm filenames to index
         print(colnames[i], file=fid)
     # change permissions of index file
-    os.chmod(index_file, MODE)
+    index_file.chmod(mode=MODE)
 
     # close log file and set permissions level to MODE
     if LOG:
-        os.chmod(os.path.join(DIRECTORY,LOGFILE), MODE)
+        LOGFILE.chmod(mode=MODE)
 
 # PURPOSE: pull file from a remote host checking if file exists locally
 # and if the remote file is newer than the local file
@@ -150,7 +152,8 @@ def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
     TEST = False
     OVERWRITE = ' (clobber)'
     # check if local version of file exists
-    if CHECKSUM and os.access(local_file, os.F_OK):
+    local_file = pathlib.Path(local_file).expanduser().absolute()
+    if CHECKSUM and local_file.exists():
         # generate checksum hash for local file
         # open the local_file in binary read mode
         local_hash = gravtk.utilities.get_hash(local_file)
@@ -168,9 +171,9 @@ def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
         if (local_hash != remote_hash):
             TEST = True
             OVERWRITE = f' (checksums: {local_hash} {remote_hash})'
-    elif os.access(local_file, os.F_OK):
+    elif local_file.exists():
         # check last modification time of local file
-        local_mtime = os.stat(local_file).st_mtime
+        local_mtime = local_file.stat().st_mtime
         # if remote file is newer: overwrite the local file
         if (gravtk.utilities.even(remote_mtime) >
             gravtk.utilities.even(local_mtime)):
@@ -183,16 +186,16 @@ def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
     if TEST or CLOBBER:
         # Printing files transferred
         logging.info(f'{remote_file} --> ')
-        logging.info(f'\t{local_file}{OVERWRITE}\n')
+        logging.info(f'\t{str(local_file)}{OVERWRITE}\n')
         # if executing copy command (not only printing the files)
         if not LIST:
             # chunked transfer encoding size
             CHUNK = 16 * 1024
             # copy bytes or transfer file
-            if CHECKSUM and os.access(local_file, os.F_OK):
+            if CHECKSUM and local_file.exists():
                 # store bytes to file using chunked transfer encoding
                 remote_buffer.seek(0)
-                with open(local_file, 'wb') as f:
+                with local_file.open(mode='wb') as f:
                     shutil.copyfileobj(remote_buffer, f, CHUNK)
             else:
                 # Create and submit request.
@@ -202,11 +205,11 @@ def http_pull_file(remote_file, remote_mtime, local_file, TIMEOUT=120,
                 response = gravtk.utilities.urllib2.urlopen(request,
                     timeout=TIMEOUT)
                 # copy remote file contents to local file
-                with open(local_file, 'wb') as f:
+                with local_file.open(mode='wb') as f:
                     shutil.copyfileobj(response, f, CHUNK)
             # keep remote modification time of file and local access time
-            os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
-            os.chmod(local_file, MODE)
+            os.utime(local_file, (local_file.stat().st_atime, remote_mtime))
+            local_file.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -218,8 +221,7 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # data release
     parser.add_argument('--release','-r',

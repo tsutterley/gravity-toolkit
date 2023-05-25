@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 plot_GrIS_grid_movie.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 Creates GMT-like animations for the Greenland Ice Sheet
 on a NSIDC polar stereographic north (3413) projection
 
@@ -34,6 +34,7 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/GDAL/
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: switch from parameter files to argparse arguments
         updated inputs to spatial from_file function
     Updated 07/2022: place some imports behind try/except statements
@@ -72,6 +73,7 @@ import os
 import copy
 import time
 import logging
+import pathlib
 import argparse
 import warnings
 import traceback
@@ -151,24 +153,22 @@ except (NameError,ValueError) as exc:
     pass
 
 # PURPOSE: keep track of threads
-def info(title):
-    print(os.path.basename(sys.argv[0]))
-    print(title)
-    print(f'module name: {__name__}')
+def info(args):
+    logging.info(pathlib.Path(sys.argv[0]).name)
+    logging.info(args)
+    logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        print(f'parent process: {os.getppid():d}')
-    print(f'process id: {os.getpid():d}')
-
+        logging.info(f'parent process: {os.getppid():d}')
+    logging.info(f'process id: {os.getpid():d}')
 
 # PURPOSE: plot Rignot 2012 drainage basin polylines
 def plot_rignot_basins(ax, base_dir):
-    region_directory = os.path.join(base_dir, *region_dir)
+    region_directory = base_dir.joinpath(*region_dir)
     # for each region
     for reg in region_title:
         # read the regional polylines
-        region_file = region_filename.format(reg)
-        region_ll = np.loadtxt(os.path.join(region_directory,region_file),
-            dtype=region_dtype)
+        region_file = region_directory.joinpath(region_filename.format(reg))
+        region_ll = np.loadtxt(region_file, dtype=region_dtype)
         # converting region lat/lon into plot coordinates
         points = projection.transform_points(ccrs.PlateCarree(),
             region_ll['lon'], region_ll['lat'])
@@ -177,7 +177,7 @@ def plot_rignot_basins(ax, base_dir):
 # PURPOSE: plot Greenland drainage basins from IMBIE2 (Mouginot)
 def plot_IMBIE2_basins(ax, base_dir):
     # read drainage basin polylines from shapefile (using splat operator)
-    basin_shapefile = os.path.join(base_dir,*IMBIE_basin_file)
+    basin_shapefile = base_dir.joinpath(*IMBIE_basin_file)
     shape_input = shapefile.Reader(basin_shapefile)
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
@@ -198,7 +198,7 @@ def plot_IMBIE2_basins(ax, base_dir):
 
 # PURPOSE: plot Greenland grounded ice delineation from GIMP
 def plot_grounded_ice(ax, base_dir, START=1, END=300, LINEWIDTH=0.6):
-    shape_input = shapefile.Reader(os.path.join(base_dir,*coast_file))
+    shape_input = shapefile.Reader(base_dir.joinpath(*coast_file))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     for i in range(START,END):
@@ -216,7 +216,7 @@ def plot_glacier_inventory(ax, base_dir, START=0, END=30, LINEWIDTH=0.6):
     RGI_files.append('06_rgi60_Iceland')
     RGI_files.append('07_rgi60_Svalbard')
     for f in RGI_files:
-        shape_input = shapefile.Reader(os.path.join(base_dir,'RGI',f,
+        shape_input = shapefile.Reader(base_dir.joinpath('RGI',f,
             '{0}_plot.shp'.format(f)))
         shape_entities = shape_input.shapes()
         shape_attributes = shape_input.records()
@@ -230,12 +230,12 @@ def plot_glacier_inventory(ax, base_dir, START=0, END=30, LINEWIDTH=0.6):
 # PURPOSE plot coastlines and islands (GSHHS with G250 Greenland)
 def plot_coastline(ax, base_dir):
     # read the coastline shape file
-    coastline_dir = os.path.join(base_dir,'masks','G250')
+    coastline_dir = base_dir.joinpath('masks','G250')
     coastline_shape_files = []
     coastline_shape_files.append('GSHHS_i_L1_no_greenland.shp')
     coastline_shape_files.append('greenland_coastline_islands.shp')
     for fi,S in zip(coastline_shape_files,[1000,200]):
-        shape_input = shapefile.Reader(os.path.join(coastline_dir,fi))
+        shape_input = shapefile.Reader(coastline_dir.joinpath(fi))
         shape_entities = shape_input.shapes()
         # for each entity within the shapefile
         for c,ent in enumerate(shape_entities[:S]):
@@ -246,7 +246,7 @@ def plot_coastline(ax, base_dir):
 # plot the MODIS Mosaic of Greenland as a background image
 def plot_image_mosaic(ax, base_dir, MASKED=True):
     # read MODIS mosaic of Greenland
-    ds = osgeo.gdal.Open(os.path.join(base_dir,*image_file))
+    ds = osgeo.gdal.Open(str(base_dir.joinpath(*image_file)))
     # get dimensions
     xsize = ds.RasterXSize
     ysize = ds.RasterYSize
@@ -420,7 +420,7 @@ def animate_grid(base_dir, FILENAME,
 
     # create movie writer objects
     FFMpegWriter = animation.writers['ffmpeg']
-    metadata = dict(title=os.path.basename(sys.argv[0]), artist='Matplotlib',
+    metadata = dict(title=pathlib.Path(sys.argv[0]).name, artist='Matplotlib',
         date_created=time.strftime('%Y-%m-%d',time.localtime()))
     # bitrate to be determined automatically by underlying utility
     writer = FFMpegWriter(fps=8, metadata=metadata, bitrate=-1,
@@ -560,10 +560,9 @@ def animate_grid(base_dir, FILENAME,
     # adjust subplot within figure
     fig.subplots_adjust(left=0.02,right=0.99,bottom=0.02,top=0.96)
 
-    # replace data and contours to create movie frames
     # create output directory if non-existent
-    if not os.access(os.path.dirname(FIGURE_FILE), os.F_OK):
-        os.makedirs(os.path.dirname(FIGURE_FILE), MODE)
+    FIGURE_FILE.parent.mkdir(mode=MODE, parents=True, exist_ok=True)
+    # replace data and contours to create movie frames
     # create image for each frame
     with writer.saving(fig, FIGURE_FILE, FIGURE_DPI):
         # for each input file
@@ -626,7 +625,7 @@ def animate_grid(base_dir, FILENAME,
             # clear figure axes of any contour collections
             [c.remove() for cntr in contours for c in cntr.collections]
     # change the permissions mode
-    os.chmod(FIGURE_FILE, MODE)
+    FIGURE_FILE.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -639,12 +638,11 @@ def arguments():
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     parser.add_argument('infile',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Input grid file')
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # Input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--format','-F',
@@ -653,7 +651,7 @@ def arguments():
     # land-sea mask
     lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
+        type=pathlib.Path, default=lsmask,
         help='Land-sea mask')
     # output grid parameters
     parser.add_argument('--spacing',
@@ -687,7 +685,7 @@ def arguments():
         choices=sorted(cmap_set),
         help='Named Matplotlib colormap')
     parser.add_argument('--cpt-file','-c',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Input Color Palette Table (.cpt) file')
     # color map alpha
     parser.add_argument('--alpha','-a',
@@ -743,7 +741,7 @@ def arguments():
         help='Add map scale bar')
     # output file, format and dpi
     parser.add_argument('--figure-file','-O',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Output figure file')
     parser.add_argument('--figure-dpi','-d',
         type=int, default=180,

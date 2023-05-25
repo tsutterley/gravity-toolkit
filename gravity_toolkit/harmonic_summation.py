@@ -172,7 +172,7 @@ def harmonic_transform(clm1, slm1, lon, lat,
         PLM, dPLM = plm_holmes(LMAX, np.cos(th))
 
     # combined Ylms and Fourier coefficients (complex)
-    Ylms = np.zeros((LMAX+1,MMAX+1),dtype=np.complex128)
+    Ylms = np.zeros((LMAX+1, MMAX+1),dtype=np.complex128)
     delta_M = np.zeros((MMAX+1,thmax),dtype=np.complex128)# [m,th]
     # Real (cosine) and imaginary (sine) components
     # Truncating harmonics to degree and order LMAX

@@ -185,7 +185,7 @@ def integration(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
     coeff = 1.0/(4.0*np.pi)
 
     # Calculate polynomials using Holmes and Featherstone (2002) relation
-    plm = np.zeros((LMAX+1,MMAX+1,nlat))
+    plm = np.zeros((LMAX+1, MMAX+1, nlat))
     if (np.ndim(PLM) == 0):
         plmout,dplm = plm_holmes(LMAX, np.cos(th))
     else:
@@ -200,12 +200,12 @@ def integration(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
         plm[:,m,j] = plmout[:,m,j]*int_fact[j]
 
     # Initializing preliminary spherical harmonic matrices
-    yclm = np.zeros((LMAX+1,MMAX+1))
-    yslm = np.zeros((LMAX+1,MMAX+1))
+    yclm = np.zeros((LMAX+1, MMAX+1))
+    yslm = np.zeros((LMAX+1, MMAX+1))
     # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
-    Ylms.clm = np.zeros((LMAX+1,MMAX+1))
-    Ylms.slm = np.zeros((LMAX+1,MMAX+1))
+    Ylms.clm = np.zeros((LMAX+1, MMAX+1))
+    Ylms.slm = np.zeros((LMAX+1, MMAX+1))
     # Multiplying gridded data with sin/cos of m#phis (output [m,theta])
     # This will sum through all phis in the dot product
     dcos = np.dot(ccos,data)
@@ -339,8 +339,8 @@ def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
 
     # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
-    Ylms.clm = np.zeros((LMAX+1,MMAX+1))
-    Ylms.slm = np.zeros((LMAX+1,MMAX+1))
+    Ylms.clm = np.zeros((LMAX+1, MMAX+1))
+    Ylms.slm = np.zeros((LMAX+1, MMAX+1))
 
     # Sum theta fourier coefficients
     # temp is the integral of cos(n theta) cos(k theta) dcos(theta)

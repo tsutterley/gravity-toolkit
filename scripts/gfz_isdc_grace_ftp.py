@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_grace_ftp.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (05/2023)
 Syncs GRACE/GRACE-FO data from the GFZ Information System and Data Center (ISDC)
 Syncs CSR/GFZ/JPL files for RL06 GAA/GAB/GAC/GAD/GSM
     GAA and GAB are GFZ/JPL only
@@ -40,6 +40,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 10/2022: fix version check for mission
@@ -72,6 +73,7 @@ import ftplib
 import shutil
 import hashlib
 import logging
+import pathlib
 import argparse
 import posixpath
 import gravity_toolkit as gravtk
@@ -81,12 +83,10 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     NEWSLETTERS=False, TIMEOUT=None, LOG=False, LIST=False,
     CLOBBER=False, CHECKSUM=False, MODE=None):
 
-    # connect and login to GFZ ISDC ftp server
-    ftp = ftplib.FTP('isdcftp.gfz-potsdam.de', timeout=TIMEOUT)
-    ftp.login()
-
     # check if directory exists and recursively create if not
-    os.makedirs(DIRECTORY,MODE) if not os.path.exists(DIRECTORY) else None
+    DIRECTORY = pathlib.Path(DIRECTORY).expanduser().absolute()
+    DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
+
     # mission shortnames
     shortname = {'grace':'GRAC', 'grace-fo':'GRFO'}
     # datasets for each processing center
@@ -100,9 +100,8 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
         # output to log file
         # format: GFZ_ISDC_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
-        LOGFILE = f'GFZ_ISDC_sync_{today}.log'
-        logging.basicConfig(filename=os.path.join(DIRECTORY,LOGFILE),
-            level=logging.INFO)
+        LOGFILE = DIRECTORY.joinpath(f'GFZ_ISDC_sync_{today}.log')
+        logging.basicConfig(filename=LOGFILE, level=logging.INFO)
         logging.info(f'GFZ ISDC Sync Log ({today})')
         logging.info('CENTERS={0}'.format(','.join(PROC)))
         logging.info('RELEASES={0}'.format(','.join(DREL)))
@@ -110,11 +109,15 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
         # standard output (terminal output)
         logging.basicConfig(level=logging.INFO)
 
+    # connect and login to GFZ ISDC ftp server
+    ftp = ftplib.FTP('isdcftp.gfz-potsdam.de', timeout=TIMEOUT)
+    ftp.login()
+
     # Degree 1 (geocenter) coefficients
     logging.info('Degree 1 Coefficients:')
-    local_dir = os.path.join(DIRECTORY,'geocenter')
+    local_dir = DIRECTORY.joinpath('geocenter')
     # check if geocenter directory exists and recursively create if not
-    os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
+    local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
     # TN-13 JPL degree 1 files
     # compile regular expression operator for remote files
     R1 = re.compile(r'TN-13_GEOC_(CSR|GFZ|JPL)_(.*?).txt$', re.VERBOSE)
@@ -126,14 +129,13 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     for fi,remote_mtime in zip(remote_files,remote_mtimes):
         # extract filename from regex object
         remote_path = [ftp.host,'grace-fo','DOCUMENTS','TECHNICAL_NOTES',fi]
-        local_file = os.path.join(local_dir,fi)
+        local_file = local_dir.joinpath(fi)
         ftp_mirror_file(ftp, remote_path, remote_mtime,
             local_file, TIMEOUT=TIMEOUT, LIST=LIST,
             CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
 
     # SLR C2,0 coefficients
     logging.info('C2,0 Coefficients:')
-    local_dir = os.path.expanduser(DIRECTORY)
     # compile regular expression operator for remote files
     R1 = re.compile(r'TN-(05|07|11)_C20_SLR_RL(.*?).txt$', re.VERBOSE)
     # get filenames from remote directory
@@ -144,14 +146,13 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     for fi,remote_mtime in zip(remote_files,remote_mtimes):
         # extract filename from regex object
         remote_path = [ftp.host,'grace','DOCUMENTS','TECHNICAL_NOTES',fi]
-        local_file = os.path.join(local_dir,re.sub(r'(_RL.*?).txt','.txt',fi))
+        local_file = DIRECTORY.joinpath(re.sub(r'(_RL.*?).txt','.txt',fi))
         ftp_mirror_file(ftp, remote_path, remote_mtime,
             local_file, TIMEOUT=TIMEOUT, LIST=LIST,
             CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
 
     # SLR C3,0 coefficients
     logging.info('C3,0 Coefficients:')
-    local_dir = os.path.expanduser(DIRECTORY)
     # compile regular expression operator for remote files
     R1 = re.compile(r'TN-(14)_C30_C20_SLR_GSFC.txt$', re.VERBOSE)
     # get filenames from remote directory
@@ -162,14 +163,13 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     for fi,remote_mtime in zip(remote_files,remote_mtimes):
         # extract filename from regex object
         remote_path = [ftp.host,'grace-fo','DOCUMENTS','TECHNICAL_NOTES',fi]
-        local_file = os.path.join(local_dir,re.sub(r'(SLR_GSFC)','GSFC_SLR',fi))
+        local_file = DIRECTORY.joinpath(re.sub(r'(SLR_GSFC)','GSFC_SLR',fi))
         ftp_mirror_file(ftp, remote_path, remote_mtime,
             local_file, TIMEOUT=TIMEOUT, LIST=LIST,
             CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
 
     # TN-08 GAE, TN-09 GAF and TN-10 GAG ECMWF atmosphere correction products
     logging.info('TN-08 GAE, TN-09 GAF and TN-10 GAG products:')
-    local_dir = os.path.expanduser(DIRECTORY)
     ECMWF_files = []
     ECMWF_files.append('TN-08_GAE-2_2006032-2010031_0000_EIGEN_G---_0005.gz')
     ECMWF_files.append('TN-09_GAF-2_2010032-2015131_0000_EIGEN_G---_0005.gz')
@@ -184,7 +184,7 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     for fi,remote_mtime in zip(remote_files,remote_mtimes):
         # extract filename from regex object
         remote_path = [ftp.host,'grace','DOCUMENTS','TECHNICAL_NOTES',fi]
-        local_file = os.path.join(local_dir,fi)
+        local_file = DIRECTORY.joinpath(fi)
         ftp_mirror_file(ftp, remote_path, remote_mtime,
             local_file, TIMEOUT=TIMEOUT, LIST=LIST,
             CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
@@ -192,9 +192,9 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     # GRACE and GRACE-FO newsletters
     if NEWSLETTERS:
         # local newsletter directory (place GRACE and GRACE-FO together)
-        local_dir = os.path.join(DIRECTORY,'newsletters')
+        local_dir = DIRECTORY.joinpath('newsletters')
         # check if newsletters directory exists and recursively create if not
-        os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
+        local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
         # for each satellite mission (grace, grace-fo)
         for i,mi in enumerate(['grace','grace-fo']):
             logging.info(f'{mi} Newsletters:')
@@ -217,7 +217,7 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
                 for fi,remote_mtime in zip(remote_files,remote_mtimes):
                     # extract filename from regex object
                     remote_path = [ftp.host,mi,'DOCUMENTS','NEWSLETTER',Y,fi]
-                    local_file = os.path.join(local_dir,fi)
+                    local_file = local_dir.joinpath(fi)
                     ftp_mirror_file(ftp, remote_path, remote_mtime,
                         local_file, TIMEOUT=TIMEOUT, LIST=LIST,
                         CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
@@ -231,10 +231,9 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
             # for each level-2 product (GAC, GAD, GSM, GAA, GAB)
             for ds in DSET[pr]:
                 # local directory for exact data product
-                local_dir = os.path.join(DIRECTORY, pr, rl, ds)
+                local_dir = DIRECTORY.joinpath(pr, rl, ds)
                 # check if directory exists and recursively create if not
-                if not os.path.exists(local_dir):
-                    os.makedirs(local_dir,MODE)
+                local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
                 # list of GRACE/GRACE-FO files for index
                 grace_files = []
                 # for each satellite mission (grace, grace-fo)
@@ -255,7 +254,7 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
                     for fi,remote_mtime in zip(remote_files,remote_mtimes):
                         # extract filename from regex object
                         remote_path = [ftp.host,mi,'Level-2',pr,drel_str,fi]
-                        local_file = os.path.join(local_dir,fi)
+                        local_file = local_dir.joinpath(fi)
                         ftp_mirror_file(ftp, remote_path, remote_mtime,
                             local_file, TIMEOUT=TIMEOUT, LIST=LIST,
                             CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
@@ -263,25 +262,26 @@ def gfz_isdc_grace_ftp(DIRECTORY, PROC=[], DREL=[], VERSION=[],
                     rx = gravtk.utilities.compile_regex_pattern(
                         pr, rl, ds, mission=shortname[mi])
                     # find local GRACE/GRACE-FO files to create index
-                    granules = [f for f in os.listdir(local_dir) if rx.match(f)]
+                    granules = sorted([f.name for f in local_dir.iterdir()
+                        if rx.match(f.name)])
                     # reduce list of GRACE/GRACE-FO files to unique dates
                     granules = gravtk.time.reduce_by_date(granules)
                     # extend list of GRACE/GRACE-FO files with granules
                     grace_files.extend(granules)
 
                 # outputting GRACE/GRACE-FO filenames to index
-                index_file = os.path.join(local_dir,'index.txt')
-                with open(index_file, mode='w', encoding='utf8') as fid:
+                index_file = local_dir.joinpath('index.txt')
+                with index_file.open(mode='w', encoding='utf8') as fid:
                     for fi in sorted(grace_files):
                         print(fi, file=fid)
                 # change permissions of index file
-                os.chmod(index_file, MODE)
+                index_file.chmod(mode=MODE)
 
     # close the ftp connection
     ftp.quit()
     # close log file and set permissions level to MODE
     if LOG:
-        os.chmod(os.path.join(DIRECTORY,LOGFILE), MODE)
+        LOGFILE.chmod(mode=MODE)
 
 # PURPOSE: pull file from a remote host checking if file exists locally
 # and if the remote file is newer than the local file
@@ -291,11 +291,11 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
     TEST = False
     OVERWRITE = ' (clobber)'
     # check if local version of file exists
-    if CHECKSUM and os.access(local_file, os.F_OK):
+    local_file = pathlib.Path(local_file).expanduser().absolute()
+    if CHECKSUM and local_file.exists():
         # generate checksum hash for local file
         # open the local_file in binary read mode
-        with open(local_file, 'rb') as local_buffer:
-            local_hash = hashlib.md5(local_buffer.read()).hexdigest()
+        local_hash = gravtk.utilities.get_hash(local_file)
         # copy remote file contents to bytesIO object
         remote_buffer = gravtk.utilities.from_ftp(remote_path,
             timeout=TIMEOUT)
@@ -305,9 +305,9 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
         if (local_hash != remote_hash):
             TEST = True
             OVERWRITE = f' (checksums: {local_hash} {remote_hash})'
-    elif os.access(local_file, os.F_OK):
+    elif local_file.exists():
         # check last modification time of local file
-        local_mtime = os.stat(local_file).st_mtime
+        local_mtime = local_file.stat().st_mtime
         # if remote file is newer: overwrite the local file
         if (gravtk.utilities.even(remote_mtime) >
             gravtk.utilities.even(local_mtime)):
@@ -321,24 +321,24 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
         # Printing files transferred
         remote_ftp_url = posixpath.join('ftp://',*remote_path)
         logging.info(f'{remote_ftp_url} -->')
-        logging.info(f'\t{local_file}{OVERWRITE}\n')
+        logging.info(f'\t{str(local_file)}{OVERWRITE}\n')
         # if executing copy command (not only printing the files)
         if not LIST:
             # copy file from ftp server or from bytesIO object
-            if CHECKSUM and os.access(local_file, os.F_OK):
+            if CHECKSUM and local_file.exists():
                 # store bytes to file using chunked transfer encoding
                 remote_buffer.seek(0)
-                with open(local_file, 'wb') as f:
+                with local_file.open(mode='wb') as f:
                     shutil.copyfileobj(remote_buffer, f, 16 * 1024)
             else:
                 # path to remote file
                 remote_file = posixpath.join(*remote_path[1:])
                 # copy remote file contents to local file
-                with open(local_file, 'wb') as f:
+                with local_file.open(mode='wb') as f:
                     ftp.retrbinary(f'RETR {remote_file}', f.write)
             # keep remote modification time of file and local access time
-            os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
-            os.chmod(local_file, MODE)
+            os.utime(local_file, (local_file.stat().st_atime, remote_mtime))
+            local_file.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -350,8 +350,7 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # GRACE/GRACE-FO processing center
     parser.add_argument('--center','-c',

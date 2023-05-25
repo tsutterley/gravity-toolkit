@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 combine_harmonics.py
-Written by Tyler Sutterley (04/2023)
+Written by Tyler Sutterley (05/2023)
 Converts a file from the spherical harmonic domain into the spatial domain
 
 CALLING SEQUENCE:
@@ -72,6 +72,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 04/2023: allow units argument to be set to 0 for no unit conversion
     Updated 03/2023: add index ascii/netCDF4/HDF5 datatypes as possible inputs
         add descriptive file-level attributes to output netCDF4/HDF5 files
@@ -112,6 +113,7 @@ import os
 import re
 import copy
 import logging
+import pathlib
 import argparse
 import traceback
 import numpy as np
@@ -119,7 +121,7 @@ import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(pathlib.Path(sys.argv[0]).name)
     logging.info(args)
     logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
@@ -144,14 +146,15 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     DATAFORM=None,
     MODE=0o775):
 
+    # verify inputs
+    INPUT_FILE = pathlib.Path(INPUT_FILE).expanduser().absolute()
+    OUTPUT_FILE = pathlib.Path(OUTPUT_FILE).expanduser().absolute()
     # verify that output directory exists
-    DIRECTORY = os.path.abspath(os.path.dirname(OUTPUT_FILE))
-    if not os.access(DIRECTORY, os.F_OK):
-        os.makedirs(DIRECTORY,MODE,exist_ok=True)
+    OUTPUT_FILE.parent.mkdir(mode=MODE, parents=True, exist_ok=True)
     # attributes for output files
     attributes = dict(ROOT={})
     attributes['ROOT']['product_type'] = 'gravity_field'
-    attributes['ROOT']['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+    attributes['ROOT']['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
 
     # upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:
@@ -160,15 +163,15 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     # read input spherical harmonic coefficients from file
     if DATAFORM in ('ascii', 'netCDF4', 'HDF5'):
         dataform = copy.copy(DATAFORM)
-        attributes['ROOT']['lineage'] = os.path.basename(INPUT_FILE)
         input_Ylms = gravtk.harmonics().from_file(INPUT_FILE,
             format=DATAFORM)
+        attributes['ROOT']['lineage'] = input_Ylms.filename.name
     elif DATAFORM in ('index-ascii', 'index-netCDF4', 'index-HDF5'):
         # read from index file
         _,dataform = DATAFORM.split('-')
-        attributes['ROOT']['lineage'] = [os.path.basename(f) for f in INPUT_FILE]
         input_Ylms = gravtk.harmonics().from_index(INPUT_FILE,
             format=dataform)
+        attributes['ROOT']['lineage'] = [f.name for f in input_Ylms.filename]
     # reform harmonic dimensions to be l,m,t
     # truncate to degree and order LMAX, MMAX
     input_Ylms = input_Ylms.truncate(lmax=LMAX, mmax=MMAX).expand_dims()
@@ -240,13 +243,13 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     elif (INTERVAL == 3):
         # non-global grid set with BOUNDS parameter
         minlon,maxlon,minlat,maxlat = BOUNDS.copy()
-        grid.lon = np.arange(minlon+dlon/2.0,maxlon+dlon/2.0,dlon)
-        grid.lat = np.arange(maxlat-dlat/2.0,minlat-dlat/2.0,-dlat)
+        grid.lon = np.arange(minlon+dlon/2.0, maxlon+dlon/2.0, dlon)
+        grid.lat = np.arange(maxlat-dlat/2.0, minlat-dlat/2.0, -dlat)
         nlon = len(grid.lon)
         nlat = len(grid.lat)
     # output spatial grid
-    grid.data = np.zeros((nlat,nlon,nt))
-    grid.mask = np.zeros((nlat,nlon,nt), dtype=bool)
+    grid.data = np.zeros((nlat, nlon, nt))
+    grid.mask = np.zeros((nlat, nlon, nt), dtype=bool)
 
     # Setting units factor for output
     # dfactor computes the degree dependent coefficients
@@ -284,7 +287,7 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
         attributes=attributes)
 
     # change output permissions level to MODE
-    os.chmod(OUTPUT_FILE, MODE)
+    OUTPUT_FILE.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -298,10 +301,10 @@ def arguments():
     # command line parameters
     # input and output file
     parser.add_argument('infile',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='?',
+        type=pathlib.Path, nargs='?',
         help='Input harmonic file')
     parser.add_argument('outfile',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='?',
+        type=pathlib.Path, nargs='?',
         help='Output spatial file')
     # maximum spherical harmonic degree and order
     parser.add_argument('--lmax','-l',
@@ -354,11 +357,11 @@ def arguments():
     # land-sea mask for redistributing over the ocean
     lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
+        type=pathlib.Path, default=lsmask,
         help='Land-sea mask for redistributing over the ocean')
     # mean file to remove
     parser.add_argument('--mean',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Mean file to remove from the harmonic data')
     # input and output data format (ascii, netCDF4, HDF5)
     choices = []

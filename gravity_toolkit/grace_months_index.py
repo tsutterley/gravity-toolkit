@@ -41,6 +41,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 05/2023: use formatting for reading from date file
+        use pathlib to define and operate on paths
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 05/2022: use argparse descriptions within documentation
         use new GSFC release 6 version 2 mascons as the default
@@ -64,7 +65,7 @@ UPDATE HISTORY:
 """
 from __future__ import print_function
 
-import os
+import pathlib
 import argparse
 import calendar
 import numpy as np
@@ -88,8 +89,9 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
         Permissions mode of output index file
     """
     # Output GRACE months file
-    grace_months_file = os.path.join(base_dir,'GRACE_months.txt')
-    fid = open(grace_months_file, mode='w', encoding='utf8')
+    base_dir = pathlib.Path(base_dir).expanduser().absolute()
+    grace_months_file = base_dir.joinpath('GRACE_months.txt')
+    fid = grace_months_file.open(mode='w', encoding='utf8')
 
     # Initial parameters
     # processing centers
@@ -108,15 +110,15 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
         # for each processing centers (CSR, GFZ, JPL)
         for pr in PROC:
             # Setting the data directory for processing center and release
-            grace_dir = os.path.join(base_dir, pr, rl, DSET)
+            grace_dir = base_dir.joinpath(pr, rl, DSET)
             # read GRACE/GRACE-FO date ascii file
-            grace_date_file = os.path.join(grace_dir,f'{pr}_{rl}_DATES.txt')
+            grace_date_file = grace_dir.joinpath(f'{pr}_{rl}_DATES.txt')
             # names and formats of GRACE/GRACE-FO date ascii file
             names = ('t','mon','styr','stday','endyr','endday','total')
             formats = ('f','i','i','i','i','i','i')
             dtype = np.dtype({'names':names, 'formats':formats})
             # check that the GRACE/GRACE-FO date file exists
-            if os.access(grace_date_file, os.F_OK):
+            if grace_date_file.exists():
                 # Setting the dictionary key e.g. 'CSR_RL04'
                 var_name = f'{pr}_{rl}'
                 # skip the header line
@@ -176,7 +178,7 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
     # close months file
     fid.close()
     # set the permissions level of the output file
-    os.chmod(grace_months_file, MODE)
+    grace_months_file.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -188,8 +190,7 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',

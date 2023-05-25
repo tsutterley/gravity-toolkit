@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 quick_mascon_plot.py
-Written by Tyler Sutterley (04/2023)
+Written by Tyler Sutterley (05/2023)
 Plots a mascon time series file for a particular format
 
 COMMAND LINE OPTIONS:
@@ -34,6 +34,7 @@ PROGRAM DEPENDENCIES:
     time_series.regress.py: calculates trend coefficients using least-squares
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 04/2023: add option to include plot markers on time series plots
     Updated 03/2023: place matplotlib import behind try/except statement
     Updated 01/2023: refactored time series analysis functions
@@ -50,7 +51,7 @@ UPDATE HISTORY:
     Written 10/2019
 """
 import sys
-import os
+import pathlib
 import argparse
 import warnings
 import numpy as np
@@ -92,13 +93,14 @@ def run_plot(i,f,individual=False,header=0,marker=None,title=None,
     if individual:
         plt.figure(i+1)
     # read data
-    dinput = np.loadtxt(os.path.expanduser(f),skiprows=header)
+    f = pathlib.Path(f).expanduser().absolute()
+    dinput = np.loadtxt(f, skiprows=header)
     # calculate regression
     x1 = gravtk.time_series.regress(dinput[:,1],dinput[:,2],ORDER=1,
         CYCLES=[0.5,1.0,161.0/365.25])
     x2 = gravtk.time_series.regress(dinput[:,1],dinput[:,2],ORDER=2,
         CYCLES=[0.5,1.0,161.0/365.25])
-    print(os.path.basename(f))
+    print(f.name)
     # print regression coefficients
     args = ('x1',x1['beta'][1],x1['error'][1])
     print('{0}: {1:0.4f} +/- {2:0.4f}'.format(*args))
@@ -161,14 +163,14 @@ def arguments():
     )
     # command line parameters
     parser.add_argument('file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='+',
+        type=pathlib.Path, nargs='+',
         help='Mascon data files')
     parser.add_argument('--individual','-I',
         default=False, action='store_true',
         help='Create individual plots or combine into single')
     # output filename, format and dpi
     parser.add_argument('--output-file','-O',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Output figure file')
     parser.add_argument('--figure-format','-f',
         type=str, default='pdf', choices=('pdf','png','jpg','svg'),
@@ -228,27 +230,26 @@ def main():
     # show or save plots
     if args.output_file and (len(plt.get_fignums()) > 1):
         # for each figure number
-        fileBasename,fileExtension = os.path.splitext(args.output_file)
         for num in plt.get_fignums():
             fig = plt.figure(num)
-            output_file = f'{fileBasename}_{num}{fileExtension}'
+            output = f'{args.output_file.stem}_{num}{args.output_file.suffix}'
             # save the figure file
-            fig.savefig(output_file,
-                metadata={'Title':os.path.basename(sys.argv[0])},
+            fig.savefig(output,
+                metadata={'Title':pathlib.Path(sys.argv[0]).name},
                 dpi=args.figure_dpi,
                 format=args.figure_format
             )
             # change the permissions mode
-            os.chmod(output_file, args.mode)
+            output.chmod(mode=args.mode)
     elif args.output_file:
         # save the figure file
         plt.savefig(args.output_file,
-            metadata={'Title':os.path.basename(sys.argv[0])},
+            metadata={'Title':pathlib.Path(sys.argv[0]).name},
             dpi=args.figure_dpi,
             format=args.figure_format
         )
         # change the permissions mode
-        os.chmod(args.output_file, args.mode)
+        args.output_file.chmod(mode=args.mode)
     else:
         # show all plots
         plt.show()

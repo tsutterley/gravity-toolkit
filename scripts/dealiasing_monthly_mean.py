@@ -49,6 +49,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 05/2023: use formatting for reading from date file
+        use pathlib to define and operate on paths
     Updated 03/2023: read data into flattened harmonics objects
         debug-level logging of member names and header lines
         convert shape and ndim to harmonic class properties
@@ -81,6 +82,7 @@ import re
 import gzip
 import time
 import logging
+import pathlib
 import tarfile
 import argparse
 import numpy as np
@@ -140,17 +142,16 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
     product['glo'] = 'Global atmospheric and oceanic loading'
     product['oba'] = f'Ocean bottom pressure from {OCEAN_MODEL}'
 
-    # GRACE AOD1B directory for data release
-    aod1b_dir = os.path.join(base_dir,'AOD1B',DREL)
-    # GRACE data directory for data release and processing center
-    grace_dir = os.path.join(base_dir,PROC,DREL)
+    # input directory setup
+    base_dir = pathlib.Path(base_dir).expanduser().absolute()
+    aod1b_dir = base_dir.joinpath('AOD1B', DREL)
+    grace_dir = base_dir.joinpath(PROC, DREL)
     # recursively create output directory if not currently existing
-    if not os.access(os.path.join(grace_dir,DSET),os.F_OK):
-        os.makedirs(os.path.join(grace_dir,DSET), MODE)
+    grace_dir.joinpath(DSET).mkdir(mode=MODE, parents=True, exist_ok=True)
 
     # attributes for output files
     attributes = {}
-    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+    attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
     # file formatting string if outputting to SHM format
     shm = '{0}-2_{1:4.0f}{2:03.0f}-{3:4.0f}{4:03.0f}_{5}_{6}_{7}_{8}00.gz'
     # center name if outputting to SHM format
@@ -169,16 +170,18 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
     names = ('t','mon','styr','stday','endyr','endday','total')
     formats = ('f','i','i','i','i','i','i')
     dtype = np.dtype({'names':names, 'formats':formats})
-    date_input = np.loadtxt(os.path.join(grace_dir,'GSM',grace_date_file),
-        skiprows=1, dtype=dtype)
+    input_date_file = grace_dir.joinpath('GSM', grace_date_file)
+    date_input = np.loadtxt(input_date_file, skiprows=1, dtype=dtype)
+    tdec = date_input['t']
     grace_month = date_input['mon']
     start_yr = date_input['styr']
     start_day = date_input['stday']
     end_yr = date_input['endyr']
     end_day = date_input['endday']
+    total_days = date_input['total']
     # output date file reduced to months with complete AOD
-    f_out = open(os.path.join(grace_dir,DSET,grace_date_file),
-        mode='w', encoding='utf8')
+    output_date_file = grace_dir.joinpath(DSET, grace_date_file)
+    f_out = output_date_file.open(mode='w', encoding='utf8')
     # date file header information
     args = ('Mid-date','Month','Start_Day','End_Day','Total_Days')
     print('{0} {1:>10} {2:>11} {3:>10} {4:>13}'.format(*args), file=f_out)
@@ -209,6 +212,8 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
         else:
             args = (PROC,DREL,DSET.upper(),LMAX,gm,suffix[DATAFORM])
             FILE = '{0}_{1}_{2}_CLM_L{3:d}_{4:03d}.{5}'.format(*args)
+        # complete path to output filename
+        OUTPUT_FILE = grace_dir.joinpath(DSET, FILE)
 
         # calendar dates to read
         JD = np.array(julian_days_to_read)
@@ -218,21 +223,21 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
         rx1='|'.join(['{0:d}-{1:02d}'.format(*p) for p in set(zip(Y,M))])
         rx2='|'.join(['{0:0d}-{1:02d}-{2:02d}'.format(*p) for p in set(zip(Y,M,D))])
         # compile regular expressions operators for finding tar files
-        tx = re.compile(r'AOD1B_({0})_\d+.(tar.gz|tgz)$'.format(rx1),re.VERBOSE)
+        tx = re.compile(rf'AOD1B_({rx1})_\d+.(tar.gz|tgz)$', re.VERBOSE)
         # finding all of the tar files in the AOD1b directory
-        input_tar_files = [tf for tf in os.listdir(aod1b_dir) if tx.match(tf)]
+        input_tar_files = [tf for tf in aod1b_dir.iterdir() if tx.match(tf.name)]
         # compile regular expressions operators for file dates
         # will extract year and month and calendar day from the ascii file
-        fx = re.compile(r'AOD1B_({0})_X_\d+.asc(.gz)?$'.format(rx2),re.VERBOSE)
+        fx = re.compile(rf'AOD1B_({rx2})_X_\d+.asc(.gz)?$', re.VERBOSE)
 
         # check the last modified times of the tar file members
-        input_mtime = np.zeros_like(julian_days_to_read,dtype=np.int64)
-        input_file_check = np.zeros_like(julian_days_to_read,dtype=bool)
+        input_mtime = np.zeros_like(julian_days_to_read, dtype=np.int64)
+        input_file_check = np.zeros_like(julian_days_to_read, dtype=bool)
         c = 0
         # for each tar file
-        for fi in sorted(input_tar_files):
+        for input_file in sorted(input_tar_files):
             # open the AOD1B monthly tar file
-            tar = tarfile.open(name=os.path.join(aod1b_dir,fi), mode='r:gz')
+            tar = tarfile.open(name=str(input_file), mode='r:gz')
             # for each ascii file within the tar file that matches fx
             monthly_members = [m for m in tar.getmembers() if fx.match(m.name)]
             for member in monthly_members:
@@ -246,9 +251,9 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
         # if output file exists: check if input tar file is newer
         TEST = False
         OVERWRITE = 'clobber'
-        if os.access(os.path.join(grace_dir,DSET,FILE), os.F_OK):
+        if OUTPUT_FILE.exists():
             # check last modification time of input and output files
-            output_mtime = os.stat(os.path.join(grace_dir,DSET,FILE)).st_mtime
+            output_mtime = OUTPUT_FILE.stat().st_mtime
             # if input tar file is newer: overwrite the output file
             if (input_mtime > output_mtime).any():
                 TEST = True
@@ -260,10 +265,10 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
         # print GRACE/GRACE-FO dates if there is a complete month of AOD
         if COMPLETE:
             # print GRACE/GRACE-FO dates to file
-            print((f'{date_input[t,0]:13.8f} {gm:03d} '
+            print((f'{tdec[t]:13.8f} {gm:03d} '
                 f'{start_yr[t]:8.0f} {start_day[t]:03d} '
                 f'{end_yr[t]:8.0f} {end_day[t]:03d} '
-                f'{date_input[t,6]:8.0f}'), file=f_out)
+                f'{total_days[t]:8.0f}'), file=f_out)
 
         # if there are new files, files to be rewritten or clobbered
         if COMPLETE and (TEST or CLOBBER):
@@ -287,9 +292,9 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
             hours = np.zeros((n_time), dtype=int)
             count = 0
             # for each tar file
-            for fi in sorted(input_tar_files):
+            for input_file in sorted(input_tar_files):
                 # open the AOD1B monthly tar file
-                tar = tarfile.open(name=os.path.join(aod1b_dir,fi), mode='r:gz')
+                tar = tarfile.open(name=str(input_file), mode='r:gz')
                 # for each ascii file within the tar file that matches fx
                 monthly_members=[m for m in tar.getmembers() if fx.match(m.name)]
                 for member in monthly_members:
@@ -365,36 +370,33 @@ def dealiasing_monthly_mean(base_dir, PROC=None, DREL=None, DSET=None,
             # output mean Ylms to file
             if (DATAFORM == 'ascii'):
                 # ascii (.txt)
-                mean_Ylms.to_ascii(os.path.join(grace_dir,DSET,FILE))
+                mean_Ylms.to_ascii(OUTPUT_FILE)
             elif (DATAFORM == 'netCDF4'):
                 # netcdf (.nc)
-                mean_Ylms.to_netCDF4(os.path.join(grace_dir,DSET,FILE),
-                    **attributes)
+                mean_Ylms.to_netCDF4(OUTPUT_FILE, **attributes)
             elif (DATAFORM == 'HDF5'):
                 # HDF5 (.H5)
-                mean_Ylms.to_HDF5(os.path.join(grace_dir,DSET,FILE),
-                    **attributes)
+                mean_Ylms.to_HDF5(OUTPUT_FILE, **attributes)
             elif (DATAFORM == 'SHM'):
-                mean_Ylms.to_SHM(os.path.join(grace_dir,DSET,FILE),
-                    gzip=True)
+                mean_Ylms.to_SHM(OUTPUT_FILE, gzip=True)
             # set the permissions mode of the output file
-            os.chmod(os.path.join(grace_dir,DSET,FILE), MODE)
+            OUTPUT_FILE.chmod(mode=MODE)
         # log if dataset is incomplete
         elif not COMPLETE:
             logging.info(f'File {FILE} not output (incomplete)')
 
     # if outputting as spherical harmonic model files
     if (DATAFORM == 'SHM'):
-        # Create an index file for each GRACE product
-        grace_files = [fi for fi in os.listdir(os.path.join(grace_dir,DSET)) if
-            re.match(r'{0}-2(.*?)\.gz'.format(DSET),fi)]
+        # Create an index file for the output GRACE product
+        grace_files = [f.name for f in grace_dir.joinpath(DSET).iterdir() if
+            re.match(rf'{DSET}-2(.*?)\.gz', f.name)]
         # outputting GRACE filenames to index
-        index_file = os.path.join(grace_dir,DSET,'index.txt')
-        with open(index_file, mode='w', encoding='utf8') as fid:
+        grace_index_file = grace_dir.joinpath(DSET, 'index.txt')
+        with grace_index_file.open(mode='w', encoding='utf8') as fid:
             for fi in sorted(grace_files):
                 print(fi, file=fid)
         # change permissions of index file
-        os.chmod(index_file, MODE)
+        grace_index_file.chmod(mode=MODE)
 
     # print completion flag
     logging.info(f'Complete: {PROC}/{DREL}/{DSET}')
@@ -437,15 +439,15 @@ class dealiasing(gravtk.harmonics):
             harmonics objects contain date information
             keyword arguments for SHM output
         """
-        self.filename = os.path.expanduser(filename)
+        self.filename = pathlib.Path(filename).expanduser().absolute()
         # set default verbosity
         kwargs.setdefault('verbose',False)
-        logging.info(self.filename)
+        logging.info(str(self.filename))
         # open the output file
         if self.gzip:
             fid = gzip.open(self.filename, 'wt')
         else:
-            fid = open(self.filename, mode='w', encoding='utf8')
+            fid = self.filename.open(mode='w', encoding='utf8')
         # print the header informat
         self.print_header(fid)
         self.print_harmonic(fid)
@@ -513,7 +515,7 @@ class dealiasing(gravtk.harmonics):
         fid.write('\n')
 
     # PURPOSE: print global attributes to YAML header
-    def print_global(self,fid):
+    def print_global(self, fid):
         fid.write('  {0}:\n'.format('global_attributes'))
         # product title
         if (self.month <= 186):
@@ -613,7 +615,7 @@ class dealiasing(gravtk.harmonics):
         fid.write('\n')
 
     # PURPOSE: print variable descriptions to YAML header
-    def print_variables(self,fid,data_precision):
+    def print_variables(self, fid, data_precision):
         # variables
         fid.write('  {0}:\n'.format('variables'))
         # record_key
@@ -705,8 +707,7 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # Data processing center or satellite mission
     parser.add_argument('--center','-c',

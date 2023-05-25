@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 monte_carlo_degree_one.py
-Written by Tyler Sutterley (04/2023)
+Written by Tyler Sutterley (05/2023)
 
 Calculates degree 1 errors using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from OMCT/MPIOM in a Monte Carlo scheme
@@ -157,6 +157,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 04/2023: add options for least-squares solver
     Updated 03/2023: place matplotlib import within try/except statement
     Updated 02/2023: use love numbers class with additional attributes
@@ -209,6 +210,7 @@ import os
 import re
 import time
 import logging
+import pathlib
 import argparse
 import warnings
 import traceback
@@ -235,7 +237,7 @@ warnings.filterwarnings("ignore")
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(pathlib.Path(sys.argv[0]).name)
     logging.info(args)
     logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
@@ -351,7 +353,7 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
 
     # output directory
-    DIRECTORY = os.path.join(base_dir,'geocenter')
+    DIRECTORY = base_dir.joinpath('geocenter')
     # list object of output files for file logs (full path)
     output_files = []
 
@@ -382,7 +384,7 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     # degree spacing and grid dimensions
     # will create GRACE spatial fields with same dimensions
     dlon,dlat = landsea.spacing
-    nlat,nlon = landsea.shape
+    nlat, nlon = landsea.shape
     # spatial parameters in radians
     dphi = dlon*np.pi/180.0
     dth = dlat*np.pi/180.0
@@ -390,7 +392,7 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     phi = landsea.lon[np.newaxis,:]*np.pi/180.0
     th = (90.0 - np.squeeze(landsea.lat))*np.pi/180.0
     # create land function
-    land_function = np.zeros((nlon,nlat),dtype=np.float64)
+    land_function = np.zeros((nlon, nlat),dtype=np.float64)
     # extract land function from file
     # combine land and island levels for land function
     indx,indy = np.nonzero((landsea.data.T >= 1) & (landsea.data.T <= 3))
@@ -442,7 +444,7 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
         # using standard GRACE/GRACE-FO harmonics
         ds_str = ''
     # full path to directory for specific GRACE/GRACE-FO product
-    GSM_Ylms.directory = Ylms['directory']
+    GSM_Ylms.directory = pathlib.Path(Ylms['directory']).expanduser().absolute()
     # GRACE dates
     tdec = np.copy(GSM_Ylms.time)
     months = np.copy(GSM_Ylms.month)
@@ -485,21 +487,21 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
 
     # calculating GRACE/GRACE-FO error (Wahr et al. 2006)
     # output GRACE error file (for both LMAX==MMAX and LMAX != MMAX cases)
-    args = (PROC,DREL,DSET,LMAX,order_str,ds_str,atm_str,GSM_Ylms.month[0],
+    fargs = (PROC,DREL,DSET,LMAX,order_str,ds_str,atm_str,GSM_Ylms.month[0],
         GSM_Ylms.month[-1], suffix[DATAFORM])
     delta_format = '{0}_{1}_{2}_DELTA_CLM_L{3:d}{4}{5}{6}_{7:03d}-{8:03d}.{9}'
-    DELTA_FILE = os.path.join(GSM_Ylms.directory,delta_format.format(*args))
+    DELTA_FILE = GSM_Ylms.directory.joinpath(delta_format.format(*fargs))
     # check full path of the GRACE directory for delta file
     # if file was previously calculated: will read file
     # else: will calculate the GRACE/GRACE-FO error
-    if not os.access(DELTA_FILE, os.F_OK):
+    if not DELTA_FILE.exists():
         # add output delta file to list object
         output_files.append(DELTA_FILE)
 
         # Delta coefficients of GRACE time series (Error components)
-        delta_Ylms = gravtk.harmonics(lmax=LMAX,mmax=MMAX)
-        delta_Ylms.clm = np.zeros((LMAX+1,MMAX+1))
-        delta_Ylms.slm = np.zeros((LMAX+1,MMAX+1))
+        delta_Ylms = gravtk.harmonics(lmax=LMAX, mmax=MMAX)
+        delta_Ylms.clm = np.zeros((LMAX+1, MMAX+1))
+        delta_Ylms.slm = np.zeros((LMAX+1, MMAX+1))
         # Smoothing Half-Width (CNES is a 10-day solution)
         # All other solutions are monthly solutions (HFWTH for annual = 6)
         if ((PROC == 'CNES') and (DREL in ('RL01','RL02'))):
@@ -529,13 +531,13 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
         # attributes for output files
         attributes = {}
         attributes['title'] = 'GRACE/GRACE-FO Spherical Harmonic Errors'
-        attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+        attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
         # save GRACE/GRACE-FO delta harmonics to file
         delta_Ylms.time = np.copy(tsmth)
         delta_Ylms.month = np.int64(nsmth)
         delta_Ylms.to_file(DELTA_FILE, format=DATAFORM, **attributes)
         # set the permissions mode of the output harmonics file
-        os.chmod(DELTA_FILE, MODE)
+        DELTA_FILE.chmod(mode=MODE)
         # append delta harmonics file to output files list
         output_files.append(DELTA_FILE)
     else:
@@ -561,7 +563,7 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     P11 = np.squeeze(PLM[1,1,:])
     # PLM for spherical harmonic degrees 2+
     # converted into mass and smoothed if specified
-    plmout = np.zeros((LMAX+1,MMAX+1,nlat))
+    plmout = np.zeros((LMAX+1, MMAX+1, nlat))
     for l in range(1,LMAX+1):
         m = np.arange(0,np.min([l,MMAX])+1)
         # convert to smoothed coefficients of mass
@@ -760,8 +762,8 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     # public file format in fully normalized spherical harmonics
     # local version with all descriptor flags
     a1=(PROC,DREL,model_str,slf_str,'',gia_str,delta_str,ds_str,'txt')
-    FILE1=os.path.join(DIRECTORY,file_format.format(*a1))
-    fid1 = open(FILE1, mode='w', encoding='utf8')
+    FILE1 = DIRECTORY.joinpath(file_format.format(*a1))
+    fid1 = FILE1.open(mode='w', encoding='utf8')
     # print headers for cases with and without dealiasing
     print_header(fid1)
     print_harmonic(fid1,LOVE.kl[1])
@@ -777,13 +779,13 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     # close the output file
     fid1.close()
     # set the permissions mode of the output file
-    os.chmod(FILE1, MODE)
+    FILE1.chmod(mode=MODE)
     output_files.append(FILE1)
 
     # output all degree 1 coefficients as a netCDF4 file
     a2=(PROC,DREL,model_str,slf_str,'',gia_str,delta_str,ds_str,'nc')
-    FILE2 = os.path.join(DIRECTORY,file_format.format(*a2))
-    fileID = netCDF4.Dataset(FILE2,'w',format="NETCDF4")
+    FILE2 = DIRECTORY.joinpath(file_format.format(*a2))
+    fileID = netCDF4.Dataset(FILE2, mode='w', format="NETCDF4")
     # Defining the NetCDF4 dimensions
     fileID.createDimension('run', RUNS)
     fileID.createDimension('time', n_files)
@@ -820,7 +822,7 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     # close the output file
     fileID.close()
     # set the permissions mode of the output file
-    os.chmod(FILE2, MODE)
+    FILE2.chmod(mode=MODE)
     output_files.append(FILE2)
 
     # create plot showing monte carlo iterations
@@ -866,11 +868,12 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
         fig.subplots_adjust(left=0.12,right=0.94,bottom=0.06,top=0.98,hspace=0.1)
         args = (PROC,DREL,model_str,ds_str)
         FILE = 'Geocenter_Monte_Carlo_{0}_{1}_{2}{3}.pdf'.format(*args)
-        plt.savefig(os.path.join(DIRECTORY,FILE), format='pdf')
+        PLOT1 = DIRECTORY.joinpath(FILE)
+        plt.savefig(PLOT1, format='pdf')
         plt.clf()
         # set the permissions mode of the output files
-        os.chmod(os.path.join(DIRECTORY,FILE), MODE)
-        output_files.append(os.path.join(DIRECTORY,FILE))
+        PLOT1.chmod(mode=MODE)
+        output_files.append(PLOT1)
 
     # return the list of output files
     return output_files
@@ -957,7 +960,7 @@ def print_global(fid,PROC,DREL,MODEL,GIA,SLR,S21,month):
     if (DREL == 'RL06'):
         ack.append('GRACE-FO is a joint mission of NASA (USA) and GFZ (Germany)')
     fid.write('    {0:22}: {1}\n'.format('acknowledgement','.  '.join(ack)))
-    PRODUCT_VERSION = 'Release-{0}'.format(DREL[2:])
+    PRODUCT_VERSION = f'Release-{DREL[2:]}'
     fid.write('    {0:22}: {1}\n'.format('product_version',PRODUCT_VERSION))
     fid.write('    {0:22}:\n'.format('references'))
     reference = []
@@ -1102,9 +1105,9 @@ def output_log_file(input_arguments, output_files):
     # format: monte_carlo_degree_one_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'monte_carlo_degree_one_run_{0}_PID-{1:d}.log'.format(*args)
-    DIRECTORY = os.path.join(input_arguments.directory,'geocenter')
+    DIRECTORY = pathlib.Path(input_arguments.directory).joinpath('geocenter')
     # create a unique log and open the log file
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -1124,9 +1127,9 @@ def output_error_log_file(input_arguments):
     # format: monte_carlo_degree_one_failed_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'monte_carlo_degree_one_failed_run_{0}_PID-{1:d}.log'.format(*args)
-    DIRECTORY = os.path.join(input_arguments.directory,'geocenter')
+    DIRECTORY = pathlib.Path(input_arguments.directory).joinpath('geocenter')
     # create a unique log and open the log file
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -1151,8 +1154,7 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # GRACE/GRACE-FO data processing center
     parser.add_argument('--center','-c',
@@ -1225,7 +1227,7 @@ def arguments():
         help='GIA model type to read')
     # full path to GIA file
     parser.add_argument('--gia-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='GIA file to read')
     # use atmospheric jump corrections from Fagiolini et al. (2015)
     parser.add_argument('--atm-correction',
@@ -1260,7 +1262,7 @@ def arguments():
         help='Input/Output data format for delta harmonics file')
     # mean file to remove
     parser.add_argument('--mean-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='GRACE/GRACE-FO mean file to remove from the harmonic data')
     # input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--mean-format',
@@ -1268,7 +1270,7 @@ def arguments():
         help='Input data format for GRACE/GRACE-FO mean file')
     # additional error files to be used in the monte carlo run
     parser.add_argument('--error-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         nargs='+', default=[],
         help='Additional error files to use in Monte Carlo analysis')
     # least squares solver
@@ -1286,7 +1288,7 @@ def arguments():
     # land-sea mask for calculating ocean mass and land water flux
     land_mask_file = gravtk.utilities.get_data_path(['data','land_fcn_300km.nc'])
     parser.add_argument('--mask',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         default=land_mask_file,
         help='Land-sea mask for calculating ocean mass and land water flux')
     # create output plots

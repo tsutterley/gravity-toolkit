@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GIA_model.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 
 Reads GIA data files that can come in various formats depending on the group
 Outputs spherical harmonics for the GIA rates and the GIA model parameters
@@ -96,6 +96,7 @@ REFERENCES:
     https://doi.org/10.1002/2016JB013844
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: case insensitive searching for HDF5 and netCDF4 attributes
         convert shape and ndim to harmonic class properties
         improve typing for variables in docstrings
@@ -140,12 +141,15 @@ UPDATE HISTORY:
     Updated 12/2012: changed the naming scheme for Simpson and Whitehouse
     Updated 09/2012: combined several GIA read programs into this standard
 """
-import os
 import re
 import copy
 import logging
+import pathlib
 import numpy as np
 from gravity_toolkit.harmonics import harmonics
+
+_known_gia_types = ['IJ05-R2', 'W12a', 'SM09', 'ICE6G', 'ICE6G-D', 'Wu10',
+    'AW13-ICE6G', 'AW13-IJ05', 'Caron', 'ascii', 'netCDF4', 'HDF5']
 
 def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     """
@@ -417,6 +421,15 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     # output spherical harmonic degree and order
     gia_Ylms['l'],gia_Ylms['m'] = (np.arange(LMAX+1),np.arange(LMAX+1))
 
+    # if reading a GIA model
+    if GIA in _known_gia_types:
+        # check that GIA data file is present in file system
+        input_file = pathlib.Path(input_file).expanduser().absolute()
+        if not input_file.exists():
+            raise FileNotFoundError(f'{str(input_file)} not found')
+        # log GIA file if debugging
+        logging.debug(f'Reading GIA file: {str(input_file)}')
+
     # Reading GIA files (ICE-6G and Wu have more complex formats)
     if GIA in ('IJ05-R2', 'W12a', 'SM09', 'AW13-ICE6G', 'AW13-IJ05'):
         # AW13, IJ05, W12a, SM09
@@ -424,14 +437,8 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         # IJ05 notes: need to scale by 1e-11 for geodesy-normalization
         # exponents are denoted with D for double
 
-        # check that GIA data file is present in file system
-        input_file = os.path.expanduser(input_file)
-        if not os.access(input_file, os.F_OK):
-            raise FileNotFoundError(f'{input_file} not found')
-        # log GIA file if debugging
-        logging.debug(f'Reading GIA file: {input_file}')
-        # opening gia data file and read contents
-        with open(input_file, mode='r', encoding='utf8') as f:
+        # opening GIA data file and read contents
+        with input_file.open(mode='r', encoding='utf8') as f:
             gia_data = f.read().splitlines()
         # number of lines in file
         gia_lines = len(gia_data)
@@ -459,14 +466,8 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         # spherical harmonic degrees listed only on order 0
         # spherical harmonic order is not listed in file
 
-        # check that GIA data file is present in file system
-        input_file = os.path.expanduser(input_file)
-        if not os.access(input_file, os.F_OK):
-            raise FileNotFoundError(f'{input_file} not found')
-        # log GIA file if debugging
-        logging.debug(f'Reading GIA file: {input_file}')
-        # opening gia data file and read contents
-        with open(input_file, mode='r', encoding='utf8') as f:
+        # opening GIA data file and read contents
+        with input_file.open(mode='r', encoding='utf8') as f:
             gia_data = f.read().splitlines()
 
         # counter variable
@@ -499,13 +500,7 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         # Need to convert from mm geoid to fully normalized
         rad_e = 6.371e9# Average Radius of the Earth [mm]
 
-        # check that GIA data file is present in file system
-        input_file = os.path.expanduser(input_file)
-        if not os.access(input_file, os.F_OK):
-            raise FileNotFoundError(f'{input_file} not found')
-        # log GIA file if debugging
-        logging.debug(f'Reading GIA file: {input_file}')
-        # The file starts with a header.
+        # note: the GIA file starts with a header
         # converting to numerical array (note 64 bit floating point)
         gia_data = np.loadtxt(input_file, skiprows=1, dtype='f8')
 
@@ -534,13 +529,7 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     elif (GIA == 'Caron'):
         # Caron et al. (2018)
 
-        # check that GIA data file is present in file system
-        input_file = os.path.expanduser(input_file)
-        if not os.access(input_file, os.F_OK):
-            raise FileNotFoundError(f'{input_file} not found')
-        # log GIA file if debugging
-        logging.debug(f'Reading GIA file: {input_file}')
-        # The file starts with a header.
+        # note: the GIA file starts with a header.
         # converting to numerical array (note 64 bit floating point)
         dtype = {'names':('l','m','Ylms'),'formats':('i','i','f8')}
         gia_data=np.loadtxt(input_file, skiprows=4, dtype=dtype)
@@ -564,14 +553,8 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     # Reading ICE-6G Version-D  GIA files
     elif (GIA == 'ICE6G-D'):
 
-        # check that GIA data file is present in file system
-        input_file = os.path.expanduser(input_file)
-        if not os.access(input_file, os.F_OK):
-            raise FileNotFoundError(f'{input_file} not found')
-        # log GIA file if debugging
-        logging.debug(f'Reading GIA file: {input_file}')
-        # opening gia data file and read contents
-        with open(input_file, mode='r', encoding='utf8') as f:
+        # opening GIA data file and read contents
+        with input_file.open(mode='r', encoding='utf8') as f:
             gia_data = f.read().splitlines()
         # number of lines in file
         gia_lines = len(gia_data)
@@ -622,14 +605,12 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
 
     # ascii: reformatted GIA in ascii format
     elif (GIA == 'ascii'):
-        # log GIA file if debugging
-        logging.debug(f'Reading GIA file: {input_file}')
         # reading GIA data from reformatted (simplified) ascii files
         Ylms = harmonics().from_ascii(input_file, date=False)
         Ylms.truncate(LMAX)
         gia_Ylms.update(Ylms.to_dict())
         # copy filename (without extension) for parameters
-        gia_Ylms['title'] = os.path.basename(os.path.splitext(input_file)[0])
+        gia_Ylms['title'] = input_file.stem
         gia_Ylms['citation'] = None
         gia_Ylms['reference'] = None
         gia_Ylms['url'] = None
@@ -637,8 +618,6 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     # netCDF4: reformatted GIA in netCDF4 format
     # HDF5: reformatted GIA in HDF5 format
     elif GIA in ('netCDF4','HDF5'):
-        # log GIA file if debugging
-        logging.debug(f'Reading GIA file: {input_file}')
         # reading GIA data from reformatted netCDF4 and HDF5 files
         Ylms = harmonics().from_file(input_file, format=GIA, date=False)
         Ylms.truncate(LMAX)
@@ -657,24 +636,24 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     if (GIA == 'IJ05-R2'):
         # IJ05-R2: Ivins R2 GIA Models
         # adding file specific earth parameters
-        parameters, = re.findall(file_pattern,os.path.basename(input_file))
+        parameters, = re.findall(file_pattern, input_file.name)
         gia_Ylms['title'] = f'{prefix}_{parameters}'
     elif (GIA == 'ICE6G'):
         # ICE6G: ICE-6G GIA Models
         # adding file specific earth parameters
-        parameters, = re.findall(file_pattern,os.path.basename(input_file))
+        parameters, = re.findall(file_pattern, input_file.name)
         gia_Ylms['title'] = f'{prefix}_{parameters}'
     elif (GIA == 'W12a'):
         # W12a: Whitehouse GIA Models
         # for Whitehouse W12a (BEST, LOWER, UPPER):
-        model = re.findall(file_pattern,os.path.basename(input_file)).pop()
+        model = re.findall(file_pattern, input_file.name).pop()
         gia_Ylms['title'] = f'{prefix}_{parameters[model]}'
     elif (GIA == 'SM09'):
         # SM09: Simpson/Milne GIA Models
         # making parameters in the file similar to IJ05
         # split rheological parameters between lithospheric thickness,
         # upper mantle viscosity and lower mantle viscosity
-        LTh,UMV,LMV=re.findall(file_pattern,os.path.basename(input_file)).pop()
+        LTh,UMV,LMV = re.findall(file_pattern, input_file.name).pop()
         # formatting rheology parameters similar to IJ05 models
         gia_Ylms['title'] = f'{prefix}_{LTh}_.{UMV}_{LMV}'
     elif (GIA == 'Wu10'):
@@ -686,36 +665,32 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     elif (GIA == 'ICE6G-D'):
         # ICE6G-D: ICE-6G Version-D GIA Models
         # adding file specific earth parameters
-        m1,p1,p2 = re.findall(file_pattern,os.path.basename(input_file)).pop()
+        m1,p1,p2 = re.findall(file_pattern, input_file.name).pop()
         gia_Ylms['title'] = f'{prefix}_{p1}{p2}'
     elif (GIA == 'AW13-ICE6G'):
         # AW13-ICE6G: Geruo A ICE-6G GIA Models
         # extract the ice history and case flags
-        hist,case,sf=re.findall(file_pattern,os.path.basename(input_file)).pop()
+        hist,case,sf=re.findall(file_pattern, input_file.name).pop()
         gia_Ylms['title'] = f'{prefix}_{hist}_{case}'
     elif (GIA == 'AW13-IJ05'):
         # AW13-IJ05: Geruo A IJ05-R2 GIA Models
         # adding file specific earth parameters
-        vrs,param,aux=re.findall(file_pattern,os.path.basename(input_file)).pop()
+        vrs,param,aux=re.findall(file_pattern, input_file.name).pop()
         gia_Ylms['title'] = f'{prefix}_{vrs}_{param}'
 
     # output harmonics to ascii, netCDF4 or HDF5 file
     if DATAFORM in ('ascii', 'netCDF4', 'HDF5'):
         # convert dictionary to harmonics object
         Ylms = harmonics().from_dict(gia_Ylms)
-        # attributes for output files
-        attributes = {}
-        attributes['title'] = copy.copy(gia_Ylms['title'])
-        attributes['reference'] = copy.copy(gia_Ylms['reference'])
+        title = copy.copy(gia_Ylms['title'])
         # output harmonics to file
         suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
-        args = (gia_Ylms['title'], LMAX, suffix[DATAFORM])
-        output_file = 'stokes_{0}_L{1:d}.{2}'.format(*args)
-        Ylms.to_file(os.path.join(os.path.dirname(input_file),output_file),
-            format=DATAFORM, date=False, **attributes)
+        filename = f'stokes_{title}_L{LMAX:d}.{suffix[DATAFORM]}'
+        output_file = input_file.with_name(filename)
+        Ylms.to_file(output_file, format=DATAFORM, date=False,
+            title=title, reference=gia_Ylms['reference'])
         # set permissions level of output file
-        os.chmod(os.path.join(os.path.dirname(input_file),output_file),
-            mode=kwargs['MODE'])
+        output_file.chmod(mode=kwargs['MODE'])
 
     # truncate to MMAX if specified
     if MMAX is not None:

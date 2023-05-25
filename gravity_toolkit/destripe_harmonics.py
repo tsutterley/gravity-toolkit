@@ -118,8 +118,8 @@ def destripe_harmonics(
     slmeven = np.zeros((LMAX), dtype=np.float64)
     clmodd = np.zeros((LMAX+1), dtype=np.float64)
     slmodd = np.zeros((LMAX+1), dtype=np.float64)
-    clmsm = np.zeros((LMAX+1,MMAX+1), dtype=np.float64)
-    slmsm = np.zeros((LMAX+1,MMAX+1), dtype=np.float64)
+    clmsm = np.zeros((LMAX+1, MMAX+1), dtype=np.float64)
+    slmsm = np.zeros((LMAX+1, MMAX+1), dtype=np.float64)
 
     # start of the smoothing over orders (m)
     for m in range(int(MMAX+1)):

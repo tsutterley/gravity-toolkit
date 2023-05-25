@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 u"""
 quick_mascon_regress.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (05/2023)
 Creates a regression summary file for a mascon time series file
 
 COMMAND LINE OPTIONS:
     -h, --help: Lists the command line options
     -H X, --header X: Number of rows of header text to skip
     --order X: regression fit polynomial order
+    --breakpoint X: breakpoint GRACE month for piecewise regression
     --cycles X: regression fit cyclical terms
     -U X, --units X: Units of input data
     -S, --stream: Stream regression summary to standard output
@@ -21,6 +22,9 @@ PROGRAM DEPENDENCIES:
     time_series.amplitude.py: calculates the amplitude and phase of a harmonic
 
 UPDATE HISTORY:
+    Updated 05/2023: split S2 tidal aliasing terms into GRACE and GRACE-FO eras
+        allow fit to be piecewise using a known breakpoint GRACE/GRACE-FO month
+        use pathlib to define and operate on paths
     Updated 01/2023: refactored time series analysis functions
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 05/2022: use argparse descriptions within documentation
@@ -29,13 +33,13 @@ UPDATE HISTORY:
 from __future__ import print_function
 
 import sys
-import os
+import pathlib
 import argparse
 import numpy as np
 import gravity_toolkit as gravtk
 
 # PURPOSE: Creates regression summary files for mascon files
-def run_regress(input_file,header=0,order=None,cycles=None,
+def run_regress(input_file,header=0,order=None,breakpoint=None,cycles=None,
     units=None,stream=False):
     """
     Creates a regression summary file for a mascon time series file
@@ -48,60 +52,96 @@ def run_regress(input_file,header=0,order=None,cycles=None,
     -----------------
     header: Number of rows of header text to skip
     order: regression fit polynomial order
+    breakpoint: breakpoint GRACE/GRACE-FO month for piecewise regression
     cycles regression fit cyclical terms
     units: Units of input data
     stream: Stream regression summary to standard output
     """
 
-    # Setting output parameters for each fit type
-    order_str = 'x{0:d}'.format(order)
-    coef_str = ['x{0:d}'.format(o) for o in range(order+1)]
-    unit_suffix = [' yr^{0:d}'.format(-o) if o else '' for o in range(order+1)]
-    # filename strings for cyclical terms
-    cyclic_str = {}
-    cyclic_str['SEMI'] = ['SS','SC']
-    cyclic_str['ANN'] = ['AS','AC']
-    cyclic_str['S2'] = ['S2S','S2C']
-    # unit longnames for cyclical terms
-    cyclic_longname = {}
-    cyclic_longname['SEMI'] = ['Semi-Annual Sine', 'Semi-Annual Cosine']
-    cyclic_longname['ANN'] = ['Annual Sine', 'Annual Cosine']
-    cyclic_longname['S2'] = ['S2 Tidal Alias Sine', 'S2 Tidal Alias Cosine']
-    amp_str = []
-    for i,c in enumerate(cycles):
-        if (c == 0.5):
-            flag = 'SEMI'
-        elif (c == 1.0):
-            flag = 'ANN'
-        elif (c == (161.0/365.25)):
-            flag = 'S2'
-        coef_str.extend(cyclic_str[flag])
-        unit_suffix.extend(['',''])
-        amp_str.append(flag)
-    # Fitting seasonal components
-    ncomp = len(coef_str)
-    ncycles = 2*len(cycles)
+    # read data
+    input_file = pathlib.Path(input_file).expanduser().absolute()
+    dinput = np.loadtxt(input_file, skiprows=header)
+
+    # fitting with either piecewise or polynomial regression
+    if breakpoint is not None:
+        # Setting output parameters for piecewise fit
+        breakpoint_index, = np.nonzero(dinput[:,0] == breakpoint)
+        cycle_index = 3
+        coef_str = ['x0', 'px1', 'px1']
+        unit_suffix = ['', ' yr^-1', ' yr^-1']
+        # output regression filename
+        output_file = f'{input_file.stem}_px1_{breakpoint:d}_SUMMARY.txt'
+    elif order is not None:
+        # Setting output parameters for each fit type
+        cycle_index = 1 + order
+        coef_str = ['x{0:d}'.format(o) for o in range(order+1)]
+        unit_suffix = [' yr^{0:d}'.format(-o) if o else '' for o in range(order+1)]
+        # output regression filename
+        output_file = f'{input_file.stem}_x{order:d}_SUMMARY.txt'
+    else:
+        raise ValueError('No regression fit specified')
 
     # stream output or print to file
     if stream:
         fid = sys.stdout
     else:
-        # input file directory and basename
-        ddir = os.path.dirname(input_file)
-        fileBasename,_ = os.path.splitext(os.path.basename(input_file))
+        # full path to output regression summary file
+        regress_file = input_file.with_name(output_file)
         # open the output regression summary file
-        regress_file = '{0}_x{1}_SUMMARY.txt'.format(fileBasename,order_str[-1])
-        fid = open(os.path.join(ddir, regress_file), mode='w', encoding='utf8')
+        fid = regress_file.open(mode='w', encoding='utf8')
 
-    # read data
-    dinput = np.loadtxt(os.path.expanduser(input_file), skiprows=header)
+    # amplitude string for cyclical components
+    amp_str = []
+    # extra terms for S2 tidal aliasing components or custom fits
+    terms = []
+    for i,c in enumerate(cycles):
+        if (c == 0.5):
+            coef_str.extend(['SS','SC'])
+            amp_str.append('SEMI')
+            unit_suffix.extend(['',''])
+        elif (c == 1.0):
+            coef_str.extend(['AS','AC'])
+            amp_str.append('ANN')
+            unit_suffix.extend(['',''])
+        elif (c == (161.0/365.25)):
+            # create custom terms for S2 tidal aliasing during GRACE period
+            ii, = np.nonzero(dinput[:,1] < 2018.0)
+            S2sin = np.zeros_like(dinput[:,1])
+            S2cos = np.zeros_like(dinput[:,1])
+            S2sin[ii] = np.sin(2.0*np.pi*dinput[ii,1]/np.float64(c))
+            S2cos[ii] = np.cos(2.0*np.pi*dinput[ii,1]/np.float64(c))
+            terms.append(S2sin)
+            terms.append(S2cos)
+            coef_str.extend(['S2SGRC','S2CGRC'])
+            amp_str.append('S2GRC')
+            unit_suffix.extend(['',''])
+            # create custom terms for S2 tidal aliasing during GRACE-FO period
+            ii, = np.nonzero(dinput[:,1] >= 2018.0)
+            S2sin = np.zeros_like(dinput[:,1])
+            S2cos = np.zeros_like(dinput[:,1])
+            S2sin[ii] = np.sin(2.0*np.pi*dinput[ii,1]/np.float64(c))
+            S2cos[ii] = np.cos(2.0*np.pi*dinput[ii,1]/np.float64(c))
+            terms.append(S2sin)
+            terms.append(S2cos)
+            coef_str.extend(['S2SGFO','S2CGFO'])
+            amp_str.append('S2GFO')
+            unit_suffix.extend(['',''])
+            # remove the original S2 tidal aliasing term from CYCLES list
+            cycles.remove(c)
+
     # calculate regression
-    fit = gravtk.time_series.regress(dinput[:,1], dinput[:,2],
-        ORDER=order, CYCLES=cycles)
+    if breakpoint is not None:
+        fit = gravtk.time_series.piecewise(dinput[:,1], dinput[:,2],
+            BREAKPOINT=breakpoint_index, CYCLES=cycles, TERMS=terms)
+    elif order is not None:
+        fit = gravtk.time_series.regress(dinput[:,1], dinput[:,2],
+            ORDER=order, CYCLES=cycles, TERMS=terms)
+    # Fitting seasonal components
+    ncycles = 2*len(cycles) + len(terms)
 
     # Print output to regression summary file
     # Summary filename
-    print('{0}: {1}'.format('Input File',os.path.basename(input_file)), file=fid)
+    print('{0}: {1}'.format('Input File', input_file.name), file=fid)
     # Regression Formula with Correlation Structure if Applicable
     print('Regression Formula: {0}\n'.format('+'.join(coef_str)), file=fid)
     # Value, Error and Statistical Significance
@@ -117,9 +157,9 @@ def run_regress(input_file,header=0,order=None,cycles=None,
         amp[comp] = np.zeros((ncycles//2))
         ph[comp] = np.zeros((ncycles//2))
     # calculate amplitudes and phases of cyclical components
-    for i,flag in enumerate(amp_str):
+    for i, flag in enumerate(amp_str):
         # indice pointing to the cyclical components
-        j = 1 + order + 2*i
+        j = cycle_index + 2*i
         amp['beta'][i],ph['beta'][i] = gravtk.time_series.amplitude(
             fit['beta'][j], fit['beta'][j+1]
         )
@@ -169,9 +209,10 @@ def arguments():
             time series file
         """
     )
+    group = parser.add_mutually_exclusive_group(required=True)
     # command line parameters
     parser.add_argument('file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='+',
+        type=pathlib.Path, nargs='+',
         help='Mascon data files')
     parser.add_argument('--header','-H',
         type=int, default=0,
@@ -180,9 +221,13 @@ def arguments():
     # 0: mean
     # 1: trend
     # 2: acceleration
-    parser.add_argument('--order',
-        type=int, default=2,
+    group.add_argument('--order',
+        type=int,
         help='Regression fit polynomial order')
+    # breakpoint month for piecewise regression
+    group.add_argument('--breakpoint',
+        type=int,
+        help='Breakpoint GRACE/GRACE-FO month for piecewise regression')
     # regression fit cyclical terms
     parser.add_argument('--cycles',
         type=float, default=[0.5,1.0,161.0/365.25], nargs='+',
@@ -206,8 +251,8 @@ def main():
     # run plot program for each input file
     for i,f in enumerate(args.file):
         run_regress(f, header=args.header, order=args.order,
-                    cycles=args.cycles, units=args.units,
-                    stream=args.stream)
+                    breakpoint=args.breakpoint, cycles=args.cycles,
+                    units=args.units, stream=args.stream)
 
 # run main program
 if __name__ == '__main__':

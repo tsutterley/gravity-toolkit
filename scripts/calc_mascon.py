@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_mascon.py
-Written by Tyler Sutterley (04/2023)
+Written by Tyler Sutterley (05/2023)
 
 Calculates a time-series of regional mass anomalies through a least-squares
     mascon procedure from GRACE/GRACE-FO time-variable gravity data
@@ -166,6 +166,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 04/2023: add options for least-squares solver
     Updated 02/2023: use love numbers class with additional attributes
     Updated 01/2023: refactored time series analysis functions
@@ -253,6 +254,7 @@ import os
 import re
 import time
 import logging
+import pathlib
 import argparse
 import traceback
 import numpy as np
@@ -261,7 +263,7 @@ import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(pathlib.Path(sys.argv[0]).name)
     logging.info(args)
     logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
@@ -309,9 +311,11 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     OUTPUT_DIRECTORY=None,
     MODE=0o775):
 
-    # recursively create output Directory if not currently existing
-    if (not os.access(OUTPUT_DIRECTORY, os.F_OK)):
-        os.makedirs(OUTPUT_DIRECTORY, mode=MODE, exist_ok=True)
+    # directory setup
+    base_dir = pathlib.Path(base_dir).expanduser().absolute()
+    # recursively create output directory if not currently existing
+    OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
+    OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
 
     # list object of output files for file logs (full path)
     output_files = []
@@ -390,7 +394,7 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         # using standard GRACE/GRACE-FO harmonics
         ds_str = ''
     # full path to directory for specific GRACE/GRACE-FO product
-    GRACE_Ylms.directory = Ylms['directory']
+    GRACE_Ylms.directory = pathlib.Path(Ylms['directory']).expanduser().absolute()
     # date information of GRACE/GRACE-FO coefficients
     n_files = len(GRACE_Ylms.time)
 
@@ -453,7 +457,8 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     construct_Ylms.month[:] = np.copy(GRACE_Ylms.month)
     if RECONSTRUCT:
         # input index for reconstructed spherical harmonic datafiles
-        with open(RECONSTRUCT_FILE, mode='r', encoding='utf8') as f:
+        RECONSTRUCT_FILE = pathlib.Path(RECONSTRUCT_FILE).expanduser().absolute()
+        with RECONSTRUCT_FILE.open(mode='r', encoding='utf8') as f:
             file_list = [l for l in f.read().splitlines() if parser.match(l)]
         # for each valid file in the index (iterate over mascons)
         for reconstruct_file in file_list:
@@ -473,7 +478,8 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         construct_str = ''
 
     # input mascon spherical harmonic datafiles
-    with open(MASCON_FILE, mode='r', encoding='utf8') as f:
+    MASCON_FILE = pathlib.Path(MASCON_FILE).expanduser().absolute()
+    with MASCON_FILE.open(mode='r', encoding='utf8') as f:
         mascon_files = [l for l in f.read().splitlines() if parser.match(l)]
     # number of mascons
     n_mas = len(mascon_files)
@@ -485,7 +491,7 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     mascon_list = []
     for k,fi in enumerate(mascon_files):
         # read mascon spherical harmonics
-        Ylms = gravtk.harmonics().from_file(os.path.expanduser(fi),
+        Ylms = gravtk.harmonics().from_file(fi,
             format=MASCON_FORMAT, date=False)
         # Calculating the total mass of each mascon (1 cmwe uniform)
         total_area[k] = 4.0*np.pi*(rad_e**3)*rho_e*Ylms.clm[0,0]/3.0
@@ -503,13 +509,11 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
                     Ylms.slm[l,m] -= ratio*ocean_Ylms.slm[l,m]
         # truncate mascon spherical harmonics to d/o LMAX/MMAX and add to list
         mascon_list.append(Ylms.truncate(lmax=LMAX, mmax=MMAX))
-        # mascon base is the file without directory or suffix
-        mascon_base = os.path.basename(mascon_files[k])
-        mascon_base = os.path.splitext(mascon_base)[0]
-        # if lower case, will capitalize
-        mascon_base = mascon_base.upper()
-        # if mascon name contains degree and order info, remove
-        mascon_name.append(mascon_base.replace(f'_L{LMAX:d}', ''))
+        # stem is the mascon file without directory or suffix
+        # if lower case: will capitalize
+        # if mascon name contains degree and order info: scrub from string
+        stem = re.sub(r'_L(\d+)(M\d+)?', r'', Ylms.filename.stem.upper())
+        mascon_name.append(stem)
     # create single harmonics object from list
     mascon_Ylms = gravtk.harmonics().from_list(mascon_list, date=False)
     # clear mascon list variable
@@ -520,18 +524,18 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     fargs = (PROC,DREL,DSET,LMAX,order_str,ds_str,atm_str,GRACE_Ylms.month[0],
         GRACE_Ylms.month[-1], suffix[DATAFORM])
     delta_format = '{0}_{1}_{2}_DELTA_CLM_L{3:d}{4}{5}{6}_{7:03d}-{8:03d}.{9}'
-    DELTA_FILE = os.path.join(GRACE_Ylms.directory,delta_format.format(*fargs))
+    DELTA_FILE = GRACE_Ylms.directory.joinpath(delta_format.format(*fargs))
     # check full path of the GRACE directory for delta file
     # if file was previously calculated: will read file
     # else: will calculate the GRACE/GRACE-FO error
-    if not os.access(DELTA_FILE, os.F_OK):
+    if not DELTA_FILE.exists():
         # add output delta file to list object
         output_files.append(DELTA_FILE)
 
         # Delta coefficients of GRACE time series (Error components)
-        delta_Ylms = gravtk.harmonics(lmax=LMAX,mmax=MMAX)
-        delta_Ylms.clm = np.zeros((LMAX+1,MMAX+1))
-        delta_Ylms.slm = np.zeros((LMAX+1,MMAX+1))
+        delta_Ylms = gravtk.harmonics(lmax=LMAX, mmax=MMAX)
+        delta_Ylms.clm = np.zeros((LMAX+1, MMAX+1))
+        delta_Ylms.slm = np.zeros((LMAX+1, MMAX+1))
         # Smoothing Half-Width (CNES is a 10-day solution)
         # All other solutions are monthly solutions (HFWTH for annual = 6)
         if ((PROC == 'CNES') and (DREL in ('RL01','RL02'))):
@@ -561,13 +565,13 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         # attributes for output files
         attributes = {}
         attributes['title'] = 'GRACE/GRACE-FO Spherical Harmonic Errors'
-        attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+        attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
         # save GRACE/GRACE-FO delta harmonics to file
         delta_Ylms.time = np.copy(tsmth)
         delta_Ylms.month = np.int64(nsmth)
         delta_Ylms.to_file(DELTA_FILE, format=DATAFORM, **attributes)
         # set the permissions mode of the output harmonics file
-        os.chmod(DELTA_FILE, MODE)
+        DELTA_FILE.chmod(mode=MODE)
         # append delta harmonics file to output files list
         output_files.append(DELTA_FILE)
     else:
@@ -585,17 +589,17 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
 
     # Initialing harmonics for least squares fitting
     # mascon kernel
-    M_lm = np.zeros((n_harm,n_mas))
+    M_lm = np.zeros((n_harm, n_mas))
     # mascon kernel converted to output unit
-    MA_lm = np.zeros((n_harm,n_mas))
+    MA_lm = np.zeros((n_harm, n_mas))
     # corrected clm and slm
-    Y_lm = np.zeros((n_harm,n_files))
+    Y_lm = np.zeros((n_harm, n_files))
     # sensitivity kernel
-    A_lm = np.zeros((n_harm,n_mas))
+    A_lm = np.zeros((n_harm, n_mas))
     # Satellite error harmonics
     delta_lm = np.zeros((n_harm))
     # Initializing output Mascon time-series
-    mascon = np.zeros((n_mas,n_files))
+    mascon = np.zeros((n_mas, n_files))
     # Mascon satellite error component
     M_delta = np.zeros((n_mas))
     # Initializing conversion factors
@@ -608,9 +612,6 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     ii = 0
     # Creating column array of clm/slm coefficients
     # Order is [C00...C6060,S11...S6060]
-    # Calculating factor to convert geoid spherical harmonic coefficients
-    # to coefficients of mass (Wahr, 1998)
-    coeff = rho_e*rad_e/3.0
     # Switching between Cosine and Sine Stokes
     for cs,csharm in enumerate(['clm','slm']):
         # copy cosine and sin harmonics
@@ -689,13 +690,13 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         fargs = (mascon_name[k], dset_str, gia_str.upper(), atm_str, ocean_str,
             LMAX, order_str, gw_str, ds_str, construct_str)
         file_format = '{0}{1}{2}{3}{4}_L{5:d}{6}{7}{8}{9}.txt'
-        output_file = os.path.join(OUTPUT_DIRECTORY,file_format.format(*fargs))
+        output_file = OUTPUT_DIRECTORY.joinpath(file_format.format(*fargs))
 
         # Output mascon datafiles
         # Will output each mascon time series
         # month, date, mascon mass [Gt], satellite error [Gt], mascon area [km^2]
         # open output mascon time-series file
-        fid = open(output_file, mode='w', encoding='utf8')
+        fid = output_file.open(mode='w', encoding='utf8')
         # for each date
         formatting_string = '{0:03d} {1:12.4f} {2:16.10f} {3:16.10f} {4:16.5f}'
         for t,mon in enumerate(GRACE_Ylms.month):
@@ -710,7 +711,7 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         # close the output file
         fid.close()
         # change the permissions mode
-        os.chmod(output_file, MODE)
+        output_file.chmod( MODE)
         # add output files to list object
         output_files.append(output_file)
 
@@ -723,8 +724,8 @@ def output_log_file(input_arguments, output_files):
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'calc_mascon_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(input_arguments.output_directory)
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = pathlib.Path(input_arguments.output_directory)
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -743,8 +744,8 @@ def output_error_log_file(input_arguments):
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'calc_mascon_failed_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(input_arguments.output_directory)
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = pathlib.Path(input_arguments.output_directory)
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -769,12 +770,10 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     parser.add_argument('--output-directory','-O',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Output directory for mascon files')
     # Data processing center or satellite mission
     parser.add_argument('--center','-c',
@@ -853,7 +852,7 @@ def arguments():
         help='GIA model type to read')
     # full path to GIA file
     parser.add_argument('--gia-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='GIA file to read')
     # use atmospheric jump corrections from Fagiolini et al. (2015)
     parser.add_argument('--atm-correction',
@@ -879,7 +878,7 @@ def arguments():
         choices=['Tellus','SLR','SLF','UCI','Swenson','GFZ'],
         help='Update Degree 1 coefficients with SLR or derived values')
     parser.add_argument('--geocenter-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Specific geocenter file if not default')
     parser.add_argument('--interpolate-geocenter',
         default=False, action='store_true',
@@ -909,7 +908,7 @@ def arguments():
         help='Input data format for auxiliary files')
     # mean file to remove
     parser.add_argument('--mean-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='GRACE/GRACE-FO mean file to remove from the harmonic data')
     # input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--mean-format',
@@ -917,7 +916,7 @@ def arguments():
         help='Input data format for GRACE/GRACE-FO mean file')
     # mascon index file and parameters
     parser.add_argument('--mascon-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Index file of mascons spherical harmonics')
     parser.add_argument('--mascon-format',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
@@ -937,7 +936,7 @@ def arguments():
         help='Least squares solver for sensitivity kernel solutions')
     # monthly files to be removed from the GRACE/GRACE-FO data
     parser.add_argument('--remove-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='+',
+        type=pathlib.Path, nargs='+',
         help='Monthly files to be removed from the GRACE/GRACE-FO data')
     choices = []
     choices.extend(['ascii','netCDF4','HDF5'])
@@ -953,12 +952,12 @@ def arguments():
         default=False, action='store_true',
         help='Remove reconstructed mascon time series fields')
     parser.add_argument('--reconstruct-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Reconstructed mascon time series file to be removed')
     # land-sea mask for redistributing mascon mass and land water flux
     lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
+        type=pathlib.Path, default=lsmask,
         help='Land-sea mask for redistributing mascon mass and land water flux')
     # Output log file for each job in forms
     # calc_mascon_run_2002-04-01_PID-00000.log

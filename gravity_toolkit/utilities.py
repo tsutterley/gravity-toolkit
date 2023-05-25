@@ -10,6 +10,7 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 05/2023: add reify decorator for evaluation of properties
+        use pathlib to define and operate on paths
     Updated 04/2023: use release-03 GFZ GravIS SLR and geocenter files
     Updated 03/2023: place boto3 import within try/except statement
     Updated 01/2023: add default ssl context attribute with protocol
@@ -44,7 +45,7 @@ UPDATE HISTORY:
     Updated 08/2020: add PO.DAAC Drive opener, login and download functions
     Written 08/2020
 """
-from __future__ import print_function, division
+from __future__ import print_function, division, annotations
 
 import sys
 import os
@@ -61,6 +62,7 @@ import getpass
 import inspect
 import hashlib
 import logging
+import pathlib
 import builtins
 import dateutil
 import warnings
@@ -87,23 +89,23 @@ except (ImportError, ModuleNotFoundError) as exc:
 warnings.filterwarnings("ignore")
 
 # PURPOSE: get absolute path within a package from a relative path
-def get_data_path(relpath):
+def get_data_path(relpath: list | str | pathlib.Path):
     """
     Get the absolute path within a package from a relative path
 
     Parameters
     ----------
-    relpath: str,
+    relpath: list, str or pathlib.Path
         relative path
     """
     # current file path
     filename = inspect.getframeinfo(inspect.currentframe()).filename
-    filepath = os.path.dirname(os.path.abspath(filename))
-    if isinstance(relpath,list):
+    filepath = pathlib.Path(filename).absolute().parent
+    if isinstance(relpath, list):
         # use *splat operator to extract from list
-        return os.path.join(filepath,*relpath)
-    elif isinstance(relpath,str):
-        return os.path.join(filepath,relpath)
+        return filepath.joinpath(*relpath)
+    elif isinstance(relpath, str):
+        return filepath.joinpath(relpath)
 
 class reify(object):
     """Class decorator that puts the result of the method it
@@ -121,13 +123,16 @@ class reify(object):
         return val
 
 # PURPOSE: get the hash value of a file
-def get_hash(local, algorithm='MD5'):
+def get_hash(
+        local: str | io.IOBase | pathlib.Path,
+        algorithm: str = 'MD5'
+    ):
     """
     Get the hash value from a local file or ``BytesIO`` object
 
     Parameters
     ----------
-    local: obj or str
+    local: obj, str or pathlib.Path
         BytesIO object or path to file
     algorithm: str, default 'MD5'
         hashing algorithm for checksum validation
@@ -141,10 +146,14 @@ def get_hash(local, algorithm='MD5'):
             return hashlib.md5(local.getvalue()).hexdigest()
         elif (algorithm == 'sha1'):
             return hashlib.sha1(local.getvalue()).hexdigest()
-    elif os.access(os.path.expanduser(local),os.F_OK):
+    elif isinstance(local, (str, pathlib.Path)):
         # generate checksum hash for local file
+        local = pathlib.Path(local).expanduser()
+        # if file currently doesn't exist, return empty string
+        if not local.exists():
+            return ''
         # open the local_file in binary read mode
-        with open(os.path.expanduser(local), 'rb') as local_buffer:
+        with local.open(mode='rb') as local_buffer:
             # generate checksum hash for a given type
             if (algorithm == 'MD5'):
                 return hashlib.md5(local_buffer.read()).hexdigest()
@@ -154,7 +163,10 @@ def get_hash(local, algorithm='MD5'):
         return ''
 
 # PURPOSE: get the git hash value
-def get_git_revision_hash(refname='HEAD', short=False):
+def get_git_revision_hash(
+        refname: str = 'HEAD',
+        short: bool = False
+    ):
     """
     Get the ``git`` hash value for a particular reference
 
@@ -167,8 +179,8 @@ def get_git_revision_hash(refname='HEAD', short=False):
     """
     # get path to .git directory from current file path
     filename = inspect.getframeinfo(inspect.currentframe()).filename
-    basepath = os.path.dirname(os.path.dirname(os.path.abspath(filename)))
-    gitpath = os.path.join(basepath,'.git')
+    basepath = pathlib.Path(filename).absolute().parent.parent
+    gitpath = basepath.joinpath('.git')
     # build command
     cmd = ['git', f'--git-dir={gitpath}', 'rev-parse']
     cmd.append('--short') if short else None
@@ -183,15 +195,15 @@ def get_git_status():
     """
     # get path to .git directory from current file path
     filename = inspect.getframeinfo(inspect.currentframe()).filename
-    basepath = os.path.dirname(os.path.dirname(os.path.abspath(filename)))
-    gitpath = os.path.join(basepath,'.git')
+    basepath = pathlib.Path(filename).absolute().parent.parent
+    gitpath = basepath.joinpath('.git')
     # build command
     cmd = ['git', f'--git-dir={gitpath}', 'status', '--porcelain']
     with warnings.catch_warnings():
         return bool(subprocess.check_output(cmd))
 
 # PURPOSE: recursively split a url path
-def url_split(s):
+def url_split(s: str):
     """
     Recursively split a url path into a list
 
@@ -224,7 +236,10 @@ def convert_arg_line_to_args(arg_line):
         yield arg
 
 # PURPOSE: returns the Unix timestamp value for a formatted date string
-def get_unix_time(time_string, format='%Y-%m-%d %H:%M:%S'):
+def get_unix_time(
+        time_string: str,
+        format: str = '%Y-%m-%d %H:%M:%S'
+    ):
     """
     Get the Unix timestamp value for a formatted date string
 
@@ -250,7 +265,7 @@ def get_unix_time(time_string, format='%Y-%m-%d %H:%M:%S'):
         return parsed_time.timestamp()
 
 # PURPOSE: output a time string in isoformat
-def isoformat(time_string):
+def isoformat(time_string: str):
     """
     Reformat a date string to ISO formatting
 
@@ -268,7 +283,7 @@ def isoformat(time_string):
         return parsed_time.isoformat()
 
 # PURPOSE: rounds a number to an even number less than or equal to original
-def even(value):
+def even(value: float):
     """
     Rounds a number to an even number less than or equal to original
 
@@ -280,7 +295,7 @@ def even(value):
     return 2*int(value//2)
 
 # PURPOSE: rounds a number upward to its nearest integer
-def ceil(value):
+def ceil(value: float):
     """
     Rounds a number upward to its nearest integer
 
@@ -292,56 +307,66 @@ def ceil(value):
     return -int(-value//1)
 
 # PURPOSE: make a copy of a file with all system information
-def copy(source, destination, move=False, **kwargs):
+def copy(
+        source: str | pathlib.Path,
+        destination: str | pathlib.Path,
+        move: bool = False,
+        **kwargs
+    ):
     """
     Copy or move a file with all system information
 
     Parameters
     ----------
-    source: str
+    source: str or pathlib.Path
         source file
-    destination: str
+    destination: str or pathlib.Path
         copied destination file
     move: bool, default False
         remove the source file
     """
-    source = os.path.abspath(os.path.expanduser(source))
-    destination = os.path.abspath(os.path.expanduser(destination))
+    source = pathlib.Path(source).expanduser().absolute()
+    destination = pathlib.Path(destination).expanduser().absolute()
     # log source and destination
-    logging.info(f'{source} -->\n\t{destination}')
+    logging.info(f'{str(source)} -->\n\t{str(destination)}')
     shutil.copyfile(source, destination)
     shutil.copystat(source, destination)
+    # remove the original file if moving
     if move:
-        os.remove(source)
+        source.unlink()
 
 # PURPOSE: open a unique file adding a numerical instance if existing
-def create_unique_file(filename):
+def create_unique_file(filename: str | pathlib.Path):
     """
     Open a unique file adding a numerical instance if existing
 
     Parameters
     ----------
-    filename: str
+    filename: str or pathlib.Path
         full path to output file
     """
-    # split filename into fileBasename and fileExtension
-    fileBasename, fileExtension = os.path.splitext(filename)
+    filename = pathlib.Path(filename)
     # create counter to add to the end of the filename if existing
     counter = 1
     while counter:
         try:
             # open file descriptor only if the file doesn't exist
-            fd = os.open(filename, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+            fd = filename.open(mode='xb')
         except OSError:
             pass
         else:
-            return os.fdopen(fd, 'w+')
-        # new filename adds counter the between fileBasename and fileExtension
-        filename = f'{fileBasename}_{counter:d}{fileExtension}'
+            # return the file descriptor
+            return fd
+        # new filename adds a counter before the file extension
+        filename = filename.with_name(f'{filename.stem}_{counter:d}{filename.suffix}')
         counter += 1
 
 # PURPOSE: check ftp connection
-def check_ftp_connection(HOST, username=None, password=None):
+def check_ftp_connection(
+        HOST: str,
+        username: str | None = None,
+        password: str | None = None
+    ):
     """
     Check internet connection with ftp host
 
@@ -367,8 +392,15 @@ def check_ftp_connection(HOST, username=None, password=None):
         return True
 
 # PURPOSE: list a directory on a ftp host
-def ftp_list(HOST, username=None, password=None, timeout=None,
-    basename=False, pattern=None, sort=False):
+def ftp_list(
+        HOST: str | list,
+        username: str | None = None,
+        password: str | None = None,
+        timeout: int | None = None,
+        basename: bool = False,
+        pattern: str | None = None,
+        sort: bool = False
+    ):
     """
     List a directory on a ftp host
 
@@ -402,7 +434,7 @@ def ftp_list(HOST, username=None, password=None, timeout=None,
     # try to connect to ftp host
     try:
         ftp = ftplib.FTP(HOST[0],timeout=timeout)
-    except (socket.gaierror,IOError) as exc:
+    except (socket.gaierror,IOError):
         raise RuntimeError(f'Unable to connect to {HOST[0]}')
     else:
         ftp.login(username,password)
@@ -439,12 +471,21 @@ def ftp_list(HOST, username=None, password=None, timeout=None,
         # close the ftp connection
         ftp.close()
         # return the list of items and last modified times
-        return (output,mtimes)
+        return (output, mtimes)
 
 # PURPOSE: download a file from a ftp host
-def from_ftp(HOST, username=None, password=None, timeout=None,
-    local=None, hash='', chunk=8192, verbose=False, fid=sys.stdout,
-    mode=0o775):
+def from_ftp(
+        HOST: str | list,
+        username: str | None = None,
+        password: str | None = None,
+        timeout: int | None = None,
+        local: str | pathlib.Path | None = None,
+        hash: str = '',
+        chunk: int = 8192,
+        verbose: bool = False,
+        fid=sys.stdout,
+        mode: oct = 0o775
+    ):
     """
     Download a file from a ftp host
 
@@ -458,7 +499,7 @@ def from_ftp(HOST, username=None, password=None, timeout=None,
         ftp password
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
-    local: str or NoneType, default None
+    local: str, pathlib.Path or NoneType, default None
         path to local file
     hash: str, default ''
         MD5 hash of local file
@@ -485,8 +526,8 @@ def from_ftp(HOST, username=None, password=None, timeout=None,
     # try downloading from ftp
     try:
         # try to connect to ftp host
-        ftp = ftplib.FTP(HOST[0],timeout=timeout)
-    except (socket.gaierror,IOError) as exc:
+        ftp = ftplib.FTP(HOST[0], timeout=timeout)
+    except (socket.gaierror,IOError):
         raise RuntimeError(f'Unable to connect to {HOST[0]}')
     else:
         ftp.login(username,password)
@@ -507,21 +548,20 @@ def from_ftp(HOST, username=None, password=None, timeout=None,
         # compare checksums
         if local and (hash != remote_hash):
             # convert to absolute path
-            local = os.path.abspath(local)
+            local = pathlib.Path(local).expanduser().absolute()
             # create directory if non-existent
-            if not os.access(os.path.dirname(local), os.F_OK):
-                os.makedirs(os.path.dirname(local), mode)
+            local.parent.mkdir(mode=mode, parents=True, exist_ok=True)
             # print file information
-            args = (posixpath.join(*HOST),local)
+            args = (posixpath.join(*HOST), str(local))
             logging.info('{0} -->\n\t{1}'.format(*args))
             # store bytes to file using chunked transfer encoding
             remote_buffer.seek(0)
-            with open(os.path.expanduser(local), 'wb') as f:
+            with local.open(mode='wb') as f:
                 shutil.copyfileobj(remote_buffer, f, chunk)
             # change the permissions mode
-            os.chmod(local,mode)
+            local.chmod(mode)
             # keep remote modification time of file and local access time
-            os.utime(local, (os.stat(local).st_atime, remote_mtime))
+            os.utime(local, (local.stat().st_atime, remote_mtime))
         # close the ftp connection
         ftp.close()
         # return the bytesIO object
@@ -532,7 +572,7 @@ def from_ftp(HOST, username=None, password=None, timeout=None,
 _default_ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS)
 
 # PURPOSE: check internet connection
-def check_connection(HOST, context=_default_ssl_context):
+def check_connection(HOST: str, context=_default_ssl_context):
     """
     Check internet connection with http host
 
@@ -552,9 +592,15 @@ def check_connection(HOST, context=_default_ssl_context):
         return True
 
 # PURPOSE: list a directory on an Apache http Server
-def http_list(HOST, timeout=None, context=_default_ssl_context,
-    parser=lxml.etree.HTMLParser(), format='%Y-%m-%d %H:%M',
-    pattern='', sort=False):
+def http_list(
+        HOST: str | list,
+        timeout: int | None = None,
+        context = _default_ssl_context,
+        parser = lxml.etree.HTMLParser(),
+        format: str = '%Y-%m-%d %H:%M',
+        pattern: str = '',
+        sort: bool = False
+    ):
     """
     List a directory on an Apache http Server
 
@@ -588,20 +634,20 @@ def http_list(HOST, timeout=None, context=_default_ssl_context,
     # try listing from http
     try:
         # Create and submit request.
-        request=urllib2.Request(posixpath.join(*HOST))
-        response=urllib2.urlopen(request,timeout=timeout,context=context)
-    except (urllib2.HTTPError, urllib2.URLError) as exc:
+        request = urllib2.Request(posixpath.join(*HOST))
+        response = urllib2.urlopen(request, timeout=timeout, context=context)
+    except (urllib2.HTTPError, urllib2.URLError):
         raise Exception('List error from {0}'.format(posixpath.join(*HOST)))
     else:
         # read and parse request for files (column names and modified times)
-        tree = lxml.etree.parse(response,parser)
+        tree = lxml.etree.parse(response, parser)
         colnames = tree.xpath('//tr/td[not(@*)]//a/@href')
         # get the Unix timestamp value for a modification time
         collastmod = [get_unix_time(i,format=format)
             for i in tree.xpath('//tr/td[@align="right"][1]/text()')]
         # reduce using regular expression pattern
         if pattern:
-            i = [i for i,f in enumerate(colnames) if re.search(pattern,f)]
+            i = [i for i,f in enumerate(colnames) if re.search(pattern, f)]
             # reduce list of column names and last modified times
             colnames = [colnames[indice] for indice in i]
             collastmod = [collastmod[indice] for indice in i]
@@ -612,12 +658,20 @@ def http_list(HOST, timeout=None, context=_default_ssl_context,
             colnames = [colnames[indice] for indice in i]
             collastmod = [collastmod[indice] for indice in i]
         # return the list of column names and last modified times
-        return (colnames,collastmod)
+        return (colnames, collastmod)
 
 # PURPOSE: download a file from a http host
-def from_http(HOST, timeout=None, context=_default_ssl_context,
-    local=None, hash='', chunk=16384, verbose=False, fid=sys.stdout,
-    mode=0o775):
+def from_http(
+        HOST: str | list,
+        timeout: int | None = None,
+        context = _default_ssl_context,
+        local: str | pathlib.Path | None = None,
+        hash: str = '',
+        chunk: int = 16384,
+        verbose: bool = False,
+        fid = sys.stdout,
+        mode: oct = 0o775
+    ):
     """
     Download a file from a http host
 
@@ -629,9 +683,7 @@ def from_http(HOST, timeout=None, context=_default_ssl_context,
         timeout in seconds for blocking operations
     context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
         SSL context for ``urllib`` opener object
-    timeout: int or NoneType, default None
-        timeout in seconds for blocking operations
-    local: str or NoneType, default None
+    local: str, pathlib.Path or NoneType, default None
         path to local file
     hash: str, default ''
         MD5 hash of local file
@@ -659,8 +711,8 @@ def from_http(HOST, timeout=None, context=_default_ssl_context,
     try:
         # Create and submit request.
         request = urllib2.Request(posixpath.join(*HOST))
-        response = urllib2.urlopen(request,timeout=timeout,context=context)
-    except (urllib2.HTTPError, urllib2.URLError) as exc:
+        response = urllib2.urlopen(request, timeout=timeout, context=context)
+    except:
         raise Exception('Download error from {0}'.format(posixpath.join(*HOST)))
     else:
         # copy remote file contents to bytesIO object
@@ -674,27 +726,32 @@ def from_http(HOST, timeout=None, context=_default_ssl_context,
         # compare checksums
         if local and (hash != remote_hash):
             # convert to absolute path
-            local = os.path.abspath(local)
+            local = pathlib.Path(local).expanduser().absolute()
             # create directory if non-existent
-            if not os.access(os.path.dirname(local), os.F_OK):
-                os.makedirs(os.path.dirname(local), mode)
+            local.parent.mkdir(mode=mode, parents=True, exist_ok=True)
             # print file information
-            args = (posixpath.join(*HOST),local)
+            args = (posixpath.join(*HOST), str(local))
             logging.info('{0} -->\n\t{1}'.format(*args))
             # store bytes to file using chunked transfer encoding
             remote_buffer.seek(0)
-            with open(os.path.expanduser(local), 'wb') as f:
+            with local.open(mode='wb') as f:
                 shutil.copyfileobj(remote_buffer, f, chunk)
             # change the permissions mode
-            os.chmod(local,mode)
+            local.chmod(mode)
         # return the bytesIO object
         remote_buffer.seek(0)
         return remote_buffer
 
 # PURPOSE: attempt to build an opener with netrc
-def attempt_login(urs, context=_default_ssl_context,
-    password_manager=True, get_ca_certs=False, redirect=False,
-    authorization_header=True, **kwargs):
+def attempt_login(
+        urs: str,
+        context=_default_ssl_context,
+        password_manager: bool = True,
+        get_ca_certs: bool = False,
+        redirect: bool = False,
+        authorization_header: bool = True,
+        **kwargs
+    ):
     """
     Attempt to build a ``urllib`` opener for NASA Earthdata
 
@@ -730,12 +787,14 @@ def attempt_login(urs, context=_default_ssl_context,
     kwargs.setdefault('username', os.environ.get('EARTHDATA_USERNAME'))
     kwargs.setdefault('password', os.environ.get('EARTHDATA_PASSWORD'))
     kwargs.setdefault('retries', 5)
-    kwargs.setdefault('netrc', os.path.expanduser('~/.netrc'))
+    kwargs.setdefault('netrc', pathlib.Path.home().joinpath('.netrc'))
     try:
+        # verify permissions level of netrc file
         # only necessary on jupyterhub
-        os.chmod(kwargs['netrc'], 0o600)
+        nc = pathlib.Path(kwargs['netrc']).expanduser().absolute()
+        nc.chmod(mode=0o600)
         # try retrieving credentials from netrc
-        username, _, password = netrc.netrc(kwargs['netrc']).authenticators(urs)
+        username, _, password = netrc.netrc(nc).authenticators(urs)
     except Exception as exc:
         # try retrieving credentials from environmental variables
         username, password = (kwargs['username'], kwargs['password'])
@@ -771,9 +830,16 @@ def attempt_login(urs, context=_default_ssl_context,
     raise RuntimeError('End of Retries: Check NASA Earthdata credentials')
 
 # PURPOSE: "login" to NASA Earthdata with supplied credentials
-def build_opener(username, password, context=_default_ssl_context,
-    password_manager=False, get_ca_certs=False, redirect=False,
-    authorization_header=True, urs='https://urs.earthdata.nasa.gov'):
+def build_opener(
+        username: str,
+        password: str,
+        context=_default_ssl_context,
+        password_manager: bool = False,
+        get_ca_certs: bool = False,
+        redirect: bool = False,
+        authorization_header: bool = True,
+        urs: str = 'https://urs.earthdata.nasa.gov'
+    ):
     """
     Build ``urllib`` opener for NASA Earthdata with supplied credentials
 
@@ -807,7 +873,7 @@ def build_opener(username, password, context=_default_ssl_context,
     if password_manager:
         password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
         # Add the username and password for NASA Earthdata Login system
-        password_mgr.add_password(None,urs,username,password)
+        password_mgr.add_password(None, urs, username, password)
         handler.append(urllib2.HTTPBasicAuthHandler(password_mgr))
     # Create cookie jar for storing cookies. This is used to store and return
     # the session cookie given to use by the data server (otherwise will just
@@ -827,7 +893,7 @@ def build_opener(username, password, context=_default_ssl_context,
     # add Authorization header to opener
     if authorization_header:
         b64 = base64.b64encode(f'{username}:{password}'.encode())
-        opener.addheaders = [("Authorization","Basic {0}".format(b64.decode()))]
+        opener.addheaders = [("Authorization", f"Basic {b64.decode()}")]
     # Now all calls to urllib2.urlopen use our opener.
     urllib2.install_opener(opener)
     # All calls to urllib2.urlopen will now use handler
@@ -877,8 +943,11 @@ _s3_buckets = {
 }
 
 # PURPOSE: get AWS s3 client for PO.DAAC Cumulus
-def s3_client(HOST=_s3_endpoints['podaac'], timeout=None,
-    region_name='us-west-2'):
+def s3_client(
+        HOST: str = _s3_endpoints['podaac'],
+        timeout: int | None = None,
+        region_name: str = 'us-west-2'
+    ):
     """
     Get AWS s3 client for PO.DAAC Cumulus
 
@@ -909,7 +978,7 @@ def s3_client(HOST=_s3_endpoints['podaac'], timeout=None,
     return client
 
 # PURPOSE: get a s3 bucket name from a presigned url
-def s3_bucket(presigned_url):
+def s3_bucket(presigned_url: str) -> str:
     """
     Get a s3 bucket name from a presigned url
 
@@ -928,7 +997,7 @@ def s3_bucket(presigned_url):
     return bucket
 
 # PURPOSE: get a s3 bucket key from a presigned url
-def s3_key(presigned_url):
+def s3_key(presigned_url: str) -> str:
     """
     Get a s3 bucket key from a presigned url
 
@@ -947,7 +1016,7 @@ def s3_key(presigned_url):
     return key
 
 # PURPOSE: check that entered NASA Earthdata credentials are valid
-def check_credentials(HOST='https://podaac-tools.jpl.nasa.gov/drive/files'):
+def check_credentials(HOST: str = _s3_endpoints['podaac']):
     """
     Check that entered NASA Earthdata credentials are valid
 
@@ -965,9 +1034,17 @@ def check_credentials(HOST='https://podaac-tools.jpl.nasa.gov/drive/files'):
         return True
 
 # PURPOSE: list a directory on JPL PO.DAAC/ECCO Drive https server
-def drive_list(HOST, username=None, password=None, build=True,
-    timeout=None, urs='podaac-tools.jpl.nasa.gov',
-    parser=lxml.etree.HTMLParser(), pattern='', sort=False):
+def drive_list(
+        HOST: str | list,
+        username: str | None = None,
+        password: str | None = None,
+        build: bool = True,
+        timeout: int | None = None,
+        urs: str = 'podaac-tools.jpl.nasa.gov',
+        parser=lxml.etree.HTMLParser(),
+        pattern: str = '',
+        sort: bool = False
+    ):
     """
     List a directory on
     `JPL PO.DAAC <https://podaac-tools.jpl.nasa.gov/drive>`_ or
@@ -1041,9 +1118,20 @@ def drive_list(HOST, username=None, password=None, build=True,
         return (colnames,collastmod)
 
 # PURPOSE: download a file from a PO.DAAC/ECCO Drive https server
-def from_drive(HOST, username=None, password=None, build=True,
-    timeout=None, urs='podaac-tools.jpl.nasa.gov', local=None,
-    hash='', chunk=16384, verbose=False, fid=sys.stdout, mode=0o775):
+def from_drive(
+        HOST: str | list,
+        username: str | None = None,
+        password: str | None = None,
+        build: bool = True,
+        timeout: int | None = None,
+        urs: str = 'podaac-tools.jpl.nasa.gov',
+        local: str | pathlib.Path | None = None,
+        hash: str = '',
+        chunk: int = 16384,
+        verbose: bool = False,
+        fid = sys.stdout,
+        mode: oct = 0o775
+    ):
     """
     Download a file from a
     `JPL PO.DAAC <https://podaac-tools.jpl.nasa.gov/drive>`_ or
@@ -1115,25 +1203,30 @@ def from_drive(HOST, username=None, password=None, build=True,
         # compare checksums
         if local and (hash != remote_hash):
             # convert to absolute path
-            local = os.path.abspath(local)
+            local = pathlib.Path(local).expanduser().absolute()
             # create directory if non-existent
-            if not os.access(os.path.dirname(local), os.F_OK):
-                os.makedirs(os.path.dirname(local), mode)
+            local.parent.mkdir(mode=mode, parents=True, exist_ok=True)
             # print file information
-            args = (posixpath.join(*HOST),local)
+            args = (posixpath.join(*HOST), str(local))
             logging.info('{0} -->\n\t{1}'.format(*args))
             # store bytes to file using chunked transfer encoding
             remote_buffer.seek(0)
-            with open(os.path.expanduser(local), 'wb') as f:
+            with local.open(mode='wb') as f:
                 shutil.copyfileobj(remote_buffer, f, chunk)
             # change the permissions mode
-            os.chmod(local,mode)
+            local.chmod(mode=mode)
         # return the bytesIO object
         remote_buffer.seek(0)
         return remote_buffer
 
 # PURPOSE: retrieve shortnames for GRACE/GRACE-FO products
-def cmr_product_shortname(mission, center, release, level='L2', version='0'):
+def cmr_product_shortname(
+        mission: str,
+        center: str,
+        release: str,
+        level: str = 'L2',
+        version: str = '0'
+    ):
     """
     Create a list of product shortnames for NASA Common Metadata
     Repository (CMR) queries
@@ -1232,7 +1325,12 @@ def cmr_product_shortname(mission, center, release, level='L2', version='0'):
     else:
         return cmr_shortnames
 
-def cmr_readable_granules(product, level='L2', solution='BA01', version='0'):
+def cmr_readable_granules(
+        product: str,
+        level: str = 'L2',
+        solution: str = 'BA01',
+        version: str = '0'
+    ):
     """
     Create readable granule names pattern for NASA Common Metadata
     Repository (CMR) queries
@@ -1277,7 +1375,10 @@ def cmr_readable_granules(product, level='L2', solution='BA01', version='0'):
     return pattern
 
 # PURPOSE: filter the CMR json response for desired data files
-def cmr_filter_json(search_results, endpoint="data"):
+def cmr_filter_json(
+        search_results: dict,
+        endpoint: str = 'data'
+    ):
     """
     Filter the NASA Common Metadata Repository (CMR) json
     response for desired data files
@@ -1325,7 +1426,10 @@ def cmr_filter_json(search_results, endpoint="data"):
     return (granule_names,granule_urls,granule_mtimes)
 
 # PURPOSE: filter the CMR json response for desired metadata files
-def cmr_metadata_json(search_results, endpoint="data"):
+def cmr_metadata_json(
+        search_results: dict,
+        endpoint: str = 'data'
+    ):
     """
     Filter the NASA Common Metadata Repository (CMR) json response
     for desired metadata files
@@ -1365,9 +1469,21 @@ def cmr_metadata_json(search_results, endpoint="data"):
     return collection_urls
 
 # PURPOSE: cmr queries for GRACE/GRACE-FO products
-def cmr(mission=None, center=None, release=None, level='L2', product=None,
-    solution='BA01', version='0', start_date=None, end_date=None,
-    provider='POCLOUD', endpoint='data', verbose=False, fid=sys.stdout):
+def cmr(
+        mission: str | None = None,
+        center: str | None = None,
+        release: str | None = None,
+        level: str | None = 'L2',
+        product: str | None = None,
+        solution: str | None = 'BA01',
+        version: str | None = '0',
+        start_date: str | None = None,
+        end_date: str | None = None,
+        provider: str | None = 'POCLOUD',
+        endpoint: str | None = 'data',
+        verbose: bool = False,
+        fid = sys.stdout
+    ):
     """
     Query the NASA Common Metadata Repository (CMR) for GRACE/GRACE-FO data
 
@@ -1379,24 +1495,24 @@ def cmr(mission=None, center=None, release=None, level='L2', product=None,
         GRACE/GRACE-FO processing center
     release: str or NoneType, default None
         GRACE/GRACE-FO data release
-    level: str, default 'L2'
+    level: str or NoneType, default 'L2'
         GRACE/GRACE-FO product level
     product: str or NoneType, default None
         GRACE/GRACE-FO data product
-    solution: str, default 'BA01'
+    solution: str or NoneType, default 'BA01'
         monthly gravity field solution for Release-06
-    version: str, default '0'
+    version: str or NoneType, default '0'
         GRACE/GRACE-FO Level-2 data version
     start_date: str or NoneType, default None
         starting date for CMR product query
     end_date: str or NoneType, default None
         ending date for CMR product query
-    provider: str, default 'POCLOUD'
+    provider: str or NoneType, default 'POCLOUD'
         CMR data provider
 
             - ``'PODAAC'``: PO.DAAC Drive
             - ``'POCLOUD'``: PO.DAAC Cumulus
-    endpoint: str, default 'data'
+    endpoint: str or NoneType, default 'data'
         url endpoint type
 
             - ``'data'``: PO.DAAC https archive
@@ -1486,9 +1602,18 @@ def cmr(mission=None, center=None, release=None, level='L2', product=None,
     return (granule_names, granule_urls, granule_mtimes)
 
 # PURPOSE: cmr queries for GRACE/GRACE-FO auxiliary data and documentation
-def cmr_metadata(mission=None, center=None, release=None, level='L2',
-    version='0', provider='POCLOUD', endpoint='data', pattern='',
-    verbose=False, fid=sys.stdout):
+def cmr_metadata(
+        mission: str | None = None,
+        center: str | None = None,
+        release: str | None = None,
+        level: str | None = 'L2',
+        version: str | None = '0',
+        provider: str | None = 'POCLOUD',
+        endpoint: str | None = 'data',
+        pattern: str | None = '',
+        verbose: bool = False,
+        fid = sys.stdout
+    ):
     """
     Query the NASA Common Metadata Repository (CMR) for GRACE/GRACE-FO
     auxiliary data and documentation
@@ -1572,8 +1697,14 @@ def cmr_metadata(mission=None, center=None, release=None, level='L2',
     return collection_urls
 
 # PURPOSE: create and compile regular expression operator to find GRACE files
-def compile_regex_pattern(PROC, DREL, DSET, mission=None,
-    solution=r'BA01', version=r'\d+'):
+def compile_regex_pattern(
+        PROC: str,
+        DREL: str,
+        DSET: str,
+        mission: str | None = None,
+        solution: str | None = r'BA01',
+        version: str | None = r'\d+'
+    ):
     """
     Compile regular expressor operators for finding a specified
     subset of GRACE/GRACE-FO Level-2 spherical harmonic files
@@ -1675,9 +1806,17 @@ def compile_regex_pattern(PROC, DREL, DSET, mission=None,
 # PURPOSE: download geocenter files from Sutterley and Velicogna (2019)
 # https://doi.org/10.3390/rs11182108
 # https://doi.org/10.6084/m9.figshare.7388540
-def from_figshare(directory, article='7388540', timeout=None,
-    context=_default_ssl_context, chunk=16384, verbose=False, fid=sys.stdout,
-    pattern=r'(CSR|GFZ|JPL)_(RL\d+)_(.*?)_SLF_iter.txt$', mode=0o775):
+def from_figshare(
+        directory: str | pathlib.Path,
+        article: str = '7388540',
+        timeout: int | None = None,
+        context = _default_ssl_context,
+        chunk: int | None = 16384,
+        verbose: bool = False,
+        fid = sys.stdout,
+        pattern: str = r'(CSR|GFZ|JPL)_(RL\d+)_(.*?)_SLF_iter.txt$',
+        mode: oct = 0o775
+    ):
     """
     Download [Sutterley2019]_ geocenter files from
     `figshare <https://doi.org/10.6084/m9.figshare.7388540>`_
@@ -1713,9 +1852,9 @@ def from_figshare(directory, article='7388540', timeout=None,
     # figshare host
     HOST=['https://api.figshare.com','v2','articles',article]
     # recursively create directory if non-existent
-    directory = os.path.abspath(os.path.expanduser(directory))
-    if not os.access(os.path.join(directory,'geocenter'), os.F_OK):
-        os.makedirs(os.path.join(directory,'geocenter'), mode)
+    directory = pathlib.Path(directory).expanduser().absolute()
+    local_dir = directory.joinpath('geocenter')
+    local_dir.mkdir(mode=mode, parents=True, exist_ok=True)
     # Create and submit request.
     request = urllib2.Request(posixpath.join(*HOST))
     response = urllib2.urlopen(request,timeout=timeout,context=context)
@@ -1724,19 +1863,34 @@ def from_figshare(directory, article='7388540', timeout=None,
     geocenter_files = [f for f in resp['files'] if re.match(pattern,f['name'])]
     for f in geocenter_files:
         # download geocenter file
-        original_md5 = get_hash(os.path.join(directory,'geocenter',f['name']))
-        from_http(url_split(f['download_url']),timeout=timeout,context=context,
-            local=os.path.join(directory,'geocenter',f['name']),
-            hash=original_md5,chunk=chunk,verbose=verbose,fid=fid,mode=mode)
+        local_file = local_dir.joinpath(f['name'])
+        original_md5 = get_hash(local_file)
+        from_http(f['download_url'],
+            timeout=timeout,
+            context=context,
+            local=local_file,
+            hash=original_md5,
+            chunk=chunk,
+            verbose=verbose,
+            fid=fid,
+            mode=mode)
         # verify MD5 checksums
-        computed_md5 = get_hash(os.path.join(directory,'geocenter',f['name']))
+        computed_md5 = get_hash(local_file)
         if (computed_md5 != f['supplied_md5']):
-            raise Exception('Checksum mismatch: {0}'.format(f['download_url']))
+            raise Exception(f'Checksum mismatch: {f["download_url"]}')
 
 # PURPOSE: send files to figshare using secure FTP uploader
-def to_figshare(files, username=None, password=None, directory=None,
-    timeout=None, context=ssl.SSLContext(ssl.PROTOCOL_TLS),
-    get_ca_certs=False, verbose=False, chunk=8192):
+def to_figshare(
+        files: list,
+        username: str | None = None,
+        password: str | None = None,
+        directory: str | None | pathlib.Path = None,
+        timeout: int | None = None,
+        context = _default_ssl_context,
+        get_ca_certs: bool = False,
+        verbose: bool = False,
+        chunk: int = 8192
+    ):
     """
     Send files to figshare using secure `FTP uploader
     <https://help.figshare.com/article/upload-large-datasets-and-
@@ -1784,19 +1938,28 @@ def to_figshare(files, username=None, password=None, directory=None,
         pass
     # upload each file
     for local_file in files:
+        # local file
+        local_file = pathlib.Path(local_file).expanduser().absolute()
         # remote ftp file
         ftp_remote_path = posixpath.join('data',directory,
-            os.path.basename(local_file))
+            local_file.name)
         # open local file and send bytes
-        with open(os.path.expanduser(local_file),'rb') as fp:
+        with local_file.open(mode='rb') as fp:
             ftps.storbinary(f'STOR {ftp_remote_path}', fp,
                 blocksize=chunk, callback=None, rest=None)
 
 # PURPOSE: download satellite laser ranging files from CSR
 # http://download.csr.utexas.edu/pub/slr/geocenter/GCN_L1_L2_30d_CF-CM.txt
 # http://download.csr.utexas.edu/outgoing/cheng/gct2est.220_5s
-def from_csr(directory, timeout=None, context=_default_ssl_context,
-    chunk=16384, verbose=False, fid=sys.stdout, mode=0o775):
+def from_csr(
+        directory: str | pathlib.Path,
+        timeout: int | None = None,
+        context = _default_ssl_context,
+        chunk: int | None = 16384,
+        verbose: bool = False,
+        fid = sys.stdout,
+        mode: oct = 0o775
+    ):
     """
     Download `satellite laser ranging (SLR)
     <http://download.csr.utexas.edu/pub/slr/>`_
@@ -1822,9 +1985,9 @@ def from_csr(directory, timeout=None, context=_default_ssl_context,
     # CSR download http server
     HOST = 'http://download.csr.utexas.edu'
     # recursively create directory if non-existent
-    directory = os.path.abspath(os.path.expanduser(directory))
-    if not os.access(os.path.join(directory,'geocenter'), os.F_OK):
-        os.makedirs(os.path.join(directory,'geocenter'), mode)
+    directory = pathlib.Path(directory).expanduser().absolute()
+    local_dir = directory.joinpath('geocenter')
+    local_dir.mkdir(mode=mode, parents=True, exist_ok=True)
     # download SLR 5x5, figure axis and azimuthal dependence files
     FILES = []
     FILES.append([HOST,'pub','slr','degree_5',
@@ -1834,28 +1997,46 @@ def from_csr(directory, timeout=None, context=_default_ssl_context,
     FILES.append([HOST,'pub','slr','degree_2','C22_S22_RL06.txt'])
     # for each SLR file
     for FILE in FILES:
-        original_md5 = get_hash(os.path.join(directory,FILE[-1]))
-        from_http(FILE,timeout=timeout,context=context,
-            local=os.path.join(directory,FILE[-1]),
-            hash=original_md5,chunk=chunk,verbose=verbose,
-            fid=fid,mode=mode)
+        local_file = directory.joinpath(FILE[-1])
+        original_md5 = get_hash(local_file)
+        from_http(FILE,
+            timeout=timeout,
+            context=context,
+            local=local_file,
+            hash=original_md5,
+            chunk=chunk,
+            verbose=verbose,
+            fid=fid,
+            mode=mode)
     # download CF-CM SLR and updated SLR geocenter files from Minkang Cheng
     FILES = []
     FILES.append([HOST,'pub','slr','geocenter','GCN_L1_L2_30d_CF-CM.txt'])
     FILES.append([HOST,'outgoing','cheng','gct2est.220_5s'])
     # for each SLR geocenter file
     for FILE in FILES:
-        original_md5 = get_hash(os.path.join(directory,'geocenter',FILE[-1]))
-        from_http(FILE,timeout=timeout,context=context,
-            local=os.path.join(directory,'geocenter',FILE[-1]),
-            hash=original_md5,chunk=chunk,verbose=verbose,
-            fid=fid,mode=mode)
+        local_file = local_dir.joinpath(FILE[-1])
+        original_md5 = get_hash(local_file)
+        from_http(FILE,
+            timeout=timeout,
+            context=context,
+            local=local_file,
+            hash=original_md5,
+            chunk=chunk,
+            verbose=verbose,
+            fid=fid,
+            mode=mode)
 
 # PURPOSE: download GravIS and satellite laser ranging files from GFZ
 # ftp://isdcftp.gfz-potsdam.de/grace/Level-2/GFZ/RL06_SLR_C20/
 # ftp://isdcftp.gfz-potsdam.de/grace/GravIS/GFZ/Level-2B/aux_data/
-def from_gfz(directory, timeout=None, chunk=8192, verbose=False,
-    fid=sys.stdout, mode=0o775):
+def from_gfz(
+        directory: str | pathlib.Path,
+        timeout: int | None = None,
+        chunk: int | None = 8192,
+        verbose: bool = False,
+        fid = sys.stdout,
+        mode: oct = 0o775
+    ):
     """
     Download GravIS and satellite laser ranging (SLR) files from the
     German Research Centre for Geosciences (GeoForschungsZentrum, GFZ)
@@ -1876,9 +2057,9 @@ def from_gfz(directory, timeout=None, chunk=8192, verbose=False,
         permissions mode of output local file
     """
     # recursively create directories if non-existent
-    directory = os.path.abspath(os.path.expanduser(directory))
-    if not os.access(os.path.join(directory,'geocenter'), os.F_OK):
-        os.makedirs(os.path.join(directory,'geocenter'), mode)
+    directory = pathlib.Path(directory).expanduser().absolute()
+    local_dir = directory.joinpath('geocenter')
+    local_dir.mkdir(mode=mode, parents=True, exist_ok=True)
     # SLR oblateness and combined low-degree harmonic files
     FILES = []
     FILES.append(['isdcftp.gfz-potsdam.de','grace','Level-2','GFZ',
@@ -1887,22 +2068,41 @@ def from_gfz(directory, timeout=None, chunk=8192, verbose=False,
         'Level-2B','aux_data','GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0003.dat'])
     # get each file
     for FILE in FILES:
-        local = os.path.join(directory,FILE[-1])
-        from_ftp(FILE,timeout=timeout,local=local,hash=get_hash(local),
-            chunk=chunk,verbose=verbose,fid=fid,mode=mode)
+        local_file = directory.joinpath(FILE[-1])
+        from_ftp(FILE,
+            timeout=timeout,
+            local=local_file,
+            hash=get_hash(local_file),
+            chunk=chunk,
+            verbose=verbose,
+            fid=fid,
+            mode=mode)
     # GravIS geocenter file
     FILE = ['isdcftp.gfz-potsdam.de','grace','GravIS','GFZ','Level-2B',
         'aux_data','GRAVIS-2B_GFZOP_GEOCENTER_0003.dat']
-    local = os.path.join(directory,'geocenter',FILE[-1])
-    from_ftp(FILE,timeout=timeout,local=local,hash=get_hash(local),
-        chunk=chunk,verbose=verbose,fid=fid,mode=mode)
+    local_file = local_dir.joinpath(FILE[-1])
+    from_ftp(FILE,
+        timeout=timeout,
+        local=local_file,
+        hash=get_hash(local_file),
+        chunk=chunk,
+        verbose=verbose,
+        fid=fid,
+        mode=mode)
 
 # PURPOSE: download satellite laser ranging files from GSFC
 # https://earth.gsfc.nasa.gov/geo/data/slr
-def from_gsfc(directory,
-    host='https://earth.gsfc.nasa.gov/sites/default/files/geo/slr-weekly',
-    timeout=None, context=_default_ssl_context, chunk=16384, verbose=False,
-    fid=sys.stdout, copy=False, mode=0o775):
+def from_gsfc(
+        directory: str | pathlib.Path,
+        host: str = 'https://earth.gsfc.nasa.gov/sites/default/files/geo/slr-weekly',
+        timeout: int | None = None,
+        context = _default_ssl_context,
+        chunk: int | None = 16384,
+        verbose: bool = False,
+        fid = sys.stdout,
+        copy: bool = False,
+        mode: oct = 0o775
+    ):
     """
     Download `satellite laser ranging (SLR) <https://earth.gsfc.nasa.gov/geo/data/slr/>`_
     files from NASA Goddard Space Flight Center (GSFC)
@@ -1929,17 +2129,21 @@ def from_gsfc(directory,
         permissions mode of output local file
     """
     # recursively create directory if non-existent
-    directory = os.path.abspath(os.path.expanduser(directory))
-    if not os.access(directory, os.F_OK):
-        os.makedirs(directory, mode)
+    directory = pathlib.Path(directory).expanduser().absolute()
+    directory.mkdir(mode=mode, parents=True, exist_ok=True)
     # download GSFC SLR 5x5 file
     FILE = 'gsfc_slr_5x5c61s61.txt'
-    original_md5 = get_hash(os.path.join(directory,FILE))
+    local_file = directory.joinpath(FILE)
+    original_md5 = get_hash(local_file)
     fileID = from_http(posixpath.join(host,FILE),
-        timeout=timeout, context=context,
-        local=os.path.join(directory,FILE),
-        hash=original_md5, chunk=chunk, verbose=verbose,
-        fid=fid, mode=mode)
+        timeout=timeout,
+        context=context,
+        local=local_file,
+        hash=original_md5,
+        chunk=chunk,
+        verbose=verbose,
+        fid=fid,
+        mode=mode)
     # create a dated copy for archival purposes
     if copy:
         # create copy of file for archiving
@@ -1949,17 +2153,20 @@ def from_gsfc(directory,
         # extract start and end of data date span
         span_start,span_end = re.findall(r'\d+[\s+]\w{3}[\s+]\d{4}', data_span)
         # create copy of file with date span in filename
-        COPY = 'GSFC_SLR_5x5c61s61_{0}_{1}.txt'.format(
-            time.strftime('%Y%m', time.strptime(span_start, '%d %b %Y')),
-            time.strftime('%Y%m', time.strptime(span_end, '%d %b %Y')))
-        shutil.copyfile(os.path.join(directory,FILE), os.path.join(directory,COPY))
+        YM1 = time.strftime('%Y%m', time.strptime(span_start, '%d %b %Y'))
+        YM2 = time.strftime('%Y%m', time.strptime(span_end, '%d %b %Y'))
+        COPY = f'GSFC_SLR_5x5c61s61_{YM1}_{YM2}.txt'
+        shutil.copyfile(local_file, directory.joinpath(COPY))
         # copy modification times and permissions for archive file
-        shutil.copystat(os.path.join(directory,FILE), os.path.join(directory,COPY))
+        shutil.copystat(local_file, directory.joinpath(COPY))
 
 # PURPOSE: list a directory on the GFZ ICGEM https server
 # http://icgem.gfz-potsdam.de
-def icgem_list(host='http://icgem.gfz-potsdam.de/tom_longtime',
-    timeout=None, parser=lxml.etree.HTMLParser()):
+def icgem_list(
+        host: str = 'http://icgem.gfz-potsdam.de/tom_longtime',
+        timeout: int | None = None,
+        parser=lxml.etree.HTMLParser()
+    ):
     """
     Parse the table of static gravity field models on the GFZ
     `International Centre for Global Earth Models (ICGEM) <http://icgem.gfz-potsdam.de/>`_

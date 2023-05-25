@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_icgem_costg_ftp.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (05/2023)
 Syncs GRACE/GRACE-FO/Swarm COST-G data from the GFZ International
     Centre for Global Earth Models (ICGEM)
 
@@ -38,6 +38,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
@@ -54,6 +55,7 @@ import ftplib
 import shutil
 import hashlib
 import logging
+import pathlib
 import argparse
 import posixpath
 import gravity_toolkit as gravtk
@@ -74,12 +76,10 @@ def compile_regex_pattern(MISSION, DSET):
 def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], RELEASE=None, TIMEOUT=None,
     LOG=False, LIST=False, CLOBBER=False, CHECKSUM=False, MODE=None):
 
-    # connect and login to GFZ ICGEM ftp server
-    ftp = ftplib.FTP('icgem.gfz-potsdam.de', timeout=TIMEOUT)
-    ftp.login()
-
     # check if directory exists and recursively create if not
-    os.makedirs(DIRECTORY,MODE) if not os.path.exists(DIRECTORY) else None
+    DIRECTORY = pathlib.Path(DIRECTORY).expanduser().absolute()
+    DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
+
     # dealiasing datasets for each mission
     DSET = {}
     DSET['Grace'] = ['GAC','GSM']
@@ -96,13 +96,16 @@ def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], RELEASE=None, TIMEOUT=None,
         # output to log file
         # format: GFZ_ICGEM_COST-G_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
-        LOGFILE = f'GFZ_ICGEM_COST-G_sync_{today}.log'
-        logging.basicConfig(filename=os.path.join(DIRECTORY,LOGFILE),
-            level=logging.INFO)
+        LOGFILE = DIRECTORY.joinpath(f'GFZ_ICGEM_COST-G_sync_{today}.log')
+        logging.basicConfig(filename=LOGFILE, level=logging.INFO)
         logging.info(f'GFZ ICGEM COST-G Sync Log ({today})')
     else:
         # standard output (terminal output)
         logging.basicConfig(level=logging.INFO)
+
+    # connect and login to GFZ ICGEM ftp server
+    ftp = ftplib.FTP('icgem.gfz-potsdam.de', timeout=TIMEOUT)
+    ftp.login()
 
     # find files for a particular mission
     logging.info(f'{MISSION} Spherical Harmonics:')
@@ -112,10 +115,9 @@ def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], RELEASE=None, TIMEOUT=None,
         # print string of exact data product
         logging.info(f'{MISSION}/{RELEASE}/{ds}')
         # local directory for exact data product
-        local_dir = os.path.join(DIRECTORY,LOCAL[MISSION],RELEASE,ds)
+        local_dir = DIRECTORY.joinpath(LOCAL[MISSION], RELEASE, ds)
         # check if directory exists and recursively create if not
-        if not os.path.exists(local_dir):
-            os.makedirs(local_dir,MODE)
+        local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
         # compile the regular expression operator to find files
         R1 = compile_regex_pattern(MISSION, ds)
         # set the remote path to download files
@@ -137,28 +139,29 @@ def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], RELEASE=None, TIMEOUT=None,
         for fi,remote_mtime in zip(remote_files,remote_mtimes):
             # remote and local versions of the file
             remote_path.append(fi)
-            local_file = os.path.join(local_dir,fi)
+            local_file = local_dir.joinpath(fi)
             ftp_mirror_file(ftp, remote_path, remote_mtime,
                 local_file, TIMEOUT=TIMEOUT, LIST=LIST,
                 CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
             # remove the file from the remote path list
             remote_path.remove(fi)
         # find local GRACE/GRACE-FO/Swarm files to create index
-        grace_files=[fi for fi in os.listdir(local_dir) if R1.match(fi)]
+        grace_files = sorted([f.name for f in local_dir.iterdir()
+            if R1.match(f.name)])
         # write each file to an index
-        index_file = os.path.join(local_dir,'index.txt')
-        with open(index_file, mode='w', encoding='utf8') as fid:
+        index_file = local_dir.joinpath('index.txt')
+        with index_file.open(mode='w', encoding='utf8') as fid:
             # output GRACE/GRACE-FO/Swarm filenames to index
             for fi in sorted(grace_files):
                 print(fi, file=fid)
         # change permissions of index file
-        os.chmod(index_file, MODE)
+        index_file.chmod(mode=MODE)
 
     # close the ftp connection
     ftp.quit()
     # close log file and set permissions level to MODE
     if LOG:
-        os.chmod(os.path.join(DIRECTORY,LOGFILE), MODE)
+        LOGFILE.chmod(mode=MODE)
 
 # PURPOSE: pull file from a remote host checking if file exists locally
 # and if the remote file is newer than the local file
@@ -168,11 +171,11 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
     TEST = False
     OVERWRITE = ' (clobber)'
     # check if local version of file exists
-    if CHECKSUM and os.access(local_file, os.F_OK):
+    local_file = pathlib.Path(local_file).expanduser().absolute()
+    if CHECKSUM and local_file.exists():
         # generate checksum hash for local file
         # open the local_file in binary read mode
-        with open(local_file, 'rb') as local_buffer:
-            local_hash = hashlib.md5(local_buffer.read()).hexdigest()
+        local_hash = gravtk.utilities.get_hash(local_file)
         # copy remote file contents to bytesIO object
         remote_buffer = gravtk.utilities.from_ftp(remote_path,
             timeout=TIMEOUT)
@@ -182,9 +185,9 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
         if (local_hash != remote_hash):
             TEST = True
             OVERWRITE = f' (checksums: {local_hash} {remote_hash})'
-    elif os.access(local_file, os.F_OK):
+    elif local_file.exists():
         # check last modification time of local file
-        local_mtime = os.stat(local_file).st_mtime
+        local_mtime = local_file.stat().st_mtime
         # if remote file is newer: overwrite the local file
         if (gravtk.utilities.even(remote_mtime) >
             gravtk.utilities.even(local_mtime)):
@@ -198,24 +201,24 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
         # Printing files transferred
         remote_ftp_url = posixpath.join('ftp://',*remote_path)
         logging.info(f'{remote_ftp_url} -->')
-        logging.info(f'\t{local_file}{OVERWRITE}\n')
+        logging.info(f'\t{str(local_file)}{OVERWRITE}\n')
         # if executing copy command (not only printing the files)
         if not LIST:
             # copy file from ftp server or from bytesIO object
-            if CHECKSUM and os.access(local_file, os.F_OK):
+            if CHECKSUM and local_file.exists():
                 # store bytes to file using chunked transfer encoding
                 remote_buffer.seek(0)
-                with open(local_file, 'wb') as f:
+                with local_file.open(mode='wb') as f:
                     shutil.copyfileobj(remote_buffer, f, 16 * 1024)
             else:
                 # path to remote file
                 remote_file = posixpath.join(*remote_path[1:])
                 # copy remote file contents to local file
-                with open(local_file, 'wb') as f:
+                with local_file.open(mode='wb') as f:
                     ftp.retrbinary(f'RETR {remote_file}', f.write)
             # keep remote modification time of file and local access time
-            os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
-            os.chmod(local_file, MODE)
+            os.utime(local_file, (local_file.stat().st_atime, remote_mtime))
+            local_file.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -227,8 +230,7 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # mission (GRACE, GRACE Follow-On or Swarm)
     choices = ['Grace','Grace-FO','Swarm']

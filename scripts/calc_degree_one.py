@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_degree_one.py
-Written by Tyler Sutterley (04/2023)
+Written by Tyler Sutterley (05/2023)
 
 Calculates degree 1 variations using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from ECCO and OMCT/MPIOM
@@ -167,6 +167,7 @@ REFERENCES:
         https://doi.org/10.1029/2007JB005338
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 04/2023: add options for least-squares solver
     Updated 03/2023: place matplotlib import within try/except statement
     Updated 02/2023: use love numbers class with additional attributes
@@ -251,6 +252,7 @@ import time
 import copy
 import shutil
 import logging
+import pathlib
 import argparse
 import warnings
 import traceback
@@ -277,7 +279,7 @@ warnings.filterwarnings("ignore")
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(pathlib.Path(sys.argv[0]).name)
     logging.info(args)
     logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
@@ -385,10 +387,10 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     MODE=0o775):
 
     # output directory
-    DIRECTORY = os.path.join(base_dir,'geocenter')
+    base_dir = pathlib.Path(base_dir).expanduser().absolute()
+    DIRECTORY = base_dir.joinpath('geocenter')
     # create output directory if non-existent
-    if not os.access(DIRECTORY, os.F_OK):
-        os.makedirs(DIRECTORY, mode=MODE)
+    DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
     # list object of output files for file logs (full path)
     output_files = []
 
@@ -447,7 +449,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     # degree spacing and grid dimensions
     # will create GRACE spatial fields with same dimensions
     dlon,dlat = landsea.spacing
-    nlat,nlon = landsea.shape
+    nlat, nlon = landsea.shape
     # spatial parameters in radians
     dphi = dlon*np.pi/180.0
     dth = dlat*np.pi/180.0
@@ -455,7 +457,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     phi = landsea.lon[np.newaxis,:]*np.pi/180.0
     th = (90.0 - np.squeeze(landsea.lat))*np.pi/180.0
     # create land function
-    land_function = np.zeros((nlon,nlat),dtype=np.float64)
+    land_function = np.zeros((nlon, nlat),dtype=np.float64)
     # extract land function from file
     # combine land and island levels for land function
     indx,indy = np.nonzero((landsea.data.T >= 1) & (landsea.data.T <= 3))
@@ -566,7 +568,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     # ECCO_V4r4: https://ecco.jpl.nasa.gov/drive/files/Version4/Release4/interp_monthly/
     if MODEL not in ('OMCT','MPIOM'):
         # read input data files for ascii (txt), netCDF4 (nc) or HDF5 (H5)
-        MODEL_INDEX = os.path.expanduser(MODEL_INDEX)
+        MODEL_INDEX = pathlib.Path(MODEL_INDEX).expanduser().absolute()
         OBP_Ylms = gravtk.harmonics().from_index(MODEL_INDEX,
             format=DATAFORM)
         # reduce to GRACE/GRACE-FO months and truncate to degree and order
@@ -593,7 +595,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     P11 = np.squeeze(PLM[1,1,:])
     # PLM for spherical harmonic degrees 2+ up to LMAX
     # converted into mass and smoothed if specified
-    plmout = np.zeros((LMAX+1,MMAX+1,nlat))
+    plmout = np.zeros((LMAX+1, MMAX+1, nlat))
     for l in range(1,LMAX+1):
         m = np.arange(0,np.min([l,MMAX])+1)
         # convert to smoothed coefficients of mass
@@ -834,8 +836,8 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     for AOD in ['','_wAOD']:
         # local version with all descriptor flags
         a1=(PROC,DREL,MODEL,slf_str,iter_str,slr_str,gia_str,AOD,ds_str,'txt')
-        FILE1 = os.path.join(DIRECTORY,file_format.format(*a1))
-        fid1 = open(FILE1, mode='w', encoding='utf8')
+        FILE1 = DIRECTORY.joinpath(file_format.format(*a1))
+        fid1 = FILE1.open(mode='w', encoding='utf8')
         # print headers for cases with and without dealiasing
         print_header(fid1)
         print_harmonic(fid1,LOVE.kl[1])
@@ -855,18 +857,18 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         fid1.close()
         output_files.append(FILE1)
         # set the permissions mode of the output file
-        os.chmod(FILE1, MODE)
+        FILE1.chmod(mode=MODE)
         # create public and archival copies of data
         if COPY:
             # create symbolic link for public distribution without flags
             a2=(PROC,DREL,MODEL,slf_str,iter_str,'','',AOD,'','txt')
-            FILE2 = os.path.join(DIRECTORY,file_format.format(*a2))
-            os.symlink(FILE1,FILE2) if not os.access(FILE2,os.F_OK) else None
+            FILE2 = DIRECTORY.joinpath(file_format.format(*a2))
+            os.symlink(FILE1,FILE2) if not FILE2.exists() else None
             output_files.append(FILE2)
             # create copy of file with date for archiving
-            today=time.strftime('_%Y-%m-%d',time.localtime())
+            today = time.strftime('_%Y-%m-%d',time.localtime())
             a3=(PROC,DREL,MODEL,slf_str,iter_str,'','',AOD,today,'txt')
-            FILE3 = os.path.join(DIRECTORY,file_format.format(*a3))
+            FILE3 = DIRECTORY.joinpath(file_format.format(*a3))
             shutil.copyfile(FILE1,FILE3)
             # copy modification times and permissions for archive file
             shutil.copystat(FILE1,FILE3)
@@ -876,8 +878,8 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     if ITERATIVE:
         # output all degree 1 coefficients as a netCDF4 file
         a4=(PROC,DREL,MODEL,slf_str,iter_str,slr_str,gia_str,'',ds_str,'nc')
-        FILE4=os.path.join(DIRECTORY,file_format.format(*a4))
-        fileID=netCDF4.Dataset(FILE4,'w')
+        FILE4 = DIRECTORY.joinpath(file_format.format(*a4))
+        fileID = netCDF4.Dataset(FILE4, mode='w')
         # Defining the NetCDF4 dimensions
         fileID.createDimension('iteration', n_iter)
         fileID.createDimension('time', n_files)
@@ -914,7 +916,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         # close the output file
         fileID.close()
         # set the permissions mode of the output file
-        os.chmod(FILE4, MODE)
+        FILE4.chmod(mode=MODE)
         output_files.append(FILE4)
 
     # create plot similar to Figure 1 of Swenson et al (2008)
@@ -977,12 +979,13 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         fig.subplots_adjust(left=0.1,right=0.96,bottom=0.06,top=0.98,hspace=0.1)
         args = (PROC,DREL,MODEL,slf_str,iter_str,slr_str,gia_str,ds_str)
         FILE = 'Swenson_Figure_1_{0}_{1}_{2}{3}{4}{5}{6}{7}.pdf'.format(*args)
-        plt.savefig(os.path.join(DIRECTORY,FILE), format='pdf',
-            metadata={'Title':os.path.basename(sys.argv[0])})
+        PLOT1 = DIRECTORY.joinpath(FILE)
+        plt.savefig(PLOT1, format='pdf',
+            metadata={'Title':pathlib.path(sys.argv[0]).name})
         plt.clf()
         # set the permissions mode of the output files
-        os.chmod(os.path.join(DIRECTORY,FILE), MODE)
-        output_files.append(os.path.join(DIRECTORY,FILE))
+        PLOT.chmod(mode=MODE)
+        output_files.append(PLOT1)
 
     # if ITERATIVE: create plot showing iteration solutions
     if PLOT and ITERATIVE:
@@ -1029,12 +1032,13 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         fig.subplots_adjust(left=0.12,right=0.94,bottom=0.06,top=0.98,hspace=0.1)
         args = (PROC,DREL,MODEL,slf_str,slr_str,gia_str,ds_str)
         FILE = 'Geocenter_Iterative_{0}_{1}_{2}{3}{4}{5}{6}.pdf'.format(*args)
-        plt.savefig(os.path.join(DIRECTORY,FILE), format='pdf',
-            metadata={'Title':os.path.basename(sys.argv[0])})
+        PLOT2 = DIRECTORY.joinpath(FILE)
+        plt.savefig(PLOT2, format='pdf',
+            metadata={'Title':pathlib.path(sys.argv[0]).name})
         plt.clf()
         # set the permissions mode of the output files
-        os.chmod(os.path.join(DIRECTORY,FILE), MODE)
-        output_files.append(os.path.join(DIRECTORY,FILE))
+        PLOT.chmod(mode=MODE)
+        output_files.append(PLOT2)
 
     # return the list of output files and the number of iterations
     return (output_files, n_iter)
@@ -1132,7 +1136,7 @@ def print_global(fid,PROC,DREL,MODEL,AOD,GIA,SLR,S21,month):
     if (DREL == 'RL06'):
         ack.append('GRACE-FO is a joint mission of NASA (USA) and GFZ (Germany)')
     fid.write('    {0:22}: {1}\n'.format('acknowledgement','.  '.join(ack)))
-    PRODUCT_VERSION = 'Release-{0}'.format(DREL[2:])
+    PRODUCT_VERSION = f'Release-{DREL[2:]}'
     fid.write('    {0:22}: {1}\n'.format('product_version',PRODUCT_VERSION))
     fid.write('    {0:22}:\n'.format('references'))
     reference = []
@@ -1256,9 +1260,9 @@ def output_log_file(input_arguments, output_files, n_iter):
     # format: calc_degree_one_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'calc_degree_one_run_{0}_PID-{1:d}.log'.format(*args)
-    DIRECTORY = os.path.join(input_arguments.directory,'geocenter')
+    DIRECTORY = pathlib.Path(input_arguments.directory).joinpath('geocenter')
     # create a unique log and open the log file
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -1279,9 +1283,9 @@ def output_error_log_file(input_arguments):
     # format: calc_degree_one_failed_run_2002-04-01_PID-70335.log
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'calc_degree_one_failed_run_{0}_PID-{1:d}.log'.format(*args)
-    DIRECTORY = os.path.join(input_arguments.directory,'geocenter')
+    DIRECTORY = pathlib.Path(input_arguments.directory).joinpath('geocenter')
     # create a unique log and open the log file
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -1307,8 +1311,7 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # GRACE/GRACE-FO data processing center
     parser.add_argument('--center','-c',
@@ -1377,7 +1380,7 @@ def arguments():
         help='GIA model type to read')
     # full path to GIA file
     parser.add_argument('--gia-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='GIA file to read')
     # use atmospheric jump corrections from Fagiolini et al. (2015)
     parser.add_argument('--atm-correction',
@@ -1425,11 +1428,11 @@ def arguments():
         help='Input data format for ocean models')
     # index file for ocean model harmonics
     parser.add_argument('--ocean-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Index file for ocean model harmonics')
     # mean file to remove
     parser.add_argument('--mean-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='GRACE/GRACE-FO mean file to remove from the harmonic data')
     # input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--mean-format',
@@ -1454,7 +1457,7 @@ def arguments():
     # land-sea mask for calculating ocean mass and land water flux
     land_mask_file = gravtk.utilities.get_data_path(['data','land_fcn_300km.nc'])
     parser.add_argument('--mask',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         default=land_mask_file,
         help='Land-sea mask for calculating ocean mass and land water flux')
     # create output plots

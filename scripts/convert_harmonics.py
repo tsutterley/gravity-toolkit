@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 convert_harmonics.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 Converts a file from the spatial domain into the spherical harmonic domain
 
 CALLING SEQUENCE:
@@ -62,6 +62,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: updated inputs to spatial from_ascii function
         add descriptive file-level attributes to output netCDF4/HDF5 files
     Updated 01/2023: refactored associated legendre polynomials
@@ -91,6 +92,7 @@ import os
 import re
 import copy
 import logging
+import pathlib
 import argparse
 import traceback
 import numpy as np
@@ -98,7 +100,7 @@ import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(pathlib.Path(sys.argv[0]).name)
     logging.info(args)
     logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
@@ -119,15 +121,16 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     DATAFORM=None,
     MODE=0o775):
 
+    # verify inputs
+    INPUT_FILE = pathlib.Path(INPUT_FILE).expanduser().absolute()
+    OUTPUT_FILE = pathlib.Path(OUTPUT_FILE).expanduser().absolute()
     # verify that output directory exists
-    DIRECTORY = os.path.abspath(os.path.dirname(OUTPUT_FILE))
-    if not os.access(DIRECTORY, os.F_OK):
-        os.makedirs(DIRECTORY,MODE,exist_ok=True)
+    OUTPUT_FILE.parent.mkdir(mode=MODE, parents=True, exist_ok=True)
     # attributes for output files
     attributes = {}
     attributes['product_type'] = 'gravity_field'
-    attributes['lineage'] = os.path.basename(INPUT_FILE)
-    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+    attributes['lineage'] = INPUT_FILE.name
+    attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
 
     # upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:
@@ -159,7 +162,7 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     # convert missing values to zero
     input_spatial.replace_invalid(0.0)
     # input data shape
-    nlat,nlon,nt = input_spatial.shape
+    nlat, nlon, nt = input_spatial.shape
 
     # read arrays of kl, hl, and ll Love Numbers
     LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
@@ -201,7 +204,7 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     # outputting data to file
     Ylms.to_file(OUTPUT_FILE, format=DATAFORM)
     # change output permissions level to MODE
-    os.chmod(OUTPUT_FILE, MODE)
+    OUTPUT_FILE.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -215,10 +218,10 @@ def arguments():
     # command line parameters
     # input and output file
     parser.add_argument('infile',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='?',
+        type=pathlib.Path, nargs='?',
         help='Input spatial file')
     parser.add_argument('outfile',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='?',
+        type=pathlib.Path, nargs='?',
         help='Output harmonic file')
     # maximum spherical harmonic degree and order
     parser.add_argument('--lmax','-l',

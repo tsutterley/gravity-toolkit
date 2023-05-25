@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 C20.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (05/2023)
 
 Reads in C20 spherical harmonic coefficients derived from SLR measurements
 
@@ -65,6 +65,7 @@ REFERENCES:
         https://doi.org/10.5880/GFZ.GRAVIS_06_C20_SLR
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 01/2023: refactored satellite laser ranging read functions
     Updated 04/2022: updated docstrings to numpy documentation format
         include utf-8 encoding in reads to be windows compliant
@@ -107,8 +108,8 @@ UPDATE HISTORY:
         Will accommodate upcoming GRACE RL05, which will use different SLR files
     Written 12/2011
 """
-import os
 import re
+import pathlib
 import numpy as np
 import gravity_toolkit.time
 
@@ -140,13 +141,14 @@ def C20(SLR_file, AOD=True, HEADER=True):
     """
 
     # check that SLR file exists
-    if not os.access(os.path.expanduser(SLR_file), os.F_OK):
-        raise FileNotFoundError('SLR file not found in file system')
+    SLR_file = pathlib.Path(SLR_file).expanduser().absolute()
+    if not SLR_file.exists():
+        raise FileNotFoundError(f'{str(SLR_file)} not found in file system')
 
     # output dictionary with data variables
     dinput = {}
     # determine if imported file is from PO.DAAC or CSR
-    if bool(re.search(r'C20_RL\d+',SLR_file,re.I)):
+    if bool(re.search(r'C20_RL\d+', SLR_file.name ,re.I)):
         # SLR C20 file from CSR
         # Just for checking new months when TN series isn't up to date as the
         # SLR estimates always use the full set of days in each calendar month.
@@ -161,7 +163,7 @@ def C20(SLR_file, AOD=True, HEADER=True):
         dtype['names'] = ('time','C20','delta','sigma','AOD','start','end')
         dtype['formats'] = ('f','f8','f','f','f','f','f')
         # header text is commented and won't be read
-        file_input = np.loadtxt(os.path.expanduser(SLR_file),dtype=dtype)
+        file_input = np.loadtxt(SLR_file, dtype=dtype)
         # date and GRACE/GRACE-FO month
         dinput['time'] = file_input['time']
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
@@ -175,14 +177,14 @@ def C20(SLR_file, AOD=True, HEADER=True):
         if AOD:
             # Removing AOD product that was restored in the solution
             dinput['data'] -= file_input['AOD']*1e-10
-    elif bool(re.search(r'GFZ_(RL\d+)_C20_SLR',SLR_file,re.I)):
+    elif bool(re.search(r'GFZ_(RL\d+)_C20_SLR', SLR_file.name, re.I)):
         # SLR C20 file from GFZ
         # Column 1: MJD of BEGINNING of solution span
         # Column 2: Year and fraction of year of BEGINNING of solution span
         # Column 3: Replacement C(2,0)
         # Column 4: Replacement C(2,0) - mean C(2,0) (1.0E-10)
         # Column 5: C(2,0) formal error (1.0E-10)
-        with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
+        with SLR_file.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         # number of lines contained in the file
         file_lines = len(file_contents)
@@ -229,14 +231,14 @@ def C20(SLR_file, AOD=True, HEADER=True):
         for key,val in dinput.items():
             dinput[key] = val[:t]
 
-    elif bool(re.search(r'GRAVIS-2B_GFZOP',SLR_file,re.I)):
+    elif bool(re.search(r'GRAVIS-2B_GFZOP', SLR_file.name, re.I)):
         # Combined GRACE/SLR solution file produced by GFZ
         # Column  1: MJD of BEGINNING of solution data span
         # Column  2: Year and fraction of year of BEGINNING of solution span
         # Column  3: Replacement C(2,0)
         # Column  4: Replacement C(2,0) - mean C(2,0) (1.0E-10)
         # Column  5: C(2,0) formal standard deviation (1.0E-12)
-        with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
+        with SLR_file.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         # number of lines contained in the file
         file_lines = len(file_contents)
@@ -285,9 +287,9 @@ def C20(SLR_file, AOD=True, HEADER=True):
         for key,val in dinput.items():
             dinput[key] = val[:t]
 
-    elif bool(re.search(r'TN-(11|14)',SLR_file,re.I)):
+    elif bool(re.search(r'TN-(11|14)', SLR_file.name, re.I)):
         # SLR C20 RL06 file from PO.DAAC
-        with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
+        with SLR_file.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         # number of lines contained in the file
         file_lines = len(file_contents)
@@ -346,7 +348,7 @@ def C20(SLR_file, AOD=True, HEADER=True):
             dinput[key] = val[:t]
     else:
         # SLR C20 file from PO.DAAC
-        with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
+        with SLR_file.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         # number of lines contained in the file
         file_lines = len(file_contents)

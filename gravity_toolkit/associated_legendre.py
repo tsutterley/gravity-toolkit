@@ -349,10 +349,10 @@ def plm_mohlenkamp(LMAX, x,
     sx = len(x)
 
     # Initialize the output Legendre polynomials
-    plm = np.zeros((LMAX+1,MMAX+1,sx), dtype=astype)
+    plm = np.zeros((LMAX+1, MMAX+1, sx), dtype=astype)
     dplm = np.zeros((LMAX+1,LMAX+1,sx), dtype=astype)
     # Jacobi polynomial for the recurrence relation
-    jlmm = np.zeros((LMAX+1,MMAX+1,sx))
+    jlmm = np.zeros((LMAX+1, MMAX+1, sx))
     # for x=cos(th): u= sin(th)
     u = np.sqrt(1.0 - x**2)
     # update where u==0 to eps of data type to prevent invalid divisions

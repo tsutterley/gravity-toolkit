@@ -222,14 +222,14 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
     dsin = unit_conv*data*np.sin(m*phi)
 
     # Multiplying by plm_alpha (F_l from Jacob 2012)
-    plm = np.zeros((LMAX+1,MMAX+1))
+    plm = np.zeros((LMAX+1, MMAX+1))
     # Initializing preliminary spherical harmonic matrices
-    yclm = np.zeros((LMAX+1,MMAX+1))
-    yslm = np.zeros((LMAX+1,MMAX+1))
+    yclm = np.zeros((LMAX+1, MMAX+1))
+    yslm = np.zeros((LMAX+1, MMAX+1))
     # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
-    Ylms.clm = np.zeros((LMAX+1,MMAX+1))
-    Ylms.slm = np.zeros((LMAX+1,MMAX+1))
+    Ylms.clm = np.zeros((LMAX+1, MMAX+1))
+    Ylms.slm = np.zeros((LMAX+1, MMAX+1))
     for m in range(0,MMAX+1):# MMAX+1 to include MMAX
         l = np.arange(m,LMAX+1)# LMAX+1 to include LMAX
         # rotate disc load to be centered at lat/lon

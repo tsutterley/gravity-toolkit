@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GRACE_harmonics.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 Contributions by Hugo Lecomte
 
 Reads GRACE files and extracts spherical harmonic data and drift rates (RL04)
@@ -42,6 +42,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: added regex formatting for CNES GRGS harmonics
         improve typing for variables in docstrings
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -65,11 +66,11 @@ UPDATE HISTORY:
         output file headers and parse new YAML headers for RL06 and GRACE-FO
     Written 10/2017 for public release
 """
-import os
 import re
 import io
 import gzip
 import yaml
+import pathlib
 import numpy as np
 import gravity_toolkit.time
 
@@ -185,15 +186,15 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
     grace_L2_input['l'] = np.arange(LMAX+1)
     grace_L2_input['m'] = np.arange(MMAX+1)
     # Spherical harmonic coefficient matrices to be filled from data file
-    grace_L2_input['clm'] = np.zeros((LMAX+1,MMAX+1))
-    grace_L2_input['slm'] = np.zeros((LMAX+1,MMAX+1))
+    grace_L2_input['clm'] = np.zeros((LMAX+1, MMAX+1))
+    grace_L2_input['slm'] = np.zeros((LMAX+1, MMAX+1))
     # spherical harmonic uncalibrated standard deviations
-    grace_L2_input['eclm'] = np.zeros((LMAX+1,MMAX+1))
-    grace_L2_input['eslm'] = np.zeros((LMAX+1,MMAX+1))
+    grace_L2_input['eclm'] = np.zeros((LMAX+1, MMAX+1))
+    grace_L2_input['eslm'] = np.zeros((LMAX+1, MMAX+1))
     if ((DREL == 4) and (DSET == 'GSM')):
         # clm and slm drift rates for RL04
-        drift_c = np.zeros((LMAX+1,MMAX+1))
-        drift_s = np.zeros((LMAX+1,MMAX+1))
+        drift_c = np.zeros((LMAX+1, MMAX+1))
+        drift_s = np.zeros((LMAX+1, MMAX+1))
     # set default degree 0 harmonics for intercomparability between centers
     grace_L2_input['clm'][0, 0] = 1.0
 
@@ -319,7 +320,7 @@ def parse_file(input_file):
     if isinstance(input_file, io.IOBase):
         return rx.findall(input_file.filename).pop()
     else:
-        return rx.findall(os.path.basename(input_file)).pop()
+        return rx.findall(pathlib.Path(input_file).name).pop()
 
 # PURPOSE: read input file and extract contents
 def extract_file(input_file, compressed):
@@ -335,10 +336,10 @@ def extract_file(input_file, compressed):
     """
     # tilde expansion of input file if not byteIO object
     if not isinstance(input_file, io.IOBase):
-        input_file = os.path.expanduser(input_file)
+        input_file = pathlib.Path(input_file).expanduser().absolute()
         # check that data file is present in file system
-        if not os.access(input_file, os.F_OK):
-            raise FileNotFoundError(f'{input_file} not found')
+        if not input_file.exists():
+            raise FileNotFoundError(f'{str(input_file)} not found')
     # check if file is uncompressed byteIO object
     if isinstance(input_file, io.IOBase) and not compressed:
         # extract spherical harmonic coefficients

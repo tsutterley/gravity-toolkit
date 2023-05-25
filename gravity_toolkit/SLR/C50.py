@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 C50.py
-Written by Yara Mohajerani and Tyler Sutterley (01/2023)
+Written by Yara Mohajerani and Tyler Sutterley (05/2023)
 
 Reads monthly degree 5 zonal spherical harmonic data files from SLR
 
@@ -43,6 +43,7 @@ PROGRAM DEPENDENCIES:
     read_SLR_harmonics.py: low-degree spherical harmonic coefficients from SLR
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 01/2023: refactored satellite laser ranging read functions
     Updated 04/2022: updated docstrings to numpy documentation format
         include utf-8 encoding in reads to be windows compliant
@@ -56,8 +57,8 @@ UPDATE HISTORY:
     Updated 07/2020: added function docstrings
     Written 11/2019
 """
-import os
 import re
+import pathlib
 import numpy as np
 import gravity_toolkit.time
 import gravity_toolkit.read_SLR_harmonics
@@ -91,15 +92,17 @@ def C50(SLR_file, C50_MEAN=0.0, DATE=None, HEADER=True):
     """
 
     # check that SLR file exists
-    if not os.access(os.path.expanduser(SLR_file), os.F_OK):
-        raise FileNotFoundError('SLR file not found in file system')
-    # output dictionary with input data
-    dinput = {}
+    SLR_file = pathlib.Path(SLR_file).expanduser().absolute()
+    if not SLR_file.exists():
+        raise FileNotFoundError(f'{str(SLR_file)} not found in file system')
 
-    if bool(re.search(r'GSFC_SLR_C(20)_C(30)_C(50)',SLR_file,re.I)):
+    # output dictionary with data variables
+    dinput = {}
+    # determine source of input file
+    if bool(re.search(r'GSFC_SLR_C(20)_C(30)_C(50)', SLR_file.name, re.I)):
 
         # SLR C50 RL06 file from GSFC
-        with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
+        with SLR_file.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         # number of lines contained in the file
         file_lines = len(file_contents)
@@ -156,7 +159,7 @@ def C50(SLR_file, C50_MEAN=0.0, DATE=None, HEADER=True):
         # truncate variables if necessary
         for key,val in dinput.items():
             dinput[key] = val[:t]
-    elif bool(re.search(r'gsfc_slr_5x5c61s61',SLR_file,re.I)):
+    elif bool(re.search(r'gsfc_slr_5x5c61s61', SLR_file.name, re.I)):
         # read 5x5 + 6,1 file from GSFC and extract coefficients
         Ylms = gravity_toolkit.read_SLR_harmonics(SLR_file, HEADER=True)
         # calculate 28-day moving-average solution from 7-day arcs
@@ -164,9 +167,9 @@ def C50(SLR_file, C50_MEAN=0.0, DATE=None, HEADER=True):
             Ylms['clm'][5,0,:], DATE=DATE, NEIGHBORS=28))
         # no estimated spherical harmonic errors
         dinput['error'] = np.zeros_like(DATE,dtype='f8')
-    elif bool(re.search(r'C50_LARES',SLR_file,re.I)):
+    elif bool(re.search(r'C50_LARES', SLR_file.name, re.I)):
         # read LARES filtered values
-        LARES_input = np.loadtxt(SLR_file,skiprows=1)
+        LARES_input = np.loadtxt(SLR_file, skiprows=1)
         dinput['time'] = LARES_input[:,0].copy()
         # convert C50 from anomalies to absolute
         dinput['data'] = 1e-10*LARES_input[:,1] + C50_MEAN

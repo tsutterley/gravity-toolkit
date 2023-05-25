@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 u"""
-run_sea_level_equation.py (03/2023)
+run_sea_level_equation.py (05/2023)
 Solves the sea level equation with the option of including polar motion feedback
 Uses a Clenshaw summation to calculate the spherical harmonic summation
 
@@ -68,6 +68,7 @@ REFERENCES:
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: add root attributes to output netCDF4 and HDF5 files
     Updated 02/2023: use love numbers class with additional attributes
     Updated 01/2023: refactored associated legendre polynomials
@@ -111,6 +112,7 @@ import sys
 import os
 import re
 import logging
+import pathlib
 import argparse
 import traceback
 import numpy as np
@@ -119,7 +121,7 @@ import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(pathlib.Path(sys.argv[0]).name)
     logging.info(args)
     logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
@@ -140,10 +142,14 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     DATE=False,
     MODE=0o775):
 
+    # set default paths
+    INPUT_FILE = pathlib.Path(INPUT_FILE).expanduser().absolute()
+    OUTPUT_FILE = pathlib.Path(OUTPUT_FILE).expanduser().absolute()
+    LANDMASK = pathlib.Path(LANDMASK).expanduser().absolute()
     # output attributes for spatial files
     attributes = collections.OrderedDict()
-    attributes['lineage'] = os.path.basename(INPUT_FILE)
-    attributes['land_sea_mask'] = os.path.basename(LANDMASK)
+    attributes['lineage'] = INPUT_FILE.name
+    attributes['land_sea_mask'] = LANDMASK.name
     attributes['title'] = 'Sea_Level_Fingerprint'
     attributes['max_degree'] = LMAX
     attributes['iterations'] = ITERATIONS
@@ -155,7 +161,7 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
         varname='LSMASK')
     # create land function
     nth,nphi = landsea.shape
-    land_function = np.zeros((nth,nphi),dtype=np.float64)
+    land_function = np.zeros((nth, nphi), dtype=np.float64)
     # calculate colatitude in radians
     th = (90.0 - landsea.lat)*np.pi/180.0
     # extract land function from file
@@ -222,7 +228,7 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     # remove singleton dimensions if necessary
     sea_level.squeeze()
     # add attributes to output spatial field
-    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+    attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
     sea_level.attributes['ROOT'] = attributes
 
     # attributes for output files
@@ -243,7 +249,7 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
         # HDF5 (.H5)
         sea_level.to_HDF5(OUTPUT_FILE, date=DATE, **kwargs)
     # set the permissions mode of the output file
-    os.chmod(OUTPUT_FILE, MODE)
+    OUTPUT_FILE.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -257,15 +263,15 @@ def arguments():
     # command line parameters
     # input and output file
     parser.add_argument('infile',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='?',
+        type=pathlib.Path, nargs='?',
         help='Input load file')
     parser.add_argument('outfile',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='?',
+        type=pathlib.Path, nargs='?',
         help='Output sea level fingerprints file')
     # land mask file
     lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
+        type=pathlib.Path, default=lsmask,
         help='Land-sea mask for calculating sea level fingerprints')
     # maximum spherical harmonic degree and order
     parser.add_argument('--lmax','-l',

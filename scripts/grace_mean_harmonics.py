@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_mean_harmonics.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 
 Calculates the temporal mean of the GRACE/GRACE-FO spherical harmonics
     for a given date range from a set of parameters
@@ -72,6 +72,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: add root attributes to output netCDF4 and HDF5 files
         convert shape and ndim to harmonic class properties
     Updated 12/2022: single implicit import of gravity toolkit
@@ -115,6 +116,7 @@ import sys
 import os
 import time
 import logging
+import pathlib
 import argparse
 import numpy as np
 import traceback
@@ -123,7 +125,7 @@ import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(pathlib.Path(sys.argv[0]).name)
     logging.info(args)
     logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
@@ -152,6 +154,9 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
     MEANFORM=None,
     VERBOSE=0,
     MODE=0o775):
+
+    # input directory setup
+    base_dir = pathlib.Path(base_dir).expanduser().absolute()
 
     # attributes for output files
     attributes = collections.OrderedDict()
@@ -194,15 +199,15 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
 
     # default output filename if not entering via parameter file
     if not MEAN_FILE:
-        DIRECTORY = os.path.expanduser(input_Ylms['directory'])
+        DIRECTORY = pathlib.Path(input_Ylms['directory']).expanduser().absolute()
         args = (PROC,DREL,DSET,grace_str,LMAX,order_str,START,END,suffix)
         file_format = '{0}_{1}_{2}_MEAN_CLM{3}_L{4:d}{5}_{6:03d}-{7:03d}.{8}'
-        MEAN_FILE = os.path.join(DIRECTORY,file_format.format(*args))
+        MEAN_FILE = DIRECTORY.joinpath(file_format.format(*args))
     else:
-        DIRECTORY = os.path.dirname(MEAN_FILE)
+        MEAN_FILE = pathlib.Path(MEAN_FILE).expanduser().absolute()
+        DIRECTORY = MEAN_FILE.parent
     # recursively create output directory if non-existent
-    if not os.access(DIRECTORY, os.F_OK):
-        os.makedirs(DIRECTORY, MODE)
+    DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
 
     # output spherical harmonics for the static field
     if (MEANFORM == 'gfc'):
@@ -212,13 +217,13 @@ def grace_mean_harmonics(base_dir, PROC, DREL, DSET, LMAX,
     else:
         # add attributes from input GRACE fields
         attributes.update(input_Ylms.get('attributes'))
-        attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+        attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
         # output mean field to specified file format
         mean_Ylms.attributes['ROOT'] = attributes
         mean_Ylms.to_file(MEAN_FILE, format=MEANFORM,
             verbose=VERBOSE)
     # change the permissions mode
-    os.chmod(MEAN_FILE, MODE)
+    MEAN_FILE.chmod(mode=MODE)
 
     # return the output file
     return MEAN_FILE
@@ -258,12 +263,12 @@ class mean(gravtk.harmonics):
             harmonics objects contain date information
             keyword arguments for gfc output
         """
-        self.filename = os.path.expanduser(filename)
+        self.filename = pathlib.Path(filename).expanduser().absolute()
         # set default verbosity
         kwargs.setdefault('verbose',False)
-        logging.info(self.filename)
+        logging.info(str(self.filename))
         # open the output file
-        fid = open(self.filename, mode='w', encoding='utf8')
+        fid = self.filename.open(mode='w', encoding='utf8')
         # print the header informat
         self.print_header(fid)
         # output file format
@@ -299,8 +304,8 @@ def output_log_file(input_arguments, output_file):
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_mean_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(input_arguments.directory)
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = pathlib.Path(input_arguments.directory)
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -318,8 +323,8 @@ def output_error_log_file(input_arguments):
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_mean_failed_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(input_arguments.directory)
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = pathlib.Path(input_arguments.directory)
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -343,8 +348,7 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # Data processing center or satellite mission
     parser.add_argument('--center','-c',
@@ -401,7 +405,7 @@ def arguments():
         choices=['Tellus','SLR','SLF','UCI','Swenson','GFZ'],
         help='Update Degree 1 coefficients with SLR or derived values')
     parser.add_argument('--geocenter-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Specific geocenter file if not default')
     parser.add_argument('--interpolate-geocenter',
         default=False, action='store_true',
@@ -427,7 +431,7 @@ def arguments():
         help='Replace C50 coefficients with SLR values')
     # mean file to remove
     parser.add_argument('--mean-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Output GRACE/GRACE-FO mean file')
     # input data format (ascii, netCDF4, HDF5, gfc)
     parser.add_argument('--mean-format',

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ocean_stokes.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 
 Reads a land-sea mask and converts to a series of spherical harmonics
 
@@ -43,6 +43,7 @@ REFERENCES:
     Earth and Space Science, 7, 2020. https://doi.org/10.1029/2019EA000860
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: fixed docstring summary of ocean stokes function
         improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -57,6 +58,7 @@ UPDATE HISTORY:
     Updated 05/2015: added parameter MMAX for MMAX != LMAX
     Written 03/2015
 """
+import pathlib
 import numpy as np
 from gravity_toolkit.spatial import spatial
 from gravity_toolkit.gen_stokes import gen_stokes
@@ -92,6 +94,10 @@ def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
     m: np.ndarray
         spherical harmonic order to MMAX
     """
+    # verify that land-sea mask file exists
+    LANDMASK = pathlib.Path(LANDMASK).expanduser().absolute()
+    if not LANDMASK.exists():
+        raise FileNotFoundError(f'{str(LANDMASK)} not found in file system')
     # maximum spherical harmonic order
     MMAX = np.copy(LMAX) if MMAX is None else MMAX
     # Read Land-Sea Mask of specified input file

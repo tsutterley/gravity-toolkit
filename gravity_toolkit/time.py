@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 time.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 Contributions by Hugo Lecomte
 
 Utilities for calculating time operations
@@ -13,6 +13,7 @@ PYTHON DEPENDENCIES:
         https://dateutil.readthedocs.io/en/stable/
 
 UPDATE HISTORY:
+    Updated 05/2023: convert a string with time zone information to datetime
     Updated 03/2023: added regex formatting for CNES GRGS harmonics
         improve typing for variables in docstrings
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -33,9 +34,9 @@ UPDATE HISTORY:
     Updated 08/2020: added NASA Earthdata routines for downloading from CDDIS
     Written 07/2020
 """
-import os
 import re
 import copy
+import pathlib
 import warnings
 import datetime
 import numpy as np
@@ -63,6 +64,30 @@ _to_sec['common_years'] = 365.0 * 86400.0
 _to_sec['year'] = 365.25 * 86400.0
 _to_sec['years'] = 365.25 * 86400.0
 
+# PURPOSE: parse a date string and convert to a datetime object in UTC
+def parse(date_string):
+    """
+    Parse a date string and convert to a naive ``datetime`` object in UTC
+
+    Parameters
+    ----------
+    date_string: str
+        formatted time string
+
+    Returns
+    -------
+    date: obj
+        output ``datetime`` object
+    """
+    # parse the date string
+    date = dateutil.parser.parse(date_string)
+    # convert to UTC if containing time-zone information
+    # then drop the timezone information to prevent unsupported errors
+    if date.tzinfo:
+        date = date.astimezone(dateutil.tz.UTC).replace(tzinfo=None)
+    # return the datetime object
+    return date
+
 # PURPOSE: parse a date string into epoch and units scale
 def parse_date_string(date_string):
     """
@@ -85,7 +110,7 @@ def parse_date_string(date_string):
     """
     # try parsing the original date string as a date
     try:
-        epoch = dateutil.parser.parse(date_string)
+        epoch = parse(date_string)
     except ValueError:
         pass
     else:
@@ -113,7 +138,7 @@ def split_date_string(date_string):
     except ValueError:
         raise ValueError(f'Invalid format: {date_string}')
     else:
-        return (units.lower(),dateutil.parser.parse(epoch))
+        return (units.lower(), parse(epoch))
 
 # PURPOSE: convert a datetime object into a list
 def datetime_to_list(date):
@@ -142,7 +167,7 @@ def parse_grace_file(granule):
         GRACE/GRACE-FO Level-2 spherical harmonic data file
     """
     # verify that filename is reduced to basename
-    file_basename = os.path.basename(granule)
+    file_basename = pathlib.Path(granule).name
     # compile numerical expression operator for parameters from files
     # UTCSR: The University of Texas at Austin Center for Space Research
     # EIGEN: GFZ German Research Center for Geosciences (RL01-RL05)
@@ -186,7 +211,7 @@ def parse_gfc_file(granule, PROC, DSET):
             - ``'GSM'``: corrected monthly static gravity field product
     """
     # verify that filename is reduced to basename
-    file_basename = os.path.basename(granule)
+    file_basename = pathlib.Path(granule).name
     # extract parameters from input filename
     if (PROC == 'GRAZ'):
         # regular expression operators for ITSG data and models
@@ -271,7 +296,7 @@ def reduce_by_date(granules):
             versions = []
             for i in indices:
                 # verify that filename is reduced to basename
-                file_basename = os.path.basename(granules[i])
+                file_basename = pathlib.Path(granules[i]).name
                 # parse filename to get file version
                 PFX,SY,SD,EY,ED,AUX,PRC,F1,DRL,VER,F2,SFX = \
                     rx.findall(file_basename).pop()

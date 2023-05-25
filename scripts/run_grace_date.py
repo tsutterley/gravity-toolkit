@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 run_grace_date.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (05/2023)
 
 Wrapper program for running GRACE date and months programs
 
@@ -47,6 +47,7 @@ PROGRAM DEPENDENCIES:
     grace_months_index.py: creates a single file showing the GRACE dates
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 04/2022: use argparse descriptions within documentation
     Updated 12/2021: can use variable loglevels for verbose output
@@ -70,8 +71,8 @@ UPDATE HISTORY:
 from __future__ import print_function
 
 import sys
-import os
 import logging
+import pathlib
 import argparse
 import gravity_toolkit as gravtk
 
@@ -125,8 +126,7 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # Data processing center or satellite mission
     parser.add_argument('--center','-c',

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 plot_global_grid_maps.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 Creates GMT-like animations in a Plate Carree (Equirectangular) projection
 
 PYTHON DEPENDENCIES:
@@ -23,6 +23,7 @@ PYTHON DEPENDENCIES:
         https://github.com/GeospatialPython/pyshp
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: switch from parameter files to argparse arguments
         updated inputs to spatial from_file function
     Updated 07/2022: place some imports behind try/except statements
@@ -53,6 +54,7 @@ import os
 import copy
 import time
 import logging
+import pathlib
 import argparse
 import warnings
 import traceback
@@ -97,23 +99,23 @@ except (NameError,ValueError) as exc:
     pass
 
 # PURPOSE: keep track of threads
-def info(title):
-    print(os.path.basename(sys.argv[0]))
-    print(title)
-    print(f'module name: {__name__}')
+def info(args):
+    logging.info(pathlib.Path(sys.argv[0]).name)
+    logging.info(args)
+    logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        print(f'parent process: {os.getppid():d}')
-    print(f'process id: {os.getpid():d}')
+        logging.info(f'parent process: {os.getppid():d}')
+    logging.info(f'process id: {os.getpid():d}')
 
 # PURPOSE plot coastlines and islands (GSHHS with G250 Greenland)
 def plot_coastline(ax, base_dir, LINEWIDTH=0.5):
     # read the coastline shape file
-    coastline_dir = os.path.join(base_dir,'masks','G250')
+    coastline_dir = base_dir.joinpath('masks','G250')
     coastline_shape_files = []
     coastline_shape_files.append('GSHHS_i_L1_no_greenland.shp')
     coastline_shape_files.append('greenland_coastline_islands.shp')
     for fi,S in zip(coastline_shape_files,[1000,200]):
-        shape_input = shapefile.Reader(os.path.join(coastline_dir,fi))
+        shape_input = shapefile.Reader(coastline_dir.joinpath(fi))
         shape_entities = shape_input.shapes()
         # for each entity within the shapefile
         for c,ent in enumerate(shape_entities[:S]):
@@ -125,7 +127,7 @@ def plot_coastline(ax, base_dir, LINEWIDTH=0.5):
 def plot_grounded_ice(ax, base_dir, LINEWIDTH=0.5):
     coast_file = ['masks','IceBoundaries_Antarctica_v02',
         'ant_ice_sheet_islands_v2.shp']
-    shape_input = shapefile.Reader(os.path.join(base_dir,*coast_file))
+    shape_input = shapefile.Reader(base_dir.joinpath(*coast_file))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     i = [i for i,e in enumerate(shape_entities) if (np.ndim(e.points) > 1)]
@@ -250,7 +252,7 @@ def animate_grid(base_dir, FILENAME,
 
     # create movie writer objects
     FFMpegWriter = animation.writers['ffmpeg']
-    metadata = dict(title=os.path.basename(sys.argv[0]), artist='Matplotlib',
+    metadata = dict(title=pathlib.Path(sys.argv[0]).name, artist='Matplotlib',
         date_created=time.strftime('%Y-%m-%d',time.localtime()))
     # bitrate to be determined automatically by underlying utility
     writer = FFMpegWriter(fps=8, metadata=metadata, bitrate=-1,
@@ -366,10 +368,9 @@ def animate_grid(base_dir, FILENAME,
     # adjust subplot within figure
     fig.subplots_adjust(left=0.04,right=0.96,bottom=0.05,top=0.96)
 
-       # replace data and contours to create movie frames
-    # create output directory if non-existent
-    if not os.access(os.path.dirname(FIGURE_FILE), os.F_OK):
-        os.makedirs(os.path.dirname(FIGURE_FILE), MODE)
+       # create output directory if non-existent
+    FIGURE_FILE.parent.mkdir(mode=MODE, parents=True, exist_ok=True)
+    # replace data and contours to create movie frames
     # create image for each frame
     with writer.saving(fig, FIGURE_FILE, FIGURE_DPI):
         # for each input file
@@ -440,7 +441,7 @@ def animate_grid(base_dir, FILENAME,
             # clear figure axes of any contour collections
             [c.remove() for cntr in contours for c in cntr.collections]
     # change the permissions mode
-    os.chmod(FIGURE_FILE, MODE)
+    FIGURE_FILE.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -453,12 +454,11 @@ def arguments():
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     parser.add_argument('infile',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Input grid file')
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # Input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--format','-F',
@@ -467,7 +467,7 @@ def arguments():
     # land-sea mask
     lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
+        type=pathlib.Path, default=lsmask,
         help='Land-sea mask')
     # output grid parameters
     parser.add_argument('--spacing',
@@ -501,7 +501,7 @@ def arguments():
         choices=sorted(cmap_set),
         help='Named Matplotlib colormap')
     parser.add_argument('--cpt-file','-c',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Input Color Palette Table (.cpt) file')
     # color map alpha
     parser.add_argument('--alpha','-a',
@@ -545,7 +545,7 @@ def arguments():
         help='Input grid file')
     # output file, format and dpi
     parser.add_argument('--figure-file','-O',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Output figure file')
     parser.add_argument('--figure-dpi','-d',
         type=int, default=180,

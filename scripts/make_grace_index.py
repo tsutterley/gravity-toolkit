@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 make_grace_index.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (05/2023)
 Creates index files of GRACE/GRACE-FO Level-2 data
 
 CALLING SEQUENCE:
@@ -23,6 +23,7 @@ PYTHON DEPENDENCIES:
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 08/2022: make the data product optional
@@ -31,15 +32,17 @@ UPDATE HISTORY:
 from __future__ import print_function
 
 import sys
-import os
 import logging
 import argparse
+import pathlib
 import gravity_toolkit as gravtk
 
 # PURPOSE: Creates index files of GRACE/GRACE-FO data
 def make_grace_index(DIRECTORY, PROC=[], DREL=[], DSET=[],
     VERSION=[], MODE=None):
 
+    # input directory setup
+    DIRECTORY = pathlib.Path(DIRECTORY).expanduser().absolute()
     # mission shortnames
     shortname = {'grace':'GRAC', 'grace-fo':'GRFO'}
     # GRACE/GRACE-FO level-2 spherical harmonic products
@@ -51,9 +54,9 @@ def make_grace_index(DIRECTORY, PROC=[], DREL=[], DSET=[],
             # for each level-2 product
             for ds in DSET:
                 # local directory for exact data product
-                local_dir = os.path.join(DIRECTORY, pr, rl, ds)
+                local_dir = DIRECTORY.joinpath( pr, rl, ds)
                 # check if local directory exists
-                if not os.access(local_dir, os.F_OK):
+                if not local_dir.exists():
                     continue
                 # list of GRACE/GRACE-FO files for index
                 grace_files = []
@@ -65,17 +68,18 @@ def make_grace_index(DIRECTORY, PROC=[], DREL=[], DSET=[],
                     rx = gravtk.utilities.compile_regex_pattern(pr, rl, ds,
                         mission=shortname[mi], version=VERSION[i])
                     # find local GRACE/GRACE-FO files to create index
-                    granules = [f for f in os.listdir(local_dir) if rx.match(f)]
+                    granules = [f.name for f in local_dir.iterdir()
+                        if rx.match(f.name)]
                     # extend list of GRACE/GRACE-FO files
                     grace_files.extend(granules)
 
                 # outputting GRACE/GRACE-FO filenames to index
-                index_file = os.path.join(local_dir,'index.txt')
-                with open(index_file, mode='w', encoding='utf8') as fid:
+                index_file = local_dir.joinpath('index.txt')
+                with index_file.open(mode='w', encoding='utf8') as fid:
                     for fi in sorted(grace_files):
                         print(fi, file=fid)
                 # change permissions of index file
-                os.chmod(index_file, MODE)
+                index_file.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -87,8 +91,7 @@ def arguments():
     # command line parameters
     # # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # GRACE/GRACE-FO processing center
     parser.add_argument('--center','-c',

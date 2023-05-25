@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter_ocean_models.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 Plots the GRACE/GRACE-FO geocenter time series comparing results
     using different ocean bottom pressure estimates
 
@@ -19,6 +19,7 @@ COMMAND LINE OPTIONS:
     -O X, --ocean X: ocean bottom pressure products to use
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: place matplotlib import within try/except statement
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -34,7 +35,7 @@ UPDATE HISTORY:
 """
 from __future__ import print_function
 
-import os
+import pathlib
 import argparse
 import warnings
 import numpy as np
@@ -81,7 +82,7 @@ def geocenter_ocean_models(grace_dir,PROC,DREL,MODEL,START_MON,END_MON,MISSING):
     for k,mdl in enumerate(MODEL):
         # read geocenter file for processing center and model
         grace_file = '{0}_{1}_{2}_{3}.txt'.format(PROC,DREL,mdl,input_flags[2])
-        DEG1 = gravtk.geocenter().from_UCI(os.path.join(grace_dir,grace_file))
+        DEG1 = gravtk.geocenter().from_UCI(grace_dir.joinpath(grace_file))
         # indices for mean months
         kk, = np.nonzero((DEG1.month >= START_MON) & (DEG1.month <= 176))
         DEG1.mean(apply=True, indices=kk)
@@ -106,7 +107,7 @@ def geocenter_ocean_models(grace_dir,PROC,DREL,MODEL,START_MON,END_MON,MISSING):
     # read geocenter file for processing center and model
     model_str = 'OMCT' if DREL in ('RL04','RL05') else 'MPIOM'
     grace_file = '{0}_{1}_{2}_{3}.txt'.format(PROC,DREL,model_str,input_flags[2])
-    DEG1 = gravtk.geocenter().from_UCI(os.path.join(grace_dir,grace_file))
+    DEG1 = gravtk.geocenter().from_UCI(grace_dir.joinpath(grace_file))
     # add axis labels and adjust font sizes for axis ticks
     for j,key in enumerate(fig_labels):
         # vertical lines for end of the GRACE mission and start of GRACE-FO
@@ -151,7 +152,7 @@ def geocenter_ocean_models(grace_dir,PROC,DREL,MODEL,START_MON,END_MON,MISSING):
     fig.subplots_adjust(left=0.06,right=0.98,bottom=0.12,top=0.94,wspace=0.05)
     # save figure to file
     OUTPUT_FIGURE = f'SV19_{PROC}_{DREL}_ocean_models.pdf'
-    plt.savefig(os.path.join(grace_dir,OUTPUT_FIGURE), format='pdf', dpi=300)
+    plt.savefig(grace_dir.joinpath(OUTPUT_FIGURE), format='pdf', dpi=300)
     plt.clf()
 
 # PURPOSE: create argument parser
@@ -163,8 +164,7 @@ def arguments():
     )
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # GRACE/GRACE-FO processing center
     parser.add_argument('--center','-c',
