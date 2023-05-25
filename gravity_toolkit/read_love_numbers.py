@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_love_numbers.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
 Linearly interpolates load Love/Shida numbers for missing degrees
@@ -56,6 +56,7 @@ REFERENCES:
         103(B12), 30205-30229, (1998)
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: improve typing for variables in docstrings
     Updated 02/2023: fix degree zero case and add load love number formatter
         added options for hard and soft PREM sediment cases
@@ -84,10 +85,10 @@ UPDATE HISTORY:
     Updated 05/2013: python updates and comment updates
     Written 01/2012
 """
-import os
 import io
 import re
 import logging
+import pathlib
 import numpy as np
 from gravity_toolkit.utilities import get_data_path
 
@@ -300,22 +301,24 @@ def extract_love_numbers(love_numbers_file):
 
     Parameters
     ----------
-    love_numbers_file: str
+    love_numbers_file: str, bytesIO or pathlib.Path
         Elastic load Love/Shida numbers file
     """
     # check if input Love/Shida numbers are a string or bytesIO object
-    if isinstance(love_numbers_file, str):
+    if isinstance(love_numbers_file, (str, pathlib.Path)):
         # tilde expansion of load love number data file
-        love_numbers_file = os.path.expanduser(love_numbers_file)
+        love_numbers_file = pathlib.Path(love_numbers_file).expanduser().absolute()
         # check that load Love/Shida number data file is present in file system
-        if not os.access(love_numbers_file, os.F_OK):
-            raise FileNotFoundError(f'{love_numbers_file} not found')
+        if not love_numbers_file.exists():
+            raise FileNotFoundError(f'{str(love_numbers_file)} not found')
         # Input load Love/Shida number data file and read contents
-        with open(love_numbers_file, mode='r', encoding='utf8') as f:
+        with love_numbers_file.open(mode='r', encoding='utf8') as f:
             return f.read().splitlines()
     elif isinstance(love_numbers_file, io.IOBase):
         # read contents from load Love/Shida number data
         return love_numbers_file.read().decode('utf8').splitlines()
+    else:
+        raise ValueError('Invalid Love/Shida numbers file input')
 
 # PURPOSE: read load Love/Shida numbers for a range of spherical harmonic degrees
 def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
@@ -427,8 +430,10 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
         columns = ['l','hl','ll','kl','nl','nk']
     else:
         raise ValueError(f'Unknown Love Numbers Type {LOVE_NUMBERS:d}')
+    # validate as pathlib object
+    love_numbers_file = pathlib.Path(love_numbers_file).expanduser().absolute()
     # log load Love/Shida numbers file if debugging
-    logging.debug(f'Reading Love/Shida numbers file: {love_numbers_file}')
+    logging.debug(f'Reading Love/Shida numbers file: {str(love_numbers_file)}')
     # LMAX of load Love/Shida numbers from Han and Wahr (1995) is 696.
     # from Wahr (2007) linearly interpolating kl works
     # however, as we are linearly extrapolating out, do not make
@@ -438,7 +443,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
         COLUMNS=columns, REFERENCE=REFERENCE, FORMAT=FORMAT)
     # append model and filename attributes to class
     if (FORMAT == 'class'):
-        love.filename = os.path.basename(love_numbers_file)
+        love.filename = love_numbers_file.name
         love.reference=REFERENCE
         love.model = model
         love.citation = citation

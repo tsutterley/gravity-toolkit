@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 dealiasing_global_uplift.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 
 Reads GRACE/GRACE-FO level-1b dealiasing data files for global atmospheric
 and oceanic loading and estimates anomalies in elastic crustal uplift
@@ -67,6 +67,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: attributes from units class for output netCDF4/HDF5 files
     Written 03/2023
 """
@@ -78,6 +79,7 @@ import re
 import gzip
 import time
 import logging
+import pathlib
 import tarfile
 import argparse
 import traceback
@@ -86,7 +88,7 @@ import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(pathlib.Path(sys.argv[0]).name)
     logging.info(args)
     logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
@@ -108,11 +110,12 @@ def dealiasing_global_uplift(base_dir,
     OUTPUT_DIRECTORY=None,
     MODE=0o775):
 
-    # AOD1B directory and output spatial directory
-    grace_dir = os.path.join(base_dir,'AOD1B',DREL)
-    # recursively create output Directory if not currently existing
-    if (not os.access(OUTPUT_DIRECTORY, os.F_OK)):
-        os.makedirs(OUTPUT_DIRECTORY, mode=MODE, exist_ok=True)
+    # input directory setup
+    base_dir = pathlib.Path(base_dir).expanduser().absolute()
+    grace_dir = base_dir.joinpath('AOD1B', DREL)
+    # output directory setup
+    OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
+    OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
 
     # list object of output files for file logs (full path)
     output_files = []
@@ -153,7 +156,7 @@ def dealiasing_global_uplift(base_dir,
     attributes['ROOT']['product_name'] = DSET
     attributes['ROOT']['product_type'] = 'gravity_field'
     attributes['ROOT']['reference'] = \
-        f'Output from {os.path.basename(sys.argv[0])}'
+        f'Output from {pathlib.Path(sys.argv[0]).name}'
     # output suffix for data formats
     suffix = dict(ascii='txt',netCDF4='nc',HDF5='H5')
 
@@ -172,7 +175,7 @@ def dealiasing_global_uplift(base_dir,
     rx = re.compile(regex_pattern, re.VERBOSE)
 
     # finding all of the tar files in the AOD1b directory
-    input_tar_files = [tf for tf in os.listdir(grace_dir) if tx.match(tf)]
+    input_tar_files = [tf for tf in grace_dir.iterdir() if tx.match(tf.name)]
 
     # Output Degree Spacing
     dlon,dlat = (DDEG[0],DDEG[0]) if (len(DDEG) == 1) else (DDEG[0],DDEG[1])
@@ -194,8 +197,8 @@ def dealiasing_global_uplift(base_dir,
     elif (INTERVAL == 3):
         # non-global grid set with BOUNDS parameter
         minlon,maxlon,minlat,maxlat = BOUNDS.copy()
-        grid.lon = np.arange(minlon+dlon/2.0,maxlon+dlon/2.0,dlon)
-        grid.lat = np.arange(maxlat-dlat/2.0,minlat-dlat/2.0,-dlat)
+        grid.lon = np.arange(minlon+dlon/2.0, maxlon+dlon/2.0, dlon)
+        grid.lat = np.arange(maxlat-dlat/2.0, minlat-dlat/2.0, -dlat)
         n_lon = len(grid.lon)
         n_lat = len(grid.lat)
 
@@ -239,21 +242,21 @@ def dealiasing_global_uplift(base_dir,
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(theta))
 
     # for each tar file
-    for i in sorted(input_tar_files):
+    for input_file in sorted(input_tar_files):
         # extract the year and month from the file
-        YY,MM,SFX = tx.findall(i).pop()
+        YY,MM,SFX = tx.findall(input_file.name).pop()
         # number of days per month
         dpm = gravtk.time.calendar_days(int(YY))
         # output monthly spatial file
         FILE = f'AOD1B_{DREL}_{DSET}_{UNITS}_{YY}_{MM}.{suffix[DATAFORM]}'
-        output_file = os.path.join(OUTPUT_DIRECTORY,FILE)
+        output_file = OUTPUT_DIRECTORY.joinpath(FILE)
         # if output file exists: check if input tar file is newer
         TEST = False
         # check if output file exists
-        if os.access(output_file, os.F_OK):
+        if output_file.exists():
             # check last modification time of input and output files
-            input_mtime = os.stat(os.path.join(grace_dir,i)).st_mtime
-            output_mtime = os.stat(output_file).st_mtime
+            input_mtime = input_file.stat().st_mtime
+            output_mtime = output_file.stat().st_mtime
             # if input tar file is newer: overwrite the output file
             if (input_mtime > output_mtime):
                 TEST = True
@@ -264,9 +267,9 @@ def dealiasing_global_uplift(base_dir,
         # or will rewrite if CLOBBER is set (if wanting something changed)
         if TEST:
             # track tar file
-            logging.debug(os.path.join(grace_dir,i))
+            logging.debug(str(input_file))
             # open the AOD1B monthly tar file
-            tar = tarfile.open(name=os.path.join(grace_dir,i), mode='r:gz')
+            tar = tarfile.open(name=str(input_file), mode='r:gz')
             # number of time points
             n_time = int(nt*dpm[int(MM)-1])
             # flattened harmonics object
@@ -349,7 +352,7 @@ def dealiasing_global_uplift(base_dir,
             grid.to_file(output_file, format=DATAFORM,
                 attributes=attributes)
             # set the permissions mode of the output file
-            os.chmod(output_file, MODE)
+            output_file.chmod(mode=MODE)
             # append output file to list
             output_files.append(output_file)
             # close the tar file
@@ -364,8 +367,8 @@ def output_log_file(input_arguments, output_files):
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'aod1b_spatial_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(input_arguments.output_directory)
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = pathlib.Path(input_arguments.output_directory)
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -384,8 +387,8 @@ def output_error_log_file(input_arguments):
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'aod1b_spatial_failed_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(input_arguments.output_directory)
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = pathlib.Path(input_arguments.output_directory)
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -410,12 +413,10 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     parser.add_argument('--output-directory','-O',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Output directory for spatial files')
     # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',

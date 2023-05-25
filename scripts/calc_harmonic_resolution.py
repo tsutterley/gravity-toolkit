@@ -36,7 +36,6 @@ UPDATE HISTORY:
     Updated 08/2013: changed SPH_CAP option to (Y/N)
     Written 01/2013
 """
-import sys
 import argparse
 import numpy as np
 

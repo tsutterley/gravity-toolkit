@@ -75,7 +75,7 @@ GRACE/GRACE-FO data is freely available in the US from
 the `NASA Physical Oceanography Distributed Active Archive Center (PO.DAAC) <https://podaac.jpl.nasa.gov/grace>`_ and
 internationally from the `GFZ Information System and Data Center (ISDC) <http://isdc.gfz-potsdam.de/grace-isdc/>`_.
 There are programs within this repository that can sync with both of these data archives:
-``podaac_grace_sync.py`` for `PO.DAAC <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/podaac_grace_sync.py>`_ and
+``podaac_cumulus.py`` for `PO.DAAC AWS <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/podaac_cumulus.py>`_ and
 ``gfz_isdc_grace_ftp.py`` for the `GFZ ISDC <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/gfz_isdc_grace_ftp.py>`_.
 
 Geoid Height

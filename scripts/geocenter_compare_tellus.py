@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter_compare_tellus.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 Plots the GRACE/GRACE-FO geocenter time series for different
     GRACE/GRACE-FO processing centers comparing with the
     JPL GRACE Tellus product
@@ -17,6 +17,7 @@ COMMAND LINE OPTIONS:
     -M X, --missing X: Missing GRACE months in time series
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: place matplotlib import within try/except statement
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -27,7 +28,7 @@ UPDATE HISTORY:
 """
 from __future__ import print_function
 
-import os
+import pathlib
 import argparse
 import warnings
 import numpy as np
@@ -82,7 +83,7 @@ def geocenter_compare_tellus(grace_dir,DREL,START_MON,END_MON,MISSING):
             fargs = (pr,DREL,model_str,input_flags[2])
         # read geocenter file for processing center and model
         grace_file = '{0}_{1}_{2}_{3}.txt'.format(*fargs)
-        DEG1 = gravtk.geocenter().from_UCI(os.path.join(grace_dir,grace_file))
+        DEG1 = gravtk.geocenter().from_UCI(grace_dir.joinpath(grace_file))
         # indices for mean months
         kk, = np.nonzero((DEG1.month >= START_MON) & (DEG1.month <= 176))
         DEG1.mean(apply=True, indices=kk)
@@ -107,7 +108,7 @@ def geocenter_compare_tellus(grace_dir,DREL,START_MON,END_MON,MISSING):
 
         if (pr == 'GFZwPT'):
             grace_file = 'GRAVIS-2B_GFZOP_GEOCENTER_0002.dat'
-            DEG1 = gravtk.geocenter().from_gravis(os.path.join(grace_dir,grace_file))
+            DEG1 = gravtk.geocenter().from_gravis(grace_dir.joinpath(grace_file))
             # indices for mean months
             kk, = np.nonzero((DEG1.month >= START_MON) & (DEG1.month <= 176))
             DEG1.mean(apply=True, indices=kk)
@@ -133,7 +134,7 @@ def geocenter_compare_tellus(grace_dir,DREL,START_MON,END_MON,MISSING):
 
         # Running function read_tellus_geocenter.py
         grace_file = f'TN-13_GEOC_{pr}_{DREL}.txt'
-        DEG1 = gravtk.geocenter().from_tellus(os.path.join(grace_dir,grace_file),
+        DEG1 = gravtk.geocenter().from_tellus(grace_dir.joinpath(grace_file),
             JPL=True)
         # indices for mean months
         kk, = np.nonzero((DEG1.month >= START_MON) & (DEG1.month <= 176))
@@ -205,7 +206,7 @@ def geocenter_compare_tellus(grace_dir,DREL,START_MON,END_MON,MISSING):
         fig.subplots_adjust(left=0.06,right=0.98,bottom=0.12,top=0.94,wspace=0.05)
         # save figure to file
         OUTPUT_FIGURE = f'TN13_SV19_{pr}_{DREL}.pdf'
-        plt.savefig(os.path.join(grace_dir,OUTPUT_FIGURE), format='pdf', dpi=300)
+        plt.savefig(grace_dir.joinpath(OUTPUT_FIGURE), format='pdf', dpi=300)
         plt.clf()
 
 # PURPOSE: create argument parser
@@ -218,8 +219,7 @@ def arguments():
     )
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 Data class for reading and processing geocenter data
 
 PYTHON DEPENDENCIES:
@@ -15,6 +15,7 @@ PYTHON DEPENDENCIES:
         https://github.com/yaml/pyyaml
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: convert shape and ndim to harmonic class properties
         improve typing for variables in docstrings
         set case insensitive filename to None if filename is empty
@@ -36,7 +37,6 @@ UPDATE HISTORY:
     Updated 02/2014: minor update to if statement
     Updated 03/2013: converted to python
 """
-import os
 import re
 import io
 import copy
@@ -45,6 +45,7 @@ import time
 import uuid
 import yaml
 import logging
+import pathlib
 import warnings
 import numpy as np
 import gravity_toolkit.time
@@ -109,13 +110,13 @@ class geocenter(object):
         # iterator
         self.__index__ = 0
 
-    def case_insensitive_filename(self,filename):
+    def case_insensitive_filename(self, filename):
         """
         Searches a directory for a filename without case dependence
 
         Parameters
         ----------
-        filename: str
+        filename: str, io.IOBase, pathlib.Path or None
             input filename
         """
         # check if filename is open file object
@@ -125,25 +126,23 @@ class geocenter(object):
             self.filename = None
         else:
             # tilde-expand input filename
-            self.filename = os.path.expanduser(filename)
+            self.filename = pathlib.Path(filename).expanduser().absolute()
             # check if file presently exists with input case
-            if not os.access(self.filename,os.F_OK):
+            if not self.filename.exists():
                 # search for filename without case dependence
-                basename = os.path.basename(filename)
-                directory = os.path.dirname(os.path.expanduser(filename))
-                f = [f for f in os.listdir(directory) if re.match(basename,f,re.I)]
-                # check that geocenter file exists
+                f = [f.name for f in self.filename.parent.iterdir() if
+                    re.match(self.filename.name, f.name, re.I)]
                 if not f:
                     errmsg = f'{filename} not found in file system'
                     raise FileNotFoundError(errmsg)
-                self.filename = os.path.join(directory,f.pop())
+                self.filename = self.filename.with_name(f.pop())
         # print filename
         logging.debug(self.filename)
         return self
 
     # PURPOSE: read AOD1b geocenter for month and calculate the mean harmonics
     # need to run aod1b_geocenter.py to write these monthly geocenter files
-    def from_AOD1B(self, release, calendar_year, calendar_month):
+    def from_AOD1B(self, release, year, month, product='glo'):
         """
         Reads monthly non-tidal ocean and atmospheric variation geocenter files
 
@@ -151,21 +150,23 @@ class geocenter(object):
         ----------
         release: str
             GRACE/GRACE-FO/Swarm data release for dealiasing product
-        calendar_year: int
+        year: int
             calendar year of data
-        calendar_month: int
+        month: int
             calendar month of data
+        product: str, default 'glo'
+            GRACE/GRACE-FO/Swarm dealiasing product
         """
 
         # full path to AOD geocenter for month (using glo coefficients)
-        args = (release,'glo',calendar_year,calendar_month)
-        AOD1B_file = 'AOD1B_{0}_{1}_{2:4.0f}_{3:02.0f}.txt'.format(*args)
+        granule = f'AOD1B_{release} {product}_{year:4.0f}_{month:02.0f}.txt'
+        AOD1B_file = self.directory.joinpath(granule)
         # check that file exists
-        if not os.access(os.path.join(self.directory,AOD1B_file), os.F_OK):
+        if not AOD1B_file.exists():
             errmsg = f'AOD1B File {AOD1B_file} not in File System'
             raise FileNotFoundError(errmsg)
         # read AOD1b geocenter skipping over commented header text
-        with open(os.path.join(self.directory,AOD1B_file), mode='r', encoding='utf8') as f:
+        with AOD1B_file.open(mode='r', encoding='utf8') as f:
             file_contents=[i for i in f.read().splitlines() if not re.match(r'#',i)]
         # extract X,Y,Z from each line in the file
         n_lines = len(file_contents)
@@ -178,8 +179,8 @@ class geocenter(object):
             # first column: ISO-formatted date and time
             cal_date = time.strptime(line_contents[0],r'%Y-%m-%dT%H:%M:%S')
             # verify that dates are within year and month
-            assert (cal_date.tm_year == calendar_year)
-            assert (cal_date.tm_mon == calendar_month)
+            assert (cal_date.tm_year == year)
+            assert (cal_date.tm_mon == month)
             # second-fourth columns: X, Y and Z geocenter variations
             temp.X[i],temp.Y[i],temp.Z[i] = np.array(line_contents[1:],dtype='f')
         # convert X,Y,Z into spherical harmonics
@@ -228,7 +229,7 @@ class geocenter(object):
         # Column 10: Coefficient S(1,1) - mean S(1,1) (1.0E-10)
         # Column 11: S(1,1) uncertainty (1.0E-10)
 
-        with open(self.filename, mode='r', encoding='utf8') as f:
+        with self.filename.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         # number of lines contained in the file
         file_lines = len(file_contents)
@@ -300,7 +301,6 @@ class geocenter(object):
         # return the GFZ GravIS geocenter solutions
         return self.from_dict(dinput)
 
-
     def from_SLR(self, geocenter_file, **kwargs):
         """
         Reads monthly geocenter files from satellite laser ranging corrected
@@ -355,16 +355,15 @@ class geocenter(object):
 
         # directory setup for AOD1b data starting with input degree 1 file
         # this will verify that the input paths work
-        base_dir = os.path.join(os.path.dirname(self.filename),os.path.pardir)
-        self.directory = os.path.abspath(os.path.join(base_dir,'AOD1B',
-            kwargs['release'],'geocenter'))
+        base_dir = self.filename.parent.parent
+        self.directory = base_dir.joinpath('AOD1B', kwargs['release'], 'geocenter')
         # check that AOD1B directory exists
-        if not os.access(self.directory, os.F_OK):
-            errmsg = f'{self.directory} not found in file system'
+        if not self.directory.exists():
+            errmsg = f'{str(self.directory)} not found in file system'
             raise FileNotFoundError(errmsg)
 
         # Input geocenter file and split lines
-        with open(os.path.expanduser(geocenter_file), mode='r', encoding='utf8') as f:
+        with self.filename.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         ndate = len(file_contents) - HEADER
 
@@ -419,11 +418,11 @@ class geocenter(object):
             # Calculation of the Julian date from calendar date
             JD[t] = gravity_toolkit.time.calendar_to_julian(self.time[t])
             # convert the julian date into calendar dates
-            YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(JD[t],
+            YY, MM, DD, hh, mm, ss = gravity_toolkit.time.convert_julian(JD[t],
                 FORMAT='tuple')
             # calculate the GRACE/GRACE-FO month (Apr02 == 004)
             # https://grace.jpl.nasa.gov/data/grace-months/
-            self.month[t] = gravity_toolkit.time.calendar_to_grace(YY,month=MM)
+            self.month[t] = gravity_toolkit.time.calendar_to_grace(YY, month=MM)
 
             # if removing the Atmospheric and Oceanic dealiasing
             if kwargs['AOD']:
@@ -470,7 +469,7 @@ class geocenter(object):
         # set filename
         self.case_insensitive_filename(geocenter_file)
         # read geocenter file and get contents
-        with open(os.path.expanduser(geocenter_file), mode='r', encoding='utf8') as f:
+        with self.filename.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         # number of lines contained in the file
         file_lines = len(file_contents)
@@ -571,7 +570,7 @@ class geocenter(object):
         kwargs.setdefault('header',True)
 
         # read degree 1 file and get contents
-        with open(self.filename, mode='r', encoding='utf8') as f:
+        with self.filename.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         # number of lines contained in the file
         file_lines = len(file_contents)
@@ -693,7 +692,7 @@ class geocenter(object):
         kwargs.setdefault('JPL',True)
 
         # read degree 1 file and get contents
-        with open(self.filename, mode='r', encoding='utf8') as f:
+        with self.filename.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         # number of lines contained in the file
         file_lines = len(file_contents)
@@ -815,7 +814,7 @@ class geocenter(object):
         # Open the netCDF4 file for reading
         if (kwargs['compression'] == 'gzip'):
             # read gzipped file as in-memory (diskless) netCDF4 dataset
-            with gzip.open(self.filename,'r') as f:
+            with gzip.open(self.filename, mode='r') as f:
                 fileID = netCDF4.Dataset(uuid.uuid4().hex,
                     memory=f.read())
         elif (kwargs['compression'] == 'bytes'):
@@ -823,7 +822,7 @@ class geocenter(object):
             fileID = netCDF4.Dataset(uuid.uuid4().hex,
                 memory=self.filename.read())
         else:
-            fileID = netCDF4.Dataset(self.filename, 'r')
+            fileID = netCDF4.Dataset(self.filename, mode='r')
         # Getting the data from each netCDF4 variable
         DEG1 = {}
         # converting netCDF4 objects into numpy arrays

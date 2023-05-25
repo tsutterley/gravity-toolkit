@@ -3,10 +3,10 @@ u"""
 test_download_and_read.py (11/2021)
 Tests the read program to verify that coefficients are being extracted
 """
-import os
 import pytest
 import shutil
 import inspect
+import pathlib
 import posixpath
 import gravity_toolkit as gravtk
 from read_GRACE_geocenter.read_GRACE_geocenter import read_GRACE_geocenter
@@ -95,6 +95,7 @@ def test_esa_swarm_download_and_read():
     # download and read as virtual file object
     gravtk.utilities.from_http(remote_file,
         local=swarm_file,verbose=True)
+    swarm_file = pathlib.Path(swarm_file).absolute()
     Ylms = gravtk.read_gfc_harmonics(swarm_file)
     keys = ['time', 'start', 'end', 'clm', 'slm', 'eclm', 'eslm']
     test = dict(start=2456627.5, end=2456658.499988426)
@@ -102,7 +103,7 @@ def test_esa_swarm_download_and_read():
     assert all((Ylms[key] == val) for key,val in test.items())
     assert (Ylms['clm'][2,0] == -0.48416530506600003e-03)
     # clean up
-    os.remove(swarm_file)
+    swarm_file.unlink()
 
 # PURPOSE: Download a GRACE ITSG GRAZ file and check that read program runs
 def test_itsg_graz_download_and_read():
@@ -110,27 +111,28 @@ def test_itsg_graz_download_and_read():
         'ITSG-Grace_operational','monthly','monthly_n60',
         'ITSG-Grace_operational_n60_2018-06.gfc']
     # download and read as virtual file object
-    gravtk.utilities.from_http(HOST,local=HOST[-1],verbose=True)
-    Ylms = gravtk.read_gfc_harmonics(HOST[-1])
+    gravtk.utilities.from_http(HOST, local=HOST[-1], verbose=True)
+    itsg_file = pathlib.Path(HOST[-1]).absolute()
+    Ylms = gravtk.read_gfc_harmonics(itsg_file)
     keys = ['time', 'start', 'end', 'clm', 'slm', 'eclm', 'eslm']
     test = dict(start=2458270.5, end=2458300.499988426)
     assert all((key in Ylms.keys()) for key in keys)
     assert all((Ylms[key] == val) for key,val in test.items())
     assert (Ylms['clm'][2,0] == -0.4841694727612e-03)
     # clean up
-    os.remove(HOST[-1])
+    itsg_file.unlink()
 
 # PURPOSE: Download Sutterley and Velicogna (2019) geocenter files
 @pytest.fixture(scope="module", autouse=True)
 def download_geocenter():
     # download geocenter files to filepath
     filename = inspect.getframeinfo(inspect.currentframe()).filename
-    filepath = os.path.dirname(os.path.abspath(filename))
+    filepath = pathlib.Path(filename).absolute().parent
     gravtk.utilities.from_figshare(filepath,verbose=True)
     # run tests
     yield
     # clean up
-    shutil.rmtree(os.path.join(filepath,'geocenter'))
+    shutil.rmtree(filepath.joinpath('geocenter'))
 
 # parameterize processing center and data release
 @pytest.mark.parametrize("PROC", ['CSR','GFZ','JPL'])
@@ -138,13 +140,13 @@ def download_geocenter():
 # PURPOSE: read Sutterley and Velicogna (2019) geocenter files
 def test_geocenter_read(PROC, DREL):
     filename = inspect.getframeinfo(inspect.currentframe()).filename
-    filepath = os.path.dirname(os.path.abspath(filename))
+    filepath = pathlib.Path(filename).absolute().parent
     MODEL = dict(RL04='OMCT', RL05='OMCT', RL06='MPIOM')
     args = (PROC,DREL,MODEL[DREL],'SLF_iter')
     FILE = '{0}_{1}_{2}_{3}.txt'.format(*args)
     # assert that file exists
-    geocenter_file = os.path.join(filepath,'geocenter',FILE)
-    assert os.access(geocenter_file, os.F_OK)
+    geocenter_file = filepath.joinpath('geocenter', FILE)
+    assert geocenter_file.exists()
     # test geocenter read program
     DEG1 = read_GRACE_geocenter(geocenter_file)
     keys = ['time', 'JD', 'month', 'C10', 'C11', 'S11','header']

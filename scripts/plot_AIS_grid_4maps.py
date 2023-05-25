@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 plot_AIS_grid_4maps.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 Creates 3 GMT-like plots of the Antarctic Ice Sheet
 on a polar stereographic south (3031) projection
 
@@ -31,6 +31,7 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/GDAL/
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: switch from parameter files to argparse arguments
         updated inputs to spatial from_ascii function
     Updated 07/2022: place some imports behind try/except statements
@@ -51,6 +52,7 @@ import sys
 import os
 import copy
 import logging
+import pathlib
 import argparse
 import warnings
 import traceback
@@ -126,23 +128,22 @@ except (NameError,ValueError) as exc:
     pass
 
 # PURPOSE: keep track of threads
-def info(title):
-    print(os.path.basename(sys.argv[0]))
-    print(title)
-    print(f'module name: {__name__}')
+def info(args):
+    logging.info(pathlib.Path(sys.argv[0]).name)
+    logging.info(args)
+    logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        print(f'parent process: {os.getppid():d}')
-    print(f'process id: {os.getpid():d}')
+        logging.info(f'parent process: {os.getppid():d}')
+    logging.info(f'process id: {os.getpid():d}')
 
 # PURPOSE: plot Rignot 2012 drainage basin polylines
 def plot_rignot_basins(ax, base_dir):
-    region_directory = os.path.join(base_dir, *region_dir)
+    region_directory = base_dir.joinpath(*region_dir)
     # for each region
     for reg in region_title:
         # read the regional polylines
-        region_file = region_filename.format(reg)
-        region_ll = np.loadtxt(os.path.join(region_directory,region_file),
-            dtype=region_dtype)
+        region_file = region_directory.joinpath(region_filename.format(reg))
+        region_ll = np.loadtxt(region_file, dtype=region_dtype)
         # converting region lat/lon into plot coordinates
         points = projection.transform_points(ccrs.PlateCarree(),
             region_ll['lon'], region_ll['lat'])
@@ -151,7 +152,7 @@ def plot_rignot_basins(ax, base_dir):
 # PURPOSE: plot Antarctic drainage basins from IMBIE2 (Mouginot)
 def plot_IMBIE2_basins(ax, base_dir):
     # read drainage basin polylines from shapefile (using splat operator)
-    basin_shapefile = os.path.join(base_dir,*IMBIE_basin_file)
+    basin_shapefile = base_dir.joinpath(*IMBIE_basin_file)
     shape_input = shapefile.Reader(basin_shapefile)
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
@@ -173,7 +174,7 @@ def plot_IMBIE2_basins(ax, base_dir):
 def plot_IMBIE2_subbasins(ax, base_dir):
     # read drainage basin polylines from shapefile (using splat operator)
     IMBIE_subbasin_file = ['Basins_20Oct2016_v1.7','Basins_v1.7.shp']
-    basin_shapefile = os.path.join(base_dir,'masks',*IMBIE_subbasin_file)
+    basin_shapefile = base_dir.joinpath('masks',*IMBIE_subbasin_file)
     shape_input = shapefile.Reader(basin_shapefile)
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
@@ -191,7 +192,7 @@ def plot_IMBIE2_subbasins(ax, base_dir):
 
 # PURPOSE: plot Antarctic grounded ice delineation
 def plot_grounded_ice(ax, base_dir, START=1):
-    shape_input = shapefile.Reader(os.path.join(base_dir,*coast_file))
+    shape_input = shapefile.Reader(base_dir.joinpath(*coast_file))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     i = [i for i,e in enumerate(shape_entities) if (np.ndim(e.points) > 1)]
@@ -204,7 +205,7 @@ def plot_grounded_ice(ax, base_dir, START=1):
 # PURPOSE: plot MODIS mosaic of Antarctica as background image
 def plot_image_mosaic(ax, base_dir, MASKED=True):
     # read MODIS mosaic of Antarctica
-    ds = osgeo.gdal.Open(os.path.join(base_dir,*image_file))
+    ds = osgeo.gdal.Open(str(base_dir.joinpath(*image_file)))
     # get dimensions
     xsize = ds.RasterXSize
     ysize = ds.RasterYSize
@@ -556,18 +557,16 @@ def plot_grid(base_dir, FILENAMES,
     # adjust subplots within figure
     fig.subplots_adjust(left=0.01, right=0.99, bottom=0.14, top=0.97,
         hspace=0.05, wspace=0.05)
-    # output to file
     # create output directory if non-existent
-    if not os.access(os.path.dirname(FIGURE_FILE), os.F_OK):
-        os.makedirs(os.path.dirname(FIGURE_FILE), MODE)
+    FIGURE_FILE.parent.mkdir(mode=MODE, parents=True, exist_ok=True)
     # save to file
-    logging.info(FIGURE_FILE)
+    logging.info(str(FIGURE_FILE))
     plt.savefig(FIGURE_FILE,
-        metadata={'Title':os.path.basename(sys.argv[0])},
+        metadata={'Title':pathlib.Path(sys.argv[0]).name},
         dpi=FIGURE_DPI, format=FIGURE_FORMAT)
     plt.clf()
     # change the permissions mode
-    os.chmod(FIGURE_FILE, MODE)
+    FIGURE_FILE.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -580,12 +579,11 @@ def arguments():
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     parser.add_argument('infile', nargs=4,
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Input grid files')
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # Input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--format','-F',
@@ -595,7 +593,7 @@ def arguments():
     # land-sea mask
     lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
+        type=pathlib.Path, default=lsmask,
         help='Land-sea mask')
     # output grid parameters
     parser.add_argument('--spacing',
@@ -629,7 +627,7 @@ def arguments():
         choices=sorted(cmap_set),
         help='Named Matplotlib colormap')
     parser.add_argument('--cpt-file','-c',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Input Color Palette Table (.cpt) file')
     # color map alpha
     parser.add_argument('--alpha','-a',
@@ -682,7 +680,7 @@ def arguments():
         help='Add map scale bar')
     # output file, format and dpi
     parser.add_argument('--figure-file','-O',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Output figure file')
     parser.add_argument('--figure-format','-f',
         type=str, default='png', choices=('pdf','png','jpg','svg'),

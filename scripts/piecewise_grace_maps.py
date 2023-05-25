@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 piecewise_grace_maps.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 
 Reads in GRACE/GRACE-FO spatial files and fits a piecewise regression
     model at each grid point for breakpoint analysis
@@ -60,6 +60,8 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 05/2023: split S2 tidal aliasing terms into GRACE and GRACE-FO eras
+        use pathlib to define and operate on paths
     Updated 04/2023: updated for public release
     Updated 03/2023: updated inputs to spatial from_ascii function
         use attributes from units class for writing to netCDF4/HDF5 files
@@ -96,6 +98,7 @@ import sys
 import os
 import time
 import logging
+import pathlib
 import argparse
 import traceback
 import numpy as np
@@ -103,7 +106,7 @@ import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(pathlib.Path(sys.argv[0]).name)
     logging.info(args)
     logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
@@ -130,6 +133,9 @@ def piecewise_grace_maps(LMAX, RAD,
     VERBOSE=0,
     MODE=0o775):
 
+    # create output directory if currently non-existent
+    OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
+    OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
     # output filename suffix
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')[DATAFORM]
 
@@ -172,37 +178,10 @@ def piecewise_grace_maps(LMAX, RAD,
     elif (INTERVAL == 3):
         # non-global grid set with BOUNDS parameter
         minlon,maxlon,minlat,maxlat = BOUNDS.copy()
-        lon = np.arange(minlon+dlon/2.0,maxlon+dlon/2.0,dlon)
-        lat = np.arange(maxlat-dlat/2.0,minlat-dlat/2.0,-dlat)
+        lon = np.arange(minlon+dlon/2.0, maxlon+dlon/2.0, dlon)
+        lat = np.arange(maxlat-dlat/2.0, minlat-dlat/2.0, -dlat)
         nlon = len(lon)
         nlat = len(lat)
-
-    # Setting output parameters
-    coef_str = ['x0', 'px1', 'px1']
-    unit_suffix = ['', ' yr^-1', ' yr^-1']
-    unit_longname = ['Constant', 'Piecewise Trend', 'Piecewise Trend']
-    # filename strings for cyclical terms
-    cyclic_str = {}
-    cyclic_str['SEMI'] = ['SS','SC']
-    cyclic_str['ANN'] = ['AS','AC']
-    cyclic_str['S2'] = ['S2S','S2C']
-    # unit longnames for cyclical terms
-    cyclic_longname = {}
-    cyclic_longname['SEMI'] = ['Semi-Annual Sine', 'Semi-Annual Cosine']
-    cyclic_longname['ANN'] = ['Annual Sine', 'Annual Cosine']
-    cyclic_longname['S2'] = ['S2 Tidal Alias Sine', 'S2 Tidal Alias Cosine']
-    amp_str = []
-    for i,c in enumerate(CYCLES):
-        if (c == 0.5):
-            flag = 'SEMI'
-        elif (c == 1.0):
-            flag = 'ANN'
-        elif (c == (161.0/365.25)):
-            flag = 'S2'
-        coef_str.extend(cyclic_str[flag])
-        unit_longname.extend(cyclic_longname[flag])
-        unit_suffix.extend(['',''])
-        amp_str.append(flag)
 
     # input data spatial object
     spatial_list = []
@@ -210,7 +189,7 @@ def piecewise_grace_maps(LMAX, RAD,
         # input GRACE/GRACE-FO spatial file
         fargs = (FILE_PREFIX, units, LMAX, order_str,
             gw_str, ds_str, grace_month, suffix)
-        input_file = os.path.join(OUTPUT_DIRECTORY,input_format.format(*fargs))
+        input_file = OUTPUT_DIRECTORY.joinpath(input_format.format(*fargs))
         # read GRACE/GRACE-FO spatial file
         if (DATAFORM == 'ascii'):
             dinput = gravtk.spatial().from_ascii(input_file,
@@ -223,7 +202,7 @@ def piecewise_grace_maps(LMAX, RAD,
             dinput = gravtk.spatial().from_HDF5(input_file)
         # append to spatial list
         dinput.month = grace_month
-        nlat,nlon = dinput.shape
+        nlat, nlon = dinput.shape
         spatial_list.append(dinput)
 
     # concatenate list to single spatial object
@@ -234,9 +213,57 @@ def piecewise_grace_maps(LMAX, RAD,
         raise ValueError(f'{BREAKPOINT} not found in GRACE/GRACE-FO months')
     breakpoint_index, = np.nonzero(grid.month == BREAKPOINT)
 
+    # Setting output parameters
+    coef_str = ['x0', 'px1', 'px1']
+    unit_suffix = ['', ' yr^-1', ' yr^-1']
+    unit_longname = ['Constant', 'Piecewise Trend', 'Piecewise Trend']
+
+    # amplitude string for cyclical components
+    amp_str = []
+    # extra terms for S2 tidal aliasing components or custom fits
+    TERMS = []
+    for i,c in enumerate(CYCLES):
+        if (c == 0.5):
+            coef_str.extend(['SS','SC'])
+            amp_str.append('SEMI')
+            unit_longname.extend(['Semi-Annual Sine', 'Semi-Annual Cosine'])
+            unit_suffix.extend(['',''])
+        elif (c == 1.0):
+            coef_str.extend(['AS','AC'])
+            amp_str.append('ANN')
+            unit_longname.extend(['Annual Sine', 'Annual Cosine'])
+            unit_suffix.extend(['',''])
+        elif (c == (161.0/365.25)):
+            # create custom terms for S2 tidal aliasing during GRACE period
+            ii, = np.nonzero(grid.time < 2018.0)
+            S2sin = np.zeros_like(grid.time)
+            S2cos = np.zeros_like(grid.time)
+            S2sin[ii] = np.sin(2.0*np.pi*grid.time[ii]/np.float64(c))
+            S2cos[ii] = np.cos(2.0*np.pi*grid.time[ii]/np.float64(c))
+            TERMS.append(S2sin)
+            TERMS.append(S2cos)
+            coef_str.extend(['S2SGRC','S2CGRC'])
+            amp_str.append('S2GRC')
+            unit_longname.extend(['S2 Tidal Alias Sine', 'S2 Tidal Alias Cosine'])
+            unit_suffix.extend(['',''])
+            # create custom terms for S2 tidal aliasing during GRACE-FO period
+            ii, = np.nonzero(grid.time >= 2018.0)
+            S2sin = np.zeros_like(grid.time)
+            S2cos = np.zeros_like(grid.time)
+            S2sin[ii] = np.sin(2.0*np.pi*grid.time[ii]/np.float64(c))
+            S2cos[ii] = np.cos(2.0*np.pi*grid.time[ii]/np.float64(c))
+            TERMS.append(S2sin)
+            TERMS.append(S2cos)
+            coef_str.extend(['S2SGFO','S2CGFO'])
+            amp_str.append('S2GFO')
+            unit_longname.extend(['S2 Tidal Alias Sine', 'S2 Tidal Alias Cosine'])
+            unit_suffix.extend(['',''])
+            # remove the original S2 tidal aliasing term from CYCLES list
+            CYCLES.remove(c)
+
     # Fitting seasonal components
     ncomp = len(coef_str)
-    ncycles = 2*len(CYCLES)
+    ncycles = 2*len(CYCLES) + len(TERMS)
     # output start and end months with breakpoint
     output_start = np.zeros((ncomp), dtype=int) + START
     output_end = np.zeros((ncomp), dtype=int) + END
@@ -247,9 +274,9 @@ def piecewise_grace_maps(LMAX, RAD,
 
     # Allocating memory for output variables
     out = dinput.zeros_like()
-    out.data = np.zeros((nlat,nlon,ncomp))
-    out.error = np.zeros((nlat,nlon,ncomp))
-    out.mask = np.ones((nlat,nlon,ncomp),dtype=bool)
+    out.data = np.zeros((nlat, nlon, ncomp))
+    out.error = np.zeros((nlat, nlon, ncomp))
+    out.mask = np.ones((nlat, nlon, ncomp),dtype=bool)
     # Fit Significance
     FS = {}
     # SSE: Sum of Squares Error
@@ -288,8 +315,8 @@ def piecewise_grace_maps(LMAX, RAD,
             coef_str[i], '', output_start[i], output_end[i], suffix)
         f2 = (FILE_PREFIX, units, LMAX, order_str, gw_str, ds_str,
             coef_str[i], '_ERROR', output_start[i], output_end[i], suffix)
-        file1 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f1))
-        file2 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f2))
+        file1 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f1))
+        file2 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f2))
         # full attributes
         UNITS_TITLE = f'{units_name}{unit_suffix[i]}'
         LONGNAME = units_longname
@@ -342,15 +369,15 @@ def piecewise_grace_maps(LMAX, RAD,
                 gw_str, ds_str, flag, '', START, END, suffix)
             f4 = (FILE_PREFIX, units, LMAX, order_str,
                 gw_str, ds_str, flag,'_PHASE', START, END, suffix)
-            file3 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f3))
-            file4 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f4))
+            file3 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f3))
+            file4 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f4))
             # output spatial error file name
             f5 = (FILE_PREFIX, units, LMAX, order_str,
                 gw_str, ds_str, flag, '_ERROR', START, END, suffix)
             f6 = (FILE_PREFIX, units, LMAX, order_str,
                 gw_str, ds_str, flag, '_PHASE_ERROR', START, END, suffix)
-            file5 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f5))
-            file6 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f6))
+            file5 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f5))
+            file6 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f6))
             # full attributes
             AMP_UNITS = units_name
             PH_UNITS = 'degrees'
@@ -388,7 +415,7 @@ def piecewise_grace_maps(LMAX, RAD,
         signif_str = f'{key}_'
         f7 = (FILE_PREFIX, units, LMAX, order_str, gw_str, ds_str,
             signif_str, 'px1', START, END, suffix)
-        file7 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f7))
+        file7 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f7))
         # full attributes
         LONGNAME = signif_longname[key]
         # output fit significance to file
@@ -405,13 +432,13 @@ def piecewise_grace_maps(LMAX, RAD,
 def output_data(data, FILENAME=None, KEY='data', DATAFORM=None,
     UNITS=None, LONGNAME=None, TITLE=None, VERBOSE=0, MODE=0o775):
     output = data.copy()
-    setattr(output,'data',getattr(data, KEY))
+    setattr(output, 'data', getattr(data, KEY))
     # attributes for output files
     attributes = {}
     attributes['units'] = UNITS
     attributes['longname'] = LONGNAME
     attributes['title'] = TITLE
-    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+    attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
     # write to output file
     if (DATAFORM == 'ascii'):
         # ascii (.txt)
@@ -425,7 +452,7 @@ def output_data(data, FILENAME=None, KEY='data', DATAFORM=None,
         output.to_HDF5(FILENAME, date=False, verbose=VERBOSE,
             **attributes)
     # change the permissions mode of the output file
-    os.chmod(FILENAME, MODE)
+    FILENAME.chmod(mode=MODE)
 
 # PURPOSE: print a file log for the GRACE/GRACE-FO regression
 def output_log_file(input_arguments, output_files):
@@ -433,8 +460,8 @@ def output_log_file(input_arguments, output_files):
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_processing_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(input_arguments.output_directory)
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = pathlib.Path(input_arguments.output_directory)
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -453,8 +480,8 @@ def output_error_log_file(input_arguments):
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_processing_failed_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(input_arguments.output_directory)
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = pathlib.Path(input_arguments.output_directory)
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -477,8 +504,7 @@ def arguments():
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     parser.add_argument('--output-directory','-O',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Output directory for spatial files')
     parser.add_argument('--file-prefix','-P',
         type=str,

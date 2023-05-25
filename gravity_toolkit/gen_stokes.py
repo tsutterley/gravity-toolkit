@@ -191,7 +191,7 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
 
     # Calculating fully-normalized Legendre Polynomials
     # Output is plm[l,m,th]
-    plm = np.zeros((LMAX+1,MMAX+1,nlat))
+    plm = np.zeros((LMAX+1, MMAX+1, nlat))
     # added option to precompute plms to improve computational speed
     if PLM is None:
         # if plms are not pre-computed: calculate Legendre polynomials
@@ -203,12 +203,12 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
         plm[:,m,j] = PLM[:,m,j]*int_fact[j]
 
     # Initializing preliminary spherical harmonic matrices
-    yclm = np.zeros((LMAX+1,MMAX+1))
-    yslm = np.zeros((LMAX+1,MMAX+1))
+    yclm = np.zeros((LMAX+1, MMAX+1))
+    yslm = np.zeros((LMAX+1, MMAX+1))
     # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
-    Ylms.clm = np.zeros((LMAX+1,MMAX+1))
-    Ylms.slm = np.zeros((LMAX+1,MMAX+1))
+    Ylms.clm = np.zeros((LMAX+1, MMAX+1))
+    Ylms.slm = np.zeros((LMAX+1, MMAX+1))
     # Multiplying gridded data with sin/cos of m#phis
     # This will sum through all phis in the dot product
     # output [m,theta]

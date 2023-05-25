@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 aod1b_oblateness.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 Contributions by Hugo Lecomte (03/2021)
 
 Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
@@ -36,6 +36,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: debug-level logging of member names and header lines
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -62,10 +63,10 @@ UPDATE HISTORY:
 from __future__ import print_function, division
 
 import sys
-import os
 import re
 import gzip
 import logging
+import pathlib
 import tarfile
 import argparse
 import numpy as np
@@ -141,29 +142,30 @@ def aod1b_oblateness(base_dir,
     product['oba'] = f'Ocean bottom pressure from {OCEAN_MODEL}'
 
     # AOD1B directory and output oblateness directory
-    grace_dir = os.path.join(base_dir,'AOD1B',DREL)
-    output_dir = os.path.join(grace_dir,'oblateness')
-    if not os.access(output_dir, os.F_OK):
-        os.mkdir(output_dir, MODE)
+    base_dir = pathlib.Path(base_dir).expanduser().absolute()
+    grace_dir = base_dir.joinpath('AOD1B',DREL)
+    output_dir = grace_dir.joinpath('oblateness')
+    output_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
 
     # finding all of the tar files in the AOD1b directory
-    input_tar_files = [tf for tf in os.listdir(grace_dir) if tx.match(tf)]
+    input_tar_files = [tf for tf in grace_dir.iterdir() if tx.match(tf.name)]
 
     # for each tar file
-    for i in sorted(input_tar_files):
+    for input_file in sorted(input_tar_files):
         # extract the year and month from the file
-        YY,MM,SFX = tx.findall(i).pop()
-        YY,MM = np.array([YY,MM], dtype=np.int64)
+        YY,MM,SFX = tx.findall(input_file.name).pop()
+        YY,MM = np.array([YY, MM], dtype=np.int64)
         # output monthly oblateness file
         FILE = f'AOD1B_{DREL}_{DSET}_{YY:4d}_{MM:02d}.txt'
+        output_file = output_dir.joinpath(FILE)
         # if output file exists: check if input tar file is newer
         TEST = False
         OVERWRITE = ' (clobber)'
         # check if output file exists
-        if os.access(os.path.join(output_dir,FILE), os.F_OK):
+        if output_file.exists():
             # check last modification time of input and output files
-            input_mtime = os.stat(os.path.join(grace_dir,i)).st_mtime
-            output_mtime = os.stat(os.path.join(output_dir,FILE)).st_mtime
+            input_mtime = input_file.stat().st_mtime
+            output_mtime = output_file.stat().st_mtime
             # if input tar file is newer: overwrite the output file
             if (input_mtime > output_mtime):
                 TEST = True
@@ -175,16 +177,16 @@ def aod1b_oblateness(base_dir,
         # or will rewrite if CLOBBER is set (if wanting something changed)
         if TEST or CLOBBER:
             # if verbose: output information about the oblateness file
-            logging.info('{0}{1}'.format(os.path.join(output_dir,FILE),OVERWRITE))
+            logging.info(f'{str(output_file)}{OVERWRITE}')
             # open output monthly oblateness file
-            f = open(os.path.join(output_dir,FILE), mode='w', encoding='utf8')
+            f = output_file.open(mode='w', encoding='utf8')
             args = ('Oblateness time series',DREL,DSET)
             print('# {0} from {1} AOD1b {2} Product'.format(*args), file=f)
             print('# {0}'.format(product[DSET]), file=f)
             print('# {0:^15}    {1:^15}'.format('ISO-Time','C20'), file=f)
 
             # open the AOD1B monthly tar file
-            tar = tarfile.open(name=os.path.join(grace_dir,i), mode='r:gz')
+            tar = tarfile.open(name=str(input_file), mode='r:gz')
 
             # Iterate over every member within the tar file
             for member in tar.getmembers():
@@ -238,7 +240,7 @@ def aod1b_oblateness(base_dir,
             # close the output file
             f.close()
             # set the permissions mode of the output file
-            os.chmod(os.path.join(output_dir,FILE), MODE)
+            output_file.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -252,8 +254,7 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',

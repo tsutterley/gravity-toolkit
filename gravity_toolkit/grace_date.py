@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 u"""
 grace_date.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
-Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
+Reads index file from podaac_cumulus.py or gfz_isdc_grace_ftp.py
 Parses dates of each GRACE/GRACE-FO file and assigns the month number
 Creates an index of dates for GRACE/GRACE-FO files
 
@@ -46,6 +46,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: use f-strings for formatting output date lines
         added regex formatting for CNES GRGS harmonics
     Updated 11/2022: use f-strings for formatting verbose output
@@ -103,8 +104,8 @@ UPDATE HISTORY:
 """
 from __future__ import print_function
 
-import os
 import logging
+import pathlib
 import argparse
 import numpy as np
 import gravity_toolkit.time
@@ -155,16 +156,16 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     """
 
     #  Directory of exact product
-    grace_dir = os.path.join(base_dir, PROC, DREL, DSET)
+    grace_dir = base_dir.joinpath(PROC, DREL, DSET)
     # index file containing GRACE/GRACE-FO data filenames
-    index_file = os.path.join(grace_dir, 'index.txt')
+    index_file = grace_dir.joinpath('index.txt')
     # check that index file exists
-    if not os.access(index_file, os.F_OK):
-        raise FileNotFoundError(f'{index_file} not found')
+    if not index_file.exists():
+        raise FileNotFoundError(f'{str(index_file)} not found')
     # log index file if debugging
-    logging.debug(f'Reading index file: {index_file}')
+    logging.debug(f'Reading index file: {str(index_file)}')
     # read index file for GRACE/GRACE-FO filenames
-    with open(index_file, mode='r', encoding='utf8') as f:
+    with index_file.open(mode='r', encoding='utf8') as f:
         input_files = f.read().splitlines()
 
     #  number of lines in input_files
@@ -177,8 +178,8 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     end_day = np.zeros((n_files))# day number end date
     mid_day = np.zeros((n_files))# mid-month day
     tot_days = np.zeros((n_files))# number of days since Jan 2002
-    tdec = np.zeros((n_files))# tdec is the date in decimal form
-    mon = np.zeros((n_files,),dtype=np.int64)# GRACE/GRACE-FO month number
+    tdec = np.zeros((n_files))# date in decimal form
+    mon = np.zeros((n_files,), dtype=np.int64)# GRACE/GRACE-FO month number
 
     # for each data file
     for t,infile in enumerate(input_files):
@@ -256,8 +257,8 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
 
     # Output GRACE/GRACE-FO date ascii file
     if OUTPUT:
-        date_file = f'{PROC}_{DREL}_DATES.txt'
-        fid = open(os.path.join(grace_dir,date_file), mode='w', encoding='utf8')
+        grace_date_file = grace_dir.joinpath(f'{PROC}_{DREL}_DATES.txt')
+        fid = grace_date_file.open(mode='w', encoding='utf8')
         # date file header information
         args = ('Mid-date','Month','Start_Day','End_Day','Total_Days')
         print('{0} {1:>10} {2:>11} {3:>10} {4:>13}'.format(*args),file=fid)
@@ -267,7 +268,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     # for each data file
     for t, infile in enumerate(input_files):
         # add file to python dictionary mapped to GRACE/GRACE-FO month
-        grace_files[mon[t]] = os.path.join(grace_dir,infile)
+        grace_files[mon[t]] = grace_dir.joinpath(infile)
         # print to GRACE dates ascii file (NOTE: tot_days will be rounded)
         if OUTPUT:
             print((f'{tdec[t]:13.8f} {mon[t]:03d} '
@@ -279,7 +280,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     # set permissions level of output date file
     if OUTPUT:
         fid.close()
-        os.chmod(os.path.join(grace_dir, date_file), MODE)
+        grace_date_file.chmod(mode=MODE)
 
     # return the python dictionary that maps GRACE months with GRACE files
     return grace_files
@@ -294,8 +295,7 @@ def arguments():
     )
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # Data processing center or satellite mission
     parser.add_argument('--center','-c',

@@ -31,7 +31,7 @@ If you have used ``gravity-toolkit`` in your work, please consider citing our li
 
     T. C. Sutterley, et al., "gravity-toolkit: Python tools for obtaining and
     working with data from the GRACE and GRACE Follow-On missions", (2020).
-    `doi: 10.5281/zenodo.7713980 <https://doi.org/10.5281/zenodo.7713980>`_
+    `doi: 10.5281/zenodo.5156864 <https://doi.org/10.5281/zenodo.5156864>`_
 
 Contributors
 ############

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 C30.py
-Written by Yara Mohajerani and Tyler Sutterley (01/2023)
+Written by Yara Mohajerani and Tyler Sutterley (05/2023)
 
 Reads monthly degree 3 zonal spherical harmonic data files from SLR
 
@@ -60,6 +60,7 @@ REFERENCES:
         https://doi.org/10.5880/GFZ.GRAVIS_06_L2B
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 01/2023: refactored satellite laser ranging read functions
     Updated 04/2022: updated docstrings to numpy documentation format
         include utf-8 encoding in reads to be windows compliant
@@ -79,8 +80,8 @@ UPDATE HISTORY:
         read CSR monthly 5x5 file and extract C3,0 coefficients
     Written 05/2019
 """
-import os
 import re
+import pathlib
 import numpy as np
 import gravity_toolkit.time
 import gravity_toolkit.read_SLR_harmonics
@@ -112,15 +113,17 @@ def C30(SLR_file, C30_MEAN=9.5717395773300e-07, HEADER=True):
     """
 
     # check that SLR file exists
-    if not os.access(os.path.expanduser(SLR_file), os.F_OK):
-        raise FileNotFoundError('SLR file not found in file system')
-    # output dictionary with input data
-    dinput = {}
+    SLR_file = pathlib.Path(SLR_file).expanduser().absolute()
+    if not SLR_file.exists():
+        raise FileNotFoundError(f'{str(SLR_file)} not found in file system')
 
-    if bool(re.search(r'TN-(14)',SLR_file,re.I)):
+    # output dictionary with data variables
+    dinput = {}
+    # determine source of input file
+    if bool(re.search(r'TN-(14)', SLR_file.name, re.I)):
 
         # SLR C30 RL06 file from PO.DAAC produced by GSFC
-        with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
+        with SLR_file.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         # number of lines contained in the file
         file_lines = len(file_contents)
@@ -178,7 +181,7 @@ def C30(SLR_file, C30_MEAN=9.5717395773300e-07, HEADER=True):
         # truncate variables if necessary
         for key,val in dinput.items():
             dinput[key] = val[:t]
-    elif bool(re.search(r'C30_LARES',SLR_file,re.I)):
+    elif bool(re.search(r'C30_LARES', SLR_file.name, re.I)):
         # read LARES filtered values
         LARES_input = np.loadtxt(SLR_file,skiprows=1)
         dinput['time'] = LARES_input[:,0].copy()
@@ -188,14 +191,14 @@ def C30(SLR_file, C30_MEAN=9.5717395773300e-07, HEADER=True):
         dinput['error'] = np.zeros_like(LARES_input[:,1])
         # calculate GRACE/GRACE-FO month
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
-    elif bool(re.search(r'GRAVIS-2B_GFZOP',SLR_file,re.I)):
+    elif bool(re.search(r'GRAVIS-2B_GFZOP', SLR_file.name, re.I)):
         # Combined GRACE/SLR solution file produced by GFZ
         # Column  1: MJD of BEGINNING of solution data span
         # Column  2: Year and fraction of year of BEGINNING of solution span
         # Column  6: Replacement C(3,0)
         # Column  7: Replacement C(3,0) - mean C(3,0) (1.0E-10)
         # Column  8: C(3,0) formal standard deviation (1.0E-12)
-        with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
+        with SLR_file.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
         # number of lines contained in the file
         file_lines = len(file_contents)

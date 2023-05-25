@@ -102,6 +102,7 @@ import gzip
 import struct
 import shutil
 import logging
+import pathlib
 import tarfile
 import argparse
 import posixpath
@@ -112,8 +113,10 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
     CLOBBER=False, MODE=None):
     # remote CNES/GRGS host directory
     HOST = ['http://gravitegrace.get.obs-mip.fr','grgs.obs-mip.fr','data']
+
     # check if directory exists and recursively create if not
-    os.makedirs(DIRECTORY,MODE) if not os.path.exists(DIRECTORY) else None
+    DIRECTORY = pathlib.Path(DIRECTORY).expanduser().absolute()
+    DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
 
     # create dictionaries for dataset and host directory
     DSET = {}
@@ -170,9 +173,9 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
         # output to log file
         # format: CNES_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
-        LOGFILE = f'CNES_sync_{today}.log'
-        fid1 = open(os.path.join(DIRECTORY,LOGFILE), mode='w', encoding='utf8')
-        logging.basicConfig(stream=fid1,level=logging.INFO)
+        LOGFILE = DIRECTORY.joinpath(f'CNES_sync_{today}.log')
+        fid1 = LOGFILE.open(mode='w', encoding='utf8')
+        logging.basicConfig(stream=fid1, level=logging.INFO)
         logging.info(f'CNES Sync Log ({today})')
     else:
         # standard output (terminal output)
@@ -184,17 +187,17 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
         # datasets (GSM, GAA, GAB)
         for ds in DSET[rl]:
             logging.info(f'CNES/{rl}/{ds}')
-            # specific GRACE directory
-            local_dir = os.path.join(DIRECTORY, 'CNES', rl, ds)
-            # check if GRACE directory exists and recursively create if not
-            os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
+            # local directory for exact data product
+            local_dir = DIRECTORY.joinpath('CNES', rl, ds)
+            # check if directory exists and recursively create if not
+            local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
             # retrieve each tar file from CNES
             for t in TAR[rl][ds]:
                 remote_tar_path = copy.copy(HOST)
                 remote_tar_path.extend(REMOTE[rl][ds])
                 remote_tar_path.append(t)
                 # local copy of CNES data tar file
-                local_file = os.path.join(DIRECTORY, 'CNES', rl, t)
+                local_file = DIRECTORY.joinpath('CNES', rl, t)
                 MD5 = gravtk.utilities.get_hash(local_file)
                 # copy remote tar file to local if new or updated
                 gravtk.utilities.from_http(remote_tar_path,
@@ -210,7 +213,7 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
                 remote_mtime = gravtk.utilities.get_unix_time(time_string,
                     format='%a, %d %b %Y %H:%M:%S %Z')
                 # keep remote modification time of file and local access time
-                os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
+                os.utime(local_file, (local_file.stat().st_atime, remote_mtime))
 
                 # open file with tarfile (read)
                 tar = tarfile.open(name=local_file, mode='r:gz')
@@ -220,26 +223,27 @@ def cnes_grace_sync(DIRECTORY, DREL=[], TIMEOUT=None, LOG=False,
                 # for each member of the dataset within the tar file
                 for member in member_list:
                     # local gzipped version of the file
-                    fi = os.path.basename(member.name)
-                    local_file = os.path.join(local_dir, f'{fi}.gz')
+                    granule = pathlib.Path(member.name).stem
+                    local_file = local_dir.joinpath(f'{granule}.gz')
                     gzip_copy_file(tar, member, local_file, CLOBBER, MODE)
                 # close the tar file
                 tar.close()
 
             # find GRACE files and sort by date
-            grace_files = [fi for fi in os.listdir(local_dir) if re.search(ds,fi)]
+            grace_files = [f.name for f in local_dir.iterdir()
+                if re.search(ds, f.name)]
             # outputting GRACE filenames to index
-            index_file = os.path.join(local_dir, 'index.txt')
-            with open(index_file, mode='w', encoding='utf8') as fid:
+            index_file = local_dir.joinpath('index.txt')
+            with index_file.open(mode='w', encoding='utf8') as fid:
                 for fi in sorted(grace_files):
                     print(fi, file=fid)
             # change permissions of index file
-            os.chmod(index_file, MODE)
+            index_file.chmod(mode=MODE)
 
     # close log file and set permissions level to MODE
     if LOG:
         fid1.close()
-        os.chmod(os.path.join(DIRECTORY,LOGFILE), MODE)
+        LOGFILE.chmod(mode=MODE)
 
 # PURPOSE: copy file from tar file checking if file exists locally
 # and if the original file is newer than the local file
@@ -250,7 +254,8 @@ def gzip_copy_file(tar, member, local_file, CLOBBER, MODE):
     # last modification time of file within tar file
     file1_mtime = member.mtime
     # check if output compressed file exists in local directory
-    if os.access(local_file, os.F_OK):
+    local_file = pathlib.Path(local_file).expanduser().absolute()
+    if local_file.exists():
         # check last modification time of output gzipped file
         with gzip.open(local_file, 'rb') as fileID:
             fileobj = fileID.fileobj
@@ -268,15 +273,15 @@ def gzip_copy_file(tar, member, local_file, CLOBBER, MODE):
     if TEST or CLOBBER:
         # Printing files copied from tar file to new compressed file
         logging.info(f'{tar.name}/{member.name} --> ')
-        logging.info(f'\t{local_file}{OVERWRITE}\n')
+        logging.info(f'\t{str(local_file)}{OVERWRITE}\n')
         # extract file contents to new compressed file
         f_in = tar.extractfile(member)
         with gzip.GzipFile(local_file, 'wb', 9, None, file1_mtime) as f_out:
             shutil.copyfileobj(f_in, f_out)
         f_in.close()
         # keep remote modification time of file and local access time
-        os.utime(local_file, (os.stat(local_file).st_atime, file1_mtime))
-        os.chmod(local_file, MODE)
+        os.utime(local_file, (local_file.stat().st_atime, file1_mtime))
+        local_file.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -288,8 +293,7 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',

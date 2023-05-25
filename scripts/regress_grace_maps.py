@@ -61,6 +61,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 05/2023: split S2 tidal aliasing terms into GRACE and GRACE-FO eras
+        use pathlib to define and operate on paths
     Updated 03/2023: updated inputs to spatial from_ascii function
         use attributes from units class for writing to netCDF4/HDF5 files
     Updated 01/2023: refactored time series analysis functions
@@ -96,6 +97,7 @@ import sys
 import os
 import time
 import logging
+import pathlib
 import argparse
 import traceback
 import numpy as np
@@ -103,7 +105,7 @@ import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(pathlib.Path(sys.argv[0]).name)
     logging.info(args)
     logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
@@ -130,6 +132,9 @@ def regress_grace_maps(LMAX, RAD,
     VERBOSE=0,
     MODE=0o775):
 
+    # create output directory if currently non-existent
+    OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
+    OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
     # output filename suffix
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')[DATAFORM]
 
@@ -172,8 +177,8 @@ def regress_grace_maps(LMAX, RAD,
     elif (INTERVAL == 3):
         # non-global grid set with BOUNDS parameter
         minlon,maxlon,minlat,maxlat = BOUNDS.copy()
-        lon = np.arange(minlon+dlon/2.0,maxlon+dlon/2.0,dlon)
-        lat = np.arange(maxlat-dlat/2.0,minlat-dlat/2.0,-dlat)
+        lon = np.arange(minlon+dlon/2.0, maxlon+dlon/2.0, dlon)
+        lat = np.arange(maxlat-dlat/2.0, minlat-dlat/2.0, -dlat)
         nlon = len(lon)
         nlat = len(lat)
 
@@ -183,7 +188,7 @@ def regress_grace_maps(LMAX, RAD,
         # input GRACE/GRACE-FO spatial file
         fargs = (FILE_PREFIX, units, LMAX, order_str,
             gw_str, ds_str, grace_month, suffix)
-        input_file = os.path.join(OUTPUT_DIRECTORY,input_format.format(*fargs))
+        input_file = OUTPUT_DIRECTORY.joinpath(input_format.format(*fargs))
         # read GRACE/GRACE-FO spatial file
         if (DATAFORM == 'ascii'):
             dinput = gravtk.spatial().from_ascii(input_file,
@@ -196,7 +201,7 @@ def regress_grace_maps(LMAX, RAD,
             dinput = gravtk.spatial().from_HDF5(input_file)
         # append to spatial list
         dinput.month = grace_month
-        nlat,nlon = dinput.shape
+        nlat, nlon = dinput.shape
         spatial_list.append(dinput)
 
     # concatenate list to single spatial object
@@ -262,9 +267,9 @@ def regress_grace_maps(LMAX, RAD,
 
     # Allocating memory for output variables
     out = dinput.zeros_like()
-    out.data = np.zeros((nlat,nlon,ncomp))
-    out.error = np.zeros((nlat,nlon,ncomp))
-    out.mask = np.ones((nlat,nlon,ncomp),dtype=bool)
+    out.data = np.zeros((nlat, nlon, ncomp))
+    out.error = np.zeros((nlat, nlon, ncomp))
+    out.mask = np.ones((nlat, nlon, ncomp),dtype=bool)
     # Fit Significance
     FS = {}
     # SSE: Sum of Squares Error
@@ -303,8 +308,8 @@ def regress_grace_maps(LMAX, RAD,
             gw_str, ds_str, coef_str[i], '', START, END, suffix)
         f2 = (FILE_PREFIX, units, LMAX, order_str,
             gw_str, ds_str, coef_str[i], '_ERROR', START, END, suffix)
-        file1 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f1))
-        file2 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f2))
+        file1 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f1))
+        file2 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f2))
         # full attributes
         UNITS_TITLE = f'{units_name}{unit_suffix[i]}'
         LONGNAME = units_longname
@@ -357,15 +362,15 @@ def regress_grace_maps(LMAX, RAD,
                 gw_str, ds_str, flag, '', START, END, suffix)
             f4 = (FILE_PREFIX, units, LMAX, order_str,
                 gw_str, ds_str, flag,'_PHASE', START, END, suffix)
-            file3 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f3))
-            file4 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f4))
+            file3 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f3))
+            file4 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f4))
             # output spatial error file name
             f5 = (FILE_PREFIX, units, LMAX, order_str,
                 gw_str, ds_str, flag, '_ERROR', START, END, suffix)
             f6 = (FILE_PREFIX, units, LMAX, order_str,
                 gw_str, ds_str, flag, '_PHASE_ERROR', START, END, suffix)
-            file5 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f5))
-            file6 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f6))
+            file5 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f5))
+            file6 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f6))
             # full attributes
             AMP_UNITS = units_name
             PH_UNITS = 'degrees'
@@ -403,7 +408,7 @@ def regress_grace_maps(LMAX, RAD,
         signif_str = f'{key}_'
         f7 = (FILE_PREFIX, units, LMAX, order_str, gw_str, ds_str,
             signif_str, coef_str[ORDER], START, END, suffix)
-        file7 = os.path.join(OUTPUT_DIRECTORY,output_format.format(*f7))
+        file7 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f7))
         # full attributes
         LONGNAME = signif_longname[key]
         # output fit significance to file
@@ -420,13 +425,13 @@ def regress_grace_maps(LMAX, RAD,
 def output_data(data, FILENAME=None, KEY='data', DATAFORM=None,
     UNITS=None, LONGNAME=None, TITLE=None, VERBOSE=0, MODE=0o775):
     output = data.copy()
-    setattr(output,'data',getattr(data, KEY))
+    setattr(output, 'data', getattr(data, KEY))
     # attributes for output files
     attributes = {}
     attributes['units'] = UNITS
     attributes['longname'] = LONGNAME
     attributes['title'] = TITLE
-    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+    attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
     # write to output file
     if (DATAFORM == 'ascii'):
         # ascii (.txt)
@@ -440,7 +445,7 @@ def output_data(data, FILENAME=None, KEY='data', DATAFORM=None,
         output.to_HDF5(FILENAME, date=False, verbose=VERBOSE,
             **attributes)
     # change the permissions mode of the output file
-    os.chmod(FILENAME, MODE)
+    FILENAME.chmod(mode=MODE)
 
 # PURPOSE: print a file log for the GRACE/GRACE-FO regression
 def output_log_file(input_arguments, output_files):
@@ -448,8 +453,8 @@ def output_log_file(input_arguments, output_files):
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_processing_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(input_arguments.output_directory)
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = pathlib.Path(input_arguments.output_directory)
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -468,8 +473,8 @@ def output_error_log_file(input_arguments):
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_processing_failed_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(input_arguments.output_directory)
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = pathlib.Path(input_arguments.output_directory)
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -492,8 +497,7 @@ def arguments():
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     parser.add_argument('--output-directory','-O',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Output directory for spatial files')
     parser.add_argument('--file-prefix','-P',
         type=str,

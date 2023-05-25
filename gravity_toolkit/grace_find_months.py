@@ -37,6 +37,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 05/2023: use formatting for reading from date file
+        use pathlib to define and operate on paths
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -50,7 +51,7 @@ UPDATE HISTORY:
     Updated 09/2013: missing periods for for CNES
     Written 05/2013
 """
-import os
+import pathlib
 import numpy as np
 from gravity_toolkit.grace_date import grace_date
 
@@ -103,11 +104,12 @@ def grace_find_months(base_dir, PROC, DREL, DSET='GSM'):
     """
 
     #  Directory of exact product (using date index from GSM)
-    grace_dir = os.path.join(base_dir, PROC, DREL, DSET)
+    base_dir = pathlib.Path(base_dir).expanduser().absolute()
+    grace_dir = base_dir.joinpath(PROC, DREL, DSET)
 
     # check that GRACE/GRACE-FO date file exists
-    date_file = os.path.join(grace_dir, f'{PROC}_{DREL}_DATES.txt')
-    if not os.access(date_file, os.F_OK):
+    grace_date_file = grace_dir.joinpath(f'{PROC}_{DREL}_DATES.txt')
+    if not grace_date_file.exists():
         grace_date(base_dir, PROC=PROC, DREL=DREL, DSET=DSET, OUTPUT=True)
 
     # names and formats of GRACE/GRACE-FO date ascii file
@@ -116,7 +118,7 @@ def grace_find_months(base_dir, PROC, DREL, DSET='GSM'):
     dtype = np.dtype({'names':names, 'formats':formats})
     # read GRACE/GRACE-FO date ascii file
     # skip the header row and extract dates (decimal format) and months
-    date_input = np.loadtxt(date_file, skiprows=1, dtype=dtype)
+    date_input = np.loadtxt(grace_date_file, skiprows=1, dtype=dtype)
     # date info dictionary
     var_info = {}
     var_info['time'] = date_input['t']

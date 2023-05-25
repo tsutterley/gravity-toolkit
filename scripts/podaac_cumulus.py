@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_cumulus.py
-Written by Tyler Sutterley (04/2023)
+Written by Tyler Sutterley (05/2023)
 
 Syncs GRACE/GRACE-FO data from NASA JPL PO.DAAC Cumulus AWS S3 bucket
 S3 Cumulus syncs are only available in AWS instances in us-west-2
@@ -51,6 +51,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 04/2023: different openers for s3 and data endpoints
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: added CMR queries for GRACE/GRACE-FO technical notes
@@ -72,6 +73,7 @@ import gzip
 import time
 import shutil
 import logging
+import pathlib
 import argparse
 import gravity_toolkit as gravtk
 
@@ -81,7 +83,8 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
     CLOBBER=False, MODE=None):
 
     # check if directory exists and recursively create if not
-    os.makedirs(DIRECTORY,MODE) if not os.path.exists(DIRECTORY) else None
+    DIRECTORY = pathlib.Path(DIRECTORY).expanduser().absolute()
+    DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
 
     # mission shortnames
     shortname = {'grace':'GRAC', 'grace-fo':'GRFO'}
@@ -95,9 +98,8 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
     if LOG:
         # format: PODAAC_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d', time.localtime())
-        LOGFILE = f'PODAAC_sync_{today}.log'
-        logging.basicConfig(filename=os.path.join(DIRECTORY,LOGFILE),
-            level=logging.INFO)
+        LOGFILE = DIRECTORY.joinpath(f'PODAAC_sync_{today}.log')
+        logging.basicConfig(filename=LOGFILE, level=logging.INFO)
         logging.info(f'PO.DAAC Cumulus Sync Log ({today})')
         logging.info('CENTERS={0}'.format(','.join(PROC)))
         logging.info('RELEASES={0}'.format(','.join(DREL)))
@@ -113,8 +115,8 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
     R1 = re.compile(r'TN-13_GEOC_(CSR|GFZ|JPL)_(.*?).txt', re.VERBOSE)
     R2 = re.compile(r'TN-(14)_C30_C20_GSFC_SLR.txt', re.VERBOSE)
     # check if geocenter directory exists and recursively create if not
-    local_dir = os.path.join(DIRECTORY,'geocenter')
-    os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
+    local_dir = DIRECTORY.joinpath('geocenter')
+    local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
     # current time stamp to use for local files
     mtime = time.time()
     # for each processing center (CSR, GFZ, JPL)
@@ -132,7 +134,7 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                 # TN-13 JPL degree 1 files
                 url, = [url for url in urls if R1.search(url)]
                 granule = gravtk.utilities.url_split(url)[-1]
-                local_file = os.path.join(DIRECTORY,'geocenter',granule)
+                local_file = local_dir.joinpath(granule)
                 # access auxiliary data from endpoint
                 if (ENDPOINT == 'data'):
                     http_pull_file(url, mtime, local_file,
@@ -147,7 +149,7 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                 # TN-14 SLR C2,0 and C3,0 files
                 url, = [url for url in urls if R2.search(url)]
                 granule = gravtk.utilities.url_split(url)[-1]
-                local_file = os.path.join(DIRECTORY,granule)
+                local_file = DIRECTORY.joinpath(granule)
                 # access auxiliary data from endpoint
                 if (ENDPOINT == 'data'):
                     http_pull_file(url, mtime, local_file,
@@ -167,10 +169,9 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
             # print string of exact data product
             logging.info(f'GFZ/AOD1B/{rl}')
             # local directory for exact data product
-            local_dir = os.path.join(DIRECTORY,'AOD1B',rl)
+            local_dir = DIRECTORY.joinpath('AOD1B',rl)
             # check if directory exists and recursively create if not
-            if not os.path.exists(local_dir):
-                os.makedirs(local_dir,MODE)
+            local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
             # query CMR for dataset
             ids,urls,mtimes = gravtk.utilities.cmr(
                 mission='grace', level='L1B', center='GFZ', release=rl,
@@ -180,7 +181,7 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
             for id,url,mtime in zip(ids,urls,mtimes):
                 # retrieve GRACE/GRACE-FO files
                 granule = gravtk.utilities.url_split(url)[-1]
-                local_file = os.path.join(local_dir,granule)
+                local_file = local_dir.joinpath(granule)
                 # access data from endpoint
                 if (ENDPOINT == 'data'):
                     http_pull_file(url, mtime, local_file,
@@ -201,10 +202,9 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
             # for each level-2 product (GAC, GAD, GSM, GAA, GAB)
             for ds in DSET[pr]:
                 # local directory for exact data product
-                local_dir = os.path.join(DIRECTORY, pr, rl, ds)
+                local_dir = DIRECTORY.joinpath(pr, rl, ds)
                 # check if directory exists and recursively create if not
-                if not os.path.exists(local_dir):
-                    os.makedirs(local_dir,MODE)
+                local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
                 # list of GRACE/GRACE-FO files for index
                 grace_files = []
                 # for each satellite mission (grace, grace-fo)
@@ -224,7 +224,7 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                         # retrieve GRACE/GRACE-FO files
                         granule = gravtk.utilities.url_split(url)[-1]
                         suffix = '.gz' if GZIP else ''
-                        local_file = os.path.join(local_dir, f'{granule}{suffix}')
+                        local_file = local_dir.joinpath(f'{granule}{suffix}')
                         # access data from endpoint
                         if (ENDPOINT == 'data'):
                             http_pull_file(url, mtime, local_file,
@@ -237,23 +237,24 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                             s3_pull_file(response, mtime, local_file,
                                 GZIP=GZIP, CLOBBER=CLOBBER, MODE=MODE)
                     # find local GRACE/GRACE-FO files to create index
-                    granules = sorted([f for f in os.listdir(local_dir) if rx.match(f)])
+                    granules = sorted([f.name for f in local_dir.iterdir()
+                        if rx.match(f.name)])
                     # reduce list of GRACE/GRACE-FO files to unique dates
                     granules = gravtk.time.reduce_by_date(granules)
                     # extend list of GRACE/GRACE-FO files with granules
                     grace_files.extend(granules)
 
                 # outputting GRACE/GRACE-FO filenames to index
-                index_file = os.path.join(local_dir,'index.txt')
-                with open(index_file, mode='w', encoding='utf8') as fid:
+                index_file = local_dir.joinpath('index.txt')
+                with index_file.open(mode='w', encoding='utf8') as fid:
                     for fi in sorted(grace_files):
                         print(fi, file=fid)
                 # change permissions of index file
-                os.chmod(index_file, MODE)
+                index_file.chmod(mode=MODE)
 
     # close log file and set permissions level to MODE
     if LOG:
-        os.chmod(os.path.join(DIRECTORY,LOGFILE), MODE)
+        LOGFILE.chmod(mode=MODE)
 
 # PURPOSE: pull file from a remote host checking if file exists locally
 # and if the remote file is newer than the local file
@@ -263,9 +264,10 @@ def http_pull_file(remote_file, remote_mtime, local_file,
     TEST = False
     OVERWRITE = ' (clobber)'
     # check if local version of file exists
-    if os.access(local_file, os.F_OK):
+    local_file = pathlib.Path(local_file).expanduser().absolute()
+    if local_file.exists():
         # check last modification time of local file
-        local_mtime = os.stat(local_file).st_mtime
+        local_mtime = local_file.stat().st_mtime
         # if remote file is newer: overwrite the local file
         if (gravtk.utilities.even(remote_mtime) >
             gravtk.utilities.even(local_mtime)):
@@ -278,7 +280,7 @@ def http_pull_file(remote_file, remote_mtime, local_file,
     if TEST or CLOBBER:
         # Printing files transferred
         logging.info(f'{remote_file} -->')
-        logging.info(f'\t{local_file}{OVERWRITE}\n')
+        logging.info(f'\t{str(local_file)}{OVERWRITE}\n')
         # chunked transfer encoding size
         CHUNK = 16 * 1024
         # Create and submit request.
@@ -292,11 +294,11 @@ def http_pull_file(remote_file, remote_mtime, local_file,
             with gzip.GzipFile(local_file, 'wb', 9, None, remote_mtime) as f:
                 shutil.copyfileobj(response, f)
         else:
-            with open(local_file, 'wb') as f:
+            with local_file.open(mode='wb') as f:
                 shutil.copyfileobj(response, f, CHUNK)
         # keep remote modification time of file and local access time
-        os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
-        os.chmod(local_file, MODE)
+        os.utime(local_file, (local_file.stat().st_atime, remote_mtime))
+        local_file.chmod(mode=MODE)
 
 # PURPOSE: pull file from AWS s3 bucket checking if file exists locally
 # and if the remote file is newer than the local file
@@ -306,9 +308,10 @@ def s3_pull_file(response, remote_mtime, local_file,
     TEST = False
     OVERWRITE = ' (clobber)'
     # check if local version of file exists
-    if os.access(local_file, os.F_OK):
+    local_file = pathlib.Path(local_file).expanduser().absolute()
+    if local_file.exists():
         # check last modification time of local file
-        local_mtime = os.stat(local_file).st_mtime
+        local_mtime = local_file.stat().st_mtime
         # if remote file is newer: overwrite the local file
         if (gravtk.utilities.even(remote_mtime) >
             gravtk.utilities.even(local_mtime)):
@@ -320,7 +323,7 @@ def s3_pull_file(response, remote_mtime, local_file,
     # if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         # Printing files transferred
-        logging.info(f'{local_file}{OVERWRITE}')
+        logging.info(f'{str(local_file)}{OVERWRITE}')
         # chunked transfer encoding size
         CHUNK = 16 * 1024
         # copy remote file contents to local file
@@ -328,11 +331,11 @@ def s3_pull_file(response, remote_mtime, local_file,
             with gzip.GzipFile(local_file, 'wb', 9, None, remote_mtime) as f:
                 shutil.copyfileobj(response['Body'], f)
         else:
-            with open(local_file, 'wb') as f:
+            with local_file.open(mode='wb') as f:
                 shutil.copyfileobj(response['Body'], f, CHUNK)
         # keep remote modification time of file and local access time
-        os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
-        os.chmod(local_file, MODE)
+        os.utime(local_file, (local_file.stat().st_atime, remote_mtime))
+        local_file.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -350,13 +353,11 @@ def arguments():
         type=str, default=os.environ.get('EARTHDATA_PASSWORD'),
         help='Password for NASA Earthdata Login')
     parser.add_argument('--netrc','-N',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.path.join(os.path.expanduser('~'),'.netrc'),
+        type=pathlib.Path, default=pathlib.Path.home().joinpath('.netrc'),
         help='Path to .netrc file for authentication')
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # GRACE/GRACE-FO processing center
     parser.add_argument('--center','-c',

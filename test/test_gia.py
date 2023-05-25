@@ -3,11 +3,11 @@ u"""
 test_gia.py (12/2022)
 Tests the that GIA model readers are equivalent
 """
-import os
 import gzip
 import time
 import pytest
 import shutil
+import pathlib
 import numpy as np
 import gravity_toolkit as gravtk
 
@@ -15,7 +15,7 @@ import gravity_toolkit as gravtk
 @pytest.fixture(scope="module", autouse=True)
 def download_GIA_model():
     # output GIA file
-    GIA_FILE = 'Stokes_trend_High_Res.txt'
+    GIA_FILE = pathlib.Path('Stokes_trend_High_Res.txt')
     # download GIA model
     HOST = ['https://www.atmosp.physics.utoronto.ca','~peltier','datasets',
         'Ice6G_C_VM5a','ICE-6G_High_Res_Stokes_trend.txt.gz']
@@ -26,7 +26,7 @@ def download_GIA_model():
     # run tests
     yield
     # clean up
-    os.remove(GIA_FILE)
+    GIA_FILE.unlink()
 
 # PURPOSE: read ICE-6G GIA test outputs
 def test_GIA_model_read():

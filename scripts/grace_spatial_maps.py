@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_spatial_maps.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     monthly spatial fields
@@ -150,6 +150,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: add root attributes to output netCDF4 and HDF5 files
         use attributes from units class for writing to netCDF4/HDF5 files
     Updated 02/2023: use get function to retrieve specific units
@@ -189,6 +190,7 @@ import re
 import copy
 import time
 import logging
+import pathlib
 import numpy as np
 import argparse
 import traceback
@@ -197,7 +199,7 @@ import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(pathlib.Path(sys.argv[0]).name)
     logging.info(args)
     logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
@@ -245,8 +247,8 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     MODE=0o775):
 
     # recursively create output directory if not currently existing
-    if not os.access(OUTPUT_DIRECTORY, os.F_OK):
-        os.makedirs(OUTPUT_DIRECTORY, mode=MODE, exist_ok=True)
+    OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
+    OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
 
     # output attributes for spatial files
     attributes = collections.OrderedDict()
@@ -303,11 +305,12 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # use a mean file for the static field to remove
     if MEAN_FILE:
         # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
+        MEAN_FILE = pathlib.Path(MEAN_FILE).expanduser().absolute()
         mean_Ylms = gravtk.harmonics().from_file(MEAN_FILE,
             format=MEANFORM, date=False)
         # remove the input mean
         GRACE_Ylms.subtract(mean_Ylms)
-        attributes['lineage'].append(os.path.basename(MEAN_FILE))
+        attributes['lineage'].append(MEAN_FILE.name)
     else:
         GRACE_Ylms.mean(apply=True)
 
@@ -322,12 +325,12 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         ds_str = ''
 
     # input GIA spherical harmonic datafiles
+    GIA_FILE = pathlib.Path(GIA_FILE).expanduser().absolute() if GIA else None
     GIA_Ylms_rate = gravtk.gia(lmax=LMAX).from_GIA(GIA_FILE, GIA=GIA, mmax=MMAX)
     # output GIA string for filename
     if GIA:
         gia_str = f'_{GIA_Ylms_rate.title}'
-        attributes['GIA'] = (str(GIA_Ylms_rate.citation),
-                             os.path.basename(GIA_FILE))
+        attributes['GIA'] = (str(GIA_Ylms_rate.citation), GIA_FILE.name)
     else:
         gia_str = ''
     # monthly GIA calculated by gia_rate*time elapsed
@@ -366,16 +369,14 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
                 # HDF5 (.H5)
                 Ylms = gravtk.harmonics().from_file(REMOVE_FILE,
                     format=REMOVEFORM)
-                attributes['lineage'].append(os.path.basename(REMOVE_FILE))
+                attributes['lineage'].append(Ylms.name)
             elif REMOVEFORM in ('index-ascii','index-netCDF4','index-HDF5'):
                 # read from index file
                 _,removeform = REMOVEFORM.split('-')
                 # index containing files in data format
                 Ylms = gravtk.harmonics().from_index(REMOVE_FILE,
                     format=removeform)
-                attributes['lineage'].extend(
-                    [os.path.basename(f) for f in Ylms.filename]
-                )
+                attributes['lineage'].extend([f.name for f in Ylms.filename])
             # reduce to GRACE/GRACE-FO months and truncate to degree and order
             Ylms = Ylms.subset(GRACE_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
             # distribute removed Ylms uniformly over the ocean
@@ -418,8 +419,8 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     elif (INTERVAL == 3):
         # non-global grid set with BOUNDS parameter
         minlon,maxlon,minlat,maxlat = BOUNDS.copy()
-        grid.lon = np.arange(minlon+dlon/2.0,maxlon+dlon/2.0,dlon)
-        grid.lat = np.arange(maxlat-dlat/2.0,minlat-dlat/2.0,-dlat)
+        grid.lon = np.arange(minlon+dlon/2.0, maxlon+dlon/2.0, dlon)
+        grid.lat = np.arange(maxlat-dlat/2.0, minlat-dlat/2.0, -dlat)
         nlon = len(grid.lon)
         nlat = len(grid.lat)
 
@@ -445,7 +446,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
     attributes['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
     # add attributes to output spatial object
-    attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+    attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
     grid.attributes['ROOT'] = attributes
 
     # output file format
@@ -473,13 +474,13 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         # output monthly files to ascii, netCDF4 or HDF5
         fargs = (FILE_PREFIX,units,LMAX,order_str,gw_str,
             ds_str,grace_month,suffix[DATAFORM])
-        FILE = os.path.join(OUTPUT_DIRECTORY,file_format.format(*fargs))
-        grid.to_file(FILE, format=DATAFORM, date=True, verbose=VERBOSE,
-            units=units_name, longname=units_longname)
+        OUTPUT_FILE = OUTPUT_DIRECTORY.joinpath(file_format.format(*fargs))
+        grid.to_file(OUTPUT_FILE, format=DATAFORM, date=True,
+            verbose=VERBOSE, units=units_name, longname=units_longname)
         # set the permissions mode of the output files
-        os.chmod(FILE, MODE)
+        OUTPUT_FILE.chmod(mode=MODE)
         # add file to list
-        output_files.append(FILE)
+        output_files.append(OUTPUT_FILE)
 
     # return the list of output files
     return output_files
@@ -490,8 +491,8 @@ def output_log_file(input_arguments, output_files):
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_processing_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(input_arguments.output_directory)
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = pathlib.Path(input_arguments.output_directory)
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -510,8 +511,8 @@ def output_error_log_file(input_arguments):
     args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
     LOGFILE = 'GRACE_processing_failed_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
-    DIRECTORY = os.path.expanduser(input_arguments.output_directory)
-    fid = gravtk.utilities.create_unique_file(os.path.join(DIRECTORY,LOGFILE))
+    DIRECTORY = pathlib.Path(input_arguments.output_directory)
+    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
     logging.basicConfig(stream=fid, level=logging.INFO)
     # print argument values sorted alphabetically
     logging.info('ARGUMENTS:')
@@ -535,12 +536,10 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     parser.add_argument('--output-directory','-O',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Output directory for spatial files')
     parser.add_argument('--file-prefix','-P',
         type=str,
@@ -637,7 +636,7 @@ def arguments():
         help='GIA model type to read')
     # full path to GIA file
     parser.add_argument('--gia-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='GIA file to read')
     # use atmospheric jump corrections from Fagiolini et al. (2015)
     parser.add_argument('--atm-correction',
@@ -663,7 +662,7 @@ def arguments():
         choices=['Tellus','SLR','SLF','UCI','Swenson','GFZ'],
         help='Update Degree 1 coefficients with SLR or derived values')
     parser.add_argument('--geocenter-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Specific geocenter file if not default')
     parser.add_argument('--interpolate-geocenter',
         default=False, action='store_true',
@@ -693,7 +692,7 @@ def arguments():
         help='Input/output data format')
     # mean file to remove
     parser.add_argument('--mean-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='GRACE/GRACE-FO mean file to remove from the harmonic data')
     # input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--mean-format',
@@ -701,7 +700,7 @@ def arguments():
         help='Input data format for GRACE/GRACE-FO mean file')
     # monthly files to be removed from the GRACE/GRACE-FO data
     parser.add_argument('--remove-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), nargs='+',
+        type=pathlib.Path, nargs='+',
         help='Monthly files to be removed from the GRACE/GRACE-FO data')
     choices = []
     choices.extend(['ascii','netCDF4','HDF5'])
@@ -715,7 +714,7 @@ def arguments():
     # land-sea mask for redistributing fluxes
     lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
+        type=pathlib.Path, default=lsmask,
         help='Land-sea mask for redistributing land water flux')
     # Output log file for each job in forms
     # GRACE_processing_run_2002-04-01_PID-00000.log

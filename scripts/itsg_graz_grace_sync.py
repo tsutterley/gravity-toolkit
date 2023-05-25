@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 itsg_graz_grace_sync.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (05/2023)
 Syncs GRACE/GRACE-FO and auxiliary data from the ITSG GRAZ server
 
 CALLING SEQUENCE:
@@ -39,6 +39,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
@@ -53,6 +54,7 @@ import re
 import time
 import shutil
 import logging
+import pathlib
 import argparse
 import posixpath
 import gravity_toolkit as gravtk
@@ -62,15 +64,16 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
     LOG=False, LIST=False, MODE=0o775, CLOBBER=False):
 
     # check if directory exists and recursively create if not
-    os.makedirs(DIRECTORY,MODE) if not os.path.exists(DIRECTORY) else None
+    DIRECTORY = pathlib.Path(DIRECTORY).expanduser().absolute()
+    DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
+
     # create log file with list of synchronized files (or print to terminal)
     if LOG:
         # output to log file
         # format: ITSG_GRAZ_GRACE_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
-        LOGFILE = f'ITSG_GRAZ_GRACE_sync_{today}.log'
-        logging.basicConfig(filename=os.path.join(DIRECTORY,LOGFILE),
-            level=logging.INFO)
+        LOGFILE = DIRECTORY.joinpath(f'ITSG_GRAZ_GRACE_sync_{today}.log')
+        logging.basicConfig(filename=LOGFILE, level=logging.INFO)
         logging.info(f'ITSG GRAZ GRACE Sync Log ({today})')
         logging.info(f'Release: {RELEASE}')
         logging.info(f'LMAX: {LMAX:d}')
@@ -118,11 +121,11 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
         # extract parameters from input filename
         PFX,PRD,trunc,year,month,SFX = R1.findall(colname).pop()
         # local directory for output GRAZ data
-        local_dir=os.path.join(DIRECTORY,'GRAZ',DREL[RELEASE],DEALIASING[PRD])
+        local_dir = DIRECTORY.joinpath('GRAZ',DREL[RELEASE],DEALIASING[PRD])
         # check if local directory exists and recursively create if not
-        os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
+        local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
         # local and remote versions of the file
-        local_file = os.path.join(local_dir,colname)
+        local_file = local_dir.joinpath(colname)
         remote_file = posixpath.join(*REMOTE,colname)
         # copy file from remote directory comparing modified dates
         http_pull_file(remote_file, remote_mtime, local_file,
@@ -134,13 +137,13 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
     files,mtimes = gravtk.utilities.http_list(REMOTE,
         timeout=TIMEOUT,pattern=R1,sort=True)
     # local directory for output GRAZ data
-    local_dir = os.path.join(DIRECTORY,'GRAZ',DREL[RELEASE],'GSM')
+    local_dir = DIRECTORY.joinpath('GRAZ',DREL[RELEASE],'GSM')
     # check if local directory exists and recursively create if not
-    os.makedirs(local_dir,MODE) if not os.path.exists(local_dir) else None
+    local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
     # for each file on the remote directory
     for colname,remote_mtime in zip(files,mtimes):
         # local and remote versions of the file
-        local_file = os.path.join(local_dir,colname)
+        local_file = local_dir.joinpath(colname)
         remote_file = posixpath.join(*REMOTE,colname)
         # copy file from remote directory comparing modified dates
         http_pull_file(remote_file, remote_mtime, local_file,
@@ -150,22 +153,23 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
     # DATA PRODUCTS (GAC, GAD, GSM, GAA, GAB)
     for ds in ['GAA','GAB','GAC','GAD','GSM']:
         # local directory for exact data product
-        local_dir = os.path.join(DIRECTORY,'GRAZ',DREL[RELEASE],ds)
-        if not os.access(local_dir,os.F_OK):
+        local_dir = DIRECTORY.joinpath('GRAZ',DREL[RELEASE],ds)
+        if not local_dir.exists():
             continue
         # find local GRACE files to create index
-        grace_files=[fi for fi in os.listdir(local_dir) if R1.match(fi)]
+        grace_files = sorted([f.name for f in local_dir.iterdir()
+            if R1.match(f.name)])
         # outputting GRACE filenames to index
-        index_file = os.path.join(local_dir,'index.txt')
-        with open(index_file, mode='w', encoding='utf8') as fid:
+        index_file = local_dir.joinpath('index.txt')
+        with index_file.open(mode='w', encoding='utf8') as fid:
             for fi in sorted(grace_files):
                 print(fi, file=fid)
         # change permissions of index file
-        os.chmod(index_file, MODE)
+        index_file.chmod(mode=MODE)
 
     # close log file and set permissions level to MODE
     if LOG:
-        os.chmod(os.path.join(DIRECTORY,LOGFILE), MODE)
+        LOGFILE.chmod(mode=MODE)
 
 # PURPOSE: pull file from a remote host checking if file exists locally
 # and if the remote file is newer than the local file
@@ -175,9 +179,10 @@ def http_pull_file(remote_file,remote_mtime,local_file,
     TEST = False
     OVERWRITE = ' (clobber)'
     # check if local version of file exists
-    if os.access(local_file, os.F_OK):
+    local_file = pathlib.Path(local_file).expanduser().absolute()
+    if local_file.exists():
         # check last modification time of local file
-        local_mtime = os.stat(local_file).st_mtime
+        local_mtime = local_file.stat().st_mtime
         # if remote file is newer: overwrite the local file
         if (gravtk.utilities.even(remote_mtime) >
             gravtk.utilities.even(local_mtime)):
@@ -190,7 +195,7 @@ def http_pull_file(remote_file,remote_mtime,local_file,
     if TEST or CLOBBER:
         # Printing files transferred
         logging.info(f'{remote_file} --> ')
-        logging.info(f'\t{local_file}{OVERWRITE}\n')
+        logging.info(f'\t{str(local_file)}{OVERWRITE}\n')
         # if executing copy command (not only printing the files)
         if not LIST:
             # Create and submit request. There are a wide range of exceptions
@@ -202,11 +207,11 @@ def http_pull_file(remote_file,remote_mtime,local_file,
             CHUNK = 16 * 1024
             # copy contents to local file using chunked transfer encoding
             # transfer should work properly with ascii and binary data formats
-            with open(local_file, 'wb') as f:
+            with local_file.open(mode='wb') as f:
                 shutil.copyfileobj(response, f, CHUNK)
             # keep remote modification time of file and local access time
-            os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
-            os.chmod(local_file, MODE)
+            os.utime(local_file, (local_file.stat().st_atime, remote_mtime))
+            local_file.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -218,8 +223,7 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # ITSG GRAZ releases
     choices = ['Grace2014','Grace2016','Grace2018','Grace_operational']

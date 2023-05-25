@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_dealiasing_ftp.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 Syncs GRACE Level-1b dealiasing products from the GFZ Information
     System and Data Center (ISDC)
 Optionally outputs as monthly tar files
@@ -30,6 +30,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: increase default year range to sync
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -53,6 +54,7 @@ import re
 import time
 import ftplib
 import logging
+import pathlib
 import tarfile
 import argparse
 import posixpath
@@ -62,17 +64,18 @@ import gravity_toolkit as gravtk
 # and optionally outputs as monthly tar files
 def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, MONTHS=None, TAR=False,
     TIMEOUT=None, LOG=False, CLOBBER=False, MODE=None):
-    # output data directory
-    grace_dir = os.path.join(base_dir,'AOD1B',DREL)
-    os.makedirs(grace_dir) if not os.access(grace_dir,os.F_OK) else None
+    # check if directory exists and recursively create if not
+    base_dir = pathlib.Path(base_dir).expanduser().absolute()
+    grace_dir = base_dir.joinpath('AOD1B',DREL)
+    grace_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
+
     # create log file with list of synchronized files (or print to terminal)
     if LOG:
         # output to log file
         # format: GFZ_AOD1B_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d',time.localtime())
-        LOGFILE = f'GFZ_AOD1B_sync_{today}.log'
-        logging.basicConfig(filename=os.path.join(base_dir,LOGFILE),
-            level=logging.INFO)
+        LOGFILE = base_dir.joinpath(f'GFZ_AOD1B_sync_{today}.log')
+        logging.basicConfig(filename=LOGFILE, level=logging.INFO)
         logging.info(f'GFZ AOD1b Sync Log ({today})')
     else:
         # standard output (terminal output)
@@ -80,7 +83,7 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, MONTHS=None, TAR=False,
 
     # remote HOST for DREL on GFZ data server
     # connect and login to GFZ ftp server
-    ftp = ftplib.FTP('isdcftp.gfz-potsdam.de',timeout=TIMEOUT)
+    ftp = ftplib.FTP('isdcftp.gfz-potsdam.de', timeout=TIMEOUT)
     ftp.login()
 
     # compile regular expression operator for years to sync
@@ -91,7 +94,7 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, MONTHS=None, TAR=False,
     # compile regular expression operator for years to sync
     R1 = re.compile(rf'({regex_years})', re.VERBOSE)
     # suffix for each data release
-    SUFFIX = dict(RL04='tar.gz',RL05='tar.gz',RL06='tgz')
+    SUFFIX = dict(RL04='tar.gz', RL05='tar.gz', RL06='tgz')
 
     # find remote yearly directories for DREL
     YRS,_ = gravtk.utilities.ftp_list([ftp.host,'grace',
@@ -105,8 +108,8 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, MONTHS=None, TAR=False,
             args = (Y, M, DREL.replace('RL',''), SUFFIX[DREL])
             FILE = 'AOD1B_{0}-{1:02d}_{2}.{3}'.format(*args)
             # check if output tar file exists (if TAR)
-            local_tar_file = os.path.join(grace_dir,FILE)
-            TEST = not os.access(local_tar_file, os.F_OK)
+            local_tar_file = grace_dir.joinpath(FILE)
+            TEST = not local_tar_file.exists()
             # compile regular expressions operators for file dates
             # will extract year and month and calendar day from the ascii file
             regex_pattern = r'AOD1B_({0})-({1:02d})-(\d+)_X_\d+.asc.gz$'
@@ -134,21 +137,21 @@ def gfz_isdc_dealiasing_ftp(base_dir, DREL, YEAR=None, MONTHS=None, TAR=False,
                 # close tar file and set permissions level to MODE
                 tar.close()
                 logging.info(f' --> {local_tar_file}\n')
-                os.chmod(local_tar_file, MODE)
+                local_tar_file.chmod(mode=MODE)
             elif (file_count > 0) and not TAR:
                 # copy each gzip file and keep as individual daily files
                 for fi,remote_mtime in zip(remote_files,remote_mtimes):
                     # remote and local version of each input file
                     remote = [ftp.host,'grace','Level-1B','GFZ','AOD',DREL,Y,fi]
-                    local_file = os.path.join(grace_dir,fi)
+                    local_file = grace_dir.joinpath(fi)
                     ftp_mirror_file(ftp,remote,remote_mtime,local_file,
-                        CLOBBER=CLOBBER,MODE=MODE)
+                        CLOBBER=CLOBBER, MODE=MODE)
 
     # close the ftp connection
     ftp.quit()
     # close log file and set permissions level to MODE
     if LOG:
-        os.chmod(os.path.join(base_dir,LOGFILE), MODE)
+        LOGFILE.chmod(mode=MODE)
 
 # PURPOSE: pull file from a remote host checking if file exists locally
 # and if the remote file is newer than the local file
@@ -160,9 +163,10 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
     TEST = False
     OVERWRITE = ' (clobber)'
     # check if local version of file exists
-    if os.access(local_file, os.F_OK):
+    local_file = pathlib.Path(local_file).expanduser().absolute()
+    if local_file.exists():
         # check last modification time of local file
-        local_mtime = os.stat(local_file).st_mtime
+        local_mtime = local_file.stat().st_mtime
         # if remote file is newer: overwrite the local file
         if (gravtk.utilities.even(remote_mtime) >
             gravtk.utilities.even(local_mtime)):
@@ -178,11 +182,11 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
         logging.info(f'{remote_ftp_url} -->')
         logging.info(f'\t{local_file}{OVERWRITE}\n')
         # copy remote file contents to local file
-        with open(local_file, 'wb') as f:
+        with local_file.open(mode='wb') as f:
             ftp.retrbinary(f'RETR {remote_file}', f.write)
         # keep remote modification time of file and local access time
-        os.utime(local_file, (os.stat(local_file).st_atime, remote_mtime))
-        os.chmod(local_file, MODE)
+        os.utime(local_file, (local_file.stat().st_atime, remote_mtime))
+        local_file.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -194,8 +198,7 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Working data directory')
     # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',

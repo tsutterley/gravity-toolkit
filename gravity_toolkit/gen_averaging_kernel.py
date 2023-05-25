@@ -160,8 +160,8 @@ def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
     sigma_0 = sigma/np.sqrt(temp)
 
     # Compute averaging kernel coefficients
-    wclm = np.zeros((LMAX+1,MMAX+1))
-    wslm = np.zeros((LMAX+1,MMAX+1))
+    wclm = np.zeros((LMAX+1, MMAX+1))
+    wslm = np.zeros((LMAX+1, MMAX+1))
     # for each spherical harmonic degree
     for l in range(0,LMAX+1):# equivalent to 0:lmax
         # inverse of smoothed signal variance in output units

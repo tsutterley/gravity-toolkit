@@ -26,6 +26,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 05/2023: use reify decorators for complex form and amplitude
+        use pathlib to define and operate on paths
     Updated 03/2023: customizable file-level attributes to netCDF4 and HDF5
         add attributes fetching to the from_dict and to_dict functions
         retrieve all root attributes from HDF5 and netCDF4 datasets
@@ -86,7 +87,6 @@ UPDATE HISTORY:
 """
 from __future__ import print_function, division
 
-import os
 import re
 import io
 import copy
@@ -94,6 +94,7 @@ import gzip
 import time
 import uuid
 import logging
+import pathlib
 import zipfile
 import warnings
 import numpy as np
@@ -175,7 +176,7 @@ class harmonics(object):
 
         Parameters
         ----------
-        filename: str
+        filename: str, io.IOBase, pathlib.Path or None
             input filename
         """
         # check if filename is open file object
@@ -185,20 +186,40 @@ class harmonics(object):
             self.filename = None
         else:
             # tilde-expand input filename
-            self.filename = os.path.expanduser(filename)
+            self.filename = pathlib.Path(filename).expanduser().absolute()
             # check if file presently exists with input case
-            if not os.access(self.filename,os.F_OK):
+            if not self.filename.exists():
                 # search for filename without case dependence
-                basename = os.path.basename(filename)
-                directory = os.path.dirname(os.path.expanduser(filename))
-                f = [f for f in os.listdir(directory) if re.match(basename,f,re.I)]
+                f = [f.name for f in self.filename.parent.iterdir() if
+                    re.match(self.filename.name, f.name, re.I)]
                 if not f:
                     errmsg = f'{filename} not found in file system'
                     raise FileNotFoundError(errmsg)
-                self.filename = os.path.join(directory,f.pop())
+                self.filename = self.filename.with_name(f.pop())
         # print filename
         logging.debug(self.filename)
         return self
+
+    def compressuser(self, filename=None):
+        """
+        Tilde-compresses a file to be relative to the home directory
+
+        Parameters
+        ----------
+        filename: str or None, default None
+            output filename
+        """
+        if filename is None:
+            filename = self.filename
+        else:
+            filename = pathlib.Path(filename).expanduser().absolute()
+        # attempt to compress filename relative to home directory
+        try:
+            relative_to = filename.relative_to(pathlib.Path().home())
+        except (ValueError, AttributeError) as exc:
+            return filename
+        else:
+            return pathlib.Path('~').joinpath(relative_to)
 
     def from_ascii(self, filename, **kwargs):
         """
@@ -229,13 +250,13 @@ class harmonics(object):
         logging.info(self.filename)
         if (kwargs['compression'] == 'gzip'):
             # read input ascii data from gzip compressed file and split lines
-            with gzip.open(self.filename,'r') as f:
+            with gzip.open(self.filename, mode='r') as f:
                 file_contents = f.read().decode('ISO-8859-1').splitlines()
         elif (kwargs['compression'] == 'zip'):
             # read input ascii data from zipped file and split lines
-            base,_ = os.path.splitext(self.filename)
+            stem = self.filename.stem
             with zipfile.ZipFile(self.filename) as z:
-                file_contents = z.read(base).decode('ISO-8859-1').splitlines()
+                file_contents = z.read(stem).decode('ISO-8859-1').splitlines()
         elif (kwargs['compression'] == 'bytes'):
             # read input file object and split lines
             file_contents = self.filename.read().splitlines()
@@ -307,16 +328,16 @@ class harmonics(object):
         # Open the NetCDF4 file for reading
         if (kwargs['compression'] == 'gzip'):
             # read as in-memory (diskless) netCDF4 dataset
-            with gzip.open(self.filename,'r') as f:
+            with gzip.open(self.filename, mode='r') as f:
                 fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=f.read())
         elif (kwargs['compression'] == 'zip'):
             # read zipped file and extract file into in-memory file object
-            fileBasename,_ = os.path.splitext(os.path.basename(filename))
+            stem = self.filename.stem
             with zipfile.ZipFile(self.filename) as z:
                 # first try finding a netCDF4 file with same base filename
                 # if none found simply try searching for a netCDF4 file
                 try:
-                    f,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
+                    f,=[f for f in z.namelist() if re.match(stem,f,re.I)]
                 except:
                     f,=[f for f in z.namelist() if re.search(r'\.nc(4)?$',f)]
                 # read bytes from zipfile as in-memory (diskless) netCDF4 dataset
@@ -326,7 +347,7 @@ class harmonics(object):
             fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=filename.read())
         else:
             # read netCDF4 dataset
-            fileID = netCDF4.Dataset(self.filename, 'r')
+            fileID = netCDF4.Dataset(self.filename, mode='r')
         # Output NetCDF file information
         logging.info(fileID.filepath())
         logging.info(list(fileID.variables.keys()))
@@ -397,38 +418,38 @@ class harmonics(object):
         # Open the HDF5 file for reading
         if (kwargs['compression'] == 'gzip'):
             # read gzip compressed file and extract into in-memory file object
-            with gzip.open(self.filename,'r') as f:
+            with gzip.open(self.filename, mode='r') as f:
                 fid = io.BytesIO(f.read())
             # set filename of BytesIO object
-            fid.filename = os.path.basename(filename)
+            fid.filename = self.filename.name
             # rewind to start of file
             fid.seek(0)
             # read as in-memory (diskless) HDF5 dataset from BytesIO object
-            fileID = h5py.File(fid, 'r')
+            fileID = h5py.File(fid, mode='r')
         elif (kwargs['compression'] == 'zip'):
             # read zipped file and extract file into in-memory file object
-            fileBasename,_ = os.path.splitext(os.path.basename(filename))
+            stem = self.filename.stem
             with zipfile.ZipFile(self.filename) as z:
                 # first try finding a HDF5 file with same base filename
                 # if none found simply try searching for a HDF5 file
                 try:
-                    f,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
+                    f,=[f for f in z.namelist() if re.match(stem,f,re.I)]
                 except:
                     f,=[f for f in z.namelist() if re.search(r'\.H(DF)?5$',f,re.I)]
                 # read bytes from zipfile into in-memory BytesIO object
                 fid = io.BytesIO(z.read(f))
             # set filename of BytesIO object
-            fid.filename = os.path.basename(filename)
+            fid.filename = self.filename.name
             # rewind to start of file
             fid.seek(0)
             # read as in-memory (diskless) HDF5 dataset from BytesIO object
-            fileID = h5py.File(fid, 'r')
+            fileID = h5py.File(fid, mode='r')
         elif (kwargs['compression'] == 'bytes'):
             # read as in-memory (diskless) HDF5 dataset
-            fileID = h5py.File(self.filename, 'r')
+            fileID = h5py.File(self.filename, mode='r')
         else:
             # read HDF5 dataset
-            fileID = h5py.File(self.filename, 'r')
+            fileID = h5py.File(self.filename, mode='r')
         # Output HDF5 file information
         logging.info(fileID.filename)
         logging.info(list(fileID.keys()))
@@ -748,7 +769,7 @@ class harmonics(object):
         verbose: bool, default False
             Output file and variable information
         """
-        self.filename = os.path.expanduser(filename)
+        self.filename = pathlib.Path(filename).expanduser().absolute()
         # set default verbosity
         kwargs.setdefault('verbose',False)
         logging.info(self.filename)
@@ -822,7 +843,7 @@ class harmonics(object):
         # setting NetCDF clobber attribute
         clobber = 'w' if kwargs['clobber'] else 'a'
         # opening netCDF file for writing
-        self.filename = os.path.expanduser(filename)
+        self.filename = pathlib.Path(filename).expanduser().absolute()
         fileID = netCDF4.Dataset(self.filename, clobber, format="NETCDF4")
         # flatten harmonics
         temp = self.flatten(date=kwargs['date'])
@@ -967,7 +988,7 @@ class harmonics(object):
         # setting HDF5 clobber attribute
         clobber = 'w' if kwargs['clobber'] else 'w-'
         # opening HDF5 file for writing
-        self.filename = os.path.expanduser(filename)
+        self.filename = pathlib.Path(filename).expanduser().absolute()
         fileID = h5py.File(self.filename, clobber)
         # flatten harmonics
         temp = self.flatten(date=kwargs['date'])
@@ -1066,14 +1087,14 @@ class harmonics(object):
             keyword arguments for output writers
         """
         # Write index file of output spherical harmonics
-        self.filename = os.path.expanduser(filename)
+        self.filename = pathlib.Path(filename).expanduser().absolute()
         fid = open(self.filename, mode='w', encoding='utf8')
         # set default verbosity
         kwargs.setdefault('verbose',False)
         # for each file to be in the index
         for i,f in enumerate(file_list):
             # print filename to index
-            print(f.replace(os.path.expanduser('~'),'~'), file=fid)
+            print(self.compressuser(f), file=fid)
             # index harmonics object at i
             h = self.index(i, date=date)
             # write to file

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 
 Data class for reading, writing and processing spatial data
 
@@ -20,6 +20,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: customizable file-level attributes to netCDF4 and HDF5
         add attributes fetching to from_dict function
         retrieve all root attributes from HDF5 and netCDF4 datasets
@@ -65,7 +66,6 @@ UPDATE HISTORY:
     Updated 06/2020: added zeros_like() for creating an empty spatial object
     Written 06/2020
 """
-import os
 import re
 import io
 import copy
@@ -73,6 +73,7 @@ import gzip
 import time
 import uuid
 import logging
+import pathlib
 import zipfile
 import warnings
 import numpy as np
@@ -136,13 +137,13 @@ class spatial(object):
         # iterator
         self.__index__ = 0
 
-    def case_insensitive_filename(self,filename):
+    def case_insensitive_filename(self, filename):
         """
         Searches a directory for a filename without case dependence
 
         Parameters
         ----------
-        filename: str
+        filename: str, io.IOBase, pathlib.Path or None
             input filename
         """
         # check if filename is open file object
@@ -152,20 +153,40 @@ class spatial(object):
             self.filename = None
         else:
             # tilde-expand input filename
-            self.filename = os.path.expanduser(filename)
+            self.filename = pathlib.Path(filename).expanduser().absolute()
             # check if file presently exists with input case
-            if not os.access(self.filename,os.F_OK):
+            if not self.filename.exists():
                 # search for filename without case dependence
-                basename = os.path.basename(filename)
-                directory = os.path.dirname(os.path.expanduser(filename))
-                f = [f for f in os.listdir(directory) if re.match(basename,f,re.I)]
+                f = [f.name for f in self.filename.parent.iterdir() if
+                    re.match(self.filename.name, f.name, re.I)]
                 if not f:
                     errmsg = f'{filename} not found in file system'
                     raise FileNotFoundError(errmsg)
-                self.filename = os.path.join(directory,f.pop())
+                self.filename = self.filename.with_name(f.pop())
         # print filename
         logging.debug(self.filename)
         return self
+
+    def compressuser(self, filename=None):
+        """
+        Tilde-compresses a file to be relative to the home directory
+
+        Parameters
+        ----------
+        filename: str or None, default None
+            output filename
+        """
+        if filename is None:
+            filename = self.filename
+        else:
+            filename = pathlib.Path(filename).expanduser().absolute()
+        # attempt to compress filename relative to home directory
+        try:
+            relative_to = filename.relative_to(pathlib.Path().home())
+        except (ValueError, AttributeError) as exc:
+            return filename
+        else:
+            return pathlib.Path('~').joinpath(relative_to)
 
     def from_ascii(self, filename, date=True, **kwargs):
         """
@@ -212,22 +233,22 @@ class spatial(object):
         kwargs.setdefault('columns',['lon','lat','data','time'])
         kwargs.setdefault('header',0)
         # open the ascii file and extract contents
-        logging.info(self.filename)
+        logging.info(str(self.filename))
         if (kwargs['compression'] == 'gzip'):
             # read input ascii data from gzip compressed file and split lines
-            with gzip.open(self.filename,'r') as f:
+            with gzip.open(self.filename, mode='r') as f:
                 file_contents = f.read().decode('ISO-8859-1').splitlines()
         elif (kwargs['compression'] == 'zip'):
             # read input ascii data from zipped file and split lines
-            base,_ = os.path.splitext(self.filename)
+            stem = self.filename.stem
             with zipfile.ZipFile(self.filename) as z:
-                file_contents = z.read(base).decode('ISO-8859-1').splitlines()
+                file_contents = z.read(stem).decode('ISO-8859-1').splitlines()
         elif (kwargs['compression'] == 'bytes'):
             # read input file object and split lines
             file_contents = self.filename.read().splitlines()
         else:
             # read input ascii file (.txt, .asc) and split lines
-            with open(self.filename, mode='r', encoding='utf8') as f:
+            with self.filename.open(mode='r', encoding='utf8') as f:
                 file_contents = f.read().splitlines()
         # compile regular expression operator for extracting numerical values
         # from input ascii files of spatial data
@@ -332,12 +353,12 @@ class spatial(object):
                 fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=f.read())
         elif (kwargs['compression'] == 'zip'):
             # read zipped file and extract file into in-memory file object
-            fileBasename,_ = os.path.splitext(os.path.basename(filename))
+            stem = self.filename.stem
             with zipfile.ZipFile(self.filename) as z:
                 # first try finding a netCDF4 file with same base filename
                 # if none found simply try searching for a netCDF4 file
                 try:
-                    f,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
+                    f,=[f for f in z.namelist() if re.match(stem,f,re.I)]
                 except:
                     f,=[f for f in z.namelist() if re.search(r'\.nc(4)?$',f)]
                 # read bytes from zipfile as in-memory (diskless) netCDF4 dataset
@@ -448,25 +469,25 @@ class spatial(object):
             with gzip.open(self.filename, mode='r') as f:
                 fid = io.BytesIO(f.read())
             # set filename of BytesIO object
-            fid.filename = os.path.basename(filename)
+            fid.filename = self.filename.name
             # rewind to start of file
             fid.seek(0)
             # read as in-memory (diskless) HDF5 dataset from BytesIO object
             fileID = h5py.File(fid, 'r')
         elif (kwargs['compression'] == 'zip'):
             # read zipped file and extract file into in-memory file object
-            fileBasename,_ = os.path.splitext(os.path.basename(filename))
+            stem = self.filename.stem
             with zipfile.ZipFile(self.filename) as z:
                 # first try finding a HDF5 file with same base filename
                 # if none found simply try searching for a HDF5 file
                 try:
-                    f,=[f for f in z.namelist() if re.match(fileBasename,f,re.I)]
+                    f,=[f for f in z.namelist() if re.match(stem,f,re.I)]
                 except:
                     f,=[f for f in z.namelist() if re.search(r'\.H(DF)?5$',f,re.I)]
                 # read bytes from zipfile into in-memory BytesIO object
                 fid = io.BytesIO(z.read(f))
             # set filename of BytesIO object
-            fid.filename = os.path.basename(filename)
+            fid.filename = self.filename.name
             # rewind to start of file
             fid.seek(0)
             # read as in-memory (diskless) HDF5 dataset from BytesIO object
@@ -560,7 +581,7 @@ class spatial(object):
         # removes empty lines (if there are extra empty lines)
         parser = re.compile(r'^(?!\#|\%|$)', re.VERBOSE)
         # Read index file of input spatial data
-        with open(self.filename, mode='r', encoding='utf8') as f:
+        with self.filename.open(mode='r', encoding='utf8') as f:
             file_list = [l for l in f.read().splitlines() if parser.match(l)]
         # create a list of spatial objects
         s = []
@@ -721,13 +742,13 @@ class spatial(object):
         verbose: bool, default False
             Output file and variable information
         """
-        self.filename = os.path.expanduser(filename)
+        self.filename = pathlib.Path(filename).expanduser().absolute()
         # set default verbosity and parameters
         kwargs.setdefault('date',True)
         kwargs.setdefault('verbose',False)
-        logging.info(self.filename)
+        logging.info(str(self.filename))
         # open the output file
-        fid = open(self.filename, mode='w', encoding='utf8')
+        fid = self.filename.open(mode='w', encoding='utf8')
         if kwargs['date']:
             file_format = '{0:10.4f} {1:10.4f} {2:12.4f} {3:10.4f}'
         else:
@@ -800,7 +821,7 @@ class spatial(object):
         # setting NetCDF clobber attribute
         clobber = 'w' if kwargs['clobber'] else 'a'
         # opening NetCDF file for writing
-        self.filename = os.path.expanduser(filename)
+        self.filename = pathlib.Path(filename).expanduser().absolute()
         fileID = netCDF4.Dataset(self.filename, clobber, format="NETCDF4")
         # mapping between output keys and netCDF4 variable names
         if not kwargs['field_mapping']:
@@ -878,7 +899,7 @@ class spatial(object):
         # date created
         fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
         # Output NetCDF structure information
-        logging.info(self.filename)
+        logging.info(str(self.filename))
         logging.info(list(fileID.variables.keys()))
         # Closing the NetCDF file
         fileID.close()
@@ -944,7 +965,7 @@ class spatial(object):
         # setting NetCDF clobber attribute
         clobber = 'w' if kwargs['clobber'] else 'w-'
         # opening NetCDF file for writing
-        self.filename = os.path.expanduser(filename)
+        self.filename = pathlib.Path(filename).expanduser().absolute()
         fileID = h5py.File(self.filename, clobber)
         # mapping between output keys and netCDF4 variable names
         if not kwargs['field_mapping']:
@@ -1021,7 +1042,7 @@ class spatial(object):
         # date created
         fileID.attrs['date_created'] = time.strftime('%Y-%m-%d',time.localtime())
         # Output HDF5 structure information
-        logging.info(self.filename)
+        logging.info(str(self.filename))
         logging.info(list(fileID.keys()))
         # Closing the NetCDF file
         fileID.close()
@@ -1050,14 +1071,14 @@ class spatial(object):
             keyword arguments for output writers
         """
         # Write index file of output spatial files
-        self.filename = os.path.expanduser(filename)
-        fid = open(self.filename, mode='w', encoding='utf8')
+        self.filename = pathlib.Path(filename).expanduser().absolute()
+        fid = self.filename.open(mode='w', encoding='utf8')
         # set default verbosity
         kwargs.setdefault('verbose',False)
         # for each file to be in the index
         for i,f in enumerate(file_list):
             # print filename to index
-            print(f.replace(os.path.expanduser('~'),'~'), file=fid)
+            print(self.compressuser(f), file=fid)
             # index spatial object at i
             s = self.index(i, date=date)
             # write to file
@@ -1759,22 +1780,22 @@ class scaling_factors(spatial):
         kwargs.setdefault('columns',default_columns)
         kwargs.setdefault('header',0)
         # open the ascii file and extract contents
-        logging.info(self.filename)
+        logging.info(str(self.filename))
         if (kwargs['compression'] == 'gzip'):
             # read input ascii data from gzip compressed file and split lines
-            with gzip.open(self.filename,'r') as f:
+            with gzip.open(self.filename, mode='r') as f:
                 file_contents = f.read().decode('ISO-8859-1').splitlines()
         elif (kwargs['compression'] == 'zip'):
             # read input ascii data from zipped file and split lines
-            base,_ = os.path.splitext(self.filename)
+            stem = self.filename.stem
             with zipfile.ZipFile(self.filename) as z:
-                file_contents = z.read(base).decode('ISO-8859-1').splitlines()
+                file_contents = z.read(stem).decode('ISO-8859-1').splitlines()
         elif (kwargs['compression'] == 'bytes'):
             # read input file object and split lines
             file_contents = self.filename.read().splitlines()
         else:
             # read input ascii file (.txt, .asc) and split lines
-            with open(self.filename, mode='r', encoding='utf8') as f:
+            with self.filename.open(mode='r', encoding='utf8') as f:
                 file_contents = f.read().splitlines()
         # compile regular expression operator for extracting numerical values
         # from input ascii files of spatial data
@@ -1840,12 +1861,12 @@ class scaling_factors(spatial):
         verbose: bool, default False
             Output file and variable information
         """
-        self.filename = os.path.expanduser(filename)
+        self.filename = pathlib.Path(filename).expanduser().absolute()
         # set default verbosity and parameters
         kwargs.setdefault('verbose',False)
-        logging.info(self.filename)
+        logging.info(str(self.filename))
         # open the output file
-        fid = open(self.filename, mode='w', encoding='utf8')
+        fid = self.filename.open(mode='w', encoding='utf8')
         # write to file for each valid latitude and longitude
         ii,jj = np.nonzero((self.data != self.fill_value) & (~self.mask))
         for i,j in zip(ii,jj):
@@ -1889,7 +1910,7 @@ class scaling_factors(spatial):
         temp1.expand_dims().replace_invalid(0.0)
         temp2.expand_dims().replace_invalid(0.0)
         # dimensions of input spatial object
-        nlat,nlon,nt = temp1.shape
+        nlat, nlon, nt = temp1.shape
         # allocate for scaling factor and scaling factor error
         temp = scaling_factors(nlat=nlat, nlon=nlon, fill_value=0.0)
         temp.data = np.zeros((nlat, nlon))

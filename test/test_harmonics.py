@@ -8,15 +8,15 @@ Tests harmonic programs using the Velicogna and Wahr (2013) Greenland synthetic
     4. Compares output smoothed spatial distribution with validation dataset
 Tests harmonic objects flatten, expansion and iteration routines
 """
-import os
 import pytest
 import inspect
+import pathlib
 import numpy as np
 import gravity_toolkit as gravtk
 
 # path to test files
 filename = inspect.getframeinfo(inspect.currentframe()).filename
-filepath = os.path.dirname(os.path.abspath(filename))
+filepath = pathlib.Path(filename).absolute().parent
 
 # PURPOSE: test harmonic conversion programs
 def test_harmonics():
@@ -27,11 +27,10 @@ def test_harmonics():
     LOVE = gravtk.read_love_numbers(love_numbers_file, FORMAT='class')
 
     # read input spatial distribution file
-    distribution_file = 'out.green_ice.grid.0.5.2008.cmh20.gz'
-    input_distribution = gravtk.spatial().from_ascii(
-        os.path.join(filepath,distribution_file), date=False,
-        spacing=[0.5,0.5], nlat=361, nlon=721, extent=[0,360.0,-90,90],
-        compression='gzip')
+    distribution_file = filepath.joinpath('out.green_ice.grid.0.5.2008.cmh20.gz')
+    input_distribution = gravtk.spatial().from_ascii(distribution_file,
+        date=False, spacing=[0.5,0.5], nlat=361, nlon=721,
+        extent=[0,360.0,-90,90], compression='gzip')
 
     # spherical harmonic parameters
     # maximum spherical harmonic degree
@@ -53,9 +52,9 @@ def test_harmonics():
         PLM=PLM, LOVE=LOVE)
 
     # read harmonics from file
-    harmonics_file = 'out.geoid.green_ice.0.5.2008.60.gz'
+    harmonics_file = filepath.joinpath('out.geoid.green_ice.0.5.2008.60.gz')
     valid_Ylms = gravtk.harmonics(lmax=LMAX, mmax=LMAX).from_ascii(
-        os.path.join(filepath,harmonics_file),date=False,compression='gzip')
+        harmonics_file, date=False, compression='gzip')
 
     # check that harmonic data is equal to machine precision
     difference_Ylms = test_Ylms.copy()
@@ -83,11 +82,10 @@ def test_harmonics():
         LMAX=LMAX, PLM=PLM, UNITS=1, RAD=RAD, LOVE=LOVE).T
 
     # read input and output spatial distribution files
-    distribution_file = 'out.combine.green_ice.0.5.2008.60.gz'
-    output_distribution = gravtk.spatial().from_ascii(
-        os.path.join(filepath,distribution_file), date=False,
-        spacing=[0.5,0.5], nlat=361, nlon=721, extent=[0,360.0,-90,90],
-        compression='gzip')
+    spatial_file = filepath.joinpath('out.combine.green_ice.0.5.2008.60.gz')
+    output_distribution = gravtk.spatial().from_ascii(spatial_file,
+        date=False, spacing=[0.5,0.5], nlat=361, nlon=721,
+        extent=[0,360.0,-90,90], compression='gzip')
 
     # check that data is equal to machine precision
     difference_distribution = test_distribution - output_distribution.data

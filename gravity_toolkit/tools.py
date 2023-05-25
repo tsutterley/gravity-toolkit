@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 tools.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 Jupyter notebook, user interface and plotting tools
 
 PYTHON DEPENDENCIES:
@@ -27,6 +27,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: add wrap longitudes function to change convention
         improve typing for variables in docstrings
     Updated 06/2022: place matplotlib imports within try/except
@@ -40,6 +41,7 @@ UPDATE HISTORY:
 import os
 import re
 import copy
+import pathlib
 import colorsys
 import warnings
 import numpy as np
@@ -80,7 +82,7 @@ class widgets:
         """Widgets and functions for running GRACE/GRACE-FO analyses
         """
         # set default keyword arguments
-        kwargs.setdefault('directory', os.getcwd())
+        kwargs.setdefault('directory', pathlib.Path.cwd())
         kwargs.setdefault('defaults', ['CSR','RL06','GSM',60])
         kwargs.setdefault('style', {})
         # set style
@@ -105,7 +107,7 @@ class widgets:
 
         # set the directory with GRACE/GRACE-FO data
         self.directory_label = ipywidgets.Text(
-            value=kwargs['directory'],
+            value=str(kwargs['directory']),
             description='Directory:',
             disabled=False,
             style=self.style,
@@ -746,19 +748,19 @@ class widgets:
     def base_directory(self):
         """Returns the data directory
         """
-        return os.path.expanduser(self.directory_label.value)
+        return pathlib.Path(self.directory_label.value).expanduser().absolute()
 
     @property
     def GIA_model(self):
         """Returns the GIA model file
         """
-        return os.path.expanduser(self.GIA_label.value)
+        return pathlib.Path(self.GIA_label.value).expanduser().absolute()
 
     @property
     def landmask(self):
         """Returns the land-sea mask file
         """
-        return os.path.expanduser(self.mask_label.value)
+        return pathlib.Path(self.mask_label.value).expanduser().absolute()
 
     @property
     def unit_index(self):
@@ -923,10 +925,11 @@ def from_cpt(filename, use_extremes=True, **kwargs):
     """
 
     # read the cpt file and get contents
-    with open(filename, mode='r', encoding='utf8') as f:
+    filename = pathlib.Path(filename).expanduser().absolute()
+    with filename.open(mode='r', encoding='utf8') as f:
         file_contents = f.read().splitlines()
     # extract basename from cpt filename
-    name = re.sub(r'\.cpt','',os.path.basename(filename),flags=re.I)
+    name = re.sub(r'\.cpt', '', filename.name, flags=re.I)
 
     # compile regular expression operator to find numerical instances
     rx = re.compile(r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?')

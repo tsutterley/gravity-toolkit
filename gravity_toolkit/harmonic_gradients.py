@@ -90,8 +90,8 @@ def harmonic_gradients(clm1, slm1, lon, lat,
     # Truncating harmonics to degree and order LMAX
     # removing coefficients below LMIN and above MMAX
     mm = np.arange(0,MMAX+1)
-    clm = np.zeros((LMAX+1,MMAX+1))
-    slm = np.zeros((LMAX+1,MMAX+1))
+    clm = np.zeros((LMAX+1, MMAX+1))
+    slm = np.zeros((LMAX+1, MMAX+1))
     clm[LMIN:LMAX+1,mm] = clm1[LMIN:LMAX+1,mm]
     slm[LMIN:LMAX+1,mm] = slm1[LMIN:LMAX+1,mm]
     # spherical harmonic degree and order

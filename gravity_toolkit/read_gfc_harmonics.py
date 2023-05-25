@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_gfc_harmonics.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 Contributions by Hugo Lecomte
 
 Reads gfc files and extracts spherical harmonics for Swarm and
@@ -55,6 +55,7 @@ PROGRAM DEPENDENCIES:
     calculate_tidal_offset.py: calculates the C20 offset for a tidal system
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: forked from read_ICGEM_harmonics in geoid toolkit
@@ -66,8 +67,8 @@ UPDATE HISTORY:
     Updated 07/2017: include parameters to change the tide system
     Written 12/2015
 """
-import os
 import re
+import pathlib
 import warnings
 import numpy as np
 import gravity_toolkit.time
@@ -147,6 +148,9 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         Coefficients for Satellite Altimetry Applications", (2003).
         `eprint ID: 11802 <http://mitgcm.org/~mlosch/geoidcookbook.pdf>`_
     """
+    # full path to input filename
+    input_file = pathlib.Path(input_file).expanduser().absolute()
+
     # regular expression operators for ITSG data and models
     itsg_products = []
     itsg_products.append(r'atmosphere')
@@ -163,33 +167,33 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
     swarm_data = r'(SW)_(.*?)_(EGF_SHA_2)__(.*?)_(.*?)_(.*?)(\.gfc|\.ZIP)'
     swarm_model = r'(GAA|GAB|GAC|GAD)_Swarm_(\d+)_(\d{2})_(\d{4})(\.gfc|\.ZIP)'
     # extract parameters for each data center and product
-    if re.match(itsg_pattern, os.path.basename(input_file)):
+    if re.match(itsg_pattern, input_file.name):
         # compile numerical expression operator for parameters from files
         # GRAZ: Institute of Geodesy from GRAZ University of Technology
         rx = re.compile(itsg_pattern, re.VERBOSE | re.IGNORECASE)
         # extract parameters from input filename
-        PFX,PRD,trunc,year,month,SFX = rx.findall(input_file).pop()
+        PFX,PRD,trunc,year,month,SFX = rx.findall(input_file.name).pop()
         # number of days in each month for the calendar year
         dpm = gravity_toolkit.time.calendar_days(int(year))
         # create start and end date lists
         start_date = [int(year),int(month),1,0,0,0]
         end_date = [int(year),int(month),dpm[int(month)-1],23,59,59]
-    elif re.match(swarm_data, os.path.basename(input_file)):
+    elif re.match(swarm_data, input_file.name):
         # compile numerical expression operator for parameters from files
         # Swarm: data from Swarm satellite
         rx = re.compile(swarm_data, re.VERBOSE | re.IGNORECASE)
         # extract parameters from input filename
-        SAT,tmp,PROD,starttime,endtime,RL,SFX = rx.findall(input_file).pop()
+        SAT,tmp,PROD,starttime,endtime,RL,SFX = rx.findall(input_file.name).pop()
         start_date,_ = gravity_toolkit.time.parse_date_string(starttime)
         end_date,_ = gravity_toolkit.time.parse_date_string(endtime)
         # number of days in each month for the calendar year
         dpm = gravity_toolkit.time.calendar_days(start_date[0])
-    elif re.match(swarm_model, os.path.basename(input_file)):
+    elif re.match(swarm_model, input_file.name):
         # compile numerical expression operator for parameters from files
         # Swarm: dealiasing products for Swarm data
         rx = re.compile(swarm_data, re.VERBOSE | re.IGNORECASE)
         # extract parameters from input filename
-        PROD,trunc,month,year,SFX = rx.findall(input_file).pop()
+        PROD,trunc,month,year,SFX = rx.findall(input_file.name).pop()
         # number of days in each month for the calendar year
         dpm = gravity_toolkit.time.calendar_days(int(year))
         # create start and end date lists
@@ -197,7 +201,7 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         end_date = [int(year),int(month),dpm[int(month)-1],23,59,59]
 
     # python dictionary with model input and headers
-    ZIP = bool(re.search('ZIP',SFX,re.IGNORECASE))
+    ZIP = bool(re.search('ZIP', SFX, re.IGNORECASE))
     model_input = read_ICGEM_harmonics(input_file, TIDE=TIDE,
         FLAG=FLAG, ZIP=ZIP)
 

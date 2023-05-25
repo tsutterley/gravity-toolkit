@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_SLR_harmonics.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (05/2023)
 
 Reads in low-degree spherical harmonic coefficients calculated from
     Satellite Laser Ranging (SLR) measurements
@@ -50,6 +50,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: improve typing for variables in docstrings
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -69,8 +70,8 @@ UPDATE HISTORY:
 """
 from __future__ import division
 
-import os
 import re
+import pathlib
 import numpy as np
 import gravity_toolkit.time
 
@@ -87,9 +88,9 @@ def read_SLR_harmonics(SLR_file, **kwargs):
     **kwargs: dict
         keyword arguments for input readers
     """
-    if bool(re.search(r'gsfc_slr_5x5c61s61',SLR_file,re.I)):
+    if bool(re.search(r'gsfc_slr_5x5c61s61', SLR_file.name, re.I)):
         return read_GSFC_weekly_6x1(SLR_file, **kwargs)
-    elif bool(re.search(r'CSR_Monthly_5x5_Gravity_Harmonics',SLR_file,re.I)):
+    elif bool(re.search(r'CSR_Monthly_5x5_Gravity_Harmonics', SLR_file.name, re.I)):
         return read_CSR_monthly_6x1(SLR_file, **kwargs)
     else:
         raise Exception(f'Unknown SLR file format {SLR_file}')
@@ -132,11 +133,12 @@ def read_CSR_monthly_6x1(SLR_file, SCALE=1e-10, HEADER=True):
         `doi: 10.1029/2010JB000850 <https://doi.org/10.1029/2010JB000850>`_
     """
     # check that SLR file exists
-    if not os.access(os.path.expanduser(SLR_file), os.F_OK):
+    SLR_file = pathlib.Path(SLR_file).expanduser().absolute()
+    if not SLR_file.exists():
         raise FileNotFoundError('SLR file not found in file system')
 
     # read the file and get contents
-    with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
+    with SLR_file.open(mode='r', encoding='utf8') as f:
         file_contents = f.read().splitlines()
     file_lines = len(file_contents)
 
@@ -278,11 +280,12 @@ def read_GSFC_weekly_6x1(SLR_file, SCALE=1.0, HEADER=True):
         `doi: 10.1029/2019GL085488 <https://doi.org/10.1029/2019GL085488>`_
     """
     # check that SLR file exists
-    if not os.access(os.path.expanduser(SLR_file), os.F_OK):
+    SLR_file = pathlib.Path(SLR_file).expanduser().absolute()
+    if not SLR_file.exists():
         raise FileNotFoundError('SLR file not found in file system')
 
     # read the file and get contents
-    with open(os.path.expanduser(SLR_file), mode='r', encoding='utf8') as f:
+    with SLR_file.open(mode='r', encoding='utf8') as f:
         file_contents = f.read().splitlines()
     file_lines = len(file_contents)
 

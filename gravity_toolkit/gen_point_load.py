@@ -145,8 +145,8 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
 
     # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
-    Ylms.clm = np.zeros((LMAX+1,MMAX+1))
-    Ylms.slm = np.zeros((LMAX+1,MMAX+1))
+    Ylms.clm = np.zeros((LMAX+1, MMAX+1))
+    Ylms.slm = np.zeros((LMAX+1, MMAX+1))
     # for each degree l
     for l in range(LMAX+1):
         m1 = np.min([l,MMAX]) + 1

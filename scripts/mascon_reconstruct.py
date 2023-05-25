@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 mascon_reconstruct.py
-Written by Tyler Sutterley (02/2023)
+Written by Tyler Sutterley (05/2023)
 
 Calculates the equivalent spherical harmonics from a mascon time series
 
@@ -76,6 +76,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 05/2023: use pathlib to define and operate on paths
     Updated 02/2023: use love numbers class with additional attributes
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -117,6 +118,7 @@ from __future__ import print_function
 import sys
 import os
 import re
+import pathlib
 import logging
 import argparse
 import numpy as np
@@ -125,16 +127,12 @@ import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(os.path.basename(sys.argv[0]))
+    logging.info(pathlib.Path(sys.argv[0]).name)
     logging.info(args)
     logging.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
-
-# PURPOSE: tilde-compress a file path string
-def tilde_compress(file_path):
-    return file_path.replace(os.path.expanduser('~'),'~')
 
 # PURPOSE: Reconstruct spherical harmonic fields from the mascon
 # time series calculated in calc_mascon
@@ -155,6 +153,10 @@ def mascon_reconstruct(DSET, LMAX, RAD,
     LANDMASK=None,
     OUTPUT_DIRECTORY=None,
     MODE=0o775):
+
+    # create output directory if currently non-existent
+    OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
+    OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
 
     # for datasets not GSM: will add a label for the dataset
     dset_str = '' if (DSET == 'GSM') else f'_{DSET}'
@@ -178,7 +180,8 @@ def mascon_reconstruct(DSET, LMAX, RAD,
     parser = re.compile(r'^(?!\#|\%|$)', re.VERBOSE)
 
     # create initial reconstruct index for calc_mascon.py
-    fid = open(RECONSTRUCT_FILE, mode='w', encoding='utf8')
+    RECONSTRUCT_FILE = pathlib.Path(RECONSTRUCT_FILE).expanduser().absolute()
+    fid = RECONSTRUCT_FILE.as_uriopen(mode='w', encoding='utf8')
     # output file format
     file_format = '{0}{1}{2}{3}{4}_L{5:d}{6}{7}{8}_{9:03d}-{10:03d}.{11}'
 
@@ -202,13 +205,14 @@ def mascon_reconstruct(DSET, LMAX, RAD,
         ocean_str = ''
 
     # input mascon spherical harmonic datafiles
-    with open(MASCON_FILE, mode='r', encoding='utf8') as f:
+    MASCON_FILE = pathlib.Path(MASCON_FILE).expanduser().absolute()
+    with MASCON_FILE.open(mode='r', encoding='utf8') as f:
         mascon_files = [l for l in f.read().splitlines() if parser.match(l)]
 
     # for each mascon file
-    for k,fi in enumerate(mascon_files):
+    for k,mascon_file in enumerate(mascon_files):
         # read mascon spherical harmonics
-        Ylms = gravtk.harmonics().from_file(os.path.expanduser(fi),
+        Ylms = gravtk.harmonics().from_file(mascon_file,
             format=DATAFORM, date=False)
         # Calculating the total mass of each mascon (1 cmwe uniform)
         total_area = 4.0*np.pi*(rad_e**3)*rho_e*Ylms.clm[0,0]/3.0
@@ -226,13 +230,10 @@ def mascon_reconstruct(DSET, LMAX, RAD,
                     Ylms.slm[l,m] -= ratio*ocean_Ylms.slm[l,m]
         # truncate mascon spherical harmonics to d/o LMAX/MMAX
         Ylms = Ylms.truncate(lmax=LMAX, mmax=MMAX)
-        # mascon base is the file without directory or suffix
-        mascon_base = os.path.basename(fi)
-        mascon_base = os.path.splitext(mascon_base)[0]
-        # if lower case, will capitalize
-        mascon_base = mascon_base.upper()
-        # if mascon name contains degree and order info, remove
-        mascon_name = mascon_base.replace(f'_L{LMAX:d}', '')
+        # mascon_name is the mascon file without directory or suffix
+        # if lower case: will capitalize
+        # if mascon name contains degree and order info: scrub from string
+        mascon_name = re.sub(r'_L(\d+)(M\d+)?', r'', Ylms.filename.stem.upper())
 
         # input filename format (for both LMAX==MMAX and LMAX != MMAX cases):
         # mascon name, GRACE dataset, GIA model, LMAX, (MMAX,)
@@ -241,7 +242,7 @@ def mascon_reconstruct(DSET, LMAX, RAD,
         args = (mascon_name,dset_str,gia_str.upper(),atm_str,ocean_str,
             LMAX,order_str,gw_str,ds_str)
         file_input = '{0}{1}{2}{3}{4}_L{5:d}{6}{7}{8}.txt'.format(*args)
-        mascon_data_input = np.loadtxt(os.path.join(OUTPUT_DIRECTORY,file_input))
+        mascon_data_input = np.loadtxt(OUTPUT_DIRECTORY.joinpath(file_input))
 
         # convert mascon time-series from Gt to cmwe
         mascon_sigma = 1e15*mascon_data_input[:,2]/total_area
@@ -253,21 +254,20 @@ def mascon_reconstruct(DSET, LMAX, RAD,
         # output to file: no ascii option
         args = (mascon_name,dset_str,gia_str.upper(),atm_str,ocean_str,
             LMAX,order_str,gw_str,ds_str,START,END,suffix[DATAFORM])
-        FILE = file_format.format(*args)
+        output_file = OUTPUT_DIRECTORY.joinpath(file_format.format(*args))
         # attributes for output files
         attributes = {}
-        attributes['reference'] = f'Output from {os.path.basename(sys.argv[0])}'
+        attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
         # output harmonics to file
-        mascon_Ylms.to_file(os.path.join(OUTPUT_DIRECTORY,FILE),
-            format=DATAFORM, **attributes)
+        mascon_Ylms.to_file(output_file, format=DATAFORM, **attributes)
         # print file name to index
-        print(tilde_compress(os.path.join(OUTPUT_DIRECTORY,FILE)),file=fid)
+        print(mascon_Ylms.compressuser(output_file), file=fid)
         # change the permissions mode
-        os.chmod(os.path.join(OUTPUT_DIRECTORY,FILE),MODE)
+        output_file.chmod(mode=MODE)
     # close the reconstruct index
     fid.close()
     # change the permissions mode of the index file
-    os.chmod(RECONSTRUCT_FILE, MODE)
+    RECONSTRUCT_FILE.chmod(mode=MODE)
 
 # PURPOSE: create argument parser
 def arguments():
@@ -280,8 +280,7 @@ def arguments():
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     parser.add_argument('--output-directory','-O',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
-        default=os.getcwd(),
+        type=pathlib.Path, default=pathlib.Path.cwd(),
         help='Output directory for mascon files')
     # GRACE/GRACE-FO Level-2 data product
     parser.add_argument('--product','-p',
@@ -343,7 +342,7 @@ def arguments():
         help='GIA model type to read')
     # full path to GIA file
     parser.add_argument('--gia-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='GIA file to read')
     # use atmospheric jump corrections from Fagiolini et al. (2015)
     parser.add_argument('--atm-correction',
@@ -355,19 +354,19 @@ def arguments():
         help='Input data format for auxiliary files')
     # mascon index file and parameters
     parser.add_argument('--mascon-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Index file of mascons spherical harmonics')
     parser.add_argument('--redistribute-mascons',
         default=False, action='store_true',
         help='Redistribute mascon mass over the ocean')
     # mascon reconstruct parameters
     parser.add_argument('--reconstruct-file',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)),
+        type=pathlib.Path,
         help='Reconstructed mascon time series file')
     # land-sea mask for redistributing mascon mass
     lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
-        type=lambda p: os.path.abspath(os.path.expanduser(p)), default=lsmask,
+        type=pathlib.Path, default=lsmask,
         help='Land-sea mask for redistributing mascon mass')
     # print information about processing run
     parser.add_argument('--verbose','-V',

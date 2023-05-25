@@ -248,14 +248,14 @@ def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
     # Define output latitude and longitude grids
     lon = np.arange(-180.0+grid_spacing/2.0,180.0+grid_spacing/2.0,grid_spacing)
     lat = np.arange(90.0-grid_spacing/2.0,-90.0-grid_spacing/2.0,-grid_spacing)
-    nlon,nlat = (len(lon),len(lat))
+    nlon, nlat = (len(lon),len(lat))
     # for mascons centered on 180: use 0:360
     alon = np.copy(lon)
     lt0, = np.nonzero(lon < 0)
     alon[lt0] += 360.0
 
     # loop over each mascon bin and assign value to grid points inside bin:
-    mdata = np.zeros((nlat,nlon))
+    mdata = np.zeros((nlat, nlon))
     for k in range(0, nmas):
         # create latitudinal and longitudinal bounds for mascon k
         if (lat_center[k] == 90.0) | (lat_center[k] == -90.0):
@@ -335,10 +335,10 @@ def from_jpl(mscdata, grid_spacing, lon_bound, lat_bound, **kwargs):
     # output lat will not include 90
     lon = np.arange(grid_spacing/2.0, 360.0+grid_spacing/2.0, grid_spacing)
     lat = np.arange(-90.0+grid_spacing/2.0, 90.0+grid_spacing/2.0, grid_spacing)
-    nlon,nlat = (len(lon),len(lat))
+    nlon, nlat = (len(lon),len(lat))
 
     # loop over each mascon bin and assign value to grid points inside bin:
-    mdata = np.zeros((nlat,nlon))
+    mdata = np.zeros((nlat, nlon))
     for k in range(0, nmas):
         I, = np.nonzero((lat >= lat_bound[k,1]) & (lat < lat_bound[k,0]))
         J, = np.nonzero((lon >= lon_bound[k,0]) & (lon < lon_bound[k,2]))
