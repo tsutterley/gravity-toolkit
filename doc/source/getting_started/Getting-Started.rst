@@ -3,12 +3,11 @@ Getting Started
 ===============
 
 - `Register at NASA Earthdata and add PO.DAAC Drive OPS as application <./NASA-Earthdata.md>`_
-- Get PO.DAAC WebDAV credentials by running `podaac_webdav.py <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/podaac_webdav.py>`_ or logging onto `PO.DAAC Drive <https://podaac-tools.jpl.nasa.gov/drive>`_
-- Run `podaac_grace_sync.py <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/podaac_grace_sync.py>`_ program with your WebDAV credentials to acquire GRACE/GRACE-FO and auxiliary data
+- Run `podaac_cumulus.py <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/podaac_cumulus.py>`_ program with your NASA Earthdata credentials to acquire GRACE/GRACE-FO and auxiliary data
 
 .. code-block:: bash
 
-    python podaac_grace_sync.py --user=<username> --directory=<path_to_grace_directory> --release RL06
+    python podaac_cumulus.py --user=<username> --directory=<path_to_grace_directory> --release RL06
 
 - Run `cnes_grace_sync.py <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/cnes_grace_sync.py>`_ program to acquire CNES/GRGS GRACE/GRACE-FO data
 

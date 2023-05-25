@@ -4,7 +4,7 @@ grace_date.py
 Written by Tyler Sutterley (05/2023)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
-Reads index file from podaac_grace_sync.py or gfz_isdc_grace_ftp.py
+Reads index file from podaac_cumulus.py or gfz_isdc_grace_ftp.py
 Parses dates of each GRACE/GRACE-FO file and assigns the month number
 Creates an index of dates for GRACE/GRACE-FO files
 
