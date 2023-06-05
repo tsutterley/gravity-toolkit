@@ -156,6 +156,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     """
 
     #  Directory of exact product
+    base_dir = pathlib.Path(base_dir).expanduser().absolute()
     grace_dir = base_dir.joinpath(PROC, DREL, DSET)
     # index file containing GRACE/GRACE-FO data filenames
     index_file = grace_dir.joinpath('index.txt')

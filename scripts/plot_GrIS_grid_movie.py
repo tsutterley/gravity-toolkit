@@ -178,7 +178,8 @@ def plot_rignot_basins(ax, base_dir):
 def plot_IMBIE2_basins(ax, base_dir):
     # read drainage basin polylines from shapefile (using splat operator)
     basin_shapefile = base_dir.joinpath(*IMBIE_basin_file)
-    shape_input = shapefile.Reader(basin_shapefile)
+    logging.debug(str(basin_shapefile))
+    shape_input = shapefile.Reader(str(basin_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     # find record index for region by iterating through shape attributes
@@ -198,7 +199,9 @@ def plot_IMBIE2_basins(ax, base_dir):
 
 # PURPOSE: plot Greenland grounded ice delineation from GIMP
 def plot_grounded_ice(ax, base_dir, START=1, END=300, LINEWIDTH=0.6):
-    shape_input = shapefile.Reader(base_dir.joinpath(*coast_file))
+    coast_shapefile = base_dir.joinpath(*coast_file)
+    logging.debug(str(coast_shapefile))
+    shape_input = shapefile.Reader(str(coast_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     for i in range(START,END):
@@ -216,8 +219,9 @@ def plot_glacier_inventory(ax, base_dir, START=0, END=30, LINEWIDTH=0.6):
     RGI_files.append('06_rgi60_Iceland')
     RGI_files.append('07_rgi60_Svalbard')
     for f in RGI_files:
-        shape_input = shapefile.Reader(base_dir.joinpath('RGI',f,
-            '{0}_plot.shp'.format(f)))
+        RGI_shapefile = base_dir.joinpath('RGI',f,f'{f}_plot.shp')
+        logging.debug(str(RGI_shapefile))
+        shape_input = shapefile.Reader(str(RGI_shapefile))
         shape_entities = shape_input.shapes()
         shape_attributes = shape_input.records()
         for i in range(START,END):
@@ -235,7 +239,9 @@ def plot_coastline(ax, base_dir):
     coastline_shape_files.append('GSHHS_i_L1_no_greenland.shp')
     coastline_shape_files.append('greenland_coastline_islands.shp')
     for fi,S in zip(coastline_shape_files,[1000,200]):
-        shape_input = shapefile.Reader(coastline_dir.joinpath(fi))
+        coast_shapefile = coastline_dir.joinpath(*fi)
+        logging.debug(str(coast_shapefile))
+        shape_input = shapefile.Reader(str(coast_shapefile))
         shape_entities = shape_input.shapes()
         # for each entity within the shapefile
         for c,ent in enumerate(shape_entities[:S]):
@@ -246,7 +252,9 @@ def plot_coastline(ax, base_dir):
 # plot the MODIS Mosaic of Greenland as a background image
 def plot_image_mosaic(ax, base_dir, MASKED=True):
     # read MODIS mosaic of Greenland
-    ds = osgeo.gdal.Open(str(base_dir.joinpath(*image_file)))
+    image_geotiff_file = base_dir.joinpath(*image_file)
+    logging.debug(str(image_geotiff_file))
+    ds = osgeo.gdal.Open(str(image_geotiff_file))
     # get dimensions
     xsize = ds.RasterXSize
     ysize = ds.RasterYSize
@@ -265,18 +273,15 @@ def plot_image_mosaic(ax, base_dir, MASKED=True):
         mosaic.fill_value = 0
         # create mask array for bad values
         mosaic.mask = (mosaic.data == mosaic.fill_value)
-    # image extents
-    extents=(xmin,xmax,ymin,ymax)
     # dataset range
-    vmin,vmax = (0,18770)
-    # plot modis background of Greenland
+    vmin, vmax = (0, 18770)
     # create color map with transparent bad points
     image_cmap = copy.copy(cm.gist_gray)
     image_cmap.set_bad(alpha=0.0)
     # nearest to not interpolate image
-    im = ax.imshow(mosaic, interpolation='nearest', extent=extents,
+    im = ax.imshow(mosaic, interpolation='nearest',
         cmap=image_cmap, vmin=vmin, vmax=vmax, origin='upper',
-        transform=projection)
+        extent=(xmin, xmax, ymin, ymax), transform=projection)
     im.set_rasterized(True)
     # close the dataset
     ds = None
@@ -416,7 +421,7 @@ def animate_grid(base_dir, FILENAME,
 
     # if dlat is negative
     if (np.sign(dlat) == -1):
-        dinput = dinput.reverse(axis=0)
+        dinput = dinput.flip(axis=0)
 
     # create movie writer objects
     FFMpegWriter = animation.writers['ffmpeg']
@@ -735,7 +740,7 @@ def arguments():
         help='Add map grid lines')
     parser.add_argument('--grid-lines',
         type=float, nargs='+', default=(15,15),
-        help='Input grid file')
+        help='Input grid spacing for meridians and parallels')
     parser.add_argument('--draw-scale',
         default=False, action='store_true',
         help='Add map scale bar')

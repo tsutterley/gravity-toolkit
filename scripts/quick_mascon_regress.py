@@ -24,6 +24,7 @@ PROGRAM DEPENDENCIES:
 UPDATE HISTORY:
     Updated 05/2023: split S2 tidal aliasing terms into GRACE and GRACE-FO eras
         allow fit to be piecewise using a known breakpoint GRACE/GRACE-FO month
+        use fit module for getting tidal aliasing terms
         use pathlib to define and operate on paths
     Updated 01/2023: refactored time series analysis functions
     Updated 12/2022: single implicit import of gravity toolkit
@@ -104,29 +105,17 @@ def run_regress(input_file,header=0,order=None,breakpoint=None,cycles=None,
             amp_str.append('ANN')
             unit_suffix.extend(['',''])
         elif (c == (161.0/365.25)):
-            # create custom terms for S2 tidal aliasing during GRACE period
-            ii, = np.nonzero(dinput[:,1] < 2018.0)
-            S2sin = np.zeros_like(dinput[:,1])
-            S2cos = np.zeros_like(dinput[:,1])
-            S2sin[ii] = np.sin(2.0*np.pi*dinput[ii,1]/np.float64(c))
-            S2cos[ii] = np.cos(2.0*np.pi*dinput[ii,1]/np.float64(c))
-            terms.append(S2sin)
-            terms.append(S2cos)
+            # terms for S2 tidal aliasing during both GRACE and GRACE-FO periods
+            terms.extend(gravtk.time_series.aliasing_terms(dinput[:,1]))
+            # labels for S2 tidal aliasing during GRACE period
             coef_str.extend(['S2SGRC','S2CGRC'])
             amp_str.append('S2GRC')
             unit_suffix.extend(['',''])
-            # create custom terms for S2 tidal aliasing during GRACE-FO period
-            ii, = np.nonzero(dinput[:,1] >= 2018.0)
-            S2sin = np.zeros_like(dinput[:,1])
-            S2cos = np.zeros_like(dinput[:,1])
-            S2sin[ii] = np.sin(2.0*np.pi*dinput[ii,1]/np.float64(c))
-            S2cos[ii] = np.cos(2.0*np.pi*dinput[ii,1]/np.float64(c))
-            terms.append(S2sin)
-            terms.append(S2cos)
+            # labels for S2 tidal aliasing during GRACE-FO period
             coef_str.extend(['S2SGFO','S2CGFO'])
             amp_str.append('S2GFO')
             unit_suffix.extend(['',''])
-            # remove the original S2 tidal aliasing term from CYCLES list
+            # remove the original S2 tidal aliasing term from cycles list
             cycles.remove(c)
 
     # calculate regression

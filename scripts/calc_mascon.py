@@ -711,7 +711,7 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         # close the output file
         fid.close()
         # change the permissions mode
-        output_file.chmod( MODE)
+        output_file.chmod(mode=MODE)
         # add output files to list object
         output_files.append(output_file)
 

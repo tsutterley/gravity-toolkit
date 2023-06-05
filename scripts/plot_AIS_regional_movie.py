@@ -235,7 +235,8 @@ def plot_rignot_basins(ax, base_dir):
 def plot_IMBIE2_basins(ax, base_dir):
     # read drainage basin polylines from shapefile (using splat operator)
     basin_shapefile = base_dir.joinpath(*IMBIE_basin_file)
-    shape_input = shapefile.Reader(basin_shapefile)
+    logging.debug(str(basin_shapefile))
+    shape_input = shapefile.Reader(str(basin_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     # find record index for region by iterating through shape attributes
@@ -257,7 +258,8 @@ def plot_IMBIE2_subbasins(ax, base_dir):
     # read drainage basin polylines from shapefile (using splat operator)
     IMBIE_subbasin_file = ['Basins_20Oct2016_v1.7','Basins_v1.7.shp']
     basin_shapefile = base_dir.joinpath('masks',*IMBIE_subbasin_file)
-    shape_input = shapefile.Reader(basin_shapefile)
+    logging.debug(str(basin_shapefile))
+    shape_input = shapefile.Reader(str(basin_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     # iterate through shape entities and attributes
@@ -278,7 +280,8 @@ def plot_amundsen_basins(ax, base_dir):
     basin_shapefile = base_dir.joinpath('masks','Basins_Admunsen',
         'Basins_admunsen_match_coastline_and_IS.shp')
     basin_title = ['pope_smith','haynes','thwaites','pine_island','kohler']
-    shape_input = shapefile.Reader(basin_shapefile)
+    logging.debug(str(basin_shapefile))
+    shape_input = shapefile.Reader(str(basin_shapefile))
     shape_entities = shape_input.shapes()
     # for each shape entity
     for i,ent in enumerate(shape_entities):
@@ -289,7 +292,9 @@ def plot_amundsen_basins(ax, base_dir):
 
 # PURPOSE: plot Antarctic grounded ice delineation
 def plot_grounded_ice(ax, base_dir, START=1):
-    shape_input = shapefile.Reader(base_dir.joinpath(*coast_file))
+    coast_shapefile = base_dir.joinpath(*coast_file)
+    logging.debug(str(coast_shapefile))
+    shape_input = shapefile.Reader(str(coast_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     i = [i for i,e in enumerate(shape_entities) if (np.ndim(e.points) > 1)]
@@ -302,26 +307,20 @@ def plot_grounded_ice(ax, base_dir, START=1):
 # PURPOSE: plot MODIS mosaic of Antarctica as background image
 def plot_image_mosaic(ax, base_dir, xlimits, ylimits, MASKED=True):
     # read MODIS mosaic of Antarctica
-    ds = osgeo.gdal.Open(str(base_dir.joinpath(*image_file)))
-    # get dimensions
-    xsize = ds.RasterXSize
-    ysize = ds.RasterYSize
+    image_geotiff_file = base_dir.joinpath(*image_file)
+    logging.debug(str(image_geotiff_file))
+    ds = osgeo.gdal.Open(str(image_geotiff_file))
     # get geotiff info
     info_geotiff = ds.GetGeoTransform()
-    # calculate image extents
-    xmin = info_geotiff[0]
-    ymax = info_geotiff[3]
-    xmax = xmin + (xsize-1)*info_geotiff[1]
-    ymin = ymax + (ysize-1)*info_geotiff[5]
     # reduce input image with GDAL
     # Specify offset and rows and columns to read
-    xoffset = int((xlimits[0] - xmin)/info_geotiff[1])
-    yoffset = int((ymax - ylimits[1])/np.abs(info_geotiff[5]))
-    xcount = int((xlimits[1] - xlimits[0])/info_geotiff[1]) + 1
-    ycount = int((ylimits[1] - ylimits[0])/np.abs(info_geotiff[5])) + 1
+    xoff = int((xlimits[0] - info_geotiff[0])/info_geotiff[1])
+    yoff = int((ylimits[1] - info_geotiff[3])/info_geotiff[5])
+    xsize = int((xlimits[1] - xlimits[0])/info_geotiff[1]) + 1
+    ysize = int((ylimits[0] - ylimits[1])/info_geotiff[5]) + 1
     # read as grayscale image reducing to xlimit and ylimit
-    mosaic = np.ma.array(ds.ReadAsArray(xoff=xoffset, yoff=yoffset,
-        xsize=xcount, ysize=ycount))
+    mosaic = np.ma.array(ds.ReadAsArray(xoff=xoff, yoff=yoff,
+        xsize=xsize, ysize=ysize))
     # mask image mosaic
     if MASKED:
         # mask invalid values
@@ -329,22 +328,19 @@ def plot_image_mosaic(ax, base_dir, xlimits, ylimits, MASKED=True):
         # create mask array for bad values
         mosaic.mask = (mosaic.data == mosaic.fill_value)
     # reduced x and y limits of image
-    xmin_reduced=xmin + xoffset*info_geotiff[1]
-    xmax_reduced=xmin + xoffset*info_geotiff[1] + (xcount-1)*info_geotiff[1]
-    ymax_reduced=ymax + yoffset*info_geotiff[5]
-    ymin_reduced=ymax + yoffset*info_geotiff[5] + (ycount-1)*info_geotiff[5]
-    # reduced image extents
-    extents = (xmin_reduced,xmax_reduced,ymin_reduced,ymax_reduced)
+    xmin = info_geotiff[0] + xoff*info_geotiff[1]
+    xmax = info_geotiff[0] + xoff*info_geotiff[1] + (xsize-1)*info_geotiff[1]
+    ymax = info_geotiff[3] + yoff*info_geotiff[5]
+    ymin = info_geotiff[3] + yoff*info_geotiff[5] + (ysize-1)*info_geotiff[5]
     # dataset range
-    vmin,vmax = (0,16386)
-    # plot modis background of Antarctica
+    vmin, vmax = (0, 16386)
     # create color map with transparent bad points
     image_cmap = copy.copy(cm.gist_gray)
     image_cmap.set_bad(alpha=0.0)
     # nearest to not interpolate image
-    im = ax.imshow(mosaic, interpolation='nearest', extent=extents,
+    im = ax.imshow(mosaic, interpolation='nearest',
         cmap=image_cmap, vmin=vmin, vmax=vmax, origin='upper',
-        transform=projection)
+        extent=(xmin, xmax, ymin, ymax), transform=projection)
     im.set_rasterized(True)
     # close the dataset
     ds = None
@@ -484,7 +480,7 @@ def animate_grid(base_dir, FILENAME,
 
     # if dlat is negative
     if (np.sign(dlat) == -1):
-        dinput = dinput.reverse(axis=0)
+        dinput = dinput.flip(axis=0)
 
     # create movie writer objects
     FFMpegWriter = animation.writers['ffmpeg']
@@ -812,7 +808,7 @@ def arguments():
         help='Add map grid lines')
     parser.add_argument('--grid-lines',
         type=float, nargs='+', default=(15,15),
-        help='Input grid file')
+        help='Input grid spacing for meridians and parallels')
     parser.add_argument('--draw-scale',
         default=False, action='store_true',
         help='Add map scale bar')

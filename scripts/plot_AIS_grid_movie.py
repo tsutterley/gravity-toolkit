@@ -174,7 +174,8 @@ def plot_rignot_basins(ax, base_dir):
 def plot_IMBIE2_basins(ax, base_dir):
     # read drainage basin polylines from shapefile (using splat operator)
     basin_shapefile = base_dir.joinpath(*IMBIE_basin_file)
-    shape_input = shapefile.Reader(basin_shapefile)
+    logging.debug(str(basin_shapefile))
+    shape_input = shapefile.Reader(str(basin_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     # find record index for region by iterating through shape attributes
@@ -196,7 +197,8 @@ def plot_IMBIE2_subbasins(ax, base_dir):
     # read drainage basin polylines from shapefile (using splat operator)
     IMBIE_subbasin_file = ['Basins_20Oct2016_v1.7','Basins_v1.7.shp']
     basin_shapefile = base_dir.joinpath('masks',*IMBIE_subbasin_file)
-    shape_input = shapefile.Reader(basin_shapefile)
+    logging.debug(str(basin_shapefile))
+    shape_input = shapefile.Reader(str(basin_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     # iterate through shape entities and attributes
@@ -213,7 +215,9 @@ def plot_IMBIE2_subbasins(ax, base_dir):
 
 # PURPOSE: plot Antarctic grounded ice delineation
 def plot_grounded_ice(ax, base_dir, START=1):
-    shape_input = shapefile.Reader(base_dir.joinpath(*coast_file))
+    coast_shapefile = base_dir.joinpath(*coast_file)
+    logging.debug(str(coast_shapefile))
+    shape_input = shapefile.Reader(str(coast_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     i = [i for i,e in enumerate(shape_entities) if (np.ndim(e.points) > 1)]
@@ -226,7 +230,9 @@ def plot_grounded_ice(ax, base_dir, START=1):
 # PURPOSE: plot MODIS mosaic of Antarctica as background image
 def plot_image_mosaic(ax, base_dir, MASKED=True):
     # read MODIS mosaic of Antarctica
-    ds = osgeo.gdal.Open(str(base_dir.joinpath(*image_file)))
+    image_geotiff_file = base_dir.joinpath(*image_file)
+    logging.debug(str(image_geotiff_file))
+    ds = osgeo.gdal.Open(str(image_geotiff_file))
     # get dimensions
     xsize = ds.RasterXSize
     ysize = ds.RasterYSize
@@ -248,8 +254,7 @@ def plot_image_mosaic(ax, base_dir, MASKED=True):
     # image extents
     extents=(xmin,xmax,ymin,ymax)
     # dataset range
-    vmin,vmax = (0,16386)
-    # plot modis background of Antarctica
+    vmin, vmax = (0, 16386)
     # create color map with transparent bad points
     image_cmap = copy.copy(cm.gist_gray)
     image_cmap.set_bad(alpha=0.0)
@@ -395,7 +400,7 @@ def animate_grid(base_dir, FILENAME,
 
     # if dlat is negative
     if (np.sign(dlat) == -1):
-        dinput = dinput.reverse(axis=0)
+        dinput = dinput.flip(axis=0)
 
     # create movie writer objects
     FFMpegWriter = animation.writers['ffmpeg']
@@ -710,7 +715,7 @@ def arguments():
         help='Add map grid lines')
     parser.add_argument('--grid-lines',
         type=float, nargs='+', default=(15,15),
-        help='Input grid file')
+        help='Input grid spacing for meridians and parallels')
     parser.add_argument('--draw-scale',
         default=False, action='store_true',
         help='Add map scale bar')

@@ -2,7 +2,7 @@
 u"""
 gen_averaging_kernel.py
 Original IDL code gen_wclms_me.pro written by Sean Swenson
-Adapted by Tyler Sutterley (03/2023)
+Adapted by Tyler Sutterley (06/2023)
 
 Generates averaging kernel coefficients which minimize the total error
 
@@ -34,6 +34,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 PROGRAM DEPENDENCIES:
+    harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
     units.py: class for converting spherical harmonic data to specific units
 
 REFERENCES:
@@ -43,6 +44,8 @@ REFERENCES:
         107(B9), (2002). https://doi.org/10.1029/2001JB000576
 
 UPDATE HISTORY:
+    Updated 06/2023: added option for setting minimum value threshold
+        use harmonics class for spherical harmonic operations
     Updated 04/2023: allow love numbers to be None for mass units case
     Updated 03/2023: improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -55,7 +58,7 @@ import numpy as np
 import gravity_toolkit.units
 
 def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
-    LMAX=60, MMAX=None, UNITS=0, LOVE=None):
+    LMAX=60, MMAX=None, CUTOFF=1e-15, UNITS=0, LOVE=None):
     """
     Generates averaging kernel coefficients which minimize the
     total error following [Swenson2002]_
@@ -81,6 +84,8 @@ def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
         Upper bound of Spherical Harmonic Degrees
     MMAX: int or NoneType, default None
         Upper bound of Spherical Harmonic Orders
+    CUTOFF: float, default 1e-15
+        minimum value for tail of Gaussian averaging function
     UNITS: int, default 0
         Input data units
 
@@ -140,8 +145,8 @@ def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
     while (valid and (l <= LMAX)):
         gl[l] = (1.0 - 2.0*l)/b*gl[l-1] + gl[l-2]
         # check validity
-        if (np.abs(gl[l]) < 1.0e-15):
-            gl[l:LMAX+1] = 1.0e-15
+        if (gl[l] < CUTOFF):
+            gl[l:LMAX+1] = CUTOFF
             valid = False
         # add to counter for spherical harmonic degree
         l += 1
@@ -160,8 +165,9 @@ def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
     sigma_0 = sigma/np.sqrt(temp)
 
     # Compute averaging kernel coefficients
-    wclm = np.zeros((LMAX+1, MMAX+1))
-    wslm = np.zeros((LMAX+1, MMAX+1))
+    Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
+    Ylms.clm = np.zeros((LMAX+1, MMAX+1))
+    Ylms.slm = np.zeros((LMAX+1, MMAX+1))
     # for each spherical harmonic degree
     for l in range(0,LMAX+1):# equivalent to 0:lmax
         # inverse of smoothed signal variance in output units
@@ -170,9 +176,9 @@ def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
         mm = np.min([MMAX,l])
         for m in range(0,mm+1):
             temp = 1.0 + 2.0*ldivg*eclm[l,m]**2
-            wclm[l,m] = gclm[l,m]/temp
+            Ylms.clm[l,m] = gclm[l,m]/temp
             temp = 1.0 + 2.0*ldivg*eslm[l,m]**2
-            wslm[l,m] = gslm[l,m]/temp
+            Ylms.slm[l,m] = gslm[l,m]/temp
 
     # return kernels divided by the area under the kernel
-    return {'clm':wclm/area, 'slm':wslm/area}
+    return Ylms.scale(1.0/area)

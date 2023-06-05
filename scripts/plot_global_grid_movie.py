@@ -115,7 +115,9 @@ def plot_coastline(ax, base_dir, LINEWIDTH=0.5):
     coastline_shape_files.append('GSHHS_i_L1_no_greenland.shp')
     coastline_shape_files.append('greenland_coastline_islands.shp')
     for fi,S in zip(coastline_shape_files,[1000,200]):
-        shape_input = shapefile.Reader(coastline_dir.joinpath(fi))
+        coast_shapefile = coastline_dir.joinpath(*fi)
+        logging.debug(str(coast_shapefile))
+        shape_input = shapefile.Reader(str(coast_shapefile))
         shape_entities = shape_input.shapes()
         # for each entity within the shapefile
         for c,ent in enumerate(shape_entities[:S]):
@@ -127,7 +129,9 @@ def plot_coastline(ax, base_dir, LINEWIDTH=0.5):
 def plot_grounded_ice(ax, base_dir, LINEWIDTH=0.5):
     coast_file = ['masks','IceBoundaries_Antarctica_v02',
         'ant_ice_sheet_islands_v2.shp']
-    shape_input = shapefile.Reader(base_dir.joinpath(*coast_file))
+    coast_shapefile = base_dir.joinpath(*coast_file)
+    logging.debug(str(coast_shapefile))
+    shape_input = shapefile.Reader(str(coast_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     i = [i for i,e in enumerate(shape_entities) if (np.ndim(e.points) > 1)]
@@ -248,7 +252,7 @@ def animate_grid(base_dir, FILENAME,
 
     # if dlat is negative
     if (np.sign(dlat) == -1):
-        dinput = dinput.reverse(axis=0)
+        dinput = dinput.flip(axis=0)
 
     # create movie writer objects
     FFMpegWriter = animation.writers['ffmpeg']
@@ -542,7 +546,7 @@ def arguments():
         help='Add map grid lines')
     parser.add_argument('--grid-lines',
         type=float, nargs='+', default=(15,15),
-        help='Input grid file')
+        help='Input grid spacing for meridians and parallels')
     # output file, format and dpi
     parser.add_argument('--figure-file','-O',
         type=pathlib.Path,
