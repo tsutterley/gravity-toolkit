@@ -17,7 +17,7 @@ def test_point_masses(NPTS):
     lat = np.arange(90.0 - dlat/2.0, -90.0 - dlat/2.0, -dlat)
     lon = np.arange(-180.0 + dlon/2.0, 180.0 + dlon/2.0, dlon)
     gridlon,gridlat = np.meshgrid(lon,lat)
-    nlat,nlon = np.shape(gridlon)
+    nlat, nlon = np.shape(gridlon)
 
     # parameterize point masses
     LAT = lat[0]-dlat*np.random.randint(0,nlat,size=NPTS)
@@ -25,7 +25,7 @@ def test_point_masses(NPTS):
     MASS = 100.0 - 200.0*np.random.randn(NPTS)
 
     # create test gridded field
-    data = np.zeros((nlat,nlon))
+    data = np.zeros((nlat, nlon))
     for i in range(NPTS):
         indy,indx = np.nonzero((gridlat == LAT[i]) & (gridlon == LON[i]))
         data[indy,indx] += MASS[i]

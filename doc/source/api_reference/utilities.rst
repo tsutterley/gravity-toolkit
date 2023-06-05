@@ -60,6 +60,12 @@ General Methods
 
 .. autofunction:: gravity_toolkit.utilities.build_opener
 
+.. autofunction:: gravity_toolkit.utilities.get_token
+
+.. autofunction:: gravity_toolkit.utilities.list_tokens
+
+.. autofunction:: gravity_toolkit.utilities.revoke_token
+
 .. autofunction:: gravity_toolkit.utilities.s3_client
 
 .. autofunction:: gravity_toolkit.utilities.s3_bucket

@@ -21,6 +21,8 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 05/2023: use pathlib to define and operate on paths
+        more operatations on spatial error if in possible data keys
+        rename reverse function to flip to match numpy nomenclature
     Updated 03/2023: customizable file-level attributes to netCDF4 and HDF5
         add attributes fetching to from_dict function
         retrieve all root attributes from HDF5 and netCDF4 datasets
@@ -379,11 +381,10 @@ class spatial(object):
             'standard_name','_FillValue','missing_value']
         # mapping between output keys and netCDF4 variable names
         if not kwargs['field_mapping']:
-            kwargs['field_mapping']['lon'] = kwargs['lonname']
-            kwargs['field_mapping']['lat'] = kwargs['latname']
-            kwargs['field_mapping']['data'] = kwargs['varname']
+            fields = [kwargs['lonname'],kwargs['latname'],kwargs['varname']]
             if kwargs['date']:
-                kwargs['field_mapping']['time'] = kwargs['timename']
+                fields.append(kwargs['timename'])
+            kwargs['field_mapping'] = self.default_field_mapping(fields)
         # for each variable
         for field,key in kwargs['field_mapping'].items():
             # Getting the data from each NetCDF variable
@@ -506,11 +507,10 @@ class spatial(object):
             'standard_name','_FillValue','missing_value']
         # mapping between output keys and HDF5 variable names
         if not kwargs['field_mapping']:
-            kwargs['field_mapping']['lon'] = kwargs['lonname']
-            kwargs['field_mapping']['lat'] = kwargs['latname']
-            kwargs['field_mapping']['data'] = kwargs['varname']
+            fields = [kwargs['lonname'],kwargs['latname'],kwargs['varname']]
             if kwargs['date']:
-                kwargs['field_mapping']['time'] = kwargs['timename']
+                fields.append(kwargs['timename'])
+            kwargs['field_mapping'] = self.default_field_mapping(fields)
         # for each variable
         for field,key in kwargs['field_mapping'].items():
             # Getting the data from each HDF5 variable
@@ -749,14 +749,22 @@ class spatial(object):
         logging.info(str(self.filename))
         # open the output file
         fid = self.filename.open(mode='w', encoding='utf8')
-        if kwargs['date']:
-            file_format = '{0:10.4f} {1:10.4f} {2:12.4f} {3:10.4f}'
+        if hasattr(self, 'error') and kwargs['date']:
+            file_format = '{0:10.4f} {1:10.4f} {2:12.4f} {3:12.4f} {4:10.4f}'
+        elif hasattr(self, 'error'):
+            file_format = '{0:10.4f} {1:10.4f} {2:12.4f} {3:12.4f}'
+        elif kwargs['date']:
+            file_format = '{0:10.4f} {1:10.4f} {2:12.4f} {4:10.4f}'
         else:
             file_format = '{0:10.4f} {1:10.4f} {2:12.4f}'
         # write to file for each valid latitude and longitude
         ii,jj = np.nonzero((self.data != self.fill_value) & (~self.mask))
-        for ln,lt,dt in zip(self.lon[jj],self.lat[ii],self.data[ii,jj]):
-            print(file_format.format(ln,lt,dt,self.time), file=fid)
+        for i,j in zip(ii,jj):
+            ln = self.lon[j]
+            lt = self.lat[i]
+            data = self.data[i,j]
+            error = self.error[i,j] if hasattr(self, 'error') else 0.0
+            print(file_format.format(ln,lt,data,error,self.time), file=fid)
         # close the output file
         fid.close()
 
@@ -825,11 +833,10 @@ class spatial(object):
         fileID = netCDF4.Dataset(self.filename, clobber, format="NETCDF4")
         # mapping between output keys and netCDF4 variable names
         if not kwargs['field_mapping']:
-            kwargs['field_mapping']['lon'] = kwargs['lonname']
-            kwargs['field_mapping']['lat'] = kwargs['latname']
-            kwargs['field_mapping']['data'] = kwargs['varname']
+            fields = [kwargs['lonname'],kwargs['latname'],kwargs['varname']]
             if kwargs['date']:
-                kwargs['field_mapping']['time'] = kwargs['timename']
+                fields.append(kwargs['timename'])
+            kwargs['field_mapping'] = self.default_field_mapping(fields)
         # create attributes dictionary for output variables
         if not all(key in kwargs['attributes'] for key in kwargs['field_mapping'].values()):
             # Defining attributes for longitude and latitude
@@ -967,13 +974,12 @@ class spatial(object):
         # opening NetCDF file for writing
         self.filename = pathlib.Path(filename).expanduser().absolute()
         fileID = h5py.File(self.filename, clobber)
-        # mapping between output keys and netCDF4 variable names
+        # mapping between output keys and HDF5 variable names
         if not kwargs['field_mapping']:
-            kwargs['field_mapping']['lon'] = kwargs['lonname']
-            kwargs['field_mapping']['lat'] = kwargs['latname']
-            kwargs['field_mapping']['data'] = kwargs['varname']
+            fields = [kwargs['lonname'],kwargs['latname'],kwargs['varname']]
             if kwargs['date']:
-                kwargs['field_mapping']['time'] = kwargs['timename']
+                fields.append(kwargs['timename'])
+            kwargs['field_mapping'] = self.default_field_mapping(fields)
         # create attributes dictionary for output variables
         if not all(key in kwargs['attributes'] for key in kwargs['field_mapping'].values()):
             # Defining attributes for longitude and latitude
@@ -1128,6 +1134,36 @@ class spatial(object):
             # HDF5 (.H5)
             self.to_HDF5(filename, date=date, **kwargs)
 
+    def default_field_mapping(self, variables):
+        """
+        Builds field mappings from a variable list
+
+
+        Parameters
+        ----------
+        variables: list
+            netCDF4/HDF5 variables names to be mapped
+
+                - ``lonname``
+                - ``latname``
+                - ``varname``
+                - ``timename``
+
+        Returns
+        -------
+        field_mapping: dict
+            Field mappings for netCDF4/HDF5 read and write functions
+        """
+        # get each variable name and add to field mapping dictionary
+        field_mapping = {}
+        for i, var in enumerate(['lon', 'lat', 'data', 'time']):
+            try:
+                field_mapping[var] = copy.copy(variables[i])
+            except IndexError as exc:
+                pass
+        # return the field mapping
+        return field_mapping
+
     def to_masked_array(self):
         """
         Convert a ``spatial`` object to a masked numpy array
@@ -1143,6 +1179,8 @@ class spatial(object):
             self.mask |= (self.data == self.fill_value)
             self.mask |= np.isnan(self.data)
             self.data[self.mask] = self.fill_value
+            if hasattr(self, 'error'):
+                self.error[self.mask] = self.fill_value
         return self
 
     def copy(self):
@@ -1201,6 +1239,11 @@ class spatial(object):
                 self.mask = self.mask[:,:,None]
             except Exception as exc:
                 pass
+            # try expanding spatial error
+            try:
+                self.error = self.error[:,:,None]
+            except AttributeError as exc:
+                pass
         # update mask
         self.update_mask()
         return self
@@ -1256,12 +1299,12 @@ class spatial(object):
         # squeeze singleton dimensions
         self.time = np.squeeze(self.time)
         self.month = np.squeeze(self.month)
-        self.data = np.squeeze(self.data)
-        # try squeezing mask variable
-        try:
-            self.mask = np.squeeze(self.mask)
-        except Exception as exc:
-            pass
+        # attempt to squeeze possible data variables
+        for key in ['data','mask','error']:
+            try:
+                setattr(self, key, np.squeeze(getattr(self, key)))
+            except Exception as exc:
+                pass
         # update mask
         self.update_mask()
         return self
@@ -1279,14 +1322,13 @@ class spatial(object):
         """
         # output spatial object
         temp = spatial(fill_value=self.fill_value)
-        # subset output spatial field
-        temp.data = self.data[:,:,indice].copy()
-        temp.mask = self.mask[:,:,indice].copy()
-        # subset output spatial error
-        try:
-            temp.error = self.error[:,:,indice].copy()
-        except AttributeError as exc:
-            pass
+        # attempt to subset possible data variables
+        for key in ['data','mask','error']:
+            try:
+                tmp = getattr(self, key)
+                setattr(temp, key, tmp[:,:,indice].copy())
+            except Exception as exc:
+                pass
         # copy dimensions
         temp.lon = self.lon.copy()
         temp.lat = self.lat.copy()
@@ -1465,7 +1507,7 @@ class spatial(object):
         temp.update_mask()
         return temp
 
-    def reverse(self, axis=0):
+    def flip(self, axis=0):
         """
         Reverse the order of data and dimensions along an axis
 
@@ -1476,22 +1518,26 @@ class spatial(object):
         """
         # output spatial object
         temp = self.copy()
-        temp.expand_dims()
         # copy dimensions and reverse order
         if (axis == 0):
             temp.lat = temp.lat[::-1].copy()
-            temp.data = temp.data[::-1,:,:].copy()
-            temp.mask = temp.mask[::-1,:,:].copy()
         elif (axis == 1):
             temp.lon = temp.lon[::-1].copy()
-            temp.data = temp.data[:,::-1,:].copy()
-            temp.mask = temp.mask[:,::-1,:].copy()
-        # remove singleton dimensions if importing a single value
-        return temp.squeeze()
+        elif (axis == 2):
+            temp.time = temp.time[::-1].copy()
+        # attempt to reverse possible data variables
+        for key in ['data','mask','error']:
+            try:
+                setattr(temp, key, np.flip(getattr(self, key), axis=axis))
+            except Exception as exc:
+                pass
+        # update mask
+        temp.update_mask()
+        return temp
 
     def transpose(self, axes=None):
         """
-        Reverse or permute the axes of a ``spatial`` object
+        Transpose or permute the axes of a ``spatial`` object
 
         Parameters
         ----------
@@ -1500,9 +1546,12 @@ class spatial(object):
         """
         # output spatial object
         temp = self.copy()
-        # copy dimensions and reverse order
-        temp.data = np.transpose(temp.data, axes=axes)
-        temp.mask = np.transpose(temp.mask, axes=axes)
+        # attempt to transpose possible data variables
+        for key in ['data','mask','error']:
+            try:
+                setattr(temp, key, np.transpose(getattr(self, key), axes=axes))
+            except Exception as exc:
+                pass
         # update mask
         temp.update_mask()
         return temp
@@ -1601,14 +1650,18 @@ class spatial(object):
         self.fill_value = fill_value
         # replace invalid values with new fill value
         self.data[self.mask] = self.fill_value
+        if hasattr(self, 'error'):
+            self.error[self.mask] = self.fill_value
         return self
 
     def replace_masked(self):
         """
         Replace the masked values with ``fill_value``
         """
-        if self.fill_value is not None:
+        if (self.fill_value is not None):
             self.data[self.mask] = self.fill_value
+        if (self.fill_value is not None) and hasattr(self, 'error'):
+            self.error[self.mask] = self.fill_value
         return self
 
     @property

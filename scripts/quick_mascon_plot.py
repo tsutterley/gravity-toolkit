@@ -35,6 +35,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 05/2023: use pathlib to define and operate on paths
+        use fit module for getting tidal aliasing terms
     Updated 04/2023: add option to include plot markers on time series plots
     Updated 03/2023: place matplotlib import behind try/except statement
     Updated 01/2023: refactored time series analysis functions
@@ -94,13 +95,14 @@ def run_plot(i,f,individual=False,header=0,marker=None,title=None,
         plt.figure(i+1)
     # read data
     f = pathlib.Path(f).expanduser().absolute()
+    print(f.name)
     dinput = np.loadtxt(f, skiprows=header)
     # calculate regression
+    TERMS = gravtk.time_series.aliasing_terms(dinput[:,1])
     x1 = gravtk.time_series.regress(dinput[:,1],dinput[:,2],ORDER=1,
-        CYCLES=[0.5,1.0,161.0/365.25])
+        CYCLES=[0.5,1.0], TERMS=TERMS)
     x2 = gravtk.time_series.regress(dinput[:,1],dinput[:,2],ORDER=2,
-        CYCLES=[0.5,1.0,161.0/365.25])
-    print(f.name)
+        CYCLES=[0.5,1.0], TERMS=TERMS)
     # print regression coefficients
     args = ('x1',x1['beta'][1],x1['error'][1])
     print('{0}: {1:0.4f} +/- {2:0.4f}'.format(*args))

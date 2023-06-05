@@ -40,6 +40,7 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 05/2023: use pathlib to define and operate on paths
+        added option to set the input variable names or column order
     Updated 03/2023: switch from parameter files to argparse arguments
         updated inputs to spatial from_ascii function
     Updated 07/2022: place some imports behind try/except statements
@@ -208,7 +209,8 @@ def plot_rignot_basins(ax, base_dir, HEM, projection):
 def plot_IMBIE2_basins(ax, base_dir, HEM):
     # read drainage basin polylines from shapefile (using splat operator)
     basin_shapefile = base_dir.joinpath(*IMBIE_basin_file[HEM])
-    shape_input = shapefile.Reader(basin_shapefile)
+    logging.debug(str(basin_shapefile))
+    shape_input = shapefile.Reader(str(basin_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     # find record index for region by iterating through shape attributes
@@ -241,7 +243,8 @@ def plot_IMBIE2_subbasins(ax, base_dir):
     # read drainage basin polylines from shapefile (using splat operator)
     IMBIE_subbasin_file = ['Basins_20Oct2016_v1.7','Basins_v1.7.shp']
     basin_shapefile = base_dir.joinpath('masks',*IMBIE_subbasin_file)
-    shape_input = shapefile.Reader(basin_shapefile)
+    logging.debug(str(basin_shapefile))
+    shape_input = shapefile.Reader(str(basin_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     # iterate through shape entities and attributes
@@ -283,7 +286,9 @@ def plot_coastline(ax, base_dir):
     coastline_shape_files.append('GSHHS_i_L1_no_greenland.shp')
     coastline_shape_files.append('greenland_coastline_islands.shp')
     for fi,S in zip(coastline_shape_files,[1000,200]):
-        shape_input = shapefile.Reader(coastline_dir.joinpath(fi))
+        coast_shapefile = coastline_dir.joinpath(*fi)
+        logging.debug(str(coast_shapefile))
+        shape_input = shapefile.Reader(str(coast_shapefile))
         shape_entities = shape_input.shapes()
         # for each entity within the shapefile
         for c,ent in enumerate(shape_entities[:S]):
@@ -307,10 +312,10 @@ def plot_image_mosaic(ax, base_dir, HEM, MASKED=True):
     ymin = ymax + (ysize-1)*info_geotiff[5]
     if (HEM == 'N'):
         # dataset range
-        vmin,vmax = (0,16386)
+        vmin, vmax = (0, 16386)
     elif (HEM == 'S'):
         # dataset range
-        vmin,vmax = (0,16386)
+        vmin, vmax = (0, 16386)
     # read as grayscale image
     mosaic = np.ma.array(ds.ReadAsArray())
     # mask image mosaic
@@ -319,15 +324,13 @@ def plot_image_mosaic(ax, base_dir, HEM, MASKED=True):
         mosaic.fill_value = 0
         # create mask array for bad values
         mosaic.mask = (mosaic.data == mosaic.fill_value)
-    # image extents
-    extents=(xmin,xmax,ymin,ymax)
     # create color map with transparent bad points
     image_cmap = copy.copy(cm.gist_gray)
     image_cmap.set_bad(alpha=0.0)
     # nearest to not interpolate image
-    im = ax.imshow(mosaic, interpolation='nearest', extent=extents,
+    im = ax.imshow(mosaic, interpolation='nearest',
         cmap=image_cmap, vmin=vmin, vmax=vmax, origin='upper',
-        transform=projection[HEM])
+        extent=(xmin, xmax, ymin, ymax), transform=projection[HEM])
     im.set_rasterized(True)
     # close the dataset
     ds = None
@@ -351,6 +354,7 @@ def add_plot_scale(ax,X,Y,dx,dy,masked,fc1='w',fc2='k'):
 # PURPOSE: plot side by side maps of Greenland and Antarctica
 def plot_grid(base_dir, FILENAMES,
     DATAFORM=None,
+    VARIABLES=[],
     MASK=None,
     INTERPOLATION=None,
     DDEG=None,
@@ -484,17 +488,20 @@ def plot_grid(base_dir, FILENAMES,
             plot_image_mosaic(ax, base_dir, HEM)
 
         # input ascii/netCDF4/HDF5 file
-        # scale data by SCALE_FACTOR
         if (DATAFORM[i] == 'ascii'):
             # ascii (.txt)
             dinput = gravtk.spatial().from_ascii(FILENAMES[i], date=False,
-                spacing=[dlon,dlat], nlat=nlat, nlon=nlon)
+                columns=VARIABLES, spacing=[dlon,dlat], nlat=nlat, nlon=nlon)
         elif (DATAFORM[i] == 'netCDF4'):
             # netCDF4 (.nc)
-            dinput = gravtk.spatial().from_netCDF4(FILENAMES[i], date=False)
+            field_mapping = gravtk.spatial().default_field_mapping(VARIABLES)
+            dinput = gravtk.spatial().from_netCDF4(FILENAMES[i], date=False,
+                field_mapping=field_mapping)
         elif (DATAFORM[i] == 'HDF5'):
             # HDF5 (.H5)
-            dinput = gravtk.spatial().from_HDF5(FILENAMES[i], date=False)
+            field_mapping = gravtk.spatial().default_field_mapping(VARIABLES)
+            dinput = gravtk.spatial().from_HDF5(FILENAMES[i], date=False,
+                field_mapping=field_mapping)
 
         # remove offset and scale to units
         if (REMOVE != 0.0) or (SCALE_FACTOR != 1.0):
@@ -506,7 +513,7 @@ def plot_grid(base_dir, FILENAMES,
 
         # if dlat is negative
         if (np.sign(dlat) == -1):
-            dinput = dinput.reverse(axis=0)
+            dinput = dinput.flip(axis=0)
 
         # calculate image coordinates
         mx = np.int64((xlimits[1]-xlimits[0])/1000.)+1
@@ -699,6 +706,10 @@ def arguments():
         type=str, nargs='+',
         default='netCDF4', choices=['ascii','netCDF4','HDF5'],
         help='Input data format')
+    # variable names (for ascii names of columns)
+    parser.add_argument('--variables','-v',
+        type=str, nargs='+', default=['lon','lat','z'],
+        help='Variable names of data in input file')
     # land-sea mask
     lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
     parser.add_argument('--mask',
@@ -783,7 +794,7 @@ def arguments():
         help='Add map grid lines')
     parser.add_argument('--grid-lines',
         type=float, nargs='+', default=(15,15),
-        help='Input grid file')
+        help='Input grid spacing for meridians and parallels')
     parser.add_argument('--draw-scale',
         default=False, action='store_true',
         help='Add map scale bar')
@@ -824,6 +835,7 @@ def main():
         # run plot program with parameters
         plot_grid(args.directory, args.infile,
             DATAFORM=args.format,
+            VARIABLES=args.variables,
             DDEG=args.spacing,
             INTERVAL=args.interval,
             INTERPOLATION=args.interpolation,

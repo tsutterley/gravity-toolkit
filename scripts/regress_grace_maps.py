@@ -61,6 +61,8 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 05/2023: split S2 tidal aliasing terms into GRACE and GRACE-FO eras
+        output data and error variables into single files
+        use fit module for getting tidal aliasing terms
         use pathlib to define and operate on paths
     Updated 03/2023: updated inputs to spatial from_ascii function
         use attributes from units class for writing to netCDF4/HDF5 files
@@ -212,11 +214,11 @@ def regress_grace_maps(LMAX, RAD,
     coef_str = ['x{0:d}'.format(o) for o in range(ORDER+1)]
     unit_suffix = [' yr^{0:d}'.format(-o) if o else '' for o in range(ORDER+1)]
     if (ORDER == 0):# Mean
-        unit_longname = ['Mean']
+        fit_longname = ['Mean']
     elif (ORDER == 1):# Trend
-        unit_longname = ['Constant','Trend']
+        fit_longname = ['Constant','Trend']
     elif (ORDER == 2):# Quadratic
-        unit_longname = ['Constant','Linear','Quadratic']
+        fit_longname = ['Constant','Linear','Quadratic']
 
     # amplitude string for cyclical components
     amp_str = []
@@ -226,37 +228,25 @@ def regress_grace_maps(LMAX, RAD,
         if (c == 0.5):
             coef_str.extend(['SS','SC'])
             amp_str.append('SEMI')
-            unit_longname.extend(['Semi-Annual Sine', 'Semi-Annual Cosine'])
+            fit_longname.extend(['Semi-Annual Sine', 'Semi-Annual Cosine'])
             unit_suffix.extend(['',''])
         elif (c == 1.0):
             coef_str.extend(['AS','AC'])
             amp_str.append('ANN')
-            unit_longname.extend(['Annual Sine', 'Annual Cosine'])
+            fit_longname.extend(['Annual Sine', 'Annual Cosine'])
             unit_suffix.extend(['',''])
         elif (c == (161.0/365.25)):
-            # create custom terms for S2 tidal aliasing during GRACE period
-            ii, = np.nonzero(grid.time < 2018.0)
-            S2sin = np.zeros_like(grid.time)
-            S2cos = np.zeros_like(grid.time)
-            S2sin[ii] = np.sin(2.0*np.pi*grid.time[ii]/np.float64(c))
-            S2cos[ii] = np.cos(2.0*np.pi*grid.time[ii]/np.float64(c))
-            TERMS.append(S2sin)
-            TERMS.append(S2cos)
+            # terms for S2 tidal aliasing during both GRACE and GRACE-FO periods
+            TERMS.extend(gravtk.time_series.aliasing_terms(grid.time))
+            # labels for S2 tidal aliasing during GRACE period
             coef_str.extend(['S2SGRC','S2CGRC'])
             amp_str.append('S2GRC')
-            unit_longname.extend(['S2 Tidal Alias Sine', 'S2 Tidal Alias Cosine'])
+            fit_longname.extend(['S2 Tidal Alias Sine', 'S2 Tidal Alias Cosine'])
             unit_suffix.extend(['',''])
-            # create custom terms for S2 tidal aliasing during GRACE-FO period
-            ii, = np.nonzero(grid.time >= 2018.0)
-            S2sin = np.zeros_like(grid.time)
-            S2cos = np.zeros_like(grid.time)
-            S2sin[ii] = np.sin(2.0*np.pi*grid.time[ii]/np.float64(c))
-            S2cos[ii] = np.cos(2.0*np.pi*grid.time[ii]/np.float64(c))
-            TERMS.append(S2sin)
-            TERMS.append(S2cos)
+            # labels for S2 tidal aliasing during GRACE-FO period
             coef_str.extend(['S2SGFO','S2CGFO'])
             amp_str.append('S2GFO')
-            unit_longname.extend(['S2 Tidal Alias Sine', 'S2 Tidal Alias Cosine'])
+            fit_longname.extend(['S2 Tidal Alias Sine', 'S2 Tidal Alias Cosine'])
             unit_suffix.extend(['',''])
             # remove the original S2 tidal aliasing term from CYCLES list
             CYCLES.remove(c)
@@ -264,6 +254,8 @@ def regress_grace_maps(LMAX, RAD,
     # Fitting seasonal components
     ncomp = len(coef_str)
     ncycles = 2*len(CYCLES) + len(TERMS)
+    # confidence interval for regression fit errors
+    CONF = 0.95
 
     # Allocating memory for output variables
     out = dinput.zeros_like()
@@ -284,7 +276,7 @@ def regress_grace_maps(LMAX, RAD,
         for j in range(nlon):
             # Calculating the regression coefficients
             tsbeta = gravtk.time_series.regress(grid.time, grid.data[i,j,:],
-                ORDER=ORDER, CYCLES=CYCLES, TERMS=TERMS, CONF=0.95)
+                ORDER=ORDER, CYCLES=CYCLES, TERMS=TERMS, CONF=CONF)
             # save regression components
             for k in range(0, ncomp):
                 out.data[i,j,k] = tsbeta['beta'][k]
@@ -306,96 +298,71 @@ def regress_grace_maps(LMAX, RAD,
         # output spatial file name
         f1 = (FILE_PREFIX, units, LMAX, order_str,
             gw_str, ds_str, coef_str[i], '', START, END, suffix)
-        f2 = (FILE_PREFIX, units, LMAX, order_str,
-            gw_str, ds_str, coef_str[i], '_ERROR', START, END, suffix)
         file1 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f1))
-        file2 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f2))
         # full attributes
         UNITS_TITLE = f'{units_name}{unit_suffix[i]}'
         LONGNAME = units_longname
-        FILE_TITLE = f'GRACE/GRACE-FO_Spatial_Data_{unit_longname[i]}'
+        FILE_TITLE = f'GRACE/GRACE-FO_Spatial_Data_{fit_longname[i]}'
         # output regression fit to file
         output = out.index(i, date=False)
         output_data(output, FILENAME=file1, DATAFORM=DATAFORM,
             UNITS=UNITS_TITLE, LONGNAME=LONGNAME, TITLE=FILE_TITLE,
-            VERBOSE=VERBOSE, MODE=MODE)
-        output_data(output, FILENAME=file2, DATAFORM=DATAFORM,
-            UNITS=UNITS_TITLE, LONGNAME=LONGNAME, TITLE=FILE_TITLE,
-            KEY='error', VERBOSE=VERBOSE, MODE=MODE)
+            CONF=CONF, VERBOSE=VERBOSE, MODE=MODE)
         # add output files to list object
         output_files.append(file1)
-        output_files.append(file2)
 
     # if fitting coefficients with cyclical components
-    if (ncycles > 0):
-        # output spatial titles for amplitudes
-        amp_title = dict(ANN='Annual Amplitude',SEMI='Semi-Annual Amplitude',
-            S2GRC='S2 Tidal Alias Amplitude',S2GFO='S2 Tidal Alias Amplitude')
-        ph_title = dict(ANN='Annual Phase',SEMI='Semi-Annual Phase',
-            S2GRC='S2 Tidal Alias Phase',S2GFO='S2 Tidal Alias Phase')
+    # output spatial titles for amplitudes
+    amp_title = dict(ANN='Annual Amplitude',SEMI='Semi-Annual Amplitude',
+        S2GRC='S2 Tidal Alias Amplitude',S2GFO='S2 Tidal Alias Amplitude')
+    ph_title = dict(ANN='Annual Phase',SEMI='Semi-Annual Phase',
+        S2GRC='S2 Tidal Alias Phase',S2GFO='S2 Tidal Alias Phase')
+    # output amplitude and phase of cyclical components
+    for i,flag in enumerate(amp_str):
+        # Indice pointing to the cyclical components
+        j = 1 + ORDER + 2*i
+        # Allocating memory for output amplitude and phase
+        amp = dinput.zeros_like()
+        ph = dinput.zeros_like()
+        # calculating amplitude and phase of spatial field
+        amp.data,ph.data = gravtk.time_series.amplitude(
+            out.data[:,:,j], out.data[:,:,j+1]
+        )
+        # convert phase from -180:180 to 0:360
+        ii,jj = np.nonzero(ph.data < 0)
+        ph.data[ii,jj] += 360.0
+        # Amplitude Error
+        comp1 = out.error[:,:,j]*out.data[:,:,j]/amp.data
+        comp2 = out.error[:,:,j+1]*out.data[:,:,j+1]/amp.data
+        amp.error = np.sqrt(comp1**2 + comp2**2)
+        # Phase Error (degrees)
+        comp1 = out.error[:,:,j]*out.data[:,:,j+1]/(amp.data**2)
+        comp2 = out.error[:,:,j+1]*out.data[:,:,j]/(amp.data**2)
+        ph.error = (180.0/np.pi)*np.sqrt(comp1**2 + comp2**2)
 
-        # output amplitude and phase of cyclical components
-        for i,flag in enumerate(amp_str):
-            # Indice pointing to the cyclical components
-            j = 1 + ORDER + 2*i
-            # Allocating memory for output amplitude and phase
-            amp = dinput.zeros_like()
-            ph = dinput.zeros_like()
-            # calculating amplitude and phase of spatial field
-            amp.data,ph.data = gravtk.time_series.amplitude(
-                out.data[:,:,j], out.data[:,:,j+1]
-            )
-            # convert phase from -180:180 to 0:360
-            ii,jj = np.nonzero(ph.data < 0)
-            ph.data[ii,jj] += 360.0
-            # Amplitude Error
-            comp1 = out.error[:,:,j]*out.data[:,:,j]/amp.data
-            comp2 = out.error[:,:,j+1]*out.data[:,:,j+1]/amp.data
-            amp.error = np.sqrt(comp1**2 + comp2**2)
-            # Phase Error (degrees)
-            comp1 = out.error[:,:,j]*out.data[:,:,j+1]/(amp.data**2)
-            comp2 = out.error[:,:,j+1]*out.data[:,:,j]/(amp.data**2)
-            ph.error = (180.0/np.pi)*np.sqrt(comp1**2 + comp2**2)
-
-            # output file names for amplitude, phase and errors
-            f3 = (FILE_PREFIX, units, LMAX, order_str,
-                gw_str, ds_str, flag, '', START, END, suffix)
-            f4 = (FILE_PREFIX, units, LMAX, order_str,
-                gw_str, ds_str, flag,'_PHASE', START, END, suffix)
-            file3 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f3))
-            file4 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f4))
-            # output spatial error file name
-            f5 = (FILE_PREFIX, units, LMAX, order_str,
-                gw_str, ds_str, flag, '_ERROR', START, END, suffix)
-            f6 = (FILE_PREFIX, units, LMAX, order_str,
-                gw_str, ds_str, flag, '_PHASE_ERROR', START, END, suffix)
-            file5 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f5))
-            file6 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f6))
-            # full attributes
-            AMP_UNITS = units_name
-            PH_UNITS = 'degrees'
-            LONGNAME = units_longname
-            AMP_TITLE = f'GRACE/GRACE-FO_Spatial_Data_{amp_title[flag]}'
-            PH_TITLE = f'GRACE/GRACE-FO_Spatial_Data_{ph_title[flag]}'
-            # Output seasonal amplitude and phase to files
-            output_data(amp, FILENAME=file3, DATAFORM=DATAFORM,
-                UNITS=AMP_UNITS, LONGNAME=LONGNAME, TITLE=AMP_TITLE,
-                VERBOSE=VERBOSE, MODE=MODE)
-            output_data(ph, FILENAME=file4, DATAFORM=DATAFORM,
-                UNITS=PH_UNITS, LONGNAME='Phase', TITLE=PH_TITLE,
-                VERBOSE=VERBOSE, MODE=MODE)
-            # Output seasonal amplitude and phase error to files
-            output_data(amp, FILENAME=file5, DATAFORM=DATAFORM,
-                UNITS=AMP_UNITS, LONGNAME=LONGNAME, TITLE=AMP_TITLE,
-                KEY='error', VERBOSE=VERBOSE, MODE=MODE)
-            output_data(ph, FILENAME=file6, DATAFORM=DATAFORM,
-                UNITS=PH_UNITS, LONGNAME='Phase', TITLE=PH_TITLE,
-                KEY='error', VERBOSE=VERBOSE, MODE=MODE)
-            # add output files to list object
-            output_files.append(file3)
-            output_files.append(file4)
-            output_files.append(file5)
-            output_files.append(file6)
+        # output file names for amplitude, phase and errors
+        f2 = (FILE_PREFIX, units, LMAX, order_str,
+            gw_str, ds_str, flag, '_AMPL', START, END, suffix)
+        f3 = (FILE_PREFIX, units, LMAX, order_str,
+            gw_str, ds_str, flag,'_PHASE', START, END, suffix)
+        file2 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f2))
+        file3 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f3))
+        # full attributes
+        AMP_UNITS = units_name
+        PH_UNITS = 'degrees'
+        LONGNAME = units_longname
+        AMP_TITLE = f'GRACE/GRACE-FO_Spatial_Data_{amp_title[flag]}'
+        PH_TITLE = f'GRACE/GRACE-FO_Spatial_Data_{ph_title[flag]}'
+        # Output seasonal amplitude and phase to files
+        output_data(amp, FILENAME=file2, DATAFORM=DATAFORM,
+            UNITS=AMP_UNITS, LONGNAME=LONGNAME, TITLE=AMP_TITLE,
+            CONF=CONF, VERBOSE=VERBOSE, MODE=MODE)
+        output_data(ph, FILENAME=file3, DATAFORM=DATAFORM,
+            UNITS=PH_UNITS, LONGNAME='Phase', TITLE=PH_TITLE,
+            CONF=CONF, VERBOSE=VERBOSE, MODE=MODE)
+        # add output files to list object
+        output_files.append(file2)
+        output_files.append(file3)
 
     # Output fit significance
     signif_longname = {'SSE':'Sum of Squares Error',
@@ -406,44 +373,65 @@ def regress_grace_maps(LMAX, RAD,
     for key,fs in FS.items():
         # output file names for fit significance
         signif_str = f'{key}_'
-        f7 = (FILE_PREFIX, units, LMAX, order_str, gw_str, ds_str,
+        f4 = (FILE_PREFIX, units, LMAX, order_str, gw_str, ds_str,
             signif_str, coef_str[ORDER], START, END, suffix)
-        file7 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f7))
+        file4 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f4))
         # full attributes
         LONGNAME = signif_longname[key]
         # output fit significance to file
-        output_data(fs, FILENAME=file7, DATAFORM=DATAFORM,
+        output_data(fs, FILENAME=file4, DATAFORM=DATAFORM,
             UNITS=key, LONGNAME=LONGNAME, TITLE=nu,
             VERBOSE=VERBOSE, MODE=MODE)
         # add output files to list object
-        output_files.append(file7)
+        output_files.append(file4)
 
     # return the list of output files
     return output_files
 
 # PURPOSE: wrapper function for outputting data to file
-def output_data(data, FILENAME=None, KEY='data', DATAFORM=None,
-    UNITS=None, LONGNAME=None, TITLE=None, VERBOSE=0, MODE=0o775):
-    output = data.copy()
-    setattr(output, 'data', getattr(data, KEY))
-    # attributes for output files
-    attributes = {}
-    attributes['units'] = UNITS
-    attributes['longname'] = LONGNAME
-    attributes['title'] = TITLE
-    attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
+def output_data(data, FILENAME=None, DATAFORM=None, UNITS=None,
+    LONGNAME=None, TITLE=None, CONF=0, VERBOSE=0, MODE=0o775):
+    # field mapping for output regression data
+    field_mapping = {}
+    field_mapping['lat'] = 'lat'
+    field_mapping['lon'] = 'lon'
+    field_mapping['data'] = 'data'
+    # add data error to output field mapping
+    if hasattr(data, 'error'):
+        field_mapping['error'] = 'error'
+    # output attributes
+    attributes = dict(ROOT={})
+    attributes['lon'] = {}
+    attributes['lon']['long_name'] = 'longitude'
+    attributes['lon']['units'] = 'degrees_east'
+    attributes['lat'] = {}
+    attributes['lat']['long_name'] = 'latitude'
+    attributes['lat']['units'] = 'degrees_north'
+    attributes['data'] = {}
+    attributes['data']['description'] = 'Model_fit'
+    attributes['data']['long_name'] = LONGNAME
+    attributes['data']['units'] = UNITS
+    attributes['error'] = {}
+    attributes['error']['description'] = 'Uncertainty_in_model_fit'
+    attributes['error']['long_name'] = LONGNAME
+    attributes['error']['units'] = UNITS
+    attributes['error']['confidence'] = 100*CONF
+    # output global attributes
+    REFERENCE = f'Output from {pathlib.Path(sys.argv[0]).name}'
     # write to output file
     if (DATAFORM == 'ascii'):
         # ascii (.txt)
-        output.to_ascii(FILENAME, date=False, verbose=VERBOSE)
+        data.to_ascii(FILENAME, date=False, verbose=VERBOSE)
     elif (DATAFORM == 'netCDF4'):
         # netcdf (.nc)
-        output.to_netCDF4(FILENAME, date=False, verbose=VERBOSE,
-            **attributes)
+        data.to_netCDF4(FILENAME, date=False, verbose=VERBOSE,
+            field_mapping=field_mapping, attributes=attributes,
+            title=TITLE, reference=REFERENCE)
     elif (DATAFORM == 'HDF5'):
         # HDF5 (.H5)
-        output.to_HDF5(FILENAME, date=False, verbose=VERBOSE,
-            **attributes)
+        data.to_HDF5(FILENAME, date=False, verbose=VERBOSE,
+            field_mapping=field_mapping, attributes=attributes,
+            title=TITLE, reference=REFERENCE)
     # change the permissions mode of the output file
     FILENAME.chmod(mode=MODE)
 

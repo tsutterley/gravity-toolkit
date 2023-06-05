@@ -73,6 +73,7 @@ missions
     api_reference/spatial.rst
     api_reference/time.rst
     api_reference/time_series/amplitude.rst
+    api_reference/time_series/fit.rst
     api_reference/time_series/piecewise.rst
     api_reference/time_series/regress.rst
     api_reference/time_series/savitzky_golay.rst
