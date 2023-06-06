@@ -562,10 +562,6 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     atm = gravtk.geocenter().from_harmonics(ATM_Ylms)
 
     # read bottom pressure model if applicable
-    # ECCO_kf080i: https://ecco.jpl.nasa.gov/drive/files/NearRealTime/KalmanFilter/
-    # ECCO_dr080i: https://ecco.jpl.nasa.gov/drive/files/NearRealTime/Smoother/
-    # ECCO_V4r3: https://ecco.jpl.nasa.gov/drive/files/Version4/Release3/interp_monthly/
-    # ECCO_V4r4: https://ecco.jpl.nasa.gov/drive/files/Version4/Release4/interp_monthly/
     if MODEL not in ('OMCT','MPIOM'):
         # read input data files for ascii (txt), netCDF4 (nc) or HDF5 (H5)
         MODEL_INDEX = pathlib.Path(MODEL_INDEX).expanduser().absolute()

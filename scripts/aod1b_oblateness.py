@@ -12,9 +12,6 @@ Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
 
 Creates monthly files of oblateness (C20) variations at 3 or 6 hour intervals
 
-NOTE: this reads the GFZ AOD1B files downloaded from PO.DAAC
-https://podaac-uat.jpl.nasa.gov/drive/files/allData/grace/L1B/GFZ/AOD1B/RL05/
-
 CALLING SEQUENCE:
     python aod1b_oblateness.py --release RL06 atm ocn glo oba
 

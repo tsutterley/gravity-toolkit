@@ -6,18 +6,15 @@ Written by Tyler Sutterley (05/2023)
 Reads in C20 spherical harmonic coefficients derived from SLR measurements
 
 Dataset distributed by NASA PO.DAAC
-    https://podaac-tools.jpl.nasa.gov/drive/files/GeodeticsGravity/grace/docs
-        TN-05_C20_SLR.txt
-        TN-07_C20_SLR.txt
-        TN-11_C20_SLR.txt
-        TN-14_C30_C30_GSFC_SLR.txt
+    TN-05_C20_SLR.txt
+    TN-07_C20_SLR.txt
+    TN-11_C20_SLR.txt
+    TN-14_C30_C30_GSFC_SLR.txt
 Dataset distributed by UTCSR
-    ftp://ftp.csr.utexas.edu/pub/slr/degree_2/C20_RL05.txt
+    C20_RL05.txt
 Datasets distributed by GFZ
-    ftp://isdcftp.gfz-potsdam.de/grace/Level-2/GFZ/RL06_SLR_C20/
-        GFZ_RL06_C20_SLR.dat
-    ftp://isdcftp.gfz-potsdam.de/grace/GravIS/GFZ/Level-2B/aux_data/
-        GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat
+    GFZ_RL06_C20_SLR.dat
+    GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat
 
 CALLING SEQUENCE:
     SLR_C20 = gravity_toolkit.SLR.C20(SLR_file)

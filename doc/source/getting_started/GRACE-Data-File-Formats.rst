@@ -88,5 +88,5 @@ Summary
 References
 ##########
 
-- `Product Description Document for AOD1B Release 06, Technical Document GRACE 327-750, Revision 6.1, GFZ German Research Centre for Geosciences (2017). <https://podaac-tools.jpl.nasa.gov/drive/files/allData/gracefo/docs/AOD1B_PDD_RL06_v6.1.pdf>`_
-- `GRACE Follow-On Level-2 Gravity Field Product User Handbook, Technical Document GRACE-FO D-103922, Revision 1.1, NASA Jet Propulsion Laboratory (2019). <https://podaac-tools.jpl.nasa.gov/drive/files/allData/gracefo/docs/GRACE-FO_L2_UserHandbook.pdf>`_
+- `Product Description Document for AOD1B Release 06, Technical Document GRACE 327-750, Revision 6.1, GFZ German Research Centre for Geosciences (2017). <https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-docs/grace/open/L1B/GFZ/AOD1B/RL04/docs/AOD1B_PDD_RL06_v6.1.pdf>`_
+- `GRACE Follow-On Level-2 Gravity Field Product User Handbook, Technical Document GRACE-FO D-103922, Revision 1.1, NASA Jet Propulsion Laboratory (2019). <https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-docs/gracefo/open/docs/GRACE-FO_L2_UserHandbook.pdf>`_

@@ -650,8 +650,7 @@ class geocenter(object):
         Technical Notes (TN-13) calculated using GRACE/GRACE-FO measurements and
         Ocean Models of Degree 1
 
-        `Datasets distributed by NASA PO.DAAC
-        <https://podaac-tools.jpl.nasa.gov/drive/files/allData/tellus/L2/degree_1>`_
+        Datasets distributed by NASA PO.DAAC
 
         Parameters
         ----------

@@ -25,15 +25,15 @@ Data Archives
 Product Information
 ###################
 
-- `GRACE Level-2 Gravity Field Product User Handbook <https://podaac-tools.jpl.nasa.gov/drive/files/GeodeticsGravity/grace/docs/L2-UserHandbook_v4.0.pdf>`_
-- `GRACE-FO Level-2 Gravity Field Product User Handbook <https://podaac-tools.jpl.nasa.gov/drive/files/GeodeticsGravity/gracefo/docs/GRACE-FO_L2-UserHandbook_v1.1.pdf>`_
-- `GRACE Product Description Document for AOD1B Release 06 <https://podaac-tools.jpl.nasa.gov/drive/files/GeodeticsGravity/grace/docs/AOD1B_PDD_RL06_v6.1.pdf>`_
+- `GRACE Level-2 Gravity Field Product User Handbook <https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-docs/grace/open/L1B/GFZ/AOD1B/RL04/docs/L2-UserHandbook_v4.0.pdf>`_
+- `GRACE-FO Level-2 Gravity Field Product User Handbook <https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-docs/gracefo/open/docs/GRACE-FO_L2_UserHandbook.pdf>`_
+- `GRACE Product Description Document for AOD1B Release 06 <https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-docs/grace/open/L1B/GFZ/AOD1B/RL04/docs/AOD1B_PDD_RL06_v6.1.pdf>`_
 
 Processing Standards
 ####################
-- `GRACE-FO CSR Level-2 Processing Standards Document <https://podaac-tools.jpl.nasa.gov/drive/files/GeodeticsGravity/gracefo/docs/GRACE-FO_L2-CSR_ProcStds_v1.1.pdf>`_
-- `GRACE-FO GFZ Level-2 Processing Standards Document <https://podaac-tools.jpl.nasa.gov/drive/files/GeodeticsGravity/gracefo/docs/GRACE-FO_L2-GFZ_ProcStds_v1.0.pdf>`_
-- `GRACE-FO JPL Level-2 Processing Standards Document <https://podaac-tools.jpl.nasa.gov/drive/files/GeodeticsGravity/gracefo/docs/GRACE-FO_L2-JPL_ProcStds_v1.0.pdf>`_
+- `GRACE-FO CSR Level-2 Processing Standards Document <https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-docs/gracefo/open/docs/GRACE-FO_L2-CSR_ProcStds_v1.1.pdf>`_
+- `GRACE-FO GFZ Level-2 Processing Standards Document <https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-docs/gracefo/open/docs/GRACE-FO_L2-GFZ_ProcStds_v1.0.pdf>`_
+- `GRACE-FO JPL Level-2 Processing Standards Document <https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-docs/gracefo/open/docs/GRACE-FO_L2-JPL_ProcStds_v1.0.pdf>`_
 
 Software
 ########

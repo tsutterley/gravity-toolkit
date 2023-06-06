@@ -29,36 +29,25 @@ during Phase 4 and Phase 5 of the transition, slated for April and July 2022 res
 If any problems contact JPL PO.DAAC support at `podaac@podaac.jpl.nasa.gov <mailto:podaac@podaac.jpl.nasa.gov>`_
 or the NASA EOSDIS support team `support@earthdata.nasa.gov <mailto:support@earthdata.nasa.gov>`_.
 
-WebDAV
-------
-JPL PO.DAAC Drive uses passwords generated using the Web Distributed Authoring and Versioning (WebDAV) API.
-This password is created at the `PO.DAAC Drive <https://podaac-tools.jpl.nasa.gov/drive/>`_ website.
-Use this password rather than your Earthdata password when retrieving model data from PO.DAAC Drive.
-`Click here for more information <https://podaac-tools.jpl.nasa.gov/drive/help>`_.
-
 Steps to Sync from PO.DAAC
 --------------------------
 
 1. `Register with NASA Earthdata Login system <https://urs.earthdata.nasa.gov/users/new>`_
-2. `After registering, login to the system <https://urs.earthdata.nasa.gov/home>`_
-3. Add ``PO.DAAC Drive OPS`` `applications to Earthdata <https://wiki.earthdata.nasa.gov/display/EL/How+To+Pre-authorize+an+application>`_
-4. `Sync time-variable gravity data <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/podaac_cumulus.py>`_
+2. `Sync time-variable gravity data using your Earthdata credentials <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/podaac_cumulus.py>`_
 
-Can also create a ``.netrc`` file for permanently storing NASA Earthdata and JPL WebDAV credentials:
+Can also create a ``.netrc`` file for permanently storing NASA Earthdata credentials:
 
 .. code-block:: bash
 
     echo "machine urs.earthdata.nasa.gov login <uid> password <password>" >> ~/.netrc
-    echo "machine podaac-tools.jpl.nasa.gov login <uid> password <webdav>" >> ~/.netrc
     chmod 0600 ~/.netrc
 
-Or set environmental variables for your NASA Earthdata and JPL WebDAV credentials:
+Or set environmental variables for your NASA Earthdata credentials:
 
 .. code-block:: bash
 
     export EARTHDATA_USERNAME=<uid>
     export EARTHDATA_PASSWORD=<password>
-    export PODAAC_PASSWORD=<webdav>
 
 NASA Common Metadata Repository
 ###############################

@@ -168,6 +168,7 @@ def plot_IMBIE2_basins(ax, base_dir):
     # read drainage basin polylines from shapefile (using splat operator)
     basin_shapefile = base_dir.joinpath(*IMBIE_basin_file)
     logging.debug(str(basin_shapefile))
+    logging.debug(str(basin_shapefile))
     shape_input = shapefile.Reader(str(basin_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
@@ -190,6 +191,7 @@ def plot_IMBIE2_subbasins(ax, base_dir):
     # read drainage basin polylines from shapefile (using splat operator)
     IMBIE_subbasin_file = ['Basins_20Oct2016_v1.7','Basins_v1.7.shp']
     basin_shapefile = base_dir.joinpath('masks',*IMBIE_subbasin_file)
+    logging.debug(str(basin_shapefile))
     logging.debug(str(basin_shapefile))
     shape_input = shapefile.Reader(str(basin_shapefile))
     shape_entities = shape_input.shapes()
