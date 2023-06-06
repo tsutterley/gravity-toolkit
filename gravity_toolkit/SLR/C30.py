@@ -6,13 +6,10 @@ Written by Yara Mohajerani and Tyler Sutterley (05/2023)
 Reads monthly degree 3 zonal spherical harmonic data files from SLR
 
 Dataset distributed by NASA PO.DAAC
-    https://podaac-tools.jpl.nasa.gov/drive/files/GeodeticsGravity/gracefo/docs
-        TN-14_C30_C30_GSFC_SLR.txt
-    ftp://ftp.csr.utexas.edu/pub/slr/degree_5/
-        CSR_Monthly_5x5_Gravity_Harmonics.txt
+    TN-14_C30_C30_GSFC_SLR.txt
+    CSR_Monthly_5x5_Gravity_Harmonics.txt
 Dataset distributed by GFZ
-    ftp://isdcftp.gfz-potsdam.de/grace/GravIS/GFZ/Level-2B/aux_data/
-        GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat
+    GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat
 
 CALLING SEQUENCE:
     SLR_C30 = gravity_toolkit.SLR.C30(SLR_file)

@@ -61,7 +61,7 @@ GRACE/GRACE-FO senses changes in gravity by measuring the change in distance bet
 All the onboard measurements are combined with estimates of the background gravity field, atmospheric and oceanic variability,
 and tides to create the `Level-2 spherical harmonic product of GRACE and GRACE-FO`__.
 
-.. __: https://podaac-tools.jpl.nasa.gov/drive/files/GeodeticsGravity/gracefo/docs/GRACE-FO_L2-UserHandbook_v1.1.pdf
+.. __: https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-docs/gracefo/open/docs/GRACE-FO_L2_UserHandbook.pdf
 
 Data Processing
 ###############

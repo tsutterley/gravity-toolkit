@@ -2,7 +2,7 @@
 Getting Started
 ===============
 
-- `Register at NASA Earthdata and add PO.DAAC Drive OPS as application <./NASA-Earthdata.md>`_
+- `Register at NASA Earthdata <./NASA-Earthdata.rst>`_
 - Run `podaac_cumulus.py <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/podaac_cumulus.py>`_ program with your NASA Earthdata credentials to acquire GRACE/GRACE-FO and auxiliary data
 
 .. code-block:: bash
