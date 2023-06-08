@@ -181,7 +181,7 @@ def mascon_reconstruct(DSET, LMAX, RAD,
 
     # create initial reconstruct index for calc_mascon.py
     RECONSTRUCT_FILE = pathlib.Path(RECONSTRUCT_FILE).expanduser().absolute()
-    fid = RECONSTRUCT_FILE.as_uriopen(mode='w', encoding='utf8')
+    fid = RECONSTRUCT_FILE.open(mode='w', encoding='utf8')
     # output file format
     file_format = '{0}{1}{2}{3}{4}_L{5:d}{6}{7}{8}_{9:03d}-{10:03d}.{11}'
 
