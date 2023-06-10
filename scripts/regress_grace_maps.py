@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 regress_grace_maps.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (06/2023)
 
 Reads in GRACE/GRACE-FO spatial files and fits a regression model
     at each grid point
@@ -60,6 +60,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 06/2023: append amplitude and phase titles when creating flags
     Updated 05/2023: split S2 tidal aliasing terms into GRACE and GRACE-FO eras
         output data and error variables into single files
         use fit module for getting tidal aliasing terms
@@ -222,17 +223,24 @@ def regress_grace_maps(LMAX, RAD,
 
     # amplitude string for cyclical components
     amp_str = []
+    # amplitude and phase titles for cyclical components
+    amp_title = {}
+    ph_title = {}
     # extra terms for S2 tidal aliasing components or custom fits
     TERMS = []
     for i,c in enumerate(CYCLES):
         if (c == 0.5):
             coef_str.extend(['SS','SC'])
             amp_str.append('SEMI')
+            amp_title['SEMI'] = 'Semi-Annual Amplitude'
+            ph_title['SEMI'] = 'Semi-Annual Phase'
             fit_longname.extend(['Semi-Annual Sine', 'Semi-Annual Cosine'])
             unit_suffix.extend(['',''])
         elif (c == 1.0):
             coef_str.extend(['AS','AC'])
             amp_str.append('ANN')
+            amp_title['ANN'] = 'Annual Amplitude'
+            ph_title['ANN'] = 'Annual Phase'
             fit_longname.extend(['Annual Sine', 'Annual Cosine'])
             unit_suffix.extend(['',''])
         elif (c == (161.0/365.25)):
@@ -241,11 +249,15 @@ def regress_grace_maps(LMAX, RAD,
             # labels for S2 tidal aliasing during GRACE period
             coef_str.extend(['S2SGRC','S2CGRC'])
             amp_str.append('S2GRC')
+            amp_title['S2GRC'] = 'S2 Tidal Alias (GRACE) Amplitude'
+            ph_title['S2GRC'] = 'S2 Tidal Alias (GRACE) Phase'
             fit_longname.extend(['S2 Tidal Alias Sine', 'S2 Tidal Alias Cosine'])
             unit_suffix.extend(['',''])
             # labels for S2 tidal aliasing during GRACE-FO period
             coef_str.extend(['S2SGFO','S2CGFO'])
             amp_str.append('S2GFO')
+            amp_title['S2GFO'] = 'S2 Tidal Alias (GRACE-FO) Amplitude'
+            ph_title['S2GFO'] = 'S2 Tidal Alias (GRACE-FO) Phase'
             fit_longname.extend(['S2 Tidal Alias Sine', 'S2 Tidal Alias Cosine'])
             unit_suffix.extend(['',''])
             # remove the original S2 tidal aliasing term from CYCLES list
@@ -312,11 +324,6 @@ def regress_grace_maps(LMAX, RAD,
         output_files.append(file1)
 
     # if fitting coefficients with cyclical components
-    # output spatial titles for amplitudes
-    amp_title = dict(ANN='Annual Amplitude',SEMI='Semi-Annual Amplitude',
-        S2GRC='S2 Tidal Alias Amplitude',S2GFO='S2 Tidal Alias Amplitude')
-    ph_title = dict(ANN='Annual Phase',SEMI='Semi-Annual Phase',
-        S2GRC='S2 Tidal Alias Phase',S2GFO='S2 Tidal Alias Phase')
     # output amplitude and phase of cyclical components
     for i,flag in enumerate(amp_str):
         # Indice pointing to the cyclical components
@@ -365,10 +372,11 @@ def regress_grace_maps(LMAX, RAD,
         output_files.append(file3)
 
     # Output fit significance
-    signif_longname = {'SSE':'Sum of Squares Error',
-        'AIC':'Akaike information criterion',
-        'BIC':'Bayesian information criterion',
-        'R2Adj':'Adjusted Coefficient of Determination'}
+    signif_longname = {}
+    signif_longname['SSE'] = 'Sum of Squares Error'
+    signif_longname['AIC'] = 'Akaike information criterion'
+    signif_longname['BIC'] = 'Bayesian information criterion'
+    signif_longname['R2Adj'] = 'Adjusted Coefficient of Determination'
     # for each fit significance term
     for key,fs in FS.items():
         # output file names for fit significance
