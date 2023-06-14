@@ -129,7 +129,7 @@ which can be spectrally filtered following [Swenson2006]_.
 References
 ##########
 
-.. [Bandikova2019] T. Bandikova, C. McCullough, G. L. Kruizinga, H. Save, and B. Christophe, "GRACE accelerometer data transplant", *Advances in Space Research*, 64(3), 623--644, (2019). `doi: 10.1016/j.asr.2019.05.021 <10.1016/j.asr.2019.05.021>`_
+.. [Bandikova2019] T. Bandikova, C. McCullough, G. L. Kruizinga, H. Save, and B. Christophe, "GRACE accelerometer data transplant", *Advances in Space Research*, 64(3), 623--644, (2019). `doi: 10.1016/j.asr.2019.05.021 <https://doi.org/10.1016/j.asr.2019.05.021>`_
 
 .. [Blewett2003] G. Blewitt, "Self-consistency in reference frames, geocenter definition, and surface loading of the solid Earth", *Journal of Geophysical Research: Solid Earth*, 108(B2), 2103, (2003). `doi: 10.1029/2002JB002082 <https://doi.org/10.1029/2002JB002082>`_
 

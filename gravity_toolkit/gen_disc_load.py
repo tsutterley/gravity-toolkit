@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_disc_load.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (06/2023)
 Calculates gravitational spherical harmonic coefficients for a uniform disc load
 
 CALLING SEQUENCE:
@@ -55,6 +55,7 @@ REFERENCES:
         https://doi.org/10.1007/s00190-011-0522-7
 
 UPDATE HISTORY:
+    Updated 06/2023: modified custom units case to not convert to cmwe
     Updated 03/2023: simplified unit degree factors using units class
         improve typing for variables in docstrings
     Updated 02/2023: set custom units as top option in if/else statements
@@ -153,7 +154,7 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
     th = (90.0 - lat)*np.pi/180.0# Colatitude in radians
 
     # Earth Parameters
-    factors = gravity_toolkit.units(lmax=LMAX).spatial(*LOVE)
+    factors = gravity_toolkit.units(lmax=LMAX)
 
     # convert input area into cm^2 and then divide by area of a half sphere
     # alpha will be 1 - the ratio of the input area with the half sphere
@@ -162,25 +163,31 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
     # Calculate factor to convert from input units into g/cm^2
     if isinstance(UNITS, (list, np.ndarray)):
         # custom units
-        unit_conv = np.copy(UNITS)
+        unit_conv = 1.0
+        dfactor = np.copy(UNITS)
     elif (UNITS == 1):
         # Input data is in cm water equivalent (cmwe)
         unit_conv = 1.0
+        # degree dependent factors to convert from coefficients
+        # of mass into normalized geoid coefficients
+        dfactor = 4.0*np.pi*factors.spatial(*LOVE).cmwe/(1.0 + 2.0*factors.l)
     elif (UNITS == 2):
         # Input data is in gigatonnes (Gt)
         # 1e15 converts from Gt to grams, 1e10 converts from km^2 to cm^2
         unit_conv = 1e15/(1e10*area)
+        # degree dependent factors to convert from coefficients
+        # of mass into normalized geoid coefficients
+        dfactor = 4.0*np.pi*factors.spatial(*LOVE).cmwe/(1.0 + 2.0*factors.l)
     elif (UNITS == 3):
         # Input data is in kg/m^2
         # 1 kg = 1000 g
         # 1 m^2 = 100*100 cm^2 = 1e4 cm^2
         unit_conv = 0.1
+        # degree dependent factors to convert from coefficients
+        # of mass into normalized geoid coefficients
+        dfactor = 4.0*np.pi*factors.spatial(*LOVE).cmwe/(1.0 + 2.0*factors.l)
     else:
         raise ValueError(f'Unknown units {UNITS}')
-
-    # calculate SH degree dependent factors to convert from coefficients
-    # of mass into normalized geoid coefficients
-    dfactor = 4.0*np.pi*factors.cmwe/(1.0 + 2.0*factors.l)
 
     # Calculating plms of the disc
     # allocating for constructed array
