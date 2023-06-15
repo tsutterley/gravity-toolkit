@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 u"""
 gen_spherical_cap.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (06/2023)
 Calculates gravitational spherical harmonic coefficients for a spherical cap
-
-Spherical cap derivation from Longman (1962), Farrell (1972), Pollack (1973)
-    and Jacob (2012)
 
 Creating a spherical cap with generating angle alpha is a 2 step process:
     1) obtain harmonics when cap is located at the north pole
@@ -64,6 +61,7 @@ REFERENCES:
         https://doi.org/10.1007/s00190-011-0522-7
 
 UPDATE HISTORY:
+    Updated 06/2023: modified custom units case to not convert to cmwe
     Updated 03/2023: simplified unit degree factors using units class
         improve typing for variables in docstrings
     Updated 02/2023: set custom units as top option in if/else statements
@@ -174,7 +172,7 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     th = (90.0 - lat)*np.pi/180.0# Colatitude in radians
 
     # Earth Parameters
-    factors = gravity_toolkit.units(lmax=LMAX).spatial(*LOVE)
+    factors = gravity_toolkit.units(lmax=LMAX)
 
     # Converting input area into an equivalent spherical cap radius
     # Following Jacob et al. (2012) Equation 4 and 5
@@ -197,13 +195,17 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     else:
         raise ValueError('Input RAD_CAP, AREA or RAD_KM of spherical cap')
 
-    # Calculate factor to convert from input units into cmwe
+    # Calculate factor to convert from input units
     if isinstance(UNITS, (list, np.ndarray)):
         # custom units
-        unit_conv = np.copy(UNITS)
+        unit_conv = 1.0
+        dfactor = np.copy(UNITS)
     elif (UNITS == 1):
         # Input data is in cm water equivalent (cmwe)
         unit_conv = 1.0
+        # degree dependent factors to convert from coefficients
+        # of mass into normalized geoid coefficients
+        dfactor = 4.0*np.pi*factors.spatial(*LOVE).cmwe/(1.0 + 2.0*factors.l)
     elif (UNITS == 2):
         # Input data is in gigatonnes (Gt)
         # calculate spherical cap area from angular radius
@@ -212,17 +214,19 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
         # 1 g/cm^3 = 1000 kg/m^3 = density water
         # 1 Gt = 1 Pg = 1.e15 g
         unit_conv = 1.e15/area
+        # degree dependent factors to convert from coefficients
+        # of mass into normalized geoid coefficients
+        dfactor = 4.0*np.pi*factors.spatial(*LOVE).cmwe/(1.0 + 2.0*factors.l)
     elif (UNITS == 3):
         # Input data is in kg/m^2
         # 1 kg = 1000 g
         # 1 m^2 = 100*100 cm^2 = 1e4 cm^2
         unit_conv = 0.1
+        # degree dependent factors to convert from coefficients
+        # of mass into normalized geoid coefficients
+        dfactor = 4.0*np.pi*factors.spatial(*LOVE).cmwe/(1.0 + 2.0*factors.l)
     else:
         raise ValueError(f'Unknown units {UNITS}')
-
-    # calculate SH degree dependent factors to convert from coefficients
-    # of mass into normalized geoid coefficients
-    dfactor = 4.0*np.pi*factors.cmwe/(1.0 + 2.0*factors.l)
 
     # Calculating plms of the spherical caps
     # From Longman et al. (1962)

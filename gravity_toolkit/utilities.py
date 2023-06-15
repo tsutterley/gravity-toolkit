@@ -1255,7 +1255,7 @@ def drive_list(
     try:
         # Create and submit request.
         request = urllib2.Request(posixpath.join(*HOST))
-        tree = lxml.etree.parse(urllib2.urlopen(request,timeout=timeout),parser)
+        tree = lxml.etree.parse(urllib2.urlopen(request, timeout=timeout),parser)
     except (urllib2.HTTPError, urllib2.URLError) as exc:
         raise Exception('List error from {0}'.format(posixpath.join(*HOST)))
     else:
@@ -1349,7 +1349,7 @@ def from_drive(
     try:
         # Create and submit request.
         request = urllib2.Request(posixpath.join(*HOST))
-        response = urllib2.urlopen(request,timeout=timeout)
+        response = urllib2.urlopen(request, timeout=timeout)
     except (urllib2.HTTPError, urllib2.URLError) as exc:
         raise Exception('Download error from {0}'.format(posixpath.join(*HOST)))
     else:
@@ -2018,7 +2018,7 @@ def from_figshare(
     local_dir.mkdir(mode=mode, parents=True, exist_ok=True)
     # Create and submit request.
     request = urllib2.Request(posixpath.join(*HOST))
-    response = urllib2.urlopen(request,timeout=timeout,context=context)
+    response = urllib2.urlopen(request, timeout=timeout,context=context)
     resp = json.loads(response.read())
     # reduce list of geocenter files
     geocenter_files = [f for f in resp['files'] if re.match(pattern,f['name'])]
@@ -2352,7 +2352,7 @@ def icgem_list(
     try:
         # Create and submit request.
         request = urllib2.Request(host)
-        tree = lxml.etree.parse(urllib2.urlopen(request,timeout=timeout),parser)
+        tree = lxml.etree.parse(urllib2.urlopen(request, timeout=timeout),parser)
     except:
         raise Exception(f'List error from {host}')
     else:
