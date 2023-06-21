@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 quick_mascon_regress.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (06/2023)
 Creates a regression summary file for a mascon time series file
 
 COMMAND LINE OPTIONS:
@@ -22,6 +22,7 @@ PROGRAM DEPENDENCIES:
     time_series.amplitude.py: calculates the amplitude and phase of a harmonic
 
 UPDATE HISTORY:
+    Updated 06/2023: can choose different tidal aliasing periods
     Updated 05/2023: split S2 tidal aliasing terms into GRACE and GRACE-FO eras
         allow fit to be piecewise using a known breakpoint GRACE/GRACE-FO month
         use fit module for getting tidal aliasing terms
@@ -93,9 +94,22 @@ def run_regress(input_file,header=0,order=None,breakpoint=None,cycles=None,
 
     # amplitude string for cyclical components
     amp_str = []
-    # extra terms for S2 tidal aliasing components or custom fits
+    # unique tidal aliasing periods from Ray and Luthcke (2006)
+    tidal_aliasing = {}
+    tidal_aliasing['Q1'] = 9.1
+    tidal_aliasing['O1'] = 13.6
+    tidal_aliasing['P1'] = 171.2
+    tidal_aliasing['S1'] = 322.1
+    tidal_aliasing['K1'] = 2725.4
+    tidal_aliasing['J1'] = 27.8
+    tidal_aliasing['M2'] = 13.5
+    tidal_aliasing['S2'] = 161.0
+    tidal_aliasing['K2'] = 1362.7
+    # extra terms for tidal aliasing components or custom fits
     terms = []
+    term_index = []
     for i,c in enumerate(cycles):
+        # check if fitting with semi-annual or annual terms
         if (c == 0.5):
             coef_str.extend(['SS','SC'])
             amp_str.append('SEMI')
@@ -104,19 +118,24 @@ def run_regress(input_file,header=0,order=None,breakpoint=None,cycles=None,
             coef_str.extend(['AS','AC'])
             amp_str.append('ANN')
             unit_suffix.extend(['',''])
-        elif (c == (161.0/365.25)):
-            # terms for S2 tidal aliasing during both GRACE and GRACE-FO periods
-            terms.extend(gravtk.time_series.aliasing_terms(dinput[:,1]))
-            # labels for S2 tidal aliasing during GRACE period
-            coef_str.extend(['S2SGRC','S2CGRC'])
-            amp_str.append('S2GRC')
-            unit_suffix.extend(['',''])
-            # labels for S2 tidal aliasing during GRACE-FO period
-            coef_str.extend(['S2SGFO','S2CGFO'])
-            amp_str.append('S2GFO')
-            unit_suffix.extend(['',''])
-            # remove the original S2 tidal aliasing term from cycles list
-            cycles.remove(c)
+        # check if fitting with tidal aliasing terms
+        for t,period in tidal_aliasing.items():
+            if np.isclose(c, (period/365.25)):
+                # terms for tidal aliasing during GRACE and GRACE-FO periods
+                terms.extend(gravtk.time_series.aliasing_terms(dinput[:,1],
+                    period=period))
+                # labels for tidal aliasing during GRACE period
+                coef_str.extend([f'{t}SGRC', f'{t}CGRC'])
+                amp_str.append(f'{t}GRC')
+                unit_suffix.extend(['',''])
+                # labels for tidal aliasing during GRACE-FO period
+                coef_str.extend([f'{t}SGFO', f'{t}CGFO'])
+                amp_str.append(f'{t}GFO')
+                unit_suffix.extend(['',''])
+                # index to remove the original tidal aliasing term
+                term_index.append(i)
+    # remove the original tidal aliasing terms
+    cycles = np.delete(cycles, term_index)
 
     # calculate regression
     if breakpoint is not None:

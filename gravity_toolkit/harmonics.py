@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (06/2023)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -25,6 +25,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 06/2023: fix GRACE/GRACE-FO months in drift function
     Updated 05/2023: use reify decorators for complex form and amplitude
         use pathlib to define and operate on paths
     Updated 03/2023: customizable file-level attributes to netCDF4 and HDF5
@@ -1746,7 +1747,7 @@ class harmonics(object):
         temp.slm = np.zeros((temp.lmax+1,temp.mmax+1,len(t)))
         # copy time variables and calculate GRACE/GRACE-FO months
         temp.time = np.copy(t)
-        temp.month = np.int64(calendar_to_grace(temp.time))
+        temp.month = calendar_to_grace(temp.time)
         # adjust months to fix special cases if necessary
         temp.month = adjust_months(temp.month)
         # get filenames if applicable
