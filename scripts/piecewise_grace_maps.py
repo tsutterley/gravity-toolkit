@@ -61,6 +61,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 06/2023: append amplitude and phase titles when creating flags
+        more tidal aliasing periods using values from Ray and Luthcke (2006)
     Updated 05/2023: split S2 tidal aliasing terms into GRACE and GRACE-FO eras
         output data and error variables into single files
         use fit module for getting tidal aliasing terms
@@ -226,9 +227,22 @@ def piecewise_grace_maps(LMAX, RAD,
     # amplitude and phase titles for cyclical components
     amp_title = {}
     ph_title = {}
-    # extra terms for S2 tidal aliasing components or custom fits
+    # unique tidal aliasing periods from Ray and Luthcke (2006)
+    tidal_aliasing = {}
+    tidal_aliasing['Q1'] = 9.1
+    tidal_aliasing['O1'] = 13.6
+    tidal_aliasing['P1'] = 171.2
+    tidal_aliasing['S1'] = 322.1
+    tidal_aliasing['K1'] = 2725.4
+    tidal_aliasing['J1'] = 27.8
+    tidal_aliasing['M2'] = 13.5
+    tidal_aliasing['S2'] = 161.0
+    tidal_aliasing['K2'] = 1362.7
+    # extra terms for tidal aliasing components or custom fits
     TERMS = []
+    term_index = []
     for i,c in enumerate(CYCLES):
+        # check if fitting with semi-annual or annual terms
         if (c == 0.5):
             coef_str.extend(['SS','SC'])
             amp_str.append('SEMI')
@@ -243,25 +257,32 @@ def piecewise_grace_maps(LMAX, RAD,
             ph_title['ANN'] = 'Annual Phase'
             fit_longname.extend(['Annual Sine', 'Annual Cosine'])
             unit_suffix.extend(['',''])
-        elif (c == (161.0/365.25)):
-            # terms for S2 tidal aliasing during both GRACE and GRACE-FO periods
-            TERMS.extend(gravtk.time_series.aliasing_terms(grid.time))
-            # labels for S2 tidal aliasing during GRACE period
-            coef_str.extend(['S2SGRC','S2CGRC'])
-            amp_str.append('S2GRC')
-            amp_title['S2GRC'] = 'S2 Tidal Alias (GRACE) Amplitude'
-            ph_title['S2GRC'] = 'S2 Tidal Alias (GRACE) Phase'
-            fit_longname.extend(['S2 Tidal Alias Sine', 'S2 Tidal Alias Cosine'])
-            unit_suffix.extend(['',''])
-            # labels for S2 tidal aliasing during GRACE-FO period
-            coef_str.extend(['S2SGFO','S2CGFO'])
-            amp_str.append('S2GFO')
-            amp_title['S2GFO'] = 'S2 Tidal Alias (GRACE-FO) Amplitude'
-            ph_title['S2GFO'] = 'S2 Tidal Alias (GRACE-FO) Phase'
-            fit_longname.extend(['S2 Tidal Alias Sine', 'S2 Tidal Alias Cosine'])
-            unit_suffix.extend(['',''])
-            # remove the original S2 tidal aliasing term from CYCLES list
-            CYCLES.remove(c)
+        # check if fitting with tidal aliasing terms
+        for t,period in tidal_aliasing.items():
+            if np.isclose(c, (period/365.25)):
+                # terms for tidal aliasing during GRACE and GRACE-FO periods
+                TERMS.extend(gravtk.time_series.aliasing_terms(grid.time,
+                    period=period))
+                # labels for tidal aliasing during GRACE period
+                coef_str.extend([f'{t}SGRC', f'{t}CGRC'])
+                amp_str.append(f'{t}GRC')
+                amp_title[f'{t}GRC'] = f'{t} Tidal Alias (GRACE) Amplitude'
+                ph_title[f'{t}GRC'] = f'{t} Tidal Alias (GRACE) Phase'
+                fit_longname.append(f'{t} Tidal Alias (GRACE) Sine')
+                fit_longname.append(f'{t} Tidal Alias (GRACE) Cosine')
+                unit_suffix.extend(['',''])
+                # labels for tidal aliasing during GRACE-FO period
+                coef_str.extend([f'{t}SGFO', f'{t}CGFO'])
+                amp_str.append(f'{t}GFO')
+                amp_title[f'{t}GFO'] = f'{t} Tidal Alias (GRACE-FO) Amplitude'
+                ph_title[f'{t}GFO'] = f'{t} Tidal Alias (GRACE-FO) Phase'
+                fit_longname.append(f'{t} Tidal Alias (GRACE-FO) Sine')
+                fit_longname.append(f'{t} Tidal Alias (GRACE-FO) Cosine')
+                unit_suffix.extend(['',''])
+                # index to remove the original tidal aliasing term
+                term_index.append(i)
+    # remove the original tidal aliasing terms
+    CYCLES = np.delete(CYCLES, term_index)
 
     # Fitting seasonal components
     ncomp = len(coef_str)
