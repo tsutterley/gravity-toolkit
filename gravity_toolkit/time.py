@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 time.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (06/2023)
 Contributions by Hugo Lecomte
 
 Utilities for calculating time operations
@@ -13,6 +13,8 @@ PYTHON DEPENDENCIES:
         https://dateutil.readthedocs.io/en/stable/
 
 UPDATE HISTORY:
+    Updated 06/2023: add timescale class for converting between time scales
+        add functions for retrieving leap seconds from NIST or IERF servers
     Updated 05/2023: convert a string with time zone information to datetime
     Updated 03/2023: added regex formatting for CNES GRGS harmonics
         improve typing for variables in docstrings
@@ -34,13 +36,18 @@ UPDATE HISTORY:
     Updated 08/2020: added NASA Earthdata routines for downloading from CDDIS
     Written 07/2020
 """
+from __future__ import annotations
+
 import re
 import copy
+import logging
 import pathlib
 import warnings
 import datetime
+import traceback
 import numpy as np
 import dateutil.parser
+import gravity_toolkit.utilities
 
 # conversion factors between time units and seconds
 _to_sec = {'microseconds': 1e-6, 'microsecond': 1e-6,
@@ -63,6 +70,13 @@ _to_sec['common_year'] = 365.0 * 86400.0
 _to_sec['common_years'] = 365.0 * 86400.0
 _to_sec['year'] = 365.25 * 86400.0
 _to_sec['years'] = 365.25 * 86400.0
+
+# standard epochs
+_mjd_epoch = (1858, 11, 17, 0, 0, 0)
+_ntp_epoch = (1900, 1, 1, 0, 0, 0)
+_unix_epoch = (1970, 1, 1, 0, 0, 0)
+_gps_epoch = (1980, 1, 6, 0, 0, 0)
+_j2000_epoch = (2000, 1, 1, 12, 0, 0)
 
 # PURPOSE: parse a date string and convert to a datetime object in UTC
 def parse(date_string):
@@ -91,7 +105,7 @@ def parse(date_string):
 # PURPOSE: parse a date string into epoch and units scale
 def parse_date_string(date_string):
     """
-    parse a date string of the form
+    Parse a date string of the form
 
     - time-units since ``yyyy-mm-dd hh:mm:ss``
     - ``yyyy-mm-dd hh:mm:ss`` for exact calendar dates
@@ -104,7 +118,7 @@ def parse_date_string(date_string):
     Returns
     -------
     epoch: list
-        epoch of delta time
+        epoch of ``delta_time``
     conversion_factor: float
         multiplication factor to convert to seconds
     """
@@ -115,7 +129,7 @@ def parse_date_string(date_string):
         pass
     else:
         # return the epoch (as list)
-        return (datetime_to_list(epoch),0.0)
+        return (datetime_to_list(epoch), 0.0)
     # split the date string into units and epoch
     units, epoch = split_date_string(date_string)
     if units not in _to_sec.keys():
@@ -134,7 +148,7 @@ def split_date_string(date_string):
         time-units since yyyy-mm-dd hh:mm:ss
     """
     try:
-        units,_,epoch = date_string.split(None,2)
+        units,_,epoch = date_string.split(None, 2)
     except ValueError:
         raise ValueError(f'Invalid format: {date_string}')
     else:
@@ -143,11 +157,12 @@ def split_date_string(date_string):
 # PURPOSE: convert a datetime object into a list
 def datetime_to_list(date):
     """
-    convert a datetime object into a list
+    convert a ``datetime`` object into a list
 
     Parameters
     ----------
-    date: datetime object
+    date: obj
+        Input ``datetime`` object to convert
 
     Returns
     -------
@@ -476,6 +491,31 @@ def calendar_days(year):
     elif ((m4 != 0) | (m100 == 0) & (m400 != 0) | (m4000 == 0)):
         return np.array(_dpm_stnd, dtype=np.float64)
 
+# PURPOSE: convert a numpy datetime array to delta times since an epoch
+def convert_datetime(date, epoch=_unix_epoch):
+    """
+    Convert a ``numpy`` ``datetime`` array to seconds since ``epoch``
+
+    Parameters
+    ----------
+    date: np.ndarray
+        ``numpy`` ``datetime`` array
+    epoch: str, tuple, list, np.ndarray, default (1970,1,1,0,0,0)
+        epoch for output ``delta_time``
+
+    Returns
+    -------
+    delta_time: float
+        seconds since epoch
+    """
+    # convert epoch to datetime variables
+    if isinstance(epoch, (tuple, list)):
+        epoch = np.datetime64(datetime.datetime(*epoch))
+    elif isinstance(epoch, str):
+        epoch = np.datetime64(parse(epoch))
+    # convert to delta time
+    return (date - epoch) / np.timedelta64(1, 's')
+
 # PURPOSE: convert times from seconds since epoch1 to time since epoch2
 def convert_delta_time(delta_time, epoch1=None, epoch2=None, scale=1.0):
     """
@@ -485,16 +525,24 @@ def convert_delta_time(delta_time, epoch1=None, epoch2=None, scale=1.0):
     ----------
     delta_time: np.ndarray
         seconds since epoch1
-    epoch1: tuple or NoneType, default None
+    epoch1: str, tuple, list or NoneType, default None
         epoch for input delta_time
-    epoch2: tuple or NoneType, default None
+    epoch2: str, tuple, list or NoneType, default None
         epoch for output delta_time
     scale: float, default 1.0
         scaling factor for converting time to output units
     """
-    epoch1 = datetime.datetime(*epoch1)
-    epoch2 = datetime.datetime(*epoch2)
-    delta_time_epochs = (epoch2 - epoch1).total_seconds()
+    # convert epochs to datetime variables
+    if isinstance(epoch1, (tuple, list)):
+        epoch1 = np.datetime64(datetime.datetime(*epoch1))
+    elif isinstance(epoch1, str):
+        epoch1 = np.datetime64(parse(epoch1))
+    if isinstance(epoch2, (tuple, list)):
+        epoch2 = np.datetime64(datetime.datetime(*epoch2))
+    elif isinstance(epoch2, str):
+        epoch2 = np.datetime64(parse(epoch2))
+    # calculate the total difference in time in seconds
+    delta_time_epochs = (epoch2 - epoch1) / np.timedelta64(1, 's')
     # subtract difference in time and rescale to output units
     return scale*(delta_time - delta_time_epochs)
 
@@ -503,7 +551,7 @@ def convert_delta_time(delta_time, epoch1=None, epoch2=None, scale=1.0):
 def convert_calendar_dates(year, month, day, hour=0.0, minute=0.0, second=0.0,
     epoch=(1992,1,1,0,0,0), scale=1.0):
     """
-    Calculate the time in time units since ``epoch`` from calendar dates
+    Calculate the time in units since ``epoch`` from calendar dates
 
     Parameters
     ----------
@@ -519,7 +567,7 @@ def convert_calendar_dates(year, month, day, hour=0.0, minute=0.0, second=0.0,
         minute of the hour
     second: np.ndarray or float, default 0.0
         second of the minute
-    epoch: tuple, default (1992,1,1,0,0,0)
+    epoch: str, tuple, list or NoneType, default (1992,1,1,0,0,0)
         epoch for output delta_time
     scale: float, default 1.0
         scaling factor for converting time to output units
@@ -535,11 +583,16 @@ def convert_calendar_dates(year, month, day, hour=0.0, minute=0.0, second=0.0,
         np.floor(3.0*(np.floor((year + (month - 9.0)/7.0)/100.0) + 1.0)/4.0) + \
         np.floor(275.0*month/9.0) + day + hour/24.0 + minute/1440.0 + \
         second/86400.0 + 1721028.5 - 2400000.5
-    epoch1 = datetime.datetime(1858,11,17,0,0,0)
-    epoch2 = datetime.datetime(*epoch)
-    delta_time_epochs = (epoch2 - epoch1).total_seconds()
-    # return the date in days since epoch (or scaled to units)
-    return scale*np.array(MJD - delta_time_epochs/86400.0,dtype=np.float64)
+    # convert epochs to datetime variables
+    epoch1 = np.datetime64(datetime.datetime(*_mjd_epoch))
+    if isinstance(epoch, (tuple, list)):
+        epoch = np.datetime64(datetime.datetime(*epoch))
+    elif isinstance(epoch, str):
+        epoch = np.datetime64(parse(epoch))
+    # calculate the total difference in time in days
+    delta_time_epochs = (epoch - epoch1) / np.timedelta64(1, 'D')
+    # return the date in units (default days) since epoch
+    return scale*np.array(MJD - delta_time_epochs, dtype=np.float64)
 
 # PURPOSE: Converts from calendar dates into decimal years
 def convert_calendar_decimal(year, month, day=None, hour=None, minute=None,
@@ -801,3 +854,304 @@ def convert_julian(JD, **kwargs):
         return (year, month, day, hour, minute, second)
     elif (kwargs['format'] == 'zip'):
         return zip(year, month, day, hour, minute, second)
+
+class timescale:
+    """
+    Class for converting between time scales
+
+    Attributes
+    ----------
+    leaps: np.ndarray
+        Number of leap seconds
+    MJD: np.ndarray
+        Modified Julian Days
+    day: float
+        Seconds in a day
+    """
+    def __init__(self, MJD=None):
+        # leap seconds
+        self.leaps = None
+        # modified Julian Days
+        self.MJD = MJD
+        # seconds per day
+        self.day = 86400.0
+        # iterator
+        self.__index__ = 0
+
+    def from_deltatime(self,
+            delta_time: np.ndarray,
+            epoch: str | tuple | list | np.ndarray,
+            standard: str = 'UTC'
+        ):
+        """
+        Converts a delta time array and into a ``timescale`` object
+
+        Parameters
+        ----------
+        delta_time: np.ndarray
+            seconds since ``epoch``
+        epoch: str, uuple, list or np.ndarray
+            epoch for input ``delta_time``
+        standard: str, default 'UTC'
+            time standard for input ``delta_time``
+        """
+        # assert delta time is an array
+        delta_time = np.atleast_1d(delta_time)
+        # calculate leap seconds if specified
+        if (standard.upper() == 'GPS'):
+            GPS_Epoch_Time = convert_delta_time(0, epoch1=epoch,
+                epoch2= _gps_epoch, scale=1.0)
+            GPS_Time = convert_delta_time(delta_time, epoch1=epoch,
+                epoch2=_gps_epoch, scale=1.0)
+            # calculate difference in leap seconds from start of epoch
+            self.leaps = count_leap_seconds(GPS_Time) - \
+                count_leap_seconds(np.atleast_1d(GPS_Epoch_Time))
+        elif (standard.upper() == 'LORAN'):
+            # LORAN time is ahead of GPS time by 9 seconds
+            GPS_Epoch_Time = convert_delta_time(-9.0, epoch1=epoch,
+                epoch2=_gps_epoch, scale=1.0)
+            GPS_Time = convert_delta_time(delta_time - 9.0, epoch1=epoch,
+                epoch2=_gps_epoch, scale=1.0)
+            # calculate difference in leap seconds from start of epoch
+            self.leaps = count_leap_seconds(GPS_Time) - \
+                count_leap_seconds(np.atleast_1d(GPS_Epoch_Time))
+        elif (standard.upper() == 'TAI'):
+            # TAI time is ahead of GPS time by 19 seconds
+            GPS_Epoch_Time = convert_delta_time(-19.0, epoch1=epoch,
+                epoch2=_gps_epoch, scale=1.0)
+            GPS_Time = convert_delta_time(delta_time-19.0, epoch1=epoch,
+                epoch2=_gps_epoch, scale=1.0)
+            # calculate difference in leap seconds from start of epoch
+            self.leaps = count_leap_seconds(GPS_Time) - \
+                count_leap_seconds(np.atleast_1d(GPS_Epoch_Time))
+        else:
+            self.leaps = 0.0
+        # convert time to days relative to Modified Julian days in UTC
+        self.MJD = convert_delta_time(delta_time - self.leaps,
+            epoch1=epoch, epoch2=_mjd_epoch, scale=(1.0/self.day))
+        return self
+
+    def from_datetime(self, dtime: np.ndarray):
+        """
+        Reads a ``datetime`` array and converts into a ``timescale`` object
+
+        Parameters
+        ----------
+        dtime: np.ndarray
+            ``numpy.datetime64`` array
+        """
+        # convert delta time array from datetime object
+        # to days relative to 1992-01-01T00:00:00
+        self.MJD = convert_datetime(dtime, epoch=_mjd_epoch)/self.day
+        return self
+
+    def to_deltatime(self,
+            epoch: str | tuple | list | np.ndarray,
+            scale: float = 1.0
+        ):
+        """
+        Convert a ``timescale`` object to a delta time array
+
+        Parameters
+        ----------
+        epoch: str, tuple, list, or np.ndarray
+            epoch for output ``delta_time``
+        scale: float, default 1.0
+            scaling factor for converting time to output units
+
+        Returns
+        -------
+        delta_time: np.ndarray
+            time since epoch
+        """
+        # convert epochs to numpy datetime variables
+        epoch1 = np.datetime64(datetime.datetime(*_mjd_epoch))
+        if isinstance(epoch, (tuple, list)):
+            epoch = np.datetime64(datetime.datetime(*epoch))
+        elif isinstance(epoch, str):
+            epoch = np.datetime64(parse(epoch))
+        # calculate the difference in epochs in days
+        delta_time_epochs = (epoch - epoch1) / np.timedelta64(1, 'D')
+        # return the date in time (default days) since epoch
+        return scale*np.array(self.MJD - delta_time_epochs, dtype=np.float64)
+
+    def to_datetime(self):
+        """
+        Convert a ``timescale`` object to a ``datetime`` array
+
+        Returns
+        -------
+        dtime: np.ndarray
+            ``numpy.datetime64`` array
+        """
+        # convert Modified Julian Day epoch to datetime variable
+        epoch = np.datetime64(datetime.datetime(*_mjd_epoch))
+        # use nanoseconds to keep as much precision as possible
+        delta_time = np.atleast_1d(self.MJD*self.day*1e9).astype(np.int64)
+        # return the datetime array
+        return np.array(epoch + delta_time.astype('timedelta64[ns]'))
+
+    @gravity_toolkit.utilities.reify
+    def ut1(self):
+        """Universal Time (UT) as Julian Days
+        """
+        return self.MJD + 2400000.5
+
+    @property
+    def dtype(self):
+        """Main data type of ``timescale`` object"""
+        return self.MJD.dtype
+
+    @property
+    def shape(self):
+        """Dimensions of ``timescale`` object
+        """
+        return np.shape(self.MJD)
+
+    @property
+    def ndim(self):
+        """Number of dimensions in ``timescale`` object
+        """
+        return np.ndim(self.MJD)
+
+    def __len__(self):
+        """Number of time values
+        """
+        return len(np.atleast_1d(self.MJD))
+
+    def __iter__(self):
+        """Iterate over time values
+        """
+        self.__index__ = 0
+        return self
+
+    def __next__(self):
+        """Get the next time step
+        """
+        temp = timescale()
+        try:
+            temp.MJD = np.atleast_1d(self.MJD)[self.__index__].copy()
+        except IndexError as exc:
+            raise StopIteration from exc
+        # add to index
+        self.__index__ += 1
+        return temp
+
+# PURPOSE: Count number of leap seconds that have passed for each GPS time
+def count_leap_seconds(GPS_Time, truncate=True):
+    """
+    Counts the number of leap seconds between a given GPS time and UTC
+
+    Parameters
+    ----------
+    GPS_Time: np.ndarray or float
+        seconds since January 6, 1980 at 00:00:00
+    truncate: bool, default True
+        Reduce list of leap seconds to positive GPS times
+
+    Returns
+    -------
+    n_leaps: float
+        number of elapsed leap seconds
+    """
+    # get the valid leap seconds
+    leaps = get_leap_seconds(truncate=truncate)
+    # number of leap seconds prior to GPS_Time
+    n_leaps = np.zeros_like(GPS_Time,dtype=np.float64)
+    for i,leap in enumerate(leaps):
+        count = np.count_nonzero(GPS_Time >= leap)
+        if (count > 0):
+            indices = np.nonzero(GPS_Time >= leap)
+            n_leaps[indices] += 1.0
+    # return the number of leap seconds for converting to UTC
+    return n_leaps
+
+# PURPOSE: Define GPS leap seconds
+def get_leap_seconds(truncate=True):
+    """
+    Gets a list of GPS times for when leap seconds occurred
+
+    Parameters
+    ----------
+    truncate: bool, default True
+        Reduce list of leap seconds to positive GPS times
+
+    Returns
+    -------
+    GPS time: float
+        GPS seconds when leap seconds occurred
+    """
+    leap_secs = gravity_toolkit.utilities.get_data_path(
+        ['data','leap-seconds.list'])
+    # find line with file expiration as delta time
+    with leap_secs.open(mode='r', encoding='utf8') as fid:
+        secs, = [re.findall(r'\d+',i).pop() for i in fid.read().splitlines()
+            if re.match(r'^(?=#@)',i)]
+    # check that leap seconds file is still valid
+    expiry = datetime.datetime(*_ntp_epoch) + datetime.timedelta(seconds=int(secs))
+    today = datetime.datetime.utcnow()
+    update_leap_seconds() if (expiry < today) else None
+    # get leap seconds
+    leap_UTC,TAI_UTC = np.loadtxt(leap_secs).T
+    # TAI time is ahead of GPS by 19 seconds
+    TAI_GPS = 19.0
+    # convert leap second epochs from NTP to GPS
+    # convert from time of 2nd leap second to time of 1st leap second
+    leap_GPS = convert_delta_time(leap_UTC + TAI_UTC - TAI_GPS - 1,
+        epoch1=_ntp_epoch, epoch2=_gps_epoch)
+    # return the GPS times of leap second occurance
+    if truncate:
+        return leap_GPS[leap_GPS >= 0].astype(np.float64)
+    else:
+        return leap_GPS.astype(np.float64)
+
+# PURPOSE: connects to servers and downloads leap second files
+def update_leap_seconds(timeout=20, verbose=False, mode=0o775):
+    """
+    Connects to servers to download leap-seconds.list files from NIST servers
+
+    - https://www.nist.gov/pml/time-and-frequency-division/leap-seconds-faqs
+
+    Servers and Mirrors
+
+    - ftp://ftp.nist.gov/pub/time/leap-seconds.list
+    - https://www.ietf.org/timezones/data/leap-seconds.list
+
+    Parameters
+    ----------
+    timeout: int or None, default 20
+        timeout in seconds for blocking operations
+    verbose: bool, default False
+        print file information about output file
+    mode: oct, default 0o775
+        permissions mode of output file
+    """
+    # local version of file
+    FILE = 'leap-seconds.list'
+    LOCAL = gravity_toolkit.utilities.get_data_path(['data',FILE])
+    HASH = gravity_toolkit.utilities.get_hash(LOCAL)
+
+    # try downloading from NIST ftp servers
+    HOST = ['ftp.nist.gov','pub','time',FILE]
+    try:
+        gravity_toolkit.utilities.check_ftp_connection(HOST[0])
+        gravity_toolkit.utilities.from_ftp(HOST,
+            timeout=timeout, local=LOCAL, hash=HASH,
+            verbose=verbose, mode=mode)
+    except Exception as exc:
+        logging.debug(traceback.format_exc())
+        pass
+    else:
+        return
+
+    # try downloading from Internet Engineering Task Force (IETF) mirror
+    REMOTE = ['https://www.ietf.org','timezones','data',FILE]
+    try:
+        gravity_toolkit.utilities.from_http(REMOTE,
+            timeout=timeout, local=LOCAL, hash=HASH,
+            verbose=verbose, mode=mode)
+    except Exception as exc:
+        logging.debug(traceback.format_exc())
+        pass
+    else:
+        return
