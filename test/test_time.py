@@ -4,6 +4,7 @@ test_time.py (01/2023)
 Verify time conversion and utility functions
 
 UPDATE HISTORY:
+    Updated 06/2023: add tests for delta time conversion
     Updated 01/2023: single implicit import of gravity toolkit
     Updated 05/2021: define int/float precision to prevent deprecation warning
     Updated 02/2021: added function to test GRACE months adjustments
@@ -94,6 +95,11 @@ def test_unix_time():
     # ATLAS Standard Data Epoch
     UNIX = gravtk.utilities.get_unix_time('2018-01-01 00:00:00')
     assert (UNIX == 1514764800)
+    # check UNIX time conversion with delta times
+    output_time = gravtk.time.convert_delta_time(UNIX,
+        epoch1=gravtk.time._unix_epoch, epoch2=(2018,1,1),
+        scale=1.0)
+    assert (output_time == 0)
 
 # PURPOSE: test parsing time strings
 def test_parse_date_string():
@@ -115,6 +121,64 @@ def test_parse_date_string():
     # check the epoch and the time unit conversion factors
     assert np.all(epoch == [2000,1,1,12,0,0])
     assert (to_secs == 0.0)
+    # time string for unitless case with a time zone
+    time_string = '2000-01-01T12:00:00.000-06:00'
+    epoch,to_secs = gravtk.time.parse_date_string(time_string)
+    # check the epoch and the time unit conversion factors
+    assert np.all(epoch == [2000,1,1,18,0,0])
+    assert (to_secs == 0.0)
+
+# PURPOSE: verify forward and backwards delta time conversions
+@pytest.mark.parametrize("delta_time", np.random.randint(1,31536000,size=4))
+def test_delta_time(delta_time, gps_epoch=1198800018.0):
+    # convert to array if single value
+    delta_time = np.atleast_1d(delta_time)
+    # calculate gps time from delta_time
+    gps_seconds = gps_epoch + delta_time
+    time_leaps = gravtk.time.count_leap_seconds(gps_seconds)
+    # compare output delta times with original values
+    output_time = gravtk.time.convert_delta_time(gps_seconds - time_leaps,
+        epoch1=gravtk.time._gps_epoch, epoch2=(2018,1,1,0,0,0),
+        scale=1.0)
+    assert (delta_time == output_time)
+    # compare with original values using string epochs
+    output_time = gravtk.time.convert_delta_time(gps_seconds - time_leaps,
+        epoch1='1980-01-06T00:00:00', epoch2='2018-01-01T00:00:00',
+        scale=1.0)
+    assert (delta_time == output_time)
+    # calculate and compare with timescale values
+    GPS = gravtk.time.timescale().from_deltatime(gps_seconds,
+        epoch=gravtk.time._gps_epoch, standard='GPS')
+    output_time = GPS.to_deltatime((2018,1,1,0,0,0), scale=GPS.day)
+    assert np.isclose(delta_time, output_time)
+
+# PURPOSE: test timescale class conversions and constants
+def test_timescale():
+    # ATLAS Standard Data Epoch
+    atlas_sdp_epoch = np.datetime64('2018-01-01T00:00:00')
+    # from datetime
+    ATLAS = gravtk.time.timescale().from_datetime(atlas_sdp_epoch)
+    assert np.all(ATLAS.MJD == 58119)
+    delta_time_epochs = (ATLAS.to_datetime() - atlas_sdp_epoch)
+    assert np.all(delta_time_epochs/np.timedelta64(1, 'ns') == 0)
+    # from deltatime
+    ATLAS = gravtk.time.timescale().from_deltatime(0, epoch=(2018,1,1))
+    assert np.all(ATLAS.MJD == 58119)
+    delta_time_epochs = (ATLAS.to_datetime() - atlas_sdp_epoch)
+    assert np.all(delta_time_epochs/np.timedelta64(1, 'ns') == 0)
+    # from MJD
+    ATLAS = gravtk.time.timescale(MJD=58119)
+    assert np.all(ATLAS.ut1 == 2458119.5)
+    assert np.all((ATLAS.MJD - 51544.5) == (ATLAS.ut1 - 2451545.0))
+    # from MJD hourly array
+    delta_time = np.arange(0, 365, 1.0/24.0)
+    ATLAS = gravtk.time.timescale(MJD=58119 + delta_time)
+    delta_time_epochs = (ATLAS.to_datetime() - atlas_sdp_epoch)
+    assert np.allclose(delta_time_epochs/np.timedelta64(1, 'D'), delta_time)
+    assert np.allclose(ATLAS.to_deltatime(epoch=atlas_sdp_epoch), delta_time)
+    assert np.allclose(ATLAS.to_deltatime(epoch='2018-01-01'), delta_time)
+    # check constants
+    assert (ATLAS.day == 86400.0)
 
 # PURPOSE: test months adjustment for special cases
 # parameterize calendar dates
