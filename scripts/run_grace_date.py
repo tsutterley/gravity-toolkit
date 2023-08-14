@@ -99,6 +99,22 @@ def run_grace_date(base_dir, PROC, DREL, VERBOSE=0, MODE=0o775):
         'RL05':['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
         'RL06':['GAA', 'GAB', 'GAC', 'GAD', 'GSM']}
     VALID['JPL'] = ['RL04','RL05','RL06']
+    # -- CNES RL04/5 at LMAX 90
+    DSET['CNES'] = {'RL04': ['GSM'],
+                   'RL05': ['GSM'],}
+    VALID['CNES'] = ['RL04', 'RL05']
+    # -- GRAZ/ITSG RL14/16/18 at LMAX 120
+    DSET['GRAZ'] = {'RL14': ['GSM'],
+                   'RL16': ['GSM'],
+                   'RL18': ['GSM']}
+    VALID['GRAZ'] = ['RL14', 'RL16', 'RL18']
+    # -- Swarm RL01 at LMAX 40
+    DSET['SWARM'] = {'RL01': ['GSM'],}
+    VALID['SWARM'] = ['RL01']
+    # -- COSTG RL01 at LMAX 90
+    DSET['COSTG'] = {'RL01': ['GSM'],
+                   'RL06': ['GSM']}
+    VALID['COSTG'] = ['RL01', 'RL06']
 
     # for each processing center
     for p in PROC:
@@ -132,7 +148,7 @@ def arguments():
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, nargs='+',
         default=['CSR','GFZ','JPL'],
-        choices=['CSR','GFZ','JPL'],
+        choices=['CSR','GFZ','JPL', 'CNES','GRAZ','SWARM', 'COSTG'],
         help='GRACE/GRACE-FO Processing Center')
     # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',

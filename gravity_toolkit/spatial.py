@@ -2059,9 +2059,9 @@ class scaling_factors(spatial):
             pc = v.T[k] * np.sqrt(mat_svd.shape[1] - 1) /2*(sort_eof[-int(len(sort_eof)*0.01)] - sort_eof[int(len(sort_eof)*0.01)])
 
             if mask is None:
-                eof_grid.data = np.reshape(scale_eof, (self.lat.shape[0], self.lon.shape[0], 1))
+                eof_grid.data = np.reshape(scale_eof, (self.lat.shape[0], self.lon.shape[0]))
             else:
-                eof_grid.data = np.zeros((self.lat.shape[0], self.lon.shape[0], 1))
+                eof_grid.data = np.zeros((self.lat.shape[0], self.lon.shape[0]))
                 eof_grid.data[mask] = scale_eof
                 eof_grid.data[np.logical_not(mask)] = None
 
@@ -2077,8 +2077,7 @@ class scaling_factors(spatial):
                 spec = matplotlib.gridspec.GridSpec(ncols=4, nrows=12, wspace=0.03, width_ratios=[8, 1, 1, 1])
                 axmap = fig.add_subplot(spec[:, 0], projection=ccrs.PlateCarree())
 
-                cmap = plt.cm.get_cmap(cmap)
-
+                cmap = matplotlib.colormaps.get_cmap(cmap)
                 immap = axmap.imshow(eof_grid.data, cmap=cmap, transform=ccrs.PlateCarree(), extent=self.extent,
                                      origin='upper', vmin=-1.15, vmax=1.15)
                 axmap.coastlines('50m')

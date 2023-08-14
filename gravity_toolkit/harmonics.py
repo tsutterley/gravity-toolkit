@@ -756,7 +756,9 @@ class harmonics(object):
         for key in ['l', 'm', 'clm', 'slm', 'time', 'month']:
             try:
                 setattr(self, key, d[key].copy())
-            except (AttributeError, KeyError):
+            except AttributeError:
+                setattr(self, key, d[key])
+            except KeyError:
                 pass
         # maximum degree and order
         self.lmax = np.max(d['l'])
@@ -2060,6 +2062,9 @@ class harmonics(object):
 
         Options:
             save_path : if not False, give a path to save the figure
+
+        TODO: Refaire ça avec une matrice carrée sur tous les coeffs test: C20, C21, C22, S21, S22, C30, ...
+        ou C20, C21, S21, C22, S22, C30, ...
         """
         mat_c = np.zeros((self.lmax, self.lmax))
         if m:
