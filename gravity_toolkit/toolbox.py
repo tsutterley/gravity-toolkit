@@ -93,24 +93,7 @@ def create_grid(Ylms, lmax=None, rad=0, destripe=False, unit='cmwe', dlon=0.5, d
     # converting harmonics to truncated, smoothed coefficients in units
     # combining harmonics to calculate output spatial fields
     # output spatial grid
-    if not (type(Ylms.month) in [list, np.array]) and len(Ylms.month) == 1:
-        grid.data = np.zeros((nlat, nlon))
-
-        if destripe:
-            tmp = Ylms.copy().destripe()
-        else:
-            tmp = Ylms.copy()
-
-        if rad != 0:
-            wt = 2.0 * np.pi * gauss_weights(rad, lmax)
-            tmp.convolve(dfactor * wt)
-        else:
-            tmp.convolve(dfactor)
-        # convert spherical harmonics to output spatial grid
-        grid.data[:, :] = harmonic_summation(tmp.clm, tmp.slm,
-                                                 grid.lon, grid.lat, LMAX=lmax, MMAX=lmax, PLM=PLM).T
-
-    else:
+    if type(Ylms.time) in [list, np.array, np.ndarray] and len(Ylms.time) != 1:
         grid.data = np.zeros((nlat, nlon, len(Ylms.month)))
         for i, grace_month in enumerate(Ylms.month):
             # GRACE/GRACE-FO harmonics for time t
@@ -128,6 +111,25 @@ def create_grid(Ylms, lmax=None, rad=0, destripe=False, unit='cmwe', dlon=0.5, d
             # convert spherical harmonics to output spatial grid
             grid.data[:, :, i] = harmonic_summation(tmp.clm, tmp.slm,
                                                         grid.lon, grid.lat, LMAX=lmax, MMAX=lmax, PLM=PLM).T
+    else:
+        grid.data = np.zeros((nlat, nlon))
+
+        if destripe:
+            tmp = Ylms.copy().destripe()
+        else:
+            tmp = Ylms.copy()
+        if len(tmp.clm.shape) == 3:
+            tmp.clm = tmp.clm.reshape(tmp.clm.shape[:-1])
+            tmp.slm = tmp.slm.reshape(tmp.slm.shape[:-1])
+
+        if rad != 0:
+            wt = 2.0 * np.pi * gauss_weights(rad, lmax)
+            tmp.convolve(dfactor * wt)
+        else:
+            tmp.convolve(dfactor * np.ones((lmax + 1)))
+        # convert spherical harmonics to output spatial grid
+        grid.data[:, :] = harmonic_summation(tmp.clm, tmp.slm,
+                                                 grid.lon, grid.lat, LMAX=lmax, MMAX=lmax, PLM=PLM).T
 
     grid.mask = np.zeros(grid.data.shape)
     return grid
@@ -155,7 +157,7 @@ def grid_to_hs(grid, lmax, mmax=None, unit='cmwe'):
     mmax = np.copy(lmax) if (mmax is None) else mmax
 
     # -- number of dates in data
-    if type(grid.time) in [list, np.array] or len(grid.time) != 1:
+    if type(grid.time) in [list, np.array, np.ndarray] and len(grid.time) != 1:
         n_time = len(grid.time)
     else:
         n_time = 1
@@ -311,7 +313,7 @@ def filt_Ylms(ylms, filt='low', filt_param=None):
         if filt_param is None:
             to_zero = np.logical_or(freq > 0.5, freq < -0.5)
         else:
-            to_zero = np.logical_or(freq > filt_param[0], freq < filt_param[0])
+            to_zero = np.logical_or(freq > filt_param[0], freq < -filt_param[0])
         fc[:, :, to_zero] = 0
         fs[:, :, to_zero] = 0
         filtered_ylms.clm = np.real(np.fft.ifft(fc, axis=2))[:, :, :ndata]
