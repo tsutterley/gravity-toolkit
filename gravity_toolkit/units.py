@@ -108,7 +108,7 @@ class units(object):
         GM=GM_e-GM_atm
         # degree dependent coefficients
         # norm, fully normalized spherical harmonics
-        self.norm = np.ones((self.lmax + 1))
+        self.norm = np.ones((self.lmax + 1))/(4.0 * np.pi)
         # cmwe, centimeters water equivalent [g/cm^2]
         self.cmwe = 3.0 * (1.0 + kl[self.l]) / (1.0 + 2.0 * self.l) / (4.0 * np.pi * self.rad_e * self.rho_e)
         # cmwe_ne, centimeters water equivalent none elastic [g/cm^2]
@@ -116,7 +116,7 @@ class units(object):
         # mmwe, millimeters water equivalent [kg/m^2]
         self.mmwe=3.0*(1.0+kl[self.l])/(1.0+2.0*self.l)/(40.0*np.pi*self.rad_e*self.rho_e)
         # mmGH, millimeters geoid height
-        self.mmGH=np.ones((self.lmax+1))/(4.0*np.pi*self.rad_e)
+        self.mmGH=np.ones((self.lmax+1))/(4.0*np.pi*10*self.rad_e)
         # microGal, microGal gravity perturbations
         self.microGal = (self.rad_e ** 2.0)/(4.0*np.pi*1.e6 * GM)/(self.l + 1.0)
 

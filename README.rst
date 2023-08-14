@@ -25,6 +25,9 @@ read-GRACE-harmonics
 
 Python tools for obtaining and working with Level-2 spherical harmonic coefficients from the NASA/DLR Gravity Recovery and Climate Experiment (GRACE) and the NASA/GFZ Gravity Recovery and Climate Experiment Follow-On (GRACE-FO) missions
 
+This repository is **forked** from the original one created by Tyler Sutterley. It contains additions made by Hugo Lecomte, especially for plotting purpose on harmonics and spatial objects. The additions have been developed as part of my PhD work at ITES.
+I specially thank Tyler for this tool and I am glad to have been able to contribute to it.
+
 Resources
 #########
 
@@ -91,10 +94,8 @@ Data Repositories
 Download
 ########
 
-| The program homepage is:
+| The original program homepage is:
 | https://github.com/tsutterley/read-GRACE-harmonics
-| A zip archive of the latest version is available directly at:
-| https://github.com/tsutterley/read-GRACE-harmonics/archive/main.zip
 
 Disclaimer
 ##########
