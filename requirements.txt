@@ -1,13 +1,13 @@
 boto3
 future
 lxml
-matplotlib
-numpy
 python-dateutil
 pyyaml
-scipy
 matplotlib
 cartopy --no-binary=cartopy
+matplotlib
+scipy
+numpy
 datetime
 ipython
 setuptools
