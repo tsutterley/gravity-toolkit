@@ -6,11 +6,8 @@ numpy
 python-dateutil
 pyyaml
 scipy
-
 matplotlib
-python-dateutil
 cartopy --no-binary=cartopy
 datetime
-cartopy
 ipython
 setuptools
