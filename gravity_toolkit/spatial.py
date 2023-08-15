@@ -2043,8 +2043,8 @@ class scaling_factors(spatial):
         eof_grid.lat, eof_grid.lon = self.lat, self.lon
         eof_grid.time = np.array([0])
 
-        if not os.path.isdir(path_folder):
-            os.mkdir(path_folder)
+        if not pathlib.Path(path_folder).exists():
+            pathlib.Path(path_folder).mkdir(exist_ok=True)
 
         if mode == 'ts':
             plt.figure()
@@ -2066,7 +2066,7 @@ class scaling_factors(spatial):
                 eof_grid.data[np.logical_not(mask)] = None
 
             if mode == 'map':
-                tb.plot_rms_map(eof_grid, path=os.path.join(path_folder, 'map_eof_'+str(k)+'.png'), unit=unit, mask=mask)
+                tb.plot_rms_map(eof_grid, path=pathlib.Path(path_folder) / 'map_eof_'+str(k)+'.png', unit=unit, mask=mask)
 
             elif mode == 'full':
                 npow2 = 1 if len(self.time) == 0 else 2 ** (len(self.time) - 1).bit_length()
@@ -2130,12 +2130,13 @@ class scaling_factors(spatial):
                     axplot.set_ylabel('Secular\n Acceleration\n$nT.y^{-2}$', labelpad=40, fontsize=12, rotation='horizontal')
                     axfft.set_ylabel('Power\n$nT^2.y^{-4}$', labelpad=50, fontsize=12, rotation='horizontal')
 
-                plt.savefig(os.path.join(path_folder, 'eof_pc_'+str(k)+'.png'), bbox_inches='tight')
+                plt.savefig(pathlib.Path(path_folder) / 'eof_pc_'+str(k)+'.png', bbox_inches='tight')
                 plt.close()
 
             elif mode == 'ts':
                 plt.plot(self.time, pc, label=str(k))
 
         if mode == 'ts':
-            plt.savefig(os.path.join(path_folder, 'pc_'+'-'.join([str(i) for i in number])+'.png'))
+
+            plt.savefig(pathlib.Path(path_folder) / 'pc_'+'-'.join([str(i) for i in number])+'.png')
             plt.legend()

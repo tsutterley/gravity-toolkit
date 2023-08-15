@@ -106,11 +106,6 @@ from gravity_toolkit.time import adjust_months,calendar_to_grace
 import scipy as sc
 import matplotlib.pyplot as plt
 import gravity_toolkit.wavelets as wv
-from gravity_toolkit.ncdf_stokes import ncdf_stokes
-from gravity_toolkit.hdf5_stokes import hdf5_stokes
-from gravity_toolkit.ncdf_read_stokes import ncdf_read_stokes
-from gravity_toolkit.hdf5_read_stokes import hdf5_read_stokes
-from gravity_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
@@ -2098,8 +2093,8 @@ class harmonics(object):
         plt.title('Correlation of each spherical harmonics with $C_{' + str(l) + ',' + str(m)+ '}$')
 
         if save_path:
-            if os.path.isdir(save_path):
-                plt.savefig(os.path.join(save_path, 'C' + str(l) + str(m) + '_correlation.png'))
+            if pathlib.Path(save_path).is_dir():
+                plt.savefig(pathlib.Path(save_path) / 'C' + str(l) + str(m) + '_correlation.png')
             else:
                 plt.savefig(save_path[:-3] + 'c' + save_path[-3:])
 
@@ -2110,8 +2105,8 @@ class harmonics(object):
             plt.title('Correlation of each spherical harmonics with $S_{' + str(l) + ',' + str(m) + '}$')
 
             if save_path:
-                if os.path.isdir(save_path):
-                    plt.savefig(os.path.join(save_path, 'S' + str(l) + str(m) + '_correlation.png'))
+                if pathlib.Path(save_path).is_dir():
+                    plt.savefig(pathlib.Path(save_path) / 'S' + str(l) + str(m) + '_correlation.png')
                 else:
                     plt.savefig(save_path[:-3] + 's' + save_path[-3:])
         plt.show()
@@ -2158,8 +2153,8 @@ class harmonics(object):
         plt.grid()
 
         if save_path:
-            if os.path.isdir(save_path):
-                plt.savefig(os.path.join(save_path, 'C' + str(l) + str(m) + '_coefficient.png'))
+            if pathlib.Path(save_path).is_dir():
+                plt.savefig(pathlib.Path(save_path) / 'C' + str(l) + str(m) + '_coefficient.png')
             else:
                 plt.savefig(save_path[:-4] + 'c' + save_path[-4:])
 
@@ -2193,8 +2188,8 @@ class harmonics(object):
             plt.grid()
 
             if save_path:
-                if os.path.isdir(save_path):
-                    plt.savefig(os.path.join(save_path, 'S' + str(l) + str(m) + '_coefficient.png'))
+                if pathlib.Path(save_path).is_dir():
+                    plt.savefig(pathlib.Path(save_path) / 'S' + str(l) + str(m) + '_coefficient.png')
                 else:
                     plt.savefig(save_path[:-4] + 's' + save_path[-4:])
 
@@ -2233,8 +2228,8 @@ class harmonics(object):
         plt.legend()
 
         if save_path:
-            if os.path.isdir(save_path):
-                plt.savefig(os.path.join(save_path, 'CS' + str(l) + str(m) + '_fft.png'))
+            if pathlib.Path(save_path).is_dir():
+                plt.savefig(pathlib.Path(save_path) / 'CS' + str(l) + str(m) + '_fft.png')
             else:
                 plt.savefig(save_path)
 
@@ -2346,8 +2341,8 @@ class harmonics(object):
         plt.legend(loc='upper right')
 
         if save_path:
-            if os.path.isdir(save_path):
-                plt.savefig(os.path.join(save_path, 'C' + str(l) + str(m) + '_wavelet.png'))
+            if pathlib.Path(save_path).is_dir():
+                plt.savefig(pathlib.Path(save_path) / 'C' + str(l) + str(m) + '_wavelet.png')
             else:
                 plt.savefig(save_path[:-4] + 'c' + save_path[-4:])
 
@@ -2391,8 +2386,8 @@ class harmonics(object):
             plt.legend(loc='upper right')
 
             if save_path:
-                if os.path.isdir(save_path):
-                    plt.savefig(os.path.join(save_path, 'S' + str(l) + str(m) + '_wavelet.png'))
+                if pathlib.Path(save_path).is_dir():
+                    plt.savefig(pathlib.Path(save_path) / 'S' + str(l) + str(m) + '_wavelet.png')
                 else:
                     plt.savefig(save_path[:-4] + 's' + save_path[-4:])
 
