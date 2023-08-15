@@ -16,7 +16,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: calc_mascon.py
+    :filename: ../scripts/calc_mascon.py
     :func: arguments
     :prog: calc_mascon.py
     :nodescription:

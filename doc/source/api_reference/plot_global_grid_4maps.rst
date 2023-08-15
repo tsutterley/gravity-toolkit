@@ -12,7 +12,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: plot_global_grid_4maps.py
+    :filename: ../scripts/plot_global_grid_4maps.py
     :func: arguments
     :prog: plot_global_grid_4maps.py
     :nodescription:

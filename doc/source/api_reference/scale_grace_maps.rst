@@ -17,7 +17,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: scale_grace_maps.py
+    :filename: ../scripts/scale_grace_maps.py
     :func: arguments
     :prog: scale_grace_maps.py
     :nodescription:

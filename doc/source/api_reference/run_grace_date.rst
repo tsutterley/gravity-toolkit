@@ -16,7 +16,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: run_grace_date.py
+    :filename: ../scripts/run_grace_date.py
     :func: arguments
     :prog: run_grace_date.py
     :nodescription:

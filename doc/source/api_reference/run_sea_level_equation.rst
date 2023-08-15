@@ -14,7 +14,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: run_sea_level_equation.py
+    :filename: ../scripts/run_sea_level_equation.py
     :func: arguments
     :prog: run_sea_level_equation.py
     :nodescription:

@@ -12,7 +12,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: make_grace_index.py
+    :filename: ../scripts/make_grace_index.py
     :func: arguments
     :prog: make_grace_index.py
     :nodescription:

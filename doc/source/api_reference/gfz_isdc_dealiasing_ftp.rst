@@ -13,7 +13,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: gfz_isdc_dealiasing_ftp.py
+    :filename: ../scripts/gfz_isdc_dealiasing_ftp.py
     :func: arguments
     :prog: gfz_isdc_dealiasing_ftp.py
     :nodescription:

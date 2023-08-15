@@ -12,7 +12,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: convert_harmonics.py
+    :filename: ../scripts/convert_harmonics.py
     :func: arguments
     :prog: convert_harmonics.py
     :nodescription:

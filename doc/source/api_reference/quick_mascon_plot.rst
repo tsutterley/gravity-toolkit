@@ -12,7 +12,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: quick_mascon_plot.py
+    :filename: ../scripts/quick_mascon_plot.py
     :func: arguments
     :prog: quick_mascon_plot.py
     :nodescription:

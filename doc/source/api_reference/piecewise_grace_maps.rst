@@ -12,7 +12,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: piecewise_grace_maps.py
+    :filename: ../scripts/piecewise_grace_maps.py
     :func: arguments
     :prog: piecewise_grace_maps.py
     :nodescription:

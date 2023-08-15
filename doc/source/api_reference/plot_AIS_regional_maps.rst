@@ -12,7 +12,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: plot_AIS_regional_maps.py
+    :filename: ../scripts/plot_AIS_regional_maps.py
     :func: arguments
     :prog: plot_AIS_regional_maps.py
     :nodescription:

@@ -12,7 +12,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: regress_grace_maps.py
+    :filename: ../scripts/regress_grace_maps.py
     :func: arguments
     :prog: regress_grace_maps.py
     :nodescription:
