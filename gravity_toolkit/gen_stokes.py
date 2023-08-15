@@ -182,17 +182,17 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
         int_fact[:] = np.sin(th)*dphi*dth
     elif UNITS == 4:
         #-- Inputs in mmGH
-        dfactor = factors.mmGH
+        dfactor = factors.spatial(*LOVE).mmGH
         int_fact[:] = np.sin(th) * dphi * dth
     elif UNITS == 5:
-        dfactor = factors.microGal
+        dfactor = factors.spatial(*LOVE).microGal
         int_fact[:] = np.sin(th) * dphi * dth
     elif UNITS == 6:
-        dfactor = factors.cmwe_ne
+        dfactor = factors.spatial(*LOVE).cmwe_ne
         int_fact[:] = np.sin(th) * dphi * dth
     elif UNITS == 7:
         #-- Inputs in units with no dfactor
-        dfactor = factors.norm
+        dfactor = factors.spatial(*LOVE).norm
         int_fact[:] = np.sin(th) * dphi * dth
     else:
         raise ValueError(f'Unknown units {UNITS}')

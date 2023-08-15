@@ -201,9 +201,8 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         end_date = [int(year),int(month),dpm[int(month)-1],23,59,59]
 
     # python dictionary with model input and headers
-    ZIP = bool(re.search('ZIP', SFX, re.IGNORECASE))
     model_input = read_ICGEM_harmonics(input_file, TIDE=TIDE,
-        FLAG=FLAG, ZIP=ZIP)
+        FLAG=FLAG)
 
     # start and end day of the year
     start_day = np.sum(dpm[:start_date[1]-1]) + start_date[2] + \
