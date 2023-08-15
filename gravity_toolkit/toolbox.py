@@ -4,7 +4,7 @@ from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.gen_stokes import gen_stokes
 from gravity_toolkit.harmonics import harmonics
 from gravity_toolkit.harmonic_summation import harmonic_summation
-from gravity_toolkit.plm_holmes import plm_holmes
+from gravity_toolkit.associated_legendre import plm_holmes
 from gravity_toolkit.read_love_numbers import read_love_numbers
 from gravity_toolkit.spatial import spatial
 from gravity_toolkit.units import units
@@ -59,11 +59,6 @@ def create_grid(Ylms, lmax=None, rad=0, destripe=False, unit='cmwe', dlon=0.5, d
 
     nlon = len(grid.lon)
     nlat = len(grid.lat)
-
-    # update spacing and dimensions
-    grid.update_spacing()
-    grid.update_extents()
-    grid.update_dimensions()
 
     # Computing plms for converting to spatial domain
     theta = (90.0 - grid.lat) * np.pi / 180.0
@@ -232,11 +227,6 @@ def diff_grid(grid1, grid2):
     # Output Degree Interval
     grid.lon = grid1.lon
     grid.lat = grid1.lat
-
-    # update spacing and dimensions
-    grid.update_spacing()
-    grid.update_extents()
-    grid.update_dimensions()
 
     grid.data = np.zeros((grid.lat.shape[0], grid.lon.shape[0], len(grid.month)))
     cmp = 0

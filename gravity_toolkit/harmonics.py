@@ -2094,7 +2094,7 @@ class harmonics(object):
 
         if save_path:
             if pathlib.Path(save_path).is_dir():
-                plt.savefig(pathlib.Path(save_path) / 'C' + str(l) + str(m) + '_correlation.png')
+                plt.savefig(pathlib.Path(save_path) / ('C' + str(l) + str(m) + '_correlation.png'))
             else:
                 plt.savefig(save_path[:-3] + 'c' + save_path[-3:])
 
@@ -2106,7 +2106,7 @@ class harmonics(object):
 
             if save_path:
                 if pathlib.Path(save_path).is_dir():
-                    plt.savefig(pathlib.Path(save_path) / 'S' + str(l) + str(m) + '_correlation.png')
+                    plt.savefig(pathlib.Path(save_path) / ('S' + str(l) + str(m) + '_correlation.png'))
                 else:
                     plt.savefig(save_path[:-3] + 's' + save_path[-3:])
         plt.show()
@@ -2154,7 +2154,7 @@ class harmonics(object):
 
         if save_path:
             if pathlib.Path(save_path).is_dir():
-                plt.savefig(pathlib.Path(save_path) / 'C' + str(l) + str(m) + '_coefficient.png')
+                plt.savefig(pathlib.Path(save_path) / ('C' + str(l) + str(m) + '_coefficient.png'))
             else:
                 plt.savefig(save_path[:-4] + 'c' + save_path[-4:])
 
@@ -2189,7 +2189,7 @@ class harmonics(object):
 
             if save_path:
                 if pathlib.Path(save_path).is_dir():
-                    plt.savefig(pathlib.Path(save_path) / 'S' + str(l) + str(m) + '_coefficient.png')
+                    plt.savefig(pathlib.Path(save_path) / ('S' + str(l) + str(m) + '_coefficient.png'))
                 else:
                     plt.savefig(save_path[:-4] + 's' + save_path[-4:])
 
@@ -2229,7 +2229,7 @@ class harmonics(object):
 
         if save_path:
             if pathlib.Path(save_path).is_dir():
-                plt.savefig(pathlib.Path(save_path) / 'CS' + str(l) + str(m) + '_fft.png')
+                plt.savefig(pathlib.Path(save_path) / ('CS' + str(l) + str(m) + '_fft.png'))
             else:
                 plt.savefig(save_path)
 
@@ -2342,7 +2342,7 @@ class harmonics(object):
 
         if save_path:
             if pathlib.Path(save_path).is_dir():
-                plt.savefig(pathlib.Path(save_path) / 'C' + str(l) + str(m) + '_wavelet.png')
+                plt.savefig(pathlib.Path(save_path) / ('C' + str(l) + str(m) + '_wavelet.png'))
             else:
                 plt.savefig(save_path[:-4] + 'c' + save_path[-4:])
 
@@ -2387,7 +2387,7 @@ class harmonics(object):
 
             if save_path:
                 if pathlib.Path(save_path).is_dir():
-                    plt.savefig(pathlib.Path(save_path) / 'S' + str(l) + str(m) + '_wavelet.png')
+                    plt.savefig(pathlib.Path(save_path) / ('S' + str(l) + str(m) + '_wavelet.png'))
                 else:
                     plt.savefig(save_path[:-4] + 's' + save_path[-4:])
 
