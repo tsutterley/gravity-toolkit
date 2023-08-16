@@ -20,24 +20,64 @@ use of `Jupyter Notebooks <../user_guide/Examples.html>`_.
     :align: center
 
     digraph {
-        G [label="GRACE/GRACE-FO\ntime-variable gravity" shape=box style="filled" color="#7570b3"]
-        A [label="Non-tidal Ocean and\nAtmospheric Variation" shape=box style="filled" color="#7570b3"]
-        I [label="Glacial Isostatic\nAdjustment" shape=box style="filled" color="#7570b3"]
-        W [label="Terrestrial Water\nStorage" shape=box style="filled" color="#7570b3"]
-        R [label="gravity-toolkit" shape=box style="filled" color="gray"]
-        S [label="Spatial Maps" shape=box style="filled" color="#1b9e77"
+        G [label="GRACE/GRACE-FO\ntime-variable gravity"
+            fontname="Lato"
+            fontsize=11
+            shape=box
+            style="filled"
+            color="#7570b3"]
+        A [label="Non-tidal Ocean and\nAtmospheric Variation"
+            fontname="Lato"
+            fontsize=11
+            shape=box
+            style="filled"
+            color="#7570b3"]
+        I [label="Glacial Isostatic\nAdjustment"
+            fontname="Lato"
+            fontsize=11
+            shape=box
+            style="filled"
+            color="#7570b3"]
+        W [label="Terrestrial Water\nStorage"
+            fontname="Lato"
+            fontsize=11
+            shape=box
+            style="filled"
+            color="#7570b3"]
+        R [label="gravity-toolkit"
+            fontname="Lato"
+            fontsize=11
+            shape=box
+            style="filled"
+            color="gray"]
+        S [label="Spatial Maps"
+            fontname="Lato"
+            fontsize=11
+            shape=box
+            style="filled"
+            color="#1b9e77"
             URL="Spatial-Maps.html"]
-        T [label="Time Series Analysis" shape=box style="filled" color="#1b9e77"
+        T [label="Time Series Analysis"
+            fontname="Lato"
+            fontsize=11
+            shape=box
+            style="filled"
+            color="#1b9e77"
             URL="Time-Series-Analysis.html"]
-        D [label="Geocenter Variation" shape=box style="filled" color="#1b9e77"
+        D [label="Geocenter Variation"
+            fontname="Lato"
+            fontsize=11
+            shape=box
+            style="filled"
+            color="#1b9e77"
             URL="Geocenter-Variations.html"]
-        G -> R
-        A -> R
-        I -> R
-        W -> R
-        R -> S
-        R -> T
-        R -> D
+        G -> R [arrowsize=0.8]
+        A -> R [arrowsize=0.8]
+        I -> R [arrowsize=0.8]
+        W -> R [arrowsize=0.8]
+        R -> S [arrowsize=0.8]
+        R -> T [arrowsize=0.8]
+        R -> D [arrowsize=0.8]
     }
 
 Measurement Principle

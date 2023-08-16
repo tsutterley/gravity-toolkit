@@ -63,7 +63,7 @@ from gravity_toolkit.harmonic_summation import (
 )
 from gravity_toolkit.legendre_polynomials import legendre_polynomials
 from gravity_toolkit.legendre import legendre
-from gravity_toolkit.ocean_stokes import ocean_stokes
+from gravity_toolkit.ocean_stokes import ocean_stokes, land_stokes
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
 from gravity_toolkit.read_GIA_model import (
     read_GIA_model,

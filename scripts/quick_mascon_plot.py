@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 quick_mascon_plot.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (08/2023)
 Plots a mascon time series file for a particular format
 
 COMMAND LINE OPTIONS:
@@ -12,6 +12,7 @@ COMMAND LINE OPTIONS:
     -d X, --figure-dpi X: Output figure resolution in dots per inch
     -H X, --header X: Number of rows of header text to skip
     -m X, --marker X: Plot markers
+    -z X, --zorder X: Drawing order of time series
     -t X, --title X: Plot title
     -T X, --time X: Time label for x-axis
     -U X, --units X: Units label for y-axis
@@ -34,6 +35,7 @@ PROGRAM DEPENDENCIES:
     time_series.regress.py: calculates trend coefficients using least-squares
 
 UPDATE HISTORY:
+    Updated 08/2023: add option for changing drawing order of time series
     Updated 05/2023: use pathlib to define and operate on paths
         use fit module for getting tidal aliasing terms
     Updated 04/2023: add option to include plot markers on time series plots
@@ -68,21 +70,32 @@ except ModuleNotFoundError:
 warnings.filterwarnings("ignore")
 
 # PURPOSE: read mascon time series file and create plot
-def run_plot(i,f,individual=False,header=0,marker=None,title=None,
-    time=None,units=None,legend=None,error=False,monthly=True):
+def run_plot(i, input_file,
+        individual=False,
+        header=0,
+        marker=None,
+        zorder=None,
+        title=None,
+        time=None,
+        units=None,
+        legend=None,
+        error=False,
+        monthly=True
+    ):
     """
     Plots a mascon time series file for a particular format
 
     Arguments
     ---------
     i: iteration of mascon data file
-    f: mascon time series file
+    input_file: mascon time series file
 
     Keyword arguments
     -----------------
     individual: Create individual plots or combine into single
     header: Number of rows of header text to skip
     marker: Plot marker
+    zorder: Drawing order
     title: Region label for title
     time: Time label for x-axis
     units: Units label for y-axis
@@ -94,9 +107,9 @@ def run_plot(i,f,individual=False,header=0,marker=None,title=None,
     if individual:
         plt.figure(i+1)
     # read data
-    f = pathlib.Path(f).expanduser().absolute()
-    print(f.name)
-    dinput = np.loadtxt(f, skiprows=header)
+    input_file = pathlib.Path(input_file).expanduser().absolute()
+    print(input_file.name)
+    dinput = np.loadtxt(input_file, skiprows=header)
     # calculate regression
     TERMS = gravtk.time_series.aliasing_terms(dinput[:,1])
     x1 = gravtk.time_series.regress(dinput[:,1],dinput[:,2],ORDER=1,
@@ -137,10 +150,16 @@ def run_plot(i,f,individual=False,header=0,marker=None,title=None,
         if error:
             err = np.copy(dinput[:,3])
     # plot all dates
-    l, = plt.plot(tdec,data,label=legend,marker=marker,markersize=5)
+    l, = plt.plot(tdec, data,
+        label=legend,
+        marker=marker,
+        markersize=5,
+        zorder=zorder
+    )
+    # add estimated errors
     if error:
         plt.fill_between(tdec, data-err, y2=data+err,
-            color=l.get_color(), alpha=0.25)
+            color=l.get_color(), alpha=0.25, zorder=zorder)
     # vertical lines for end of the GRACE mission and start of GRACE-FO
     if monthly & ((i == 0) | individual):
         jj, = np.flatnonzero(dinput[:,0] == 186)
@@ -185,6 +204,9 @@ def arguments():
         help='Number of rows of header text to skip')
     parser.add_argument('--marker','-m',
         type=str, help='Plot marker')
+    parser.add_argument('--zorder','-z',
+        type=int, nargs='+',
+        help='Drawing order for each time series')
     parser.add_argument('--title','-t',
         type=lambda x: ' '.join(str.split(x,"_")),
         help='Plot title')
@@ -219,10 +241,11 @@ def main():
     # run plot program for each input file
     for i,f in enumerate(args.file):
         legend = args.legend[i] if args.legend else None
+        zorder = args.zorder[i] if args.zorder else None
         run_plot(i, f, individual=args.individual, header=args.header,
             marker=args.marker, title=args.title, time=args.time,
             units=args.units, legend=legend, error=args.error,
-            monthly=args.all)
+            monthly=args.all, zorder=zorder)
     # add legend if applicable
     if args.legend:
         lgd = plt.legend(loc=3,frameon=False)

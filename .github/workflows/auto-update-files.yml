@@ -30,8 +30,8 @@ jobs:
       with:
         auto-update-conda: true
         python-version: ${{ matrix.python-version }}
-        activate-environment: pyTMD
-        environment-file: environment.yml
+        activate-environment: gravity_toolkit
+        environment-file: .binder/environment.yml
     - name: Create conda Test Environment
       run: |
         conda install flake8 pytest pytest-cov cython
