@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 ocean_stokes.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (08/2023)
 
 Reads a land-sea mask and converts to a series of spherical harmonics
 
@@ -43,6 +43,7 @@ REFERENCES:
     Earth and Space Science, 7, 2020. https://doi.org/10.1029/2019EA000860
 
 UPDATE HISTORY:
+    Updated 08/2023: add land_stokes function for converting land mask
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: fixed docstring summary of ocean stokes function
         improve typing for variables in docstrings
@@ -67,6 +68,7 @@ def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
     SIMPLIFY=False):
     """
     Reads a land-sea mask and converts to a series of spherical harmonics
+    for ocean areas
 
     Parameters
     ----------
@@ -118,6 +120,64 @@ def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
     ocean_function = 1.0 - land_function
     # convert to spherical harmonics (1 cm w.e.)
     Ylms = gen_stokes(ocean_function.T, landsea.lon, landsea.lat,
+        UNITS=1, LMIN=0, LMAX=LMAX, MMAX=MMAX, LOVE=LOVE)
+    # return the spherical harmonic coefficients
+    return Ylms
+
+def land_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
+    SIMPLIFY=False):
+    """
+    Reads a land-sea mask and converts to a series of spherical harmonics
+    for land areas
+
+    Parameters
+    ----------
+    LANDMASK: str
+        netCDF4 land-sea mask file
+    LMAX: int
+        maximum spherical harmonic degree
+    MMAX: int or NoneType, default None
+        maximum spherical harmonic order of the output harmonics
+    LOVE: tuple
+        Load Love numbers up to degree LMAX (``hl``, ``kl``, ``ll``)
+    VARNAME: str, default 'LSMASK'
+        variable name for mask in netCDF4 file
+    SIMPLIFY: bool, default False
+        simplify land mask by removing isolated points
+
+    Returns
+    -------
+    clm: np.ndarray
+        cosine spherical harmonic coefficients
+    slm: np.ndarray
+        sine spherical harmonic coefficients
+    l: np.ndarray
+        spherical harmonic degree to LMAX
+    m: np.ndarray
+        spherical harmonic order to MMAX
+    """
+    # verify that land-sea mask file exists
+    LANDMASK = pathlib.Path(LANDMASK).expanduser().absolute()
+    if not LANDMASK.exists():
+        raise FileNotFoundError(f'{str(LANDMASK)} not found in file system')
+    # maximum spherical harmonic order
+    MMAX = np.copy(LMAX) if MMAX is None else MMAX
+    # Read Land-Sea Mask of specified input file
+    # 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
+    # Open the land-sea NetCDF file for reading
+    landsea = spatial().from_netCDF4(LANDMASK,
+        date=False, varname=VARNAME)
+    # create land function
+    nth,nphi = landsea.shape
+    land_function = np.zeros((nth,nphi), dtype=np.float64)
+    # combine land and island levels for land function
+    indx,indy = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))
+    land_function[indx,indy] = 1.0
+    # remove isolated points if specified
+    if SIMPLIFY:
+        land_function -= find_isolated_points(land_function)
+    # convert to spherical harmonics (1 cm w.e.)
+    Ylms = gen_stokes(land_function.T, landsea.lon, landsea.lat,
         UNITS=1, LMIN=0, LMAX=LMAX, MMAX=MMAX, LOVE=LOVE)
     # return the spherical harmonic coefficients
     return Ylms

@@ -41,8 +41,14 @@ import numpy as np
 import gravity_toolkit as gravtk
 
 # PURPOSE: Creates regression summary files for mascon files
-def run_regress(input_file,header=0,order=None,breakpoint=None,cycles=None,
-    units=None,stream=False):
+def run_regress(input_file,
+        header=0,
+        order=None,
+        breakpoint=None,
+        cycles=None,
+        units=None,
+        stream=False
+    ):
     """
     Creates a regression summary file for a mascon time series file
 
