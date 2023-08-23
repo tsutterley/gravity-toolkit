@@ -164,8 +164,8 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
     itsg_pattern = (r'(AOD1B_RL\d+|model|ITSG)[-_]({0})(_n\d+)?_'
         r'(\d+)-(\d+)(\.gfc)').format(r'|'.join(itsg_products))
     # regular expression operators for Swarm data and models
-    swarm_data = r'(SW)_(.*?)_(EGF_SHA_2)__(.*?)_(.*?)_(.*?)(\.gfc|\.ZIP)'
-    swarm_model = r'(GAA|GAB|GAC|GAD)_Swarm_(\d+)_(\d{2})_(\d{4})(\.gfc|\.ZIP)'
+    swarm_data = r'(SW)_(.*?)_(EGF_SHA_2)__(.*?)_(.*?)_(.*?)(\.gfc|\.ZIP|\.zip)'
+    swarm_model = r'(GAA|GAB|GAC|GAD)_Swarm_(\d+)_(\d{2})_(\d{4})(\.gfc|\.ZIP|\.zip)'
     # extract parameters for each data center and product
     if re.match(itsg_pattern, input_file.name):
         # compile numerical expression operator for parameters from files

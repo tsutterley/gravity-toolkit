@@ -415,7 +415,8 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         # read GRACE/GRACE-FO/Swarm file
         if PROC in ('GRAZ','Swarm'):
             # Degree 2 zonals will be converted to a tide free state
-            Ylms = read_gfc_harmonics(infile, TIDE='tide_free')
+            flag = pathlib.Path(infile).suffix
+            Ylms = read_gfc_harmonics(infile, TIDE='tide_free', FLAG=flag)
         else:
             # Effects of Pole tide drift will be compensated if specified
             Ylms = read_GRACE_harmonics(infile, LMAX, MMAX=MMAX,
