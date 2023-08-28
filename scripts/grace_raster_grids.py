@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 u"""
-grace_spatial_maps.py
-Written by Tyler Sutterley (05/2023)
+grace_raster_grids.py
+Written by Tyler Sutterley (08/2023)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
-    monthly spatial fields
+    projected spatial fields
 
 Will correct with the specified GIA model group, destripe/smooth/process,
     and export the data in specified units
@@ -15,7 +15,7 @@ Spatial output units: cm w.e., mm geoid height, mm elastic uplift,
 COMMAND LINE OPTIONS:
     --help: list the command line options
     -D X, --directory X: Working data directory
-    -O X, --output-directory X: output directory for spatial files
+    -O X, --output-directory X: output directory for raster files
     -P X, --file-prefix X: prefix string for input and output files
     -c X, --center X: GRACE/GRACE-FO processing center
     -r X, --release X: GRACE/GRACE-FO data release
@@ -39,7 +39,6 @@ COMMAND LINE OPTIONS:
         CM: Center of Mass of Earth System
         CE: Center of Mass of Solid Earth
     -F X, --format X: input/output data format
-        ascii
         netCDF4
         HDF5
     -G X, --gia X: GIA model type to read
@@ -91,12 +90,10 @@ COMMAND LINE OPTIONS:
         3: mm of elastic crustal deformation [Davis 2004]
         4: microGal gravitational perturbation
         5: mbar equivalent surface pressure
-    --spacing X: spatial resolution of output data (dlon,dlat)
-    --interval X: output grid interval
-        1: (0:360, 90:-90)
-        2: (degree spacing/2)
-        3: non-global grid (set with defined bounds)
-    --bounds X: non-global grid bounding box (minlon,maxlon,minlat,maxlat)
+    --spacing X: output grid spacing
+    --bounds X: output grid extents [xmin,xmax,ymin,ymax]
+    --projection X: spatial projection as EPSG code or PROJ4 string
+        4326: latitude and longitude coordinates on WGS84 reference ellipsoid
     --mean-file X: GRACE/GRACE-FO mean file to remove from the harmonic data
     --mean-format X: Input data format for GRACE/GRACE-FO mean file
         ascii
@@ -141,7 +138,7 @@ PROGRAM DEPENDENCIES:
     ocean_stokes.py: converts a land-sea mask to a series of spherical harmonics
     gen_stokes.py: converts a spatial field into a series of spherical harmonics
     geocenter.py: converts between spherical harmonics and geocenter variations
-    harmonic_summation.py: calculates a spatial field from spherical harmonics
+    clenshaw_summation.py: calculate spatial field from spherical harmonics
     units.py: class for converting GRACE/GRACE-FO Level-2 data to specific units
     harmonics.py: spherical harmonic data class for processing GRACE/GRACE-FO
     destripe_harmonics.py: calculates the decorrelation (destriping) filter
@@ -150,37 +147,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
-    Updated 05/2023: use pathlib to define and operate on paths
-    Updated 03/2023: add root attributes to output netCDF4 and HDF5 files
-        use attributes from units class for writing to netCDF4/HDF5 files
-    Updated 02/2023: use get function to retrieve specific units
-        use love numbers class with additional attributes
-    Updated 01/2023: refactored associated legendre polynomials
-    Updated 12/2022: single implicit import of gravity toolkit
-    Updated 11/2022: use f-strings for formatting verbose or ascii output
-    Updated 09/2022: add option to replace degree 4 zonal harmonics with SLR
-    Updated 07/2022: create mask for output gridded variables
-    Updated 04/2022: use wrapper function for reading load Love numbers
-        use argparse descriptions within sphinx documentation
-    Updated 12/2021: can use variable loglevels for verbose output
-        option to specify a specific geocenter correction file
-        fix default file prefix to include center and release information
-    Updated 11/2021: add GSFC low-degree harmonics
-    Updated 10/2021: using python logging for handling verbose output
-        add more choices for setting input format of the removed files
-    Updated 07/2021: simplified file imports using wrappers in harmonics
-        added path to default land-sea mask for mass redistribution
-        remove choices for argparse processing centers
-    Updated 06/2021: switch from parameter files to argparse arguments
-    Updated 05/2021: define int/float precision to prevent deprecation warning
-    Updated 04/2021: include parameters for replacing C21/S21 and C22/S22
-    Updated 02/2021: changed remove index to files with specified formats
-    Updated 01/2021: harmonics object output from gen_stokes.py/ocean_stokes.py
-    Updated 12/2020: added more love number options and from gfc for mean files
-    Updated 10/2020: use argparse to set command line parameters
-    Updated 08/2020: use utilities to define path to load love numbers file
-    Updated 06/2020: using spatial data class for output operations
-    Updated 05/2020: for public release
+    Written 08/2023
 """
 from __future__ import print_function
 
@@ -191,11 +158,22 @@ import copy
 import time
 import logging
 import pathlib
+import warnings
 import numpy as np
 import argparse
 import traceback
 import collections
 import gravity_toolkit as gravtk
+import geoid_toolkit as geoidtk
+
+# attempt imports
+try:
+    import pyproj
+except (ImportError, ModuleNotFoundError) as exc:
+    warnings.filterwarnings("module")
+    warnings.warn("pyproj not available", ImportWarning)
+# ignore warnings
+warnings.filterwarnings("ignore")
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -206,9 +184,28 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
+# PURPOSE: try to get the projection information
+def get_projection(PROJECTION):
+    # EPSG projection code
+    try:
+        crs = pyproj.CRS.from_epsg(int(PROJECTION))
+    except (ValueError,pyproj.exceptions.CRSError):
+        pass
+    else:
+        return crs
+    # coordinate reference system string
+    try:
+        crs = pyproj.CRS.from_string(PROJECTION)
+    except (ValueError,pyproj.exceptions.CRSError):
+        pass
+    else:
+        return crs
+    # no projection can be made
+    raise pyproj.exceptions.CRSError
+
 # PURPOSE: import GRACE/GRACE-FO files for a given months range
 # Converts the GRACE/GRACE-FO harmonics applying the specified procedures
-def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
+def grace_raster_grids(base_dir, PROC, DREL, DSET, LMAX, RAD,
     START=None,
     END=None,
     MISSING=None,
@@ -218,9 +215,9 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     REFERENCE=None,
     DESTRIPE=False,
     UNITS=None,
-    DDEG=None,
-    INTERVAL=None,
-    BOUNDS=None,
+    BOUNDS=[],
+    SPACING=[],
+    PROJECTION='4326',
     GIA=None,
     GIA_FILE=None,
     ATM=False,
@@ -243,50 +240,48 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     LANDMASK=None,
     OUTPUT_DIRECTORY=None,
     FILE_PREFIX=None,
-    VERBOSE=0,
     MODE=0o775):
 
     # recursively create output directory if not currently existing
     OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
     OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
 
-    # output attributes for spatial files
-    attributes = collections.OrderedDict()
-    attributes['generating_institute'] = PROC
-    attributes['product_release'] = DREL
-    attributes['product_name'] = DSET
-    attributes['product_type'] = 'gravity_field'
-    attributes['title'] = 'GRACE/GRACE-FO Spatial Data'
+    # output attributes for raster files
+    attributes = dict(ROOT=collections.OrderedDict())
+    attributes['ROOT']['generating_institute'] = PROC
+    attributes['ROOT']['product_release'] = DREL
+    attributes['ROOT']['product_name'] = DSET
+    attributes['ROOT']['product_type'] = 'gravity_field'
+    attributes['ROOT']['title'] = 'GRACE/GRACE-FO Spatial Data'
+    attributes['ROOT']['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
     # list object of output files for file logs (full path)
     output_files = []
 
     # file information
-    suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
+    suffix = dict(netCDF4='nc', HDF5='H5')[DATAFORM]
 
     # read arrays of kl, hl, and ll Love Numbers
     LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
         REFERENCE=REFERENCE, FORMAT='class')
     # add attributes for earth model and love numbers
-    attributes['earth_model'] = LOVE.model
-    attributes['earth_love_numbers'] = LOVE.citation
-    attributes['reference_frame'] = LOVE.reference
+    attributes['ROOT']['earth_model'] = LOVE.model
+    attributes['ROOT']['earth_love_numbers'] = LOVE.citation
+    attributes['ROOT']['reference_frame'] = LOVE.reference
 
     # Calculating the Gaussian smoothing for radius RAD
     if (RAD != 0):
-        wt = 2.0*np.pi*gravtk.gauss_weights(RAD,LMAX)
         gw_str = f'_r{RAD:0.0f}km'
-        attributes['smoothing_radius'] = f'{RAD:0.0f} km'
+        attributes['ROOT']['smoothing_radius'] = f'{RAD:0.0f} km'
     else:
         # else = 1
-        wt = np.ones((LMAX+1))
         gw_str = ''
 
     # flag for spherical harmonic order
     MMAX = np.copy(LMAX) if not MMAX else MMAX
     order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
     # add attributes for LMAX and MMAX
-    attributes['max_degree'] = LMAX
-    attributes['max_order'] = MMAX
+    attributes['ROOT']['max_degree'] = LMAX
+    attributes['ROOT']['max_order'] = MMAX
 
     # reading GRACE months for input date range
     # replacing low-degree harmonics with SLR values if specified
@@ -299,9 +294,11 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         POLE_TIDE=POLE_TIDE)
     # convert to harmonics object and remove mean if specified
     GRACE_Ylms = gravtk.harmonics().from_dict(Ylms)
+    nt = len(GRACE_Ylms.time)
     # add attributes for input GRACE/GRACE-FO spherical harmonics
     for att_name, att_val in Ylms['attributes'].items():
-        attributes[att_name] = att_val
+        attributes['ROOT'][att_name] = att_val
+
     # use a mean file for the static field to remove
     if MEAN_FILE:
         # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
@@ -310,7 +307,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
             format=MEANFORM, date=False)
         # remove the input mean
         GRACE_Ylms.subtract(mean_Ylms)
-        attributes['lineage'].append(MEAN_FILE.name)
+        attributes['ROOT']['lineage'].append(MEAN_FILE.name)
     else:
         GRACE_Ylms.mean(apply=True)
 
@@ -319,7 +316,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         # destriping GRACE/GRACE-FO coefficients
         ds_str = '_FL'
         GRACE_Ylms = GRACE_Ylms.destripe()
-        attributes['filtering'] = 'Destriped'
+        attributes['ROOT']['filtering'] = 'Destriped'
     else:
         # using standard GRACE/GRACE-FO harmonics
         ds_str = ''
@@ -330,7 +327,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # output GIA string for filename
     if GIA:
         gia_str = f'_{GIA_Ylms_rate.title}'
-        attributes['GIA'] = (str(GIA_Ylms_rate.citation), GIA_FILE.name)
+        attributes['ROOT']['GIA'] = (str(GIA_Ylms_rate.citation), GIA_FILE.name)
     else:
         gia_str = ''
     # monthly GIA calculated by gia_rate*time elapsed
@@ -343,6 +340,9 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         fargs = (PROC,DREL,DSET,Ylms['title'],gia_str)
         FILE_PREFIX = '{0}_{1}_{2}{3}{4}_'.format(*fargs)
 
+    # read Land-Sea Mask and convert to spherical harmonics
+    land_Ylms = gravtk.land_stokes(LANDMASK, LMAX,
+        MMAX=MMAX, LOVE=LOVE)
     # Read Ocean function and convert to Ylms for redistribution
     if REDISTRIBUTE_REMOVED:
         # read Land-Sea Mask and convert to spherical harmonics
@@ -369,14 +369,14 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
                 # HDF5 (.H5)
                 Ylms = gravtk.harmonics().from_file(REMOVE_FILE,
                     format=REMOVEFORM)
-                attributes['lineage'].append(Ylms.name)
+                attributes['ROOT']['lineage'].append(Ylms.name)
             elif REMOVEFORM in ('index-ascii','index-netCDF4','index-HDF5'):
                 # read from index file
                 _,removeform = REMOVEFORM.split('-')
                 # index containing files in data format
                 Ylms = gravtk.harmonics().from_index(REMOVE_FILE,
                     format=removeform)
-                attributes['lineage'].extend([f.name for f in Ylms.filename])
+                attributes['ROOT']['lineage'].extend([f.name for f in Ylms.filename])
             # reduce to GRACE/GRACE-FO months and truncate to degree and order
             Ylms = Ylms.subset(GRACE_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
             # distribute removed Ylms uniformly over the ocean
@@ -399,88 +399,138 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
             # redistributing the mass over the ocean if specified
             remove_Ylms.add(Ylms)
 
-    # Output spatial data object
-    grid = gravtk.spatial()
-    # Output Degree Spacing
-    dlon,dlat = (DDEG[0],DDEG[0]) if (len(DDEG) == 1) else (DDEG[0],DDEG[1])
-    # Output Degree Interval
-    if (INTERVAL == 1):
-        # (-180:180,90:-90)
-        nlon = np.int64((360.0/dlon)+1.0)
-        nlat = np.int64((180.0/dlat)+1.0)
-        grid.lon = -180 + dlon*np.arange(0,nlon)
-        grid.lat = 90.0 - dlat*np.arange(0,nlat)
-    elif (INTERVAL == 2):
-        # (Degree spacing)/2
-        grid.lon = np.arange(-180+dlon/2.0,180+dlon/2.0,dlon)
-        grid.lat = np.arange(90.0-dlat/2.0,-90.0-dlat/2.0,-dlat)
-        nlon = len(grid.lon)
-        nlat = len(grid.lat)
-    elif (INTERVAL == 3):
-        # non-global grid set with BOUNDS parameter
-        minlon,maxlon,minlat,maxlat = BOUNDS.copy()
-        grid.lon = np.arange(minlon+dlon/2.0, maxlon+dlon/2.0, dlon)
-        grid.lat = np.arange(maxlat-dlat/2.0, minlat-dlat/2.0, -dlat)
-        nlon = len(grid.lon)
-        nlat = len(grid.lat)
-
-    # Computing plms for converting to spatial domain
-    theta = (90.0-grid.lat)*np.pi/180.0
-    PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(theta))
+    # converting x,y from projection to latitude/longitude
+    crs1 = get_projection(PROJECTION)
+    crs2 = pyproj.CRS.from_epsg(4326)
+    transformer = pyproj.Transformer.from_crs(crs1, crs2, always_xy=True)
+    # dictionary of coordinate reference system variables
+    crs_to_dict = crs1.to_dict()
+    # Climate and Forecast (CF) Metadata Conventions
+    if (crs1.to_epsg() == 4326):
+        y_cf,x_cf = crs1.cs_to_cf()
+    else:
+        x_cf,y_cf = crs1.cs_to_cf()
 
     # output spatial units
     # Setting units factor for output
     # dfactor computes the degree dependent coefficients
-    factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
+    factors = gravtk.units(lmax=LMAX)
     # 1: cmwe, centimeters water equivalent
     # 2: mmGH, millimeters geoid height
     # 3: mmCU, millimeters elastic crustal deformation
     # 4: micGal, microGal gravity perturbations
     # 5: mbar, millibars equivalent surface pressure
     units = gravtk.units.bycode(UNITS)
-    dfactor = factors.get(units)
     # output spatial units and descriptive units longname
     units_name, units_longname = gravtk.units.get_attributes(units)
     # add attributes for earth parameters
-    attributes['earth_radius'] = f'{factors.rad_e:0.3f} cm'
-    attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
-    attributes['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
-    # add attributes to output spatial object
-    attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
-    grid.attributes['ROOT'] = attributes
+    attributes['ROOT']['earth_radius'] = f'{factors.rad_e:0.3f} cm'
+    attributes['ROOT']['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
+    attributes['ROOT']['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
 
-    # output file format
-    file_format = '{0}{1}_L{2:d}{3}{4}{5}_{6:03d}.{7}'
+    # projection attributes
+    attributes['crs'] = {}
+    # add projection attributes
+    attributes['crs']['standard_name'] = crs1.to_cf()['grid_mapping_name'].title()
+    attributes['crs']['spatial_epsg'] = crs1.to_epsg()
+    attributes['crs']['spatial_ref'] = crs1.to_wkt()
+    attributes['crs']['proj4_params'] = crs1.to_proj4()
+    for att_name,att_val in crs1.to_cf().items():
+        attributes['crs'][att_name] = att_val
+    if ('lat_0' in crs_to_dict.keys() and (crs1.to_epsg() != 4326)):
+        attributes['crs']['latitude_of_projection_origin'] = \
+            crs_to_dict['lat_0']
+    # x and y
+    attributes['x'],attributes['y'] = ({},{})
+    for att_name in ['long_name','standard_name','units']:
+        attributes['x'][att_name] = x_cf[att_name]
+        attributes['y'][att_name] = y_cf[att_name]
+    # time
+    attributes['time'] = {}
+    attributes['time']['units'] = 'years'
+    attributes['time']['long_name'] = 'Date_in_Decimal_Years'
+    # output gridded data
+    fill_value = -9999.0
+    attributes['z'] = {}
+    attributes['z']['units'] = units_name
+    attributes['z']['long_name'] = units_longname
+    attributes['z']['degree_of_truncation'] = LMAX
+    attributes['z']['_FillValue'] = fill_value
+    # set grid mapping attribute
+    attributes['z']['grid_mapping'] = 'crs'
+
+    # output data variables
+    output = {}
+    # projection variable
+    output['crs'] = np.array((),dtype=np.byte)
+    # spacing and bounds of output grid
+    dx,dy = np.broadcast_to(np.atleast_1d(SPACING),(2,))
+    xmin,xmax,ymin,ymax = np.copy(BOUNDS)
+    # create x and y from spacing and bounds
+    output['x'] = np.arange(xmin + dx/2.0, xmax + dx, dx)
+    output['y'] = np.arange(ymin + dx/2.0, ymax + dy, dy)
+    ny,nx = (len(output['y']),len(output['x']))
+    gridx, gridy = np.meshgrid(output['x'],output['y'])
+    gridlon, gridlat = transformer.transform(gridx, gridy)
+
+    # semimajor axis of ellipsoid [m]
+    a_axis = crs1.ellipsoid.semi_major_metre
+    # ellipsoidal flattening
+    flat = 1.0/crs1.ellipsoid.inverse_flattening
+    # calculate geocentric latitude and convert to degrees
+    latitude_geocentric = geoidtk.spatial.geocentric_latitude(
+        gridlon, gridlat, a_axis=a_axis, flat=flat)
+
+    # calculate spatial mask with an extended radius
+    THRESHOLD = 0.025
+    mask = gravtk.clenshaw_summation(land_Ylms.clm, land_Ylms.slm,
+        gridlon.flatten(), latitude_geocentric.flatten(), RAD=(RAD+100),
+        UNITS=units, LMAX=LMAX, LOVE=LOVE)
+    ii,jj = np.nonzero(mask.reshape(ny,nx) > THRESHOLD)
+
+    # output gridded raster data
+    output['z'] = np.ma.zeros((ny,nx,nt), fill_value=fill_value)
+    output['z'].mask = np.ones((ny,nx,nt), dtype=bool)
+    output['time'] = np.zeros((nt))
+
     # converting harmonics to truncated, smoothed coefficients in units
-    # combining harmonics to calculate output spatial fields
+    # combining harmonics to calculate output raster grids
     for i,grace_month in enumerate(GRACE_Ylms.month):
+        logging.debug(grace_month)
         # GRACE/GRACE-FO harmonics for time t
         Ylms = GRACE_Ylms.index(i)
         # Remove GIA rate for time
         Ylms.subtract(GIA_Ylms.index(i))
         # Remove monthly files to be removed
         Ylms.subtract(remove_Ylms.index(i))
-        # smooth harmonics and convert to output units
-        Ylms.convolve(dfactor*wt)
-        # convert spherical harmonics to output spatial grid
-        grid.data = gravtk.harmonic_summation(Ylms.clm, Ylms.slm,
-            grid.lon, grid.lat, LMIN=LMIN, LMAX=LMAX,
-            MMAX=MMAX, PLM=PLM).T
-        grid.mask = np.zeros_like(grid.data, dtype=bool)
+        # truncate to degree and order LMAX and MMAX
+        # truncate minimum degree to LMIN
+        Ylms.truncate(LMAX, lmin=LMIN, mmax=MMAX)
+        # convert spherical harmonics to output raster grid
+        output['z'].data[ii,jj,i] = gravtk.clenshaw_summation(
+            Ylms.clm, Ylms.slm, gridlon[ii,jj], latitude_geocentric[ii,jj],
+            RAD=RAD, UNITS=units, LMAX=LMAX, LOVE=LOVE)
+        output['z'].mask[ii,jj,i] = False
         # copy time variables for month
-        grid.time = np.copy(Ylms.time)
-        grid.month = np.copy(Ylms.month)
+        output['time'][i] = np.copy(Ylms.time)
+    # convert masked values to fill value
+    output['z'].data[output['z'].mask] = output['z'].fill_value
 
-        # output monthly files to ascii, netCDF4 or HDF5
-        fargs = (FILE_PREFIX,units,LMAX,order_str,gw_str,
-            ds_str,grace_month,suffix[DATAFORM])
-        OUTPUT_FILE = OUTPUT_DIRECTORY.joinpath(file_format.format(*fargs))
-        grid.to_file(OUTPUT_FILE, format=DATAFORM, date=True,
-            verbose=VERBOSE, units=units_name, longname=units_longname)
-        # set the permissions mode of the output files
-        OUTPUT_FILE.chmod(mode=MODE)
-        # add file to list
-        output_files.append(OUTPUT_FILE)
+    # output raster files to netCDF4 or HDF5
+    FILE = (f'{FILE_PREFIX}{units}_L{LMAX:d}{order_str}{gw_str}{ds_str}_'
+        f'{START:03d}-{END:03d}.{suffix}')
+    output_file = OUTPUT_DIRECTORY.joinpath(FILE)
+    # use spatial functions from geoid toolkit to write rasters
+    if (DATAFORM == 'netCDF4'):
+        geoidtk.spatial.to_netCDF4(output, attributes, output_file,
+            data_type='grid')
+    elif (DATAFORM == 'HDF5'):
+        geoidtk.spatial.to_HDF5(output, attributes, output_file,
+            data_type='grid')
+    # set the permissions mode of the output files
+    output_file.chmod(mode=MODE)
+    # add file to list
+    output_files.append(output_file)
 
     # return the list of output files
     return output_files
@@ -527,8 +577,8 @@ def output_error_log_file(input_arguments):
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
-        description="""Calculates monthly spatial maps from GRACE/GRACE-FO
-            spherical harmonic coefficients
+        description="""Calculates monthly spatial raster grids from
+            GRACE/GRACE-FO spherical harmonic coefficients
             """,
         fromfile_prefix_chars="@"
     )
@@ -540,7 +590,7 @@ def arguments():
         help='Working data directory')
     parser.add_argument('--output-directory','-O',
         type=pathlib.Path, default=pathlib.Path.cwd(),
-        help='Output directory for spatial files')
+        help='Output directory for raster files')
     parser.add_argument('--file-prefix','-P',
         type=str,
         help='Prefix string for input and output files')
@@ -605,17 +655,19 @@ def arguments():
     parser.add_argument('--units','-U',
         type=int, default=1, choices=[1,2,3,4,5],
         help='Output units')
-    # output grid parameters
+    # output grid spacing
     parser.add_argument('--spacing',
-        type=float, nargs='+', default=[0.5,0.5], metavar=('dlon','dlat'),
-        help='Spatial resolution of output data')
-    parser.add_argument('--interval',
-        type=int, default=2, choices=[1,2,3],
-        help=('Output grid interval '
-            '(1: global, 2: centered global, 3: non-global)'))
-    parser.add_argument('--bounds',
-        type=float, nargs=4, metavar=('lon_min','lon_max','lat_min','lat_max'),
-        help='Bounding box for non-global grid')
+        type=float, default=1.0, nargs='+',
+        help='Output grid spacing')
+    # bounds of output grid
+    parser.add_argument('--bounds', type=float,
+        nargs=4, default=[-180.0,180.0,-90.0,90.0],
+        metavar=('xmin','xmax','ymin','ymax'),
+        help='Output grid extents')
+    # spatial projection (EPSG code or PROJ4 string)
+    parser.add_argument('--projection',
+        type=str, default='4326',
+        help='Spatial projection as EPSG code or PROJ4 string')
     # GIA model type list
     models = {}
     models['IJ05-R2'] = 'Ivins R2 GIA Models'
@@ -686,9 +738,9 @@ def arguments():
     parser.add_argument('--slr-c50',
         type=str, default=None, choices=['CSR','GSFC','LARES'],
         help='Replace C50 coefficients with SLR values')
-    # input data format (ascii, netCDF4, HDF5)
+    # input data format (netCDF4, HDF5)
     parser.add_argument('--format','-F',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
+        type=str, default='netCDF4', choices=['netCDF4','HDF5'],
         help='Input/output data format')
     # mean file to remove
     parser.add_argument('--mean-file',
@@ -746,8 +798,8 @@ def main():
     # try to run the analysis with listed parameters
     try:
         info(args)
-        # run grace_spatial_maps algorithm with parameters
-        output_files = grace_spatial_maps(
+        # run grace_raster_grids algorithm with parameters
+        output_files = grace_raster_grids(
             args.directory,
             args.center,
             args.release,
@@ -763,9 +815,9 @@ def main():
             REFERENCE=args.reference,
             DESTRIPE=args.destripe,
             UNITS=args.units,
-            DDEG=args.spacing,
-            INTERVAL=args.interval,
+            SPACING=args.spacing,
             BOUNDS=args.bounds,
+            PROJECTION=args.projection,
             GIA=args.gia,
             GIA_FILE=args.gia_file,
             ATM=args.atm_correction,
@@ -788,7 +840,6 @@ def main():
             LANDMASK=args.mask,
             OUTPUT_DIRECTORY=args.output_directory,
             FILE_PREFIX=args.file_prefix,
-            VERBOSE=args.verbose,
             MODE=args.mode)
     except Exception as exc:
         # if there has been an error exception

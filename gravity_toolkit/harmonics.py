@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (06/2023)
+Written by Tyler Sutterley (08/2023)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -25,6 +25,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 08/2023: add string representation of the harmonics object
     Updated 06/2023: fix GRACE/GRACE-FO months in drift function
     Updated 05/2023: use reify decorators for complex form and amplitude
         use pathlib to define and operate on paths
@@ -1340,6 +1341,9 @@ class harmonics(object):
             self.lmax = np.int64(lmax)
         if mmax is not None:
             self.mmax = np.int64(mmax)
+        # use default maximum order
+        if self.mmax is None:
+            self.mmax = np.copy(self.lmax)
         # assign variables to self
         if nt is not None:
             self.clm = np.zeros((self.lmax+1, self.mmax+1, nt))
@@ -1883,10 +1887,22 @@ class harmonics(object):
         """
         return self.clm - self.slm*1j
 
+    def __str__(self):
+        """String representation of the ``harmonics`` object
+        """
+        properties = ['gravity_toolkit.harmonics']
+        properties.append(f"    max_degree: {self.lmax}")
+        if self.mmax and (self.mmax != self.lmax):
+            properties.append(f"    max_order: {self.mmax}")
+        if self.month:
+            properties.append(f"    start_month: {min(self.month)}")
+            properties.append(f"    end_month: {max(self.month)}")
+        return '\n'.join(properties)
+
     def __len__(self):
         """Number of months
         """
-        return len(self.month)
+        return len(self.month) if self.month else 0
 
     def __iter__(self):
         """Iterate over GRACE/GRACE-FO months

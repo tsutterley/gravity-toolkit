@@ -112,6 +112,7 @@ missions
     api_reference/dealiasing_global_uplift.rst
     api_reference/dealiasing_monthly_mean.rst
     api_reference/grace_mean_harmonics.rst
+    api_reference/grace_raster_grids.rst
     api_reference/grace_spatial_error.rst
     api_reference/grace_spatial_maps.rst
     api_reference/mascon_reconstruct.rst

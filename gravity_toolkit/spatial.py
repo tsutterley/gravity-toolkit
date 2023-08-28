@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (08/2023)
 
 Data class for reading, writing and processing spatial data
 
@@ -20,6 +20,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 08/2023: add string representation of the spatial object
     Updated 05/2023: use pathlib to define and operate on paths
         more operatations on spatial error if in possible data keys
         rename reverse function to flip to match numpy nomenclature
@@ -1701,10 +1702,23 @@ class spatial(object):
         """
         return np.ndim(self.data)
 
+    def __str__(self):
+        """String representation of the ``spatial`` object
+        """
+        properties = ['gravity_toolkit.spatial']
+        extent = ', '.join(map(str, self.extent))
+        properties.append(f"    extent: {extent}")
+        shape = ', '.join(map(str, self.shape))
+        properties.append(f"    shape: {shape}")
+        if self.month:
+            properties.append(f"    start_month: {min(self.month)}")
+            properties.append(f"    end_month: {max(self.month)}")
+        return '\n'.join(properties)
+
     def __len__(self):
         """Number of months
         """
-        return len(self.month)
+        return len(self.month) if self.month else 0
 
     def __iter__(self):
         """Iterate over GRACE/GRACE-FO months
