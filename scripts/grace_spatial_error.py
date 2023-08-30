@@ -650,7 +650,7 @@ def arguments():
     parser.add_argument('--mean-file',
         type=pathlib.Path,
         help='GRACE/GRACE-FO mean file to remove from the harmonic data')
-    # input data format (ascii, netCDF4, HDF5)
+    # input data format for mean file (ascii, netCDF4, HDF5)
     parser.add_argument('--mean-format',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5','gfc'],
         help='Input data format for GRACE/GRACE-FO mean file')

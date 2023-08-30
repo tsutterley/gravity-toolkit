@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_love_numbers.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (08/2023)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
 Linearly interpolates load Love/Shida numbers for missing degrees
@@ -56,6 +56,7 @@ REFERENCES:
         103(B12), 30205-30229, (1998)
 
 UPDATE HISTORY:
+    Updated 08/2023: add string representation of the love_numbers class
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: improve typing for variables in docstrings
     Updated 02/2023: fix degree zero case and add load love number formatter
@@ -444,7 +445,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
     # append model and filename attributes to class
     if (FORMAT == 'class'):
         love.filename = love_numbers_file.name
-        love.reference=REFERENCE
+        love.reference = REFERENCE
         love.model = model
         love.citation = citation
     # return the load love numbers
@@ -598,6 +599,16 @@ class love_numbers(object):
         # calculate spherical harmonic degree (0 is falsy)
         self.l=np.arange(self.lmax+1) if (self.lmax is not None) else None
         return self
+
+    def __str__(self):
+        """String representation of the ``love_numbers`` object
+        """
+        properties = ['gravity_toolkit.love_numbers']
+        properties.append(f"    citation: {self.citation}")
+        properties.append(f"    earth_model: {self.model}")
+        properties.append(f"    max_degree: {self.lmax}")
+        properties.append(f"    reference: {self.reference}")
+        return '\n'.join(properties)
 
     def __len__(self):
         """Number of degrees
