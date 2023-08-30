@@ -153,8 +153,6 @@ from __future__ import print_function
 
 import sys
 import os
-import re
-import copy
 import time
 import logging
 import pathlib
@@ -164,9 +162,13 @@ import argparse
 import traceback
 import collections
 import gravity_toolkit as gravtk
-import geoid_toolkit as geoidtk
 
 # attempt imports
+try:
+    import geoid_toolkit as geoidtk
+except (ImportError, ModuleNotFoundError) as exc:
+    warnings.filterwarnings("module")
+    warnings.warn("geoid_toolkit not available", ImportWarning)
 try:
     import pyproj
 except (ImportError, ModuleNotFoundError) as exc:
