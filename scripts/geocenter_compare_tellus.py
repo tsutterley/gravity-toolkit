@@ -44,7 +44,7 @@ try:
     matplotlib.rcParams['font.family'] = 'sans-serif'
     matplotlib.rcParams['font.sans-serif'] = ['Helvetica']
     matplotlib.rcParams['mathtext.default'] = 'regular'
-except (ImportError, ModuleNotFoundError) as exc:
+except (AttributeError, ImportError, ModuleNotFoundError) as exc:
     warnings.filterwarnings("module")
     warnings.warn("matplotlib not available", ImportWarning)
 # ignore warnings

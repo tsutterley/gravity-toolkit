@@ -110,17 +110,17 @@ from gravity_toolkit.utilities import reify
 # attempt imports
 try:
     from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
-except (ImportError, ModuleNotFoundError) as exc:
+except (AttributeError, ImportError, ModuleNotFoundError) as exc:
     warnings.filterwarnings("module")
     warnings.warn("geoid_toolkit not available", ImportWarning)
 try:
     import h5py
-except (ImportError, ModuleNotFoundError) as exc:
+except (AttributeError, ImportError, ModuleNotFoundError) as exc:
     warnings.filterwarnings("module")
     warnings.warn("h5py not available", ImportWarning)
 try:
     import netCDF4
-except (ImportError, ModuleNotFoundError) as exc:
+except (AttributeError, ImportError, ModuleNotFoundError) as exc:
     warnings.filterwarnings("module")
     warnings.warn("netCDF4 not available", ImportWarning)
 # ignore warnings

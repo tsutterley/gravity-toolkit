@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.8]
+        python-version: [3.11]
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
@@ -23,16 +23,23 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up conda ${{ matrix.python-version }}
-      uses: conda-incubator/setup-miniconda@v2
+    - name: Set up mamba ${{ matrix.python-version }}
+      uses: mamba-org/setup-micromamba@v1
       with:
-        auto-update-conda: true
-        python-version: ${{ matrix.python-version }}
-        activate-environment: gravity_toolkit
+        micromamba-version: 'latest'
         environment-file: .binder/environment.yml
-    - name: Create conda Test Environment
+        init-shell: bash
+        environment-name: gravity_toolkit
+        cache-environment: true
+        post-cleanup: 'all'
+        create-args: >-
+          python=${{ matrix.python-version }}
+          flake8
+          pytest
+          pytest-cov
+          cython
+    - name: Create mamba Test Environment
       run: |
-        conda install flake8 pytest pytest-cov cython
         pip install git+https://github.com/tsutterley/read-GRACE-geocenter.git
     - name: Lint with flake8
       run: |

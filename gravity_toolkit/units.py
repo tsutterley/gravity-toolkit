@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 units.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (09/2023)
 Contributions by Hugo Lecomte
 
 Class for converting GRACE/GRACE-FO Level-2 data to specific units
@@ -10,6 +10,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 09/2023: added property for the approximate mass of the Earth
     Updated 03/2023: include option to not compensate for elastic deformation
         include option to include effects for Earth's oblateness
         added functions for getting unit attributes for known types
@@ -108,6 +109,12 @@ class units(object):
         """average density of the Earth in g/cm\ :sup:`3`
         """
         return 0.75*self.GM/(self.G*np.pi*self.rad_e**3)
+
+    @property
+    def mass(self) -> float:
+        """approximate mass of the Earth in g
+        """
+        return (4.0/3.0)*np.pi*self.rho_e*self.rad_e**3
 
     def harmonic(self, hl, kl, ll, **kwargs):
         """
