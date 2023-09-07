@@ -1718,7 +1718,7 @@ class spatial(object):
     def __len__(self):
         """Number of months
         """
-        return len(self.month) if self.month else 0
+        return len(self.month) if np.any(self.month) else 0
 
     def __iter__(self):
         """Iterate over GRACE/GRACE-FO months
