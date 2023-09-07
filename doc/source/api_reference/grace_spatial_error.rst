@@ -14,7 +14,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: grace_spatial_error.py
+    :filename: ../scripts/grace_spatial_error.py
     :func: arguments
     :prog: grace_spatial_error.py
     :nodescription:

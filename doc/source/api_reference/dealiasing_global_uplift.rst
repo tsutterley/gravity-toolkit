@@ -12,7 +12,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: dealiasing_global_uplift.py
+    :filename: ../scripts/dealiasing_global_uplift.py
     :func: arguments
     :prog: dealiasing_global_uplift.py
     :nodescription:

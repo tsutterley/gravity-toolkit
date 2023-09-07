@@ -1155,3 +1155,25 @@ def update_leap_seconds(timeout=20, verbose=False, mode=0o775):
         pass
     else:
         return
+
+def dpm_count(input_year):
+    """
+        Return the number of days per months on the current year
+
+        Arguments
+        ---------
+        input_year: year of interest
+
+        Returns
+        -------
+        dpm: list of the day per month
+        """
+    # -- Calculation of total days since start of campaign
+    if (input_year % 4) == 0:
+        # -- Leap Year
+        dpm = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    else:
+        # -- Standard Year
+        dpm = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
+    return dpm

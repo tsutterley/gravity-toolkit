@@ -12,7 +12,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: calc_degree_one.py
+    :filename: ../scripts/calc_degree_one.py
     :func: arguments
     :prog: calc_degree_one.py
     :nodescription:

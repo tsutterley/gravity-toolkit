@@ -13,7 +13,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: grace_mean_harmonics.py
+    :filename: ../scripts/grace_mean_harmonics.py
     :func: arguments
     :prog: grace_mean_harmonics.py
     :nodescription:

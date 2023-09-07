@@ -12,7 +12,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: plot_global_grid_movie.py
+    :filename: ../scripts/plot_global_grid_movie.py
     :func: arguments
     :prog: plot_global_grid_movie.py
     :nodescription:

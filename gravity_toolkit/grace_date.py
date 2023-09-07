@@ -302,6 +302,7 @@ def arguments():
     parser.add_argument('--center','-c',
         metavar='PROC', type=str, nargs='+',
         default=['CSR','GFZ','JPL'],
+        choices=['CSR','GFZ','JPL', 'CNES'],
         help='GRACE/GRACE-FO Processing Center')
     # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',

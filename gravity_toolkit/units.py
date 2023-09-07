@@ -88,6 +88,7 @@ class units(object):
         self.microGal = None
         self.mbar = None
         self.Pa = None
+        self.cmweEl = None
         self.lmax = lmax
         # calculate spherical harmonic degree (0 is falsy)
         self.l = np.arange(self.lmax+1) if (self.lmax is not None) else None
@@ -176,6 +177,8 @@ class units(object):
         self.cmwe = self.rho_e*self.rad_e*(2.0*self.l+1.0)/fraction/3.0
         # mmwe, millimeters water equivalent [kg/m^2]
         self.mmwe = 10.0*self.rho_e*self.rad_e*(2.0*self.l+1.0)/fraction/3.0
+        # cmwe_ne, centimeters water equivalent none elastic [g/cm^2]
+        self.cmwe_ne = self.rho_e * self.rad_e * (2.0 * self.l + 1.0) / 3.0
         # mmGH, millimeters geoid height
         self.mmGH = np.ones((self.lmax+1))*(10.0*self.rad_e)
         # mmCU, millimeters elastic crustal deformation (uplift)
@@ -192,6 +195,8 @@ class units(object):
         self.mbar = self.g_wmo*self.rho_e*self.rad_e*(2.0*self.l+1.0)/fraction/3e3
         # Pa, pascals equivalent surface pressure
         self.Pa = self.g_wmo*self.rho_e*self.rad_e*(2.0*self.l+1.0)/fraction/30.0
+        # cmwe, centimeters water equivalent [g/cm^2] considering Earth oblateness
+        self.cmweEl = self.rho_e*self.rad_e*(2.0*self.l+1.0)/(1.0+kl[self.l])/3.0 *(1 - self.flat)
         # return the degree dependent unit conversions
         return self
 
@@ -233,15 +238,18 @@ class units(object):
             fraction += kl[self.l]
         # degree dependent coefficients
         # norm, fully normalized spherical harmonics
-        self.norm = np.ones((self.lmax+1))
+        self.norm = np.ones((self.lmax + 1))/(4.0 * np.pi)
         # cmwe, centimeters water equivalent [g/cm^2]
         self.cmwe = 3.0*fraction/(1.0+2.0*self.l)/(4.0*np.pi*self.rad_e*self.rho_e)
+        # cmwe_ne, centimeters water equivalent none elastic [g/cm^2]
+        self.cmwe_ne = 3.0 / (1.0 + 2.0*self.l) / (4.0*np.pi*self.rad_e*self.rho_e)
         # mmwe, millimeters water equivalent [kg/m^2]
         self.mmwe = 3.0*fraction/(1.0+2.0*self.l)/(40.0*np.pi*self.rad_e*self.rho_e)
         # mmGH, millimeters geoid height
-        self.mmGH = np.ones((self.lmax+1))/(4.0*np.pi*self.rad_e)
+        self.mmGH = np.ones((self.lmax+1))/(4.0*np.pi*10*self.rad_e)
         # microGal, microGal gravity perturbations
         self.microGal = (self.rad_e**2.0)/(4.0*np.pi*1.e6*self.GM)/(self.l+1.0)
+
         # return the degree dependent unit conversions
         return self
 

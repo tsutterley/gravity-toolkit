@@ -14,7 +14,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: calc_harmonic_resolution.py
+    :filename: ../scripts/calc_harmonic_resolution.py
     :func: arguments
     :prog: calc_harmonic_resolution.py
     :nodescription:

@@ -18,7 +18,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: dealiasing_monthly_mean.py
+    :filename: ../scripts/dealiasing_monthly_mean.py
     :func: arguments
     :prog: dealiasing_monthly_mean.py
     :nodescription:
