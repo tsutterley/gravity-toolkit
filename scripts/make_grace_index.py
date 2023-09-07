@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 make_grace_index.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (09/2023)
 Creates index files of GRACE/GRACE-FO Level-2 data
 
 CALLING SEQUENCE:
@@ -23,6 +23,8 @@ PYTHON DEPENDENCIES:
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
 
 UPDATE HISTORY:
+    Updated 09/2023: add reduce by date if making index with latest version
+        don't restrict version number to a set list of presently available
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -73,6 +75,8 @@ def make_grace_index(DIRECTORY, PROC=[], DREL=[], DSET=[],
                     # extend list of GRACE/GRACE-FO files
                     grace_files.extend(granules)
 
+                # reduce list of GRACE/GRACE-FO files to unique dates
+                grace_files = gravtk.time.reduce_by_date(grace_files)
                 # outputting GRACE/GRACE-FO filenames to index
                 index_file = local_dir.joinpath('index.txt')
                 with index_file.open(mode='w', encoding='utf8') as fid:
@@ -111,7 +115,7 @@ def arguments():
     # GRACE/GRACE-FO data version
     parser.add_argument('--version','-v',
         metavar='VERSION', type=str, nargs=2,
-        default=['0','1'], choices=['0','1','2','3'],
+        default=['0','1'],
         help='GRACE/GRACE-FO Level-2 data version')
     # verbose will output information about each output file
     parser.add_argument('--verbose','-V',

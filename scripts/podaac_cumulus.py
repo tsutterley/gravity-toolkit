@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_cumulus.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (09/2023)
 
 Syncs GRACE/GRACE-FO data from NASA JPL PO.DAAC Cumulus AWS S3 bucket
 S3 Cumulus syncs are only available in AWS instances in us-west-2
@@ -51,6 +51,8 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 09/2023: check that collection metadata urls exist
+        don't restrict version number to a set list of presently available
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 04/2023: different openers for s3 and data endpoints
     Updated 12/2022: single implicit import of gravity toolkit
@@ -130,6 +132,9 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                     mission='grace-fo', center=pr, release=rl,
                     version=version, provider='POCLOUD',
                     endpoint=ENDPOINT)
+                # verify that urls exist
+                if not urls:
+                    continue
 
                 # TN-13 JPL degree 1 files
                 url, = [url for url in urls if R1.search(url)]
@@ -372,7 +377,7 @@ def arguments():
     # GRACE/GRACE-FO data version
     parser.add_argument('--version','-v',
         metavar='VERSION', type=str, nargs=2,
-        default=['0','1'], choices=['0','1','2','3'],
+        default=['0','1'],
         help='GRACE/GRACE-FO Level-2 data version')
     # GRACE/GRACE-FO dealiasing products
     parser.add_argument('--aod1b','-a',

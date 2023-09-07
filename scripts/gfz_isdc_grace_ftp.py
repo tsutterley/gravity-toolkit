@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gfz_isdc_grace_ftp.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (09/2023)
 Syncs GRACE/GRACE-FO data from the GFZ Information System and Data Center (ISDC)
 Syncs CSR/GFZ/JPL files for RL06 GAA/GAB/GAC/GAD/GSM
     GAA and GAB are GFZ/JPL only
@@ -40,6 +40,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 09/2023: don't restrict version number to a set list
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -365,7 +366,7 @@ def arguments():
     # GRACE/GRACE-FO data version
     parser.add_argument('--version','-v',
         metavar='VERSION', type=str, nargs=2,
-        default=['0','1'], choices=['0','1','2','3'],
+        default=['0','1'],
         help='GRACE/GRACE-FO Level-2 data version')
     # GRACE/GRACE-FO newsletters
     parser.add_argument('--newsletters','-n',
