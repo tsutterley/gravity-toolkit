@@ -77,10 +77,7 @@ import gravity_toolkit.time
 try:
     from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.filterwarnings("module")
     warnings.warn("geoid_toolkit not available", ImportWarning)
-# ignore warnings
-warnings.filterwarnings("ignore")
 
 # PURPOSE: read spherical harmonic coefficients of a gravity model
 def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):

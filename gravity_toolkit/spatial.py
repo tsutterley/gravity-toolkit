@@ -87,15 +87,11 @@ from gravity_toolkit.time import adjust_months, calendar_to_grace
 try:
     import h5py
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.filterwarnings("module")
     warnings.warn("h5py not available", ImportWarning)
 try:
     import netCDF4
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.filterwarnings("module")
     warnings.warn("netCDF4 not available", ImportWarning)
-# ignore warnings
-warnings.filterwarnings("ignore")
 
 class spatial(object):
     """

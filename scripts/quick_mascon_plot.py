@@ -64,10 +64,7 @@ import gravity_toolkit as gravtk
 try:
     import matplotlib.pyplot as plt
 except ModuleNotFoundError:
-    warnings.filterwarnings("module")
     warnings.warn("matplotlib not available", ImportWarning)
-# ignore warnings
-warnings.filterwarnings("ignore")
 
 # PURPOSE: read mascon time series file and create plot
 def run_plot(i, input_file,

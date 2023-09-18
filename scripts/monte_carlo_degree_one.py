@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 monte_carlo_degree_one.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (09/2023)
 
 Calculates degree 1 errors using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from OMCT/MPIOM in a Monte Carlo scheme
@@ -157,6 +157,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 09/2023: add more root level attributes to output netCDF4 files
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 04/2023: add options for least-squares solver
     Updated 03/2023: place matplotlib import within try/except statement
@@ -214,6 +215,7 @@ import pathlib
 import argparse
 import warnings
 import traceback
+import collections
 import numpy as np
 import scipy.linalg
 import gravity_toolkit as gravtk
@@ -225,15 +227,11 @@ try:
     import matplotlib.offsetbox
     from matplotlib.ticker import MultipleLocator
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.filterwarnings("module")
     warnings.warn("matplotlib not available", ImportWarning)
 try:
     import netCDF4
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.filterwarnings("module")
     warnings.warn("netCDF4 not available", ImportWarning)
-# ignore warnings
-warnings.filterwarnings("ignore")
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -313,6 +311,17 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     # do not import degree 1 coefficients
     DEG1 = ''
 
+    # output attributes for geocenter netCDF4 files
+    attributes = collections.OrderedDict()
+    attributes['generating_institute'] = PROC
+    attributes['product_release'] = DREL
+    attributes['product_name'] = DSET
+    attributes['product_type'] = 'gravity_field'
+    MISSION = dict(RL05='GRACE', RL06='GRACE/GRACE-FO')
+    attributes['title'] = f'{MISSION[DREL]} Geocenter Coefficients'
+    attributes['solver'] = SOLVER
+
+
     # delta coefficients flag for monte carlo run
     delta_str = '_monte_carlo'
     # output string for both LMAX==MMAX and LMAX != MMAX cases
@@ -320,7 +329,7 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     # atmospheric ECMWF "jump" flag (if ATM)
     atm_str = '_wATM' if ATM else ''
     # ocean model string
-    model_str = 'MPIOM' if (DREL == 'RL06') else 'OMCT'
+    model_str = 'OMCT' if (DREL == 'RL05') else 'MPIOM'
     # output flag for using sea level fingerprints
     slf_str = '_SLF' if FINGERPRINT else ''
     # output flag for low-degree harmonic replacements
@@ -361,12 +370,20 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     LOVE = gravtk.load_love_numbers(EXPANSION,
         LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE='CF',
         FORMAT='class')
+    # add attributes for earth model and love numbers
+    attributes['earth_model'] = LOVE.model
+    attributes['earth_love_numbers'] = LOVE.citation
+    attributes['reference_frame'] = LOVE.reference
     # set gravitational load love number to a specific value
     if LOVE_K1:
         LOVE.kl[1] = np.copy(LOVE_K1)
+
     # maximum spherical harmonic order
     if not MMAX:
         MMAX = np.copy(LMAX)
+    # add attributes for LMAX and MMAX
+    attributes['max_degree'] = LMAX
+    attributes['max_order'] = MMAX
 
     # Earth Parameters
     factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
@@ -375,6 +392,10 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     l = factors.l
     # Factor for converting to Mass SH
     dfactor = factors.get('cmwe')
+    # add attributes for earth parameters
+    attributes['earth_radius'] = f'{factors.rad_e:0.3f} cm'
+    attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
+    attributes['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
 
     # Read Smoothed Ocean and Land Functions
     # smoothed functions are from the read_ocean_function.py program
@@ -412,6 +433,7 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     # Gaussian Smoothing (Jekeli, 1981)
     if (RAD != 0):
         wt = 2.0*np.pi*gravtk.gauss_weights(RAD,LMAX)
+        attributes['smoothing_radius'] = f'{RAD:0.0f} km'
     else:
         # else = 1
         wt = np.ones((LMAX+1))
@@ -426,6 +448,9 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
         POLE_TIDE=POLE_TIDE, ATM=False, MODEL_DEG1=False)
     # create harmonics object from GRACE/GRACE-FO data
     GSM_Ylms = gravtk.harmonics().from_dict(Ylms)
+    # add attributes for input GRACE/GRACE-FO spherical harmonics
+    for att_name, att_val in GSM_Ylms.attributes['ROOT'].items():
+        attributes[att_name] = att_val
     # use a mean file for the static field to remove
     if MEAN_FILE:
         # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
@@ -433,13 +458,16 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
             format=MEANFORM, date=False)
         # remove the input mean
         GSM_Ylms.subtract(mean_Ylms)
+        attributes['lineage'].append(MEAN_FILE.name)
     else:
         GSM_Ylms.mean(apply=True)
+
     # filter GRACE/GRACE-FO coefficients
     if DESTRIPE:
         # destriping GRACE/GRACE-FO coefficients
         ds_str = '_FL'
         GSM_Ylms = GSM_Ylms.destripe()
+        attributes['filtering'] = 'Destriped'
     else:
         # using standard GRACE/GRACE-FO harmonics
         ds_str = ''
@@ -453,7 +481,11 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
 
     # input GIA spherical harmonic datafiles
     GIA_Ylms_rate = gravtk.gia(lmax=LMAX).from_GIA(GIA_FILE, GIA=GIA, mmax=MMAX)
-    gia_str = f'_{GIA_Ylms_rate.title}' if GIA else ''
+    if GIA:
+        gia_str = f'_{GIA_Ylms_rate.title}'
+        attributes['GIA'] = (str(GIA_Ylms_rate.citation), GIA_FILE.name)
+    else:
+        gia_str = ''
     # monthly GIA calculated by gia_rate*time elapsed
     # finding change in GIA each month
     GIA_Ylms = GIA_Ylms_rate.drift(GSM_Ylms.time, epoch=2003.3)
@@ -529,13 +561,13 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
                     val2[l,m] = np.sqrt(np.sum(smth['noise']**2)/nsmth)
 
         # attributes for output files
-        attributes = {}
-        attributes['title'] = 'GRACE/GRACE-FO Spherical Harmonic Errors'
-        attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
+        attrs = {}
+        attrs['title'] = 'GRACE/GRACE-FO Spherical Harmonic Errors'
+        attrs['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
         # save GRACE/GRACE-FO delta harmonics to file
         delta_Ylms.time = np.copy(tsmth)
         delta_Ylms.month = np.int64(nsmth)
-        delta_Ylms.to_file(DELTA_FILE, format=DATAFORM, **attributes)
+        delta_Ylms.to_file(DELTA_FILE, format=DATAFORM, **attrs)
         # set the permissions mode of the output harmonics file
         DELTA_FILE.chmod(mode=MODE)
         # append delta harmonics file to output files list
@@ -789,34 +821,45 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     # Defining the NetCDF4 dimensions
     fileID.createDimension('run', RUNS)
     fileID.createDimension('time', n_files)
+
+    # variable attributes
+    attrs = dict(time={}, month={}, C10={}, C11={}, S11={})
+    attrs['time']['units'] = 'years'
+    attrs['time']['long_name'] = 'Date_in_Decimal_Years'
+    attrs['month']['long_name'] = 'GRACE_month'
+    attrs['month']['units'] = 'months since 2001-12-01'
+    attrs['month']['calendar'] = 'standard'
+    attrs['C10']['units'] = 'fully_normalized'
+    attrs['C10']['long_name'] = 'cosine_spherical_harmonic_of_degree_1,_order_0'
+    attrs['C10']['description'] = 'spherical_harmonics'
+    attrs['C11']['units'] = 'fully_normalized'
+    attrs['C11']['long_name'] = 'cosine_spherical_harmonic_of_degree_1,_order_1'
+    attrs['C11']['description'] = 'spherical_harmonics'
+    attrs['S11']['units'] = 'fully_normalized'
+    attrs['S11']['long_name'] = 'sine_spherical_harmonic_of_degree_1,_order_1'
+    attrs['S11']['description'] = 'spherical_harmonics'
+
     # defining the NetCDF4 variables
     nc = {}
-    nc['time'] = fileID.createVariable('time',tdec.dtype,('time',))
-    nc['month'] = fileID.createVariable('month',months.dtype,('time',))
-    nc['C10'] = fileID.createVariable('C10',iteration.C10.dtype,
-        ('time','run',), zlib=True)
-    nc['C11'] = fileID.createVariable('C11',iteration.C11.dtype,
-        ('time','run',), zlib=True)
-    nc['S11'] = fileID.createVariable('S11',iteration.S11.dtype,
-        ('time','run',), zlib=True)
+    nc['time'] = fileID.createVariable('time', tdec.dtype, ('time',))
+    nc['month'] = fileID.createVariable('month', months.dtype, ('time',))
     # filling NetCDF4 variables
     nc['time'][:] = tdec[:].copy()
     nc['month'][:] = months[:].copy()
-    nc['C10'][:] = iteration.C10[:,:]/dfactor[1]
-    nc['C11'][:] = iteration.C11[:,:]/dfactor[1]
-    nc['S11'][:] = iteration.S11[:,:]/dfactor[1]
-    # defining the NetCDF4 attributes
-    nc['time'].units = 'years'
-    nc['time'].long_name = 'Date_in_Decimal_Years'
-    nc['month'].long_name = 'GRACE_month'
-    nc['month'].units = 'months since 2001-12-01'
-    nc['month'].calendar = 'standard'
-    nc['C10'].units = 'fully_normalized'
-    nc['C10'].long_name = 'cosine_spherical_harmonic_of_degree_1,_order_0'
-    nc['C11'].units = 'fully_normalized'
-    nc['C11'].long_name = 'cosine_spherical_harmonic_of_degree_1,_order_1'
-    nc['S11'].units = 'fully_normalized'
-    nc['S11'].long_name = 'sine_spherical_harmonic_of_degree_1,_order_1'
+    # set attributes for time and month
+    for key in ('time','month'):
+        for att_name, att_val in attrs[key].items():
+            nc[key].setncattr(att_name, att_val)
+
+    # degree 1 coefficients from the monte carlo solution
+    for key in iteration.fields:
+        var = iteration.get(key)
+        nc[key] = fileID.createVariable(key, var.dtype,
+            ('time','run',), zlib=True)
+        nc[key][:] = var[:,:]/dfactor[1]
+        for att_name, att_val in attrs[key].items():
+            nc[key].setncattr(att_name, att_val)
+
     # define global attributes
     fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
     # close the output file

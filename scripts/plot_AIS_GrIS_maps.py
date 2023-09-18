@@ -79,7 +79,6 @@ import gravity_toolkit as gravtk
 try:
     import cartopy.crs as ccrs
 except ModuleNotFoundError:
-    warnings.filterwarnings("module")
     warnings.warn("cartopy not available", ImportWarning)
 try:
     import matplotlib
@@ -94,20 +93,15 @@ try:
     matplotlib.rcParams['font.sans-serif'] = ['Helvetica']
     matplotlib.rcParams['mathtext.default'] = 'regular'
 except ModuleNotFoundError:
-    warnings.filterwarnings("module")
     warnings.warn("matplotlib not available", ImportWarning)
 try:
     import osgeo.gdal
 except ModuleNotFoundError:
-    warnings.filterwarnings("module")
     warnings.warn("GDAL not available", ImportWarning)
 try:
     import shapefile
 except ModuleNotFoundError:
-    warnings.filterwarnings("module")
     warnings.warn("shapefile not available", ImportWarning)
-# ignore warnings
-warnings.filterwarnings("ignore")
 
 # region directory, filename, title and data type
 region_dir = {}

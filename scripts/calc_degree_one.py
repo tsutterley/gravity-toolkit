@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_degree_one.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (09/2023)
 
 Calculates degree 1 variations using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from ECCO and OMCT/MPIOM
@@ -167,6 +167,7 @@ REFERENCES:
         https://doi.org/10.1029/2007JB005338
 
 UPDATE HISTORY:
+    Updated 09/2023: output comprehensive netCDF4 files with all components
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 04/2023: add options for least-squares solver
     Updated 03/2023: place matplotlib import within try/except statement
@@ -256,6 +257,7 @@ import pathlib
 import argparse
 import warnings
 import traceback
+import collections
 import numpy as np
 import scipy.linalg
 import gravity_toolkit as gravtk
@@ -267,15 +269,11 @@ try:
     import matplotlib.offsetbox
     from matplotlib.ticker import MultipleLocator
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.filterwarnings("module")
     warnings.warn("matplotlib not available", ImportWarning)
 try:
     import netCDF4
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.filterwarnings("module")
     warnings.warn("netCDF4 not available", ImportWarning)
-# ignore warnings
-warnings.filterwarnings("ignore")
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -391,11 +389,37 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     DIRECTORY = base_dir.joinpath('geocenter')
     # create output directory if non-existent
     DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
+
+    # output attributes for geocenter netCDF4 files
+    attributes = collections.OrderedDict()
+    attributes['generating_institute'] = PROC
+    attributes['product_release'] = DREL
+    attributes['product_name'] = 'GSM'
+    attributes['product_type'] = 'gravity_field'
+    MISSION = dict(RL05='GRACE', RL06='GRACE/GRACE-FO')
+    attributes['title'] = f'{MISSION[DREL]} Geocenter Coefficients'
+    attributes['solver'] = SOLVER
+
     # list object of output files for file logs (full path)
     output_files = []
 
-    # output flag for using sea level fingerprints
-    slf_str = '_SLF' if FINGERPRINT else ''
+    # output flag and attributes for using iterative solution
+    if ITERATIVE:
+        iter_str = '_iter'
+        max_iter = 15
+        attributes['solution_type'] = 'iterative'
+    else:
+        iter_str = ''
+        max_iter = 1
+        attributes['solution_type'] = 'single'
+    # output flag and attributes for using sea level fingerprints
+    if FINGERPRINT:
+        slf_str = '_SLF'
+        attributes['eustatic_sea_level'] = 'self_attraction_and_loading'
+    else:
+        slf_str = ''
+        attributes['eustatic_sea_level'] = 'uniform_redistribution'
+
     # output flag for low-degree harmonic replacements
     if SLR_21 in ('CSR','GFZ','GSFC'):
         C21_str = f'_w{SLR_21}_21'
@@ -427,12 +451,20 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     LOVE = gravtk.load_love_numbers(EXPANSION,
         LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE='CF',
         FORMAT='class')
+    # add attributes for earth model and love numbers
+    attributes['earth_model'] = LOVE.model
+    attributes['earth_love_numbers'] = LOVE.citation
+    attributes['reference_frame'] = LOVE.reference
     # set gravitational load love number to a specific value
     if LOVE_K1:
         LOVE.kl[1] = np.copy(LOVE_K1)
+
     # maximum spherical harmonic order
     if not MMAX:
         MMAX = np.copy(LMAX)
+    # add attributes for LMAX and MMAX
+    attributes['max_degree'] = LMAX
+    attributes['max_order'] = MMAX
 
     # Earth Parameters
     factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
@@ -441,6 +473,10 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     l = factors.l
     # Factor for converting to Mass SH
     dfactor = factors.cmwe
+    # add attributes for earth parameters
+    attributes['earth_radius'] = f'{factors.rad_e:0.3f} cm'
+    attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
+    attributes['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
 
     # Read Smoothed Ocean and Land Functions
     # Open the land-sea NetCDF file for reading
@@ -479,6 +515,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     # Gaussian Smoothing (Jekeli, 1981)
     if (RAD != 0):
         wt = 2.0*np.pi*gravtk.gauss_weights(RAD,LMAX)
+        attributes['smoothing_radius'] = f'{RAD:0.0f} km'
     else:
         # else = 1
         wt = np.ones((LMAX+1))
@@ -489,6 +526,9 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         SLR_C30=SLR_C30, SLR_C40=SLR_C40, SLR_C50=SLR_C50, POLE_TIDE=POLE_TIDE)
     GAD_Ylms = load_AOD(base_dir, PROC, DREL, 'GAD', START, END, MISSING, LMAX)
     GAC_Ylms = load_AOD(base_dir, PROC, DREL, 'GAC', START, END, MISSING, LMAX)
+    # add attributes for input GRACE/GRACE-FO spherical harmonics
+    for att_name, att_val in GSM_Ylms.attributes['ROOT'].items():
+        attributes[att_name] = att_val
     # use a mean file for the static field to remove
     if MEAN_FILE:
         # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
@@ -496,6 +536,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
             format=MEANFORM, date=False)
         # remove the input mean
         GSM_Ylms.subtract(mean_Ylms)
+        attributes['lineage'].append(MEAN_FILE.name)
     else:
         GSM_Ylms.mean(apply=True)
     # remove the mean from the GRACE/GRACE-FO dealiasing data
@@ -509,17 +550,23 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         ds_str = '_FL'
         GSM_Ylms = GSM_Ylms.destripe()
         GAD_Ylms = GAD_Ylms.destripe()
+        attributes['filtering'] = 'Destriped'
     else:
         # using standard GRACE GSM harmonics
         ds_str = ''
     # GRACE dates
-    tdec = GSM_Ylms.time
+    tdec = np.copy(GSM_Ylms.time)
+    months = np.copy(GSM_Ylms.month)
     # number of months considered
     n_files = len(GSM_Ylms)
 
     # input GIA spherical harmonic datafiles
     GIA_Ylms_rate = gravtk.gia(lmax=LMAX).from_GIA(GIA_FILE, GIA=GIA, mmax=MMAX)
-    gia_str = f'_{GIA_Ylms_rate.title}' if GIA else ''
+    if GIA:
+        gia_str = f'_{GIA_Ylms_rate.title}'
+        attributes['GIA'] = (str(GIA_Ylms_rate.citation), GIA_FILE.name)
+    else:
+        gia_str = ''
     # monthly GIA calculated by gia_rate*time elapsed
     # finding change in GIA each month
     GIA_Ylms = GIA_Ylms_rate.drift(GSM_Ylms.time, epoch=2003.3)
@@ -567,6 +614,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         MODEL_INDEX = pathlib.Path(MODEL_INDEX).expanduser().absolute()
         OBP_Ylms = gravtk.harmonics().from_index(MODEL_INDEX,
             format=DATAFORM)
+        attributes['lineage'].extend([f.name for f in OBP_Ylms.filename])
         # reduce to GRACE/GRACE-FO months and truncate to degree and order
         OBP_Ylms = OBP_Ylms.subset(GSM_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
         # filter ocean bottom pressure coefficients
@@ -625,12 +673,6 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     n_iter = 0
     eps = np.inf
     eps_max = 1e-6
-    if ITERATIVE:
-        iter_str = '_iter'
-        max_iter = 15
-    else:
-        iter_str = ''
-        max_iter = 1
 
     # Calculating data matrices
     # GRACE Eustatic degree 1 from land variations
@@ -771,10 +813,10 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
             if MODEL not in ('OMCT','MPIOM'):
                 # calculate difference between ECCO and GAD as the OMCT/MPIOM
                 # model is already removed from the GRACE GSM coefficients
-                GAD = np.array([GAD.C10[t], GAD.C11[t], GAD.S11[t]])
-                OBP = np.array([OBP.C10[t], OBP.C11[t], OBP.S11[t]])
+                GADMAT = np.array([GAD.C10[t], GAD.C11[t], GAD.S11[t]])
+                OBPMAT = np.array([OBP.C10[t], OBP.C11[t], OBP.S11[t]])
                 # effectively adding back OMCT/MPIOM and then removing ECCO
-                CMAT += OBP - GAD
+                CMAT += OBPMAT - GADMAT
 
             # G Matrix for time t
             GMAT = np.array([G.C10[t], G.C11[t], G.S11[t]])
@@ -870,50 +912,117 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
             shutil.copystat(FILE1,FILE3)
             output_files.append(FILE3)
 
-    # save iterations to netCDF4 file
-    if ITERATIVE:
-        # output all degree 1 coefficients as a netCDF4 file
-        a4=(PROC,DREL,MODEL,slf_str,iter_str,slr_str,gia_str,'',ds_str,'nc')
-        FILE4 = DIRECTORY.joinpath(file_format.format(*a4))
-        fileID = netCDF4.Dataset(FILE4, mode='w')
-        # Defining the NetCDF4 dimensions
-        fileID.createDimension('iteration', n_iter)
-        fileID.createDimension('time', n_files)
-        # defining the NetCDF4 variables
-        nc = {}
-        nc['time'] = fileID.createVariable('time',GSM_Ylms.time.dtype,('time',))
-        nc['month'] = fileID.createVariable('month',GSM_Ylms.month.dtype,('time',))
-        nc['C10'] = fileID.createVariable('C10',iteration.C10.dtype,
+    # output all degree 1 coefficients as a netCDF4 file
+    a4=(PROC,DREL,MODEL,slf_str,iter_str,slr_str,gia_str,'',ds_str,'nc')
+    FILE4 = DIRECTORY.joinpath(file_format.format(*a4))
+    fileID = netCDF4.Dataset(FILE4, mode='w')
+    # Defining the NetCDF4 dimensions
+    fileID.createDimension('iteration', n_iter)
+    fileID.createDimension('time', n_files)
+
+    # variable attributes
+    attrs = dict(time={}, month={}, C10={}, C11={}, S11={})
+    attrs['time']['units'] = 'years'
+    attrs['time']['long_name'] = 'Date_in_Decimal_Years'
+    attrs['month']['long_name'] = 'GRACE_month'
+    attrs['month']['units'] = 'months since 2001-12-01'
+    attrs['month']['calendar'] = 'standard'
+    attrs['C10']['units'] = 'fully_normalized'
+    attrs['C10']['long_name'] = 'cosine_spherical_harmonic_of_degree_1,_order_0'
+    attrs['C10']['description'] = 'spherical_harmonics'
+    attrs['C11']['units'] = 'fully_normalized'
+    attrs['C11']['long_name'] = 'cosine_spherical_harmonic_of_degree_1,_order_1'
+    attrs['C11']['description'] = 'spherical_harmonics'
+    attrs['S11']['units'] = 'fully_normalized'
+    attrs['S11']['long_name'] = 'sine_spherical_harmonic_of_degree_1,_order_1'
+    attrs['S11']['description'] = 'spherical_harmonics'
+
+    # defining the NetCDF4 variables
+    nc = {}
+    nc['time'] = fileID.createVariable('time', tdec.dtype, ('time',))
+    nc['month'] = fileID.createVariable('month', months.dtype, ('time',))
+    # filling NetCDF4 variables
+    nc['time'][:] = tdec[:].copy()
+    nc['month'][:] = months[:].copy()
+    # set attributes for time and month
+    for key in ('time','month'):
+        for att_name, att_val in attrs[key].items():
+            nc[key].setncattr(att_name, att_val)
+
+    # degree 1 coefficients from the iterative solution
+    for key in iteration.fields:
+        var = iteration.get(key)
+        nc[key] = fileID.createVariable(key, var.dtype,
             ('time','iteration',), zlib=True)
-        nc['C11'] = fileID.createVariable('C11',iteration.C11.dtype,
-            ('time','iteration',), zlib=True)
-        nc['S11'] = fileID.createVariable('S11',iteration.S11.dtype,
-            ('time','iteration',), zlib=True)
-        # filling NetCDF4 variables
-        nc['time'][:] = np.copy(GSM_Ylms.time)
-        nc['month'][:] = np.copy(GSM_Ylms.month)
-        nc['C10'][:] = iteration.C10[:,:n_iter]
-        nc['C11'][:] = iteration.C11[:,:n_iter]
-        nc['S11'][:] = iteration.S11[:,:n_iter]
-        # defining the NetCDF4 attributes
-        nc['time'].units = 'years'
-        nc['time'].long_name = 'Date_in_Decimal_Years'
-        nc['month'].long_name = 'GRACE_month'
-        nc['month'].units = 'months since 2001-12-01'
-        nc['month'].calendar = 'standard'
-        nc['C10'].units = 'fully_normalized'
-        nc['C10'].long_name = 'cosine_spherical_harmonic_of_degree_1,_order_0'
-        nc['C11'].units = 'fully_normalized'
-        nc['C11'].long_name = 'cosine_spherical_harmonic_of_degree_1,_order_1'
-        nc['S11'].units = 'fully_normalized'
-        nc['S11'].long_name = 'sine_spherical_harmonic_of_degree_1,_order_1'
-        # define global attributes
-        fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
-        # close the output file
-        fileID.close()
-        # set the permissions mode of the output file
-        FILE4.chmod(mode=MODE)
-        output_files.append(FILE4)
+        nc[key][:] = var[:,:n_iter]
+        for att_name, att_val in attrs[key].items():
+            nc[key].setncattr(att_name, att_val)
+
+    # atmospheric and oceanic dealiasing
+    nc['AOD'] = {}
+    g1 = fileID.createGroup('AOD')
+    g1.description = f'Atmospheric and oceanic dealiasing'
+    gac = GAC.scale(1.0/dfactor[1])
+    for key in gac.fields:
+        var = gac.get(key)
+        nc['AOD'][key] = g1.createVariable(key, var.dtype,
+            ('time',), zlib=True)
+        nc['AOD'][key][:] = var[:]
+        for att_name, att_val in attrs[key].items():
+            nc['AOD'][key].setncattr(att_name, att_val)
+
+    # ocean bottom pressure
+    nc['OBP'] = {}
+    g2 = fileID.createGroup('OBP')
+    g2.description = f'Ocean bottom pressure from {MODEL}'
+    if MODEL not in ('OMCT','MPIOM'):
+        obp = OBP.scale(1.0/dfactor[1])
+    else:
+        obp = GAD.scale(1.0/dfactor[1])
+    for key in obp.fields:
+        var = obp.get(key)
+        nc['OBP'][key] = g2.createVariable(key, var.dtype,
+            ('time',), zlib=True)
+        nc['OBP'][key][:] = var[:]
+        for att_name, att_val in attrs[key].items():
+            nc['OBP'][key].setncattr(att_name, att_val)
+
+    # GRACE components of ocean water mass
+    nc['OWM'] = {}
+    g3 = fileID.createGroup('OWM')
+    g3.description = f'Ocean water mass from {MISSION[DREL]}'
+    owm = G.scale(1.0/dfactor[1])
+    for key in owm.fields:
+        var = owm.get(key)
+        nc['OWM'][key] = g3.createVariable(key, var.dtype,
+            ('time',), zlib=True)
+        nc['OWM'][key][:] = var[:]
+        for att_name, att_val in attrs[key].items():
+            nc['OWM'][key].setncattr(att_name, att_val)
+
+    # eustatic sea level from land water mass
+    nc['ESL'] = {}
+    g4 = fileID.createGroup('ESL')
+    g4.description = 'Eustatic sea level from land water mass'
+    esl = eustatic.scale(1.0/dfactor[1])
+    for key in esl.fields:
+        var = esl.get(key)
+        nc['ESL'][key] = g4.createVariable(key, var.dtype,
+            ('time',), zlib=True)
+        nc['ESL'][key][:] = var[:]
+        for att_name, att_val in attrs[key].items():
+            nc['ESL'][key].setncattr(att_name, att_val)
+
+    # define global attributes
+    for att_name, att_val in attributes.items():
+        fileID.setncattr(att_name, att_val)
+    # define creation date attribute
+    fileID.date_created = time.strftime('%Y-%m-%d',time.localtime())
+    # close the output file
+    fileID.close()
+    # set the permissions mode of the output file
+    FILE4.chmod(mode=MODE)
+    output_files.append(FILE4)
 
     # create plot similar to Figure 1 of Swenson et al (2008)
     if PLOT:
@@ -939,7 +1048,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         GAD.mean(apply=True,indices=ii)
         ax[0].plot(tdec,10.*GAD.C10, 'b', lw=2)
         ax[1].plot(tdec,10.*GAD.C11, 'b', lw=2)
-        ax[2].plot(tdec,10.*GAD.C11, 'b', lw=2)
+        ax[2].plot(tdec,10.*GAD.S11, 'b', lw=2)
         # plot eustatic components
         eustatic.mean(apply=True,indices=ii)
         ax[0].plot(tdec,10.*eustatic.C10, 'r', lw=2)
@@ -977,10 +1086,10 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         FILE = 'Swenson_Figure_1_{0}_{1}_{2}{3}{4}{5}{6}{7}.pdf'.format(*args)
         PLOT1 = DIRECTORY.joinpath(FILE)
         plt.savefig(PLOT1, format='pdf',
-            metadata={'Title':pathlib.path(sys.argv[0]).name})
+            metadata={'Title':pathlib.Path(sys.argv[0]).name})
         plt.clf()
         # set the permissions mode of the output files
-        PLOT.chmod(mode=MODE)
+        PLOT1.chmod(mode=MODE)
         output_files.append(PLOT1)
 
     # if ITERATIVE: create plot showing iteration solutions
@@ -1030,10 +1139,10 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         FILE = 'Geocenter_Iterative_{0}_{1}_{2}{3}{4}{5}{6}.pdf'.format(*args)
         PLOT2 = DIRECTORY.joinpath(FILE)
         plt.savefig(PLOT2, format='pdf',
-            metadata={'Title':pathlib.path(sys.argv[0]).name})
+            metadata={'Title':pathlib.Path(sys.argv[0]).name})
         plt.clf()
         # set the permissions mode of the output files
-        PLOT.chmod(mode=MODE)
+        PLOT2.chmod(mode=MODE)
         output_files.append(PLOT2)
 
     # return the list of output files and the number of iterations

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (09/2023)
 Data class for reading and processing geocenter data
 
 PYTHON DEPENDENCIES:
@@ -15,6 +15,8 @@ PYTHON DEPENDENCIES:
         https://github.com/yaml/pyyaml
 
 UPDATE HISTORY:
+    Updated 09/2023: add group option to netCDF read function
+        add functions to return variables or class attributes
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: convert shape and ndim to harmonic class properties
         improve typing for variables in docstrings
@@ -54,10 +56,7 @@ import gravity_toolkit.time
 try:
     import netCDF4
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.filterwarnings("module")
     warnings.warn("netCDF4 not available", ImportWarning)
-# ignore warnings
-warnings.filterwarnings("ignore")
 
 class geocenter(object):
     """
@@ -788,7 +787,7 @@ class geocenter(object):
         # return the geocenter harmonics
         return self
 
-    def from_netCDF4(self, geocenter_file, **kwargs):
+    def from_netCDF4(self, geocenter_file, group=None, **kwargs):
         """
         Reads geocenter file and extracts dates and spherical harmonic data
         from a netCDF4 file
@@ -797,6 +796,8 @@ class geocenter(object):
         ----------
         geocenter_file: str
             degree 1 netCDF4 file
+        group: str or NoneType, default None
+            netCDF4 group name
         compression: str or NoneType, default None
             file compression type
 
@@ -807,7 +808,7 @@ class geocenter(object):
             and ocean model outputs", *Remote Sensing*, 11(18), 2108, (2019).
             `doi: 10.3390/rs11182108 <https://doi.org/10.3390/rs11182108>`_
         """
-        kwargs.setdefault('compression',None)
+        kwargs.setdefault('compression', None)
         # set filename
         self.case_insensitive_filename(geocenter_file)
         # Open the netCDF4 file for reading
@@ -822,10 +823,12 @@ class geocenter(object):
                 memory=self.filename.read())
         else:
             fileID = netCDF4.Dataset(self.filename, mode='r')
+        # check if reading from root group or sub-group
+        ncf = fileID.groups[group] if group else fileID
         # Getting the data from each netCDF4 variable
         DEG1 = {}
         # converting netCDF4 objects into numpy arrays
-        for key,val in fileID.variables.items():
+        for key, val in ncf.variables.items():
             DEG1[key] = val[:].copy()
         # close the netCDF4 file
         fileID.close()
@@ -1240,6 +1243,36 @@ class geocenter(object):
         temp.C11 = np.power(self.C11,power)
         temp.S11 = np.power(self.S11,power)
         return temp
+
+    def get(self, field: str):
+        """
+        Get a field from the ``geocenter`` object
+
+        Parameters
+        ----------
+        field: str
+            field name
+
+        Returns
+        -------
+        var: np.ndarray
+            variable for field
+        """
+        var = getattr(self, field)
+        return copy.copy(var)
+
+    @property
+    def fields(self):
+        return ['C10', 'C11', 'S11']
+
+    def __str__(self):
+        """String representation of the ``geocenter`` object
+        """
+        properties = ['gravity_toolkit.geocenter']
+        if self.month:
+            properties.append(f"    start_month: {min(self.month)}")
+            properties.append(f"    end_month: {max(self.month)}")
+        return '\n'.join(properties)
 
     def __len__(self):
         """Number of months
