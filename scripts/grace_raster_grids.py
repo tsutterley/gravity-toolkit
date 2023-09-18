@@ -167,15 +167,11 @@ import gravity_toolkit as gravtk
 try:
     import geoid_toolkit as geoidtk
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.filterwarnings("module")
     warnings.warn("geoid_toolkit not available", ImportWarning)
 try:
     import pyproj
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.filterwarnings("module")
     warnings.warn("pyproj not available", ImportWarning)
-# ignore warnings
-warnings.filterwarnings("ignore")
 
 # PURPOSE: keep track of threads
 def info(args):

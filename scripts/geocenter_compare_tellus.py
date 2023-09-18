@@ -45,10 +45,7 @@ try:
     matplotlib.rcParams['font.sans-serif'] = ['Helvetica']
     matplotlib.rcParams['mathtext.default'] = 'regular'
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.filterwarnings("module")
     warnings.warn("matplotlib not available", ImportWarning)
-# ignore warnings
-warnings.filterwarnings("ignore")
 
 # PURPOSE: plots the GRACE/GRACE-FO geocenter time series
 def geocenter_compare_tellus(grace_dir,DREL,START_MON,END_MON,MISSING):
