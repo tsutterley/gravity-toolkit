@@ -286,9 +286,9 @@ def plot_amundsen_basins(ax, base_dir):
 
 # PURPOSE: plot Antarctic grounded ice delineation
 def plot_grounded_ice(ax, base_dir, START=1):
-    coast_shapefile = base_dir.joinpath(*coast_file)
-    logging.debug(str(coast_shapefile))
-    shape_input = shapefile.Reader(str(coast_shapefile))
+    grounded_ice_shapefile = base_dir.joinpath(*coast_file)
+    logging.debug(str(grounded_ice_shapefile))
+    shape_input = shapefile.Reader(str(grounded_ice_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     i = [i for i,e in enumerate(shape_entities) if (np.ndim(e.points) > 1)]

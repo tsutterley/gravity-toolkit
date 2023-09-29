@@ -168,6 +168,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 09/2023: output comprehensive netCDF4 files with all components
+        simplify I-matrix and G-matrix calculations
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 04/2023: add options for least-squares solver
     Updated 03/2023: place matplotlib import within try/except statement
@@ -267,7 +268,7 @@ try:
     import matplotlib.pyplot as plt
     import matplotlib.cm as cm
     import matplotlib.offsetbox
-    from matplotlib.ticker import MultipleLocator
+    import matplotlib.ticker as ticker
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
     warnings.warn("matplotlib not available", ImportWarning)
 try:
@@ -652,18 +653,22 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     # I-Parameter matrix accounts for the fact that the GRACE data only
     # includes spherical harmonic degrees greater than or equal to 2
     for i in range(0,nlat):
+        # C10, C11, S11
+        PC10 = P10[i]*ccos[0,:]
+        PC11 = P11[i]*ccos[1,:]
+        PS11 = P11[i]*ssin[1,:]
         # C10: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
-        IMAT[0,0] += np.sum(int_fact[i]*P10[i]*ccos[0,:]*ocean_function[:,i]*P10[i]*ccos[0,:])/(4.0*np.pi)
-        IMAT[1,0] += np.sum(int_fact[i]*P10[i]*ccos[0,:]*ocean_function[:,i]*P11[i]*ccos[1,:])/(4.0*np.pi)
-        IMAT[2,0] += np.sum(int_fact[i]*P10[i]*ccos[0,:]*ocean_function[:,i]*P11[i]*ssin[1,:])/(4.0*np.pi)
+        IMAT[0,0] += np.sum(int_fact[i]*PC10*ocean_function[:,i]*PC10)/(4.0*np.pi)
+        IMAT[1,0] += np.sum(int_fact[i]*PC10*ocean_function[:,i]*PC11)/(4.0*np.pi)
+        IMAT[2,0] += np.sum(int_fact[i]*PC10*ocean_function[:,i]*PS11)/(4.0*np.pi)
         # C11: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
-        IMAT[0,1] += np.sum(int_fact[i]*P11[i]*ccos[1,:]*ocean_function[:,i]*P10[i]*ccos[0,:])/(4.0*np.pi)
-        IMAT[1,1] += np.sum(int_fact[i]*P11[i]*ccos[1,:]*ocean_function[:,i]*P11[i]*ccos[1,:])/(4.0*np.pi)
-        IMAT[2,1] += np.sum(int_fact[i]*P11[i]*ccos[1,:]*ocean_function[:,i]*P11[i]*ssin[1,:])/(4.0*np.pi)
+        IMAT[0,1] += np.sum(int_fact[i]*PC11*ocean_function[:,i]*PC10)/(4.0*np.pi)
+        IMAT[1,1] += np.sum(int_fact[i]*PC11*ocean_function[:,i]*PC11)/(4.0*np.pi)
+        IMAT[2,1] += np.sum(int_fact[i]*PC11*ocean_function[:,i]*PS11)/(4.0*np.pi)
         # S11: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
-        IMAT[0,2] += np.sum(int_fact[i]*P11[i]*ssin[1,:]*ocean_function[:,i]*P10[i]*ccos[0,:])/(4.0*np.pi)
-        IMAT[1,2] += np.sum(int_fact[i]*P11[i]*ssin[1,:]*ocean_function[:,i]*P11[i]*ccos[1,:])/(4.0*np.pi)
-        IMAT[2,2] += np.sum(int_fact[i]*P11[i]*ssin[1,:]*ocean_function[:,i]*P11[i]*ssin[1,:])/(4.0*np.pi)
+        IMAT[0,2] += np.sum(int_fact[i]*PS11*ocean_function[:,i]*PC10)/(4.0*np.pi)
+        IMAT[1,2] += np.sum(int_fact[i]*PS11*ocean_function[:,i]*PC11)/(4.0*np.pi)
+        IMAT[2,2] += np.sum(int_fact[i]*PS11*ocean_function[:,i]*PS11)/(4.0*np.pi)
 
     # get seasonal variations of an initial geocenter correction
     # for use in the land water mass calculation
@@ -714,11 +719,15 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         rmass = np.dot(np.transpose(ccos),pcos) + np.dot(np.transpose(ssin),psin)
         # calculate G matrix parameters through a summation of each latitude
         for i in range(0,nlat):
+            # C10, C11, S11
+            PC10 = P10[i]*ccos[0,:]
+            PC11 = P11[i]*ccos[1,:]
+            PS11 = P11[i]*ssin[1,:]
             # summation of integration factors, Legendre polynomials,
             # (convolution of order and harmonics) and the ocean mass at t
-            G.C10[t] += np.sum(int_fact[i]*P10[i]*ccos[0,:]*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
-            G.C11[t] += np.sum(int_fact[i]*P11[i]*ccos[1,:]*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
-            G.S11[t] += np.sum(int_fact[i]*P11[i]*ssin[1,:]*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
+            G.C10[t] += np.sum(int_fact[i]*PC10*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
+            G.C11[t] += np.sum(int_fact[i]*PC11*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
+            G.S11[t] += np.sum(int_fact[i]*PS11*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
 
     # calculate degree one solution for each iteration (or single if not)
     while (eps > eps_max) and (n_iter < max_iter):
@@ -1026,50 +1035,35 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
 
     # create plot similar to Figure 1 of Swenson et al (2008)
     if PLOT:
-        # 3 row plot (C10, C11 and S11)
-        # with ECCO OBP geocenter, OMCT/MPIOM OBP geocenter, eustatic geocenter
-        # and the G matrix geocenter components
+        # 3 row plot (C10, C11 and S11) with:
+        # - ECCO OBP geocenter
+        # - OMCT/MPIOM OBP geocenter
+        # - eustatic sea level geocenter
+        # - G-matrix ocean water mass components
         ax = {}
-        fig, (ax[0], ax[1], ax[2]) = plt.subplots(num=1, nrows=3, sharex=True,
-            sharey=True, figsize=(6,9))
+        fig, (ax[0], ax[1], ax[2]) = plt.subplots(num=1, nrows=3,
+            sharex=True, sharey=True, figsize=(6,9))
         ii = np.nonzero((tdec >= 2003.) & (tdec < 2008.))
-        # plot ocean bottom pressure for alternative models
+        # remove means of individual geocenter components
         if MODEL not in ('OMCT','MPIOM'):
             OBP.mean(apply=True,indices=ii)
-            ax[0].plot(tdec,10.*OBP.C10,color='#1ed565',lw=2)
-            ax[1].plot(tdec,10.*OBP.C11,color='#1ed565',lw=2)
-            ax[2].plot(tdec,10.*OBP.S11,color='#1ed565',lw=2)
-        # plot GRACE components
         G.mean(apply=True,indices=ii)
-        ax[0].plot(tdec,10.*G.C10, color='orange', lw=2)
-        ax[1].plot(tdec,10.*G.C11, color='orange', lw=2)
-        ax[2].plot(tdec,10.*G.S11, color='orange', lw=2)
-        # plot OMCT/MPIOM ocean bottom pressure
         GAD.mean(apply=True,indices=ii)
-        ax[0].plot(tdec,10.*GAD.C10, 'b', lw=2)
-        ax[1].plot(tdec,10.*GAD.C11, 'b', lw=2)
-        ax[2].plot(tdec,10.*GAD.S11, 'b', lw=2)
-        # plot eustatic components
         eustatic.mean(apply=True,indices=ii)
-        ax[0].plot(tdec,10.*eustatic.C10, 'r', lw=2)
-        ax[1].plot(tdec,10.*eustatic.C11, 'r', lw=2)
-        ax[2].plot(tdec,10.*eustatic.S11, 'r', lw=2)
-        # labels and set limits to Swenson range
-        ax[0].set_ylabel('[mm]', fontsize=14)
-        ax[1].set_ylabel('[mm]', fontsize=14)
-        ax[2].set_ylabel('[mm]', fontsize=14)
-        ax[2].set_xlabel('Time [Yr]', fontsize=14)
-        ax[2].set_xlim(2003,2007)
-        ax[2].set_ylim(-6,6)
-        ax[2].xaxis.set_ticks(np.arange(2003,2008,1))
-        ax[2].xaxis.set_minor_locator(MultipleLocator(0.25))
-        ax[2].yaxis.set_ticks(np.arange(-6,8,2))
-        ax[2].xaxis.get_major_formatter().set_useOffset(False)
-        # add axis labels and adjust font sizes for axis ticks
-        fig_labels = ['C10','C11','S11']
-        for i in range(3):
+        for i,key in enumerate(G.fields):
+            # plot ocean bottom pressure for alternative models
+            if MODEL not in ('OMCT','MPIOM'):
+                ax[i].plot(tdec, 10.*OBP.get(key), color='#1ed565', lw=2)
+            # plot GRACE components
+            ax[i].plot(tdec, 10.*G.get(key), color='orange', lw=2)
+            # plot OMCT/MPIOM ocean bottom pressure
+            ax[i].plot(tdec, 10.*GAD.get(key), color='blue', lw=2)
+            # plot eustatic components
+            ax[i].plot(tdec, 10.*eustatic.get(key), color='r', lw=2)
+            ax[i].set_ylabel('[mm]', fontsize=14)
+            # add axis labels and adjust font sizes for axis ticks
             # axis label
-            artist = matplotlib.offsetbox.AnchoredText(fig_labels[i], pad=0.,
+            artist = matplotlib.offsetbox.AnchoredText(key, pad=0.,
                 prop=dict(size=16,weight='bold'), frameon=False, loc=2)
             ax[i].add_artist(artist)
             # axes tick adjustments
@@ -1080,13 +1074,21 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
             # adjust ticks
             ax[i].get_xaxis().set_tick_params(which='both', direction='in')
             ax[i].get_yaxis().set_tick_params(which='both', direction='in')
+        # labels and set limits to Swenson range
+        ax[2].set_xlabel('Time [Yr]', fontsize=14)
+        ax[2].set_xlim(2003, 2007)
+        ax[2].set_ylim(-6, 6)
+        ax[2].xaxis.set_ticks(np.arange(2003, 2008, 1))
+        ax[2].xaxis.set_minor_locator(ticker.MultipleLocator(0.25))
+        ax[2].yaxis.set_ticks(np.arange(-6, 8, 2))
+        ax[2].xaxis.get_major_formatter().set_useOffset(False)
         # adjust locations of subplots and save to file
         fig.subplots_adjust(left=0.1,right=0.96,bottom=0.06,top=0.98,hspace=0.1)
         args = (PROC,DREL,MODEL,slf_str,iter_str,slr_str,gia_str,ds_str)
         FILE = 'Swenson_Figure_1_{0}_{1}_{2}{3}{4}{5}{6}{7}.pdf'.format(*args)
         PLOT1 = DIRECTORY.joinpath(FILE)
-        plt.savefig(PLOT1, format='pdf',
-            metadata={'Title':pathlib.Path(sys.argv[0]).name})
+        metadata = {'Title':pathlib.Path(sys.argv[0]).name}
+        plt.savefig(PLOT1, format='pdf', metadata=metadata)
         plt.clf()
         # set the permissions mode of the output files
         PLOT1.chmod(mode=MODE)
@@ -1096,8 +1098,8 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     if PLOT and ITERATIVE:
         # 3 row plot (C10, C11 and S11)
         ax = {}
-        fig, (ax[0], ax[1], ax[2]) = plt.subplots(num=1, nrows=3, sharex=True,
-            figsize=(6,9))
+        fig, (ax[0], ax[1], ax[2]) = plt.subplots(num=2, nrows=3,
+            sharex=True, figsize=(6,9))
         # show solutions for each iteration
         cmap = copy.copy(cm.rainbow)
         plot_colors = iter(cmap(np.linspace(0,1,n_iter)))
@@ -1108,21 +1110,11 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
             ax[0].plot(GSM_Ylms.month,iteration_mmwe.C10[:,j],c=c)
             ax[1].plot(GSM_Ylms.month,iteration_mmwe.C11[:,j],c=c)
             ax[2].plot(GSM_Ylms.month,iteration_mmwe.S11[:,j],c=c)
-        # labels and set limits
-        ax[0].set_ylabel('mm', fontsize=14)
-        ax[1].set_ylabel('mm', fontsize=14)
-        ax[2].set_ylabel('mm', fontsize=14)
-        ax[2].set_xlabel('Grace Month', fontsize=14)
-        xmin = np.floor(GSM_Ylms.month[0]/10.)*10.
-        xmax = np.ceil(GSM_Ylms.month[-1]/10.)*10.
-        ax[2].set_xlim(xmin,xmax)
-        ax[2].xaxis.set_minor_locator(MultipleLocator(5))
-        ax[2].xaxis.get_major_formatter().set_useOffset(False)
         # add axis labels and adjust font sizes for axis ticks
-        fig_labels = ['C10','C11','S11']
-        for i in range(3):
+        for i,key in enumerate(iteration_mmwe.fields):
+            ax[i].set_ylabel('mm', fontsize=14)
             # axis label
-            artist = matplotlib.offsetbox.AnchoredText(fig_labels[i], pad=0.,
+            artist = matplotlib.offsetbox.AnchoredText(key, pad=0.,
                 prop=dict(size=16,weight='bold'), frameon=False, loc=2)
             ax[i].add_artist(artist)
             # axes tick adjustments
@@ -1133,13 +1125,20 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
             # adjust ticks
             ax[i].get_xaxis().set_tick_params(which='both', direction='in')
             ax[i].get_yaxis().set_tick_params(which='both', direction='in')
+        # labels and set limits
+        ax[2].set_xlabel('Grace Month', fontsize=14)
+        xmin = np.floor(GSM_Ylms.month[0]/10.)*10.
+        xmax = np.ceil(GSM_Ylms.month[-1]/10.)*10.
+        ax[2].set_xlim(xmin,xmax)
+        ax[2].xaxis.set_minor_locator(ticker.MultipleLocator(5))
+        ax[2].xaxis.get_major_formatter().set_useOffset(False)
         # adjust locations of subplots and save to file
         fig.subplots_adjust(left=0.12,right=0.94,bottom=0.06,top=0.98,hspace=0.1)
         args = (PROC,DREL,MODEL,slf_str,slr_str,gia_str,ds_str)
         FILE = 'Geocenter_Iterative_{0}_{1}_{2}{3}{4}{5}{6}.pdf'.format(*args)
         PLOT2 = DIRECTORY.joinpath(FILE)
-        plt.savefig(PLOT2, format='pdf',
-            metadata={'Title':pathlib.Path(sys.argv[0]).name})
+        metadata = {'Title':pathlib.Path(sys.argv[0]).name}
+        plt.savefig(PLOT2, format='pdf', metadata=metadata)
         plt.clf()
         # set the permissions mode of the output files
         PLOT2.chmod(mode=MODE)

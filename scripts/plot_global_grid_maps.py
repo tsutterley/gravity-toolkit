@@ -108,7 +108,7 @@ def plot_coastline(ax, base_dir, LINEWIDTH=0.5):
     coastline_shape_files.append('GSHHS_i_L1_no_greenland.shp')
     coastline_shape_files.append('greenland_coastline_islands.shp')
     for fi,S in zip(coastline_shape_files,[1000,200]):
-        coast_shapefile = coastline_dir.joinpath(*fi)
+        coast_shapefile = coastline_dir.joinpath(fi)
         logging.debug(str(coast_shapefile))
         shape_input = shapefile.Reader(str(coast_shapefile))
         shape_entities = shape_input.shapes()
@@ -120,11 +120,11 @@ def plot_coastline(ax, base_dir, LINEWIDTH=0.5):
 
 # PURPOSE: plot Antarctic grounded ice delineation
 def plot_grounded_ice(ax, base_dir, LINEWIDTH=0.5):
-    coast_file = ['masks','IceBoundaries_Antarctica_v02',
+    grounded_ice_file = ['masks','IceBoundaries_Antarctica_v02',
         'ant_ice_sheet_islands_v2.shp']
-    coast_shapefile = base_dir.joinpath(*coast_file)
-    logging.debug(str(coast_shapefile))
-    shape_input = shapefile.Reader(str(coast_shapefile))
+    grounded_ice_shapefile = base_dir.joinpath(*grounded_ice_file)
+    logging.debug(str(grounded_ice_shapefile))
+    shape_input = shapefile.Reader(str(grounded_ice_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     i = [i for i,e in enumerate(shape_entities) if (np.ndim(e.points) > 1)]

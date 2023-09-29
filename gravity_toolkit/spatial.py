@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (08/2023)
+Written by Tyler Sutterley (09/2023)
 
 Data class for reading, writing and processing spatial data
 
@@ -20,6 +20,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 09/2023: prevent double printing of filenames when using debug
     Updated 08/2023: add string representation of the spatial object
     Updated 05/2023: use pathlib to define and operate on paths
         more operatations on spatial error if in possible data keys
@@ -162,8 +163,7 @@ class spatial(object):
                     errmsg = f'{filename} not found in file system'
                     raise FileNotFoundError(errmsg)
                 self.filename = self.filename.with_name(f.pop())
-        # print filename
-        logging.debug(self.filename)
+        # return the filename
         return self
 
     def compressuser(self, filename=None):

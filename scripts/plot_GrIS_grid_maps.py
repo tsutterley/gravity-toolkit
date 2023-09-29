@@ -220,7 +220,7 @@ def plot_coastline(ax, base_dir):
     coastline_shape_files.append('GSHHS_i_L1_no_greenland.shp')
     coastline_shape_files.append('greenland_coastline_islands.shp')
     for fi,S in zip(coastline_shape_files,[1000,200]):
-        coast_shapefile = coastline_dir.joinpath(*fi)
+        coast_shapefile = coastline_dir.joinpath(fi)
         logging.debug(str(coast_shapefile))
         shape_input = shapefile.Reader(str(coast_shapefile))
         shape_entities = shape_input.shapes()

@@ -255,7 +255,8 @@ def plot_IMBIE2_subbasins(ax, base_dir):
 
 # PURPOSE: plot Greenland and Antarctic grounded ice delineation
 def plot_grounded_ice(ax, base_dir, HEM, START=1):
-    shape_input = shapefile.Reader(base_dir.joinpath(*coast_file[HEM]))
+    grounded_ice_shape_file = base_dir.joinpath(*coast_file[HEM])
+    shape_input = shapefile.Reader(str(grounded_ice_shape_file))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     if (HEM == 'N'):
@@ -280,7 +281,7 @@ def plot_coastline(ax, base_dir):
     coastline_shape_files.append('GSHHS_i_L1_no_greenland.shp')
     coastline_shape_files.append('greenland_coastline_islands.shp')
     for fi,S in zip(coastline_shape_files,[1000,200]):
-        coast_shapefile = coastline_dir.joinpath(*fi)
+        coast_shapefile = coastline_dir.joinpath(fi)
         logging.debug(str(coast_shapefile))
         shape_input = shapefile.Reader(str(coast_shapefile))
         shape_entities = shape_input.shapes()

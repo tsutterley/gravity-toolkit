@@ -17,6 +17,7 @@ PYTHON DEPENDENCIES:
 UPDATE HISTORY:
     Updated 09/2023: add group option to netCDF read function
         add functions to return variables or class attributes
+        prevent double printing of filenames when using debug
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: convert shape and ndim to harmonic class properties
         improve typing for variables in docstrings
@@ -135,8 +136,7 @@ class geocenter(object):
                     errmsg = f'{filename} not found in file system'
                     raise FileNotFoundError(errmsg)
                 self.filename = self.filename.with_name(f.pop())
-        # print filename
-        logging.debug(self.filename)
+        # return the filename
         return self
 
     # PURPOSE: read AOD1b geocenter for month and calculate the mean harmonics
