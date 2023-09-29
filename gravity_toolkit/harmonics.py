@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (08/2023)
+Written by Tyler Sutterley (09/2023)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -25,6 +25,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 09/2023: prevent double printing of filenames when using debug
     Updated 08/2023: add string representation of the harmonics object
     Updated 06/2023: fix GRACE/GRACE-FO months in drift function
     Updated 05/2023: use reify decorators for complex form and amplitude
@@ -193,8 +194,7 @@ class harmonics(object):
                     errmsg = f'{filename} not found in file system'
                     raise FileNotFoundError(errmsg)
                 self.filename = self.filename.with_name(f.pop())
-        # print filename
-        logging.debug(self.filename)
+        # return the filename
         return self
 
     def compressuser(self, filename=None):

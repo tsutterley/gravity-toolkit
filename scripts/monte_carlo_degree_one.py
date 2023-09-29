@@ -158,6 +158,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 09/2023: add more root level attributes to output netCDF4 files
+        simplify I-matrix and G-matrix calculations
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 04/2023: add options for least-squares solver
     Updated 03/2023: place matplotlib import within try/except statement
@@ -608,18 +609,22 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     # I-Parameter matrix accounts for the fact that the GRACE data only
     # includes spherical harmonic degrees greater than or equal to 2
     for i in range(0,nlat):
+        # C10, C11, S11
+        PC10 = P10[i]*ccos[0,:]
+        PC11 = P11[i]*ccos[1,:]
+        PS11 = P11[i]*ssin[1,:]
         # C10: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
-        IMAT[0,0] += np.sum(int_fact[i]*P10[i]*ccos[0,:]*ocean_function[:,i]*P10[i]*ccos[0,:])/(4.0*np.pi)
-        IMAT[1,0] += np.sum(int_fact[i]*P10[i]*ccos[0,:]*ocean_function[:,i]*P11[i]*ccos[1,:])/(4.0*np.pi)
-        IMAT[2,0] += np.sum(int_fact[i]*P10[i]*ccos[0,:]*ocean_function[:,i]*P11[i]*ssin[1,:])/(4.0*np.pi)
+        IMAT[0,0] += np.sum(int_fact[i]*PC10*ocean_function[:,i]*PC10)/(4.0*np.pi)
+        IMAT[1,0] += np.sum(int_fact[i]*PC10*ocean_function[:,i]*PC11)/(4.0*np.pi)
+        IMAT[2,0] += np.sum(int_fact[i]*PC10*ocean_function[:,i]*PS11)/(4.0*np.pi)
         # C11: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
-        IMAT[0,1] += np.sum(int_fact[i]*P11[i]*ccos[1,:]*ocean_function[:,i]*P10[i]*ccos[0,:])/(4.0*np.pi)
-        IMAT[1,1] += np.sum(int_fact[i]*P11[i]*ccos[1,:]*ocean_function[:,i]*P11[i]*ccos[1,:])/(4.0*np.pi)
-        IMAT[2,1] += np.sum(int_fact[i]*P11[i]*ccos[1,:]*ocean_function[:,i]*P11[i]*ssin[1,:])/(4.0*np.pi)
+        IMAT[0,1] += np.sum(int_fact[i]*PC11*ocean_function[:,i]*PC10)/(4.0*np.pi)
+        IMAT[1,1] += np.sum(int_fact[i]*PC11*ocean_function[:,i]*PC11)/(4.0*np.pi)
+        IMAT[2,1] += np.sum(int_fact[i]*PC11*ocean_function[:,i]*PS11)/(4.0*np.pi)
         # S11: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
-        IMAT[0,2] += np.sum(int_fact[i]*P11[i]*ssin[1,:]*ocean_function[:,i]*P10[i]*ccos[0,:])/(4.0*np.pi)
-        IMAT[1,2] += np.sum(int_fact[i]*P11[i]*ssin[1,:]*ocean_function[:,i]*P11[i]*ccos[1,:])/(4.0*np.pi)
-        IMAT[2,2] += np.sum(int_fact[i]*P11[i]*ssin[1,:]*ocean_function[:,i]*P11[i]*ssin[1,:])/(4.0*np.pi)
+        IMAT[0,2] += np.sum(int_fact[i]*PS11*ocean_function[:,i]*PC10)/(4.0*np.pi)
+        IMAT[1,2] += np.sum(int_fact[i]*PS11*ocean_function[:,i]*PC11)/(4.0*np.pi)
+        IMAT[2,2] += np.sum(int_fact[i]*PS11*ocean_function[:,i]*PS11)/(4.0*np.pi)
 
     # get seasonal variations of an initial geocenter correction
     # for use in the land water mass calculation
@@ -669,11 +674,15 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
             rmass = np.dot(np.transpose(ccos),pcos) + np.dot(np.transpose(ssin),psin)
             # calculate G matrix parameters through a summation of each latitude
             for i in range(0,nlat):
+                # C10, C11, S11
+                PC10 = P10[i]*ccos[0,:]
+                PC11 = P11[i]*ccos[1,:]
+                PS11 = P11[i]*ssin[1,:]
                 # summation of integration factors, Legendre polynomials,
                 # (convolution of order and harmonics) and the ocean mass at t
-                G.C10 += np.sum(int_fact[i]*P10[i]*ccos[0,:]*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
-                G.C11 += np.sum(int_fact[i]*P11[i]*ccos[1,:]*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
-                G.S11 += np.sum(int_fact[i]*P11[i]*ssin[1,:]*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
+                G.C10 += np.sum(int_fact[i]*PC10*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
+                G.C11 += np.sum(int_fact[i]*PC11*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
+                G.S11 += np.sum(int_fact[i]*PS11*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
 
             # seasonal component of geocenter variation for land water
             GSM_Ylms.clm[1,0,t] = seasonal_geocenter.C10[t]
