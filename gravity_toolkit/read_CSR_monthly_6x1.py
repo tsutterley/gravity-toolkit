@@ -44,7 +44,7 @@ from __future__ import print_function, division
 import os
 import re
 import numpy as np
-from gravity_toolkit.convert_calendar_decimal import convert_calendar_decimal
+from gravity_toolkit.time import convert_calendar_decimal
 
 #-- PURPOSE: read low degree harmonic data from Satellite Laser Ranging (SLR)
 def read_CSR_monthly_6x1(input_file, HEADER=True):
