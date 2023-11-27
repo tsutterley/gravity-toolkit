@@ -279,11 +279,12 @@ class harmonics(object):
         self.mmax = 0
         # for each line in the file
         for line in file_contents:
-            l1,m1,clm1,slm1,*aux = rx.findall(line)
-            # convert line degree and order to integers
-            l1,m1 = np.array([l1,m1],dtype=np.int64)
-            self.lmax = np.copy(l1) if (l1 > self.lmax) else self.lmax
-            self.mmax = np.copy(m1) if (m1 > self.mmax) else self.mmax
+            if not '#' in line:
+                l1,m1,clm1,slm1,*aux = rx.findall(line)
+                # convert line degree and order to integers
+                l1,m1 = np.array([l1,m1],dtype=np.int64)
+                self.lmax = np.copy(l1) if (l1 > self.lmax) else self.lmax
+                self.mmax = np.copy(m1) if (m1 > self.mmax) else self.mmax
         # output spherical harmonics data
         self.clm = np.zeros((self.lmax+1,self.mmax+1))
         self.slm = np.zeros((self.lmax+1,self.mmax+1))

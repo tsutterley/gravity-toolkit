@@ -225,10 +225,13 @@ class units(object):
         """
         # set default keyword arguments
         kwargs.setdefault('include_elastic', True)
+        kwargs.setdefault('include_ellipsoidal', False)
         fraction = np.ones((self.lmax+1))
         # compensate for elastic deformation within the solid earth
         if kwargs['include_elastic']:
             fraction += kl[self.l]
+        if kwargs['include_ellipsoidal']:
+            fraction /= (1.0 - self.flat)
         # degree dependent coefficients
         # norm, fully normalized spherical harmonics
         self.norm = np.ones((self.lmax + 1))/(4.0 * np.pi)
