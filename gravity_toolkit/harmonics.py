@@ -279,7 +279,7 @@ class harmonics(object):
         self.mmax = 0
         # for each line in the file
         for line in file_contents:
-            if not '#' in line:
+            if not '#' in line[:2]:
                 l1,m1,clm1,slm1,*aux = rx.findall(line)
                 # convert line degree and order to integers
                 l1,m1 = np.array([l1,m1],dtype=np.int64)
@@ -297,12 +297,13 @@ class harmonics(object):
         # extract harmonics and convert to matrix
         # for each line in the file
         for line in file_contents:
-            l1,m1,clm1,slm1,*aux = rx.findall(line)
-            # convert line degree and order to integers
-            ll,mm = np.array([l1,m1],dtype=np.int64)
-            # convert fortran exponentials if applicable
-            self.clm[ll,mm] = np.float64(clm1.replace('D','E'))
-            self.slm[ll,mm] = np.float64(slm1.replace('D','E'))
+            if not '#' in line[:2]:
+                l1,m1,clm1,slm1,*aux = rx.findall(line)
+                # convert line degree and order to integers
+                ll,mm = np.array([l1,m1],dtype=np.int64)
+                # convert fortran exponentials if applicable
+                self.clm[ll,mm] = np.float64(clm1.replace('D','E'))
+                self.slm[ll,mm] = np.float64(slm1.replace('D','E'))
         # assign degree and order fields
         self.update_dimensions()
         return self
