@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 combine_harmonics.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (10/2023)
 Converts a file from the spherical harmonic domain into the spatial domain
 
 CALLING SEQUENCE:
@@ -43,6 +43,7 @@ COMMAND LINE OPTIONS:
         ascii
         netCDF4
         HDF5
+    -D, --date: input and output files have date information
     -V, --verbose: verbose output of processing run
     -M X, --mode X: Permissions mode of the files created
 
@@ -72,6 +73,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 10/2023: add date argument to specify if data is a time series
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 04/2023: allow units argument to be set to 0 for no unit conversion
     Updated 03/2023: add index ascii/netCDF4/HDF5 datatypes as possible inputs
@@ -144,6 +146,7 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     LANDMASK=None,
     MEAN_FILE=None,
     DATAFORM=None,
+    DATE=False,
     MODE=0o775):
 
     # verify inputs
@@ -164,13 +167,13 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     if DATAFORM in ('ascii', 'netCDF4', 'HDF5'):
         dataform = copy.copy(DATAFORM)
         input_Ylms = gravtk.harmonics().from_file(INPUT_FILE,
-            format=DATAFORM)
+            format=DATAFORM, date=DATE)
         attributes['ROOT']['lineage'] = input_Ylms.filename.name
     elif DATAFORM in ('index-ascii', 'index-netCDF4', 'index-HDF5'):
         # read from index file
         _,dataform = DATAFORM.split('-')
         input_Ylms = gravtk.harmonics().from_index(INPUT_FILE,
-            format=dataform)
+            format=dataform, date=DATE)
         attributes['ROOT']['lineage'] = [f.name for f in input_Ylms.filename]
     # reform harmonic dimensions to be l,m,t
     # truncate to degree and order LMAX, MMAX
@@ -284,7 +287,7 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     # outputting data to file
     grid.squeeze().to_file(filename=OUTPUT_FILE, format=dataform,
         units=units_name, longname=units_longname,
-        attributes=attributes)
+        attributes=attributes, date=DATE)
 
     # change output permissions level to MODE
     OUTPUT_FILE.chmod(mode=MODE)
@@ -370,6 +373,10 @@ def arguments():
     parser.add_argument('--format','-F',
         type=str, default='netCDF4', choices=choices,
         help='Input and output data format')
+    # Input and output files have date information
+    parser.add_argument('--date','-D',
+        default=False, action='store_true',
+        help='Input and output files have date information')
     # print information about each input and output file
     parser.add_argument('--verbose','-V',
         action='count', default=0,
@@ -409,6 +416,7 @@ def main():
             LANDMASK=args.mask,
             MEAN_FILE=args.mean,
             DATAFORM=args.format,
+            DATE=args.date,
             MODE=args.mode)
     except Exception as exc:
         # if there has been an error exception

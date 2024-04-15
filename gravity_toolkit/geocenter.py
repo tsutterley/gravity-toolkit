@@ -520,7 +520,7 @@ class geocenter(object):
             # find numerical instances in line including integers, exponents,
             # decimal points and negatives
             line_contents = rx.findall(line)
-            # extacting mid-date time and GRACE/GRACE-FO "month"
+            # extracting mid-date time and GRACE/GRACE-FO "month"
             DEG1['time'][t] = np.float64(line_contents[0])
             DEG1['month'][t] = np.int64(line_contents[-1])
             # calculate mid-date as Julian dates
@@ -608,7 +608,7 @@ class geocenter(object):
             # decimal points and negatives
             line_contents = rx.findall(line)
 
-            # extacting time
+            # extracting time
             self.time[t]=np.float64(line_contents[0])
             # extracting spherical harmonics and convert to cmwe
             self.C10[t]=0.1*np.float64(line_contents[1])

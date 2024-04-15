@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (09/2023)
+Written by Tyler Sutterley (10/2023)
 
 Data class for reading, writing and processing spatial data
 
@@ -20,6 +20,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 10/2023: place time and month variables in try/except block
     Updated 09/2023: prevent double printing of filenames when using debug
     Updated 08/2023: add string representation of the spatial object
     Updated 05/2023: use pathlib to define and operate on paths
@@ -1731,10 +1732,14 @@ class spatial(object):
         try:
             temp.data = self.data[:,:,self.__index__].copy()
             temp.mask = self.mask[:,:,self.__index__].copy()
-            temp.time = self.time[self.__index__].copy()
-            temp.month = self.month[self.__index__].copy()
         except IndexError as exc:
             raise StopIteration from exc
+        # subset output spatial time and month
+        try:
+            temp.time = self.time[self.__index__].copy()
+            temp.month = self.month[self.__index__].copy()
+        except AttributeError as exc:
+            pass
         # subset output spatial error
         try:
             temp.error = self.error[:,:,self.__index__].copy()

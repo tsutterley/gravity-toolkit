@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 convert_harmonics.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (10/2023)
 Converts a file from the spatial domain into the spherical harmonic domain
 
 CALLING SEQUENCE:
@@ -35,6 +35,7 @@ COMMAND LINE OPTIONS:
         ascii
         netCDF4
         HDF5
+    -D, --date: input and output files have date information
     -V, --verbose: verbose output of processing run
     -M X, --mode X: Permissions mode of the files created
 
@@ -62,6 +63,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 10/2023: add date argument to specify if data is a time series
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: updated inputs to spatial from_ascii function
         add descriptive file-level attributes to output netCDF4/HDF5 files
@@ -119,6 +121,7 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     FILL_VALUE=None,
     HEADER=None,
     DATAFORM=None,
+    DATE=False,
     MODE=0o775):
 
     # verify inputs
@@ -152,13 +155,15 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
         # ascii (.txt)
         input_spatial = gravtk.spatial(fill_value=FILL_VALUE).from_ascii(
             INPUT_FILE, header=HEADER, spacing=[dlon,dlat], nlat=nlat,
-            nlon=nlon).expand_dims()
+            nlon=nlon, date=DATE).expand_dims()
     elif (DATAFORM == 'netCDF4'):
         # netcdf (.nc)
-        input_spatial = gravtk.spatial().from_netCDF4(INPUT_FILE).expand_dims()
+        input_spatial = gravtk.spatial().from_netCDF4(
+            INPUT_FILE, date=DATE).expand_dims()
     elif (DATAFORM == 'HDF5'):
         # HDF5 (.H5)
-        input_spatial = gravtk.spatial().from_HDF5(INPUT_FILE).expand_dims()
+        input_spatial = gravtk.spatial().from_HDF5(
+            INPUT_FILE, date=DATE).expand_dims()
     # convert missing values to zero
     input_spatial.replace_invalid(0.0)
     # input data shape
@@ -192,17 +197,19 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
         output_Ylms = gravtk.gen_stokes(spatial_data.data.T,
             spatial_data.lon, spatial_data.lat, UNITS=UNITS,
             LMIN=0, LMAX=LMAX, MMAX=MMAX, PLM=PLM, LOVE=LOVE)
-        output_Ylms.time = np.copy(spatial_data.time)
-        output_Ylms.month = gravtk.time.calendar_to_grace(spatial_data.time)
+        # calculate date information
+        if DATE:
+            output_Ylms.time = np.copy(spatial_data.time)
+            output_Ylms.month = gravtk.time.calendar_to_grace(spatial_data.time)
         # append to list
         Ylms_list.append(output_Ylms)
     # convert Ylms list for output spherical harmonics
-    Ylms = gravtk.harmonics().from_list(Ylms_list, clear=True)
+    Ylms = gravtk.harmonics().from_list(Ylms_list, date=DATE, clear=True)
     # copy attribute to output harmonics
     Ylms.attributes['ROOT'] = copy.copy(attributes)
 
     # outputting data to file
-    Ylms.to_file(OUTPUT_FILE, format=DATAFORM)
+    Ylms.to_file(OUTPUT_FILE, format=DATAFORM, date=DATE)
     # change output permissions level to MODE
     OUTPUT_FILE.chmod(mode=MODE)
 
@@ -267,6 +274,10 @@ def arguments():
     parser.add_argument('--format','-F',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
         help='Input and output data format')
+    # Input and output files have date information
+    parser.add_argument('--date','-D',
+        default=False, action='store_true',
+        help='Input and output files have date information')
     # print information about each input and output file
     parser.add_argument('--verbose','-V',
         action='count', default=0,
@@ -301,6 +312,7 @@ def main():
             FILL_VALUE=args.fill_value,
             HEADER=args.header,
             DATAFORM=args.format,
+            DATE=args.date,
             MODE=args.mode)
     except Exception as exc:
         # if there has been an error exception

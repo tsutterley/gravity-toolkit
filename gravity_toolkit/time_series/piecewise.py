@@ -99,7 +99,7 @@ import scipy.special
 def piecewise(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
     CYCLES=[0.5,1.0], TERMS=[], DATA_ERR=0, WEIGHT=False,
     STDEV=0, CONF=0, AICc=False):
-    """
+    r"""
     Fits a synthetic signal to data over a time period by ordinary or
     weighted least-squares for breakpoint analysis [Toms2003]_
 

@@ -85,7 +85,7 @@ import gravity_toolkit.read_SLR_harmonics
 
 # PURPOSE: read Degree 2,m data from Satellite Laser Ranging (SLR)
 def CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
-    """
+    r"""
     Reads *C*\ :sub:`2m` and *S*\ :sub:`2m` spherical harmonic coefficients
     from SLR measurements
 

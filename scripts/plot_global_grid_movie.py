@@ -533,7 +533,7 @@ def arguments():
         type=str, default='',
         help='Units label for colorbar')
     parser.add_argument('--cbformat',
-        type=str, default='{0:3.0f}',
+        type=str, default='{0:0.0f}',
         help='Tick format for colorbar')
     # additional parameters
     parser.add_argument('--draw-grid-lines',

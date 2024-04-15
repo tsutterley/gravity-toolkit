@@ -1,22 +1,17 @@
 #!/usr/bin/env python
 u"""
-plot_AIS_GrIS_maps.py
+plot_GrIS_grid_5maps.py
 Written by Tyler Sutterley (10/2023)
+Creates 5 GMT-like plots for the Greenland ice sheet
+on a NSIDC polar stereographic north (3413) projection
 
-Creates GMT-like plots for the Greenland and Antarctic ice sheets
-
-Greenland:
-glacier and ice cap outlines from the OSU Greenland Ice Mapping Project
+Greenland ice sheet and glacier outlines from OSU Greenland Ice Mapping Project
     ftp://ftp-bprc.mps.ohio-state.edu/downloads/gdg/gimpim2000/
-ice divides from Rignot and Mouginot (2012) and IMBIE-2 (2016)
+Canada, Iceland and Svalbard glacier outlines from Randolph Glacier Inventory
+    https://www.glims.org/RGI/rgi60_dl.html
+ice divides from Rignot and Mouginot (2012)
 MODIS mosaic of Greenland (MOG) from NSIDC
     http://nsidc.org/data/nsidc-0547
-
-Antarctica:
-Grounded ice and islands from Eric Rignot grounded ice image (NSIDC version 2)
-Glacial drainage basins updated from Rignot et al. (2012) and IMBIE-2 (2016)
-2003-2004 MODIS mosaic of Antarctica (MOA) from NSIDC (Haran et al., 2013)
-    https://nsidc.org/data/moa/
 
 PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python
@@ -39,29 +34,7 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/GDAL/
 
 UPDATE HISTORY:
-    Updated 10/2023: increase size of scale bar for both maps
-    Updated 05/2023: use pathlib to define and operate on paths
-        added option to set the input variable names or column order
-    Updated 03/2023: switch from parameter files to argparse arguments
-        updated inputs to spatial from_ascii function
-    Updated 07/2022: place some imports behind try/except statements
-    Updated 05/2022: use argparse descriptions within documentation
-        use mask, shift grid and interpolation functions from tools
-    Updated 12/2021: added color palette table (cpt) file reader from tools
-    Updated 05/2021: define int/float precision to prevent deprecation warning
-    Updated 10/2020: using spatial utilities for reading
-        using argparse to set command-line parameters
-    Updated 10/2019: changing Y/N flags to True/False
-    Updated 09/2019: added parameter for specifying if netCDF4 or HDF5
-    Updated 04/2019: set cap style of cartopy geoaxes outline patch
-    Updated 03/2019: replacing matplotlib basemap with cartopy
-    Updated 02/2019: saving metadata to output figure
-    Updated 12/2018: added parameter CBEXTEND for colorbar extension triangles
-    Updated 05/2018: using __future__ print function for python3 compatibility
-    Updated 11/2017: can plot a contour of the global average with MEAN
-    Updated 10/2017: added IMBIE-2 sub-basins
-    Updated 09/2017: add plot scales
-    Written 08/2017
+    Written 10/2023
 """
 from __future__ import print_function
 
@@ -85,7 +58,6 @@ try:
     import matplotlib
     import matplotlib.pyplot as plt
     import matplotlib.cm as cm
-    from matplotlib import gridspec
     import matplotlib.colors as colors
     import matplotlib.ticker as ticker
     import matplotlib.offsetbox as offsetbox
@@ -104,79 +76,36 @@ try:
 except ModuleNotFoundError:
     warnings.warn("shapefile not available", ImportWarning)
 
-# region directory, filename, title and data type
-region_dir = {}
-region_filename = {}
-region_title = {}
-region_dtype = {}
 # Greenland ice divides
-region_dir['N'] = ['masks','Rignot_GRE']
-region_title['N'] = ['CE','CW','NE','NO','NW','SE','SW']
-# Antarctic 2012 basins
-region_dir['S'] = ['masks','Rignot_ANT']
-region_title['S'] = ['AAp','ApB','BC','CCp','CpD','DDp','DpE','EEp','EpFp',
-    'FpG','GH','HHp','HpI','IIpp','IppJ','JJpp','JppK','KKp','KpA']
+# region directory, filename, title and data type
+region_dir = ['masks','Rignot_GRE']
+region_title = ['CE','CW','NE','NO','NW','SE','SW']
 # regional filenames
-region_filename['N'] = 'divide_{0}_index.ascii'
-region_filename['S'] = 'basin_{0}_index.ascii'
+region_filename = 'divide_{0}_index.ascii'
 # regional datatypes
-region_dtype['N'] = {'names':('lon','lat'),'formats':('f','f')}
-region_dtype['S'] = {'names':('lat','lon'),'formats':('f','f')}
+region_dtype = {'names':('lon','lat'),'formats':('f','f')}
 
 # IMBIE-2 Drainage basins
-IMBIE_basin_file = {}
-IMBIE_basin_file['N']=['masks','GRE_Basins_IMBIE2_v1.3','GRE_Basins_IMBIE2_v1.3.shp']
-IMBIE_basin_file['S']=['masks','ANT_Basins_IMBIE2_v1.6','ANT_Basins_IMBIE2_v1.6.shp']
+IMBIE_basin_file = ['masks','GRE_Basins_IMBIE2_v1.3','GRE_Basins_IMBIE2_v1.3.shp']
 # basin titles within shapefile to extract
-IMBIE_title = {}
-IMBIE_title['N']=('CW','NE','NO','NW','SE','SW')
-IMBIE_title['S']=('A-Ap','Ap-B','B-C','C-Cp','Cp-D','D-Dp','Dp-E','E-Ep','Ep-F',
-    'F-Fp','F-G','G-H','H-Hp','Hp-I','I-Ipp','Ipp-J','J-Jpp','Jpp-K','K-A')
+IMBIE_title = ('CW','NE','NO','NW','SE','SW')
 
 # background image mosaics
-image_file = {}
 # MODIS mosaic of Greenland
-image_file['N'] = ['MOG','mog500_2005_hp1_v1.1.tif']
-# MODIS mosaic of Antarctica
-image_file['S'] = ['MOA','moa750_2004_hp1_v1.1.tif']
+image_file = ['MOG','mog500_2005_hp1_v1.1.tif']
 
-# coastline files
-coast_file = {}
 # Greenland grounded ice
-coast_file['N']=['masks','GIMP','grn_ice_sheet_peripheral_glaciers.shp']
-# Coastlines for antarctica (islands)
-coast_file['S']=['masks','IceBoundaries_Antarctica_v02',
-    'ant_ice_sheet_islands_v2.shp']
+coast_file = ['masks','GIMP','grn_ice_sheet_peripheral_glaciers.shp']
 
-# regional plot parameters
-# x and y limit
-region_xlimit = {}
-region_ylimit = {}
-# Greenland (GrIS)
-# x and y limit (Bamber extended for GIMP)
-region_xlimit['N'] = np.array([-1530000, 1610000])
-region_ylimit['N'] = np.array([-3600000, -280000])
-# Antarctica (AIS)
-# x and y limit (modified from Bamber 1km DEM)
-region_xlimit['S'] = np.array([-3100000, 3100000])
-region_ylimit['S'] = np.array([-2600000, 2600000])
-
-# setup stereographic map
-projection = {}
+# Greenland bounds (Bamber extended for GIMP)
+xlimits = (-160.*5e3, 172.*5e3)
+ylimits = (-680.*5e3,-131.*5e3)
+# cartopy transform for NSIDC polar stereographic north
 try:
-    # cartopy transform for polar stereographic south
-    projection['S'] = ccrs.Stereographic(central_longitude=0.0,
-        central_latitude=-90.0,true_scale_latitude=-71.0)
-    # cartopy transform for NSIDC polar stereographic north
-    projection['N'] = ccrs.Stereographic(central_longitude=-45.0,
+    projection = ccrs.Stereographic(central_longitude=-45.0,
         central_latitude=+90.0,true_scale_latitude=+70.0)
 except (NameError,ValueError) as exc:
     pass
-
-# location and size of plot scales
-scale_params = {}
-scale_params['N'] = (700e3,-3408462,800e3,89385,False)
-scale_params['S'] = (-292e4,-230e4,1600e3,140e3,False)
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -188,91 +117,74 @@ def info(args):
     logging.info(f'process id: {os.getpid():d}')
 
 # PURPOSE: plot Rignot 2012 drainage basin polylines
-def plot_rignot_basins(ax, base_dir, HEM, projection):
+def plot_rignot_basins(ax, base_dir):
     region_directory = base_dir.joinpath(*region_dir)
     # for each region
     for reg in region_title:
         # read the regional polylines
-        region_file = region_directory.joinpath(region_filename[HEM].format(reg))
+        region_file = region_directory.joinpath(region_filename.format(reg))
         region_ll = np.loadtxt(region_file, dtype=region_dtype)
         # converting region lat/lon into plot coordinates
         points = projection.transform_points(ccrs.PlateCarree(),
             region_ll['lon'], region_ll['lat'])
         ax.plot(points[:,0], points[:,1], color='k', transform=projection)
 
-# PURPOSE: plot Greenland and Antarctic drainage basins from IMBIE2 (Mouginot)
-def plot_IMBIE2_basins(ax, base_dir, HEM):
+# PURPOSE: plot Greenland drainage basins from IMBIE2 (Mouginot)
+def plot_IMBIE2_basins(ax, base_dir):
     # read drainage basin polylines from shapefile (using splat operator)
-    basin_shapefile = base_dir.joinpath(*IMBIE_basin_file[HEM])
+    basin_shapefile = base_dir.joinpath(*IMBIE_basin_file)
     logging.debug(str(basin_shapefile))
     shape_input = shapefile.Reader(str(basin_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
     # find record index for region by iterating through shape attributes
-    if (HEM == 'S'):
-        # find record index for region by iterating through shape attributes
-        # no islands or large regions
-        i=[i for i,a in enumerate(shape_attributes) if a[1] in IMBIE_title[HEM]]
-        # for each valid shape entity
-        for indice in i:
-            # extract Polar-Stereographic coordinates for record
-            points = np.array(shape_entities[indice].points)
-            ax.plot(points[:,0], points[:,1], c='k',
-                transform=projection[HEM])
-    elif (HEM == 'N'):
-        # no GIC or islands
-        i=[i for i,a in enumerate(shape_attributes) if a[0] in IMBIE_title[HEM]]
-        for indice in i:
-            # extract lat/lon coordinates for record
-            points = np.array(shape_entities[indice].points)
-            # Greenland IMBIE-2 basins can have multiple parts
-            parts = shape_entities[indice].parts
-            parts.append(len(points))
-            for p1,p2 in zip(parts[:-1],parts[1:]):
-                # converting basin lat/lon into plot coordinates
-                ax.plot(points[p1:p2,0], points[p1:p2,1], color='k',
-                    transform=ccrs.PlateCarree())
-
-# PURPOSE: plot Antarctic drainage sub-basins from IMBIE-2 (Mouginot)
-def plot_IMBIE2_subbasins(ax, base_dir):
-    # read drainage basin polylines from shapefile (using splat operator)
-    IMBIE_subbasin_file = ['Basins_20Oct2016_v1.7','Basins_v1.7.shp']
-    basin_shapefile = base_dir.joinpath('masks',*IMBIE_subbasin_file)
-    logging.debug(str(basin_shapefile))
-    shape_input = shapefile.Reader(str(basin_shapefile))
-    shape_entities = shape_input.shapes()
-    shape_attributes = shape_input.records()
-    # iterate through shape entities and attributes
-    indices = [i for i,a in enumerate(shape_attributes) if (a[1] != 'Islands')]
-    for i in indices:
-        # extract Polar-Stereographic coordinates for record
-        points = np.array(shape_entities[i].points)
+    # no GIC or islands
+    i = [i for i,a in enumerate(shape_attributes) if a[0] in IMBIE_title]
+    # for each valid shape entity
+    for indice in i:
+        # extract lat/lon coordinates for record
+        points = np.array(shape_entities[indice].points)
         # IMBIE-2 basins can have multiple parts
-        parts = shape_entities[i].parts
+        parts = shape_entities[indice].parts
         parts.append(len(points))
         for p1,p2 in zip(parts[:-1],parts[1:]):
-            ax.plot(points[p1:p2,0], points[p1:p2,1], c='k',
-                transform=projection['S'])
+            # converting basin lat/lon into plot coordinates
+            ax.plot(points[p1:p2,0], points[p1:p2,1], color='k',
+                transform=ccrs.PlateCarree())
 
-# PURPOSE: plot Greenland and Antarctic grounded ice delineation
-def plot_grounded_ice(ax, base_dir, HEM, START=1):
-    grounded_ice_shape_file = base_dir.joinpath(*coast_file[HEM])
-    shape_input = shapefile.Reader(str(grounded_ice_shape_file))
+# PURPOSE: plot Greenland grounded ice delineation from GIMP
+def plot_grounded_ice(ax, base_dir, START=1, END=300, LINEWIDTH=0.6):
+    coast_shapefile = base_dir.joinpath(*coast_file)
+    logging.debug(str(coast_shapefile))
+    shape_input = shapefile.Reader(str(coast_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
-    if (HEM == 'N'):
-        for i in range(START,START):
+    for i in range(START,END):
+        # extract Polar-Stereographic coordinates for record
+        points = np.array(shape_entities[i].points)
+        # converting Polar-Stereographic coordinates into plot coordinates
+        ax.plot(points[:,0], points[:,1], c='k', lw=LINEWIDTH,
+            transform=projection)
+
+# PURPOSE: plot glaciated regions from Randolph Glacier Inventory
+def plot_glacier_inventory(ax, base_dir, START=0, END=30, LINEWIDTH=0.6):
+    RGI_files = []
+    RGI_files.append('03_rgi60_ArcticCanadaNorth')
+    RGI_files.append('04_rgi60_ArcticCanadaSouth')
+    RGI_files.append('06_rgi60_Iceland')
+    RGI_files.append('07_rgi60_Svalbard')
+    for f in RGI_files:
+        RGI_shapefile = base_dir.joinpath('RGI',f,f'{f}_plot.shp')
+        logging.debug(str(RGI_shapefile))
+        shape_input = shapefile.Reader(str(RGI_shapefile))
+        shape_entities = shape_input.shapes()
+        shape_attributes = shape_input.records()
+        for i in range(START,END):
             # extract Polar-Stereographic coordinates for record
             points = np.array(shape_entities[i].points)
-            ax.plot(points[:,0], points[:,1], color='k',
-                transform=projection[HEM])
-    if (HEM == 'S'):
-        i = [i for i,e in enumerate(shape_entities) if (np.ndim(e.points) > 1)]
-        for indice in i[START:]:
-            # extract Polar-Stereographic coordinates for record
-            points = np.array(shape_entities[indice].points)
-            ax.plot(points[:,0], points[:,1], color='k',
-                transform=projection[HEM])
+            # converting Polar-Stereographic coordinates into plot coordinates
+            ax.plot(points[:,0], points[:,1], color='k', linewidth=LINEWIDTH,
+                transform=projection)
 
 # PURPOSE plot coastlines and islands (GSHHS with G250 Greenland)
 def plot_coastline(ax, base_dir):
@@ -292,10 +204,12 @@ def plot_coastline(ax, base_dir):
             lon,lat = np.transpose(ent.points)
             ax.plot(lon, lat, color='k', transform=ccrs.PlateCarree())
 
-# PURPOSE: plot MODIS mosaic of Antarctica and Greenland as background image
-def plot_image_mosaic(ax, base_dir, HEM, MASKED=True):
-    # read MODIS mosaic of Antarctica and Greenland
-    ds = osgeo.gdal.Open(base_dir.joinpath(*image_file[HEM]))
+# plot the MODIS Mosaic of Greenland as a background image
+def plot_image_mosaic(ax, base_dir, MASKED=True):
+    # read MODIS mosaic of Greenland
+    image_geotiff_file = base_dir.joinpath(*image_file)
+    logging.debug(str(image_geotiff_file))
+    ds = osgeo.gdal.Open(str(image_geotiff_file))
     # get dimensions
     xsize = ds.RasterXSize
     ysize = ds.RasterYSize
@@ -306,12 +220,6 @@ def plot_image_mosaic(ax, base_dir, HEM, MASKED=True):
     ymax = info_geotiff[3]
     xmax = xmin + (xsize-1)*info_geotiff[1]
     ymin = ymax + (ysize-1)*info_geotiff[5]
-    if (HEM == 'N'):
-        # dataset range
-        vmin, vmax = (0, 16386)
-    elif (HEM == 'S'):
-        # dataset range
-        vmin, vmax = (0, 16386)
     # read as grayscale image
     mosaic = np.ma.array(ds.ReadAsArray())
     # mask image mosaic
@@ -320,13 +228,15 @@ def plot_image_mosaic(ax, base_dir, HEM, MASKED=True):
         mosaic.fill_value = 0
         # create mask array for bad values
         mosaic.mask = (mosaic.data == mosaic.fill_value)
+    # dataset range
+    vmin, vmax = (0, 18770)
     # create color map with transparent bad points
     image_cmap = copy.copy(cm.gist_gray)
     image_cmap.set_bad(alpha=0.0)
     # nearest to not interpolate image
     im = ax.imshow(mosaic, interpolation='nearest',
         cmap=image_cmap, vmin=vmin, vmax=vmax, origin='upper',
-        extent=(xmin, xmax, ymin, ymax), transform=projection[HEM])
+        extent=(xmin, xmax, ymin, ymax), transform=projection)
     im.set_rasterized(True)
     # close the dataset
     ds = None
@@ -334,20 +244,17 @@ def plot_image_mosaic(ax, base_dir, HEM, MASKED=True):
 # PURPOSE: add a plot scale
 def add_plot_scale(ax,X,Y,dx,dy,masked,fc1='w',fc2='k'):
     if masked:
-        x1,x2,y1,y2 = [X-0.1*dx,X+1.2*dx,Y-2.5*dy,Y+3.2*dy]
-        ax.fill([x1,x2,x2,x1,x1], [y1,y1,y2,y2,y1], fc1, alpha=0.5, zorder=4)
-    for i,c in enumerate([fc1,fc2,fc1,fc2]):
-        x1,x2,y1,y2 = [X+0.25*i*dx,X+0.25*(i+1)*dx,Y,Y+dy]
+        x1,x2,y1,y2 = [X-0.05*dx,X+1.05*dx,Y-0.5*dy,Y+4.5*dy]
+        ax.fill([x1,x2,x2,x1,x1], [y1,y1,y2,y2,y1], fc1, zorder=1)
+    for i,c in enumerate([fc1,fc2,fc1,fc2,fc1]):
+        x1,x2,y1,y2 = [X+0.2*i*dx,X+0.2*(i+1)*dx,Y,Y+dy]
         ax.fill([x1,x2,x2,x1,x1], [y1,y1,y2,y2,y1], c, zorder=5)
-    ax.plot([X,X+dx,X+dx,X,X], [Y,Y,Y+dy,Y+dy,Y], fc2, zorder=6)
-    for i in range(3):
-        ax.plot([X+0.5*i*dx,X+0.5*i*dx], [Y,Y-0.5*dy], fc2, zorder=6)
-        ax.text(X+0.5*i*dx, Y-0.9*dy, '{0:0.0f}'.format(0.5*i*dx/1e3),
-            ha='center', va='top', fontsize=14, color=fc2, zorder=6)
-    ax.text(X+0.5*dx, Y+1.3*dy, 'km', ha='center', va='bottom',
-        fontsize=14, color=fc2, zorder=6)
+    ax.plot([X,X+dx,X+dx,X,X], [Y,Y,Y+dy,Y+dy,Y], fc2, zorder=4)
+    ax.plot([X,X,X+dx,X+dx], [Y+1.5*dy,Y,Y,Y+1.5*dy], fc2, zorder=4)
+    ax.text(X+0.5*dx, Y+1.3*dy, f'{dx/1e3:0.0f} km',
+        ha='center', va='bottom', fontsize=10, color=fc2)
 
-# PURPOSE: plot side by side maps of Greenland and Antarctica
+# plot grid program
 def plot_grid(base_dir, FILENAMES,
     DATAFORM=None,
     VARIABLES=[],
@@ -373,6 +280,7 @@ def plot_grid(base_dir, FILENAMES,
     CBFORMAT=None,
     BASEMAP=False,
     BASIN_TYPE=None,
+    GLACIER_MARGINS=False,
     DRAW_GRID_LINES=False,
     GRID=None,
     DRAW_SCALE=False,
@@ -393,7 +301,7 @@ def plot_grid(base_dir, FILENAMES,
         # colormap
         cmap = copy.copy(cm.get_cmap(COLOR_MAP))
 
-    # if using MODIS mosaic of Antarctica as basemap
+    # if using MODIS mosaic of Greenland as basemap
     if BASEMAP:
         # transparent color map for bad values
         cmap.set_bad(alpha=0.0)
@@ -452,36 +360,24 @@ def plot_grid(base_dir, FILENAMES,
     else:
         REMOVE = 0.0
 
-    # calculate ratio of axes
-    greenland_ratio = np.float64(region_xlimit['N'][1]-region_xlimit['N'][0]) / \
-        np.float64(region_ylimit['N'][1]-region_ylimit['N'][0])
-    antarctica_ratio = np.float64(region_xlimit['S'][1]-region_xlimit['S'][0]) / \
-        np.float64(region_ylimit['S'][1]-region_ylimit['S'][0])
-    width_ratios = greenland_ratio/antarctica_ratio
-
-    # make figure axes
-    ax1 = {}
-    fig = plt.figure(figsize=(15.5, 7))
-    gs = gridspec.GridSpec(1, 2,  width_ratios=[1,width_ratios])
-    hem_flag = ['S','N']
-    for i,HEM in enumerate(hem_flag):
-        ax1[i] = plt.subplot(gs[i], projection=projection[HEM])
-
+    # image extents
+    ax = {}
+    # setup polar stereographic maps
+    fig, (ax[0],ax[1],ax[2],ax[3],ax[4]) = plt.subplots(
+        num=1, ncols=5, figsize=(11.25,3.5),
+        subplot_kw=dict(projection=projection))
     # WGS84 Ellipsoid parameters
     a_axis = 6378137.0# [m] semimajor axis of the ellipsoid
     flat = 1.0/298.257223563# flattening of the ellipsoid
     # (4pi/3)R^3 = (4pi/3)(a^2)b = (4pi/3)(a^3)(1 -f)
-    rad_e = a_axis*(1.0 -flat)**(1.0/3.0)
-    # for each hemisphere
-    for i,ax in ax1.items():
-        # set hemisphere flag
-        HEM = hem_flag[i]
-        logging.info(f'Hemisphere: {HEM}')
-        # x and y limits for region
-        xlimits, ylimits = (region_xlimit[HEM], region_ylimit[HEM])
-        # plot image background (MODIS Mosaic of Antarctica or Greenland)
+    rad_e = a_axis*(1.0 - flat)**(1.0/3.0)
+
+    for i,ax1 in ax.items():
+
+        # plot image of MODIS mosaic of Greenland as base layer
         if BASEMAP:
-            plot_image_mosaic(ax, base_dir, HEM)
+            # plot MODIS mosaic of Greenland
+            plot_image_mosaic(ax1, base_dir)
 
         # input ascii/netCDF4/HDF5 file
         if (DATAFORM[i] == 'ascii'):
@@ -518,7 +414,7 @@ def plot_grid(base_dir, FILENAMES,
         Y = np.linspace(ylimits[0],ylimits[1],my)
         gridx,gridy = np.meshgrid(X,Y)
         # create mesh lon/lat
-        points = ccrs.PlateCarree().transform_points(projection[HEM],
+        points = ccrs.PlateCarree().transform_points(projection,
             gridx.flatten(), gridy.flatten())
         lonsin = points[:,0].reshape(my,mx)
         latsin = points[:,1].reshape(my,mx)
@@ -555,9 +451,9 @@ def plot_grid(base_dir, FILENAMES,
             img = gravtk.tools.mask_oceans(lonsin,latsin,
                 data=img,order=order,iceshelves=False)
         # plot image with transparency using normalization
-        im = ax.imshow(img, interpolation='nearest', cmap=cmap,
+        im = ax1.imshow(img, interpolation='nearest', cmap=cmap,
             extent=(xlimits[0],xlimits[1],ylimits[0],ylimits[1]),
-            norm=norm, alpha=ALPHA, origin='lower', transform=projection[HEM])
+            norm=norm, alpha=ALPHA, origin='lower', transform=projection)
 
         # create mesh lon/lat
         lon, lat = np.meshgrid(dinput.lon,dinput.lat)
@@ -570,9 +466,9 @@ def plot_grid(base_dir, FILENAMES,
             # remove 0 (will plot in red)
             reduce_clevs = clevs[np.nonzero(clevs)]
             # plot contours
-            ax.contour(lon,lat,data,reduce_clevs,colors='0.2',
+            ax1.contour(lon,lat,data,reduce_clevs,colors='0.2',
                 linestyles='solid',transform=ccrs.PlateCarree())
-            ax.contour(lon,lat,data,[0],colors='red',linestyles='solid',
+            ax1.contour(lon,lat,data,[0],colors='red',linestyles='solid',
                 linewidths=1.5,transform=ccrs.PlateCarree())
 
         # plot line contour for global average
@@ -584,33 +480,24 @@ def plot_grid(base_dir, FILENAMES,
             # calculate average
             ave=np.sum(area*data[indy,indx])/np.sum(area)
             # plot line contour of global average
-            ax.contour(lon,lat,data,[ave],colors='blue',linestyles='solid',
+            ax1.contour(lon,lat,data,[ave],colors='blue',linestyles='solid',
                 linewidths=1.5,transform=ccrs.PlateCarree())
 
+        # plot the coastline and grounded ice files
+        plot_coastline(ax1, base_dir)
         # add basins based on BASIN_TYPE (Rignot 2012, IMBIE-2, IMBIE-2 subbasins)
         if (BASIN_TYPE == 'Rignot'):
-            plot_rignot_basins(ax, base_dir, HEM, projection[HEM])
-            start_indice = 1 if HEM == 'S' else 0
-        elif (BASIN_TYPE == 'IMBIE-2'):
-            plot_IMBIE2_basins(ax, base_dir, HEM)
+            plot_rignot_basins(ax1, base_dir)
             start_indice = 1
-        elif (BASIN_TYPE == 'IMBIE-2_subbasin'):
-            plot_IMBIE2_subbasins(ax, base_dir)
+        elif (BASIN_TYPE == 'IMBIE-2'):
+            plot_IMBIE2_basins(ax1, base_dir)
             start_indice = 1
         else:
             start_indice = 0
-        # plot the coastline and grounded ice files
-        plot_coastline(ax, base_dir)
-        # if not plotting basins: plot the grounded ice exterior
-        plot_grounded_ice(ax, base_dir, HEM, START=start_indice)
-
-        # x and y limits, axis = equal
-        ax.set_xlim(xlimits)
-        ax.set_ylim(ylimits)
-        ax.set_aspect('equal', adjustable='box')
-        # no ticks on the x and y axes
-        ax.get_xaxis().set_ticks([])
-        ax.get_yaxis().set_ticks([])
+        # glaciers/ice caps/islands
+        if GLACIER_MARGINS:
+            plot_grounded_ice(ax1, base_dir, START=start_indice, END=30)
+            plot_glacier_inventory(ax1, base_dir, START=0, END=30)
 
         # draw lat/lon grid lines
         if DRAW_GRID_LINES:
@@ -618,7 +505,7 @@ def plot_grid(base_dir, FILENAMES,
             llx,lly = (GRID[0],GRID[0]) if (len(GRID) == 1) else (GRID[0],GRID[1])
             grid_meridians = np.arange(-180, 180 + llx, llx)
             grid_parallels = np.arange(-90, 90 + lly, lly)
-            gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
+            gl = ax1.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
                 linewidth=0.1, color='0.25', linestyle='-')
             gl.xlocator = ticker.FixedLocator(grid_meridians)
             gl.ylocator = ticker.FixedLocator(grid_parallels)
@@ -626,48 +513,54 @@ def plot_grid(base_dir, FILENAMES,
         # add title for each subplot
         if TITLES is not None:
             TITLE = ' '.join(TITLES[i].split('_'))
-            ax.set_title(TITLE.replace('-',u'\u2013'), fontsize=24)
-            ax.title.set_y(1.00)
+            ax1.set_title(TITLE.replace('-',u'\u2013'), fontsize=14)
+            ax1.title.set_y(1.00)
         # Add figure label for each subplot
         if LABELS is not None:
             at = offsetbox.AnchoredText(LABELS[i],
-                loc=2, pad=0, frameon=True,
-                prop=dict(size=24,weight='bold',color='k'))
-            at.patch.set_boxstyle("Square,pad=0.25")
+                loc=2, pad=0, borderpad=0.25, frameon=True,
+                prop=dict(size=18,weight='bold',color='k'))
+            at.patch.set_boxstyle("Square,pad=0.1")
             at.patch.set_edgecolor("white")
-            ax.axes.add_artist(at)
+            ax1.axes.add_artist(at)
 
-        # draw map scale to corners
-        if DRAW_SCALE:
-            add_plot_scale(ax, *scale_params[HEM], fc1='w', fc2='k')
+        # x and y limits, axis = equal
+        ax1.set_xlim(xlimits)
+        ax1.set_ylim(ylimits)
+        ax1.set_aspect('equal', adjustable='box')
+        # no ticks on the x and y axes
+        ax1.get_xaxis().set_ticks([])
+        ax1.get_yaxis().set_ticks([])
         # stronger linewidth on frame
-        ax.spines['geo'].set_linewidth(2.0)
-        ax.spines['geo'].set_zorder(10)
-        ax.spines['geo'].set_capstyle('projecting')
+        ax1.spines['geo'].set_linewidth(2.0)
+        ax1.spines['geo'].set_zorder(10)
+        ax1.spines['geo'].set_capstyle('projecting')
+
+    # draw map scale to corners of axis
+    if DRAW_SCALE:
+        add_plot_scale(ax[0],285e3,-334e4,500e3,40e3,False)
 
     # Add colorbar
     # Add an axes at position rect [left, bottom, width, height]
-    cax = fig.add_axes([0.905, 0.05, 0.022, 0.88])
+    cbar_ax = fig.add_axes([0.905, 0.05, 0.0225, 0.875])
     # extend = add extension triangles to upper and lower bounds
     # options: neither, both, min, max
-    cbar = fig.colorbar(im, cax=cax, extend=CBEXTEND,
+    cbar = fig.colorbar(im, cax=cbar_ax, extend=CBEXTEND,
         extendfrac=0.0375, drawedges=False)
     # rasterized colorbar to remove lines
     cbar.solids.set_rasterized(True)
     # Add label to the colorbar
-    cbar.ax.set_ylabel(CBTITLE, labelpad=10, fontsize=24)
-    cbar.ax.set_title(CBUNITS, fontsize=24, va='bottom')
-    cbar.ax.xaxis.set_label_coords(0.50, 1.06)
+    cbar.ax.set_ylabel(CBTITLE, labelpad=10, fontsize=14)
+    cbar.ax.set_title(CBUNITS, fontsize=14, va='bottom')
     # Set the tick levels for the colorbar
     cbar.set_ticks(levels)
     cbar.set_ticklabels([CBFORMAT.format(ct) for ct in levels])
     # ticks lines all the way across
-    cbar.ax.tick_params(which='both', width=1, length=24, labelsize=24,
+    cbar.ax.tick_params(which='both', width=1, length=19, labelsize=14,
         direction='in')
 
-    # adjust plot and save
-    fig.subplots_adjust(left=0.02,right=0.89,bottom=0.01,top=0.97,
-        wspace=0.05,hspace=0.05)
+    # adjust subplots within figure
+    fig.subplots_adjust(left=0.01,right=0.89,bottom=0.005,top=0.955,wspace=0.05)
     # create output directory if non-existent
     FIGURE_FILE.parent.mkdir(mode=MODE, parents=True, exist_ok=True)
     # save to file
@@ -682,16 +575,16 @@ def plot_grid(base_dir, FILENAMES,
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
-        description="""Creates GMT-like plots for the Greenland and
-            Antarctic ice sheets on polar stereographic projections
+        description="""Creates 5 GMT-like plots of the Greenland ice sheet
+            on a NSIDC polar stereographic north (EPSG 3413) projection
             """,
         fromfile_prefix_chars="@"
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
-    parser.add_argument('infile', nargs=2,
+    parser.add_argument('infile', nargs=5,
         type=pathlib.Path,
-        help='Input grid files (Antarctica and Greenland)')
+        help='Input grid files')
     # working data directory
     parser.add_argument('--directory','-D',
         type=pathlib.Path, default=pathlib.Path.cwd(),
@@ -759,9 +652,9 @@ def arguments():
         default=False, action='store_true',
         help='Plot contours for mean of dataset')
     # title and label
-    parser.add_argument('--plot-title', nargs=2,
+    parser.add_argument('--plot-title', nargs=5,
         type=str, help='Plot title')
-    parser.add_argument('--plot-label', nargs=2,
+    parser.add_argument('--plot-label', nargs=5,
         type=str, help='Plot label')
     # colorbar parameters
     parser.add_argument('--cbextend',
@@ -784,6 +677,9 @@ def arguments():
     parser.add_argument('--basin-type',
         type=str, default='',
         help='Add delineations for glacier drainage basins')
+    parser.add_argument('--glacier-margins',
+        default=False, action='store_true',
+        help='Add delineations for glacier margins')
     parser.add_argument('--draw-grid-lines',
         default=False, action='store_true',
         help='Add map grid lines')
@@ -851,6 +747,7 @@ def main():
             CBFORMAT=args.cbformat,
             BASEMAP=args.basemap,
             BASIN_TYPE=args.basin_type,
+            GLACIER_MARGINS=args.glacier_margins,
             DRAW_GRID_LINES=args.draw_grid_lines,
             GRID=args.grid_lines,
             DRAW_SCALE=args.draw_scale,

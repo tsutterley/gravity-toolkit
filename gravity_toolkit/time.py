@@ -997,6 +997,13 @@ class timescale:
         """
         return self.MJD + 2400000.5
 
+    @gravity_toolkit.utilities.reify
+    def year(self):
+        """Universal Time (UT) as calendar year
+        """
+        Y, M, D, h, m, s = convert_julian(self.ut1, format='tuple')
+        return convert_calendar_decimal(Y, M, D, hour=h, minute=m, second=s)
+
     @property
     def dtype(self):
         """Main data type of ``timescale`` object"""
@@ -1099,7 +1106,7 @@ def get_leap_seconds(truncate=True):
     # convert from time of 2nd leap second to time of 1st leap second
     leap_GPS = convert_delta_time(leap_UTC + TAI_UTC - TAI_GPS - 1,
         epoch1=_ntp_epoch, epoch2=_gps_epoch)
-    # return the GPS times of leap second occurance
+    # return the GPS times of leap second occurrence
     if truncate:
         return leap_GPS[leap_GPS >= 0].astype(np.float64)
     else:

@@ -85,7 +85,7 @@ import gravity_toolkit.read_SLR_harmonics
 
 # PURPOSE: read Degree 3 zonal data from Satellite Laser Ranging (SLR)
 def C30(SLR_file, C30_MEAN=9.5717395773300e-07, HEADER=True):
-    """
+    r"""
     Reads *C*\ :sub:`30` spherical harmonic coefficients from SLR measurements
 
     Parameters

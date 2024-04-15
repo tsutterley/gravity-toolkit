@@ -247,7 +247,7 @@ def read_CSR_monthly_6x1(SLR_file, SCALE=1e-10, HEADER=True):
 
 # PURPOSE: read weekly degree harmonic data from Satellite Laser Ranging (SLR)
 def read_GSFC_weekly_6x1(SLR_file, SCALE=1.0, HEADER=True):
-    """
+    r"""
     Reads weekly 5x5 spherical harmonic coefficients with 1 coefficient from
     degree 6 calculated from satellite laser ranging measurements
 

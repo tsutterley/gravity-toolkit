@@ -50,6 +50,12 @@ General Methods
 
 .. autofunction:: gravity_toolkit.utilities.from_ftp
 
+.. autofunction:: gravity_toolkit.utilities._create_default_ssl_context
+
+.. autofunction:: gravity_toolkit.utilities._create_ssl_context_no_verify
+
+.. autofunction:: gravity_toolkit.utilities._set_ssl_context_options
+
 .. autofunction:: gravity_toolkit.utilities.check_connection
 
 .. autofunction:: gravity_toolkit.utilities.http_list

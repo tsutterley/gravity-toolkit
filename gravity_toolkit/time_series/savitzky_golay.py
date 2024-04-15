@@ -77,7 +77,7 @@ def savitzky_golay(t_in, y_in, WINDOW=None, ORDER=2, DERIV=0,
         Length of the window
 
         Must be an odd integer
-    ORDER: int, defualt 2
+    ORDER: int, default 2
         Order of the polynomial used in the filtering
 
         Must be less than (window_size - 1)

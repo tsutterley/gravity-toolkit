@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_cumulus.py
-Written by Tyler Sutterley (09/2023)
+Written by Tyler Sutterley (04/2024)
 
 Syncs GRACE/GRACE-FO data from NASA JPL PO.DAAC Cumulus AWS S3 bucket
 S3 Cumulus syncs are only available in AWS instances in us-west-2
@@ -51,6 +51,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 04/2024: added check to verify access to s3 buckets
     Updated 09/2023: check that collection metadata urls exist
         don't restrict version number to a set list of presently available
     Updated 05/2023: use pathlib to define and operate on paths
@@ -90,6 +91,8 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
 
     # mission shortnames
     shortname = {'grace':'GRAC', 'grace-fo':'GRFO'}
+    # default bucket for GRACE/GRACE-FO bucket
+    bucket = gravtk.utilities._s3_buckets['podaac']
     # datasets for each processing center
     DSET = {}
     DSET['CSR'] = ['GAC', 'GAD', 'GSM']
@@ -177,6 +180,18 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
             local_dir = DIRECTORY.joinpath('AOD1B',rl)
             # check if directory exists and recursively create if not
             local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
+            # test connection to s3 bucket
+            if (ENDPOINT == 's3'):
+                # get shortname for CMR query
+                cmr_shortname, = gravtk.utilities.cmr_product_shortname(
+                    mission=mi, center='GFZ', release=rl, level='L1B')
+                # attempt to list objects in s3 bucket
+                try:
+                    objects = client.list_objects(Bucket=bucket,
+                        Prefix=cmr_shortname)
+                except Exception as exc:
+                    message = f'Error accessing S3 bucket {bucket}'
+                    raise Exception(message) from exc
             # query CMR for dataset
             ids,urls,mtimes = gravtk.utilities.cmr(
                 mission='grace', level='L1B', center='GFZ', release=rl,
@@ -216,6 +231,18 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                 for i,mi in enumerate(['grace','grace-fo']):
                     # print string of exact data product
                     logging.info(f'{mi} {pr}/{rl}/{ds}')
+                    # test connection to s3 bucket
+                    if (ENDPOINT == 's3'):
+                        # get shortname for CMR query
+                        cmr_shortname, = gravtk.utilities.cmr_product_shortname(
+                            mission=mi, center=pr, release=rl, product=ds)
+                        # attempt to list objects in s3 bucket
+                        try:
+                            objects = client.list_objects(Bucket=bucket,
+                                Prefix=cmr_shortname)
+                        except Exception as exc:
+                            message = f'Error accessing S3 bucket {bucket}'
+                            raise Exception(message) from exc
                     # query CMR for dataset
                     ids,urls,mtimes = gravtk.utilities.cmr(
                         mission=mi, center=pr, release=rl, product=ds,
@@ -372,7 +399,7 @@ def arguments():
     # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
         metavar='DREL', type=str, nargs='+',
-        default=['RL06'], choices=['RL06'],
+        default=['RL06'],
         help='GRACE/GRACE-FO data release')
     # GRACE/GRACE-FO data version
     parser.add_argument('--version','-v',

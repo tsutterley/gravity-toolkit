@@ -77,7 +77,7 @@ def clenshaw_summation(clm, slm, lon, lat,
         ASTYPE=np.longdouble,
         SCALE=1e-280
     ):
-    """
+    r"""
     Calculates the spatial field for a series of spherical harmonics for a
     sequence of ungridded points
 
@@ -143,7 +143,7 @@ def clenshaw_summation(clm, slm, lon, lat,
 
     # check if lat and lon are the same size
     if (len(lat) != len(lon)):
-        raise ValueError('Incompatable vector dimensions (lon, lat)')
+        raise ValueError('Incompatible vector dimensions (lon, lat)')
 
     # calculate colatitude and longitude in radians
     th = (90.0 - lat)*np.pi/180.0

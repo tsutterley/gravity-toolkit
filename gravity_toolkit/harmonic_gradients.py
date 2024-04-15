@@ -159,7 +159,7 @@ def harmonic_gradients(clm1, slm1, lon, lat,
 def geostrophic_currents(clm1, slm1, lon, lat,
     LMIN=0, LMAX=60, MMAX=None, RAD=0,
     DENSITY=1.035, LOVE=None, PLM=None):
-    """
+    r"""
     Converts data from spherical harmonic coefficients to a
     spatial fields of ocean geostrophic currents following
     [Wahr2002]_

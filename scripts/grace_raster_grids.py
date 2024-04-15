@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_raster_grids.py
-Written by Tyler Sutterley (08/2023)
+Written by Tyler Sutterley (03/2024)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     projected spatial fields
@@ -147,6 +147,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 03/2024: increase mask buffer to twice the smoothing radius
     Written 08/2023
 """
 from __future__ import print_function
@@ -482,8 +483,8 @@ def grace_raster_grids(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # calculate spatial mask with an extended radius
     THRESHOLD = 0.025
     mask = gravtk.clenshaw_summation(land_Ylms.clm, land_Ylms.slm,
-        gridlon.flatten(), latitude_geocentric.flatten(), RAD=(RAD+100),
-        UNITS=units, LMAX=LMAX, LOVE=LOVE)
+        gridlon.flatten(), latitude_geocentric.flatten(), RAD=2*RAD,
+        UNITS=1, LMAX=LMAX, LOVE=LOVE)
     ii,jj = np.nonzero(mask.reshape(ny,nx) > THRESHOLD)
 
     # output gridded raster data

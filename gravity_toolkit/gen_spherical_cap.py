@@ -100,7 +100,7 @@ from gravity_toolkit.legendre_polynomials import legendre_polynomials
 
 def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     AREA=0, RAD_CAP=0, RAD_KM=0, UNITS=1, PLM=None, LOVE=None):
-    """
+    r"""
     Calculates spherical harmonic coefficients for a spherical cap
 
     Parameters
