@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_input_months.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (10/2023)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
@@ -109,6 +109,7 @@ PROGRAM DEPENDENCIES:
     read_gfc_harmonics.py: reads spherical harmonic data from gfc files
 
 UPDATE HISTORY:
+    Updated 10/2023: standardize ocean model for UCI degree 1 coefficients
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 04/2023: use release-03 GFZ GravIS SLR and geocenter files
     Updated 03/2023: added attributes for input files and corrections
@@ -661,8 +662,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     elif DEG1 in ('SLF','UCI'):
         # degree one files from Sutterley and Velicogna (2019)
         # default: iterated and with self-attraction and loading effects
-        MODEL = dict(RL04='OMCT', RL05='OMCT', RL06='MPIOM')
-        args = (PROC,DREL,MODEL[DREL],'SLF_iter')
+        args = (PROC, DREL, 'MPIOM', 'SLF_iter')
         default_geocenter = base_dir.joinpath('geocenter',
             '{0}_{1}_{2}_{3}.txt'.format(*args))
         # read degree one files from Sutterley and Velicogna (2019)

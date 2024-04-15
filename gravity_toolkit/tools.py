@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 tools.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (04/2024)
 Jupyter notebook, user interface and plotting tools
 
 PYTHON DEPENDENCIES:
@@ -27,6 +27,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 04/2024: add widget for setting endpoint for accessing PODAAC data
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: add wrap longitudes function to change convention
         improve typing for variables in docstrings
@@ -134,6 +135,15 @@ class widgets:
         )
         # default parameters
         self.defaults = copy.copy(kwargs['defaults'])
+
+        # dropdown menu for setting PODAAC access endpoint
+        self.endpoint = ipywidgets.Dropdown(
+            options=['s3', 'data'],
+            value='data',
+            description='Endpoint:',
+            disabled=False,
+            style=self.style,
+        )
 
     def set_directory(self, b):
         """function for directory selection
@@ -260,7 +270,7 @@ class widgets:
         self.months.value=options
 
     def select_options(self, **kwargs):
-        """
+        r"""
         Widgets for setting data truncation and harmonic replacements
 
         lmax: obj

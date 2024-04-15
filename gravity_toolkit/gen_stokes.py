@@ -78,7 +78,7 @@ from gravity_toolkit.associated_legendre import plm_holmes
 
 def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     PLM=None, LOVE=None):
-    """
+    r"""
     Converts data from the spatial domain to spherical harmonic coefficients
 
     Parameters

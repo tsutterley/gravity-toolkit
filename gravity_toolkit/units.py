@@ -30,7 +30,7 @@ from __future__ import annotations
 import numpy as np
 
 class units(object):
-    """
+    r"""
     Class for converting spherical harmonic and spatial data to specific units
 
     Parameters
@@ -106,7 +106,7 @@ class units(object):
 
     @property
     def rho_e(self) -> float:
-        """average density of the Earth in g/cm\ :sup:`3`
+        r"""average density of the Earth in g/cm\ :sup:`3`
         """
         return 0.75*self.GM/(self.G*np.pi*self.rad_e**3)
 

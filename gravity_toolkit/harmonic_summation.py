@@ -196,7 +196,7 @@ def harmonic_transform(clm1, slm1, lon, lat,
 
 def stokes_summation(clm1, slm1, lon, lat,
     LMIN=0, LMAX=60, MMAX=None, RAD=0, UNITS=0, LOVE=None, PLM=None):
-    """
+    r"""
     Converts data from spherical harmonic coefficients to a spatial field
 
     Parameters

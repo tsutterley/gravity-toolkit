@@ -144,5 +144,6 @@ missions
     api_reference/plot_global_grid_movie.rst
     api_reference/plot_GrIS_grid_maps.rst
     api_reference/plot_GrIS_grid_3maps.rst
+    api_reference/plot_GrIS_grid_5maps.rst
     api_reference/plot_GrIS_grid_movie.rst
     api_reference/quick_mascon_plot.rst

@@ -63,7 +63,7 @@ UPDATE HISTORY:
     Updated 05/2021: Add GRAZ/Swarm/COST-G ICGEM file
     Updated 03/2021: made degree of truncation LMAX a keyword argument
     Updated 07/2020: added function docstrings
-    Updated 07/2019: split read and wrapper funciton into separate files
+    Updated 07/2019: split read and wrapper function into separate files
     Updated 07/2017: include parameters to change the tide system
     Written 12/2015
 """

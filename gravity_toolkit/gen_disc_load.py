@@ -82,7 +82,7 @@ from gravity_toolkit.legendre_polynomials import legendre_polynomials
 
 def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
     PLM=None, LOVE=None):
-    """
+    r"""
     Calculates spherical harmonic coefficients for a uniform disc load
 
     Parameters

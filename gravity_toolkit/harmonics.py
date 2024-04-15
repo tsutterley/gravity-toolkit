@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (09/2023)
+Written by Tyler Sutterley (10/2023)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -25,6 +25,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 10/2023: place time and month variables in try/except block
     Updated 09/2023: prevent double printing of filenames when using debug
     Updated 08/2023: add string representation of the harmonics object
     Updated 06/2023: fix GRACE/GRACE-FO months in drift function
@@ -1910,12 +1911,16 @@ class harmonics(object):
         """
         temp = harmonics(lmax=np.copy(self.lmax), mmax=np.copy(self.mmax))
         try:
-            temp.time = self.time[self.__index__].copy()
-            temp.month = self.month[self.__index__].copy()
             temp.clm = self.clm[:,:,self.__index__].copy()
             temp.slm = self.slm[:,:,self.__index__].copy()
         except IndexError as exc:
             raise StopIteration from exc
+        # subset output spatial time and month
+        try:
+            temp.time = self.time[self.__index__].copy()
+            temp.month = self.month[self.__index__].copy()
+        except AttributeError as exc:
+            pass
         # subset filename if applicable
         if getattr(self, 'filename'):
             if isinstance(self.filename, (list, tuple, np.ndarray)):

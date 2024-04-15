@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (06/2023)
+Written by Tyler Sutterley (04/2024)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
@@ -9,6 +9,9 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/lxml
 
 UPDATE HISTORY:
+    Updated 04/2024: added argument for products in CMR shortname query
+    Updated 11/2023: updated ssl context to fix deprecation error
+    Updated 10/2023: add capability to download CSR LRI solutions
     Updated 06/2023: add functions to retrieve and revoke Earthdata tokens
         add TN11e.txt file to list of CSR SLR downloads
     Updated 05/2023: add reify decorator for evaluation of properties
@@ -567,11 +570,41 @@ def from_ftp(
         remote_buffer.seek(0)
         return remote_buffer
 
+def _create_default_ssl_context() -> ssl.SSLContext:
+    """Creates the default SSL context
+    """
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    _set_ssl_context_options(context)
+    context.options |= ssl.OP_NO_COMPRESSION
+    return context
+
+def _create_ssl_context_no_verify() -> ssl.SSLContext:
+    """Creates an SSL context for unverified connections
+    """
+    context = _create_default_ssl_context()
+    context.check_hostname = False
+    context.verify_mode = ssl.CERT_NONE
+    return context
+
+def _set_ssl_context_options(context: ssl.SSLContext) -> None:
+    """Sets the default options for the SSL context
+    """
+    if sys.version_info >= (3, 10) or ssl.OPENSSL_VERSION_INFO >= (1, 1, 0, 7):
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
+    else:
+        context.options |= ssl.OP_NO_SSLv2
+        context.options |= ssl.OP_NO_SSLv3
+        context.options |= ssl.OP_NO_TLSv1
+        context.options |= ssl.OP_NO_TLSv1_1
+
 # default ssl context
-_default_ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+_default_ssl_context = _create_ssl_context_no_verify()
 
 # PURPOSE: check internet connection
-def check_connection(HOST: str, context=_default_ssl_context):
+def check_connection(
+        HOST: str,
+        context: ssl.SSLContext = _default_ssl_context,
+    ):
     """
     Check internet connection with http host
 
@@ -579,7 +612,7 @@ def check_connection(HOST: str, context=_default_ssl_context):
     ----------
     HOST: str
         remote http host
-    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
+    context: obj, default gravity_toolkit.utilities._default_ssl_context
         SSL context for ``urllib`` opener object
     """
     # attempt to connect to http host
@@ -594,7 +627,7 @@ def check_connection(HOST: str, context=_default_ssl_context):
 def http_list(
         HOST: str | list,
         timeout: int | None = None,
-        context = _default_ssl_context,
+        context: ssl.SSLContext = _default_ssl_context,
         parser = lxml.etree.HTMLParser(),
         format: str = '%Y-%m-%d %H:%M',
         pattern: str = '',
@@ -609,7 +642,7 @@ def http_list(
         remote http host path
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
-    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
+    context: obj, default gravity_toolkit.utilities._default_ssl_context
         SSL context for ``urllib`` opener object
     parser: obj, default lxml.etree.HTMLParser()
         HTML parser for ``lxml``
@@ -663,7 +696,7 @@ def http_list(
 def from_http(
         HOST: str | list,
         timeout: int | None = None,
-        context = _default_ssl_context,
+        context: ssl.SSLContext = _default_ssl_context,
         local: str | pathlib.Path | None = None,
         hash: str = '',
         chunk: int = 16384,
@@ -680,7 +713,7 @@ def from_http(
         remote http host path split as list
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
-    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
+    context: obj, default gravity_toolkit.utilities._default_ssl_context
         SSL context for ``urllib`` opener object
     local: str, pathlib.Path or NoneType, default None
         path to local file
@@ -744,7 +777,7 @@ def from_http(
 # PURPOSE: attempt to build an opener with netrc
 def attempt_login(
         urs: str,
-        context=_default_ssl_context,
+        context: ssl.SSLContext = _default_ssl_context,
         password_manager: bool = True,
         get_ca_certs: bool = False,
         redirect: bool = False,
@@ -758,7 +791,7 @@ def attempt_login(
     ----------
     urs: str
         Earthdata login URS 3 host
-    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
+    context: obj, default gravity_toolkit.utilities._default_ssl_context
         SSL context for ``urllib`` opener object
     password_manager: bool, default True
         Create password manager context using default realm
@@ -832,7 +865,7 @@ def attempt_login(
 def build_opener(
         username: str,
         password: str,
-        context=_default_ssl_context,
+        context: ssl.SSLContext = _default_ssl_context,
         password_manager: bool = False,
         get_ca_certs: bool = False,
         redirect: bool = False,
@@ -848,7 +881,7 @@ def build_opener(
         NASA Earthdata username
     password: str or NoneType, default None
         NASA Earthdata password
-    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
+    context: obj, default gravity_toolkit.utilities._default_ssl_context
         SSL context for ``urllib`` opener object
     password_manager: bool, default False
         Create password manager context using default realm
@@ -906,6 +939,7 @@ def get_token(
         username: str | None = None,
         password: str | None = None,
         build: bool = True,
+        context: ssl.SSLContext = _default_ssl_context,
         urs: str = 'urs.earthdata.nasa.gov',
     ):
     """
@@ -923,6 +957,8 @@ def get_token(
         Build opener and check WebDAV credentials
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
+    context: obj, default gravity_toolkit.utilities._default_ssl_context
+        SSL context for ``urllib`` opener object
     urs: str, default 'urs.earthdata.nasa.gov'
         NASA Earthdata URS 3 host
 
@@ -936,6 +972,7 @@ def get_token(
         attempt_login(urs,
             username=username,
             password=password,
+            context=context,
             password_manager=False,
             get_ca_certs=False,
             redirect=False,
@@ -959,6 +996,7 @@ def list_tokens(
         username: str | None = None,
         password: str | None = None,
         build: bool = True,
+        context: ssl.SSLContext = _default_ssl_context,
         urs: str = 'urs.earthdata.nasa.gov',
     ):
     """
@@ -976,6 +1014,8 @@ def list_tokens(
         Build opener and check WebDAV credentials
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
+    context: obj, default gravity_toolkit.utilities._default_ssl_context
+        SSL context for ``urllib`` opener object
     urs: str, default 'urs.earthdata.nasa.gov'
         NASA Earthdata URS 3 host
 
@@ -989,6 +1029,7 @@ def list_tokens(
         attempt_login(urs,
             username=username,
             password=password,
+            context=context,
             password_manager=False,
             get_ca_certs=False,
             redirect=False,
@@ -1013,6 +1054,7 @@ def revoke_token(
         username: str | None = None,
         password: str | None = None,
         build: bool = True,
+        context: ssl.SSLContext = _default_ssl_context,
         urs: str = 'urs.earthdata.nasa.gov',
     ):
     """
@@ -1032,6 +1074,8 @@ def revoke_token(
         Build opener and check WebDAV credentials
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
+    context: obj, default gravity_toolkit.utilities._default_ssl_context
+        SSL context for ``urllib`` opener object
     urs: str, default 'urs.earthdata.nasa.gov'
         NASA Earthdata URS 3 host
     """
@@ -1040,6 +1084,7 @@ def revoke_token(
         attempt_login(urs,
             username=username,
             password=password,
+            context=context,
             password_manager=False,
             get_ca_certs=False,
             redirect=False,
@@ -1100,6 +1145,18 @@ _s3_buckets = {
     'podaac-doc': 'podaac-ops-cumulus-docs'
 }
 
+def s3_region():
+    """
+    Get AWS s3 region for EC2 instance
+
+    Returns
+    -------
+    region_name: str
+        AWS region name
+    """
+    region_name = boto3.session.Session().region_name
+    return region_name
+        
 # PURPOSE: get AWS s3 client for PO.DAAC Cumulus
 def s3_client(
         HOST: str = _s3_endpoints['podaac'],
@@ -1199,7 +1256,7 @@ def drive_list(
         build: bool = True,
         timeout: int | None = None,
         urs: str = 'podaac-tools.jpl.nasa.gov',
-        parser=lxml.etree.HTMLParser(),
+        parser = lxml.etree.HTMLParser(),
         pattern: str = '',
         sort: bool = False
     ):
@@ -1383,7 +1440,8 @@ def cmr_product_shortname(
         center: str,
         release: str,
         level: str = 'L2',
-        version: str = '0'
+        version: str = '0',
+        product: list = ['GAA','GAB','GAC','GAD','GSM']
     ):
     """
     Create a list of product shortnames for NASA Common Metadata
@@ -1405,6 +1463,8 @@ def cmr_product_shortname(
             - ``'L2'``
     version: str, default '0'
         GRACE/GRACE-FO Level-2 data version
+    product: list, default ['GAA','GAB','GAC','GAD','GSM']
+        GRACE/GRACE-FO Level-2 data products
 
     Returns
     -------
@@ -1448,11 +1508,14 @@ def cmr_product_shortname(
         cmr_shortname['grace']['L2']['GFZ'][rl] = []
         # NASA Jet Propulsion Laboratory (JPL)
         cmr_shortname['grace']['L2']['JPL'][rl] = []
+        # check that product is iterable
+        if isinstance(product, str):
+            product = [product]
         # create list of product shortnames for GRACE level-2 products
         # for each L2 data processing center
         for c in ['CSR','GFZ','JPL']:
             # for each level-2 product
-            for p in ['GAA', 'GAB', 'GAC', 'GAD', 'GSM']:
+            for p in product:
                 # skip atmospheric and oceanic dealiasing products for CSR
                 if (c == 'CSR') and p in ('GAA', 'GAB'):
                     continue
@@ -1639,6 +1702,7 @@ def cmr(
         end_date: str | None = None,
         provider: str | None = 'POCLOUD',
         endpoint: str | None = 'data',
+        context: ssl.SSLContext = _default_ssl_context,
         verbose: bool = False,
         fid = sys.stdout
     ):
@@ -1675,6 +1739,8 @@ def cmr(
 
             - ``'data'``: PO.DAAC https archive
             - ``'s3'``: PO.DAAC Cumulus AWS S3 bucket
+    context: obj, default gravity_toolkit.utilities._default_ssl_context
+        SSL context for ``urllib`` opener object
     verbose: bool, default False
         print CMR query information
     fid: obj, default sys.stdout
@@ -1698,7 +1764,7 @@ def cmr(
     # Create cookie jar for storing cookies
     cookie_jar = CookieJar()
     handler.append(urllib2.HTTPCookieProcessor(cookie_jar))
-    handler.append(urllib2.HTTPSHandler(context=_default_ssl_context))
+    handler.append(urllib2.HTTPSHandler(context=context))
     # create "opener" (OpenerDirector instance)
     opener = urllib2.build_opener(*handler)
     # build CMR query
@@ -1769,6 +1835,7 @@ def cmr_metadata(
         provider: str | None = 'POCLOUD',
         endpoint: str | None = 'data',
         pattern: str | None = '',
+        context: ssl.SSLContext = _default_ssl_context,
         verbose: bool = False,
         fid = sys.stdout
     ):
@@ -1801,6 +1868,8 @@ def cmr_metadata(
             - ``'s3'``: PO.DAAC Cumulus AWS S3 bucket
     pattern: str, default ''
         regular expression pattern for reducing list
+    context: obj, default gravity_toolkit.utilities._default_ssl_context
+        SSL context for ``urllib`` opener object
     verbose: bool, default False
         print CMR query information
     fid: obj, default sys.stdout
@@ -1820,7 +1889,7 @@ def cmr_metadata(
     # Create cookie jar for storing cookies
     cookie_jar = CookieJar()
     handler.append(urllib2.HTTPCookieProcessor(cookie_jar))
-    handler.append(urllib2.HTTPSHandler(context=_default_ssl_context))
+    handler.append(urllib2.HTTPSHandler(context=context))
     # create "opener" (OpenerDirector instance)
     opener = urllib2.build_opener(*handler)
     # build CMR query
@@ -1922,6 +1991,11 @@ def compile_regex_pattern(
         release, = re.findall(r'\d+', DREL)
         args = (DSET, mission, solution, release.zfill(2), version.zfill(2))
         pattern = r'{0}-2_\d+-\d+_{1}_UTCSR_{2}_{3}{4}(\.gz)?$'
+    elif ((DSET == 'GSM') and (PROC == 'CSR') and (DREL.endswith('LRI'))):
+        # CSR GSM LRI solutions: monthly products for mission and solution
+        release, version = re.findall(r'(\d+)\.(\d+)', DREL).pop()
+        args = (DSET, mission, r'EA01', release.zfill(2), version.zfill(2))
+        pattern = r'{0}-2_\d+-\d+_{1}_UTCSR_{2}_{3}{4}(\.gz)?$'
     elif ((DSET == 'GSM') and (PROC == 'GFZ') and (DREL == 'RL04')):
         # GFZ RL04: only unconstrained solutions (not GK2 products)
         args = (DSET,)
@@ -1968,7 +2042,7 @@ def from_figshare(
         directory: str | pathlib.Path,
         article: str = '7388540',
         timeout: int | None = None,
-        context = _default_ssl_context,
+        context: ssl.SSLContext = _default_ssl_context,
         chunk: int | None = 16384,
         verbose: bool = False,
         fid = sys.stdout,
@@ -1987,7 +2061,7 @@ def from_figshare(
         figshare article number
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
-    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
+    context: obj, default gravity_toolkit.utilities._default_ssl_context
         SSL context for ``urllib`` opener object
     chunk: int, default 16384
         chunk size for transfer encoding
@@ -2044,7 +2118,7 @@ def to_figshare(
         password: str | None = None,
         directory: str | None | pathlib.Path = None,
         timeout: int | None = None,
-        context = _default_ssl_context,
+        context: ssl.SSLContext = _default_ssl_context,
         get_ca_certs: bool = False,
         verbose: bool = False,
         chunk: int = 8192
@@ -2066,7 +2140,7 @@ def to_figshare(
         figshare subdirectory for sending data
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
-    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
+    context: obj, default gravity_toolkit.utilities._default_ssl_context
         SSL context for ``urllib`` opener object
     get_ca_certs: bool, default False
         get list of loaded “certification authority” certificates
@@ -2106,30 +2180,39 @@ def to_figshare(
             ftps.storbinary(f'STOR {ftp_remote_path}', fp,
                 blocksize=chunk, callback=None, rest=None)
 
-# PURPOSE: download satellite laser ranging files from CSR
+# PURPOSE: download files from CSR
 # http://download.csr.utexas.edu/pub/slr/geocenter/GCN_L1_L2_30d_CF-CM.txt
 # http://download.csr.utexas.edu/outgoing/cheng/gct2est.220_5s
 def from_csr(
         directory: str | pathlib.Path,
+        variable: str | list | tuple | None = None,
+        version: str = 'RL06.1LRI',
         timeout: int | None = None,
-        context = _default_ssl_context,
+        context: ssl.SSLContext = _default_ssl_context,
         chunk: int | None = 16384,
         verbose: bool = False,
         fid = sys.stdout,
         mode: oct = 0o775
     ):
     """
-    Download `satellite laser ranging (SLR)
-    <http://download.csr.utexas.edu/pub/slr/>`_
-    files from the University of Texas Center for Space Research (UTCSR)
+    Download files from the University of Texas Center for
+    Space Research (UTCSR)
 
     Parameters
     ----------
     directory: str
         download directory
+    variable: str, list, tuple or NoneType, default None
+        CSR variable to download
+
+            - ``'SLR'``: low degree SLR solutions
+            - ``'geocenter'``: SLR geocenter solutions
+            - ``'LRI'``: level-2 solutions from LRI
+    version: str, default 'RL06.1LRI'
+        Version of the LRI dataset to download
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
-    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
+    context: obj, default gravity_toolkit.utilities._default_ssl_context
         SSL context for ``urllib`` opener object
     chunk: int, default 16384
         chunk size for transfer encoding
@@ -2144,46 +2227,83 @@ def from_csr(
     HOST = 'http://download.csr.utexas.edu'
     # recursively create directory if non-existent
     directory = pathlib.Path(directory).expanduser().absolute()
-    local_dir = directory.joinpath('geocenter')
-    local_dir.mkdir(mode=mode, parents=True, exist_ok=True)
-    # download SLR 5x5, figure axis and azimuthal dependence files
-    FILES = []
-    FILES.append([HOST,'pub','slr','degree_5',
-        'CSR_Monthly_5x5_Gravity_Harmonics.txt'])
-    FILES.append([HOST,'pub','slr','degree_2','C20_RL06.txt'])
-    FILES.append([HOST,'pub','slr','degree_2','C21_S21_RL06.txt'])
-    FILES.append([HOST,'pub','slr','degree_2','C22_S22_RL06.txt'])
-    FILES.append([HOST,'pub','slr','TN11E','TN11E.txt'])
-    # for each SLR file
-    for FILE in FILES:
-        local_file = directory.joinpath(FILE[-1])
-        original_md5 = get_hash(local_file)
-        from_http(FILE,
-            timeout=timeout,
-            context=context,
-            local=local_file,
-            hash=original_md5,
-            chunk=chunk,
-            verbose=verbose,
-            fid=fid,
-            mode=mode)
-    # download CF-CM SLR and updated SLR geocenter files from Minkang Cheng
-    FILES = []
-    FILES.append([HOST,'pub','slr','geocenter','GCN_L1_L2_30d_CF-CM.txt'])
-    FILES.append([HOST,'outgoing','cheng','gct2est.220_5s'])
-    # for each SLR geocenter file
-    for FILE in FILES:
-        local_file = local_dir.joinpath(FILE[-1])
-        original_md5 = get_hash(local_file)
-        from_http(FILE,
-            timeout=timeout,
-            context=context,
-            local=local_file,
-            hash=original_md5,
-            chunk=chunk,
-            verbose=verbose,
-            fid=fid,
-            mode=mode)
+    directory.mkdir(mode=mode, parents=True, exist_ok=True)
+    # verify inputs for variable to be iterable
+    if isinstance(variable, str):
+        variable = [variable]
+    # download SLR files from CSR
+    if 'SLR' in variable:
+        # download SLR 5x5, figure axis and azimuthal dependence files
+        FILES = []
+        FILES.append([HOST,'pub','slr','degree_5',
+            'CSR_Monthly_5x5_Gravity_Harmonics.txt'])
+        FILES.append([HOST,'pub','slr','degree_2','C20_RL06.txt'])
+        FILES.append([HOST,'pub','slr','degree_2','C21_S21_RL06.txt'])
+        FILES.append([HOST,'pub','slr','degree_2','C22_S22_RL06.txt'])
+        FILES.append([HOST,'pub','slr','TN11E','TN11E.txt'])
+        # for each SLR file
+        for FILE in FILES:
+            local_file = directory.joinpath(FILE[-1])
+            original_md5 = get_hash(local_file)
+            from_http(FILE,
+                timeout=timeout,
+                context=context,
+                local=local_file,
+                hash=original_md5,
+                chunk=chunk,
+                verbose=verbose,
+                fid=fid,
+                mode=mode)
+    # download geocenter files from CSR
+    if 'geocenter' in variable:
+        # recursively create geocenter directory if non-existent
+        local_dir = directory.joinpath('geocenter')
+        local_dir.mkdir(mode=mode, parents=True, exist_ok=True)
+        # download CF-CM SLR and updated SLR geocenter files from Minkang Cheng
+        FILES = []
+        FILES.append([HOST,'pub','slr','geocenter','GCN_L1_L2_30d_CF-CM.txt'])
+        FILES.append([HOST,'outgoing','cheng','gct2est.220_5s'])
+        # for each SLR geocenter file
+        for FILE in FILES:
+            local_file = local_dir.joinpath(FILE[-1])
+            original_md5 = get_hash(local_file)
+            from_http(FILE,
+                timeout=timeout,
+                context=context,
+                local=local_file,
+                hash=original_md5,
+                chunk=chunk,
+                verbose=verbose,
+                fid=fid,
+                mode=mode)
+    # download LRI-only solutions
+    if 'LRI' in variable:
+        remote_path = ['http://download.csr.utexas.edu',
+            'outgoing', 'gracefo', version]
+        # find years of available LRI data
+        years, _ = http_list(remote_path, pattern=r'\d{4}')
+        # download each available CSR product
+        for PROD in ['GAC','GAD','GSM']:
+            # recursively create local directory if non-existent
+            local_dir = directory.joinpath('CSR', version, PROD)
+            local_dir.mkdir(mode=mode, parents=True, exist_ok=True)
+            # for each year
+            for year in years:
+                # find LRI files
+                files, mtimes = http_list([*remote_path, year], pattern=PROD)
+                # download each file
+                for fi, lmd in zip(files, mtimes):
+                    local_file = local_dir.joinpath(fi)
+                    original_md5 = get_hash(local_file)
+                    from_http([*remote_path, year, fi],
+                        timeout=timeout,
+                        context=context,
+                        local=local_file,
+                        hash=original_md5,
+                        chunk=chunk,
+                        verbose=verbose,
+                        fid=fid,
+                        mode=mode)
 
 # PURPOSE: download GravIS and satellite laser ranging files from GFZ
 # ftp://isdcftp.gfz-potsdam.de/grace/Level-2/GFZ/RL06_SLR_C20/
@@ -2255,7 +2375,7 @@ def from_gsfc(
         directory: str | pathlib.Path,
         host: str = 'https://earth.gsfc.nasa.gov/sites/default/files/geo/slr-weekly',
         timeout: int | None = None,
-        context = _default_ssl_context,
+        context: ssl.SSLContext = _default_ssl_context,
         chunk: int | None = 16384,
         verbose: bool = False,
         fid = sys.stdout,
@@ -2274,7 +2394,7 @@ def from_gsfc(
         url for the GSFC SLR weekly fields
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
-    context: obj, default ssl.SSLContext(ssl.PROTOCOL_TLS)
+    context: obj, default gravity_toolkit.utilities._default_ssl_context
         SSL context for ``urllib`` opener object
     chunk: int, default 16384
         chunk size for transfer encoding

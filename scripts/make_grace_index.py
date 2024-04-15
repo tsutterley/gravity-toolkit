@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 make_grace_index.py
-Written by Tyler Sutterley (09/2023)
+Written by Tyler Sutterley (10/2023)
 Creates index files of GRACE/GRACE-FO Level-2 data
 
 CALLING SEQUENCE:
@@ -23,6 +23,7 @@ PYTHON DEPENDENCIES:
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
 
 UPDATE HISTORY:
+    Updated 10/2023: generalize release argument to be generalized
     Updated 09/2023: add reduce by date if making index with latest version
         don't restrict version number to a set list of presently available
     Updated 05/2023: use pathlib to define and operate on paths
@@ -105,7 +106,7 @@ def arguments():
     # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',
         metavar='DREL', type=str, nargs='+',
-        default=['RL06'], choices=['RL06'],
+        default=['RL06'],
         help='GRACE/GRACE-FO data release')
     # GRACE/GRACE-FO data product
     parser.add_argument('--product','-p',

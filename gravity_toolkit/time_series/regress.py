@@ -107,7 +107,7 @@ import scipy.special
 def regress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], TERMS=[],
     DATA_ERR=0, WEIGHT=False, RELATIVE=Ellipsis, STDEV=0, CONF=0,
     AICc=True):
-    """
+    r"""
     Fits a synthetic signal to data over a time period by
     ordinary or weighted least-squares
 

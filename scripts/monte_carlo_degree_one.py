@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 monte_carlo_degree_one.py
-Written by Tyler Sutterley (09/2023)
+Written by Tyler Sutterley (10/2023)
 
 Calculates degree 1 errors using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from OMCT/MPIOM in a Monte Carlo scheme
@@ -157,6 +157,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 10/2023: generalize mission variable to be GRACE/GRACE-FO
     Updated 09/2023: add more root level attributes to output netCDF4 files
         simplify I-matrix and G-matrix calculations
     Updated 05/2023: use pathlib to define and operate on paths
@@ -318,8 +319,8 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     attributes['product_release'] = DREL
     attributes['product_name'] = DSET
     attributes['product_type'] = 'gravity_field'
-    MISSION = dict(RL05='GRACE', RL06='GRACE/GRACE-FO')
-    attributes['title'] = f'{MISSION[DREL]} Geocenter Coefficients'
+    MISSION = 'GRACE/GRACE-FO'
+    attributes['title'] = f'{MISSION} Geocenter Coefficients'
     attributes['solver'] = SOLVER
 
 
@@ -957,17 +958,17 @@ def print_harmonic(fid,kl):
 # PURPOSE: print global attributes to YAML header
 def print_global(fid,PROC,DREL,MODEL,GIA,SLR,S21,month):
     fid.write('  {0}:\n'.format('global_attributes'))
-    MISSION = dict(RL05='GRACE',RL06='GRACE/GRACE-FO')
-    title = '{0} Geocenter Coefficients {1} {2}'.format(MISSION[DREL],PROC,DREL)
+    MISSION = 'GRACE/GRACE-FO'
+    title = '{0} Geocenter Coefficients {1} {2}'.format(MISSION,PROC,DREL)
     fid.write('    {0:22}: {1}\n'.format('title',title))
     summary = []
     summary.append(('Geocenter coefficients derived from {0} mission '
-        'measurements and {1} ocean model outputs.').format(MISSION[DREL],MODEL))
+        'measurements and {1} ocean model outputs.').format(MISSION,MODEL))
     summary.append(('  These coefficients represent the largest-scale '
         'variability of hydrologic, cryospheric, and solid Earth '
         'processes.  In addition, the coefficients represent the '
         'atmospheric and oceanic processes not captured in the {0} {1} '
-        'de-aliasing product.').format(MISSION[DREL],DREL))
+        'de-aliasing product.').format(MISSION,DREL))
     # get GIA parameters
     summary.append(('  Glacial Isostatic Adjustment (GIA) estimates from '
         '{0} have been restored.').format(GIA.citation))
@@ -992,10 +993,10 @@ def print_global(fid,PROC,DREL,MODEL,GIA,SLR,S21,month):
     fid.write('    {0:22}: {1}\n'.format('keywords',', '.join(keywords)))
     vocabulary = 'NASA Global Change Master Directory (GCMD) Science Keywords'
     fid.write('    {0:22}: {1}\n'.format('keywords_vocabulary',vocabulary))
-    hist = '{0} Level-3 Data created at UC Irvine'.format(MISSION[DREL])
+    hist = '{0} Level-3 Data created at UC Irvine'.format(MISSION)
     fid.write('    {0:22}: {1}\n'.format('history',hist))
     src = 'An inversion using {0} measurements and {1} ocean model outputs.'
-    args = (MISSION[DREL],MODEL,DREL)
+    args = (MISSION,MODEL,DREL)
     fid.write('    {0:22}: {1}\n'.format('source',src.format(*args)))
     # fid.write('    {0:22}: {1}\n'.format('platform','GRACE-A, GRACE-B'))
     # vocabulary = 'NASA Global Change Master Directory platform keywords'

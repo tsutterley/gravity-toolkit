@@ -263,7 +263,7 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
 def love_number_formatter(love, FORMAT='tuple'):
     """
     Converts a dictionary of Load Love/Shida Numbers
-    to a particular output fomrat
+    to a particular output format
 
     Parameters
     ----------

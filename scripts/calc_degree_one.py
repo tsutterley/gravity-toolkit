@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_degree_one.py
-Written by Tyler Sutterley (09/2023)
+Written by Tyler Sutterley (10/2023)
 
 Calculates degree 1 variations using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from ECCO and OMCT/MPIOM
@@ -167,6 +167,7 @@ REFERENCES:
         https://doi.org/10.1029/2007JB005338
 
 UPDATE HISTORY:
+    Updated 10/2023: generalize mission variable to be GRACE/GRACE-FO
     Updated 09/2023: output comprehensive netCDF4 files with all components
         simplify I-matrix and G-matrix calculations
     Updated 05/2023: use pathlib to define and operate on paths
@@ -397,8 +398,8 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     attributes['product_release'] = DREL
     attributes['product_name'] = 'GSM'
     attributes['product_type'] = 'gravity_field'
-    MISSION = dict(RL05='GRACE', RL06='GRACE/GRACE-FO')
-    attributes['title'] = f'{MISSION[DREL]} Geocenter Coefficients'
+    MISSION = 'GRACE/GRACE-FO'
+    attributes['title'] = f'{MISSION} Geocenter Coefficients'
     attributes['solver'] = SOLVER
 
     # list object of output files for file logs (full path)
@@ -999,7 +1000,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     # GRACE components of ocean water mass
     nc['OWM'] = {}
     g3 = fileID.createGroup('OWM')
-    g3.description = f'Ocean water mass from {MISSION[DREL]}'
+    g3.description = f'Ocean water mass from {MISSION}'
     owm = G.scale(1.0/dfactor[1])
     for key in owm.fields:
         var = owm.get(key)
@@ -1012,7 +1013,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     # eustatic sea level from land water mass
     nc['ESL'] = {}
     g4 = fileID.createGroup('ESL')
-    g4.description = 'Eustatic sea level from land water mass'
+    g4.description = f'Eustatic sea level from {MISSION} land water mass'
     esl = eustatic.scale(1.0/dfactor[1])
     for key in esl.fields:
         var = esl.get(key)
@@ -1174,12 +1175,12 @@ def print_harmonic(fid,kl):
 # PURPOSE: print global attributes to YAML header
 def print_global(fid,PROC,DREL,MODEL,AOD,GIA,SLR,S21,month):
     fid.write('  {0}:\n'.format('global_attributes'))
-    MISSION = dict(RL05='GRACE',RL06='GRACE/GRACE-FO')
-    title = '{0} Geocenter Coefficients {1} {2}'.format(MISSION[DREL],PROC,DREL)
+    MISSION = 'GRACE/GRACE-FO'
+    title = '{0} Geocenter Coefficients {1} {2}'.format(MISSION,PROC,DREL)
     fid.write('    {0:22}: {1}\n'.format('title',title))
     summary = []
     summary.append(('Geocenter coefficients derived from {0} mission '
-        'measurements and {1} ocean model outputs.').format(MISSION[DREL],MODEL))
+        'measurements and {1} ocean model outputs.').format(MISSION,MODEL))
     if AOD:
         summary.append(('  These coefficients represent the largest-scale '
             'variability of atmospheric, oceanic, hydrologic, cryospheric, '
@@ -1189,7 +1190,7 @@ def print_global(fid,PROC,DREL,MODEL,AOD,GIA,SLR,S21,month):
             'variability of hydrologic, cryospheric, and solid Earth '
             'processes.  In addition, the coefficients represent the '
             'atmospheric and oceanic processes not captured in the {0} {1} '
-            'de-aliasing product.').format(MISSION[DREL],DREL))
+            'de-aliasing product.').format(MISSION,DREL))
     # get GIA parameters
     summary.append(('  Glacial Isostatic Adjustment (GIA) estimates from '
         '{0} have been restored.').format(GIA.citation))
@@ -1217,13 +1218,13 @@ def print_global(fid,PROC,DREL,MODEL,AOD,GIA,SLR,S21,month):
     fid.write('    {0:22}: {1}\n'.format('keywords',', '.join(keywords)))
     vocabulary = 'NASA Global Change Master Directory (GCMD) Science Keywords'
     fid.write('    {0:22}: {1}\n'.format('keywords_vocabulary',vocabulary))
-    hist = '{0} Level-3 Data created at UC Irvine'.format(MISSION[DREL])
+    hist = '{0} Level-3 Data created at UC Irvine'.format(MISSION)
     fid.write('    {0:22}: {1}\n'.format('history',hist))
     src = 'An inversion using {0} measurements and {1} ocean model outputs.'
     if AOD:
         src += ('  Atmospheric and oceanic variation restored using the {2} '
             'de-aliasing product.')
-    args = (MISSION[DREL],MODEL,DREL)
+    args = (MISSION,MODEL,DREL)
     fid.write('    {0:22}: {1}\n'.format('source',src.format(*args)))
     # fid.write('    {0:22}: {1}\n'.format('platform','GRACE-A, GRACE-B'))
     # vocabulary = 'NASA Global Change Master Directory platform keywords'

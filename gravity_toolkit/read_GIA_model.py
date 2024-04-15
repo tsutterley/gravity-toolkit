@@ -101,7 +101,7 @@ UPDATE HISTORY:
         convert shape and ndim to harmonic class properties
         improve typing for variables in docstrings
     Updated 02/2023: use monospaced text for harmonics objects in gia docstring
-    Updated 12/2022: made interited GIA model harmonics class
+    Updated 12/2022: made inherited GIA model harmonics class
         set default parameters, title, reference and url as None
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 09/2022: use logging for debugging level verbose output

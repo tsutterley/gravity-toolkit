@@ -7,7 +7,7 @@ Uses a Clenshaw summation to calculate the spherical harmonic summation
 CALLING SEQUENCE:
     sea_level = sea_level_equation(loadClm, loadSlm, glon, glat, landmask,
         LMAX=LMAX, LOVE=(hl,kl,ll), BODY_TIDE_LOVE=0, FLUID_LOVE=0, POLAR=True,
-        INTERATIONS=6, FILL_VALUE=0)
+        ITERATIONS=6, FILL_VALUE=0)
 
 INPUTS:
     loadClm: input set of cosine spherical harmonics
