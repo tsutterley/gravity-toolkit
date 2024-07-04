@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 units.py
-Written by Tyler Sutterley (09/2023)
+Written by Tyler Sutterley (05/2024)
 Contributions by Hugo Lecomte
 
 Class for converting GRACE/GRACE-FO Level-2 data to specific units
@@ -10,6 +10,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 05/2024: make subscriptable and allow item assignment
     Updated 09/2023: added property for the approximate mass of the Earth
     Updated 03/2023: include option to not compensate for elastic deformation
         include option to include effects for Earth's oblateness
@@ -309,3 +310,9 @@ class units(object):
             return named_attributes[var]
         except Exception as exc:
             raise ValueError(f'Unknown units {var}') from exc
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)

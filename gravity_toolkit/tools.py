@@ -11,7 +11,7 @@ PYTHON DEPENDENCIES:
     scipy: Scientific Tools for Python
         https://docs.scipy.org/doc/
     netCDF4: Python interface to the netCDF C library
-         https://unidata.github.io/netcdf4-python/netCDF4/index.html
+        https://unidata.github.io/netcdf4-python/netCDF4/index.html
     tkinter: Python interface to the Tcl/Tk GUI toolkit
         https://docs.python.org/3/library/tkinter.html
     ipywidgets: interactive HTML widgets for Jupyter notebooks and IPython
@@ -28,6 +28,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 04/2024: add widget for setting endpoint for accessing PODAAC data
+    	place colormap registration within try/except to check for existing
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: add wrap longitudes function to change convention
         improve typing for variables in docstrings
@@ -1020,7 +1021,10 @@ def from_cpt(filename, use_extremes=True, **kwargs):
     if use_extremes:
         cmap = cmap.with_extremes(**extremes)
     # register colormap to be recognizable by cm.get_cmap()
-    cm.register_cmap(name=name, cmap=cmap)
+    try:
+        cm.register_cmap(name=name, cmap=cmap)
+    except:
+        pass
     # return the colormap
     return cmap
 
@@ -1101,7 +1105,10 @@ def custom_colormap(N, map_name, **kwargs):
     # create colormap for use in matplotlib
     cmap = colors.LinearSegmentedColormap(map_name, cdict, **kwargs)
     # register colormap to be recognizable by cm.get_cmap()
-    cm.register_cmap(name=map_name, cmap=cmap)
+    try:
+        cm.register_cmap(name=map_name, cmap=cmap)
+    except:
+        pass
     # return the colormap
     return cmap
 

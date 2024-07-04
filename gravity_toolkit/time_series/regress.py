@@ -31,6 +31,7 @@ OUTPUTS:
     NRMSE: normalized root mean square error
     AIC: Akaike information criterion (Second-Order, AICc)
     BIC: Bayesian information criterion (Schwarz criterion)
+    LOGLIK: log likelihood
     model: modeled timeseries
     simple: modeled timeseries without oscillating components
     residual: model residual
@@ -200,7 +201,7 @@ def regress(t_in, d_in, ORDER=1, CYCLES=[0.5,1.0], TERMS=[],
     # calculate epoch for calculating relative times
     if isinstance(RELATIVE, (list, np.ndarray)):
         t_rel = t_in[RELATIVE].mean()
-    elif isinstance(RELATIVE, (float, int, np.float_, np.int_)):
+    elif isinstance(RELATIVE, (float, int, np.float64, np.int_)):
         t_rel = np.copy(RELATIVE)
     elif (RELATIVE == Ellipsis):
         t_rel = t_in[RELATIVE].mean()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 quick_mascon_plot.py
-Written by Tyler Sutterley (08/2023)
+Written by Tyler Sutterley (06/2024)
 Plots a mascon time series file for a particular format
 
 COMMAND LINE OPTIONS:
@@ -35,6 +35,7 @@ PROGRAM DEPENDENCIES:
     time_series.regress.py: calculates trend coefficients using least-squares
 
 UPDATE HISTORY:
+    Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 08/2023: add option for changing drawing order of time series
     Updated 05/2023: use pathlib to define and operate on paths
         use fit module for getting tidal aliasing terms
@@ -56,15 +57,11 @@ UPDATE HISTORY:
 import sys
 import pathlib
 import argparse
-import warnings
 import numpy as np
 import gravity_toolkit as gravtk
 
 # attempt imports
-try:
-    import matplotlib.pyplot as plt
-except ModuleNotFoundError:
-    warnings.warn("matplotlib not available", ImportWarning)
+plt = gravtk.utilities.import_dependency('matplotlib.pyplot')
 
 # PURPOSE: read mascon time series file and create plot
 def run_plot(i, input_file,

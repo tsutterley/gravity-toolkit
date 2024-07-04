@@ -40,6 +40,7 @@ NOTES:
     polynomial of high order over an odd-sized window centered at
     the point.
 
+REFERENCES:
     A. Savitzky, M. J. E. Golay, Smoothing and Differentiation of
         Data by Simplified Least Squares Procedures. Analytical
         Chemistry, 1964, 36 (8), pp 1627-1639.
