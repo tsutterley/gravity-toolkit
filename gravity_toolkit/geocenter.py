@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter.py
-Written by Tyler Sutterley (09/2023)
+Written by Tyler Sutterley (06/2024)
 Data class for reading and processing geocenter data
 
 PYTHON DEPENDENCIES:
@@ -15,6 +15,8 @@ PYTHON DEPENDENCIES:
         https://github.com/yaml/pyyaml
 
 UPDATE HISTORY:
+    Updated 06/2024: use wrapper to importlib for optional dependencies
+    Updated 05/2024: make subscriptable and allow item assignment
     Updated 09/2023: add group option to netCDF read function
         add functions to return variables or class attributes
         prevent double printing of filenames when using debug
@@ -47,17 +49,13 @@ import gzip
 import time
 import uuid
 import yaml
-import logging
 import pathlib
-import warnings
 import numpy as np
 import gravity_toolkit.time
+from gravity_toolkit.utilities import import_dependency
 
 # attempt imports
-try:
-    import netCDF4
-except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("netCDF4 not available", ImportWarning)
+netCDF4 = import_dependency('netCDF4')
 
 class geocenter(object):
     """
@@ -1300,3 +1298,9 @@ class geocenter(object):
         # add to index
         self.__index__ += 1
         return temp
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)

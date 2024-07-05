@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (10/2023)
+Written by Tyler Sutterley (06/2024)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -25,6 +25,8 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 06/2024: use wrapper to importlib for optional dependencies
+    Updated 05/2024: make subscriptable and allow item assignment
     Updated 10/2023: place time and month variables in try/except block
     Updated 09/2023: prevent double printing of filenames when using debug
     Updated 08/2023: add string representation of the harmonics object
@@ -100,28 +102,19 @@ import uuid
 import logging
 import pathlib
 import zipfile
-import warnings
 import numpy as np
 import gravity_toolkit.version
 from gravity_toolkit.time import adjust_months,calendar_to_grace
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
-from gravity_toolkit.utilities import reify
+from gravity_toolkit.utilities import import_dependency, reify
 
 # attempt imports
-try:
-    from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
-except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("geoid_toolkit not available", ImportWarning)
-try:
-    import h5py
-except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("h5py not available", ImportWarning)
-try:
-    import netCDF4
-except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("netCDF4 not available", ImportWarning)
+geoidtk = import_dependency('geoid_toolkit')
+h5py = import_dependency('h5py')
+netCDF4 = import_dependency('netCDF4')
+sparse = import_dependency('sparse')
 
 class harmonics(object):
     """
@@ -520,7 +513,7 @@ class harmonics(object):
             Ylms = read_gfc_harmonics(self.filename,
                 TIDE=kwargs['tide'])
         else:
-            Ylms = read_ICGEM_harmonics(self.filename,
+            Ylms = geoidtk.read_ICGEM_harmonics(self.filename,
                 TIDE=kwargs['tide'])
         # Output file information
         logging.info(self.filename)
@@ -1188,6 +1181,18 @@ class harmonics(object):
             self.squeeze()
         # return the triangular matrix
         return Ylms
+    
+    def to_coo_array(self):
+        """
+        Convert data arrays to a COO sparse matrices
+        """
+        # assign degree and order fields
+        self.update_dimensions()
+        # create COO sparse matrices
+        self.clm = sparse.COO(self.clm)
+        self.slm = sparse.COO(self.slm)
+        # return the harmonics object
+        return self
 
     def update_dimensions(self):
         """
@@ -1930,3 +1935,9 @@ class harmonics(object):
         # add to index
         self.__index__ += 1
         return temp
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)

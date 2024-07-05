@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_love_numbers.py
-Written by Tyler Sutterley (08/2023)
+Written by Tyler Sutterley (05/2024)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
 Linearly interpolates load Love/Shida numbers for missing degrees
@@ -56,6 +56,7 @@ REFERENCES:
         103(B12), 30205-30229, (1998)
 
 UPDATE HISTORY:
+    Updated 05/2024: make subscriptable and allow item assignment
     Updated 08/2023: add string representation of the love_numbers class
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: improve typing for variables in docstrings
@@ -621,3 +622,9 @@ class love_numbers(object):
         yield self.hl
         yield self.kl
         yield self.ll
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)

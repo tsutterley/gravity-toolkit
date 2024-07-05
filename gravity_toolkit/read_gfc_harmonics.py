@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_gfc_harmonics.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (06/2023)
 Contributions by Hugo Lecomte
 
 Reads gfc files and extracts spherical harmonics for Swarm and
@@ -55,6 +55,7 @@ PROGRAM DEPENDENCIES:
     calculate_tidal_offset.py: calculates the C20 offset for a tidal system
 
 UPDATE HISTORY:
+    Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -69,15 +70,12 @@ UPDATE HISTORY:
 """
 import re
 import pathlib
-import warnings
 import numpy as np
 import gravity_toolkit.time
+from gravity_toolkit.utilities import import_dependency
 
 # attempt imports
-try:
-    from geoid_toolkit.read_ICGEM_harmonics import read_ICGEM_harmonics
-except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("geoid_toolkit not available", ImportWarning)
+geoidtk = import_dependency('geoid_toolkit')
 
 # PURPOSE: read spherical harmonic coefficients of a gravity model
 def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
@@ -199,7 +197,7 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
 
     # python dictionary with model input and headers
     ZIP = bool(re.search('ZIP', SFX, re.IGNORECASE))
-    model_input = read_ICGEM_harmonics(input_file, TIDE=TIDE,
+    model_input = geoidtk.read_ICGEM_harmonics(input_file, TIDE=TIDE,
         FLAG=FLAG, ZIP=ZIP)
 
     # start and end day of the year

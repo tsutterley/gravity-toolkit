@@ -184,7 +184,7 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
             if (ENDPOINT == 's3'):
                 # get shortname for CMR query
                 cmr_shortname, = gravtk.utilities.cmr_product_shortname(
-                    mission=mi, center='GFZ', release=rl, level='L1B')
+                    mission='grace', center='GFZ', release=rl, level='L1B')
                 # attempt to list objects in s3 bucket
                 try:
                     objects = client.list_objects(Bucket=bucket,

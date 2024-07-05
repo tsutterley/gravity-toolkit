@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (10/2023)
+Written by Tyler Sutterley (06/2024)
 
 Data class for reading, writing and processing spatial data
 
@@ -20,6 +20,8 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 06/2024: use wrapper to importlib for optional dependencies
+    Updated 05/2024: make subscriptable and allow item assignment
     Updated 10/2023: place time and month variables in try/except block
     Updated 09/2023: prevent double printing of filenames when using debug
     Updated 08/2023: add string representation of the spatial object
@@ -80,20 +82,14 @@ import uuid
 import logging
 import pathlib
 import zipfile
-import warnings
 import numpy as np
 import gravity_toolkit.version
 from gravity_toolkit.time import adjust_months, calendar_to_grace
+from gravity_toolkit.utilities import import_dependency
 
 # attempt imports
-try:
-    import h5py
-except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("h5py not available", ImportWarning)
-try:
-    import netCDF4
-except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("netCDF4 not available", ImportWarning)
+h5py = import_dependency('h5py')
+netCDF4 = import_dependency('netCDF4')
 
 class spatial(object):
     """
@@ -2019,3 +2015,9 @@ class scaling_factors(spatial):
             if getattr(self, 'magnitude') is not None:
                 self.magnitude[self.mask] = self.fill_value
         return self
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)

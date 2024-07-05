@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (04/2024)
+Written by Tyler Sutterley (06/2024)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
@@ -9,6 +9,8 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/lxml
 
 UPDATE HISTORY:
+    Updated 06/2024: added wrapper to importlib for optional dependencies
+        make default case for an import exception be a class
     Updated 04/2024: added argument for products in CMR shortname query
     Updated 11/2023: updated ssl context to fix deprecation error
     Updated 10/2023: add capability to download CSR LRI solutions
@@ -71,6 +73,7 @@ import pathlib
 import builtins
 import dateutil
 import warnings
+import importlib
 import posixpath
 import lxml.etree
 import subprocess
@@ -83,12 +86,6 @@ else:
     from http.cookiejar import CookieJar
     from urllib.parse import urlencode
     import urllib.request as urllib2
-
-# attempt imports
-try:
-    import boto3
-except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("boto3 not available", ImportWarning)
 
 # PURPOSE: get absolute path within a package from a relative path
 def get_data_path(relpath: list | str | pathlib.Path):
@@ -108,6 +105,48 @@ def get_data_path(relpath: list | str | pathlib.Path):
         return filepath.joinpath(*relpath)
     elif isinstance(relpath, str):
         return filepath.joinpath(relpath)
+
+
+def import_dependency(
+        name: str,
+        extra: str = "",
+        raise_exception: bool = False
+    ):
+    """
+    Import an optional dependency
+    
+    Adapted from ``pandas.compat._optional::import_optional_dependency``
+
+    Parameters
+    ----------
+    name: str
+        Module name
+    extra: str, default ""
+        Additional text to include in the ``ImportError`` message
+    raise_exception: bool, default False
+        Raise an ``ImportError`` if the module is not found
+
+    Returns
+    -------
+    module: obj
+        Imported module
+    """
+    # check if the module name is a string
+    msg = f"Invalid module name: '{name}'; must be a string"
+    assert isinstance(name, str), msg
+    # default error if module cannot be imported
+    err = f"Missing optional dependency '{name}'. {extra}"
+    module = type('module', (), {})
+    # try to import the module
+    try:
+        module = importlib.import_module(name)
+    except (ImportError, ModuleNotFoundError) as exc:
+        if raise_exception:
+            raise ImportError(err) from exc
+        else:
+            logging.debug(err)
+    # return the module
+    return module
 
 class reify(object):
     """Class decorator that puts the result of the method it
@@ -1154,6 +1193,7 @@ def s3_region():
     region_name: str
         AWS region name
     """
+    boto3 = import_dependency('boto3')
     region_name = boto3.session.Session().region_name
     return region_name
         
@@ -1184,6 +1224,7 @@ def s3_client(
     response = urllib2.urlopen(request, timeout=timeout)
     cumulus = json.loads(response.read())
     # get AWS client object
+    boto3 = import_dependency('boto3')
     client = boto3.client('s3',
         aws_access_key_id=cumulus['accessKeyId'],
         aws_secret_access_key=cumulus['secretAccessKey'],

@@ -82,12 +82,3 @@ General Methods
 .. autofunction:: gravity_toolkit.time.convert_calendar_decimal
 
 .. autofunction:: gravity_toolkit.time.convert_julian
-
-.. autoclass:: gravity_toolkit.time.timescale
-   :members:
-
-.. autofunction:: gravity_toolkit.time.count_leap_seconds
-
-.. autofunction:: gravity_toolkit.time.get_leap_seconds
-
-.. autofunction:: gravity_toolkit.time.update_leap_seconds

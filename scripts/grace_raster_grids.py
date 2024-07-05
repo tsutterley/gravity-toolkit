@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 grace_raster_grids.py
-Written by Tyler Sutterley (03/2024)
+Written by Tyler Sutterley (06/2024)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     projected spatial fields
@@ -147,6 +147,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 03/2024: increase mask buffer to twice the smoothing radius
     Written 08/2023
 """
@@ -157,7 +158,6 @@ import os
 import time
 import logging
 import pathlib
-import warnings
 import numpy as np
 import argparse
 import traceback
@@ -165,14 +165,8 @@ import collections
 import gravity_toolkit as gravtk
 
 # attempt imports
-try:
-    import geoid_toolkit as geoidtk
-except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("geoid_toolkit not available", ImportWarning)
-try:
-    import pyproj
-except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("pyproj not available", ImportWarning)
+geoidtk = gravtk.utilities.import_dependency('geoid_toolkit')
+pyproj = gravtk.utilities.import_dependency('pyproj')
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -430,7 +424,8 @@ def grace_raster_grids(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # projection attributes
     attributes['crs'] = {}
     # add projection attributes
-    attributes['crs']['standard_name'] = crs1.to_cf()['grid_mapping_name'].title()
+    attributes['crs']['standard_name'] = \
+        crs1.to_cf()['grid_mapping_name'].title()
     attributes['crs']['spatial_epsg'] = crs1.to_epsg()
     attributes['crs']['spatial_ref'] = crs1.to_wkt()
     attributes['crs']['proj4_params'] = crs1.to_proj4()

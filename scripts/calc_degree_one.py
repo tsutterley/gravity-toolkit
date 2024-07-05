@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_degree_one.py
-Written by Tyler Sutterley (10/2023)
+Written by Tyler Sutterley (06/2024)
 
 Calculates degree 1 variations using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from ECCO and OMCT/MPIOM
@@ -167,6 +167,7 @@ REFERENCES:
         https://doi.org/10.1029/2007JB005338
 
 UPDATE HISTORY:
+    Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 10/2023: generalize mission variable to be GRACE/GRACE-FO
     Updated 09/2023: output comprehensive netCDF4 files with all components
         simplify I-matrix and G-matrix calculations
@@ -257,7 +258,6 @@ import shutil
 import logging
 import pathlib
 import argparse
-import warnings
 import traceback
 import collections
 import numpy as np
@@ -265,17 +265,11 @@ import scipy.linalg
 import gravity_toolkit as gravtk
 
 # attempt imports
-try:
-    import matplotlib.pyplot as plt
-    import matplotlib.cm as cm
-    import matplotlib.offsetbox
-    import matplotlib.ticker as ticker
-except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("matplotlib not available", ImportWarning)
-try:
-    import netCDF4
-except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("netCDF4 not available", ImportWarning)
+plt = gravtk.utilities.import_dependency('matplotlib.pyplot')
+cm = gravtk.utilities.import_dependency('matplotlib.cm')
+offsetbox = gravtk.utilities.import_dependency('matplotlib.offsetbox')
+ticker = gravtk.utilities.import_dependency('matplotlib.ticker')
+netCDF4 = gravtk.utilities.import_dependency('netCDF4')
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -1064,7 +1058,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
             ax[i].set_ylabel('[mm]', fontsize=14)
             # add axis labels and adjust font sizes for axis ticks
             # axis label
-            artist = matplotlib.offsetbox.AnchoredText(key, pad=0.,
+            artist = offsetbox.AnchoredText(key, pad=0.,
                 prop=dict(size=16,weight='bold'), frameon=False, loc=2)
             ax[i].add_artist(artist)
             # axes tick adjustments
@@ -1115,7 +1109,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         for i,key in enumerate(iteration_mmwe.fields):
             ax[i].set_ylabel('mm', fontsize=14)
             # axis label
-            artist = matplotlib.offsetbox.AnchoredText(key, pad=0.,
+            artist = offsetbox.AnchoredText(key, pad=0.,
                 prop=dict(size=16,weight='bold'), frameon=False, loc=2)
             ax[i].add_artist(artist)
             # axes tick adjustments

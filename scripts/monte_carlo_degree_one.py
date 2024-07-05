@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 monte_carlo_degree_one.py
-Written by Tyler Sutterley (10/2023)
+Written by Tyler Sutterley (06/2024)
 
 Calculates degree 1 errors using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from OMCT/MPIOM in a Monte Carlo scheme
@@ -157,6 +157,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 10/2023: generalize mission variable to be GRACE/GRACE-FO
     Updated 09/2023: add more root level attributes to output netCDF4 files
         simplify I-matrix and G-matrix calculations
@@ -215,7 +216,6 @@ import time
 import logging
 import pathlib
 import argparse
-import warnings
 import traceback
 import collections
 import numpy as np
@@ -223,17 +223,11 @@ import scipy.linalg
 import gravity_toolkit as gravtk
 
 # attempt imports
-try:
-    import matplotlib.pyplot as plt
-    import matplotlib.cm as cm
-    import matplotlib.offsetbox
-    from matplotlib.ticker import MultipleLocator
-except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("matplotlib not available", ImportWarning)
-try:
-    import netCDF4
-except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("netCDF4 not available", ImportWarning)
+plt = gravtk.utilities.import_dependency('matplotlib.pyplot')
+cm = gravtk.utilities.import_dependency('matplotlib.cm')
+offsetbox = gravtk.utilities.import_dependency('matplotlib.offsetbox')
+ticker = gravtk.utilities.import_dependency('matplotlib.ticker')
+netCDF4 = gravtk.utilities.import_dependency('netCDF4')
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -901,12 +895,12 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
         ax[2].set_ylabel('mm', fontsize=14)
         ax[2].set_xlabel('Grace Month', fontsize=14)
         ax[2].set_xlim(np.floor(months[0]/10.)*10.,np.ceil(months[-1]/10.)*10.)
-        ax[2].xaxis.set_minor_locator(MultipleLocator(5))
+        ax[2].xaxis.set_minor_locator(ticker.MultipleLocator(5))
         ax[2].xaxis.get_major_formatter().set_useOffset(False)
         # add axis labels and adjust font sizes for axis ticks
         for i,lbl in enumerate(['C10','C11','S11']):
             # axis label
-            artist = matplotlib.offsetbox.AnchoredText(lbl, pad=0.0,
+            artist = offsetbox.AnchoredText(lbl, pad=0.0,
                 frameon=False, loc=2, prop=dict(size=16,weight='bold'))
             ax[i].add_artist(artist)
             # axes tick adjustments
