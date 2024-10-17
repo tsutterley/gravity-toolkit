@@ -407,7 +407,7 @@ def plot_grid(base_dir, FILENAMES,
     cbar.solids.set_rasterized(True)
     # Add label to the colorbar
     cbar.ax.set_ylabel(CBTITLE, labelpad=10, fontsize=18)
-    cbar.ax.set_title(CBUNITS, fontsize=18, va='bottom')
+    cbar.ax.set_title(CBUNITS, fontsize=18, va='bottom', y=-1.4)
     # Set the tick levels for the colorbar
     cbar.set_ticks(levels)
     cbar.set_ticklabels([CBFORMAT.format(ct) for ct in levels])

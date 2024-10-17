@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 podaac_cumulus.py
-Written by Tyler Sutterley (04/2024)
+Written by Tyler Sutterley (09/2024)
 
 Syncs GRACE/GRACE-FO data from NASA JPL PO.DAAC Cumulus AWS S3 bucket
 S3 Cumulus syncs are only available in AWS instances in us-west-2
@@ -51,6 +51,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 09/2024: updated default version for GRACE-FO to latest
     Updated 04/2024: added check to verify access to s3 buckets
     Updated 09/2023: check that collection metadata urls exist
         don't restrict version number to a set list of presently available
@@ -135,19 +136,21 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                     mission='grace-fo', center=pr, release=rl,
                     version=version, provider='POCLOUD',
                     endpoint=ENDPOINT)
-                # verify that urls exist
-                if not urls:
-                    continue
 
                 # TN-13 JPL degree 1 files
-                url, = [url for url in urls if R1.search(url)]
-                granule = gravtk.utilities.url_split(url)[-1]
-                local_file = local_dir.joinpath(granule)
+                try:
+                    url, = [url for url in urls if R1.search(url)]
+                except ValueError as exc:
+                    logging.info('No TN-13 Files Available')
+                    url = None
+                else:
+                    granule = gravtk.utilities.url_split(url)[-1]
+                    local_file = local_dir.joinpath(granule)
                 # access auxiliary data from endpoint
-                if (ENDPOINT == 'data'):
+                if (ENDPOINT == 'data') and (url is not None):
                     http_pull_file(url, mtime, local_file,
                         TIMEOUT=TIMEOUT, CLOBBER=CLOBBER, MODE=MODE)
-                elif (ENDPOINT == 's3'):
+                elif (ENDPOINT == 's3') and (url is not None):
                     bucket = gravtk.utilities.s3_bucket(url)
                     key = gravtk.utilities.s3_key(url)
                     response = client.get_object(Bucket=bucket, Key=key)
@@ -155,14 +158,19 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                         CLOBBER=CLOBBER, MODE=MODE)
 
                 # TN-14 SLR C2,0 and C3,0 files
-                url, = [url for url in urls if R2.search(url)]
-                granule = gravtk.utilities.url_split(url)[-1]
-                local_file = DIRECTORY.joinpath(granule)
+                try:
+                    url, = [url for url in urls if R2.search(url)]
+                except ValueError as exc:
+                    logging.info('No TN-14 Files Available')
+                    url = None
+                else:
+                    granule = gravtk.utilities.url_split(url)[-1]
+                    local_file = DIRECTORY.joinpath(granule)
                 # access auxiliary data from endpoint
-                if (ENDPOINT == 'data'):
+                if (ENDPOINT == 'data') and (url is not None):
                     http_pull_file(url, mtime, local_file,
                         TIMEOUT=TIMEOUT, CLOBBER=CLOBBER, MODE=MODE)
-                elif (ENDPOINT == 's3'):
+                elif (ENDPOINT == 's3') and (url is not None):
                     bucket = gravtk.utilities.s3_bucket(url)
                     key = gravtk.utilities.s3_key(url)
                     response = client.get_object(Bucket=bucket, Key=key)
@@ -404,7 +412,7 @@ def arguments():
     # GRACE/GRACE-FO data version
     parser.add_argument('--version','-v',
         metavar='VERSION', type=str, nargs=2,
-        default=['0','1'],
+        default=['0','3'],
         help='GRACE/GRACE-FO Level-2 data version')
     # GRACE/GRACE-FO dealiasing products
     parser.add_argument('--aod1b','-a',

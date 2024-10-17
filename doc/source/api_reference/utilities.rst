@@ -62,6 +62,8 @@ General Methods
 
 .. autofunction:: gravity_toolkit.utilities.from_http
 
+.. autofunction:: gravity_toolkit.utilities.from_json
+
 .. autofunction:: gravity_toolkit.utilities.attempt_login
 
 .. autofunction:: gravity_toolkit.utilities.build_opener

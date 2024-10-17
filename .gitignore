@@ -30,6 +30,7 @@
 .Rhistory
 __pycache__
 build/
+_build/
 dist/
 develop-eggs/
 run/

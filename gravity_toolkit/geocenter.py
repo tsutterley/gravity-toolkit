@@ -131,8 +131,8 @@ class geocenter(object):
                 f = [f.name for f in self.filename.parent.iterdir() if
                     re.match(self.filename.name, f.name, re.I)]
                 if not f:
-                    errmsg = f'{filename} not found in file system'
-                    raise FileNotFoundError(errmsg)
+                    msg = f'{filename} not found in file system'
+                    raise FileNotFoundError(msg)
                 self.filename = self.filename.with_name(f.pop())
         # return the filename
         return self
@@ -160,8 +160,8 @@ class geocenter(object):
         AOD1B_file = self.directory.joinpath(granule)
         # check that file exists
         if not AOD1B_file.exists():
-            errmsg = f'AOD1B File {AOD1B_file} not in File System'
-            raise FileNotFoundError(errmsg)
+            msg = f'AOD1B File {AOD1B_file} not in File System'
+            raise FileNotFoundError(msg)
         # read AOD1b geocenter skipping over commented header text
         with AOD1B_file.open(mode='r', encoding='utf8') as f:
             file_contents=[i for i in f.read().splitlines() if not re.match(r'#',i)]
@@ -356,8 +356,8 @@ class geocenter(object):
         self.directory = base_dir.joinpath('AOD1B', kwargs['release'], 'geocenter')
         # check that AOD1B directory exists
         if not self.directory.exists():
-            errmsg = f'{str(self.directory)} not found in file system'
-            raise FileNotFoundError(errmsg)
+            msg = f'{str(self.directory)} not found in file system'
+            raise FileNotFoundError(msg)
 
         # Input geocenter file and split lines
         with self.filename.open(mode='r', encoding='utf8') as f:
