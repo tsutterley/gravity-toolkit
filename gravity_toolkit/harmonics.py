@@ -185,8 +185,8 @@ class harmonics(object):
                 f = [f.name for f in self.filename.parent.iterdir() if
                     re.match(self.filename.name, f.name, re.I)]
                 if not f:
-                    errmsg = f'{filename} not found in file system'
-                    raise FileNotFoundError(errmsg)
+                    msg = f'{filename} not found in file system'
+                    raise FileNotFoundError(msg)
                 self.filename = self.filename.with_name(f.pop())
         # return the filename
         return self
@@ -1181,7 +1181,7 @@ class harmonics(object):
             self.squeeze()
         # return the triangular matrix
         return Ylms
-    
+
     def to_coo_array(self):
         """
         Convert data arrays to a COO sparse matrices

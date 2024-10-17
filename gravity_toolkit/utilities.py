@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (06/2024)
+Written by Tyler Sutterley (10/2024)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
@@ -9,6 +9,9 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/lxml
 
 UPDATE HISTORY:
+    Updated 10/2024: update CMR search utility to replace deprecated scrolling
+        https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html
+    Updated 08/2024: generalize hash function to use any available algorithm
     Updated 06/2024: added wrapper to importlib for optional dependencies
         make default case for an import exception be a class
     Updated 04/2024: added argument for products in CMR shortname query
@@ -114,7 +117,7 @@ def import_dependency(
     ):
     """
     Import an optional dependency
-    
+
     Adapted from ``pandas.compat._optional::import_optional_dependency``
 
     Parameters
@@ -166,7 +169,7 @@ class reify(object):
 # PURPOSE: get the hash value of a file
 def get_hash(
         local: str | io.IOBase | pathlib.Path,
-        algorithm: str = 'MD5'
+        algorithm: str = 'md5'
     ):
     """
     Get the hash value from a local file or ``BytesIO`` object
@@ -175,18 +178,16 @@ def get_hash(
     ----------
     local: obj, str or pathlib.Path
         BytesIO object or path to file
-    algorithm: str, default 'MD5'
+    algorithm: str, default 'md5'
         hashing algorithm for checksum validation
-
-            - ``'MD5'``: Message Digest
-            - ``'sha1'``: Secure Hash Algorithm
     """
     # check if open file object or if local file exists
     if isinstance(local, io.IOBase):
-        if (algorithm == 'MD5'):
-            return hashlib.md5(local.getvalue()).hexdigest()
-        elif (algorithm == 'sha1'):
-            return hashlib.sha1(local.getvalue()).hexdigest()
+        # generate checksum hash for a given type
+        if algorithm in hashlib.algorithms_available:
+            return hashlib.new(algorithm, local.getvalue()).hexdigest()
+        else:
+            raise ValueError(f'Invalid hashing algorithm: {algorithm}')
     elif isinstance(local, (str, pathlib.Path)):
         # generate checksum hash for local file
         local = pathlib.Path(local).expanduser()
@@ -196,10 +197,10 @@ def get_hash(
         # open the local_file in binary read mode
         with local.open(mode='rb') as local_buffer:
             # generate checksum hash for a given type
-            if (algorithm == 'MD5'):
-                return hashlib.md5(local_buffer.read()).hexdigest()
-            elif (algorithm == 'sha1'):
-                return hashlib.sha1(local_buffer.read()).hexdigest()
+            if algorithm in hashlib.algorithms_available:
+                return hashlib.new(algorithm, local_buffer.read()).hexdigest()
+            else:
+                raise ValueError(f'Invalid hashing algorithm: {algorithm}')
     else:
         return ''
 
@@ -813,6 +814,44 @@ def from_http(
         remote_buffer.seek(0)
         return remote_buffer
 
+# PURPOSE: load a JSON response from a http host
+def from_json(
+        HOST: str | list,
+        timeout: int | None = None,
+        context: ssl.SSLContext = _default_ssl_context
+    ) -> dict:
+    """
+    Load a JSON response from a http host
+
+    Parameters
+    ----------
+    HOST: str or list
+        remote http host path split as list
+    timeout: int or NoneType, default None
+        timeout in seconds for blocking operations
+    context: obj, default pyTMD.utilities._default_ssl_context
+        SSL context for ``urllib`` opener object
+    """
+    # verify inputs for remote http host
+    if isinstance(HOST, str):
+        HOST = url_split(HOST)
+    # try loading JSON from http
+    try:
+        # Create and submit request for JSON response
+        request = urllib2.Request(posixpath.join(*HOST))
+        request.add_header('Accept', 'application/json')
+        response = urllib2.urlopen(request, timeout=timeout, context=context)
+    except urllib2.HTTPError as exc:
+        logging.debug(exc.code)
+        raise RuntimeError(exc.reason) from exc
+    except urllib2.URLError as exc:
+        logging.debug(exc.reason)
+        msg = 'Load error from {0}'.format(posixpath.join(*HOST))
+        raise Exception(msg) from exc
+    else:
+        # load JSON response
+        return json.loads(response.read())
+
 # PURPOSE: attempt to build an opener with netrc
 def attempt_login(
         urs: str,
@@ -1196,7 +1235,7 @@ def s3_region():
     boto3 = import_dependency('boto3')
     region_name = boto3.session.Session().region_name
     return region_name
-        
+
 # PURPOSE: get AWS s3 client for PO.DAAC Cumulus
 def s3_client(
         HOST: str = _s3_endpoints['podaac'],
@@ -1819,7 +1858,6 @@ def cmr(
     CMR_KEYS.append(f'?provider={provider}')
     CMR_KEYS.append('&sort_key[]=start_date')
     CMR_KEYS.append('&sort_key[]=producer_granule_id')
-    CMR_KEYS.append('&scroll=true')
     CMR_KEYS.append(f'&page_size={cmr_page_size}')
     # dictionary of product shortnames
     short_names = cmr_product_shortname(mission, center, release,
@@ -1844,20 +1882,21 @@ def cmr(
     granule_names = []
     granule_urls = []
     granule_mtimes = []
-    cmr_scroll_id = None
+    cmr_search_after = None
     while True:
         req = urllib2.Request(cmr_query_url)
-        if cmr_scroll_id:
-            req.add_header('cmr-scroll-id', cmr_scroll_id)
+        # add CMR search after header
+        if cmr_search_after:
+            req.add_header('CMR-Search-After', cmr_search_after)
+            logging.debug(f'CMR-Search-After: {cmr_search_after}')
         response = opener.open(req)
-        # get scroll id for next iteration
-        if not cmr_scroll_id:
-            headers = {k.lower():v for k,v in dict(response.info()).items()}
-            cmr_scroll_id = headers['cmr-scroll-id']
+        # get search after index for next iteration
+        headers = {k.lower():v for k,v in dict(response.info()).items()}
+        cmr_search_after = headers.get('cmr-search-after')
         # read the CMR search as JSON
         search_page = json.loads(response.read().decode('utf8'))
         ids,urls,mtimes = cmr_filter_json(search_page, endpoint=endpoint)
-        if not urls:
+        if not urls or cmr_search_after is None:
             break
         # extend lists
         granule_names.extend(ids)

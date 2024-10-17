@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 spatial.py
-Written by Tyler Sutterley (06/2024)
+Written by Tyler Sutterley (10/2024)
 
 Data class for reading, writing and processing spatial data
 
@@ -20,6 +20,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 10/2024: allow 2D and 3D arrays in output netCDF4 files
     Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 05/2024: make subscriptable and allow item assignment
     Updated 10/2023: place time and month variables in try/except block
@@ -157,8 +158,8 @@ class spatial(object):
                 f = [f.name for f in self.filename.parent.iterdir() if
                     re.match(self.filename.name, f.name, re.I)]
                 if not f:
-                    errmsg = f'{filename} not found in file system'
-                    raise FileNotFoundError(errmsg)
+                    msg = f'{filename} not found in file system'
+                    raise FileNotFoundError(msg)
                 self.filename = self.filename.with_name(f.pop())
         # return the filename
         return self
@@ -877,8 +878,9 @@ class spatial(object):
         variables = set(kwargs['field_mapping'].keys()) - set(dimensions)
         for field in sorted(variables):
             temp = getattr(self,field)
+            ndim = temp.ndim
             key = kwargs['field_mapping'][field]
-            nc[key] = fileID.createVariable(key, temp.dtype, dims,
+            nc[key] = fileID.createVariable(key, temp.dtype, dims[:ndim],
                 fill_value=self.fill_value, zlib=True)
         # filling NetCDF variables
         for field,key in kwargs['field_mapping'].items():
@@ -1360,20 +1362,17 @@ class spatial(object):
         # indices to sort data objects
         months_list = [i for i,m in enumerate(self.month) if m in months]
         # output spatial object
-        temp = spatial(nlat=self.shape[0], nlon=self.shape[1],
-            fill_value=self.fill_value)
+        temp = self.zeros_like()
         # create output spatial object
-        temp.data = np.zeros((temp.shape[0],temp.shape[1],n))
-        temp.mask = np.zeros((temp.shape[0],temp.shape[1],n), dtype=bool)
+        temp.data = np.zeros((self.shape[0],self.shape[1],n))
+        temp.mask = np.zeros((self.shape[0],self.shape[1],n), dtype=bool)
         # create output spatial error
         try:
             getattr(self, 'error')
-            temp.error = np.zeros((temp.shape[0],temp.shape[1],n))
+            temp.error = np.zeros((self.shape[0],self.shape[1],n))
         except AttributeError:
             pass
-        # copy dimensions
-        temp.lon = self.lon.copy()
-        temp.lat = self.lat.copy()
+        # allocate for output dates
         temp.time = np.zeros((n))
         temp.month = np.zeros((n),dtype=np.int64)
         temp.filename = []
