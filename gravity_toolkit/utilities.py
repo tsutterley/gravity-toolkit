@@ -1858,7 +1858,6 @@ def cmr(
     CMR_KEYS.append(f'?provider={provider}')
     CMR_KEYS.append('&sort_key[]=start_date')
     CMR_KEYS.append('&sort_key[]=producer_granule_id')
-    CMR_KEYS.append('&scroll=true')
     CMR_KEYS.append(f'&page_size={cmr_page_size}')
     # dictionary of product shortnames
     short_names = cmr_product_shortname(mission, center, release,
