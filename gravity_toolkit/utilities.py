@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (10/2024)
+Written by Tyler Sutterley (11/2024)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
@@ -9,6 +9,7 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/lxml
 
 UPDATE HISTORY:
+    Updated 11/2024: simplify unique file name function
     Updated 10/2024: update CMR search utility to replace deprecated scrolling
         https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html
     Updated 08/2024: generalize hash function to use any available algorithm
@@ -387,7 +388,9 @@ def create_unique_file(filename: str | pathlib.Path):
     filename: str or pathlib.Path
         full path to output file
     """
-    filename = pathlib.Path(filename)
+    # validate input filename
+    filename = pathlib.Path(filename).expanduser().absolute()
+    stem, suffix = filename.stem, filename.suffix
     # create counter to add to the end of the filename if existing
     counter = 1
     while counter:
@@ -400,7 +403,7 @@ def create_unique_file(filename: str | pathlib.Path):
             # return the file descriptor
             return fd
         # new filename adds a counter before the file extension
-        filename = filename.with_name(f'{filename.stem}_{counter:d}{filename.suffix}')
+        filename = filename.with_name(f'{stem}_{counter:d}{suffix}')
         counter += 1
 
 # PURPOSE: check ftp connection
