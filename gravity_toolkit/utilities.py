@@ -10,6 +10,7 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 11/2024: simplify unique file name function
+        add function to scrape GSFC website for GRACE mascon urls
     Updated 10/2024: update CMR search utility to replace deprecated scrolling
         https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html
     Updated 08/2024: generalize hash function to use any available algorithm
@@ -2451,6 +2452,59 @@ def from_gfz(
         verbose=verbose,
         fid=fid,
         mode=mode)
+
+# PURPOSE: lists files by scraping the GSFC grace-mascons website
+def gsfc_list(
+        HOST: str | list = 'https://earth.gsfc.nasa.gov/geo/data/grace-mascons',
+        timeout: int | None = None,
+        parser = lxml.etree.HTMLParser(),
+        pattern: str = r'',
+        sort: bool = False
+    ):
+    """
+    Lists files by scraping the GSFC website for GRACE mascons
+
+    Parameters
+    ----------
+    HOST: str or list
+        remote https host
+    timeout: int or NoneType, default None
+        timeout in seconds for blocking operations
+    parser: obj, default lxml.etree.HTMLParser()
+        HTML parser for ``lxml``
+    pattern: str, default ''
+        regular expression pattern for reducing list
+    sort: bool, default False
+        sort output list
+
+    Returns
+    -------
+    colnames: list
+        column names in a directory
+    """
+    # verify inputs for remote https host
+    if isinstance(HOST, str):
+        HOST = url_split(HOST)
+    # try listing from https
+    try:
+        # Create and submit request.
+        request = urllib2.Request(posixpath.join(*HOST))
+        tree = lxml.etree.parse(urllib2.urlopen(request, timeout=timeout),parser)
+    except (urllib2.HTTPError, urllib2.URLError) as exc:
+        raise Exception('List error from {0}'.format(posixpath.join(*HOST)))
+    else:
+        # read and parse request for relative links to files
+        rellinks = tree.xpath('//tr/td//a/@href')
+    # form complete column names
+    colnames = [posixpath.join(HOST[0], *url_split(l)) for l in rellinks]
+    # reduce using regular expression pattern
+    if pattern:
+        colnames = [f for i,f in enumerate(colnames) if re.search(pattern,f)]
+    # sort list of column names
+    if sort:
+        colnames = [j for i,j in sorted(enumerate(colnames), key=lambda i: i[1])]
+    # return the list of column names
+    return colnames
 
 # PURPOSE: download satellite laser ranging files from GSFC
 # https://earth.gsfc.nasa.gov/geo/data/slr
