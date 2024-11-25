@@ -183,7 +183,7 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     # add attributes for earth parameters
     factors = gravtk.units(lmax=LMAX)
     attributes['earth_radius'] = f'{factors.rad_e:0.3f} cm'
-    attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
+    attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm^3'
     attributes['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
 
     # calculate associated Legendre polynomials

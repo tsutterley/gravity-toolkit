@@ -418,7 +418,7 @@ def grace_raster_grids(base_dir, PROC, DREL, DSET, LMAX, RAD,
     units_name, units_longname = gravtk.units.get_attributes(units)
     # add attributes for earth parameters
     attributes['ROOT']['earth_radius'] = f'{factors.rad_e:0.3f} cm'
-    attributes['ROOT']['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
+    attributes['ROOT']['earth_density'] = f'{factors.rho_e:0.3f} g/cm^3'
     attributes['ROOT']['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
 
     # projection attributes

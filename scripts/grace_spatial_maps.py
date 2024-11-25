@@ -443,7 +443,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     units_name, units_longname = gravtk.units.get_attributes(units)
     # add attributes for earth parameters
     attributes['earth_radius'] = f'{factors.rad_e:0.3f} cm'
-    attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
+    attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm^3'
     attributes['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
     # add attributes to output spatial object
     attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
