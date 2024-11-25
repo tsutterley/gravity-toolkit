@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_love_numbers.py
-Written by Tyler Sutterley (05/2024)
+Written by Tyler Sutterley (11/2024)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
 Linearly interpolates load Love/Shida numbers for missing degrees
@@ -56,6 +56,7 @@ REFERENCES:
         103(B12), 30205-30229, (1998)
 
 UPDATE HISTORY:
+    Updated 11/2024: allow reading where degree is infinite
     Updated 05/2024: make subscriptable and allow item assignment
     Updated 08/2023: add string representation of the love_numbers class
     Updated 05/2023: use pathlib to define and operate on paths
@@ -93,6 +94,9 @@ import logging
 import pathlib
 import numpy as np
 from gravity_toolkit.utilities import get_data_path
+
+# default maximum degree and order in case of infinite
+_default_max_degree = 100000
 
 # PURPOSE: read load Love/Shida numbers from PREM
 def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
@@ -179,12 +183,15 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
     file_contents = extract_love_numbers(love_numbers_file)
 
     # compile regular expression operator to find numerical instances
-    regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
+    regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?)|(?:inf))(?:[Ee][+-]?\d+)?'
     rx = re.compile(regex_pattern, re.VERBOSE)
 
     # extract maximum spherical harmonic degree from final line in file
-    if LMAX is None:
-        LMAX = np.int64(rx.findall(file_contents[-1])[COLUMNS.index('l')])
+    degree = rx.findall(file_contents[-1])[COLUMNS.index('l')]
+    if LMAX is None and (degree == 'inf'):
+        LMAX = np.copy(_default_max_degree)
+    elif LMAX is None:
+        LMAX = int(degree)
 
     # dictionary of output Love/Shida numbers
     love = {}
@@ -203,7 +210,8 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
         # replacing fortran double precision exponential
         love_numbers = rx.findall(file_line.replace('D','E'))
         # spherical harmonic degree
-        l = np.int64(love_numbers[COLUMNS.index('l')])
+        degree = love_numbers[COLUMNS.index('l')]
+        l = _default_max_degree if (degree == 'inf') else int(degree)
         # truncate to spherical harmonic degree LMAX
         if (l <= LMAX):
             # convert Love/Shida numbers to float

@@ -213,7 +213,7 @@ def dealiasing_global_uplift(base_dir,
     # add attributes for earth parameters
     factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
     attributes['ROOT']['earth_radius'] = f'{factors.rad_e:0.3f} cm'
-    attributes['ROOT']['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
+    attributes['ROOT']['earth_density'] = f'{factors.rho_e:0.3f} g/cm^3'
     attributes['ROOT']['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
     # degree dependent factors for converting to output units
     dfactor = factors.get(UNITS)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 tools.py
-Written by Tyler Sutterley (04/2024)
+Written by Tyler Sutterley (11/2024)
 Jupyter notebook, user interface and plotting tools
 
 PYTHON DEPENDENCIES:
@@ -27,6 +27,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 11/2024: fix deprecated widget object copies
     Updated 04/2024: add widget for setting endpoint for accessing PODAAC data
     	place colormap registration within try/except to check for existing
     Updated 05/2023: use pathlib to define and operate on paths
@@ -123,7 +124,7 @@ class widgets:
                 self.directory_button
             ])
         else:
-            self.directory = copy.copy(self.directory_label)
+            self.directory = self.directory_label
         # connect directory select button with action
         self.directory_button.on_click(self.set_directory)
 
@@ -154,7 +155,7 @@ class widgets:
         root.withdraw()
         root.call('wm', 'attributes', '.', '-topmost', True)
         b.directory = filedialog.askdirectory()
-        self.directory_label.value = copy.copy(b.directory)
+        self.directory_label.value = b.directory
 
     def select_product(self):
         """
@@ -520,7 +521,7 @@ class widgets:
                 self.GIA_button
             ])
         else:
-            self.GIA_file = copy.copy(self.GIA_label)
+            self.GIA_file = self.GIA_label
         # connect fileselect button with action
         self.GIA_button.on_click(self.select_GIA_file)
 
@@ -567,7 +568,7 @@ class widgets:
                 self.remove_button
             ])
         else:
-            self.remove_file = copy.copy(self.remove_label)
+            self.remove_file = self.remove_label
         # connect fileselect button with action
         self.remove_button.on_click(self.select_remove_file)
         self.remove_label.observe(self.set_removefile)
@@ -615,7 +616,7 @@ class widgets:
                 self.mask_button
             ])
         else:
-            self.mask = copy.copy(self.mask_label)
+            self.mask = self.mask_label
         # connect fileselect button with action
         self.mask_button.on_click(self.select_mask_file)
 
@@ -684,7 +685,7 @@ class widgets:
         b.files = filedialog.askopenfilename(
             filetypes=filetypes,
             multiple=False)
-        self.GIA_label.value = copy.copy(b.files)
+        self.GIA_label.value = b.files
 
     def select_remove_file(self, b):
         """function for removed file selection
@@ -730,7 +731,7 @@ class widgets:
             defaultextension='nc',
             filetypes=filetypes,
             multiple=False)
-        self.mask_label.value = copy.copy(b.files)
+        self.mask_label.value = b.files
 
     def select_output(self, **kwargs):
         """

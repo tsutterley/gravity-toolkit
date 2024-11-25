@@ -390,7 +390,7 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     dfactor = factors.get('cmwe')
     # add attributes for earth parameters
     attributes['earth_radius'] = f'{factors.rad_e:0.3f} cm'
-    attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
+    attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm^3'
     attributes['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
 
     # Read Smoothed Ocean and Land Functions

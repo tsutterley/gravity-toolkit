@@ -103,7 +103,7 @@ def legendre(l, x, NORMALIZE=False):
         # Column-by-column recursion
         for k,mm1 in enumerate(m1):
             col = ind[k]
-            # Calculate twocot for underflow case
+            # Calculate two*cotangent for underflow case
             twocot = -2.0*x[col]/s[col]
             P[mm1-1:l+1,col] = 0.0
             # Start recursion with proper sign
@@ -126,7 +126,7 @@ def legendre(l, x, NORMALIZE=False):
     count = np.count_nonzero((x != 1) & (np.abs(sn) >= tol))
     if (count > 0):
         nind, = np.nonzero((x != 1) & (np.abs(sn) >= tol))
-        # Calculate twocot for normal case
+        # Calculate two*cotangent for normal case
         twocot = -2.0*x[nind]/s[nind]
         # Produce normalization constant for the m = l function
         d = np.arange(2,2*l+2,2)

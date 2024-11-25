@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 legendre_polynomials.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (11/2024)
 
 Computes fully normalized Legendre polynomials for an array of x values
     and their first derivative
@@ -33,6 +33,7 @@ REFERENCES:
         http://www.springerlink.com/content/978-3-211-33544-4
 
 UPDATE HISTORY:
+    Updated 11/2024: add polar argument for x == +/-1 to prevent drift
     Updated 03/2023: improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -92,7 +93,8 @@ def legendre_polynomials(lmax, x, ASTYPE=np.float64):
     # for x=cos(th): u=sin(th)
     u = np.sqrt(1.0 - x**2)
     # update where u==0 to eps of data type to prevent invalid divisions
-    u[u == 0] = np.finfo(u.dtype).eps
+    u0, = np.nonzero(u == 0)
+    u[u0] = np.finfo(u.dtype).eps
 
     # Initialize the recurrence relation
     ptemp[0,:] = 1.0
@@ -104,6 +106,8 @@ def legendre_polynomials(lmax, x, ASTYPE=np.float64):
         ptemp[l,:] = (((2.0*l)-1.0)/l)*x*ptemp[l-1,:] - ((l-1.0)/l)*ptemp[l-2,:]
         # Normalization is geodesy convention
         pl[l,:] = np.sqrt((2.0*l)+1.0)*ptemp[l,:]
+        # Overwrite polar case (x == +/-1)
+        pl[l,u0] = np.sqrt((2.0*l)+1.0)*x[u0]**l
 
     # First derivative of Legendre polynomials
     for l in range(1,lmax+1):

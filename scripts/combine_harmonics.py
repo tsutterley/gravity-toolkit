@@ -269,7 +269,7 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     dfactor = factors.get(units)
     # add attributes for earth parameters
     attributes['ROOT']['earth_radius'] = f'{factors.rad_e:0.3f} cm'
-    attributes['ROOT']['earth_density'] = f'{factors.rho_e:0.3f} g/cm'
+    attributes['ROOT']['earth_density'] = f'{factors.rho_e:0.3f} g/cm^3'
     attributes['ROOT']['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
 
     # Computing plms for converting to spatial domain
