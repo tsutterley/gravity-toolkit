@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 read_GRACE_harmonics.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (11/2024)
 Contributions by Hugo Lecomte
 
 Reads GRACE files and extracts spherical harmonic data and drift rates (RL04)
@@ -42,6 +42,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 11/2024: check if the GRACE/GRACE-FO files are gfc format
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: added regex formatting for CNES GRGS harmonics
         improve typing for variables in docstrings
@@ -145,13 +146,15 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
         FLAG = r'gfc'
     # COST-G unfiltered combination solutions
     # https://doi.org/10.5880/ICGEM.COST-G.001
-    elif PRC in ('COSTG',):
-        DSET, = re.findall(r'GSM|GAC',PFX)
+    # GFC solutions from the GFZ ICGEM
+    # https://icgem.gfz-potsdam.de/sl/temporal
+    elif PRC in ('COSTG',) or SFX in ('.gfc',):
+        DSET, = re.findall(r'(GSM|GAA|GAB|GAC|GAD)', PFX)
         DREL = np.int64(DRL)
         FLAG = r'gfc'
     # Standard GRACE/GRACE-FO Level-2 solutions
     else:
-        DSET = PFX
+        DSET, = re.findall(r'(GSM|GAA|GAB|GAC|GAD)', PFX)
         DREL = np.int64(DRL)
         FLAG = r'GRCOF2'
 
@@ -207,7 +210,8 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
         header_parameters = ['modelname','earth_gravity_constant','radius',
             'max_degree','errors','norm','tide_system']
         header_regex = re.compile(r'(' + r'|'.join(header_parameters) + r')')
-        grace_L2_input['header'] = [l for l in head if header_regex.match(l)]
+        header = [l.split(maxsplit=1) for l in head if header_regex.match(l)]
+        grace_L2_input['header'] = {i[0]:i[1] for i in header}
     elif ((N == 'GRAC') and (DREL >= 6)) or (N == 'GRFO'):
         # parse the YAML header for RL06 or GRACE-FO (specifying yaml loader)
         grace_L2_input.update(yaml.load('\n'.join(head),Loader=yaml.BaseLoader))
