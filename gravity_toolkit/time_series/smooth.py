@@ -87,7 +87,7 @@ def smooth(t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0,
     Computes the moving average of a time-series
 
         1) centered moving average
-        2) 13-month Loess filter [Velicogna2009]_
+        2) 13-month Loess filter :cite:p:`Velicogna:2009ft`
         3) 13-month Loess filter weighted and outputs for all dates
 
     Parameters
@@ -133,13 +133,6 @@ def smooth(t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0,
         noise component after removing the Loess trend and seasonal components
     reduce: float
         original time series after removing start and end half-windows
-
-    References
-    ----------
-    .. [Velicogna2009] I. Velicogna, "Increasing rates of ice mass loss
-        from the Greenland and Antarctic ice sheets revealed by GRACE",
-        *Geophysical Research Letters*, 36(L19503),
-        `doi: 10.1029/2009GL040222 <https://doi.org/10.1029/2009GL040222>`_
     """
 
     # remove singleton dimensions

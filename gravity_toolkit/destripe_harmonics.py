@@ -69,6 +69,7 @@ def destripe_harmonics(
     ):
     """
     Filters spherical harmonic coefficients for correlated striping errors
+    :cite:p:`Swenson:2006hu`
 
     Parameters
     ----------
@@ -93,13 +94,6 @@ def destripe_harmonics(
         filtered cosine spherical harmonic coefficients
     slm: np.ndarray
         filtered sine spherical harmonic coefficients
-
-    References
-    ----------
-    .. [Swenson2006] S. Swenson and J. Wahr,
-        "Post-processing removal of correlated errors in GRACE data",
-        *Geophysical Research Letters*, 33(L08402), (2006).
-        `doi: 10.1029/2005GL025285 <https://doi.org/10.1029/2005GL025285>`_
     """
 
     # tests if spherical harmonics have been imported

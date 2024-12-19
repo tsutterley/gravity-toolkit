@@ -120,7 +120,7 @@ class units(object):
     def harmonic(self, hl, kl, ll, **kwargs):
         """
         Calculates degree dependent factors for converting spherical
-        harmonic units from [Wahr1998]_
+        harmonic units from :cite:p:`Wahr:1998hy`
 
         Parameters
         ----------
@@ -150,9 +150,9 @@ class units(object):
         mmCH: float
             millimeters elastic crustal deformation (horizontal)
         cmVCU: float
-            centimeters viscoelastic crustal uplift from [Wahr2000]_
+            centimeters viscoelastic crustal uplift from :cite:p:`Wahr:2000ek`
         mVCU: float
-            meters viscoelastic crustal uplift from [Wahr2000]_
+            meters viscoelastic crustal uplift from :cite:p:`Wahr:2000ek`
         microGal: float
             microGal gravity perturbations
         mbar: float
@@ -199,7 +199,7 @@ class units(object):
     def spatial(self, hl, kl, ll, **kwargs):
         """
         Calculates degree dependent factors for converting spatial units
-        from [Wahr1998]_
+        from :cite:p:`Wahr:1998hy`
 
         Parameters
         ----------

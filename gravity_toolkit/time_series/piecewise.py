@@ -101,7 +101,7 @@ def piecewise(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
     STDEV=0, CONF=0, AICc=False):
     r"""
     Fits a synthetic signal to data over a time period by ordinary or
-    weighted least-squares for breakpoint analysis [Toms2003]_
+    weighted least-squares for breakpoint analysis :cite:p:`Toms:2003gv`
 
     Parameters
     ----------
@@ -129,7 +129,7 @@ def piecewise(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
     CONF: float, default 0
         Confidence interval of output error
     AICc: bool, default False
-        Use second order AIC for small sample sizes [Burnham2002]_
+        Use second order AIC for small sample sizes :cite:p:`Burnham:2002ms`
 
     Returns
     -------
@@ -168,17 +168,6 @@ def piecewise(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
         number of terms used in fit
     cov_mat: float
         covariance matrix
-
-    References
-    ----------
-    .. [Toms2003] J. D. Toms and M. L. Lesperance,
-        "Piecewise Regression: A Tool For Identifying Ecological
-        Thresholds", *Ecology*, 84, 2034-2041, (2003).
-        `doi: 10.1890/02-0472 <https://doi.org/10.1890/02-0472>`_
-    .. [Burnham2002] K. P. Burnham and D. R. Anderson,
-        *Model Selection and Multimodel Inference*,
-        2nd Edition, 488 pp., (2002).
-        `doi: 10.1007/b97636 <https://doi.org/10.1007/b97636>`_
     """
 
     t_in = np.squeeze(t_in)

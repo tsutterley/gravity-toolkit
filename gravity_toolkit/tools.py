@@ -292,9 +292,9 @@ class widgets:
         C50: obj
             Dropdown menu widget for setting *C*\ :sub:`50` data product
         pole_tide: obj
-            Checkbox widget for correcting for Pole Tide Drift [Wahr2015]_
+            Checkbox widget for correcting for Pole Tide Drift :cite:p:`Wahr:2015dg`
         atm: obj
-            Checkbox widget for correcting ECMWF Atmospheric Jumps [Fagiolini2015]_
+            Checkbox widget for correcting ECMWF Atmospheric Jumps :cite:p:`Fagiolini:2015kc`
         """
         # set default keyword arguments
 
@@ -490,7 +490,7 @@ class widgets:
         gaussian: obj
             Text entry widget for setting Gaussian Smoothing Radius in kilometers
         destripe: obj
-            Checkbox widget for destriping spherical harmonics [Swenson2006]_
+            Checkbox widget for destriping spherical harmonics :cite:p:`Swenson:2006hu`
         spacing: obj
             Text entry widget for setting output spatial degree spacing
         interval: obj
@@ -1041,9 +1041,9 @@ def custom_colormap(N, map_name, **kwargs):
     map_name: str
         name of color map
 
-            - ``'Joughin'``: [Joughin2018]_ standard velocity colormap
-            - ``'Rignot'``: [Rignot2011]_ standard velocity colormap
-            - ``'Seroussi'``: [Seroussi2011]_ velocity divergence colormap
+            - ``'Joughin'``: :cite:p:`Joughin:2018ei` standard velocity colormap
+            - ``'Rignot'``: :cite:p:`Rignot:2011ko` standard velocity colormap
+            - ``'Seroussi'``: :cite:p:`Seroussi:2011hi` velocity divergence colormap
     **kwargs: dict
         optional arguments for LinearSegmentedColormap
     """

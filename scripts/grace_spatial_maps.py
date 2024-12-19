@@ -248,7 +248,8 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
 
     # recursively create output directory if not currently existing
     OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
-    OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
+    if not OUTPUT_DIRECTORY.exists():
+        OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
 
     # output attributes for spatial files
     attributes = collections.OrderedDict()

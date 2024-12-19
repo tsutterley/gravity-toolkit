@@ -88,7 +88,7 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
     input_file: str
         full path to gfc spherical harmonic data file
     TIDE: string
-        Permanent tide system of output gravity fields [Losch2003]_
+        Permanent tide system of output gravity fields :cite:p:`Losch:2003ve`
 
             - ``'tide_free'``: no permanent direct and indirect tidal potentials
             - ``'mean_tide'``: permanent tidal potentials (direct and indirect)
@@ -134,14 +134,6 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
             - ``'mean_tide'``
             - ``'zero_tide'``
             - ``'tide_free'``
-
-    Reference
-    ---------
-    .. [Losch2003] M. Losch and V. Seufer,
-        "How to Compute Geoid Undulations (Geoid Height Relative
-        to a Given Reference Ellipsoid) from Spherical Harmonic
-        Coefficients for Satellite Altimetry Applications", (2003).
-        `eprint ID: 11802 <http://mitgcm.org/~mlosch/geoidcookbook.pdf>`_
     """
     # full path to input filename
     input_file = pathlib.Path(input_file).expanduser().absolute()

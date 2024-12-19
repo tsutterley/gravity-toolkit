@@ -4,9 +4,9 @@ calc_mascon.py
 
 - Reads in GRACE/GRACE-FO spherical harmonic coefficients
 - Correct spherical harmonics with the specified GIA model group
-- Filters and smooths data with specified processing algorithms [Jekeli1981]_ [Swenson2006]_
-- Calculates a time-series of regional mass anomalies through a least-squares mascon procedure following [Tiwari2009]_ [Jacob2012]_
-- Calculates the regional mascon errors following [Wahr2006]_
+- Filters and smooths data with specified processing algorithms :cite:p:`Jekeli:1981vj` :cite:p:`Swenson:2006hu`
+- Calculates a time-series of regional mass anomalies through a least-squares mascon procedure following :cite:p:`Tiwari:2009bx` :cite:p:`Jacob:2012gv`
+- Calculates the regional mascon errors following :cite:p:`Wahr:2006bx`
 
 `Source code`__
 
@@ -23,11 +23,11 @@ Calling Sequence
     :nodefault:
 
     --love -n : @after
-        * ``0``: Han and Wahr (1995) values from PREM [Han1995]_
-        * ``1``: Gegout (2005) values from PREM [Gegout2010]_
-        * ``2``: Wang et al. (2012) values from PREM [Wang2012]_
-        * ``3``: Wang et al. (2012) values from PREM with hard sediment [Wang2012]_
-        * ``4``: Wang et al. (2012) values from PREM with soft sediment [Wang2012]_
+        * ``0``: Han and Wahr (1995) values from PREM :cite:p:`Han:1995go`
+        * ``1``: Gegout (2005) values from PREM :cite:p:`Gegout:2010gc`
+        * ``2``: Wang et al. (2012) values from PREM :cite:p:`Wang:2012gc`
+        * ``3``: Wang et al. (2012) values from PREM with hard sediment :cite:p:`Wang:2012gc`
+        * ``4``: Wang et al. (2012) values from PREM with soft sediment :cite:p:`Wang:2012gc`
 
     --reference : @after
         * ``'CF'``: Center of Surface Figure
@@ -35,15 +35,15 @@ Calling Sequence
         * ``'CE'``: Center of Mass of Solid Earth
 
     --gia -G : @after
-        * ``'IJ05-R2'``: `Ivins R2 GIA Models <https://doi.org/10.1002/jgrb.50208>`_
-        * ``'W12a'``: `Whitehouse GIA Models <https://doi.org/10.1111/j.1365-246X.2012.05557.x>`_
-        * ``'SM09'``: `Simpson/Milne GIA Models <https://doi.org/10.1029/2010JB007776>`_
-        * ``'ICE6G'``: `ICE-6G GIA Models <https://doi.org/10.1002/2014JB011176>`_
-        * ``'Wu10'``: `Wu (2010) GIA Correction <https://doi.org/10.1038/ngeo938>`_
-        * ``'AW13-ICE6G'``: `Geruo A ICE-6G GIA Models <https://doi.org/10.1093/gji/ggs030>`_
-        * ``'AW13-IJ05'``: `Geruo A IJ05-R2 GIA Models <https://doi.org/10.1093/gji/ggs030>`_
-        * ``'Caron'``: `Caron JPL GIA Assimilation <https://doi.org/10.1002/2017GL076644>`_
-        * ``'ICE6G-D'``: `ICE-6G Version-D GIA Models <https://doi.org/10.1002/2016JB013844>`_
+        * ``'IJ05-R2'``: Ivins R2 GIA Models :cite:p:`Ivins:2013cq`
+        * ``'W12a'``: Whitehouse GIA Models :cite:p:`Whitehouse:2012jj`
+        * ``'SM09'``: Simpson/Milne GIA Models :cite:p:`Simpson:2009hg`
+        * ``'ICE6G'``: ICE-6G GIA Models :cite:p:`Peltier:2015bo`
+        * ``'Wu10'``: Wu (2010) GIA Correction :cite:p:`Wu:2010dq`
+        * ``'AW13-ICE6G'``: Geruo A ICE-6G GIA Models :cite:p:`A:2013kh`
+        * ``'AW13-IJ05'``: Geruo A IJ05-R2 GIA Models :cite:p:`A:2013kh`
+        * ``'Caron'``: Caron JPL GIA Assimilation :cite:p:`Caron:2018ba`
+        * ``'ICE6G-D'``: ICE-6G Version-D GIA Models :cite:p:`Peltier:2018dp`
         * ``'ascii'``: reformatted GIA in ascii format
         * ``'netCDF4'``: reformatted GIA in netCDF4 format
         * ``'HDF5'``: reformatted GIA in HDF5 format
@@ -116,24 +116,5 @@ Calling Sequence
         * ``'gelsy'``: complete orthogonal factorization solution
         * ``'gelss'``: singular value decomposition (SVD) solution
         * ``'gelsd'``: singular value decomposition (SVD) solution with a divide and conquer method
-
-References
-##########
-
-.. [Gegout2010] P. Gegout, J. Boehm, and D. Wijaya, "Practical numerical computation of love numbers and applications", Workshop of the COST Action ES0701, (2010). `doi: 10.13140/RG.2.1.1866.7045 <https://doi.org/10.13140/RG.2.1.1866.7045>`_
-
-.. [Han1995] D. Han and J. Wahr, "The viscoelastic relaxation of a realistically stratified earth, and a further analysis of postglacial rebound", *Geophysical Journal International*, 120(2), 287--311, (1995). `doi: 10.1111/j.1365-246X.1995.tb01819.x <https://doi.org/10.1111/j.1365-246X.1995.tb01819.x>`_
-
-.. [Jacob2012] T. Jacob, J. Wahr, W. T. Pfeffer, and S. Swenson, "Recent contributions of glaciers and ice caps to sea level rise", *Nature*, 482, 514--518, (2012). `doi: 10.1038/nature10847 <https://doi.org/10.1038/nature10847>`_
-
-.. [Jekeli1981] C. Jekeli, "Alternative Methods to Smooth the Earth's Gravity Field", NASA Grant No. NGR 36-008-161, OSURF Proj. No. 783210, 48 pp., (1981).
-
-.. [Swenson2006] S. Swenson and J. Wahr, "Post-processing removal of correlated errors in GRACE data", *Geophysical Research Letters*, 33(L08402), (2006). `doi: 10.1029/2005GL025285 <https://doi.org/10.1029/2005GL025285>`_
-
-.. [Tiwari2009] V. M. Tiwari, J. Wahr, and S. Swenson, "Dwindling groundwater resources in northern India, from satellite gravity observations", *Geophysical Research Letters*, 36(L18401), (2009). `doi: 10.1029/2009GL039401 <https://doi.org/10.1029/2009GL039401>`_
-
-.. [Wahr2006] J. Wahr, S. Swenson, and I. Velicogna, "Accuracy of GRACE mass estimates", Geophysical Research Letters, 33(L06401), (2006). `doi: 10.1029/2005GL025305 <https://doi.org/10.1029/2005GL025305>`_
-
-.. [Wang2012] H. Wang et al., "Load Love numbers and Green's functions for elastic Earth models PREM, iasp91, ak135, and modified models with refined crustal structure from Crust 2.0", *Computers & Geosciences*, 49, 190--199, (2012). `doi: 10.1016/j.cageo.2012.06.022 <https://doi.org/10.1016/j.cageo.2012.06.022>`_
 
 .. |times|      unicode:: U+00D7 .. MULTIPLICATION SIGN

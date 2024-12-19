@@ -84,6 +84,8 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
     PLM=None, LOVE=None):
     r"""
     Calculates spherical harmonic coefficients for a uniform disc load
+    :cite:p:`Holmes:2002ff` :cite:p:`Longman:1962ev` :cite:p:`Farrell:1972cm`
+    :cite:p:`Pollack:1973gi` :cite:p:`Jacob:2012eo`
 
     Parameters
     ----------
@@ -121,28 +123,6 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
         spherical harmonic degree to LMAX
     m: np.ndarray
         spherical harmonic order to MMAX
-
-    References
-    ----------
-    .. [Holmes2002] S. A. Holmes and W. E. Featherstone,
-        "A unified approach to the Clenshaw summation and the recursive
-        computation of very high degree and order normalised associated
-        Legendre functions", *Journal of Geodesy*, 76, 279--299, (2002).
-        `doi: 10.1007/s00190-002-0216-2 <https://doi.org/10.1007/s00190-002-0216-2>`_
-    .. [Longman1962] I. M. Longman, "A Green's function for determining
-        the deformation of the Earth under surface mass loads: 1. Theory",
-        *Journal of Geophysical Research*, 67(2), (1962).
-        `doi: 10.1029/JZ067i002p00845 <https://doi.org/10.1029/JZ067i002p00845>`_
-    .. [Farrell1972] W. E. Farrell, "Deformation of the Earth by surface loads",
-        *Reviews of Geophysics and Space Physics*, 10(3), (1972).
-        `doi: 10.1029/RG010i003p00761 <https://doi.org/10.1029/RG010i003p00761>`_
-    .. [Pollack1973] H. N. Pollack, "Spherical harmonic representation of the
-        gravitational potential of a point mass, a spherical cap, and a
-        spherical rectangle", *Journal of Geophysical Research*, 78(11), (1973).
-        `doi: 10.1029/JB078i011p01760 <https://doi.org/10.1029/JB078i011p01760>`_
-    .. [Jacob2012] T. Jacob et al., "Estimating geoid height change in North America:
-        past, present and future", *Journal of Geodesy*, 86, 337-358, (2012).
-        `doi: 10.1007/s00190-011-0522-7 <https://doi.org/10.1007/s00190-011-0522-7>`_
     """
 
     # upper bound of spherical harmonic orders (default = LMAX)

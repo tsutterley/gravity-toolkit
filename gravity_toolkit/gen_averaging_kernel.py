@@ -61,10 +61,10 @@ def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
     LMAX=60, MMAX=None, CUTOFF=1e-15, UNITS=0, LOVE=None):
     r"""
     Generates averaging kernel coefficients which minimize the
-    total error following [Swenson2002]_
+    total error following :cite:p:`Swenson:2002hs`
 
     Uses a normalized form of the Gaussian averaging function
-    from [Jekeli1981]_
+    from :cite:p:`Jekeli:1981vj`
 
     Parameters
     ----------
@@ -100,18 +100,6 @@ def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
         cosine coefficients of the averaging kernel
     slm: np.ndarray
         sine coefficients of the averaging kernel
-
-    References
-    ----------
-    .. [Jekeli1981] C. Jekeli, "Alternative Methods to Smooth
-        the Earth's Gravity Field", NASA Grant No. NGR 36-008-161,
-        OSURF Proj. No. 783210, 48 pp., (1981).
-
-    .. [Swenson2002] S. Swenson and J. Wahr, "Methods for inferring regional
-        surface-mass anomalies from Gravity Recovery and Climate Experiment
-        (GRACE) measurements of time-variable gravity", *Journal of
-        Geophysical Research: Solid Earth*, 107(B9), 2193, (2002).
-        `doi: 10.1029/2001JB000576 <https://doi.org/10.1029/2001JB000576>`_
     """
     # upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:

@@ -52,7 +52,7 @@ import numpy as np
 def gauss_weights(hw, LMAX, CUTOFF=1e-10):
     """
     Computes the Gaussian weights as a function of degree using
-    a normalized form of [Jekeli1981]_
+    a normalized form of :cite:p:`Jekeli:1981vj`
 
     Parameters
     ----------
@@ -67,12 +67,6 @@ def gauss_weights(hw, LMAX, CUTOFF=1e-10):
     -------
     wl: np.ndarray
         degree dependent weighting function
-
-    References
-    ----------
-    .. [Jekeli1981] C. Jekeli, "Alternative Methods to Smooth
-        the Earth's Gravity Field", NASA Grant No. NGR 36-008-161,
-        OSURF Proj. No. 783210, 48 pp., (1981).
     """
     # allocate for output weights
     wl = np.zeros((LMAX+1))
