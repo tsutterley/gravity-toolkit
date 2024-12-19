@@ -198,6 +198,7 @@ def stokes_summation(clm1, slm1, lon, lat,
     LMIN=0, LMAX=60, MMAX=None, RAD=0, UNITS=0, LOVE=None, PLM=None):
     r"""
     Converts data from spherical harmonic coefficients to a spatial field
+    :cite:p:`Wahr:1998hy`
 
     Parameters
     ----------
@@ -222,10 +223,10 @@ def stokes_summation(clm1, slm1, lon, lat,
 
             - ``1``: cm water equivalent thickness (cm w.e., g/cm\ :sup:`2`)
             - ``2``: mm geoid height
-            - ``3``: mm elastic crustal deformation
+            - ``3``: mm elastic crustal deformation :cite:p:`Davis:2004il`
             - ``4``: microGal gravitational perturbation
             - ``5``: mbar equivalent surface pressure
-            - ``6``: cm viscoelastic crustal uplift (GIA)
+            - ``6``: cm viscoelastic crustal uplift (GIA) :cite:p:`Wahr:2000ek`
             - list: custom degree-dependent unit conversion factor
     LMAX: int, default 0
         Upper bound of Spherical Harmonic Degrees
@@ -238,35 +239,6 @@ def stokes_summation(clm1, slm1, lon, lat,
     -------
     spatial: np.ndarray
         spatial field
-
-    References
-    ----------
-    .. [Davis2004] J. L. Davis et al.,
-        "Climate-driven deformation of the solid Earth from GRACE and GPS",
-        *Geophysical Research Letters*, 31(L24605), (2004).
-        `doi: 10.1029/2004GL021435 <https://doi.org/10.1029/2004GL021435>`_
-
-    .. [Holmes2002] S. A. Holmes and W. E. Featherstone,
-        "A unified approach to the Clenshaw summation and the recursive
-        computation of very high degree and order normalised associated
-        Legendre functions", *Journal of Geodesy*, 76, 279--299, (2002).
-        `doi: 10.1007/s00190-002-0216-2 <https://doi.org/10.1007/s00190-002-0216-2>`_
-
-    .. [Tscherning1982] C. C. Tscherning and K. Poder,
-        "Some Geodetic Applications of Clenshaw Summation",
-        *Bollettino di Geodesia e Scienze*, 4, 349--375, (1982).
-
-    .. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan, "Time
-        variability of the Earth's gravity field: Hydrological
-        and oceanic effects and their possible detection using GRACE",
-        *Journal of Geophysical Research*, 103(B12), 30205-30229, (1998).
-        `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_
-
-    .. [Wahr2000] J. Wahr, D. Wingham, and C. Bentley,
-        "A method of combining ICESat and GRACE satellite data to constrain
-        Antarctic mass balance", *Journal of Geophysical Research: Solid Earth*,
-        105(B7), 16279--16294, (2000).
-        `doi: 10.1029/2000JB900113 <https://doi.org/10.1029/2000JB900113>`_
     """
     # if LMAX is not specified, will use the size of the input harmonics
     if (LMAX == 0):

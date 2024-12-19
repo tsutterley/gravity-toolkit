@@ -188,10 +188,8 @@ class geocenter(object):
     def from_gravis(self, geocenter_file, **kwargs):
         """
         Reads monthly geocenter spherical harmonic data files from
-        `GFZ GravIS calculated using GRACE/GRACE-FO measurements
-        and Ocean Models of degree 1
-        <ftp://isdcftp.gfz-potsdam.de/grace/GravIS/GFZ/Level-2B/aux_data/GRAVIS-2B_GFZOP_GEOCENTER_0002.dat>`_
-
+        GFZ GravIS calculated using GRACE/GRACE-FO measurements
+        and Ocean Models of degree 1 :cite:p:`Dahle:2019cu`
 
         Parameters
         ----------
@@ -199,13 +197,6 @@ class geocenter(object):
             degree 1 file
         header: bool, default True
             file contains header text to be skipped
-
-        References
-        ----------
-        .. [Dahle2019] Dahle and Murboeck, "Post-processed GRACE/GRACE-FO
-            Geopotential GSM Coefficients GFZ RL06 (Level-2B Product)."
-            V. 0002. *GFZ Data Services*, (2019).
-            `doi: 10.5880/GFZ.GRAVIS_06_L2B <https://doi.org/10.5880/GFZ.GRAVIS_06_L2B>`_
         """
 
         # set filename
@@ -444,24 +435,13 @@ class geocenter(object):
     def from_UCI(self, geocenter_file, **kwargs):
         """
         Reads monthly geocenter files computed using GRACE/GRACE-FO
-        measurements and ocean models [Swenson2008]_ [Sutterley2019]_
+        measurements and ocean models :cite:p:`Swenson:2008cr`
+        :cite:p:`Sutterley:2019bx`
 
         Parameters
         ----------
         geocenter_file: str
             input datafile with geocenter coefficients
-
-        References
-        ----------
-        .. [Swenson2008] S. Swenson, D. Chambers, and J. Wahr,
-            "Estimating geocenter variations from a combination
-            of GRACE and ocean model output", *Journal of Geophysical
-            Research*, 113(B08410), (2008).
-            `doi: 10.1029/2007JB005338 <https://doi.org/10.1029/2007JB005338>`_
-        .. [Sutterley2019] T. C. Sutterley, and I. Velicogna, "Improved
-            estimates of geocenter variability from time-variable gravity
-            and ocean model outputs", *Remote Sensing*, 11(18), 2108, (2019).
-            `doi: 10.3390/rs11182108 <https://doi.org/10.3390/rs11182108>`_
         """
         # set filename
         self.case_insensitive_filename(geocenter_file)
@@ -544,7 +524,7 @@ class geocenter(object):
         Reads `monthly geocenter coefficients
         <https://github.com/swensosc/GRACE_Tiles/blob/master/ancillary_data/gad_gsm.rl05.txt>`_
         computed by Sean Swenson using GRACE/GRACE-FO measurements
-        and Ocean Models of degree 1
+        and Ocean Models of degree 1 :cite:p:`Swenson:2008cr`
 
         Parameters
         ----------
@@ -552,14 +532,6 @@ class geocenter(object):
             degree 1 file
         header: bool, default True
             file contains header text to be skipped
-
-        References
-        ----------
-        .. [Swenson2008] S. Swenson, D. Chambers, and J. Wahr,
-            "Estimating geocenter variations from a combination
-            of GRACE and ocean model output", *Journal of Geophysical
-            Research*, 113(B08410), (2008).
-            `doi: 10.1029/2007JB005338 <https://doi.org/10.1029/2007JB005338>`_
         """
         # set filename
         self.case_insensitive_filename(geocenter_file)
@@ -645,7 +617,8 @@ class geocenter(object):
         """
         Reads monthly geocenter spherical harmonic data files from GRACE Tellus
         Technical Notes (TN-13) calculated using GRACE/GRACE-FO measurements and
-        Ocean Models of Degree 1
+        Ocean Models of Degree 1 :cite:p:`Swenson:2008cr` :cite:p:`Sun:2016bf`
+        :cite:p:`Sun:2016hh`
 
         Datasets distributed by NASA PO.DAAC
 
@@ -661,25 +634,6 @@ class geocenter(object):
             file contains header text to be skipped
         JPL: bool, default True
             use JPL TN-13 geocenter files with self-attraction and loading
-
-        References
-        ----------
-        .. [Swenson2008] S. Swenson, D. Chambers, and J. Wahr,
-            "Estimating geocenter variations from a combination
-            of GRACE and ocean model output", *Journal of Geophysical
-            Research*, 113(B08410), (2008).
-            `doi: 10.1029/2007JB005338 <https://doi.org/10.1029/2007JB005338>`_
-
-        .. [Sun2016a] Y. Sun, R. Riva, and P. Ditmar, "Observed changes
-            in the Earth's dynamic oblateness from GRACE data and
-            geophysical models", *Journal of Geodesy*, 90(1), 81-89, (2016).
-            `doi: 10.1007/s00190-015-0852-y <https://doi.org/10.1007/s00190-015-0852-y>`_
-
-        .. [Sun2016b] Y. Sun, R. Riva, and P. Ditmar, "Optimizing estimates of
-            annual variations and trends in geocenter motion and J2 from
-            a combination of GRACE data and geophysical models",
-            *Journal of Geophysical Research: Solid Earth*, 121, (2016).
-            `doi: 10.1002/2016JB013073 <https://doi.org/10.1002/2016JB013073>`_
         """
         # set filename
         self.case_insensitive_filename(geocenter_file)
@@ -788,7 +742,7 @@ class geocenter(object):
     def from_netCDF4(self, geocenter_file, group=None, **kwargs):
         """
         Reads geocenter file and extracts dates and spherical harmonic data
-        from a netCDF4 file
+        from a netCDF4 file :cite:p:`Sutterley:2019bx`
 
         Parameters
         ----------
@@ -798,13 +752,6 @@ class geocenter(object):
             netCDF4 group name
         compression: str or NoneType, default None
             file compression type
-
-        References
-        ----------
-        .. [Sutterley2019] T. C. Sutterley, and I. Velicogna, "Improved
-            estimates of geocenter variability from time-variable gravity
-            and ocean model outputs", *Remote Sensing*, 11(18), 2108, (2019).
-            `doi: 10.3390/rs11182108 <https://doi.org/10.3390/rs11182108>`_
         """
         kwargs.setdefault('compression', None)
         # set filename

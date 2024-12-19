@@ -148,3 +148,10 @@ missions
     api_reference/plot_GrIS_grid_5maps.rst
     api_reference/plot_GrIS_grid_movie.rst
     api_reference/quick_mascon_plot.rst
+
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+    :caption: Bibliography
+
+    getting_started/Bibliography.rst

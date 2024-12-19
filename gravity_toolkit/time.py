@@ -600,7 +600,7 @@ def convert_calendar_decimal(year, month, day=None, hour=None, minute=None,
     second=None, DofY=None):
     """
     Converts from calendar date into decimal years taking into
-    account leap years
+    account leap years :cite:p:`Dershowitz:2007cc`
 
     Parameters
     ----------
@@ -623,12 +623,6 @@ def convert_calendar_decimal(year, month, day=None, hour=None, minute=None,
     -------
     t_date: np.ndarray
         date in decimal-year format
-
-    References
-    ----------
-    .. [Dershowitz2008] Dershowitz, N. and E.M. Reingold.
-        *Calendrical Calculations*, (2008).
-        Cambridge: Cambridge University Press.
     """
 
     # number of dates
@@ -748,6 +742,7 @@ def convert_calendar_decimal(year, month, day=None, hour=None, minute=None,
 def convert_julian(JD, **kwargs):
     """
     Converts from Julian day to calendar date and time
+    :cite:p:`Press:1988we`, :cite:p:`Hatcher:1984uo`
 
     Parameters
     ----------
@@ -776,15 +771,6 @@ def convert_julian(JD, **kwargs):
         minute of the hour
     second: np.ndarray
         second of the minute
-
-    References
-    ----------
-    .. [Press1988] *Numerical Recipes in C*, William H. Press,
-        Brian P. Flannery, Saul A. Teukolsky, and William T. Vetterling.
-        Second Edition, Cambridge University Press, (1988).
-    .. [Hatcher1984] Hatcher, D. A., "Simple Formulae for Julian Day Numbers and
-        Calendar Dates", *Quarterly Journal of the Royal Astronomical
-        Society*, 25(1), (1984).
     """
     # set default keyword arguments
     kwargs.setdefault('astype', None)

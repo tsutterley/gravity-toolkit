@@ -1943,7 +1943,7 @@ class scaling_factors(spatial):
         """
         Calculate the scaling factor and scaling factor errors
         from two ``spatial`` or ``scaling_factors`` objects
-        following [Landerer2012]_ and [Hsu2017]_
+        following :cite:p:`Landerer:2012kf` and :cite:p:`Hsu:2017hd`
 
         Parameters
         ----------
@@ -1954,17 +1954,6 @@ class scaling_factors(spatial):
         -------
         temp: obj
             scaling factor, scaling error and magnitude
-
-        References
-        ----------
-        .. [Landerer2012] F. W. Landerer and S. C. Swenson,
-            "Accuracy of scaled GRACE terrestrial water storage estimates",
-            *Water Resources Research*, 48(W04531), (2012).
-            `doi: 10.1029/2011WR011453 <https://doi.org/10.1029/2011WR011453>`_
-        .. [Hsu2017] C.-W. Hsu and I. Velicogna, "Detection of Sea Level
-            Fingerprints derived from GRACE gravity data",
-            *Geophysical Research Letters*, 44, 8953--8961, (2017).
-            `doi: 10.1002/2017GL074070 <https://doi.org/10.1002/2017GL074070>`_
         """
         # copy to not modify original inputs
         temp1 = self.copy()

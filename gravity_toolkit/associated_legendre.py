@@ -71,7 +71,7 @@ def plm_colombo(LMAX, x,
     ):
     """
     Computes fully-normalized associated Legendre Polynomials and their
-    first derivative using a Standard forward column method [Colombo1981]_
+    first derivative using a Standard forward column method :cite:p:`Colombo:1981vh`
 
     Parameters
     ----------
@@ -92,24 +92,6 @@ def plm_colombo(LMAX, x,
         fully-normalized Legendre polynomials
     dplms: np.ndarray
         first derivative of Legendre polynomials
-
-    References
-    ----------
-    .. [Colombo1981] O. L. Colombo,
-        "Numerical Methods for Harmonic Analysis on the Sphere",
-        Air Force Contract No. F19628-79-C-0027,
-        *OSURF Proj. No. 711664*, 140 pp., (1981).
-    .. [Losch2003] M. Losch and V. Seufer,
-        "How to Compute Geoid Undulations (Geoid Height Relative
-        to a Given Reference Ellipsoid) from Spherical Harmonic
-        Coefficients for Satellite Altimetry Applications", (2003).
-        `eprint ID: 11802 <http://mitgcm.org/~mlosch/geoidcookbook.pdf>`_
-    .. [Holmes2002] S. A. Holmes and W. E. Featherstone,
-        "A unified approach to the Clenshaw summation and the
-        recursive computation of very high degree and order
-        normalised associated Legendre functions",
-        *Journal of Geodesy*, 76, 279--299, (2002).
-        `doi: 10.1007/s00190-002-0216-2 <https://doi.org/10.1007/s00190-002-0216-2>`_
     """
 
     # removing singleton dimensions of x
@@ -168,7 +150,7 @@ def plm_holmes(LMAX, x,
     ):
     """
     Computes fully-normalized associated Legendre Polynomials and their
-    first derivative using the recursion relation from [Holmes2002]_
+    first derivative using the recursion relation from :cite:p:`Holmes:2002ff`
 
     Parameters
     ----------
@@ -189,20 +171,6 @@ def plm_holmes(LMAX, x,
         fully-normalized Legendre polynomials
     dplms: np.ndarray
         first derivative of Legendre polynomials
-
-    References
-    ----------
-    .. [Losch2003] M. Losch and V. Seufer,
-        "How to Compute Geoid Undulations (Geoid Height Relative
-        to a Given Reference Ellipsoid) from Spherical Harmonic
-        Coefficients for Satellite Altimetry Applications", (2003).
-        `eprint ID: 11802 <http://mitgcm.org/~mlosch/geoidcookbook.pdf>`_
-    .. [Holmes2002] S. A. Holmes and W. E. Featherstone,
-        "A unified approach to the Clenshaw summation and the
-        recursive computation of very high degree and order
-        normalised associated Legendre functions",
-        *Journal of Geodesy*, 76, 279--299, (2002).
-        `doi: 10.1007/s00190-002-0216-2 <https://doi.org/10.1007/s00190-002-0216-2>`_
     """
 
     # removing singleton dimensions of x
@@ -302,9 +270,9 @@ def plm_mohlenkamp(LMAX, x,
     ):
     """
     Computes fully-normalized associated Legendre Polynomials and their
-    first derivative using the recursion relation from [Mohlenkamp2016]_
+    first derivative using the recursion relation from :cite:p:`Mohlenkamp:2016vv`
 
-    Derived from [Szego1939]_ recurrence formula for Jacobi Polynomials
+    Derived from :cite:p:`Szego:1939tn` recurrence formula for Jacobi Polynomials
 
     Parameters
     ----------
@@ -325,16 +293,6 @@ def plm_mohlenkamp(LMAX, x,
         fully-normalized Legendre polynomials
     dplms: np.ndarray
         first derivative of Legendre polynomials
-
-    References
-    ----------
-    .. [Mohlenkamp2016] M. J. Mohlenkamp,
-        "A User's Guide to Spherical Harmonics", (2016).
-        `[pdf] <http://www.ohiouniversityfaculty.com/mohlenka/research/uguide.pdf>`_
-    .. [Szego1939] Gabor Szeg\ |ouml|\ , "Orthogonal Polynomials", 440 pp., (1939).
-        `[pdf] <https://people.math.osu.edu/nevai.1/AT/SZEGO/szego=szego1975=ops=OCR.pdf>`_
-
-    .. |ouml|    unicode:: U+00F6 .. LATIN SMALL LETTER O WITH DIAERESIS
     """
 
     # Verify LMAX as integer

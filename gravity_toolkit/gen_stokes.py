@@ -79,7 +79,8 @@ from gravity_toolkit.associated_legendre import plm_holmes
 def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     PLM=None, LOVE=None):
     r"""
-    Converts data from the spatial domain to spherical harmonic coefficients
+    Converts data from the spatial domain to spherical harmonic
+    coefficients :cite:p:`Wahr:1998hy`
 
     Parameters
     ----------
@@ -117,14 +118,6 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
         spherical harmonic degree to LMAX
     m: np.ndarray
         spherical harmonic order to MMAX
-
-    References
-    ----------
-    .. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan, "Time
-        variability of the Earth's gravity field: Hydrological
-        and oceanic effects and their possible detection using GRACE",
-        *Journal of Geophysical Research*, 103(B12), 30205-30229, (1998).
-        `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_
     """
 
     # converting LMIN and LMAX to integer

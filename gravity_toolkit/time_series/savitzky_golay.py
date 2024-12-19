@@ -66,7 +66,7 @@ def savitzky_golay(t_in, y_in, WINDOW=None, ORDER=2, DERIV=0,
     RATE=1, DATA_ERR=0):
     """
     Smooth and optionally differentiate data with a Savitzky-Golay
-    filter [Savitzky1964]_ [Press2007]_
+    filter :cite:p:`Savitzky:1964bn` :cite:p:`Press:1988we`
 
     Parameters
     ----------
@@ -97,15 +97,6 @@ def savitzky_golay(t_in, y_in, WINDOW=None, ORDER=2, DERIV=0,
         Estimated error at time points
     time: float
         Time points for window
-
-    References
-    ----------
-    .. [Savitzky1964] A. Savitzky, M. J. E. Golay, "Smoothing and
-        Differentiation of Data by Simplified Least Squares Procedures".
-        *Analytical Chemistry*, 36(8), 1627--1639, (1964).
-    .. [Press2007] *Numerical Recipes 3rd Edition: The Art of Scientific
-        Computing*, W.H. Press, S.A. Teukolsky, W. T. Vetterling,
-        B.P. Flannery. Cambridge University Press, (2007).
     """
 
     # verify that WINDOW is positive, odd and greater than ORDER+1

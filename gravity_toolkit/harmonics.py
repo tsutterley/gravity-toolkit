@@ -1793,19 +1793,12 @@ class harmonics(object):
     def destripe(self, **kwargs):
         """
         Filters spherical harmonic coefficients for correlated "striping"
-        errors following [Swenson2006]_
+        errors following :cite:p:`Swenson:2006hu`
 
         Parameters
         ----------
         kwargs: dict
             keyword arguments for ``destripe_harmonics``
-
-        References
-        ----------
-        .. [Swenson2006] S. Swenson and J. Wahr,
-            "Post-processing removal of correlated errors in GRACE data",
-            *Geophysical Research Letters*, 33(L08402), (2006).
-            `doi: 10.1029/2005GL025285 <https://doi.org/10.1029/2005GL025285>`_
         """
         # assign degree and order fields
         self.update_dimensions()

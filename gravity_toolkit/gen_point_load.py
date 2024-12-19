@@ -65,6 +65,7 @@ from gravity_toolkit.legendre import legendre
 def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
     """
     Calculates spherical harmonic coefficients for point masses
+    :cite:p:`Longman:1962ev` :cite:p:`Farrell:1972cm` :cite:p:`Pollack:1973gi`
 
     Parameters
     ----------
@@ -97,20 +98,6 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
         spherical harmonic degree to LMAX
     m: np.ndarray
         spherical harmonic order to MMAX
-
-    References
-    ----------
-    .. [Longman1962] I. M. Longman, "A Green's function for determining
-        the deformation of the Earth under surface mass loads: 1. Theory",
-        *Journal of Geophysical Research*, 67(2), (1962).
-        `doi: 10.1029/JZ067i002p00845 <https://doi.org/10.1029/JZ067i002p00845>`_
-    .. [Farrell1972] W. E. Farrell, "Deformation of the Earth by surface loads",
-        *Reviews of Geophysics and Space Physics*, 10(3), (1972).
-        `doi: 10.1029/RG010i003p00761 <https://doi.org/10.1029/RG010i003p00761>`_
-    .. [Pollack1973] H. N. Pollack, "Spherical harmonic representation of the
-        gravitational potential of a point mass, a spherical cap, and a
-        spherical rectangle", *Journal of Geophysical Research*, 78(11), (1973).
-        `doi: 10.1029/JB078i011p01760 <https://doi.org/10.1029/JB078i011p01760>`_
     """
 
     # upper bound of spherical harmonic orders (default == LMAX)

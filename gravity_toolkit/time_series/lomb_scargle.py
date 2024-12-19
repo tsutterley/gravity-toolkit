@@ -59,8 +59,8 @@ import scipy.signal
 def lomb_scargle(t_in, d_in, **kwargs):
     """
     Computes periodograms for least-squares spectral analysis following
-    [Lomb1976]_ [Scargle1982]_ and computes the frequency probabilities
-    following [Horne1986]_
+    :cite:p:`Lomb:1976bo` :cite:p:`Scargle:1982eu` and computes the
+    frequency probabilities following :cite:p:`Horne:1986ds`
 
     Parameters
     ----------
@@ -95,22 +95,6 @@ def lomb_scargle(t_in, d_in, **kwargs):
         period at peak power density
     centroid: float
         centroid of power density and period
-
-    References
-    ----------
-    .. [Lomb1976] N. R. Lomb, "Least-squares frequency analysis of
-        unequally spaced data", *Astrophysics and Space Science*,
-        39, 447--462, 1976. `doi: 10.1007/BF00648343
-        <https://doi.org/10.1007/BF00648343>`_
-    .. [Scargle1982] J. D. Scargle, "Studies in astronomical time series
-        analysis. II - Statistical aspects of spectral analysis of
-        unevenly spaced data", *The Astrophysical Journal*,
-        263, 835--853, 1982. `doi: 10.1086/160554
-        <https://doi.org/10.1086/160554>`_
-    .. [Horne1986] J. H. Horne and S. L. Baliunas, "A Prescription for
-        Period Analysis of Unevenly Sampled Time Series",
-        *The Astrophysical Journal*, 302, 757--763, 1986.
-        `doi: 10.1086/164037 <https://doi.org/10.1086/164037>`_
     """
     # default keyword arguments
     kwargs.setdefault('NORMALIZE', False)

@@ -45,7 +45,7 @@ import numpy as np
 def legendre(l, x, NORMALIZE=False):
     """
     Computes associated Legendre functions for a particular degree
-    following [Abramowitz1965]_ and [Jacobs1987]_
+    following :cite:p:`Abramowitz:1965vw` and :cite:p:`Jacobs:1987vv`
 
     Parameters
     ----------
@@ -62,14 +62,6 @@ def legendre(l, x, NORMALIZE=False):
     -------
     Pl: np.ndarray
         legendre polynomials of degree ``l``
-
-    References
-    ----------
-    .. [Abramowitz1965] M. Abramowitz and I. A. Stegun,
-        *Handbook of Mathematical Functions*, 1046 pp., (1965).
-
-    .. [Jacobs1987] J. A. Jacobs, *Geomagnetism*,
-        Volume 1, 1st Edition, 832 pp., (1987).
     """
     # verify integer
     l = np.int64(l)

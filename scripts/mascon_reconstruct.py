@@ -156,7 +156,8 @@ def mascon_reconstruct(DSET, LMAX, RAD,
 
     # create output directory if currently non-existent
     OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
-    OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
+    if not OUTPUT_DIRECTORY.exists():
+        OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
 
     # for datasets not GSM: will add a label for the dataset
     dset_str = '' if (DSET == 'GSM') else f'_{DSET}'

@@ -17,7 +17,8 @@ dependencies:
   - pyyaml
   - scipy
   - sphinx
+  - sphinx-argparse>=0.4
+  - sphinxcontrib-bibtex
   - sphinx_rtd_theme
   - pip:
-     - sphinx-argparse>=0.4
      - ..

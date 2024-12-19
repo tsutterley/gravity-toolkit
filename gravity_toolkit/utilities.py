@@ -2134,7 +2134,7 @@ def from_figshare(
         mode: oct = 0o775
     ):
     """
-    Download [Sutterley2019]_ geocenter files from
+    Download :cite:p:`Sutterley:2019bx` geocenter files from
     `figshare <https://doi.org/10.6084/m9.figshare.7388540>`_
 
     Parameters
@@ -2157,13 +2157,6 @@ def from_figshare(
         regular expression pattern for reducing list
     mode: oct, default 0o775
         permissions mode of output local file
-
-    References
-    ----------
-    .. [Sutterley2019] T. C. Sutterley and I. Velicogna,
-        "Improved Estimates of Geocenter Variability from Time-Variable Gravity
-        and Ocean Model Outputs", *Remote Sensing*, 11(18), 2108, (2019).
-        `doi: 10.3390/rs11182108 <https://doi.org/10.3390/rs11182108>`_
     """
     # figshare host
     HOST=['https://api.figshare.com','v2','articles',article]
