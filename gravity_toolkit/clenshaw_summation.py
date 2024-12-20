@@ -79,7 +79,7 @@ def clenshaw_summation(clm, slm, lon, lat,
     ):
     r"""
     Calculates the spatial field for a series of spherical harmonics for a
-    sequence of ungridded points
+    sequence of ungridded points :cite:p:`Holmes:2002ff` :cite:p:`Tscherning:1982tu`
 
     Parameters
     ----------
@@ -98,10 +98,10 @@ def clenshaw_summation(clm, slm, lon, lat,
 
             - ``1``: cm water equivalent thickness (cm w.e., g/cm\ :sup:`2`)
             - ``2``: mm geoid height
-            - ``3``: mm elastic crustal deformation
+            - ``3``: mm elastic crustal deformation :cite:p:`Davis:2004il`
             - ``4``: microGal gravitational perturbation
             - ``5``: mbar equivalent surface pressure
-            - ``6``: cm viscoelastic crustal uplift (GIA)
+            - ``6``: cm viscoelastic crustal uplift (GIA) :cite:p:`Wahr:2000ek`
             - list: custom degree-dependent unit conversion factor
     LMAX: int, default 0
         Upper bound of Spherical Harmonic Degrees
@@ -116,29 +116,6 @@ def clenshaw_summation(clm, slm, lon, lat,
     -------
     spatial: np.ndarray
         calculated spatial field for latitude and longitude
-
-    References
-    ----------
-    .. [Davis2004] J. L. Davis et al.,
-        "Climate-driven deformation of the solid Earth from GRACE and GPS",
-        *Geophysical Research Letters*, 31(L24605), (2004).
-        `doi: 10.1029/2004GL021435 <https://doi.org/10.1029/2004GL021435>`_
-
-    .. [Holmes2002] S. A. Holmes and W. E. Featherstone,
-        "A unified approach to the Clenshaw summation and the recursive
-        computation of very high degree and order normalised associated
-        Legendre functions", *Journal of Geodesy*, 76, 279--299, (2002).
-        `doi: 10.1007/s00190-002-0216-2 <https://doi.org/10.1007/s00190-002-0216-2>`_
-
-    .. [Tscherning1982] C. C. Tscherning and K. Poder,
-        "Some Geodetic Applications of Clenshaw Summation",
-        *Bollettino di Geodesia e Scienze*, 4, 349--375, (1982).
-
-    .. [Wahr2000] J. Wahr, D. Wingham, and C. Bentley,
-        "A method of combining ICESat and GRACE satellite data to constrain
-        Antarctic mass balance", *Journal of Geophysical Research: Solid Earth*,
-        105(B7), 16279--16294, (2000).
-        `doi: 10.1029/2000JB900113 <https://doi.org/10.1029/2000JB900113>`_
     """
 
     # check if lat and lon are the same size

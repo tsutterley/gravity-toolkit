@@ -2,7 +2,7 @@
 destripe_harmonics
 ==================
 
-- Filters spherical harmonic coefficients for correlated "striping" errors following [Swenson2006]_
+- Filters spherical harmonic coefficients for correlated "striping" errors following :cite:p:`Swenson:2006hu`
 
 Calling Sequence
 ################

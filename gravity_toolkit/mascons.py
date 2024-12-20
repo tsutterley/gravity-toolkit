@@ -32,6 +32,7 @@ import numpy as np
 def to_gsfc(gdata, lon, lat, lon_center, lat_center, lon_span, lat_span):
     """
     Converts an input gridded field to an output GSFC mascon array
+    :cite:p:`Luthcke:2013ep`
 
     Parameters
     ----------
@@ -58,15 +59,6 @@ def to_gsfc(gdata, lon, lat, lon_center, lat_center, lon_span, lat_span):
         row vector of latitude values for mascon centers
     lon_center: np.ndarray
         row vector of longitude values for mascon centers
-
-    References
-    ----------
-    .. [Luthcke2013] S. B. Luthcke, T. J. Sabaka, B. D. Loomis,
-        A. A. Arendt, J. J. McCarthy, and J. Camp,
-        "Antarctica, Greenland and Gulf of Alaska land-ice evolution
-        from an iterated GRACE global mascon solution",
-        *Journal of Glaciology*, 59(216), (2013).
-        `doi: 10.3189/2013JoG12J147 <https://doi.org/10.3189/2013JoG12J147>`_
     """
     # number of mascons
     nmas = len(lon_center)
@@ -121,6 +113,7 @@ def to_gsfc(gdata, lon, lat, lon_center, lat_center, lon_span, lat_span):
 def to_jpl(gdata, lon, lat, lon_bound, lat_bound):
     """
     Converts an input gridded field to an output JPL mascon array
+    :cite:p:`Watkins:2015jl`
 
     Parameters
     ----------
@@ -145,14 +138,6 @@ def to_jpl(gdata, lon, lat, lon_bound, lat_bound):
         row vector of latitude values for mascons
     lon: np.ndarray
         row vector of longitude values for mascons
-
-    References
-    ----------
-    .. [Watkins2015] M. M. Watkins, D. N. Wiese, D.-N. Yuan, C. Boening,
-        and F. W. Landerer, "Improved methods for observing Earth's time
-        variable mass distribution with GRACE using spherical cap mascons".
-        *Journal of Geophysical Research: Solid Earth*, 120(4), 2648--2671,
-        (2015). `doi: 10.1002/2014JB011547 <https://doi.org/10.1002/2014JB011547>`_
     """
     # mascon dimensions
     nmas,nvar = lat_bound.shape
@@ -196,6 +181,7 @@ def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
     **kwargs):
     """
     Converts an input GSFC mascon array to an output gridded field
+    :cite:p:`Luthcke:2013ep`
 
     Parameters
     ----------
@@ -218,15 +204,6 @@ def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
     -------
     mdata: np.ndarray
         distributed mass grid
-
-    References
-    ----------
-    .. [Luthcke2013] S. B. Luthcke, T. J. Sabaka, B. D. Loomis,
-        A. A. Arendt, J. J. McCarthy, and J. Camp,
-        "Antarctica, Greenland and Gulf of Alaska land-ice evolution
-        from an iterated GRACE global mascon solution",
-        *Journal of Glaciology*, 59(216), (2013).
-        `doi: 10.3189/2013JoG12J147 <https://doi.org/10.3189/2013JoG12J147>`_
     """
     # set default keyword arguments
     kwargs.setdefault('transpose', False)
@@ -289,6 +266,7 @@ def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
 def from_jpl(mscdata, grid_spacing, lon_bound, lat_bound, **kwargs):
     """
     Converts an input JPL mascon array to an output gridded field
+    :cite:p:`Watkins:2015jl`
 
     Parameters
     ----------
@@ -307,14 +285,6 @@ def from_jpl(mscdata, grid_spacing, lon_bound, lat_bound, **kwargs):
     -------
     mdata: np.ndarray
         distributed mass grid
-
-    References
-    ----------
-    .. [Watkins2015] M. M. Watkins, D. N. Wiese, D.-N. Yuan, C. Boening,
-        and F. W. Landerer, "Improved methods for observing Earth's time
-        variable mass distribution with GRACE using spherical cap mascons".
-        *Journal of Geophysical Research: Solid Earth*, 120(4), 2648--2671,
-        (2015). `doi: 10.1002/2014JB011547 <https://doi.org/10.1002/2014JB011547>`_
     """
     # set default keyword arguments
     kwargs.setdefault('transpose', False)

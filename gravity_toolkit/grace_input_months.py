@@ -196,9 +196,10 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
 
     Can replace low-degree harmonics with SLR values for months 179+
 
-    Can correct for ECMWF atmospheric "jumps" using GAE/GAF/GAG files [Fagiolini2015]_
+    Can correct for ECMWF atmospheric "jumps" using GAE/GAF/GAG files
+    :cite:p:`Fagiolini:2015kc`
 
-    Can correct for Pole Tide drift following [Wahr2015]_
+    Can correct for Pole Tide drift following :cite:p:`Wahr:2015dg`
 
     Parameters
     ----------
@@ -243,15 +244,11 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         Use Degree 1 coefficients
 
             - ``None``: No degree 1 replacement
-            - ``'Tellus'``: `GRACE/GRACE-FO TN-13 coefficients from PO.DAAC
-                <https://grace.jpl.nasa.gov/data/get-data/geocenter/>`_ [Sun2016]_
-            - ``'SLR'``: `Satellite laser ranging coefficients from CSR
-                <ftp://ftp.csr.utexas.edu/pub/slr/geocenter/>`_ [Cheng2013]_
-            - ``'UCI'``: `GRACE/GRACE-FO coefficients from Sutterley and Velicogna
-                <https://doi.org/10.6084/m9.figshare.7388540>`_ [Sutterley2019]_
-            - ``'Swenson'``: GRACE-derived coefficients from Sean Swenson [Swenson2008]_
-            - ``'GFZ'``: `GRACE/GRACE-FO coefficients from GFZ GravIS
-                <http://gravis.gfz-potsdam.de/corrections>`_
+            - ``'Tellus'``: TN-13 coefficients from PO.DAAC :cite:p:`Sun:2016bf`
+            - ``'SLR'``: Satellite laser ranging coefficients from CSR  :cite:p:`Cheng:2013tz`
+            - ``'UCI'``: GRACE/GRACE-FO coefficients from :cite:p:`Sutterley:2019bx`
+            - ``'Swenson'``: GRACE-derived coefficients from :cite:p:`Swenson:2008cr`
+            - ``'GFZ'``: GFZ GravIS coefficients 
     MMAX: int or NoneType, default None
         Upper bound of Spherical Harmonic Orders
     SLR_21: str or NoneType, default ''
@@ -287,9 +284,9 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             - ``'CSR'``: use values from CSR (5x5 with 6,1)
             - ``'GSFC'``: use values from GSFC
     POLE_TIDE: bool, default False
-        Correct GSM data with pole tides following [Wahr2015]_
+        Correct GSM data with pole tides following :cite:p:`Wahr:2015dg`
     ATM: bool, default False
-        Correct data with ECMWF "jump" corrections following [Fagiolini2015]_
+        Correct data with ECMWF "jump" corrections following :cite:p:`Fagiolini:2015kc`
     DEG1_FILE: str or NoneType, default None
         full path to degree 1 coefficients file
     MODEL_DEG1: bool, default False
@@ -320,39 +317,6 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         Directory of exact GRACE/GRACE-FO/Swarm product
     attributes: dict
         Attributes of input files and corrections
-
-    References
-    ----------
-    .. [Cheng2013] M. Cheng, "Geocenter Variations from Analysis of SLR Data",
-        *Reference Frames for Applications in Geosciences*, 19--25, (2013).
-        `doi: 10.1007/978-3-642-32998-2_4 <https://doi.org/10.1007/978-3-642-32998-2_4>`_
-
-    .. [Fagiolini2015] E. Fagiolini, F. Flechtner, M. Horwath, and H. Dobslaw,
-        "Correction of inconsistencies in ECMWF's operational analysis data
-        during de-aliasing of GRACE gravity models",
-        *Geophysical Journal International*, 202(3), 2150--2158, (2015).
-        `doi: 10.1093/gji/ggv276 <https://doi.org/10.1093/gji/ggv276>`_
-
-    .. [Sun2016] Y. Sun, P. Ditmar, and R. Riva, "Observed changes in the
-        Earth's dynamic oblateness from GRACE data and geophysical models",
-        *Journal of Geodesy*, 90(1), 81--89, (2016).
-        `doi: 10.1007/s00190-015-0852-y <https://doi.org/10.1007/s00190-015-0852-y>`_
-
-    .. [Sutterley2019] T. C. Sutterley and I. Velicogna, "Improved
-        Estimates of Geocenter Variability from Time-Variable Gravity
-        and Ocean Model Outputs", *Remote Sensing*, 11(18), 2108, (2019).
-        `doi: 10.3390/rs11182108 <https://doi.org/10.3390/rs11182108>`_
-
-    .. [Swenson2008] S. Swenson, D. Chambers, and J. Wahr, "Estimating geocenter
-        variations from a combination of GRACE and ocean model output",
-        *Journal of Geophysical Research: Solid Earth*, 113(B08410), (2008).
-        `doi: 10.1029/2007JB005338 <https://doi.org/10.1029/2007JB005338>`_
-
-    .. [Wahr2015] J. Wahr, R. S. Nerem, and S. V. Bettadpur, "The pole tide
-        and its effect on GRACE time-variable gravity measurements:
-        Implications for estimates of surface mass variations".
-        *Journal of Geophysical Research: Solid Earth*, 120(6), 4597--4615, (2015).
-        `doi: 10.1002/2015JB011986 <https://doi.org/10.1002/2015JB011986>`_
     """
     # set default keyword arguments
     kwargs.setdefault('MMAX',LMAX)
@@ -869,7 +833,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
 # PURPOSE: read atmospheric jump corrections from Fagiolini et al. (2015)
 def read_ecmwf_corrections(base_dir, LMAX, months, MMAX=None):
     """
-    Read atmospheric jump corrections from [Fagiolini2015]_
+    Read atmospheric jump corrections from :cite:p:`Fagiolini:2015kc`
 
     Parameters
     ----------
@@ -890,15 +854,6 @@ def read_ecmwf_corrections(base_dir, LMAX, months, MMAX=None):
         atmospheric correction sine spherical harmonics
     files: list
         atmospheric correction files
-
-    References
-    ----------
-    .. [Fagiolini2015] E. Fagiolini, F. Flechtner, M. Horwath, and H. Dobslaw,
-        "Correction of inconsistencies in ECMWF's operational analysis data
-        during de-aliasing of GRACE gravity models",
-        *Geophysical Journal International*, 202(3), 2150--2158, (2015).
-        `doi: 10.1093/gji/ggv276 <https://doi.org/10.1093/gji/ggv276>`_
-
     """
     # correction files
     corr_file = {}

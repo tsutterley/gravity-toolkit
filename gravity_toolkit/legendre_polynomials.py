@@ -49,7 +49,7 @@ import numpy as np
 def legendre_polynomials(lmax, x, ASTYPE=np.float64):
     """
     Computes fully-normalized Legendre polynomials and their first derivative
-    following [HofmannWellenhof2006]_
+    following :cite:p:`HofmannWellenhof:2006hy`
 
     Parameters
     ----------
@@ -68,13 +68,6 @@ def legendre_polynomials(lmax, x, ASTYPE=np.float64):
         fully-normalized Legendre polynomials
     dpl: np.ndarray
         first derivative of Legendre polynomials
-
-    References
-    ----------
-    .. [HofmannWellenhof2006] B. Hofmann-Wellenhof and H. Moritz,
-        *Physical Geodesy*, 2nd Edition, 403 pp., (2006).
-        `doi: 10.1007/978-3-211-33545-1
-        <https://doi.org/10.1007/978-3-211-33545-1>`_
     """
     # verify dimensions
     x = np.atleast_1d(x).flatten().astype(ASTYPE)

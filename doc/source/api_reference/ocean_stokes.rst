@@ -3,7 +3,7 @@ ocean_stokes
 ============
 
 - Reads a land-sea mask and converts to a series of spherical harmonics
-- `netCDF4 land-sea mask files <https://doi.org/10.6084/m9.figshare.9702338>`_ from [Sutterley2020]_
+- `netCDF4 land-sea mask files <https://doi.org/10.6084/m9.figshare.9702338>`_ from :cite:p:`Sutterley:2020js`
     * updated 1.0, 0.5 and 0.25 degree masks from `ORNL as part of ISLSCP <https://daac.ornl.gov/ISLSCP_II/guides/combined_ancillary_xdeg.html>`_
 
 Calling Sequence
@@ -21,5 +21,3 @@ Calling Sequence
 .. autofunction:: gravity_toolkit.ocean_stokes
 
 .. autofunction:: gravity_toolkit.ocean_stokes.find_isolated_points
-
-.. [Sutterley2020] T. C. Sutterley, I. Velicogna, and C.-W. Hsu, "Self-Consistent Ice Mass Balance and Regional Sea Level From Time-Variable Gravity", *Earth and Space Science*, 7(3), (2020). `doi: 10.1029/2019EA000860 <https://doi.org/10.1029/2019EA000860>`_

@@ -162,7 +162,7 @@ def geostrophic_currents(clm1, slm1, lon, lat,
     r"""
     Converts data from spherical harmonic coefficients to a
     spatial fields of ocean geostrophic currents following
-    [Wahr2002]_
+    :cite:p:`Wahr:1998hy` :cite:p:`Wahr:2002ie`
 
     Parameters
     ----------
@@ -195,20 +195,6 @@ def geostrophic_currents(clm1, slm1, lon, lat,
     -------
     currents: np.ndarray
         zonal and meridional current fields [cm/s]
-
-    References
-    ----------
-    .. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan, "Time
-        variability of the Earth's gravity field: Hydrological
-        and oceanic effects and their possible detection using GRACE",
-        *Journal of Geophysical Research*, 103(B12), 30205-30229, (1998).
-        `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_
-
-    .. [Wahr2002] J. M. Wahr, S. R. Jayne, and F. O. Bryan,
-        "A method of inferring changes in deep ocean currents from
-        satellite measurements of time-variable gravity",
-        *Journal of Geophysical Research: Oceans*, 107(C12), 3218, (2002).
-        `doi: 10.1029/2001JC001274 <https://doi.org/10.1029/2001JC001274>`_
     """
 
     # if LMAX is not specified, will use the size of the input harmonics

@@ -99,7 +99,7 @@ def read_SLR_harmonics(SLR_file, **kwargs):
 def read_CSR_monthly_6x1(SLR_file, SCALE=1e-10, HEADER=True):
     """
     Reads in monthly low degree and order spherical harmonic coefficients
-    from Satellite Laser Ranging (SLR) measurements
+    from Satellite Laser Ranging (SLR) measurements :cite:p:`Cheng:2011hh`
 
     Parameters
     ----------
@@ -124,13 +124,6 @@ def read_CSR_monthly_6x1(SLR_file, SCALE=1e-10, HEADER=True):
         output date as Modified Julian Day
     time: np.ndarray
         output date in year-decimal
-
-    References
-    ----------
-    .. [Cheng2010] M. Cheng, J. C. Ries, and B. D. Tapley,
-        "Variations of the Earth's figure axis from satellite laser ranging
-        and GRACE", *Journal of Geophysical Research*, 116(B01409), (2010).
-        `doi: 10.1029/2010JB000850 <https://doi.org/10.1029/2010JB000850>`_
     """
     # check that SLR file exists
     SLR_file = pathlib.Path(SLR_file).expanduser().absolute()
@@ -250,6 +243,7 @@ def read_GSFC_weekly_6x1(SLR_file, SCALE=1.0, HEADER=True):
     r"""
     Reads weekly 5x5 spherical harmonic coefficients with 1 coefficient from
     degree 6 calculated from satellite laser ranging measurements
+    :cite:p:`Loomis:2019dc` :cite:p:`Loomis:2020bq`
 
     Parameters
     ----------
@@ -270,14 +264,6 @@ def read_GSFC_weekly_6x1(SLR_file, SCALE=1.0, HEADER=True):
         output date as Modified Julian Day
     time: np.ndarray
         output date in year-decimal
-
-    References
-    ----------
-    .. [Loomis2020] B. D. Loomis, K. E. Rachlin, D. N. Wiese, F. W. Landerer,
-        and S. B. Luthcke, "Replacing GRACE/GRACE-FO *C*\ :sub:`30` with
-        satellite laser ranging: Impacts on Antarctic Ice Sheet mass change".
-        *Geophysical Research Letters*, 47, (2020).
-        `doi: 10.1029/2019GL085488 <https://doi.org/10.1029/2019GL085488>`_
     """
     # check that SLR file exists
     SLR_file = pathlib.Path(SLR_file).expanduser().absolute()

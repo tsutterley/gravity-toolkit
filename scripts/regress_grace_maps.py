@@ -138,7 +138,8 @@ def regress_grace_maps(LMAX, RAD,
 
     # create output directory if currently non-existent
     OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
-    OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
+    if not OUTPUT_DIRECTORY.exists():
+        OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
     # output filename suffix
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')[DATAFORM]
 

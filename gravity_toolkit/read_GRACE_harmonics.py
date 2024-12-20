@@ -89,7 +89,7 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
     MMAX: int or NoneType, default None
         Maximum order of spherical harmonics
     POLE_TIDE: bool, default False
-        Correct for pole tide drift following [Wahr2015]_
+        Correct for pole tide drift following :cite:p:`Wahr:2015dg`
 
     Returns
     -------
@@ -113,14 +113,6 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
         sine spherical harmonic uncalibrated standard deviations
     header: str
         Header text from the GRACE/GRACE-FO file
-
-    References
-    ----------
-    .. [Wahr2015] J. Wahr, R. S. Nerem, and S. V. Bettadpur, "The pole tide
-        and its effect on GRACE time-variable gravity measurements:
-        Implications for estimates of surface mass variations".
-        *Journal of Geophysical Research: Solid Earth*, 120(6), 4597--4615, (2015).
-        `doi: 10.1002/2015JB011986 <https://doi.org/10.1002/2015JB011986>`_
     """
     # set default keyword arguments
     kwargs.setdefault('MMAX', None)

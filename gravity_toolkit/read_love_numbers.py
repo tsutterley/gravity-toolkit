@@ -103,7 +103,8 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
     COLUMNS=['l','hl','kl','ll'], REFERENCE='CE', FORMAT='tuple'):
     """
     Reads PREM load Love/Shida numbers file and applies isomorphic
-    parameters [Dziewonski1981]_ [Blewett2003]_
+    parameters :cite:p:`Dziewonski:1981bz` :cite:p:`Blewitt:2003bz`
+    :cite:p:`Wahr:1998hy`
 
     Parameters
     ----------
@@ -144,40 +145,6 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
         Love number of Gravitational Potential
     ll: np.ndarray
         Love (Shida) number of Horizontal Displacement
-
-    References
-    ----------
-    .. [Blewett2003] G. Blewitt, "Self-consistency in reference frames, geocenter
-        definition, and surface loading of the solid Earth",
-        *Journal of Geophysical Research: Solid Earth*, 108(B2), 2103, (2003).
-        `doi: 10.1029/2002JB002082 <https://doi.org/10.1029/2002JB002082>`_
-
-    .. [Dziewonski1981] A. M. Dziewonski and D. L. Anderson,
-        "Preliminary reference Earth model",
-        *Physics of the Earth and Planetary Interiors*, 25(4), 297--356, (1981).
-        `doi: 10.1016/0031-9201(81)90046-7 <https://doi.org/10.1016/0031-9201(81)90046-7>`_
-
-    .. [Gegout2010] P. Gegout, J. Boehm, and D. Wijaya,
-        "Practical numerical computation of love numbers and applications",
-        Workshop of the COST Action ES0701, (2010).
-        `doi: 10.13140/RG.2.1.1866.7045 <https://doi.org/10.13140/RG.2.1.1866.7045>`_
-
-    .. [Han1995] D. Han and J. Wahr, "The viscoelastic relaxation of a
-        realistically stratified earth, and a further analysis of postglacial
-        rebound", *Geophysical Journal International*, 120(2), 287--311, (1995).
-        `doi: 10.1111/j.1365-246X.1995.tb01819.x <https://doi.org/10.1111/j.1365-246X.1995.tb01819.x>`_
-
-    .. [Wahr1998] J. Wahr, M. Molenaar, and F. Bryan,
-        "Time variability of the Earth's gravity field: Hydrological and
-        oceanic effects and their possible detection using GRACE",
-        *Journal of Geophysical Research*, 103(B12), 30205--30229, (1998).
-        `doi: 10.1029/98JB02844 <https://doi.org/10.1029/98JB02844>`_
-
-    .. [Wang2012] H. Wang et al., "Load Love numbers and Green's
-        functions for elastic Earth models PREM, iasp91, ak135, and
-        modified models with refined crustal structure from Crust 2.0",
-        *Computers & Geosciences*, 49, 190--199, (2012).
-        `doi: 10.1016/j.cageo.2012.06.022 <https://doi.org/10.1016/j.cageo.2012.06.022>`_
     """
     # Input load Love/Shida number data file and read contents
     file_contents = extract_love_numbers(love_numbers_file)
@@ -335,7 +302,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
     """
     Wrapper function for reading PREM load Love/Shida numbers for a
     range of spherical harmonic degrees and applying
-    isomorphic parameters [Blewett2003]_
+    isomorphic parameters :cite:p:`Blewitt:2003bz`
 
     Parameters
     ----------
@@ -344,13 +311,13 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
     LOVE_NUMBERS: int, default 0
         Treatment of the Load Love/Shida numbers
 
-            - ``0``: [Han1995]_ values from PREM
-            - ``1``: [Gegout2010]_ values from PREM
-            - ``2``: [Wang2012]_ values from PREM
-            - ``3``: [Wang2012]_ values from PREM with hard sediment
-            - ``4``: [Wang2012]_ values from PREM with soft sediment
+            - ``0``: :cite:p:`Han:1995go` values from PREM
+            - ``1``: :cite:p:`Gegout:2010gc` values from PREM
+            - ``2``: :cite:p:`Wang:2012gc` values from PREM
+            - ``3``: :cite:p:`Wang:2012gc` values from PREM with hard sediment
+            - ``4``: :cite:p:`Wang:2012gc` values from PREM with soft sediment
     REFERENCE: str
-        Reference frame for calculating degree 1 Love/Shida numbers [Blewett2003]_
+        Reference frame for calculating degree 1 Love/Shida numbers :cite:p:`Blewitt:2003bz`
 
             - ``'CF'``: Center of Surface Figure (default)
             - ``'CM'``: Center of Mass of Earth System
@@ -371,29 +338,6 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
         Love number of Gravitational Potential
     ll: np.ndarray
         Love (Shida) number of Horizontal Displacement
-
-    References
-    ----------
-    .. [Blewett2003] G. Blewitt, "Self-consistency in reference frames, geocenter
-        definition, and surface loading of the solid Earth",
-        *Journal of Geophysical Research: Solid Earth*, 108(B2), 2103, (2003).
-        `doi: 10.1029/2002JB002082 <https://doi.org/10.1029/2002JB002082>`_
-
-    .. [Gegout2010] P. Gegout, J. Boehm, and D. Wijaya,
-        "Practical numerical computation of love numbers and applications",
-        Workshop of the COST Action ES0701, (2010).
-        `doi: 10.13140/RG.2.1.1866.7045 <https://doi.org/10.13140/RG.2.1.1866.7045>`_
-
-    .. [Han1995] D. Han and J. Wahr, "The viscoelastic relaxation of a
-        realistically stratified earth, and a further analysis of postglacial
-        rebound", *Geophysical Journal International*, 120(2), 287--311, (1995).
-        `doi: 10.1111/j.1365-246X.1995.tb01819.x <https://doi.org/10.1111/j.1365-246X.1995.tb01819.x>`_
-
-    .. [Wang2012] H. Wang et al., "Load Love numbers and Green's
-        functions for elastic Earth models PREM, iasp91, ak135, and
-        modified models with refined crustal structure from Crust 2.0",
-        *Computers & Geosciences*, 49, 190--199, (2012).
-        `doi: 10.1016/j.cageo.2012.06.022 <https://doi.org/10.1016/j.cageo.2012.06.022>`_
     """
     # load Love/Shida numbers file
     if (LOVE_NUMBERS == 0):
@@ -554,7 +498,7 @@ class love_numbers(object):
         """
         Calculate and apply calculate isomorphic parameters to
         transform from the Center of Mass of the Solid Earth
-        Reference Frame [Blewett2003]_
+        Reference Frame :cite:p:`Blewitt:2003bz`
 
         Parameters
         ----------
@@ -566,13 +510,6 @@ class love_numbers(object):
                 - ``'CH'``: Center of Surface Height Figure
                 - ``'CM'``: Center of Mass of Earth System
                 - ``'CE'``: Center of Mass of Solid Earth
-
-        References
-        ----------
-        .. [Blewett2003] G. Blewitt, "Self-consistency in reference frames, geocenter
-            definition, and surface loading of the solid Earth",
-            *Journal of Geophysical Research: Solid Earth*, 108(B2), 2103, (2003).
-            `doi: 10.1029/2002JB002082 <https://doi.org/10.1029/2002JB002082>`_
         """
         # calculate isomorphic parameters for different reference frames
         # From Blewitt (2003), Wahr (1998), Trupin (1992) and Farrell (1972)
