@@ -11,7 +11,7 @@ CALLING SEQUENCE:
     Pl,dPl = legendre_polynomials(lmax, np.cos(theta))
 
 INPUTS:
-    lmax: maximum degree of Legrendre polynomials
+    lmax: maximum degree of Legendre polynomials
     x: elements ranging from -1 to 1
         typically cos(theta), where theta is the colatitude in radians
 
@@ -54,7 +54,7 @@ def legendre_polynomials(lmax, x, ASTYPE=np.float64):
     Parameters
     ----------
     lmax: int
-        maximum degree of Legrendre polynomials
+        maximum degree of Legendre polynomials
     x: np.ndarray
         elements ranging from -1 to 1
 

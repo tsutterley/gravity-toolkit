@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_degree_one.py
-Written by Tyler Sutterley (06/2024)
+Written by Tyler Sutterley (01/2025)
 
 Calculates degree 1 variations using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from ECCO and OMCT/MPIOM
@@ -167,6 +167,7 @@ REFERENCES:
         https://doi.org/10.1029/2007JB005338
 
 UPDATE HISTORY:
+    Updated 01/2025: fixed deprecated tick label resizing
     Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 10/2023: generalize mission variable to be GRACE/GRACE-FO
     Updated 09/2023: output comprehensive netCDF4 files with all components
@@ -1062,13 +1063,8 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
                 prop=dict(size=16,weight='bold'), frameon=False, loc=2)
             ax[i].add_artist(artist)
             # axes tick adjustments
-            for tick in ax[i].xaxis.get_major_ticks():
-                tick.label.set_fontsize(14)
-            for tick in ax[i].yaxis.get_major_ticks():
-                tick.label.set_fontsize(14)
-            # adjust ticks
-            ax[i].get_xaxis().set_tick_params(which='both', direction='in')
-            ax[i].get_yaxis().set_tick_params(which='both', direction='in')
+            ax[i].tick_params(axis='both', which='both',
+                labelsize=14, direction='in')
         # labels and set limits to Swenson range
         ax[2].set_xlabel('Time [Yr]', fontsize=14)
         ax[2].set_xlim(2003, 2007)
@@ -1113,13 +1109,8 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
                 prop=dict(size=16,weight='bold'), frameon=False, loc=2)
             ax[i].add_artist(artist)
             # axes tick adjustments
-            for tick in ax[i].xaxis.get_major_ticks():
-                tick.label.set_fontsize(14)
-            for tick in ax[i].yaxis.get_major_ticks():
-                tick.label.set_fontsize(14)
-            # adjust ticks
-            ax[i].get_xaxis().set_tick_params(which='both', direction='in')
-            ax[i].get_yaxis().set_tick_params(which='both', direction='in')
+            ax[i].tick_params(axis='both', which='both',
+                labelsize=14, direction='in')
         # labels and set limits
         ax[2].set_xlabel('Grace Month', fontsize=14)
         xmin = np.floor(GSM_Ylms.month[0]/10.)*10.
@@ -1475,7 +1466,7 @@ def arguments():
     models['HDF5'] = 'reformatted GIA in HDF5 format'
     # GIA model type
     parser.add_argument('--gia','-G',
-        type=str, metavar='GIA', default='AW13-ICE6G', choices=models.keys(),
+        type=str, metavar='GIA', choices=models.keys(),
         help='GIA model type to read')
     # full path to GIA file
     parser.add_argument('--gia-file',

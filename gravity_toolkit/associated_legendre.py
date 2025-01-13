@@ -34,19 +34,19 @@ def associated_legendre(LMAX, x,
     Parameters
     ----------
     LMAX: int
-        maximum degree of Legrendre polynomials
+        maximum degree of Legendre polynomials
     x: np.ndarray
         elements ranging from -1 to 1
 
         Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
     method: str, default 'holmes'
-        Method for computing the associated Legrendre polynomials
+        Method for computing the associated Legendre polynomials
 
             - ``'columbo'``
             - ``'holmes'``
             - ``'mohlenkamp'``
     MMAX: int or NoneType, default None
-        maximum order of Associated Legrendre polynomials
+        maximum order of Associated Legendre polynomials
     astype: np.dtype, default np.float64
         output variable data type
 
@@ -76,21 +76,21 @@ def plm_colombo(LMAX, x,
     Parameters
     ----------
     LMAX: int
-        maximum degree of Legrendre polynomials
+        maximum degree of Legendre polynomials
     x: np.ndarray
         elements ranging from -1 to 1
 
         Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
     MMAX: int or NoneType, default None
-        maximum order of Associated Legrendre polynomials
+        maximum order of Associated Legendre polynomials
     astype: np.dtype, default np.float64
         output variable data type
 
     Returns
     -------
-    plms: np.ndarray
+    plm: np.ndarray
         fully-normalized Legendre polynomials
-    dplms: np.ndarray
+    dplm: np.ndarray
         first derivative of Legendre polynomials
     """
 
@@ -155,21 +155,21 @@ def plm_holmes(LMAX, x,
     Parameters
     ----------
     LMAX: int
-        maximum degree of Legrendre polynomials
+        maximum degree of Legendre polynomials
     x: np.ndarray
         elements ranging from -1 to 1
 
         Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
     MMAX: int or NoneType, default None
-        maximum order of Associated Legrendre polynomials
+        maximum order of Associated Legendre polynomials
     astype: np.dtype, default np.float64
         output variable data type
 
     Returns
     -------
-    plms: np.ndarray
+    plm: np.ndarray
         fully-normalized Legendre polynomials
-    dplms: np.ndarray
+    dplm: np.ndarray
         first derivative of Legendre polynomials
     """
 
@@ -277,21 +277,21 @@ def plm_mohlenkamp(LMAX, x,
     Parameters
     ----------
     LMAX: int
-        maximum degree of Legrendre polynomials
+        maximum degree of Legendre polynomials
     x: np.ndarray
         elements ranging from -1 to 1
 
         Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
     MMAX: int or NoneType, default None
-        maximum order of Associated Legrendre polynomials
+        maximum order of Associated Legendre polynomials
     astype: np.dtype, default np.float64
         output variable data type
 
     Returns
     -------
-    plms: np.ndarray
+    plm: np.ndarray
         fully-normalized Legendre polynomials
-    dplms: np.ndarray
+    dplm: np.ndarray
         first derivative of Legendre polynomials
     """
 
@@ -308,7 +308,7 @@ def plm_mohlenkamp(LMAX, x,
 
     # Initialize the output Legendre polynomials
     plm = np.zeros((LMAX+1, MMAX+1, sx), dtype=astype)
-    dplm = np.zeros((LMAX+1,LMAX+1,sx), dtype=astype)
+    dplm = np.zeros((LMAX+1, LMAX+1, sx), dtype=astype)
     # Jacobi polynomial for the recurrence relation
     jlmm = np.zeros((LMAX+1, MMAX+1, sx))
     # for x=cos(th): u= sin(th)

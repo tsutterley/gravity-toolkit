@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 monte_carlo_degree_one.py
-Written by Tyler Sutterley (06/2024)
+Written by Tyler Sutterley (01/2025)
 
 Calculates degree 1 errors using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from OMCT/MPIOM in a Monte Carlo scheme
@@ -157,6 +157,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 01/2025: fixed deprecated tick label resizing
     Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 10/2023: generalize mission variable to be GRACE/GRACE-FO
     Updated 09/2023: add more root level attributes to output netCDF4 files
@@ -904,13 +905,8 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
                 frameon=False, loc=2, prop=dict(size=16,weight='bold'))
             ax[i].add_artist(artist)
             # axes tick adjustments
-            for tick in ax[i].xaxis.get_major_ticks():
-                tick.label.set_fontsize(14)
-            for tick in ax[i].yaxis.get_major_ticks():
-                tick.label.set_fontsize(14)
-            # adjust ticks
-            ax[i].get_xaxis().set_tick_params(which='both', direction='in')
-            ax[i].get_yaxis().set_tick_params(which='both', direction='in')
+            ax[i].tick_params(axis='both', which='both',
+                labelsize=14, direction='in')
         # adjust locations of subplots and save to file
         fig.subplots_adjust(left=0.12,right=0.94,bottom=0.06,top=0.98,hspace=0.1)
         args = (PROC,DREL,model_str,ds_str)
