@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter_monte_carlo.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (01/2025)
 
 CALLING SEQUENCE:
     python geocenter_monte_carlo.py --start 4 --end 237
@@ -15,6 +15,7 @@ COMMAND LINE OPTIONS:
     -M X, --missing X: Missing GRACE months in time series
 
 UPDATE HISTORY:
+    Updated 01/2025: fixed deprecated tick label resizing
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: place matplotlib import within try/except statement
     Updated 12/2022: single implicit import of gravity toolkit
@@ -142,12 +143,8 @@ def geocenter_monte_carlo(grace_dir,PROC,DREL,START_MON,END_MON,MISSING):
         ax[j].set_xlim(xmin, xmax)
         ax[j].set_ylim(-9.5,8.5)
         # axes tick adjustments
-        ax[j].get_xaxis().set_tick_params(which='both', direction='in')
-        ax[j].get_yaxis().set_tick_params(which='both', direction='in')
-        for tick in ax[j].xaxis.get_major_ticks():
-            tick.label.set_fontsize(14)
-        for tick in ax[j].yaxis.get_major_ticks():
-            tick.label.set_fontsize(14)
+        ax[j].tick_params(axis='both', which='both',
+            labelsize=14, direction='in')
 
     # labels and set limits
     ax[0].set_ylabel(f'{PROC} Geocenter Variation [mm]', fontsize=14)

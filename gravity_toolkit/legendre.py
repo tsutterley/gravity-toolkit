@@ -10,7 +10,7 @@ Based on Fortran program by Robert L. Parker, Scripps Institution of
 Oceanography, Institute for Geophysics and Planetary Physics, UCSD. 1993
 
 INPUTS:
-    l: degree of Legrendre polynomials
+    l: degree of Legendre polynomials
     x: elements ranging from -1 to 1
         typically cos(theta), where theta is the colatitude in radians
 
@@ -50,7 +50,7 @@ def legendre(l, x, NORMALIZE=False):
     Parameters
     ----------
     l: int
-        degree of Legrendre polynomials
+        degree of Legendre polynomials
     x: np.ndarray
         elements ranging from -1 to 1
 
