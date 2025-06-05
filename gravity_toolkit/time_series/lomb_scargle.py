@@ -59,14 +59,14 @@ import scipy.signal
 def lomb_scargle(t_in, d_in, **kwargs):
     """
     Computes periodograms for least-squares spectral analysis following
-    :cite:p:`Lomb:1976bo` :cite:p:`Scargle:1982eu` and computes the
-    frequency probabilities following :cite:p:`Horne:1986ds`
+    :cite:p:`Lomb:1976bo,Scargle:1982eu` and computes the
+    frequency probabilities following :cite:t:`Horne:1986ds`
 
     Parameters
     ----------
     t_in: float
         input time array
-    d_in: floatto consider
+    d_in: float
         input data array
     NORMALIZE: bool, default False
         Compute normalized periodogram

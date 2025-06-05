@@ -132,11 +132,10 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     PLM=None, FILL_VALUE=0, ASTYPE=np.longdouble, SCALE=1e-280, **kwargs):
     """
     Solves the sea level equation with the option of including
-    polar motion feedback :cite:p:`Farrell:1976hm` :cite:p:`Kendall:2005ds`
-    :cite:p:`Mitrovica:2003cq`
+    polar motion feedback :cite:p:`Farrell:1976hm,Kendall:2005ds,Mitrovica:2003cq`
 
     Uses a Clenshaw summation to calculate the spherical harmonic
-    summation :cite:p:`Holmes:2002ff` :cite:p:`Tscherning:1982tu`
+    summation :cite:p:`Holmes:2002ff,Tscherning:1982tu`
 
     Parameters
     ----------
@@ -228,13 +227,13 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     elif (FLUID_LOVE == 0):
         # Han and Wahr (1989) fluid love number
         # klf = 3.0*G*(C-A)/(rad_e**5*omega**2)
+        # klf = 3.0*G*H0*A/(rad_e**5*omega**2)
         G = 6.6740e-11# gravitational constant [m^3/(kg*s^2)]
         Re = 6.371e6# mean radius of the Earth [m]
         A_moi = 8.0077e+37# mean equatorial moment of inertia [kg m^2]
         omega = 7.292115e-5# mean rotation rate of the Earth [radians/s]
-        ef = 0.00328475# dynamical ellipticity (C_moi-A_moi)/A_moi
-        C_moi = A_moi*(1.0 + ef)# mean polar moment of inertia [kg m^2]
-        klf = 3.0*G*(C_moi-A_moi)*(Re**-5)*(omega**-2)
+        H0 = 0.00328475# dynamical ellipticity (C_moi-A_moi)/A_moi
+        klf = 3.0*G*H0*A_moi*(Re**-5)*(omega**-2)
         klf = 0.00328475/0.00348118
     if (FLUID_LOVE == 1):
         # Munk and MacDonald (1960) secular love number with IERS and PREM values

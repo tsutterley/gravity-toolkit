@@ -1571,7 +1571,7 @@ def cmr_product_shortname(
     cmr_shortname['grace-fo']['L1B'] = dict(JPL={})
     cmr_shortname['grace-fo']['L2'] = dict(CSR={},GFZ={},JPL={})
 
-    # dictionary entry for GRACE Level-1B deliasing products
+    # dictionary entry for GRACE Level-1B dealiasing products
     # for each data release
     for rl in ['RL06']:
         shortname = grace_l1_format.format('AOD1B','GFZ',rl)
@@ -2109,11 +2109,11 @@ def compile_regex_pattern(
         args = (DSET,)
         pattern = r'{0}-2_\d+-\d+_\d+_GRGS_([a-zA-Z0-9_\-]+)(\.txt)?(\.gz)?$'
     elif mission is not None:
-        # deliasing products with mission listed
+        # dealiasing products with mission listed
         args = (DSET, mission)
         pattern = r'{0}-2_([a-zA-Z0-9_\-]+)_{1}_([a-zA-Z0-9_\-]+)(\.gz)?$'
     else:
-        # deliasing products: use products in standard format
+        # dealiasing products: use products in standard format
         args = (DSET,)
         pattern = r'{0}-2_([a-zA-Z0-9_\-]+)(\.gz)?$'
     # return the compiled regular expression operator

@@ -20,7 +20,7 @@ far-field signals leaking into each regional estimate :cite:p:`Velicogna:2009ft`
 
 ``calc_degree_one.py`` calculates coefficients of degree one by combining
 GRACE/GRACE-FO spherical harmonic products with estimates of
-ocean bottom pressure (OBP) following :cite:p:`Swenson:2008cr` and :cite:p:`Sutterley:2019bx`.
+ocean bottom pressure (OBP) following :cite:t:`Swenson:2008cr,Sutterley:2019bx`.
 The method assumes that the change in global surface mass density,
 :math:`\Delta\sigma(\theta,\phi)`, can be separated into individual
 land and ocean components using a land-function
@@ -35,17 +35,17 @@ land and ocean components using a land-function
 The oceanic components of the change in degree one spherical harmonics
 (:math:`\Delta C^{ocean}_{10}`, :math:`\Delta C^{ocean}_{11}`, and :math:`\Delta S^{ocean}_{11}`)
 can then be calculated from the changes in ocean mass,
-:math:`\Delta\sigma_{ocean}(\theta,\phi)` :cite:p:`Swenson:2008cr` :cite:p:`Wahr:1998hy`.
+:math:`\Delta\sigma_{ocean}(\theta,\phi),Swenson:2008cr,Wahr:1998hy`.
 If the oceanic contributions to degree one variability
 (:math:`\Delta C^{ocean}_{10}`, :math:`\Delta C^{ocean}_{11}`, and :math:`\Delta S^{ocean}_{11}`)
 can be estimated from an ocean model, then the unknown complete degree one terms
 (:math:`\Delta C_{10}`, :math:`\Delta C_{11}`, and :math:`\Delta S_{11}`) can be
 calculated from the residual between the oceanic degree one terms and the
 measured mass change over the ocean calculated using all other degrees of
-the global spherical harmonics from GRACE/GRACE-FO :cite:p:`Swenson:2008cr` :cite:p:`Sutterley:2019bx`.
+the global spherical harmonics from GRACE/GRACE-FO :cite:p:`Swenson:2008cr,Sutterley:2019bx`.
 
 The ``calc_degree_one.py`` program will output geocenter files in ascii format
-for each GRACE/GRACE-FO month following :cite:p:`Sutterley:2019bx`.
+for each GRACE/GRACE-FO month following :cite:t:`Sutterley:2019bx`.
 Uncertainties in geocenter due to a combination of error sources can be
 estimated using the  ``monte_carlo_degree_one.py`` program.
 
@@ -55,7 +55,7 @@ Load Love Numbers
 The degree one Love number of gravitational potential :math:`k_1` is defined so
 that the degree one terms describe the offset between the center of mass (CM)
 of the combined surface mass and deformed solid Earth, and the center of figure (CF)
-of the deformed solid Earth surface :cite:p:`Trupin:1992kp` :cite:p:`Blewitt:2003bz`.
+of the deformed solid Earth surface :cite:p:`Trupin:1992kp,Blewitt:2003bz`.
 For the CF coordinate system, this means
 
 .. math::

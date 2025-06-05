@@ -4,7 +4,7 @@ grace_spatial_maps.py
 
 - Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports monthly spatial fields
 - Correct spherical harmonics with the specified GIA model group
-- Filters and smooths data with specified processing algorithms :cite:p:`Jekeli:1981vj` :cite:p:`Swenson:2006hu`
+- Filters and smooths data with specified processing algorithms :cite:p:`Jekeli:1981vj,Swenson:2006hu`
 - Converts data to specified units and performs a spherical harmonic summation to convert to the spatial domain :cite:p:`Wahr:1998hy`
 
 `Source code`__

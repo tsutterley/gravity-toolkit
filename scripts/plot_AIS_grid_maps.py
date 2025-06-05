@@ -318,7 +318,7 @@ def plot_grid(base_dir, FILENAME,
         cmap.set_bad(alpha=0.0)
     else:
         # grey color map for bad values
-        cmap.set_bad('w',0.5)
+        cmap.set_bad('lightgray',1.0)
 
     # set transparency ALPHA
     if BOUNDARY is None:
@@ -550,7 +550,7 @@ def plot_grid(base_dir, FILENAME,
     ax1.spines['geo'].set_capstyle('projecting')
 
     # adjust subplot within figure
-    fig.subplots_adjust(left=0.02,right=0.98,bottom=0.02,top=0.98)
+    fig.subplots_adjust(left=0.02,right=0.98,bottom=0.01,top=0.97)
     # create output directory if non-existent
     FIGURE_FILE.parent.mkdir(mode=MODE, parents=True, exist_ok=True)
     # save to file

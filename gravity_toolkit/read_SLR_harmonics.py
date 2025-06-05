@@ -243,7 +243,7 @@ def read_GSFC_weekly_6x1(SLR_file, SCALE=1.0, HEADER=True):
     r"""
     Reads weekly 5x5 spherical harmonic coefficients with 1 coefficient from
     degree 6 calculated from satellite laser ranging measurements
-    :cite:p:`Loomis:2019dc` :cite:p:`Loomis:2020bq`
+    :cite:p:`Loomis:2019dc,Loomis:2020bq`
 
     Parameters
     ----------

@@ -199,7 +199,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
     Can correct for ECMWF atmospheric "jumps" using GAE/GAF/GAG files
     :cite:p:`Fagiolini:2015kc`
 
-    Can correct for Pole Tide drift following :cite:p:`Wahr:2015dg`
+    Can correct for Pole Tide drift following :cite:t:`Wahr:2015dg`
 
     Parameters
     ----------
@@ -284,9 +284,9 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
             - ``'CSR'``: use values from CSR (5x5 with 6,1)
             - ``'GSFC'``: use values from GSFC
     POLE_TIDE: bool, default False
-        Correct GSM data with pole tides following :cite:p:`Wahr:2015dg`
+        Correct GSM data with pole tides following :cite:t:`Wahr:2015dg`
     ATM: bool, default False
-        Correct data with ECMWF "jump" corrections following :cite:p:`Fagiolini:2015kc`
+        Correct data with ECMWF "jump" corrections following :cite:t:`Fagiolini:2015kc`
     DEG1_FILE: str or NoneType, default None
         full path to degree 1 coefficients file
     MODEL_DEG1: bool, default False

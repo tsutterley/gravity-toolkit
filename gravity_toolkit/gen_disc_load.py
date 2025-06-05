@@ -84,8 +84,7 @@ def gen_disc_load(data, lon, lat, area, LMAX=60, MMAX=None, UNITS=2,
     PLM=None, LOVE=None):
     r"""
     Calculates spherical harmonic coefficients for a uniform disc load
-    :cite:p:`Holmes:2002ff` :cite:p:`Longman:1962ev` :cite:p:`Farrell:1972cm`
-    :cite:p:`Pollack:1973gi` :cite:p:`Jacob:2012eo`
+    :cite:p:`Holmes:2002ff,Longman:1962ev,Farrell:1972cm,Pollack:1973gi,Jacob:2012eo`
 
     Parameters
     ----------

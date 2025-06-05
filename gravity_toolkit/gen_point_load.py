@@ -65,7 +65,7 @@ from gravity_toolkit.legendre import legendre
 def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
     """
     Calculates spherical harmonic coefficients for point masses
-    :cite:p:`Longman:1962ev` :cite:p:`Farrell:1972cm` :cite:p:`Pollack:1973gi`
+    :cite:p:`Longman:1962ev,Farrell:1972cm,Pollack:1973gi`
 
     Parameters
     ----------

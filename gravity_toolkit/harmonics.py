@@ -1793,7 +1793,7 @@ class harmonics(object):
     def destripe(self, **kwargs):
         """
         Filters spherical harmonic coefficients for correlated "striping"
-        errors following :cite:p:`Swenson:2006hu`
+        errors following :cite:t:`Swenson:2006hu`
 
         Parameters
         ----------

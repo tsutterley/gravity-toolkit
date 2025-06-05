@@ -399,7 +399,7 @@ def plot_grid(base_dir, FILENAMES,
         cmap.set_bad(alpha=0.0)
     else:
         # grey color map for bad values
-        cmap.set_bad('w',0.5)
+        cmap.set_bad('lightgray',1.0)
 
     # set transparency ALPHA
     if BOUNDARY is None:

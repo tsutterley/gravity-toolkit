@@ -61,7 +61,7 @@ def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
     LMAX=60, MMAX=None, CUTOFF=1e-15, UNITS=0, LOVE=None):
     r"""
     Generates averaging kernel coefficients which minimize the
-    total error following :cite:p:`Swenson:2002hs`
+    total error following :cite:t:`Swenson:2002hs`
 
     Uses a normalized form of the Gaussian averaging function
     from :cite:p:`Jekeli:1981vj`

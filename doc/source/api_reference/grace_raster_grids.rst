@@ -4,8 +4,8 @@ grace_raster_grids.py
 
 - Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports projected spatial fields
 - Correct spherical harmonics with the specified GIA model group
-- Filters and smooths data with specified processing algorithms :cite:p:`Jekeli:1981vj` :cite:p:`Swenson:2006hu`
-- Converts data to specified units and performs a Clenshaw harmonic summation to convert to the spatial domain :cite:p:`Holmes:2002ff` :cite:p:`Tscherning:1982tu`
+- Filters and smooths data with specified processing algorithms :cite:p:`Jekeli:1981vj,Swenson:2006hu`
+- Converts data to specified units and performs a Clenshaw harmonic summation to convert to the spatial domain :cite:p:`Holmes:2002ff,Tscherning:1982tu`
 
 `Source code`__
 

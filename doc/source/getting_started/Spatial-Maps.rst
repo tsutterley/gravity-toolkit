@@ -25,7 +25,7 @@ Using load Love numbers to calculate the elastic yielding assumes that
 all other time-variable solid Earth contributions have been independently
 removed from the spherical harmonic coefficients :cite:p:`Wahr:1998hy`.
 Here, we use load Love and Shida numbers with parameters calculated from
-the Preliminary Reference Earth model (PREM) :cite:p:`Farrell:1972cm` :cite:p:`Dziewonski:1981bz`.
+the Preliminary Reference Earth model (PREM) :cite:p:`Farrell:1972cm,Dziewonski:1981bz`.
 In order to help estimate the uncertainty in elastic deformation,
 ``grace_spatial_maps.py`` can use different sets of load Love numbers by adjusting the
 ``--love`` command line option.
@@ -45,7 +45,7 @@ require the inclusion of degree one terms to be fully accurate :cite:p:`Swenson:
 ``grace_spatial_maps.py`` has geocenter options to select the degree one product to
 include with the GRACE/GRACE-FO derived harmonics.
 There are options for using measurements from satellite laser ranging :cite:p:`Cheng:2013tz` and
-calculations from time-variable gravity and ocean model outputs :cite:p:`Swenson:2008cr` :cite:p:`Sutterley:2019bx`.
+calculations from time-variable gravity and ocean model outputs :cite:p:`Swenson:2008cr,Sutterley:2019bx`.
 If including degree one harmonics and changing the reference frame,
 the reference frame for the load Love numbers needs to be updated accordingly :cite:p:`Blewitt:2003bz`.
 In ``grace_spatial_maps.py`` and other GRACE/GRACE-FO programs, the reference frame for the load Love numbers
@@ -87,7 +87,7 @@ for some low degree and order spherical harmonics.
 :math:`C_{30}`,
 :math:`C_{40}`,
 and :math:`C_{50}` with
-SLR low degree harmonic products :cite:p:`Cheng:2011hh` :cite:p:`Cheng:2018jz` :cite:p:`Koenig:2019gs` :cite:p:`Loomis:2019dc` :cite:p:`Loomis:2020bq`.
+SLR low degree harmonic products :cite:p:`Cheng:2011hh,Cheng:2018jz,Koenig:2019gs,Loomis:2019dc,Loomis:2020bq`.
 
 Corrections
 ###########
@@ -118,13 +118,13 @@ Filtering
 #########
 
 The GRACE/GRACE-FO coefficients are impacted by random spherical harmonic errors
-that increase as a function of spherical harmonic degree :cite:p:`Wahr:1998hy` :cite:p:`Swenson:2002hs`.
+that increase as a function of spherical harmonic degree :cite:p:`Wahr:1998hy,Swenson:2002hs`.
 The truncation of the spherical harmonics series also results
 in spurious ringing artifacts from Gibbs phenomenon.
 The impact of these errors can be reduced using Gaussian averaging functions
-as described in :cite:p:`Jekeli:1981vj` :cite:p:`Swenson:2002hs`.
+as described in :cite:p:`Jekeli:1981vj,Swenson:2002hs`.
 GRACE/GRACE-FO coefficients are also impacted by correlated north/south "striping" errors,
-which can be spectrally filtered following :cite:p:`Swenson:2006hu`.
+which can be spectrally filtered following :cite:t:`Swenson:2006hu`.
 
 .. |beta|    unicode:: U+03B2 .. GREEK SMALL LETTER BETA
 

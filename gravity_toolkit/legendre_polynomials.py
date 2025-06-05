@@ -49,7 +49,7 @@ import numpy as np
 def legendre_polynomials(lmax, x, ASTYPE=np.float64):
     """
     Computes fully-normalized Legendre polynomials and their first derivative
-    following :cite:p:`HofmannWellenhof:2006hy`
+    following :cite:t:`HofmannWellenhof:2006hy`
 
     Parameters
     ----------

@@ -4,10 +4,10 @@ scale_grace_maps.py
 
 - Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports scaled spatial fields
 - Correct spherical harmonics with the specified GIA model group
-- Filters and smooths data with specified processing algorithms :cite:p:`Jekeli:1981vj` :cite:p:`Swenson:2006hu`
+- Filters and smooths data with specified processing algorithms :cite:p:`Jekeli:1981vj,Swenson:2006hu`
 - Converts data to centimeters water equivalent, performs a spherical harmonic summation to convert to the spatial domain :cite:p:`Wahr:1998hy`
-- Scales the spatial fields following :cite:p:`Landerer:2012kf`
-- Calculates the scaled spatial error field following :cite:p:`Wahr:2006bx`
+- Scales the spatial fields following :cite:t:`Landerer:2012kf`
+- Calculates the scaled spatial error field following :cite:t:`Wahr:2006bx`
 
 `Source code`__
 
