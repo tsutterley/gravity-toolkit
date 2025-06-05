@@ -2,26 +2,26 @@
 gravity-toolkit
 ===============
 
-|Language|
 |License|
-|PyPI Version|
 |Documentation Status|
+|PyPI|
+|commits-since|
 |zenodo|
-
-.. |Language| image:: https://img.shields.io/pypi/pyversions/gravity-toolkit?color=green
-   :target: https://www.python.org/
 
 .. |License| image:: https://img.shields.io/github/license/tsutterley/gravity-toolkit
    :target: https://github.com/tsutterley/gravity-toolkit/blob/main/LICENSE
 
-.. |PyPI Version| image:: https://img.shields.io/pypi/v/gravity-toolkit.svg
-   :target: https://pypi.python.org/pypi/gravity-toolkit/
-
 .. |Documentation Status| image:: https://readthedocs.org/projects/gravity-toolkit/badge/?version=latest
    :target: https://gravity-toolkit.readthedocs.io/en/latest/?badge=latest
 
-.. |zenodo| image:: https://zenodo.org/badge/107323776.svg
-   :target: https://zenodo.org/badge/latestdoi/107323776
+.. |PyPI| image:: https://img.shields.io/pypi/v/gravity-toolkit.svg
+   :target: https://pypi.python.org/pypi/gravity-toolkit/
+
+.. |commits-since| image:: https://img.shields.io/github/commits-since/tsutterley/gravity-toolkit/latest
+   :target: https://github.com/tsutterley/gravity-toolkit/releases/latest
+
+.. |zenodo| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.5156864.svg
+   :target: https://doi.org/10.5281/zenodo.5156864
 
 Python tools for obtaining and working with Level-2 spherical harmonic coefficients from the NASA/DLR Gravity Recovery and Climate Experiment (GRACE) and the NASA/GFZ Gravity Recovery and Climate Experiment Follow-On (GRACE-FO) missions
 
