@@ -123,7 +123,7 @@ def test_itsg_graz_download_and_read():
     itsg_file.unlink()
 
 # PURPOSE: Download Sutterley and Velicogna (2019) geocenter files
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="module", autouse=False)
 def download_geocenter():
     # download geocenter files to filepath
     filename = inspect.getframeinfo(inspect.currentframe()).filename
@@ -138,6 +138,7 @@ def download_geocenter():
 @pytest.mark.parametrize("PROC", ['CSR','GFZ','JPL'])
 @pytest.mark.parametrize("DREL", ['RL06'])
 # PURPOSE: read Sutterley and Velicogna (2019) geocenter files
+@pytest.mark.skip(reason='presently skipping download from figshare')
 def test_geocenter_read(PROC, DREL):
     filename = inspect.getframeinfo(inspect.currentframe()).filename
     filepath = pathlib.Path(filename).absolute().parent
