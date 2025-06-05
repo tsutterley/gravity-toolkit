@@ -66,7 +66,7 @@ def savitzky_golay(t_in, y_in, WINDOW=None, ORDER=2, DERIV=0,
     RATE=1, DATA_ERR=0):
     """
     Smooth and optionally differentiate data with a Savitzky-Golay
-    filter :cite:p:`Savitzky:1964bn` :cite:p:`Press:1988we`
+    filter :cite:p:`Savitzky:1964bn,Press:1988we`
 
     Parameters
     ----------

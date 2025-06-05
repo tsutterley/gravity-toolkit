@@ -617,8 +617,7 @@ class geocenter(object):
         """
         Reads monthly geocenter spherical harmonic data files from GRACE Tellus
         Technical Notes (TN-13) calculated using GRACE/GRACE-FO measurements and
-        Ocean Models of Degree 1 :cite:p:`Swenson:2008cr` :cite:p:`Sun:2016bf`
-        :cite:p:`Sun:2016hh`
+        Ocean Models of Degree 1 :cite:p:`Swenson:2008cr,Sun:2016bf,Sun:2016hh`
 
         Datasets distributed by NASA PO.DAAC
 

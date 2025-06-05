@@ -2,8 +2,8 @@
 monte_carlo_degree_one.py
 =========================
 
-- Estimates uncertainties in degree 1 using GRACE/GRACE-FO coefficients of degree 2 and greater, and modeled ocean bottom pressure variations in a Monte Carlo scheme :cite:p:`Swenson:2008cr` :cite:p:`Sutterley:2019bx`.
-- Calculates the estimated spherical harmonic errors following :cite:p:`Wahr:2006bx`
+- Estimates uncertainties in degree 1 using GRACE/GRACE-FO coefficients of degree 2 and greater, and modeled ocean bottom pressure variations in a Monte Carlo scheme :cite:p:`Swenson:2008cr,Sutterley:2019bx`.
+- Calculates the estimated spherical harmonic errors following :cite:t:`Wahr:2006bx`
 
 `Source code`__
 
@@ -27,7 +27,7 @@ Calling Sequence
         * ``4``: Wang et al. (2012) values from PREM with soft sediment :cite:p:`Wang:2012gc`
 
     --kl -k : @after
-        * ``None``: use derived values from :cite:p:`Trupin:1992kp` :cite:p:`Blewitt:2003bz`.
+        * ``None``: use derived values from :cite:p:`Trupin:1992kp,Blewitt:2003bz`.
 
     --gia -G : @after
         * ``'IJ05-R2'``: Ivins R2 GIA Models :cite:p:`Ivins:2013cq`

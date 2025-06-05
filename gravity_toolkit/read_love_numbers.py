@@ -103,7 +103,7 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
     COLUMNS=['l','hl','kl','ll'], REFERENCE='CE', FORMAT='tuple'):
     """
     Reads PREM load Love/Shida numbers file and applies isomorphic
-    parameters :cite:p:`Dziewonski:1981bz` :cite:p:`Blewitt:2003bz`
+    parameters :cite:p:`Dziewonski:1981bz,Blewitt:2003bz`
     :cite:p:`Wahr:1998hy`
 
     Parameters

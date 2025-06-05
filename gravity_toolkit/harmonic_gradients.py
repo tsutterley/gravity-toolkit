@@ -162,7 +162,7 @@ def geostrophic_currents(clm1, slm1, lon, lat,
     r"""
     Converts data from spherical harmonic coefficients to a
     spatial fields of ocean geostrophic currents following
-    :cite:p:`Wahr:1998hy` :cite:p:`Wahr:2002ie`
+    :cite:p:`Wahr:1998hy,Wahr:2002ie`
 
     Parameters
     ----------

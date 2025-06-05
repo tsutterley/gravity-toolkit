@@ -402,7 +402,7 @@ def animate_grid(base_dir, FILENAME,
         cmap.set_bad(alpha=0.0)
     else:
         # grey color map for bad values
-        cmap.set_bad('w',0.5)
+        cmap.set_bad('lightgray',1.0)
 
     # set transparency ALPHA
     if BOUNDARY is None:

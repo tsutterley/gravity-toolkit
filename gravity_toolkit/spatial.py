@@ -1943,7 +1943,7 @@ class scaling_factors(spatial):
         """
         Calculate the scaling factor and scaling factor errors
         from two ``spatial`` or ``scaling_factors`` objects
-        following :cite:p:`Landerer:2012kf` and :cite:p:`Hsu:2017hd`
+        following :cite:t:`Landerer:2012kf` and :cite:p:`Hsu:2017hd`
 
         Parameters
         ----------

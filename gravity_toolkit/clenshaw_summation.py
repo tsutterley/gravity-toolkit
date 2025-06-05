@@ -79,7 +79,7 @@ def clenshaw_summation(clm, slm, lon, lat,
     ):
     r"""
     Calculates the spatial field for a series of spherical harmonics for a
-    sequence of ungridded points :cite:p:`Holmes:2002ff` :cite:p:`Tscherning:1982tu`
+    sequence of ungridded points :cite:p:`Holmes:2002ff,Tscherning:1982tu`
 
     Parameters
     ----------

@@ -45,7 +45,7 @@ import numpy as np
 def legendre(l, x, NORMALIZE=False):
     """
     Computes associated Legendre functions for a particular degree
-    following :cite:p:`Abramowitz:1965vw` and :cite:p:`Jacobs:1987vv`
+    following :cite:t:`Abramowitz:1965vw,Jacobs:1987vv`
 
     Parameters
     ----------

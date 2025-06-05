@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: [3.11]
+        python-version: [3.12]
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
@@ -52,7 +52,7 @@ jobs:
             --password=${{ secrets.EARTHDATA_PASSWORD }} \
             --webdav=${{ secrets.PODAAC_PASSWORD }}
     - name: Archive code coverage results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: code-coverage-report
+        name: code-coverage-report-${{ matrix.os }}
         path: ./coverage.xml

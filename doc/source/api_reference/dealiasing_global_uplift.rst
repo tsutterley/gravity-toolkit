@@ -2,7 +2,7 @@
 dealiasing_global_uplift.py
 ===========================
 
-- Reads GRACE/GRACE-FO level-1b dealiasing data files for global atmospheric and oceanic loading and estimates anomalies in elastic crustal uplift :cite:p:`Davis:2004il` :cite:p:`Wahr:1998hy`
+- Reads GRACE/GRACE-FO level-1b dealiasing data files for global atmospheric and oceanic loading and estimates anomalies in elastic crustal uplift :cite:p:`Davis:2004il,Wahr:1998hy`
 
 `Source code`__
 

@@ -4,9 +4,9 @@ calc_mascon.py
 
 - Reads in GRACE/GRACE-FO spherical harmonic coefficients
 - Correct spherical harmonics with the specified GIA model group
-- Filters and smooths data with specified processing algorithms :cite:p:`Jekeli:1981vj` :cite:p:`Swenson:2006hu`
-- Calculates a time-series of regional mass anomalies through a least-squares mascon procedure following :cite:p:`Tiwari:2009bx` :cite:p:`Jacob:2012gv`
-- Calculates the regional mascon errors following :cite:p:`Wahr:2006bx`
+- Filters and smooths data with specified processing algorithms :cite:p:`Jekeli:1981vj,Swenson:2006hu`
+- Calculates a time-series of regional mass anomalies through a least-squares mascon procedure following :cite:t:`Tiwari:2009bx,Jacob:2012gv`
+- Calculates the regional mascon errors following :cite:t:`Wahr:2006bx`
 
 `Source code`__
 

@@ -89,7 +89,7 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
     MMAX: int or NoneType, default None
         Maximum order of spherical harmonics
     POLE_TIDE: bool, default False
-        Correct for pole tide drift following :cite:p:`Wahr:2015dg`
+        Correct for pole tide drift following :cite:t:`Wahr:2015dg`
 
     Returns
     -------

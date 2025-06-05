@@ -2,8 +2,8 @@
 run_sea_level_equation.py
 =========================
 
-- Solves the sea level equation with the option of including polar motion feedback :cite:p:`Farrell:1976hm` :cite:p:`Kendall:2005ds` :cite:p:`Mitrovica:2003cq`
-- Uses a Clenshaw summation to calculate the spherical harmonic summation :cite:p:`Holmes:2002ff` :cite:p:`Tscherning:1982tu`
+- Solves the sea level equation with the option of including polar motion feedback :cite:p:`Farrell:1976hm,Kendall:2005ds,Mitrovica:2003cq`
+- Uses a Clenshaw summation to calculate the spherical harmonic summation :cite:p:`Holmes:2002ff,Tscherning:1982tu`
 
 `Source code`__
 

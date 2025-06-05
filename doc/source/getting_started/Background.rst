@@ -129,7 +129,7 @@ The instantaneous shape of the Earth's gravitational field can be described
 in terms of an equipotential surface, a surface of constant potential energy
 where the gravitational potential is constant :cite:p:`HofmannWellenhof:2006hy`.
 The Earth's geoid is the equipotential surface that coincides with global mean
-sea level if the oceans were at rest :cite:p:`HofmannWellenhof:2006hy` :cite:p:`Wahr:1998hy`.
+sea level if the oceans were at rest :cite:p:`HofmannWellenhof:2006hy,Wahr:1998hy`.
 The distance between the geoid and an Earth reference ellipsoid is the
 geoid height (:math:`N`), or the geoidal undulation :cite:p:`HofmannWellenhof:2006hy`.
 
