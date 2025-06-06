@@ -1,1 +1,8 @@
 graft gravity_toolkit/data
+prune .github*
+prune doc*
+prune notebooks*
+exclude *.cfg
+exclude *.yml
+include requirements.txt
+include version.txt
