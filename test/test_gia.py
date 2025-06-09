@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 test_gia.py (12/2022)
-Tests the that GIA model readers are equivalent
+Tests that the GIA model readers are equivalent
 """
 import gzip
 import time
