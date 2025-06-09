@@ -23,9 +23,10 @@ identifiers:
 repository-code: 'https://github.com/tsutterley/gravity-toolkit'
 url: 'https://gravity-toolkit.readthedocs.io'
 repository: 'https://pypi.org/project/gravity-toolkit'
+repository-artifact: 'https://anaconda.org/conda-forge/gravity-toolkit'
 doi: "10.5281/zenodo.5156864"
-version: "1.2.3"
-date-released: "2025-06-05"
+version: "1.2.4"
+date-released: "2025-06-09"
 keywords:
   - geodesy
   - gravity
