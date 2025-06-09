@@ -5,6 +5,7 @@ gravity-toolkit
 |License|
 |Documentation Status|
 |PyPI|
+|conda-forge|
 |commits-since|
 |zenodo|
 
@@ -16,6 +17,9 @@ gravity-toolkit
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/gravity-toolkit.svg
    :target: https://pypi.python.org/pypi/gravity-toolkit/
+
+.. |conda-forge| image:: https://img.shields.io/conda/vn/conda-forge/gravity-toolkit
+   :target: https://anaconda.org/conda-forge/gravity-toolkit
 
 .. |commits-since| image:: https://img.shields.io/github/commits-since/tsutterley/gravity-toolkit/latest
    :target: https://github.com/tsutterley/gravity-toolkit/releases/latest
