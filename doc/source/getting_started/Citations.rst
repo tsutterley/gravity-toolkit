@@ -49,7 +49,7 @@ Problem Reports
 ###############
 If you have found a problem in these programs, or you would like to suggest
 an improvement or modification, please submit a
-`GitHub issue <https://github.com/tsutterley/read-GRACE-harhmonics/issues>`_
+`GitHub issue <https://github.com/tsutterley/gravity-toolkit/issues>`_
 and we will get back to you.
 
 Dependencies
