@@ -3,28 +3,35 @@ Installation
 ============
 
 ``gravity-toolkit`` is available for download from the `GitHub repository <https://github.com/tsutterley/gravity-toolkit>`_,
-and the `Python Package Index (pypi) <https://pypi.org/project/gravity-toolkit/>`_,
-The contents of the repository can be downloaded as a `zipped file <https://github.com/tsutterley/gravity-toolkit/archive/main.zip>`_  or cloned.
+the `Python Package Index (pypi) <https://pypi.org/project/gravity-toolkit/>`_,
+and from `conda-forge <https://anaconda.org/conda-forge/gravity-toolkit>`_.
 
-To use this repository, please fork into your own account and then clone onto your system:
+
+The simplest installation for most users will likely be using ``conda`` or ``mamba``:
+
+.. code-block:: bash
+
+    conda install -c conda-forge gravity-toolkit
+
+``conda`` installed versions of ``gravity-toolkit`` can be upgraded to the latest stable release:
+
+.. code-block:: bash
+
+    conda update gravity-toolkit
+
+To use the development repository, please fork ``gravity-toolkit`` into your own account and then clone onto your system:
 
 .. code-block:: bash
 
     git clone https://github.com/tsutterley/gravity-toolkit.git
 
-Can then install using ``setuptools``:
-
-.. code-block:: bash
-
-    python3 setup.py install
-
-or ``pip``
+``gravity-toolkit`` can then be installed within the package directory using ``pip``:
 
 .. code-block:: bash
 
     python3 -m pip install --user .
 
-Alternatively can install the ``gravity_toolkit`` utilities directly from GitHub with ``pip``:
+The development version of ``gravity-toolkit`` can also be installed directly from GitHub using ``pip``:
 
 .. code-block:: bash
 

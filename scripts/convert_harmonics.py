@@ -251,14 +251,17 @@ def arguments():
     parser.add_argument('--reference',
         type=str.upper, default='CF', choices=['CF','CM','CE'],
         help='Reference frame for load Love numbers')
-    # output units
+    # input units
+    # 1: cm of water thickness (cmwe)
+    # 2: Gigatonnes (Gt)
+    # 3: mm of water thickness kg/m^2
     parser.add_argument('--units','-U',
         type=int, default=1, choices=[1,2,3],
-        help='Output units')
+        help='Input units of spatial fields')
     # output grid parameters
     parser.add_argument('--spacing','-S',
         type=float, nargs='+', default=[0.5,0.5], metavar=('dlon','dlat'),
-        help='Spatial resolution of output data')
+        help='Spatial resolution of input data')
     parser.add_argument('--interval','-I',
         type=int, default=2, choices=[1,2],
         help='Input grid interval (1: global, 2: centered global)')
