@@ -10,7 +10,7 @@ CALLING SEQUENCE:
         --verbose --mode 0o775 input_file output_file
 
 INPUTS:
-    input_file: input load file
+    input_file: input load file (harmonics or spatial field)
     output_file: output sea level fingerprints file
 
 COMMAND LINE OPTIONS:
@@ -35,7 +35,7 @@ COMMAND LINE OPTIONS:
         ascii
         netCDF4
         HDF5
-    -I X, --input-type X: Input data type for load fields
+    -T X, --input-type X: Input data type for load files
         harmonics: spherical harmonic coefficients
         spatial: spatial fields
     -D, --date: input and output files have date information
@@ -280,7 +280,13 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     # copy dimensions
     sea_level.lon = np.copy(landsea.lon)
     sea_level.lat = np.copy(landsea.lat)
-    sea_level.time = np.copy(load_Ylms.time) if DATE else None
+    # copy date variables
+    if (INPUT_TYPE == 'spatial') and DATE:
+        # copy time from spatial data
+        sea_level.time = np.copy(load_spatial.time)
+    elif DATE:
+        # copy time from load Ylms
+        sea_level.time = np.copy(load_Ylms.time)
     # remove singleton dimensions if necessary
     sea_level.squeeze()
     # add attributes to output spatial field
@@ -378,7 +384,7 @@ def arguments():
         type=str, default='netCDF4', choices=choices,
         help='Input and output data format')
     # define the input data type for the load files 
-    parser.add_argument('--input-type','-I',
+    parser.add_argument('--input-type','-T',
         type=str, default='harmonics', choices=['harmonics','spatial'],
         help='Input data type for load fields')
     # Input and output files have date information
