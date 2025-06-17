@@ -28,6 +28,7 @@ COMMAND LINE OPTIONS:
         1: Munk and MacDonald (1960) secular love number
         2: Munk and MacDonald (1960) fluid love number
         3: Lambeck (1980) fluid love number
+    -d X, --density X: Density of water in g/cm^3
     --polar-feedback: Include polar feedback
     --reference X: Reference frame for load love numbers
     -I X, --iterations X: maximum number of iterations for the solver
@@ -77,6 +78,7 @@ REFERENCES:
 UPDATE HISTORY:
     Updated 06/2025: added options to run from input spatial fields
         added attributes for lineage to track input files
+        added option to set the density of water in g/cm^3
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: add root attributes to output netCDF4 and HDF5 files
     Updated 02/2023: use love numbers class with additional attributes
@@ -145,6 +147,7 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     LOVE_NUMBERS=0,
     BODY_TIDE_LOVE=0,
     FLUID_LOVE=0,
+    DENSITY=1.0,
     REFERENCE=None,
     ITERATIONS=0,
     POLAR=False,
@@ -274,8 +277,8 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
         sea_level.data[:,:,i] = gravtk.sea_level_equation(Ylms.clm, Ylms.slm,
             landsea.lon, landsea.lat, land_function.T, LMAX=LMAX,
             LOVE=LOVE, BODY_TIDE_LOVE=BODY_TIDE_LOVE,
-            FLUID_LOVE=FLUID_LOVE, POLAR=POLAR, PLM=PLM,
-            ITERATIONS=ITERATIONS, FILL_VALUE=0).T
+            FLUID_LOVE=FLUID_LOVE, DENSITY=DENSITY, POLAR=POLAR,
+            PLM=PLM, ITERATIONS=ITERATIONS, FILL_VALUE=0).T
         sea_level.mask[:,:,i] = (sea_level.data[:,:,i] == 0)
     # copy dimensions
     sea_level.lon = np.copy(landsea.lon)
@@ -354,6 +357,10 @@ def arguments():
     parser.add_argument('--body','-b',
         type=int, default=0, choices=[0,1],
         help='Treatment of the body tide Love number')
+    # density of water in g/cm^3
+    parser.add_argument('--density','-d',
+        type=float, default=1.0,
+        help='Density of water in g/cm^3')
     # different treatments of the fluid Love number of gravitational potential
     # 0: Han and Wahr (1989) fluid love number
     # 1: Munk and MacDonald (1960) secular love number
@@ -429,6 +436,7 @@ def main():
             LOVE_NUMBERS=args.love,
             BODY_TIDE_LOVE=args.body,
             FLUID_LOVE=args.fluid,
+            DENSITY=args.density,
             REFERENCE=args.reference,
             ITERATIONS=args.iterations,
             POLAR=args.polar_feedback,

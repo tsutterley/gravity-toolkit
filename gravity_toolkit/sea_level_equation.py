@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 u"""
-sea_level_equation.py (03/2023)
+sea_level_equation.py (06/2025)
 Solves the sea level equation with the option of including polar motion feedback
 Uses a Clenshaw summation to calculate the spherical harmonic summation
 
@@ -32,6 +32,7 @@ OPTIONS:
         2: Munk and MacDonald (1960) fluid love number
         3: Lambeck (1980) fluid love number
         list or tuple: custom value (klf)
+    DENSITY: Density of water [g/cm^3]
     POLAR: Include polar feedback
     ITERATIONS: maximum number of iterations for the solver
     PLM: input Legendre polynomials
@@ -90,6 +91,7 @@ REFERENCES:
         https://doi.org/10.1029/JB090iB11p09363
 
 UPDATE HISTORY:
+    Updated 06/2025: added option to set the density of sea water (g/cm^3)
     Updated 03/2023: improve typing for variables in docstrings
     Updated 01/2023: refactored associated legendre polynomials
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -128,8 +130,9 @@ from gravity_toolkit.units import units
 
 # PURPOSE: Computes Sea Level Fingerprints including polar motion feedback
 def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
-    LOVE=None, BODY_TIDE_LOVE=0, FLUID_LOVE=0, POLAR=True, ITERATIONS=6,
-    PLM=None, FILL_VALUE=0, ASTYPE=np.longdouble, SCALE=1e-280, **kwargs):
+    LOVE=None, BODY_TIDE_LOVE=0, FLUID_LOVE=0, DENSITY=1.0, POLAR=True, 
+    ITERATIONS=6, PLM=None, FILL_VALUE=0, ASTYPE=np.longdouble, SCALE=1e-280,
+    **kwargs):
     """
     Solves the sea level equation with the option of including
     polar motion feedback :cite:p:`Farrell:1976hm,Kendall:2005ds,Mitrovica:2003cq`
@@ -167,6 +170,8 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
             - ``2``: :cite:p:`Munk:1960uk` fluid love number
             - ``3``: :cite:p:`Lambeck:1980um`  fluid love number
             - list or tuple: custom value ``(klf)``
+    DENSITY: float, default 1.0
+        Density of water [g/cm\ :sup:`3`]
     POLAR: bool, default True
         Include polar feedback
     ITERATIONS: int, default 6
@@ -199,7 +204,7 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     # extract arrays of kl, hl, and ll Love Numbers
     hl,kl,ll = LOVE
     # density of water [g/cm^3]
-    rho_water = 1.0
+    rho_water = np.float64(DENSITY)
     # Earth Parameters
     factors = units(lmax=LMAX)
     # Average Density of the Earth [g/cm^3]
