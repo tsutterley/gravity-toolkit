@@ -43,6 +43,7 @@ PROGRAM DEPENDENCIES:
         and filters the GRACE/GRACE-FO coefficients for striping errors
 
 UPDATE HISTORY:
+    Updated 06/2025: copy latitude and longitude as float64 for numpy 2.0 stability
     Updated 04/2023: allow love numbers to be None for custom units case
     Updated 03/2023: improve typing for variables in docstrings
     Updated 02/2023: set custom units as top option in if/else statements
@@ -136,11 +137,13 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     # colatitude degree spacing in radians
     dth = dlat*np.pi/180.0
 
+    # convert latitude and longitude to float if integers
+    lon = lon.astype(np.float64)
+    lat = lat.astype(np.float64)
     # reformatting longitudes to range 0:360 (if previously -180:180)
     lon = np.squeeze(lon.copy())
     if np.any(lon < 0):
-        lon_ind, = np.nonzero(lon < 0)
-        lon[lon_ind] += 360.0
+        lon[lon < 0] += 360.0
     # Longitude in radians
     phi = lon[np.newaxis,:]*np.pi/180.0
     # Colatitude in radians

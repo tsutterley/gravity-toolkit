@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 u"""
-run_sea_level_equation.py (05/2023)
+run_sea_level_equation.py (06/2025)
 Solves the sea level equation with the option of including polar motion feedback
 Uses a Clenshaw summation to calculate the spherical harmonic summation
 
@@ -10,7 +10,7 @@ CALLING SEQUENCE:
         --verbose --mode 0o775 input_file output_file
 
 INPUTS:
-    input_file: input load file
+    input_file: input load file (harmonics or spatial field)
     output_file: output sea level fingerprints file
 
 COMMAND LINE OPTIONS:
@@ -28,6 +28,7 @@ COMMAND LINE OPTIONS:
         1: Munk and MacDonald (1960) secular love number
         2: Munk and MacDonald (1960) fluid love number
         3: Lambeck (1980) fluid love number
+    -d X, --density X: Density of water in g/cm^3
     --polar-feedback: Include polar feedback
     --reference X: Reference frame for load love numbers
     -I X, --iterations X: maximum number of iterations for the solver
@@ -35,7 +36,14 @@ COMMAND LINE OPTIONS:
         ascii
         netCDF4
         HDF5
+    -T X, --input-type X: Input data type for load files
+        harmonics: spherical harmonic coefficients
+        spatial: spatial fields
     -D, --date: input and output files have date information
+    -U X, --units X: input units for spatial files
+        1: cm of water thickness (cmwe)
+        2: Gigatonnes (Gt)
+        3: mm of water thickness kg/m^2
     -V, --verbose: verbose output of processing run
     -M X, --mode X: permissions mode of the output files
 
@@ -68,6 +76,9 @@ REFERENCES:
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 06/2025: added options to run from input spatial fields
+        added attributes for lineage to track input files
+        added option to set the density of water in g/cm^3
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: add root attributes to output netCDF4 and HDF5 files
     Updated 02/2023: use love numbers class with additional attributes
@@ -111,6 +122,7 @@ from __future__ import print_function
 import sys
 import os
 import re
+import copy
 import logging
 import pathlib
 import argparse
@@ -135,11 +147,14 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     LOVE_NUMBERS=0,
     BODY_TIDE_LOVE=0,
     FLUID_LOVE=0,
+    DENSITY=1.0,
     REFERENCE=None,
     ITERATIONS=0,
     POLAR=False,
     DATAFORM=None,
+    INPUT_TYPE=None,
     DATE=False,
+    UNITS=None,
     MODE=0o775):
 
     # set default paths
@@ -192,14 +207,49 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     if POLAR:
         attributes['polar_motion_feedback'] = 'Kendall et al. (2005)'
 
-    # read spherical harmonic coefficients from input file format
-    load_Ylms = gravtk.harmonics().from_file(INPUT_FILE,
-        format=DATAFORM, date=DATE)
-    # truncate harmonics to degree and order LMAX
-    load_Ylms.truncate(lmax=LMAX, mmax=LMAX)
-    # expand dimensions to iterate over slices
-    load_Ylms.expand_dims()
-    l1,m1,nt = load_Ylms.shape
+    # read input spherical harmonic coefficients from file
+    single_file_formats = ('ascii', 'netCDF4', 'HDF5')
+    index_file_formats = ('index-ascii', 'index-netCDF4', 'index-HDF5')
+    if DATAFORM in single_file_formats and (INPUT_TYPE == 'spatial'):
+        # read spatial data from input file format
+        dataform = copy.copy(DATAFORM)
+        load_spatial = gravtk.spatial().from_file(INPUT_FILE,
+            format=DATAFORM, date=DATE)
+        attributes['lineage'] = load_spatial.filename.name
+    elif DATAFORM in index_file_formats and (INPUT_TYPE == 'spatial'):
+        # read spatial data from index file
+        _,dataform = DATAFORM.split('-')
+        load_spatial = gravtk.spatial().from_index(INPUT_FILE,
+            format=dataform, date=DATE)
+        attributes['lineage'] = [f.name for f in load_spatial.filename]
+    elif DATAFORM in single_file_formats:
+        dataform = copy.copy(DATAFORM)
+        # read spherical harmonic coefficients from input file format
+        load_Ylms = gravtk.harmonics().from_file(INPUT_FILE,
+            format=DATAFORM, date=DATE)
+        attributes['lineage'] = load_Ylms.filename.name
+    elif DATAFORM in index_file_formats:
+        # read spherical harmonic coefficients from index file
+        _,dataform = DATAFORM.split('-')
+        load_Ylms = gravtk.harmonics().from_index(INPUT_FILE,
+            format=dataform, date=DATE)
+        attributes['lineage'] = [f.name for f in load_Ylms.filename]
+    else:
+        raise ValueError(f'Unknown input data format {DATAFORM:s} for {INPUT_TYPE:s}')
+
+    # convert input data to be iterable over time slices
+    if (INPUT_TYPE == 'spatial'):
+        # expand dimensions to iterate over slices
+        load_spatial.expand_dims()
+        # number of time slices
+        nt = load_spatial.shape[2]
+    else:
+        # truncate harmonics to degree and order LMAX
+        load_Ylms.truncate(lmax=LMAX, mmax=LMAX)
+        # expand dimensions to iterate over slices
+        load_Ylms.expand_dims()
+        # number of time slices
+        nt = load_Ylms.shape[2]
 
     # calculate the legendre functions using Holmes and Featherstone relation
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(th))
@@ -211,20 +261,35 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     for i in range(nt):
         # print iteration if running a series
         if (nt > 1):
-            logging.info('Index {0:d} of {1:d}'.format(i+1,nt))
-        # subset harmonics to indice
-        Ylms = load_Ylms.index(i, date=DATE)
+            logging.info(f'Index {i+1:d} of {nt:d}')
+        # subset harmonics/spatial fields to indice
+        if (INPUT_TYPE == 'spatial'):
+            spatial_data = load_spatial.index(i, date=DATE)
+            # convert missing values to zero
+            spatial_data.replace_invalid(0.0)
+            # convert spatial field to spherical harmonics
+            Ylms = gravtk.gen_stokes(spatial_data.data.T,
+                spatial_data.lon, spatial_data.lat, UNITS=UNITS,
+                LMIN=0, LMAX=LMAX, LOVE=LOVE)
+        else:
+            Ylms = load_Ylms.index(i, date=DATE)
         # run pseudo-spectral sea level equation solver
         sea_level.data[:,:,i] = gravtk.sea_level_equation(Ylms.clm, Ylms.slm,
             landsea.lon, landsea.lat, land_function.T, LMAX=LMAX,
             LOVE=LOVE, BODY_TIDE_LOVE=BODY_TIDE_LOVE,
-            FLUID_LOVE=FLUID_LOVE, POLAR=POLAR, PLM=PLM,
-            ITERATIONS=ITERATIONS, FILL_VALUE=0).T
+            FLUID_LOVE=FLUID_LOVE, DENSITY=DENSITY, POLAR=POLAR,
+            PLM=PLM, ITERATIONS=ITERATIONS, FILL_VALUE=0).T
         sea_level.mask[:,:,i] = (sea_level.data[:,:,i] == 0)
     # copy dimensions
     sea_level.lon = np.copy(landsea.lon)
     sea_level.lat = np.copy(landsea.lat)
-    sea_level.time = np.copy(load_Ylms.time) if DATE else None
+    # copy date variables
+    if (INPUT_TYPE == 'spatial') and DATE:
+        # copy time from spatial data
+        sea_level.time = np.copy(load_spatial.time)
+    elif DATE:
+        # copy time from load Ylms
+        sea_level.time = np.copy(load_Ylms.time)
     # remove singleton dimensions if necessary
     sea_level.squeeze()
     # add attributes to output spatial field
@@ -236,16 +301,16 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     kwargs['units'] = 'centimeters'
     kwargs['longname'] = 'Equivalent_Water_Thickness'
     # save as output DATAFORM
-    if (DATAFORM == 'ascii'):
+    if (dataform == 'ascii'):
         # ascii (.txt)
         # only print ocean points
         sea_level.fill_value = 0
         sea_level.update_mask()
         sea_level.to_ascii(OUTPUT_FILE, date=DATE)
-    elif (DATAFORM == 'netCDF4'):
+    elif (dataform == 'netCDF4'):
         # netCDF4 (.nc)
         sea_level.to_netCDF4(OUTPUT_FILE, date=DATE, **kwargs)
-    elif (DATAFORM == 'HDF5'):
+    elif (dataform == 'HDF5'):
         # HDF5 (.H5)
         sea_level.to_HDF5(OUTPUT_FILE, date=DATE, **kwargs)
     # set the permissions mode of the output file
@@ -292,6 +357,10 @@ def arguments():
     parser.add_argument('--body','-b',
         type=int, default=0, choices=[0,1],
         help='Treatment of the body tide Love number')
+    # density of water in g/cm^3
+    parser.add_argument('--density','-d',
+        type=float, default=1.0,
+        help='Density of water in g/cm^3')
     # different treatments of the fluid Love number of gravitational potential
     # 0: Han and Wahr (1989) fluid love number
     # 1: Munk and MacDonald (1960) secular love number
@@ -315,13 +384,27 @@ def arguments():
         type=str.upper, default='CF', choices=['CF','CM','CE'],
         help='Reference frame for load Love numbers')
     # input and output data format (ascii, netCDF4, HDF5)
+    choices = []
+    choices.extend(['ascii','netCDF4','HDF5'])
+    choices.extend(['index-ascii','index-netCDF4','index-HDF5'])
     parser.add_argument('--format','-F',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
+        type=str, default='netCDF4', choices=choices,
         help='Input and output data format')
+    # define the input data type for the load files 
+    parser.add_argument('--input-type','-T',
+        type=str, default='harmonics', choices=['harmonics','spatial'],
+        help='Input data type for load fields')
     # Input and output files have date information
     parser.add_argument('--date','-D',
         default=False, action='store_true',
         help='Input and output files have date information')
+    # input units
+    # 1: cm of water thickness (cmwe)
+    # 2: Gigatonnes (Gt)
+    # 3: mm of water thickness kg/m^2
+    parser.add_argument('--units','-U',
+        type=int, default=1, choices=[1,2,3],
+        help='Input units of spatial fields')
     # print information about processing run
     parser.add_argument('--verbose','-V',
         action='count', default=0,
@@ -353,11 +436,14 @@ def main():
             LOVE_NUMBERS=args.love,
             BODY_TIDE_LOVE=args.body,
             FLUID_LOVE=args.fluid,
+            DENSITY=args.density,
             REFERENCE=args.reference,
             ITERATIONS=args.iterations,
             POLAR=args.polar_feedback,
             DATAFORM=args.format,
+            INPUT_TYPE=args.input_type,
             DATE=args.date,
+            UNITS=args.units,
             MODE=args.mode)
     except Exception as exc:
         # if there has been an error exception
