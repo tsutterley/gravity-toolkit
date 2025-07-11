@@ -421,7 +421,7 @@ def arguments():
         help='Sync GRACE/GRACE-FO Level-1B dealiasing products')
     # CMR endpoint type
     parser.add_argument('--endpoint','-e',
-        type=str, default='s3', choices=['s3','data'],
+        type=str, default='data', choices=['s3','data'],
         help='CMR url endpoint type')
     # connection timeout
     parser.add_argument('--timeout','-t',
