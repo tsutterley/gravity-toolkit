@@ -2153,7 +2153,7 @@ def from_figshare(
         print file transfer information
     fid: obj, default sys.stdout
         open file object to print if verbose
-    pattern: str, default r'(CSR|GFZ|JPL)_(RL\d+)_(.*?)_SLF_iter.txt$'
+    pattern: str, default '(CSR|GFZ|JPL)_(RL\\\\d+)_(.*?)_SLF_iter.txt$'
         regular expression pattern for reducing list
     mode: oct, default 0o775
         permissions mode of output local file
