@@ -21,13 +21,13 @@ provides data and related information pertaining to the physical processes and c
 including measurements of ocean winds, temperature, topography, salinity, circulation and currents, and sea ice.
 PO.DAAC hosts
 
-PO.DAAC is `migrating its data archive to the Earthdata Cloud <https://podaac.jpl.nasa.gov/cloud-datasets/migration>`_,
+PO.DAAC has `migrated its data archive to the Earthdata Cloud <https://podaac.jpl.nasa.gov/cloud-datasets/migration>`_,
 which is hosted in Amazon Web Services (AWS).
-GRACE/GRACE-FO spherical harmonic data is currently scheduled to be "cloud enabled"
-during Phase 4 and Phase 5 of the transition, slated for April and July 2022 respectively.
 
-If any problems contact JPL PO.DAAC support at `podaac@podaac.jpl.nasa.gov <mailto:podaac@podaac.jpl.nasa.gov>`_
-or the NASA EOSDIS support team `support@earthdata.nasa.gov <mailto:support@earthdata.nasa.gov>`_.
+.. tip::
+
+    If any problems contact JPL PO.DAAC support at `podaac@podaac.jpl.nasa.gov <mailto:podaac@podaac.jpl.nasa.gov>`_
+    or the NASA EOSDIS support team `support@earthdata.nasa.gov <mailto:support@earthdata.nasa.gov>`_.
 
 Steps to Sync from PO.DAAC
 --------------------------

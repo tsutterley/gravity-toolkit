@@ -1,0 +1,4 @@
+- Hugo Lecomte
+- Yara Mohajerani
+- [Tyler Sutterley (University of Washington)](http://psc.apl.uw.edu/people/investigators/tyler-sutterley/)
+- [Isabella Velicogna (University of California, Irvine)](https://www.ess.uci.edu/~velicogna/pi.html)
