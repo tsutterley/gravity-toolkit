@@ -2,26 +2,94 @@
 gravity-toolkit
 ===============
 
-Python tools for obtaining and working with Level-2 spherical harmonic
-coefficients from the NASA/DLR Gravity Recovery and Climate Experiment (GRACE)
-and the NASA/GFZ Gravity Recovery and Climate Experiment Follow-On (GRACE-FO)
-missions
+Welcome to the documentation for ``gravity-toolkit``, a set of Python tools for working with time-variable gravity fields.
+
+This documentation is intended to explain how to obtain and work with the Level-2 spherical harmonic
+coefficients from the NASA/DLR Gravity Recovery and Climate Experiment (GRACE) and
+the NASA/GFZ Gravity Recovery and Climate Experiment Follow-On (GRACE-FO) missions.
+
+Introduction
+------------
+
+.. grid:: 2 2 4 4
+    :padding: 0
+
+    .. grid-item-card::  Installation
+      :text-align: center
+      :link: ./getting_started/Install.html
+
+      :material-outlined:`download;5em`
+
+    .. grid-item-card::  Getting Started
+      :text-align: center
+      :link: ./getting_started/Getting-Started.html
+
+      :material-outlined:`hiking;5em`
+
+    .. grid-item-card::  Background
+      :text-align: center
+      :link: ./background/Background.html
+
+      :material-outlined:`library_books;5em`
+
+    .. grid-item-card::  Examples
+      :text-align: center
+      :link: ./user_guide/Examples.html
+
+      :material-outlined:`apps;5em`
+
+Contribute
+----------
+
+.. grid:: 2 2 4 4
+    :padding: 0
+
+    .. grid-item-card::  Guidelines
+      :text-align: center
+      :link: ./getting_started/Contributing.html
+
+      :material-outlined:`groups;5em`
+
+    .. grid-item-card::  Code of Conduct
+      :text-align: center
+      :link: ./getting_started/Code-of-Conduct.html
+
+      :material-outlined:`gavel;5em`
+
+    .. grid-item-card::  Discussions
+      :text-align: center
+      :link: https://github.com/tsutterley/gravity-toolkit/discussions
+
+      :material-outlined:`forum;5em`
+
+    .. grid-item-card::  Citation Information
+      :text-align: center
+      :link: ./project/Citations.html
+
+      :material-outlined:`alternate_email;5em`
 
 .. toctree::
     :maxdepth: 2
+    :hidden:
     :caption: Getting Started
 
     getting_started/Install.rst
-    getting_started/Background.rst
     getting_started/Getting-Started.rst
     getting_started/NASA-Earthdata.rst
     getting_started/GRACE-Data-File-Formats.rst
-    getting_started/Spatial-Maps.rst
-    getting_started/Time-Series-Analysis.rst
-    getting_started/Geocenter-Variations.rst
     getting_started/Contributing.rst
+    getting_started/Code-of-Conduct.rst
     getting_started/Resources.rst
-    getting_started/Citations.rst
+
+.. toctree::
+    :maxdepth: 2
+    :hidden:
+    :caption: Background
+
+    background/Background.rst
+    background/Spatial-Maps.rst
+    background/Time-Series-Analysis.rst
+    background/Geocenter-Variations.rst
 
 .. toctree::
     :maxdepth: 1
@@ -86,72 +154,100 @@ missions
 .. toctree::
     :maxdepth: 1
     :hidden:
-    :caption: Utilities
+    :caption: Access
 
-    api_reference/cnes_grace_sync.rst
-    api_reference/esa_costg_swarm_sync.rst
-    api_reference/gfz_icgem_costg_ftp.rst
-    api_reference/gfz_isdc_dealiasing_ftp.rst
-    api_reference/gfz_isdc_grace_ftp.rst
-    api_reference/itsg_graz_grace_sync.rst
-    api_reference/make_grace_index.rst
-    api_reference/podaac_cumulus.rst
+    api_reference/access/cnes_grace_sync.rst
+    api_reference/access/esa_costg_swarm_sync.rst
+    api_reference/access/gfz_icgem_costg_ftp.rst
+    api_reference/access/gfz_isdc_dealiasing_ftp.rst
+    api_reference/access/gfz_isdc_grace_ftp.rst
+    api_reference/access/itsg_graz_grace_sync.rst
+    api_reference/access/podaac_cumulus.rst
+
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+    :caption: Dealiasing
+
+    api_reference/dealiasing/aod1b_geocenter.rst
+    api_reference/dealiasing/aod1b_oblateness.rst
+    api_reference/dealiasing/dealiasing_global_uplift.rst
+    api_reference/dealiasing/dealiasing_monthly_mean.rst
+
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+    :caption: Geocenter
+
+    api_reference/geocenter/calc_degree_one.rst
+    api_reference/geocenter/monte_carlo_degree_one.rst
 
 .. toctree::
     :maxdepth: 1
     :hidden:
     :caption: Use Cases
 
-    api_reference/aod1b_geocenter.rst
-    api_reference/aod1b_oblateness.rst
-    api_reference/calc_degree_one.rst
-    api_reference/calc_mascon.rst
-    api_reference/calc_harmonic_resolution.rst
-    api_reference/calc_sensitivity_kernel.rst
-    api_reference/combine_harmonics.rst
-    api_reference/convert_harmonics.rst
-    api_reference/dealiasing_global_uplift.rst
-    api_reference/dealiasing_monthly_mean.rst
-    api_reference/grace_mean_harmonics.rst
-    api_reference/grace_raster_grids.rst
-    api_reference/grace_spatial_error.rst
-    api_reference/grace_spatial_maps.rst
-    api_reference/mascon_reconstruct.rst
-    api_reference/monte_carlo_degree_one.rst
-    api_reference/quick_mascon_regress.rst
-    api_reference/piecewise_grace_maps.rst
-    api_reference/regress_grace_maps.rst
-    api_reference/run_grace_date.rst
-    api_reference/run_sea_level_equation.rst
-    api_reference/scale_grace_maps.rst
+    api_reference/scripts/calc_mascon.rst
+    api_reference/scripts/calc_harmonic_resolution.rst
+    api_reference/scripts/calc_sensitivity_kernel.rst
+    api_reference/scripts/combine_harmonics.rst
+    api_reference/scripts/convert_harmonics.rst
+    api_reference/scripts/grace_mean_harmonics.rst
+    api_reference/scripts/grace_raster_grids.rst
+    api_reference/scripts/grace_spatial_error.rst
+    api_reference/scripts/grace_spatial_maps.rst
+    api_reference/scripts/mascon_reconstruct.rst
+    api_reference/scripts/piecewise_grace_maps.rst
+    api_reference/scripts/regress_grace_maps.rst
+    api_reference/scripts/run_sea_level_equation.rst
+    api_reference/scripts/scale_grace_maps.rst
 
 .. toctree::
     :maxdepth: 1
     :hidden:
-    :caption: Graphing
+    :caption: Mapping
 
-    api_reference/plot_AIS_grid_maps.rst
-    api_reference/plot_AIS_grid_3maps.rst
-    api_reference/plot_AIS_grid_4maps.rst
-    api_reference/plot_AIS_grid_movie.rst
-    api_reference/plot_AIS_GrIS_maps.rst
-    api_reference/plot_AIS_regional_maps.rst
-    api_reference/plot_AIS_regional_movie.rst
-    api_reference/plot_global_grid_maps.rst
-    api_reference/plot_global_grid_3maps.rst
-    api_reference/plot_global_grid_4maps.rst
-    api_reference/plot_global_grid_5maps.rst
-    api_reference/plot_global_grid_9maps.rst
-    api_reference/plot_global_grid_movie.rst
-    api_reference/plot_GrIS_grid_maps.rst
-    api_reference/plot_GrIS_grid_3maps.rst
-    api_reference/plot_GrIS_grid_5maps.rst
-    api_reference/plot_GrIS_grid_movie.rst
-    api_reference/quick_mascon_plot.rst
+    api_reference/mapping/plot_AIS_grid_maps.rst
+    api_reference/mapping/plot_AIS_grid_3maps.rst
+    api_reference/mapping/plot_AIS_grid_4maps.rst
+    api_reference/mapping/plot_AIS_grid_movie.rst
+    api_reference/mapping/plot_AIS_GrIS_maps.rst
+    api_reference/mapping/plot_AIS_regional_maps.rst
+    api_reference/mapping/plot_AIS_regional_movie.rst
+    api_reference/mapping/plot_global_grid_maps.rst
+    api_reference/mapping/plot_global_grid_3maps.rst
+    api_reference/mapping/plot_global_grid_4maps.rst
+    api_reference/mapping/plot_global_grid_5maps.rst
+    api_reference/mapping/plot_global_grid_9maps.rst
+    api_reference/mapping/plot_global_grid_movie.rst
+    api_reference/mapping/plot_GrIS_grid_maps.rst
+    api_reference/mapping/plot_GrIS_grid_3maps.rst
+    api_reference/mapping/plot_GrIS_grid_5maps.rst
+    api_reference/mapping/plot_GrIS_grid_movie.rst
+
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+    :caption: Utilities
+
+    api_reference/utilities/make_grace_index.rst
+    api_reference/utilities/quick_mascon_plot.rst
+    api_reference/utilities/quick_mascon_regress.rst
+    api_reference/utilities/run_grace_date.rst
+
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+    :caption: Project Details
+
+    project/Contributors.rst
+    project/Licenses.rst
+    project/Testing.rst
+    project/Citations.rst
 
 .. toctree::
     :maxdepth: 1
     :hidden:
     :caption: Bibliography
 
-    getting_started/Bibliography.rst
+    project/Bibliography.rst

@@ -19,7 +19,8 @@ with open('version.txt', encoding='utf8') as fh:
     version = fh.read()
 
 # list of all scripts to be included with package
-scripts=[os.path.join('scripts',f) for f in os.listdir('scripts') if f.endswith('.py')]
+for dir in ['access','dealiasing','geocenter','mapping','scripts','utilities']:
+    scripts=[os.path.join(dir,f) for f in os.listdir(dir) if f.endswith('.py')]
 scripts.append(os.path.join('gravity_toolkit','grace_date.py'))
 scripts.append(os.path.join('gravity_toolkit','grace_months_index.py'))
 

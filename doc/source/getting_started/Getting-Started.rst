@@ -2,6 +2,88 @@
 Getting Started
 ===============
 
+
+
+This documentation is intended to explain how to compute spatial and time series
+estimates using GRACE/GRACE-FO time-variable gravity measurements.
+``gravity-toolkit`` is a Python-based geophysical software that reads
+GRACE/GRACE-FO time-variable gravity solutions for estimating regional mass change.
+A suite of geophysical corrections can be applied to the gravity solutions to
+optimize the GRACE/GRACE-FO data for particular applications.
+This software was developed with the goal of supporting science applications for
+time-variable gravity.
+``gravity-toolkit`` provides data access utilities for ascii, netCDF4, HDF5 and gfc file formats.
+``gravity-toolkit`` also provides some very high-level plotting programs through the
+use of `Jupyter Notebooks <../user_guide/Examples.html>`_.
+
+.. graphviz::
+    :caption: Data Processing Framework
+    :align: center
+
+    digraph {
+        G [label="GRACE/GRACE-FO\ntime-variable gravity"
+            fontname="Lato"
+            fontsize=11
+            shape=box
+            style="filled"
+            color="#7570b3"]
+        A [label="Non-tidal Ocean and\nAtmospheric Variation"
+            fontname="Lato"
+            fontsize=11
+            shape=box
+            style="filled"
+            color="#7570b3"]
+        I [label="Glacial Isostatic\nAdjustment"
+            fontname="Lato"
+            fontsize=11
+            shape=box
+            style="filled"
+            color="#7570b3"]
+        W [label="Terrestrial Water\nStorage"
+            fontname="Lato"
+            fontsize=11
+            shape=box
+            style="filled"
+            color="#7570b3"]
+        R [label="gravity-toolkit"
+            fontname="Lato"
+            fontsize=11
+            shape=box
+            style="filled"
+            color="gray"]
+        S [label="Spatial Maps"
+            fontname="Lato"
+            fontsize=11
+            shape=box
+            style="filled"
+            color="#1b9e77"
+            URL="Spatial-Maps.html"]
+        T [label="Time Series Analysis"
+            fontname="Lato"
+            fontsize=11
+            shape=box
+            style="filled"
+            color="#1b9e77"
+            URL="Time-Series-Analysis.html"]
+        D [label="Geocenter Variation"
+            fontname="Lato"
+            fontsize=11
+            shape=box
+            style="filled"
+            color="#1b9e77"
+            URL="Geocenter-Variations.html"]
+        G -> R [arrowsize=0.8]
+        A -> R [arrowsize=0.8]
+        I -> R [arrowsize=0.8]
+        W -> R [arrowsize=0.8]
+        R -> S [arrowsize=0.8]
+        R -> T [arrowsize=0.8]
+        R -> D [arrowsize=0.8]
+    }
+
+Steps to Get Started
+####################
+
 - `Register at NASA Earthdata <./NASA-Earthdata.html>`_
 - Run `podaac_cumulus.py <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/podaac_cumulus.py>`_ program with your NASA Earthdata credentials to acquire GRACE/GRACE-FO and auxiliary data
 
