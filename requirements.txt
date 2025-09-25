@@ -1,9 +1,0 @@
-boto3
-future
-lxml
-matplotlib
-netCDF4
-numpy
-python-dateutil
-pyyaml
-scipy
