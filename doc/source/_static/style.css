@@ -1,13 +1,13 @@
 /* color adjustments to fit logo theme */
 .wy-menu > .caption > span.caption-text {
-    color: #7acea3;
+    color: #65c2a4;
 }
 .wy-nav-top {
-    background-color: #7acea3;
+    background-color: #65c2a4;
     color: #ffffff;
 }
 .wy-side-nav-search {
-    background-color: #7acea3;
+    background-color: #65c2a4;
 }
 .wy-side-nav-search input[type="text"] {
     border-color: #281a2c;
