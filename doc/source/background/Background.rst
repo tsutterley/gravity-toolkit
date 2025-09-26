@@ -48,7 +48,7 @@ Geoid Height
 ############
 
 The Level-2 spherical harmonic product of GRACE and GRACE-FO provides monthly
-estimates of the Earth's gravitational field.
+estimates of the Earth's gravitational field [see :ref:`fig-sphharm`].
 The Earth's gravitational field varies in time as masses on and within the
 Earth move and are exchanged between components of the Earth system :cite:p:`Wahr:1998hy`.
 The instantaneous shape of the Earth's gravitational field can be described
