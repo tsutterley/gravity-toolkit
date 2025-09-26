@@ -61,7 +61,7 @@ Repository = "https://github.com/tsutterley/gravity-toolkit"
 Issues = "https://github.com/tsutterley/gravity-toolkit/issues"
 
 [project.optional-dependencies]
-doc = ["docutils", "fontconfig", "freetype", "graphviz", "ipympl", "markupsafe", "myst-nb", "numpydoc", "sphinx", "sphinx-argparse>=0.4", "sphinxcontrib-bibtex", "sphinx-design", "sphinx_rtd_theme"]
+doc = ["cartopy", "docutils", "fontconfig", "freetype", "graphviz", "ipympl", "markupsafe", "myst-nb", "numpydoc", "sphinx", "sphinx-argparse>=0.4", "sphinxcontrib-bibtex", "sphinx-design", "sphinx_rtd_theme"]
 all = ["cartopy", "geoid-toolkit", "h5py", "jupyterlab", "jupyterlab_widgets", "notebook", "shapely"]
 dev = ["flake8", "pytest>=4.6", "pytest-cov"]
 
