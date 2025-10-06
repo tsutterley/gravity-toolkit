@@ -61,17 +61,17 @@ Repository = "https://github.com/tsutterley/gravity-toolkit"
 Issues = "https://github.com/tsutterley/gravity-toolkit/issues"
 
 [project.optional-dependencies]
-doc = ["cartopy", "docutils", "fontconfig", "freetype", "graphviz", "ipympl", "markupsafe", "myst-nb", "numpydoc", "sphinx", "sphinx-argparse>=0.4", "sphinxcontrib-bibtex", "sphinx-design", "sphinx_rtd_theme"]
+doc = ["docutils", "graphviz", "myst-nb", "numpydoc", "sphinx", "sphinx-argparse>=0.4", "sphinxcontrib-bibtex", "sphinx-design", "sphinx_rtd_theme"]
 all = ["cartopy", "geoid-toolkit", "h5py", "jupyterlab", "jupyterlab_widgets", "notebook", "shapely"]
-dev = ["flake8", "pytest>=4.6", "pytest-cov"]
+dev = ["flake8", "pytest>=4.6", "pytest-cov", "pytest-xdist"]
 
 [tool.setuptools.packages.find]
 exclude = ["test*", "run*"]
 
 [tool.pytest.ini_options]
-minversion = "2.0"
+minversion = "6.0"
 norecursedirs = ".git"
-addopts = "--verbose --capture=no"
+addopts = "-n auto --verbose --capture=no"
 python_files = [
     "test*.py"
 ]
@@ -111,3 +111,85 @@ convention = "numpy"
 quote-style = "single"
 indent-style = "space"
 docstring-code-format = false
+
+[tool.pixi.workspace]
+name = "gravity-toolkit"
+authors = ["gravity-toolkit contributors"]
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "linux-64", "win-64"]
+
+[tool.pixi.pypi-dependencies]
+gravity-toolkit = { path = ".", editable = true }
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+all = { features = ["all"], solve-group = "default" }
+dev = { features = ["all", "dev", "doc"], solve-group = "default" }
+doc = { features = ["all", "doc"], solve-group = "default" }
+
+[tool.pixi.tasks.start]
+cmd = "jupyter lab"
+cwd = "doc/source/notebooks"
+description = "Start JupyterLab in the notebooks directory"
+
+[tool.pixi.tasks.export-env]
+args = [ { "arg" = "flags", "default" = "" } ]
+cmd = "pixi workspace export conda-environment {{ flags }} > environment.yml"
+description = "Export workspace to a conda environment file" 
+
+[tool.pixi.feature.doc.tasks.docs]
+args = [ { "arg" = "flags", "default" = "" } ]
+cmd = "make html {{ flags }}"
+cwd = "doc"
+description = "Create HTML documentation with sphinx"
+
+[tool.pixi.feature.dev.tasks.test]
+args = [ { "arg" = "flags", "default" = "" }, { "arg" = "test", "default" = "." } ]
+cmd = "pytest {{ flags }} {{ test }}"
+cwd = "test"
+description = "Run the pytest suite"
+
+[tool.pixi.feature.dev.tasks.lint]
+args = [ { "arg" = "flags", "default" = "--select=E9,F63,F7,F82 --show-source" }, { "arg" = "test", "default" = "." } ]
+cmd = "flake8 {{ test }} --count {{ flags }} --statistics --extend-exclude 'build/,run/,*.ipynb_checkpoints/,.pixi/'"
+description = "Run flake8 to check for compilation errors"
+
+[tool.pixi.dependencies]
+boto3 = "*"
+future = "*"
+lxml = "*"
+matplotlib = "*"
+netcdf4 = "*"
+numpy = "*"
+python-dateutil = "*"
+pyyaml = "*"
+scipy = "*"
+
+[tool.pixi.feature.all.dependencies]
+cartopy = "*"
+geoid-toolkit = "*"
+h5py = "*"
+ipympl = "*"
+ipywidgets = "*"
+jupyterlab = "*"
+jupyterlab_widgets = "*"
+notebook = "*"
+shapely = "*"
+
+[tool.pixi.feature.dev.dependencies]
+flake8 = "*"
+pytest = "*"
+pytest-cov = "*"
+pytest-xdist = "*"
+
+[tool.pixi.feature.doc.dependencies]
+docutils = "*"
+graphviz = "*"
+markupsafe = "*"
+myst-nb = "*"
+numpydoc = "*"
+sphinx = "*"
+sphinx-argparse = "*"
+sphinxcontrib-bibtex = "*"
+sphinx-design = "*"
+sphinx_rtd_theme = "*"
