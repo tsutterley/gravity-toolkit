@@ -28,6 +28,7 @@
 *.gmtdefaults4
 .RData
 .Rhistory
+octave-workspace
 __pycache__
 build/
 _build/
@@ -40,7 +41,11 @@ wheels/
 .installed.cfg
 *.egg
 .pytest_cache
+.coverage
 pythonenv*/
+venv/
+*build-commands.txt
+setup-miniconda-patched-environment.yml
 # OS generated files #
 ######################
 .DS_Store
@@ -64,6 +69,7 @@ Thumbs.db
 *.ilg
 *.ind
 *.ist
+*.jats
 *.lof
 *.lot
 *.nav
@@ -87,6 +93,11 @@ None*.png
 #######################
 .ipynb_checkpoints
 Untitled.ipynb
+core.*
 # Large data files #
 ####################
 *-complete.dat
+# pixi environments #
+#####################
+.pixi/*
+!.pixi/config.toml

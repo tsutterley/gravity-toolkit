@@ -1036,7 +1036,7 @@ def get_token(
     password: str or NoneType, default None
         NASA Earthdata password
     build: bool, default True
-        Build opener and check WebDAV credentials
+        Build opener and check credentials
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
     context: obj, default gravity_toolkit.utilities._default_ssl_context
@@ -1093,7 +1093,7 @@ def list_tokens(
     password: str or NoneType, default None
         NASA Earthdata password
     build: bool, default True
-        Build opener and check WebDAV credentials
+        Build opener and check credentials
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
     context: obj, default gravity_toolkit.utilities._default_ssl_context
@@ -1153,7 +1153,7 @@ def revoke_token(
     password: str or NoneType, default None
         NASA Earthdata password
     build: bool, default True
-        Build opener and check WebDAV credentials
+        Build opener and check credentials
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
     context: obj, default gravity_toolkit.utilities._default_ssl_context

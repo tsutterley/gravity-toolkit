@@ -54,6 +54,7 @@ This software is also dependent on other commonly used Python packages:
 Disclaimer
 ##########
 
+This work is currently supported by the NASA GRACE-FO Science Team (Grant Number 80NSSC24K1153).
 This program is not sponsored or maintained by the Universities Space Research Association (USRA),
 the Center for Space Research at the University of Texas (UTCSR),
 the Jet Propulsion Laboratory (JPL),
