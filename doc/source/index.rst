@@ -159,8 +159,8 @@ Contribute
     api_reference/access/cnes_grace_sync.rst
     api_reference/access/esa_costg_swarm_sync.rst
     api_reference/access/gfz_icgem_costg_ftp.rst
-    api_reference/access/gfz_isdc_dealiasing_ftp.rst
-    api_reference/access/gfz_isdc_grace_ftp.rst
+    api_reference/access/gfz_isdc_dealiasing_sync.rst
+    api_reference/access/gfz_isdc_grace_sync.rst
     api_reference/access/itsg_graz_grace_sync.rst
     api_reference/access/podaac_cumulus.rst
 

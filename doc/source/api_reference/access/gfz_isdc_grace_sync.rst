@@ -1,6 +1,6 @@
-=====================
-gfz_isdc_grace_ftp.py
-=====================
+======================
+gfz_isdc_grace_sync.py
+======================
 
 - Syncs GRACE/GRACE-FO and auxiliary data from the `GFZ Information System and Data Center (ISDC) <http://isdc.gfz-potsdam.de/grace-isdc/>`_
 - Syncs CSR/GFZ/JPL Level-2 spherical harmonic files
@@ -10,14 +10,14 @@ gfz_isdc_grace_ftp.py
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/access/gfz_isdc_grace_ftp.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/access/gfz_isdc_grace_sync.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: gfz_isdc_grace_ftp.py
+    :filename: gfz_isdc_grace_sync.py
     :func: arguments
-    :prog: gfz_isdc_grace_ftp.py
+    :prog: gfz_isdc_grace_sync.py
     :nodescription:
     :nodefault:
