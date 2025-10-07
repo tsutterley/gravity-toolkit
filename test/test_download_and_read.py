@@ -29,6 +29,19 @@ def test_podaac_cumulus_download_and_read(username,password):
     assert (Ylms['clm'][2,0] == -0.484169355584e-03)
 
 # PURPOSE: Download a GRACE file from GFZ and check that read program runs
+def test_gfz_http_download_and_read():
+    HOST=['https://isdc-data.gfz.de','grace','Level-2','CSR','RL06',
+        'GSM-2_2002095-2002120_GRAC_UTCSR_BA01_0600.gz']
+    # download and read as virtual file object
+    FILE = gravtk.utilities.from_http(HOST,verbose=True)
+    Ylms = gravtk.read_GRACE_harmonics(FILE, 60)
+    keys = ['time', 'start', 'end', 'clm', 'slm', 'eclm', 'eslm', 'header']
+    test = dict(start=2452369.5, end=2452394.5)
+    assert all((key in Ylms.keys()) for key in keys)
+    assert all((Ylms[key] == val) for key,val in test.items())
+    assert (Ylms['clm'][2,0] == -0.484169355584e-03)
+
+# PURPOSE: Download a GRACE file from GFZ and check that read program runs
 def test_gfz_ftp_download_and_read():
     HOST=['isdcftp.gfz-potsdam.de','grace','Level-2','CSR','RL06',
         'GSM-2_2002095-2002120_GRAC_UTCSR_BA01_0600.gz']
