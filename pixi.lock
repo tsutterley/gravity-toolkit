@@ -5031,7 +5031,7 @@ packages:
 - pypi: ./
   name: gravity-toolkit
   version: 1.2.4
-  sha256: 78349d849cc9f0f33250239d7f0eb3bfe0e4c387f07127875a7c8b1409e3f645
+  sha256: 3f8afea7f56123b97f283b73aba8217cd7af40580e34057759f2e877d5ff6c88
   requires_dist:
   - boto3
   - future
