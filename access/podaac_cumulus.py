@@ -4,6 +4,7 @@ podaac_cumulus.py
 Written by Tyler Sutterley (11/2024)
 
 Syncs GRACE/GRACE-FO data from NASA JPL PO.DAAC Cumulus AWS S3 bucket
+
 S3 Cumulus syncs are only available in AWS instances in us-west-2
 
 Register with NASA Earthdata Login system:
