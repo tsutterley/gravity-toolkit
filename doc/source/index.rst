@@ -1,6 +1,6 @@
-===============
-gravity-toolkit
-===============
+=============================
+gravity-toolkit Documentation
+=============================
 
 Welcome to the documentation for ``gravity-toolkit``, a set of Python tools for working with time-variable gravity fields.
 

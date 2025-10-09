@@ -102,7 +102,7 @@ Download
 Disclaimer
 ##########
 
-This project contains work and contributions from the `scientific community <./CONTRIBUTORS.rst>`_.
+This project contains work and contributions from the `scientific community <./CONTRIBUTORS.md>`_.
 This program is not sponsored or maintained by the Universities Space Research Association (USRA),
 the Center for Space Research at the University of Texas (UTCSR), the Jet Propulsion Laboratory (JPL),
 the German Research Centre for Geosciences (GeoForschungsZentrum, GFZ) or NASA.

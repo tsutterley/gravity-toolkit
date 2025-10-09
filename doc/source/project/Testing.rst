@@ -33,11 +33,11 @@ Coverage reports can be generated using the ``pytest-cov`` plugin (which is inst
 
 .. code-block:: bash
 
-    pytest --cov pyTMD --cov-report=term 
+    pytest --cov gravity_toolkit --cov-report=term 
 
 .. code-block:: bash
 
-    pixi run test "--cov ../gravity-toolkit --cov-report=term"
+    pixi run test "--cov ../gravity_toolkit --cov-report=term"
 
 Parallelization
 ^^^^^^^^^^^^^^^

@@ -833,7 +833,7 @@ def from_json(
         remote http host path split as list
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
-    context: obj, default pyTMD.utilities._default_ssl_context
+    context: obj, default gravity_toolkit.utilities._default_ssl_context
         SSL context for ``urllib`` opener object
     """
     # verify inputs for remote http host
