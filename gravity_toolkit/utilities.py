@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (11/2024)
+Written by Tyler Sutterley (10/2025)
 Download and management utilities for syncing time and auxiliary files
 
 PYTHON DEPENDENCIES:
@@ -9,6 +9,7 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/lxml
 
 UPDATE HISTORY:
+    Updated 10/2025: switch from_gfz to https as ftp server is being retired
     Updated 11/2024: simplify unique file name function
         add function to scrape GSFC website for GRACE mascon urls
     Updated 10/2024: update CMR search utility to replace deprecated scrolling
@@ -2383,10 +2384,11 @@ def from_csr(
                         mode=mode)
 
 # PURPOSE: download GravIS and satellite laser ranging files from GFZ
-# ftp://isdcftp.gfz-potsdam.de/grace/Level-2/GFZ/RL06_SLR_C20/
-# ftp://isdcftp.gfz-potsdam.de/grace/GravIS/GFZ/Level-2B/aux_data/
+# https://isdc-data.gfz.de/grace/Level-2/GFZ/RL06_SLR_C20/
+# https://isdc-data.gfz.de/grace/GravIS/GFZ/Level-2B/aux_data/
 def from_gfz(
         directory: str | pathlib.Path,
+        version: str = '0004',
         timeout: int | None = None,
         chunk: int | None = 8192,
         verbose: bool = False,
@@ -2401,6 +2403,8 @@ def from_gfz(
     ----------
     directory: str
         download directory
+    version: str, default '0004'
+        version of the GravIS Level-2B data products to download
     timeout: int or NoneType, default None
         timeout in seconds for blocking operations
     chunk: int, default 8192
@@ -2418,14 +2422,16 @@ def from_gfz(
     local_dir.mkdir(mode=mode, parents=True, exist_ok=True)
     # SLR oblateness and combined low-degree harmonic files
     FILES = []
-    FILES.append(['isdcftp.gfz-potsdam.de','grace','Level-2','GFZ',
+    FILES.append(['https://isdc-data.gfz.de','grace','Level-2','GFZ',
         'RL06_SLR_C20','GFZ_RL06_C20_SLR.dat'])
-    FILES.append(['isdcftp.gfz-potsdam.de','grace','GravIS','GFZ',
-        'Level-2B','aux_data','GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0003.dat'])
+    # GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0004.dat
+    GRAVIS = f'GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_{version}.dat'
+    FILES.append(['https://isdc-data.gfz.de','grace','GravIS','GFZ',
+        'Level-2B','aux_data',GRAVIS])
     # get each file
     for FILE in FILES:
         local_file = directory.joinpath(FILE[-1])
-        from_ftp(FILE,
+        from_http(FILE,
             timeout=timeout,
             local=local_file,
             hash=get_hash(local_file),
@@ -2434,10 +2440,11 @@ def from_gfz(
             fid=fid,
             mode=mode)
     # GravIS geocenter file
-    FILE = ['isdcftp.gfz-potsdam.de','grace','GravIS','GFZ','Level-2B',
-        'aux_data','GRAVIS-2B_GFZOP_GEOCENTER_0003.dat']
+    GRAVIS = f'GRAVIS-2B_GFZOP_GEOCENTER_{version}.dat'
+    FILE = ['https://isdc-data.gfz.de','grace','GravIS','GFZ','Level-2B',
+        'aux_data',GRAVIS]
     local_file = local_dir.joinpath(FILE[-1])
-    from_ftp(FILE,
+    from_http(FILE,
         timeout=timeout,
         local=local_file,
         hash=get_hash(local_file),
