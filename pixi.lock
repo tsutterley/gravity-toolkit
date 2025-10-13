@@ -5030,8 +5030,8 @@ packages:
   timestamp: 1754732367050
 - pypi: ./
   name: gravity-toolkit
-  version: 1.2.4
-  sha256: 3f8afea7f56123b97f283b73aba8217cd7af40580e34057759f2e877d5ff6c88
+  version: 1.2.5
+  sha256: 1a1cfab31357870804358557dbf7e2e8d992cb5fb95442081a3ba69c736d27b1
   requires_dist:
   - boto3
   - future

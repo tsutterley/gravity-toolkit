@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gravity-toolkit"
-version = "1.2.4"
+version = "1.2.5"
 description = "Python tools for working with time-variable gravity fields"
 keywords = [
     "GRACE",
