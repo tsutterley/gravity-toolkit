@@ -133,7 +133,7 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     LOVE=None, BODY_TIDE_LOVE=0, FLUID_LOVE=0, DENSITY=1.0, POLAR=True, 
     ITERATIONS=6, PLM=None, FILL_VALUE=0, ASTYPE=np.longdouble, SCALE=1e-280,
     **kwargs):
-    """
+    r"""
     Solves the sea level equation with the option of including
     polar motion feedback :cite:p:`Farrell:1976hm,Kendall:2005ds,Mitrovica:2003cq`
 

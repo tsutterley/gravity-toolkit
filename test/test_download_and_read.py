@@ -56,27 +56,16 @@ def test_gfz_ftp_download_and_read():
 
 # PURPOSE: Download a GRACE-FO COST-G file from the GFZ ICGEM
 def test_gfz_icgem_costg_download_and_read():
-    # attempt to download from ftp server
-    try:
-        HOST=['icgem.gfz-potsdam.de','02_COST-G','Grace-FO',
-            'GSM-2_2018152-2018181_GRFO_COSTG_BF01_0100.gfc']
-        FILE = gravtk.utilities.from_ftp(HOST,verbose=True)
-    except:
-        pass
-    # attempt to download from http server
-    try:
-        HOST=['http://icgem.gfz-potsdam.de','getseries','02_COST-G',
-            'Grace-FO','GSM-2_2018152-2018181_GRFO_COSTG_BF01_0100.gfc']
-        FILE = gravtk.utilities.from_http(HOST,verbose=True)
-    except:
-        return
+    HOST=['https://icgem.gfz.de','getseries','02_COST-G_',
+        'Grace-FO_RL02','GSM-2_2018152-2018181_GRFO_COSTG_BF01_0200.gfc']
+    FILE = gravtk.utilities.from_http(HOST,verbose=True)
     # read as virtual file object
     Ylms = gravtk.read_GRACE_harmonics(FILE, 60)
     keys = ['time', 'start', 'end', 'clm', 'slm', 'eclm', 'eslm', 'header']
     test = dict(start=2458270.5, end=2458299.5)
     assert all((key in Ylms.keys()) for key in keys)
     assert all((Ylms[key] == val) for key,val in test.items())
-    assert (Ylms['clm'][2,0] == -0.484165436067e-03)
+    assert (Ylms['clm'][2,0] == -0.484165368910e-03)
 
 # PURPOSE: Download a Swarm file from ESA and check that read program runs
 def test_esa_swarm_download_and_read():

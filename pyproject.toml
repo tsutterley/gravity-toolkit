@@ -71,7 +71,7 @@ exclude = ["test*", "run*"]
 [tool.pytest.ini_options]
 minversion = "6.0"
 norecursedirs = ".git"
-addopts = "-n auto --verbose --capture=no"
+addopts = "-n auto --verbose --capture=no -W ignore::UserWarning"
 python_files = [
     "test*.py"
 ]
@@ -83,16 +83,16 @@ testpaths = [
 branch = true
 source = [
     "gravity-toolkit",
-    "test",
 ]
 omit = [
     "setup.py",
-    "conf.py",
     "access/*",
     "dealiasing/*",
+    "doc/*",
     "geocenter/*",
     "mapping/*",
     "scripts/*",
+    "test/*",
     "utilities/*",
 ]
 
@@ -148,6 +148,11 @@ args = [ { "arg" = "flags", "default" = "" }, { "arg" = "test", "default" = "." 
 cmd = "pytest {{ flags }} {{ test }}"
 cwd = "test"
 description = "Run the pytest suite"
+
+[tool.pixi.feature.dev.tasks.coverage]
+args = [ { "arg" = "flags", "default" = "" } ]
+cmd = "pytest -n=0 --cov=gravity_toolkit --junitxml=pytest.xml --cov-report=xml {{ flags }} test"
+description = "Run the pytest suite and create coverage reports"
 
 [tool.pixi.feature.dev.tasks.lint]
 args = [ { "arg" = "flags", "default" = "--select=E9,F63,F7,F82 --show-source" }, { "arg" = "test", "default" = "." } ]
