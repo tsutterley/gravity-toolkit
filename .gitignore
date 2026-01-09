@@ -41,7 +41,9 @@ wheels/
 .installed.cfg
 *.egg
 .pytest_cache
+pytest.xml
 .coverage
+coverage.xml
 pythonenv*/
 venv/
 *build-commands.txt
