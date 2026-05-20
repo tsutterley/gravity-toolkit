@@ -16,13 +16,13 @@ Using the ``pytest`` command:
 
 .. code-block:: bash
 
-    pytest --directory <path_to_tide_models> test/
+    pytest test/
 
 Using ``pixi``:
 
 .. code-block:: bash
 
-    pixi run test "--directory <path_to_tide_models>"
+    pixi run test
 
 The test suite is run in verbose mode as a default.
 
