@@ -20,6 +20,8 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 07/2026: add dunder (magic) methods for mathematical operations
+        add option to change the output format for ascii files
     Updated 10/2024: allow 2D and 3D arrays in output netCDF4 files
     Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 05/2024: make subscriptable and allow item assignment
@@ -734,6 +736,8 @@ class spatial(object):
             full path of output ascii file
         date: bool, default True
             ``spatial`` objects contain date information
+        float_format: str, default '12.4f'
+            format for floating point numbers in output ascii file
         verbose: bool, default False
             Output file and variable information
         """
@@ -744,14 +748,16 @@ class spatial(object):
         logging.info(str(self.filename))
         # open the output file
         fid = self.filename.open(mode='w', encoding='utf8')
+        file_format = '{0:10.4f} {1:10.4f} '
+        float_format = kwargs.get('float_format', '12.4f')
         if hasattr(self, 'error') and kwargs['date']:
-            file_format = '{0:10.4f} {1:10.4f} {2:12.4f} {3:12.4f} {4:10.4f}'
+            file_format += ' '.join([f'{{{i}:' + float_format + '}' for i in (2,3,4)])
         elif hasattr(self, 'error'):
-            file_format = '{0:10.4f} {1:10.4f} {2:12.4f} {3:12.4f}'
+            file_format += ' '.join([f'{{{i}:' + float_format + '}' for i in (2,3)])
         elif kwargs['date']:
-            file_format = '{0:10.4f} {1:10.4f} {2:12.4f} {4:10.4f}'
+            file_format += ' '.join([f'{{{i}:' + float_format + '}' for i in (2,4)])
         else:
-            file_format = '{0:10.4f} {1:10.4f} {2:12.4f}'
+            file_format += ' '.join([f'{{{i}:' + float_format + '}' for i in (2,)])
         # write to file for each valid latitude and longitude
         ii,jj = np.nonzero((self.data != self.fill_value) & (~self.mask))
         for i,j in zip(ii,jj):
@@ -1706,6 +1712,56 @@ class spatial(object):
             properties.append(f"    start_month: {min(self.month)}")
             properties.append(f"    end_month: {max(self.month)}")
         return '\n'.join(properties)
+
+    def __add__(self, other):
+        """Add values to a ``spatial`` object"""
+        temp = self.copy()
+        return temp.offset(other)
+
+    def __div__(self, other):
+        """Divide values from a ``spatial`` object"""
+        temp = self.copy()
+        return temp.scale(1.0 / other)
+    
+    def __iadd__(self, other):
+        """In-place add values to a ``spatial`` object"""
+        return self.offset(other)
+
+    def __idiv__(self, other):
+        """In-place divide values from a ``spatial`` object"""
+        return self.scale(1.0 / other)
+
+    def __imul__(self, other):
+        """In-place multiply values from a ``spatial`` object"""
+        return self.scale(other)
+
+    def __ipow__(self, other):
+        """In-place raise values from a ``spatial`` object to a power"""
+        return self.power(other)
+
+    def __isub__(self, other):
+        """In-place subtract values from a ``spatial`` object"""
+        return self.offset(-other)
+
+    def __mul__(self, other):
+        """Multiply values from a ``spatial`` object"""
+        temp = self.copy()
+        return temp.scale(other)
+    
+    def __pow__(self, other):
+        """Raise values from a ``spatial`` object to a power"""
+        temp = self.copy()
+        return temp.power(other)
+    
+    def __sub__(self, other):
+        """Subtract values from a ``spatial`` object"""
+        temp = self.copy()
+        return temp.offset(-other)
+
+    def __truediv__(self, other):
+        """Divide values from a ``spatial`` object"""
+        temp = self.copy()
+        return temp.scale(1.0 / other)
 
     def __len__(self):
         """Number of months

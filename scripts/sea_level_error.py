@@ -140,7 +140,7 @@ def sea_level_error(PROC, DREL, DSET, LMAX,
     dlon,dlat = landsea.spacing
     nlat, nlon = landsea.shape
     # calculate Fully-Normalized Legendre Polynomials
-    th = (90.0 - landsea.lat)*np.pi/180.0
+    th = np.radians(90.0 - landsea.lat)
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(th))
 
     # create index file for least_squares_mascons.py

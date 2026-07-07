@@ -330,7 +330,7 @@ def C20(SLR_file, AOD=True, HEADER=True):
                 YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
                     MJD+2400000.5, format='tuple')
                 # converting from month, day, year into decimal year
-                dinput['time'][t] = gravity_toolkit.time.convert_calendar_decimal(
+                dinput['time'][t], = gravity_toolkit.time.convert_calendar_decimal(
                     YY, MM, day=DD, hour=hh)
                 # Spherical Harmonic data for line
                 dinput['data'][t] = np.float64(line_contents[2])
@@ -390,7 +390,7 @@ def C20(SLR_file, AOD=True, HEADER=True):
                 YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
                     MJD+2400000.5, format='tuple')
                 # converting from month, day, year into decimal year
-                date_conv[t] = gravity_toolkit.time.convert_calendar_decimal(
+                date_conv[t], = gravity_toolkit.time.convert_calendar_decimal(
                     YY, MM, day=DD, hour=hh)
                 # Spherical Harmonic data for line
                 C20_input[t] = np.float64(line_contents[2])

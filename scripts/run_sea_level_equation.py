@@ -178,7 +178,7 @@ def run_sea_level_equation(INPUT_FILE, OUTPUT_FILE,
     nth,nphi = landsea.shape
     land_function = np.zeros((nth, nphi), dtype=np.float64)
     # calculate colatitude in radians
-    th = (90.0 - landsea.lat)*np.pi/180.0
+    th = np.radians(90.0 - landsea.lat)
     # extract land function from file
     # combine land and island levels for land function
     indx,indy = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))

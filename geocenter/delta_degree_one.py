@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 delta_degree_one.py
-Written by Tyler Sutterley (10/2023)
+Written by Tyler Sutterley (07/2026)
 
 Calculates degree 1 errors using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from OMCT/MPIOM
@@ -147,6 +147,8 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 07/2026: use np.einsum for spherical harmonic summations
+        use np.radians to convert from degrees to radians
     Updated 10/2023: generalize mission variable to be GRACE/GRACE-FO
     Updated 09/2023: simplify I-matrix and G-matrix calculations
     Updated 05/2023: use pathlib to define and operate on paths
@@ -317,11 +319,11 @@ def delta_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     dlon,dlat = landsea.spacing
     nlat, nlon = landsea.shape
     # spatial parameters in radians
-    dphi = dlon*np.pi/180.0
-    dth = dlat*np.pi/180.0
+    dphi = np.radians(dlon)
+    dth = np.radians(dlat)
     # longitude and colatitude in radians
-    phi = landsea.lon[np.newaxis,:]*np.pi/180.0
-    th = (90.0 - np.squeeze(landsea.lat))*np.pi/180.0
+    phi = np.radians(landsea.lon[np.newaxis,:])
+    th = np.radians(90.0 - np.squeeze(landsea.lat))
     # create land function
     land_function = np.zeros((nlon, nlat),dtype=np.float64)
     # extract land function from file
@@ -442,47 +444,45 @@ def delta_degree_one(base_dir, PROC, DREL, LMAX, RAD,
 
     # Calculating cos/sin of phi arrays
     # output [m,phi]
-    m = GSM_Ylms.m[:, np.newaxis]
+    m = GSM_Ylms.m
     # Integration factors (solid angle)
     int_fact = np.sin(th)*dphi*dth
-    # Calculating cos(m*phi) and sin(m*phi)
-    ccos = np.cos(np.dot(m,phi))
-    ssin = np.sin(np.dot(m,phi))
+    # 4-pi normalization
+    norm = 1.0/(4.0*np.pi)
+    # calculating cos(m*phi) and sin(m*phi) using Euler's formula
+    m_phi = np.exp(1j * np.einsum("m...,p...->mp...", m, phi))
 
     # Legendre polynomials for degree 1
     P10 = np.squeeze(PLM[1,0,:])
     P11 = np.squeeze(PLM[1,1,:])
-    # PLM for spherical harmonic degrees 2+
+    # PLM for spherical harmonic degrees 2+ up to LMAX
     # converted into mass and smoothed if specified
     plmout = np.zeros((LMAX+1, MMAX+1, nlat))
-    for l in range(1,LMAX+1):
-        m = np.arange(0,np.min([l,MMAX])+1)
-        # convert to smoothed coefficients of mass
-        # Convolving plms with degree dependent factor and smoothing
-        plmout[l,m,:] = PLM[l,m,:]*dfactor[l]*wt[l]
+    # convert to smoothed coefficients of mass
+    # Convolving plms with degree dependent factor and smoothing
+    plmout[:] = np.einsum("l,l,lmh->lmh", dfactor, wt, PLM[:LMAX+1,:MMAX+1,:])
 
     # Initializing 3x3 I-Parameter matrix
-    IMAT = np.zeros((3,3))
-    # Calculating I-Parameter matrix by integrating over latitudes
+    # (see equations 12 and 13 of Swenson et al., 2008)
+    IMAT = np.zeros((3, 3))
     # I-Parameter matrix accounts for the fact that the GRACE data only
     # includes spherical harmonic degrees greater than or equal to 2
-    for i in range(0,nlat):
-        # C10, C11, S11
-        PC10 = P10[i]*ccos[0,:]
-        PC11 = P11[i]*ccos[1,:]
-        PS11 = P11[i]*ssin[1,:]
-        # C10: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
-        IMAT[0,0] += np.sum(int_fact[i]*PC10*ocean_function[:,i]*PC10)/(4.0*np.pi)
-        IMAT[1,0] += np.sum(int_fact[i]*PC10*ocean_function[:,i]*PC11)/(4.0*np.pi)
-        IMAT[2,0] += np.sum(int_fact[i]*PC10*ocean_function[:,i]*PS11)/(4.0*np.pi)
-        # C11: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
-        IMAT[0,1] += np.sum(int_fact[i]*PC11*ocean_function[:,i]*PC10)/(4.0*np.pi)
-        IMAT[1,1] += np.sum(int_fact[i]*PC11*ocean_function[:,i]*PC11)/(4.0*np.pi)
-        IMAT[2,1] += np.sum(int_fact[i]*PC11*ocean_function[:,i]*PS11)/(4.0*np.pi)
-        # S11: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
-        IMAT[0,2] += np.sum(int_fact[i]*PS11*ocean_function[:,i]*PC10)/(4.0*np.pi)
-        IMAT[1,2] += np.sum(int_fact[i]*PS11*ocean_function[:,i]*PC11)/(4.0*np.pi)
-        IMAT[2,2] += np.sum(int_fact[i]*PS11*ocean_function[:,i]*PS11)/(4.0*np.pi)
+    # C10, C11, S11
+    PC10 = np.einsum("h...,p...->ph...", P10, m_phi[0,:].real)
+    PC11 = np.einsum("h...,p...->ph...", P11, m_phi[1,:].real)
+    PS11 = np.einsum("h...,p...->ph...", P11, m_phi[1,:].imag)
+    # C10: C10, C11, S11
+    IMAT[0,0] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC10, ocean_function, PC10)
+    IMAT[1,0] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC10, ocean_function, PC11)
+    IMAT[2,0] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC10, ocean_function, PS11)
+    # C11: C10, C11, S11
+    IMAT[0,1] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC11, ocean_function, PC10)
+    IMAT[1,1] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC11, ocean_function, PC11)
+    IMAT[2,1] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC11, ocean_function, PS11)
+    # S11: C10, C11, S11
+    IMAT[0,2] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PS11, ocean_function, PC10)
+    IMAT[1,2] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PS11, ocean_function, PC11)
+    IMAT[2,2] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PS11, ocean_function, PS11)
 
     # iterate solutions: if not single iteration
     n_iter = 0
@@ -499,9 +499,6 @@ def delta_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     # Allocate for G matrix parameters
     # G matrix calculates the GRACE ocean mass variations
     G = gravtk.geocenter()
-    G.C10 = 0.0
-    G.C11 = 0.0
-    G.S11 = 0.0
     # degree 1 iterations
     iteration = gravtk.geocenter()
     iteration.C10 = np.zeros((max_iter))
@@ -509,29 +506,19 @@ def delta_degree_one(base_dir, PROC, DREL, LMAX, RAD,
     iteration.S11 = np.zeros((max_iter))
     # calculate non-iterated terms (G-matrix parameters)
     # calculate geocenter component of ocean mass with GRACE
-    # allocate for product of grace and legendre polynomials
-    pcos = np.zeros((MMAX+1, nlat))#-[m,lat]
-    psin = np.zeros((MMAX+1, nlat))#-[m,lat]
-    # Summing product of plms and c/slms over all SH degrees >= 2
-    for i in range(0, nlat):
-        l = np.arange(2,LMAX+1)
-        pcos[:,i] = np.sum(((plmout[l,:,i]*delta_Ylms.clm[l,:])**2)/nsmth, axis=0)
-        psin[:,i] = np.sum(((plmout[l,:,i]*delta_Ylms.slm[l,:])**2)/nsmth, axis=0)
+    # subset GRACE to degrees 2+ for calculating ocean mass
+    l2 = slice(2, LMAX+1)
+    pconv = np.einsum("lmh...,lm...->mh...", plmout[l2, :, :], delta_Ylms.ilm[l2, :])
     # Multiplying by c/s(phi#m) to get surface density in cmwe (lon,lat)
     # ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
     # The summation over spherical harmonic order is in this multiplication
-    rmass = np.sqrt(np.dot(np.transpose(ccos**2),pcos) + np.dot(np.transpose(ssin**2),psin))
+    rmass = np.einsum("mp...,mh...->ph...", m_phi, pconv)
     # calculate G matrix parameters through a summation of each latitude
-    for i in range(0,nlat):
-        # C10, C11, S11
-        PC10 = P10[i]*ccos[0,:]
-        PC11 = P11[i]*ccos[1,:]
-        PS11 = P11[i]*ssin[1,:]
-        # summation of integration factors, Legendre polynomials,
-        # (convolution of order and harmonics) and the ocean mass at t
-        G.C10 += np.sum(int_fact[i]*PC10*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
-        G.C11 += np.sum(int_fact[i]*PC11*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
-        G.S11 += np.sum(int_fact[i]*PS11*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
+    # summation of integration factors, Legendre polynomials,
+    # (convolution of order and harmonics) and the ocean mass at t
+    G.C10 = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC10, ocean_function, rmass)
+    G.C11 = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC11, ocean_function, rmass)
+    G.S11 = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PS11, ocean_function, rmass)
 
     # calculate degree one solution for each iteration (or single if not)
     while (eps > eps_max) and (n_iter < max_iter):
@@ -549,22 +536,14 @@ def delta_degree_one(base_dir, PROC, DREL, LMAX, RAD,
             delta_Ylms.clm[1,1] = iteration.C11[n_iter-1]
             delta_Ylms.slm[1,1] = iteration.S11[n_iter-1]
 
-        # allocate for product of grace and legendre polynomials
-        pcos = np.zeros((MMAX+1, nlat))#-[m,lat]
-        psin = np.zeros((MMAX+1, nlat))#-[m,lat]
         # Summing product of plms and c/slms over all SH degrees
-        for i in range(0, nlat):
-            # for land water: use an initial seasonal geocenter estimate
-            # from Chen et al. (1999)
-            l = np.arange(1,LMAX+1)
-            pcos[:,i] = np.sum(((plmout[l,:,i]*delta_Ylms.clm[l,:])**2)/nsmth, axis=0)
-            psin[:,i] = np.sum(((plmout[l,:,i]*delta_Ylms.slm[l,:])**2)/nsmth, axis=0)
+        l1 = slice(1, LMAX+1)
+        pconv = np.einsum("lmh...,lm...->mh...", plmout[l1, :, :], delta_Ylms.ilm[l1, :])
 
         # Multiplying by c/s(phi#m) to get surface density in cm w.e. (lonxlat)
-        # this will be a spatial field similar to outputs from stokes_combine.py
         # ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
         # The summation over spherical harmonic order is in this multiplication
-        lmass = np.sqrt(np.dot(np.transpose(ccos**2),pcos) + np.dot(np.transpose(ssin**2),psin))
+        lmass = np.einsum("mp...,mh...->ph...", m_phi, pconv)
 
         # use sea level fingerprints or eustatic from GRACE land components
         if FINGERPRINT:

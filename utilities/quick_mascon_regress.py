@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 quick_mascon_regress.py
-Written by Tyler Sutterley (06/2023)
+Written by Tyler Sutterley (07/2026)
 Creates a regression summary file for a mascon time series file
 
 COMMAND LINE OPTIONS:
@@ -22,6 +22,7 @@ PROGRAM DEPENDENCIES:
     time_series.amplitude.py: calculates the amplitude and phase of a harmonic
 
 UPDATE HISTORY:
+    Updated 07/2026: use np.hypot to calculate the sum of two squares
     Updated 06/2023: can choose different tidal aliasing periods
     Updated 05/2023: split S2 tidal aliasing terms into GRACE and GRACE-FO eras
         allow fit to be piecewise using a known breakpoint GRACE/GRACE-FO month
@@ -185,11 +186,11 @@ def run_regress(input_file,
             # Amplitude Errors
             comp1 = fit[err][j]*fit['beta'][j]/amp['beta'][i]
             comp2 = fit[err][j+1]*fit['beta'][j+1]/amp['beta'][i]
-            amp[err][i] = np.sqrt(comp1**2 + comp2**2)
+            amp[err][i] = np.hypot(comp1, comp2)
             # Phase Error (degrees)
             comp1 = fit[err][j]*fit['beta'][j+1]/(amp['beta'][i]**2)
             comp2 = fit[err][j+1]*fit['beta'][j]/(amp['beta'][i]**2)
-            ph[err][i] = (180.0/np.pi)*np.sqrt(comp1**2 + comp2**2)
+            ph[err][i] = np.degrees(np.hypot(comp1, comp2))
 
     # Amplitude, Error and Statistical Significance
     args = ('Ampl.','Estimate','Std. Error','95% Conf.','Units')

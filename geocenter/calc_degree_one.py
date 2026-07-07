@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 calc_degree_one.py
-Written by Tyler Sutterley (01/2025)
+Written by Tyler Sutterley (07/2026)
 
 Calculates degree 1 variations using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from ECCO and OMCT/MPIOM
@@ -99,7 +99,16 @@ COMMAND LINE OPTIONS:
         HDF5
     --ocean-file X: Index file for ocean model harmonics
     --mean-file X: GRACE/GRACE-FO mean file to remove from the harmonic data
-    --mean-format X: Input data format for GRACE/GRACE-FO mean file
+    --mean-format X: Input data format for GRACE/GRACE-FO mean file'
+    --remove-file X: Monthly files to be removed from the GRACE/GRACE-FO data
+    --remove-format X: Input data format for files to be removed
+        ascii
+        netCDF4
+        HDF5
+        index-ascii
+        index-netCDF4
+        index-HDF5
+    --redistribute-removed: redistribute removed mass fields over the ocean
     --iterative: Iterate degree one solutions
     -s X, --solver X: Least squares solver for degree one solutions
         inv: matrix inversion
@@ -167,6 +176,9 @@ REFERENCES:
         https://doi.org/10.1029/2007JB005338
 
 UPDATE HISTORY:
+    Updated 07/2026: use np.einsum for spherical harmonic summations
+        can remove sets of harmonic files from the GRACE/GRACE-FO data
+        use np.radians to convert from degrees to radians
     Updated 01/2025: fixed deprecated tick label resizing
     Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 10/2023: generalize mission variable to be GRACE/GRACE-FO
@@ -340,12 +352,12 @@ def model_seasonal_geocenter(grace_date):
     SAPz = 75.0
     # calculate each geocenter component from the amplitude and phase
     # converting the phase from degrees to radians
-    X = AAx*np.sin(2.0*np.pi*grace_date + APx*np.pi/180.0) + \
-        SAAx*np.sin(4.0*np.pi*grace_date + SAPx*np.pi/180.0)
-    Y = AAy*np.sin(2.0*np.pi*grace_date + APy*np.pi/180.0) + \
-        SAAy*np.sin(4.0*np.pi*grace_date + SAPy*np.pi/180.0)
-    Z = AAz*np.sin(2.0*np.pi*grace_date + APz*np.pi/180.0) + \
-        SAAz*np.sin(4.0*np.pi*grace_date + SAPz*np.pi/180.0)
+    X = AAx*np.sin(2.0*np.pi*grace_date + np.radians(APx)) + \
+        SAAx*np.sin(4.0*np.pi*grace_date + np.radians(SAPx))
+    Y = AAy*np.sin(2.0*np.pi*grace_date + np.radians(APy)) + \
+        SAAy*np.sin(4.0*np.pi*grace_date + np.radians(SAPy))
+    Z = AAz*np.sin(2.0*np.pi*grace_date + np.radians(APz)) + \
+        SAAz*np.sin(4.0*np.pi*grace_date + np.radians(SAPz))
     DEG1 = gravtk.geocenter(X=X-X.mean(), Y=Y-Y.mean(), Z=Z-Z.mean())
     return DEG1.from_cartesian()
 
@@ -371,6 +383,9 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     DATAFORM=None,
     MEAN_FILE=None,
     MEANFORM=None,
+    REMOVE_FILES=None,
+    REMOVE_FORMAT=None,
+    REDISTRIBUTE_REMOVED=False,
     MODEL_INDEX=None,
     ITERATIVE=False,
     SOLVER=None,
@@ -484,13 +499,13 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     dlon,dlat = landsea.spacing
     nlat, nlon = landsea.shape
     # spatial parameters in radians
-    dphi = dlon*np.pi/180.0
-    dth = dlat*np.pi/180.0
+    dphi = np.radians(dlon)
+    dth = np.radians(dlat)
     # longitude and colatitude in radians
-    phi = landsea.lon[np.newaxis,:]*np.pi/180.0
-    th = (90.0 - np.squeeze(landsea.lat))*np.pi/180.0
+    phi = np.radians(np.squeeze(landsea.lon))
+    th = np.radians(90.0 - np.squeeze(landsea.lat))
     # create land function
-    land_function = np.zeros((nlon, nlat),dtype=np.float64)
+    land_function = np.zeros((nlon, nlat), dtype=np.float64)
     # extract land function from file
     # combine land and island levels for land function
     indx,indy = np.nonzero((landsea.data.T >= 1) & (landsea.data.T <= 3))
@@ -575,17 +590,16 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     GAD = gravtk.geocenter()
     GAD.time = np.copy(GAD_Ylms.time)
     GAD.month = np.copy(GAD_Ylms.month)
-    GAD.C10 = np.zeros((n_files))
-    GAD.C11 = np.zeros((n_files))
-    GAD.S11 = np.zeros((n_files))
-    for t in range(0,n_files):
-        # converting GAD degree 1 harmonics to mass
-        # NOTE: following Swenson (2008): do not use the kl Load Love number
-        # to convert the GAD coefficients into coefficients of mass as
-        # the GAC and GAD products are computed with a Load Love number of 0
-        GAD.C10[t] = rho_e*rad_e*np.squeeze(GAD_Ylms.clm[1,0,t])*(2.0 + 1.0)/3.0
-        GAD.C11[t] = rho_e*rad_e*np.squeeze(GAD_Ylms.clm[1,1,t])*(2.0 + 1.0)/3.0
-        GAD.S11[t] = rho_e*rad_e*np.squeeze(GAD_Ylms.slm[1,1,t])*(2.0 + 1.0)/3.0
+    GAD.C10 = np.empty((n_files))
+    GAD.C11 = np.empty((n_files))
+    GAD.S11 = np.empty((n_files))
+    # converting GAD degree 1 harmonics to mass
+    # NOTE: following Swenson (2008): do not use the kl Load Love number
+    # to convert the GAD coefficients into coefficients of mass as
+    # the GAC and GAD products are computed with a Load Love number of 0
+    GAD.C10[:] = rho_e*rad_e*np.squeeze(GAD_Ylms.clm[1,0,:])*(2.0 + 1.0)/3.0
+    GAD.C11[:] = rho_e*rad_e*np.squeeze(GAD_Ylms.clm[1,1,:])*(2.0 + 1.0)/3.0
+    GAD.S11[:] = rho_e*rad_e*np.squeeze(GAD_Ylms.slm[1,1,:])*(2.0 + 1.0)/3.0
     # removing the mean of the GAD OBP coefficients
     GAD.mean(apply=True)
 
@@ -622,14 +636,66 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         # converting ecco degree 1 harmonics to coefficients of mass
         OBP = gravtk.geocenter.from_harmonics(OBP_Ylms).scale(dfactor[1])
 
+    # input spherical harmonic datafiles to be removed from the GRACE data
+    # Remove sets of Ylms from the GRACE data before returning
+    remove_Ylms = GSM_Ylms.zeros_like()
+    remove_Ylms.time[:] = np.copy(GSM_Ylms.time)
+    remove_Ylms.month[:] = np.copy(GSM_Ylms.month)
+    if REMOVE_FILES:
+        # extend list if a single format was entered for all files
+        if len(REMOVE_FORMAT) < len(REMOVE_FILES):
+            REMOVE_FORMAT = REMOVE_FORMAT*len(REMOVE_FILES)
+        # for each file to be removed
+        for REMOVE_FILE,REMOVEFORM in zip(REMOVE_FILES,REMOVE_FORMAT):
+            if REMOVEFORM in ('ascii','netCDF4','HDF5'):
+                # ascii (.txt)
+                # netCDF4 (.nc)
+                # HDF5 (.H5)
+                Ylms = gravtk.harmonics().from_file(REMOVE_FILE,
+                    format=REMOVEFORM)
+                attributes['lineage'].append(Ylms.filename)
+            elif REMOVEFORM in ('index-ascii','index-netCDF4','index-HDF5'):
+                # read from index file
+                _,removeform = REMOVEFORM.split('-')
+                # index containing files in data format
+                Ylms = gravtk.harmonics().from_index(REMOVE_FILE,
+                    format=removeform)
+                attributes['lineage'].extend([f.name for f in Ylms.filename])
+            # reduce to GRACE/GRACE-FO months and truncate to degree and order
+            Ylms = Ylms.subset(GSM_Ylms.month).truncate(lmax=LMAX, mmax=MMAX)
+            # remove the temporal mean of the coefficients
+            Ylms.mean(apply=True)
+            # distribute removed Ylms uniformly over the ocean
+            if REDISTRIBUTE_REMOVED:
+                # calculate ratio between total removed mass and
+                # a uniformly distributed cm of water over the ocean
+                ratio = Ylms.clm[0,0,:]/ocean_Ylms.clm[0,0]
+                # for each spherical harmonic
+                for m in range(0,MMAX+1):# MMAX+1 to include MMAX
+                    for l in range(m,LMAX+1):# LMAX+1 to include LMAX
+                        # remove the ratio*ocean Ylms from Ylms
+                        # note: x -= y is equivalent to x = x - y
+                        Ylms.clm[l,m,:] -= ratio*ocean_Ylms.clm[l,m]
+                        Ylms.slm[l,m,:] -= ratio*ocean_Ylms.slm[l,m]
+            # filter removed coefficients
+            if DESTRIPE:
+                Ylms = Ylms.destripe()
+            # add data for month t and INDEX_FILE to the total
+            # remove_clm and remove_slm matrices
+            # redistributing the mass over the ocean if specified
+            remove_Ylms.add(Ylms)
+    # save geocenter coefficients of the auxiliary corrections
+    remove = gravtk.geocenter().from_harmonics(remove_Ylms)
+
     # Calculating cos/sin of phi arrays
     # output [m,phi]
-    m = GSM_Ylms.m[:, np.newaxis]
+    m = GSM_Ylms.m
     # Integration factors (solid angle)
     int_fact = np.sin(th)*dphi*dth
-    # Calculating cos(m*phi) and sin(m*phi)
-    ccos = np.cos(np.dot(m,phi))
-    ssin = np.sin(np.dot(m,phi))
+    # 4-pi normalization
+    norm = 1.0/(4.0*np.pi)
+    # calculating cos(m*phi) and sin(m*phi) using Euler's formula
+    m_phi = np.exp(1j * np.einsum("m...,p...->mp...", m, phi))
 
     # Legendre polynomials for degree 1
     P10 = np.squeeze(PLM[1,0,:])
@@ -637,34 +703,31 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     # PLM for spherical harmonic degrees 2+ up to LMAX
     # converted into mass and smoothed if specified
     plmout = np.zeros((LMAX+1, MMAX+1, nlat))
-    for l in range(1,LMAX+1):
-        m = np.arange(0,np.min([l,MMAX])+1)
-        # convert to smoothed coefficients of mass
-        # Convolving plms with degree dependent factor and smoothing
-        plmout[l,m,:] = PLM[l,m,:]*dfactor[l]*wt[l]
+    # convert to smoothed coefficients of mass
+    # Convolving plms with degree dependent factor and smoothing
+    plmout[:] = np.einsum("l,l,lmh->lmh", dfactor, wt, PLM[:LMAX+1,:MMAX+1,:])
 
     # Initializing 3x3 I-Parameter matrix
-    IMAT = np.zeros((3,3))
-    # Calculating I-Parameter matrix by integrating over latitudes
+    # (see equations 12 and 13 of Swenson et al., 2008)
+    IMAT = np.zeros((3, 3))
     # I-Parameter matrix accounts for the fact that the GRACE data only
     # includes spherical harmonic degrees greater than or equal to 2
-    for i in range(0,nlat):
-        # C10, C11, S11
-        PC10 = P10[i]*ccos[0,:]
-        PC11 = P11[i]*ccos[1,:]
-        PS11 = P11[i]*ssin[1,:]
-        # C10: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
-        IMAT[0,0] += np.sum(int_fact[i]*PC10*ocean_function[:,i]*PC10)/(4.0*np.pi)
-        IMAT[1,0] += np.sum(int_fact[i]*PC10*ocean_function[:,i]*PC11)/(4.0*np.pi)
-        IMAT[2,0] += np.sum(int_fact[i]*PC10*ocean_function[:,i]*PS11)/(4.0*np.pi)
-        # C11: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
-        IMAT[0,1] += np.sum(int_fact[i]*PC11*ocean_function[:,i]*PC10)/(4.0*np.pi)
-        IMAT[1,1] += np.sum(int_fact[i]*PC11*ocean_function[:,i]*PC11)/(4.0*np.pi)
-        IMAT[2,1] += np.sum(int_fact[i]*PC11*ocean_function[:,i]*PS11)/(4.0*np.pi)
-        # S11: C10, C11, S11 (see equations 12 and 13 of Swenson et al., 2008)
-        IMAT[0,2] += np.sum(int_fact[i]*PS11*ocean_function[:,i]*PC10)/(4.0*np.pi)
-        IMAT[1,2] += np.sum(int_fact[i]*PS11*ocean_function[:,i]*PC11)/(4.0*np.pi)
-        IMAT[2,2] += np.sum(int_fact[i]*PS11*ocean_function[:,i]*PS11)/(4.0*np.pi)
+    # C10, C11, S11
+    PC10 = np.einsum("h...,p...->ph...", P10, m_phi[0,:].real)
+    PC11 = np.einsum("h...,p...->ph...", P11, m_phi[1,:].real)
+    PS11 = np.einsum("h...,p...->ph...", P11, m_phi[1,:].imag)
+    # C10: C10, C11, S11
+    IMAT[0,0] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC10, ocean_function, PC10)
+    IMAT[1,0] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC10, ocean_function, PC11)
+    IMAT[2,0] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC10, ocean_function, PS11)
+    # C11: C10, C11, S11
+    IMAT[0,1] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC11, ocean_function, PC10)
+    IMAT[1,1] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC11, ocean_function, PC11)
+    IMAT[2,1] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC11, ocean_function, PS11)
+    # S11: C10, C11, S11
+    IMAT[0,2] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PS11, ocean_function, PC10)
+    IMAT[1,2] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PS11, ocean_function, PC11)
+    IMAT[2,2] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PS11, ocean_function, PS11)
 
     # get seasonal variations of an initial geocenter correction
     # for use in the land water mass calculation
@@ -691,39 +754,32 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     DMAT = np.zeros((3,n_files))
     # degree 1 iterations
     iteration = gravtk.geocenter()
-    iteration.C10 = np.zeros((n_files,max_iter))
-    iteration.C11 = np.zeros((n_files,max_iter))
-    iteration.S11 = np.zeros((n_files,max_iter))
+    iteration.C10 = np.zeros((n_files, max_iter))
+    iteration.C11 = np.zeros((n_files, max_iter))
+    iteration.S11 = np.zeros((n_files, max_iter))
     # calculate non-iterated terms for each file (G-matrix parameters)
     for t in range(n_files):
         # calculate geocenter component of ocean mass with GRACE
-        # allocate for product of grace and legendre polynomials
-        pcos = np.zeros((MMAX+1, nlat))#-[m,lat]
-        psin = np.zeros((MMAX+1, nlat))#-[m,lat]
         # Summing product of plms and c/slms over all SH degrees >= 2
-        # Removing monthly GIA signal and atmospheric correction
+        # Removing monthly GIA signal, atmospheric correction
+        # and the auxiliary coefficients
         Ylms = GSM_Ylms.index(t)
         Ylms.subtract(GIA_Ylms.index(t))
         Ylms.subtract(ATM_Ylms.index(t))
-        for i in range(0, nlat):
-            l = np.arange(2,LMAX+1)
-            pcos[:,i] = np.sum(plmout[l,:,i]*Ylms.clm[l,:], axis=0)
-            psin[:,i] = np.sum(plmout[l,:,i]*Ylms.slm[l,:], axis=0)
+        Ylms.subtract(remove_Ylms.index(t))
+        # subset GRACE to degrees 2+ for calculating ocean mass
+        l2 = slice(2, LMAX+1)
+        pconv = np.einsum("lmh...,lm...->mh...", plmout[l2, :, :], Ylms.ilm[l2, :])
         # Multiplying by c/s(phi#m) to get surface density in cmwe (lon,lat)
         # ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
         # The summation over spherical harmonic order is in this multiplication
-        rmass = np.dot(np.transpose(ccos),pcos) + np.dot(np.transpose(ssin),psin)
+        rmass = np.einsum("mp...,mh...->ph...", m_phi, pconv)
         # calculate G matrix parameters through a summation of each latitude
-        for i in range(0,nlat):
-            # C10, C11, S11
-            PC10 = P10[i]*ccos[0,:]
-            PC11 = P11[i]*ccos[1,:]
-            PS11 = P11[i]*ssin[1,:]
-            # summation of integration factors, Legendre polynomials,
-            # (convolution of order and harmonics) and the ocean mass at t
-            G.C10[t] += np.sum(int_fact[i]*PC10*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
-            G.C11[t] += np.sum(int_fact[i]*PC11*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
-            G.S11[t] += np.sum(int_fact[i]*PS11*ocean_function[:,i]*rmass[:,i])/(4.0*np.pi)
+        # summation of integration factors, Legendre polynomials,
+        # (convolution of order and harmonics) and the ocean mass at t
+        G.C10[t] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC10, ocean_function, rmass)
+        G.C11[t] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC11, ocean_function, rmass)
+        G.S11[t] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PS11, ocean_function, rmass)
 
     # calculate degree one solution for each iteration (or single if not)
     while (eps > eps_max) and (n_iter < max_iter):
@@ -743,26 +799,22 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
                 GSM_Ylms.clm[1,1,t] = iteration.C11[t,n_iter-1]
                 GSM_Ylms.slm[1,1,t] = iteration.S11[t,n_iter-1]
 
-            # allocate for product of grace and legendre polynomials
-            pcos = np.zeros((MMAX+1, nlat))#-[m,lat]
-            psin = np.zeros((MMAX+1, nlat))#-[m,lat]
             # Summing product of plms and c/slms over all SH degrees
-            # Removing monthly GIA signal and atmospheric correction
+            # Removing monthly GIA signal, atmospheric correction
+            # and the auxiliary coefficients
             Ylms = GSM_Ylms.index(t)
             Ylms.subtract(GIA_Ylms.index(t))
             Ylms.subtract(ATM_Ylms.index(t))
-            for i in range(0, nlat):
-                # for land water: use an initial seasonal geocenter estimate
-                # from Chen et al. (1999) then the iterative if specified
-                l = np.arange(1,LMAX+1)
-                pcos[:,i] = np.sum(plmout[l,:,i]*Ylms.clm[l,:], axis=0)
-                psin[:,i] = np.sum(plmout[l,:,i]*Ylms.slm[l,:], axis=0)
+            Ylms.subtract(remove_Ylms.index(t))
+            # for land water: use an initial seasonal geocenter estimate
+            # from Chen et al. (1999) then the iterative if specified
+            l1 = slice(1, LMAX+1)
+            pconv = np.einsum("lmh...,lm...->mh...", plmout[l1, :, :], Ylms.ilm[l1, :])
 
             # Multiplying by c/s(phi#m) to get surface density in cm w.e. (lonxlat)
-            # this will be a spatial field similar to outputs from stokes_combine.py
             # ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
             # The summation over spherical harmonic order is in this multiplication
-            lmass = np.dot(np.transpose(ccos),pcos) + np.dot(np.transpose(ssin),psin)
+            lmass = np.einsum("mp...,mh...->ph...", m_phi, pconv)
 
             # use sea level fingerprints or eustatic from GRACE land components
             if FINGERPRINT:
@@ -780,8 +832,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
                 sea_level = gravtk.sea_level_equation(land_Ylms.clm, land_Ylms.slm,
                     landsea.lon, landsea.lat, land_function, LMAX=EXPANSION,
                     LOVE=LOVE, BODY_TIDE_LOVE=0, FLUID_LOVE=0, ITERATIONS=3,
-                    POLAR=True, PLM=PLM, ASTYPE=np.float64, SCALE=1e-32,
-                    FILL_VALUE=0)
+                    POLAR=True, PLM=PLM, FILL_VALUE=0)
                 # 3) convert sea level fingerprints into spherical harmonics
                 slf_Ylms = gravtk.gen_stokes(sea_level, landsea.lon, landsea.lat,
                     UNITS=1, LMIN=0, LMAX=1, PLM=PLM[:2,:2,:], LOVE=LOVE)
@@ -838,10 +889,14 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
             elif SOLVER in ('gelsd', 'gelsy', 'gelss'):
                 DMAT[:,t], res, rnk, s = scipy.linalg.lstsq(IMAT, (CMAT-GMAT),
                     lapack_driver=SOLVER)
-            # save geocenter for iteration and time t after restoring GIA+ATM
-            iteration.C10[t,n_iter] = DMAT[0,t]/dfactor[1]+gia.C10[t]+atm.C10[t]
-            iteration.C11[t,n_iter] = DMAT[1,t]/dfactor[1]+gia.C11[t]+atm.C11[t]
-            iteration.S11[t,n_iter] = DMAT[2,t]/dfactor[1]+gia.S11[t]+atm.S11[t]
+            # save geocenter for iteration and time t after restoring fields
+            iteration.C10[t,n_iter] = DMAT[0,t]/dfactor[1] + \
+                gia.C10[t] + atm.C10[t] + remove.C10[t]
+            iteration.C11[t,n_iter] = DMAT[1,t]/dfactor[1] + \
+                gia.C11[t] + atm.C11[t] + remove.C11[t]
+            iteration.S11[t,n_iter] = DMAT[2,t]/dfactor[1] + \
+                gia.S11[t] + atm.S11[t] + remove.S11[t]
+
         # remove mean of each solution for iteration
         iteration.C10[:,n_iter] -= iteration.C10[:,n_iter].mean()
         iteration.C11[:,n_iter] -= iteration.C11[:,n_iter].mean()
@@ -862,9 +917,9 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     # for each of the geocenter solutions (C10, C11, S11)
     # for the iterative case this will be the final iteration
     DEG1 = gravtk.geocenter()
-    DEG1.C10 = DMAT[0,:]/dfactor[1] + gia.C10[:] + atm.C10[:]
-    DEG1.C11 = DMAT[1,:]/dfactor[1] + gia.C11[:] + atm.C11[:]
-    DEG1.S11 = DMAT[2,:]/dfactor[1] + gia.S11[:] + atm.S11[:]
+    DEG1.C10 = DMAT[0,:]/dfactor[1] + gia.C10[:] + atm.C10[:] + remove.C10[t]
+    DEG1.C11 = DMAT[1,:]/dfactor[1] + gia.C11[:] + atm.C11[:] + remove.C11[t]
+    DEG1.S11 = DMAT[2,:]/dfactor[1] + gia.S11[:] + atm.S11[:] + remove.S11[t]
     # remove mean of geocenter for each component
     DEG1.mean(apply=True)
     # calculate geocenter variations with dealiasing restored
@@ -1528,6 +1583,19 @@ def arguments():
     parser.add_argument('--mean-format',
         type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5','gfc'],
         help='Input data format for GRACE/GRACE-FO mean file')
+    # monthly files to be removed from the GRACE/GRACE-FO data
+    parser.add_argument('--remove-file',
+        type=pathlib.Path, nargs='+',
+        help='Monthly files to be removed from the GRACE/GRACE-FO data')
+    choices = []
+    choices.extend(['ascii','netCDF4','HDF5'])
+    choices.extend(['index-ascii','index-netCDF4','index-HDF5'])
+    parser.add_argument('--remove-format',
+        type=str, nargs='+', choices=choices,
+        help='Input data format for files to be removed')
+    parser.add_argument('--redistribute-removed',
+        default=False, action='store_true',
+        help='Redistribute removed mass fields over the ocean')
     # run with iterative scheme
     parser.add_argument('--iterative',
         default=False, action='store_true',
@@ -1617,6 +1685,9 @@ def main():
             MODEL_INDEX=args.ocean_file,
             MEAN_FILE=args.mean_file,
             MEANFORM=args.mean_format,
+            REMOVE_FILES=args.remove_file,
+            REMOVE_FORMAT=args.remove_format,
+            REDISTRIBUTE_REMOVED=args.redistribute_removed,
             ITERATIVE=args.iterative,
             SOLVER=args.solver,
             FINGERPRINT=args.fingerprint,

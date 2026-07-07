@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 tools.py
-Written by Tyler Sutterley (11/2024)
+Written by Tyler Sutterley (07/2026)
 Jupyter notebook, user interface and plotting tools
 
 PYTHON DEPENDENCIES:
@@ -27,6 +27,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 07/2026: use np.radians and np.degrees for angle conversions
     Updated 11/2024: fix deprecated widget object copies
     Updated 04/2024: add widget for setting endpoint for accessing PODAAC data
     	place colormap registration within try/except to check for existing
@@ -1123,9 +1124,9 @@ def wrap_longitudes(lon):
     lon: np.ndarray
         longitude (degrees east)
     """
-    phi = np.arctan2(np.sin(lon*np.pi/180.0), np.cos(lon*np.pi/180.0))
+    phi = np.arctan2(np.sin(np.radians(lon)), np.cos(np.radians(lon)))
     # convert phi from radians to degrees
-    return phi*180.0/np.pi
+    return np.degrees(phi)
 
 # PURPOSE: parallels the matplotlib basemap shiftgrid function
 def shift_grid(lon0, data, lon, CYCLIC=360.0):

@@ -109,7 +109,7 @@ def combine_sea_level_data(index_file,
     dlon,dlat = landsea.spacing
     nlat, nlon = landsea.shape
     # longitude and colatitude in radians
-    th = (90.0 - np.squeeze(landsea.lat))*np.pi/180.0
+    th = np.radians(90.0 - np.squeeze(landsea.lat))
 
     # Calculating Legendre Polynomials using Holmes and Featherstone relation
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(th))

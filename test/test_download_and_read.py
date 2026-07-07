@@ -3,6 +3,7 @@ u"""
 test_download_and_read.py (11/2021)
 Tests the read program to verify that coefficients are being extracted
 """
+import pytest
 import pathlib
 import posixpath
 import gravity_toolkit as gravtk
@@ -42,6 +43,7 @@ def test_gfz_http_download_and_read():
     assert (Ylms['clm'][2,0] == -0.484169355584e-03)
 
 # PURPOSE: Download a GRACE file from GFZ and check that read program runs
+@pytest.mark.skip(reason="Deprecated GFZ FTP server")
 def test_gfz_ftp_download_and_read():
     HOST=['isdcftp.gfz-potsdam.de','grace','Level-2','CSR','RL06',
         'GSM-2_2002095-2002120_GRAC_UTCSR_BA01_0600.gz']
@@ -90,7 +92,7 @@ def test_esa_swarm_download_and_read():
 
 # PURPOSE: Download a GRACE ITSG GRAZ file and check that read program runs
 def test_itsg_graz_download_and_read():
-    HOST=['http://ftp.tugraz.at','outgoing','ITSG','GRACE',
+    HOST=['http://ftp.tugraz.at','pub','ITSG','GRACE',
         'ITSG-Grace_operational','monthly','monthly_n60',
         'ITSG-Grace_operational_n60_2018-06.gfc']
     # download and read as virtual file object

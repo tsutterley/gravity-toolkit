@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 clenshaw_summation.py
-Written by Tyler Sutterley (04/2023)
+Written by Tyler Sutterley (07/2026)
 Calculates the spatial field for a series of spherical harmonics for a
     sequence of ungridded points
 
@@ -49,6 +49,8 @@ REFERENCES:
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 07/2026: use np.einsum for spherical harmonic summations
+        use np.radians to convert from degrees to radians
     Updated 04/2023: allow love numbers to be None for custom units case
     Updated 03/2023: improve typing for variables in docstrings
     Updated 02/2023: set custom units as top option in if/else statements
@@ -123,8 +125,8 @@ def clenshaw_summation(clm, slm, lon, lat,
         raise ValueError('Incompatible vector dimensions (lon, lat)')
 
     # calculate colatitude and longitude in radians
-    th = (90.0 - lat)*np.pi/180.0
-    phi = np.squeeze(lon*np.pi/180.0)
+    th = np.radians(90.0 - lat)
+    phi = np.squeeze(np.radians(lon))
     # calculate cos and sin of colatitudes
     t = np.cos(th)
     u = np.sin(th)
@@ -134,7 +136,7 @@ def clenshaw_summation(clm, slm, lon, lat,
 
     # Gaussian Smoothing
     if (RAD != 0):
-        wl = 2.0*np.pi*gauss_weights(RAD,LMAX)
+        wl = 2.0*np.pi*gauss_weights(RAD, LMAX)
     else:
         # else = 1
         wl = np.ones((LMAX+1))
@@ -154,43 +156,42 @@ def clenshaw_summation(clm, slm, lon, lat,
     else:
         raise ValueError(f'Unknown units {UNITS}')
 
+    # complex spherical harmonics
+    ylm = clm - 1j * slm
+    # smooth degree dependent factors
+    f = dfactor*wl
     # calculate arrays for clenshaw summations over colatitudes
-    s_m_c = np.zeros((npts,LMAX*2+2))
+    cs_m = np.zeros((npts, LMAX+1), dtype=np.clongdouble)
     for m in range(LMAX, -1, -1):
         # convolve harmonics with unit factors and smoothing
-        s_m_c[:,2*m:2*m+2] = clenshaw_s_m(t, dfactor*wl, m, clm, slm,
-            LMAX, ASTYPE=ASTYPE, SCALE=SCALE)
+        cs_m[:, m] = _clenshaw(t, f, m, ylm, LMAX, SCALE=SCALE)
 
     # calculate cos(phi)
     cos_phi_2 = 2.0*np.cos(phi)
-    # matrix of cos/sin m*phi summation
-    cos_m_phi = np.zeros((npts,LMAX+2),dtype=ASTYPE)
-    sin_m_phi = np.zeros((npts,LMAX+2),dtype=ASTYPE)
+    # matrix of cos/sin m*phi summation (Euler's form)
+    m_phi = np.zeros((npts, LMAX+2), dtype=np.clongdouble)
     # initialize matrix with values at lmax+1 and lmax
-    cos_m_phi[:,LMAX+1] = np.cos(ASTYPE(LMAX + 1)*phi)
-    sin_m_phi[:,LMAX+1] = np.sin(ASTYPE(LMAX + 1)*phi)
-    cos_m_phi[:,LMAX] = np.cos(ASTYPE(LMAX)*phi)
-    sin_m_phi[:,LMAX] = np.sin(ASTYPE(LMAX)*phi)
+    m_phi[:,LMAX+1] = np.exp(1j * (LMAX + 1) * phi)
+    m_phi[:,LMAX] = np.exp(1j * LMAX*phi)
     # calculate summation for order LMAX
-    s_m = s_m_c[:,2*LMAX]*cos_m_phi[:,LMAX] + s_m_c[:,2*LMAX+1]*sin_m_phi[:,LMAX]
+    g = np.einsum("h...,p...->ph...", cs_m[:,LMAX], m_phi[:,LMAX])
+    s_m = g.real
     # iterate to calculate complete summation
     for m in range(LMAX-1, 0, -1):
-        cos_m_phi[:,m] = cos_phi_2*cos_m_phi[:,m+1] - cos_m_phi[:,m+2]
-        sin_m_phi[:,m] = cos_phi_2*sin_m_phi[:,m+1] - sin_m_phi[:,m+2]
         # calculate summation for order m
-        a_m = np.sqrt((2.0*m+3.0)/(2.0*m+2.0))
-        s_m = a_m*u*s_m + s_m_c[:,2*m]*cos_m_phi[:,m] + s_m_c[:,2*m+1]*sin_m_phi[:,m]
+        m_phi[:,m] = cos_phi_2*m_phi[:,m+1] - m_phi[:,m+2]
+        a_m = np.sqrt((2.0*m + 3.0)/(2.0*m + 2.0))
+        g = np.einsum("h...,p...->ph...", cs_m[:,m], m_phi[:,m])
+        # update summation and discard imaginary component
+        s_m = a_m*u*s_m + g.real
     # calculate spatial field
-    spatial = np.sqrt(3.0)*u*s_m + s_m_c[:,0]
+    spatial = np.sqrt(3.0)*u*s_m + cs_m[:,0].real
     # return the calculated spatial field
     return spatial
 
-# PURPOSE: compute conditioned arrays for Clenshaw summation from the
-# fully-normalized associated Legendre's function for an order m
-def clenshaw_s_m(t, f, m, clm1, slm1, lmax,
-        ASTYPE=np.longdouble,
-        SCALE=1e-280
-    ):
+# PURPOSE: compute Clenshaw summation of the fully normalized associated
+# Legendre's function for constant order m
+def _clenshaw(t, f, m, Ylm1, lmax, SCALE=1e-280):
     """
     Compute conditioned arrays for Clenshaw summation from the fully-normalized
     associated Legendre's function for an order m
@@ -203,14 +204,10 @@ def clenshaw_s_m(t, f, m, clm1, slm1, lmax,
         degree dependent factors
     m: int
         spherical harmonic order
-    clm1: np.ndarray
-        cosine spherical harmonics
-    slm1: np.ndarray
-        sine spherical harmonics
+    Ylm1: np.ndarray
+        complex form of spherical harmonics
     lmax: int
         maximum spherical harmonic degree
-    ASTYPE: np.dtype, default np.longdouble
-        floating point precision for calculating Clenshaw summation
     SCALE: float, default 1e-280
         scaling factor to prevent underflow in Clenshaw summation
 
@@ -221,49 +218,40 @@ def clenshaw_s_m(t, f, m, clm1, slm1, lmax,
     """
     # allocate for output matrix
     N = len(t)
-    s_m = np.zeros((N,2),dtype=ASTYPE)
+    s_m = np.zeros((N), dtype=np.clongdouble)
     # scaling to prevent overflow
-    clm = SCALE*clm1.astype(ASTYPE)
-    slm = SCALE*slm1.astype(ASTYPE)
+    ylm = SCALE*Ylm1.astype(np.clongdouble)
     # convert lmax and m to float
-    lm = ASTYPE(lmax)
-    mm = ASTYPE(m)
+    lm = np.float64(lmax)
+    mm = np.float64(m)
     if (m == lmax):
-        s_m[:,0] = f[lmax]*clm[lmax,lmax]
-        s_m[:,1] = f[lmax]*slm[lmax,lmax]
+        s_m[:] = f[lmax]*ylm[lmax,lmax]
     elif (m == (lmax-1)):
         a_lm = np.sqrt(((2.0*lm-1.0)*(2.0*lm+1.0))/((lm-mm)*(lm+mm)))*t
-        s_m[:,0] = a_lm*f[lmax]*clm[lmax,lmax-1] + f[lmax-1]*clm[lmax-1,lmax-1]
-        s_m[:,1] = a_lm*f[lmax]*slm[lmax,lmax-1] + f[lmax-1]*slm[lmax-1,lmax-1]
+        s_m[:] = a_lm*f[lmax]*ylm[lmax,lmax-1] + f[lmax-1]*ylm[lmax-1,lmax-1]
     elif ((m <= (lmax-2)) and (m >= 1)):
-        s_mm_c_pre_2 = f[lmax]*clm[lmax,m]
-        s_mm_s_pre_2 = f[lmax]*slm[lmax,m]
+        s_mm_minus_2 = f[lmax]*ylm[lmax,m]
         a_lm = np.sqrt(((2.0*lm-1.0)*(2.0*lm+1.0))/((lm-mm)*(lm+mm)))*t
-        s_mm_c_pre_1 = a_lm*s_mm_c_pre_2 + f[lmax-1]*clm[lmax-1,m]
-        s_mm_s_pre_1 = a_lm*s_mm_s_pre_2 + f[lmax-1]*slm[lmax-1,m]
+        s_mm_minus_1 = a_lm*s_mm_minus_2 + f[lmax-1]*ylm[lmax-1,m]
         for l in range(lmax-2, m-1, -1):
-            ll = ASTYPE(l)
+            ll = np.float64(l)
             a_lm=np.sqrt(((2.0*ll+1.0)*(2.0*ll+3.0))/((ll+1.0-mm)*(ll+1.0+mm)))*t
             b_lm=np.sqrt(((2.*ll+5.)*(ll+mm+1.)*(ll-mm+1.))/((ll+2.-mm)*(ll+2.+mm)*(2.*ll+1.)))
-            s_mm_c = a_lm * s_mm_c_pre_1 - b_lm * s_mm_c_pre_2 + f[l]*clm[l,m]
-            s_mm_s = a_lm * s_mm_s_pre_1 - b_lm * s_mm_s_pre_2 + f[l]*slm[l,m]
-            s_mm_c_pre_2 = np.copy(s_mm_c_pre_1)
-            s_mm_s_pre_2 = np.copy(s_mm_s_pre_1)
-            s_mm_c_pre_1 = np.copy(s_mm_c)
-            s_mm_s_pre_1 = np.copy(s_mm_s)
-        s_m[:,0] = np.copy(s_mm_c)
-        s_m[:,1] = np.copy(s_mm_s)
+            s_mm_l = a_lm * s_mm_minus_1 - b_lm * s_mm_minus_2 + f[l]*ylm[l,m]
+            s_mm_minus_2 = np.copy(s_mm_minus_1)
+            s_mm_minus_1 = np.copy(s_mm_l)
+        s_m[:] = np.copy(s_mm_l)
     elif (m == 0):
-        s_mm_c_pre_2 = f[lmax]*clm[lmax,0]
+        s_mm_minus_2 = f[lmax]*ylm[lmax,0]
         a_lm = np.sqrt(((2.0*lm-1.0)*(2.0*lm+1.0))/(lm*lm))*t
-        s_mm_c_pre_1 = a_lm * s_mm_c_pre_2 + f[lmax-1]*clm[lmax-1,0]
+        s_mm_minus_1 = a_lm * s_mm_minus_2 + f[lmax-1]*ylm[lmax-1,0]
         for l in range(lmax-2, m-1, -1):
-            ll = ASTYPE(l)
+            ll = np.float64(l)
             a_lm=np.sqrt(((2.0*ll+1.0)*(2.0*ll+3.0))/((ll+1.0)*(ll+1.0)))*t
             b_lm=np.sqrt(((2.0*ll+5.0)*(ll+1.0)*(ll+1.0))/((ll+2.0)*(ll+2.0)*(2.0*ll+1.0)))
-            s_mm_c = a_lm * s_mm_c_pre_1 - b_lm * s_mm_c_pre_2 + f[l]*clm[l,0]
-            s_mm_c_pre_2 = np.copy(s_mm_c_pre_1)
-            s_mm_c_pre_1 = np.copy(s_mm_c)
-        s_m[:,0] = np.copy(s_mm_c)
-    # return s_m rescaled with scalef
+            s_mm_l = a_lm * s_mm_minus_1 - b_lm * s_mm_minus_2 + f[l]*ylm[l,0]
+            s_mm_minus_2 = np.copy(s_mm_minus_1)
+            s_mm_minus_1 = np.copy(s_mm_l)
+        s_m[:] = np.copy(s_mm_l)
+    # return rescaled s_m
     return s_m/SCALE

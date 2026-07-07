@@ -128,7 +128,7 @@ def geocenter_monte_carlo(grace_dir,PROC,DREL,START_MON,END_MON,MISSING):
         artist = matplotlib.offsetbox.AnchoredText(axes_labels[key], pad=0.,
             prop=dict(size=16,weight='bold'), frameon=False, loc=2)
         ax[j].add_artist(artist)
-        lbl = f'$\sigma$ = {RMS:0.2f} mm\nmax = {max_var:0.2f} mm'
+        lbl = r'$\sigma$' + f' = {RMS:0.2f} mm\nmax = {max_var:0.2f} mm'
         artist = matplotlib.offsetbox.AnchoredText(lbl, pad=0.,
             prop=dict(size=12), frameon=False, loc=3)
         ax[j].add_artist(artist)

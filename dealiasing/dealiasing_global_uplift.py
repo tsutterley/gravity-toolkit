@@ -239,7 +239,7 @@ def dealiasing_global_uplift(base_dir,
     attributes['time']['standard_name'] = 'time'
 
     # Computing plms for converting to spatial domain
-    theta = (90.0 - grid.lat)*np.pi/180.0
+    theta = np.radians(90.0 - grid.lat)
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(theta))
 
     # for each tar file

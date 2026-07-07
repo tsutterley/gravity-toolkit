@@ -441,7 +441,7 @@ def calc_sensitivity_kernel(LMAX, RAD,
             n_lat = len(grid.lat)
 
         # Computing plms for converting to spatial domain
-        theta = (90.0-grid.lat)*np.pi/180.0
+        theta = np.radians(90.0 - grid.lat)
         PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(theta))
 
         # for each mascon

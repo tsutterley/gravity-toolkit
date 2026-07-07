@@ -347,9 +347,9 @@ def plot_grid(base_dir, FILENAMES,
         # plot line contour for global average
         if MEAN_CONTOUR and CONTOURS:
             # calculate areas of each grid cell
-            dphi,dth = (dlon*np.pi/180.0,dlat*np.pi/180.0)
+            dphi,dth = (np.radians(dlon), np.radians(dlat))
             indy,indx = np.nonzero(np.logical_not(dinput.mask))
-            area = (rad_e**2)*dth*dphi*np.cos(lat[indy,indx]*np.pi/180.0)
+            area = (rad_e**2)*dth*dphi*np.cos(np.radians(lat[indy,indx]))
             # calculate average
             ave = np.sum(area*dinput.data[indy,indx])/np.sum(area)
             # plot line contour of global average

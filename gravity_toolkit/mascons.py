@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 mascons.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (07/2026)
 Conversion routines for publicly available GRACE/GRACE-FO mascon solutions
 
 PYTHON DEPENDENCIES:
@@ -12,6 +12,7 @@ REFERENCES:
     mascon2grid.m written by Felix Landerer and David Wiese (JPL)
 
 UPDATE HISTORY:
+    Updated 07/2026: use np.radians to convert from degrees to radians
     Updated 03/2023: improve typing for variables in docstrings
     Updated 11/2022: use lowercase keyword arguments
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -63,15 +64,13 @@ def to_gsfc(gdata, lon, lat, lon_center, lat_center, lon_span, lat_span):
     # number of mascons
     nmas = len(lon_center)
     # convert mascon centers to -180:180
-    gt180, = np.nonzero(lon_center > 180)
-    lon_center[gt180] -= 360.0
+    lon_center = np.where(lon_center > 180, lon_center - 360.0, lon_center)
     # remove singleton dimensions
     lat = np.squeeze(lat)
     lon = np.squeeze(lon)
     # for mascons centered on 180: use 0:360
     alon = np.copy(lon)
-    lt0, = np.nonzero(lon < 0)
-    alon[lt0] += 360.0
+    alon = np.where(alon < 0, alon + 360.0, alon)
 
     # loop over each mascon bin and average gdata with the cos-lat weights
     # for that bin
@@ -98,12 +97,12 @@ def to_gsfc(gdata, lon, lat, lon_center, lat_center, lon_span, lat_span):
         else:
             ilon = lon.copy()
         # indices for grid points within the mascon
-        I, = np.nonzero((lat >= lat_bound[0]) & (lat < lat_bound[1]))
-        J, = np.nonzero((ilon >= lon_bound[0]) & (ilon < lon_bound[1]))
+        I, = np.flatnonzero((lat >= lat_bound[0]) & (lat < lat_bound[1]))
+        J, = np.flatnonzero((ilon >= lon_bound[0]) & (ilon < lon_bound[1]))
         I,J = (I[np.newaxis,:], J[:,np.newaxis])
         # calculate average data for mascon bin
-        mascon_array['data'][k] = np.mean((np.cos(lat[I]*np.pi/180.0) /
-            np.mean(np.cos(lat[I]*np.pi/180.0)))*gdata[I,J]/len(I))
+        mascon_array['data'][k] = np.mean((np.cos(np.radians(lat[I])) /
+            np.mean(np.cos(np.radians(lat[I]))))*gdata[I,J]/len(I))
         mascon_array['lat_center'][k] = lat_center[k]
         mascon_array['lon_center'][k] = lon_center[k]
 
@@ -154,13 +153,13 @@ def to_jpl(gdata, lon, lat, lon_bound, lat_bound):
     mascon_array['lat'] = np.zeros((nmas))
     for k in range(0,nmas):
         # indices for grid points within the mascon
-        I, = np.nonzero((lat >= lat_bound[k,1]) & (lat < lat_bound[k,0]))
-        J, = np.nonzero((lon >= lon_bound[k,0]) & (lon < lon_bound[k,2]))
+        I, = np.flatnonzero((lat >= lat_bound[k,1]) & (lat < lat_bound[k,0]))
+        J, = np.flatnonzero((lon >= lon_bound[k,0]) & (lon < lon_bound[k,2]))
         nlt = np.count_nonzero((lat >= lat_bound[k,1]) & (lat < lat_bound[k,0]))
         I,J = (I[np.newaxis,:], J[:,np.newaxis])
         # calculate average data for mascon bin
-        mascon_array['data'][k] = np.mean((np.cos(lat[I]*np.pi/180.0) /
-            np.mean(np.cos(lat[I]*np.pi/180.0)))*gdata[I,J]/nlt)
+        mascon_array['data'][k] = np.mean((np.cos(np.radians(lat[I])) /
+            np.mean(np.cos(np.radians(lat[I]))))*gdata[I,J]/nlt)
         # calculate coordinates of mascon center
         mascon_array['lat'][k] = (lat_bound[k,1]+lat_bound[k,0])/2.0
         mascon_array['lon'][k] = (lon_bound[k,1]+lon_bound[k,2])/2.0
@@ -219,8 +218,7 @@ def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
     # number of mascons
     nmas = len(lon_center)
     # convert mascon centers to -180:180
-    gt180, = np.nonzero(lon_center > 180)
-    lon_center[gt180] -= 360.0
+    lon_center = np.where(lon_center > 180, lon_center - 360.0, lon_center)
 
     # Define output latitude and longitude grids
     lon = np.arange(-180.0+grid_spacing/2.0,180.0+grid_spacing/2.0,grid_spacing)
@@ -228,8 +226,7 @@ def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
     nlon, nlat = (len(lon),len(lat))
     # for mascons centered on 180: use 0:360
     alon = np.copy(lon)
-    lt0, = np.nonzero(lon < 0)
-    alon[lt0] += 360.0
+    alon = np.where(alon < 0, alon + 360.0, alon)
 
     # loop over each mascon bin and assign value to grid points inside bin:
     mdata = np.zeros((nlat, nlon))
@@ -252,8 +249,8 @@ def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
         else:
             ilon = lon.copy()
         # indices for grid points within the mascon
-        I, = np.nonzero((lat >= lat_bound[0]) & (lat < lat_bound[1]))
-        J, = np.nonzero((ilon >= lon_bound[0]) & (ilon < lon_bound[1]))
+        I, = np.flatnonzero((lat >= lat_bound[0]) & (lat < lat_bound[1]))
+        J, = np.flatnonzero((ilon >= lon_bound[0]) & (ilon < lon_bound[1]))
         I,J = (I[np.newaxis,:], J[:,np.newaxis])
         mdata[I,J] = mscdata[k]
 
@@ -310,8 +307,8 @@ def from_jpl(mscdata, grid_spacing, lon_bound, lat_bound, **kwargs):
     # loop over each mascon bin and assign value to grid points inside bin:
     mdata = np.zeros((nlat, nlon))
     for k in range(0, nmas):
-        I, = np.nonzero((lat >= lat_bound[k,1]) & (lat < lat_bound[k,0]))
-        J, = np.nonzero((lon >= lon_bound[k,0]) & (lon < lon_bound[k,2]))
+        I, = np.flatnonzero((lat >= lat_bound[k,1]) & (lat < lat_bound[k,0]))
+        J, = np.flatnonzero((lon >= lon_bound[k,0]) & (lon < lon_bound[k,2]))
         I,J = (I[np.newaxis,:], J[:,np.newaxis])
         mdata[I,J] = mscdata[k]
 

@@ -25,10 +25,10 @@ def test_lsmask(LANDMASK):
     nlat, nlon = landsea.shape
     # colatitude in radians
     gridlon, gridlat = np.meshgrid(landsea.lon, landsea.lat)
-    th = (90.0 - gridlat)*np.pi/180.0
+    th = np.radians(90.0 - gridlat)
     # grid spacing in radians
-    dphi = np.pi*np.abs(dlon)/180.0
-    dth = np.pi*np.abs(dlat)/180.0
+    dphi = np.radians(np.abs(dlon))
+    dth = np.radians(np.abs(dlat))
     # create land function
     land_function = np.zeros((nlat, nlon), dtype=np.float64)
     # combine land and island levels for land function

@@ -169,7 +169,7 @@ def regional_spherical_caps(LMAX,
     rad_e = dfactor.rad_e# Average Radius of the Earth [cm]
 
     # colatitude of the spherical cap centers
-    th = (90.0 - lat)*np.pi/180.0
+    th = np.radians(90.0 - lat)
     # Legendre polynomials of the spherical caps
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(th))
 
@@ -195,7 +195,7 @@ def regional_spherical_caps(LMAX,
         # area = (volume*density)/(mass/area)
         ar = 4.0*np.pi*(rad_e**3.0)*rho_e*np.squeeze(Ylms.clm[0,0])/3.0
         # calculate equivalent radius (should equal RAD_CAP)
-        rad = np.sqrt(ar/np.pi)/rad_e*180.0/np.pi
+        rad = np.degrees(np.sqrt(ar/np.pi) / rad_e)
         # if verbose output: sanity check of radii
         args = (cap_number, RAD_CAP[i], rad)
         logging.info('{0:4d} {1:10.4f} {2:10.4f}'.format(*args))

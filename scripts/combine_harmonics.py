@@ -273,7 +273,7 @@ def combine_harmonics(INPUT_FILE, OUTPUT_FILE,
     attributes['ROOT']['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
 
     # Computing plms for converting to spatial domain
-    theta = (90.0 - grid.lat)*np.pi/180.0
+    theta = np.radians(90.0 - grid.lat)
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(theta))
 
     # converting harmonics to truncated, smoothed coefficients in output units

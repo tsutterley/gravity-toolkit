@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 piecewise.py
-Written by Tyler Sutterley (04/2023)
+Written by Tyler Sutterley (07/2026)
 
 Fits a synthetic signal to data over a time period by ordinary or weighted
     least-squares for breakpoint analysis
@@ -61,6 +61,7 @@ PYTHON DEPENDENCIES:
     scipy: Scientific Tools for Python (https://docs.scipy.org/doc/)
 
 UPDATE HISTORY:
+    Updated 07/2026: use np.hypot to calculate the sum of two squares
     Updated 04/2023: option to include extra fit terms in the design matrix
     Updated 01/2023: refactored time series analysis functions
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -293,7 +294,7 @@ def piecewise(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
 
         # Recalculating beta2 error
         beta_err = np.copy(temp_err)
-        beta_err[2] = np.sqrt(temp_err[1]**2 + temp_err[2]**2)
+        beta_err[2] = np.hypot(temp_err[1], temp_err[2])
         # Weighted sum of squares Error
         WSSE = np.dot(np.transpose(wi*(d_in[0:nmax] - np.dot(DMAT,beta_mat))),
             wi*(d_in[0:nmax] - np.dot(DMAT,beta_mat)))/np.float64(nu)
@@ -314,7 +315,7 @@ def piecewise(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
             temp_err[i] = np.sum((NORMEQ[i,:]*P_err)**2)
         # Recalculating beta2 error
         beta_err = np.copy(temp_err)
-        beta_err[2] = np.sqrt(temp_err[1]**2 + temp_err[2]**2)
+        beta_err[2] = np.hypot(temp_err[1], temp_err[2])
         # Mean square error
         MSE = np.dot(np.transpose(d_in[0:nmax] - np.dot(DMAT,beta_mat)),
             (d_in[0:nmax] - np.dot(DMAT,beta_mat)))/np.float64(nu)
@@ -359,10 +360,10 @@ def piecewise(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
 
         # Recalculating standard error for beta2
         st_err = np.copy(temp_std)
-        st_err[2] = np.sqrt(temp_std[1]**2 + temp_std[2]**2)
+        st_err[2] = np.hypot(temp_std[1], temp_std[2])
         # Recalculating beta2 error
         beta_err = np.copy(temp_err)
-        beta_err[2] = np.sqrt(temp_err[1]**2 + temp_err[2]**2)
+        beta_err[2] = np.hypot(temp_err[1], temp_err[2])
 
         return {'beta':beta_out, 'error':beta_err, 'std_err':st_err, 'R2':rsquare,
             'R2Adj':rsq_adj, 'MSE':MSE, 'NRMSE':NRMSE, 'AIC':AIC, 'BIC':BIC,
