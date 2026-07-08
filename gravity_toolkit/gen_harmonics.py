@@ -178,14 +178,10 @@ def integration(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
 
     # Calculate polynomials using Holmes and Featherstone (2002) relation
     if (np.ndim(PLM) == 0):
-        plmout, dplm = plm_holmes(LMAX, np.cos(th))
-    else:
-        # use precomputed plms to improve computational speed
-        # or to use a different recursion relation for polynomials
-        plmout = PLM[ll, :, :].copy()
+        PLM, dplm = plm_holmes(LMAX, np.cos(th))
     # Multiply plms by integration factors [sin(theta)*dtheta*dphi]
     # truncate plms to maximum spherical harmonic order if MMAX < LMAX
-    plm = np.einsum("lmh...,h...->lmh...", plmout[:,mm,:], int_fact)
+    plm = np.einsum("lmh...,h...->lmh...", PLM[:LMAX+1,:MMAX+1,:], int_fact)
     # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
     Ylms.clm = np.zeros((LMAX+1, MMAX+1))
@@ -261,15 +257,13 @@ def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
     f = np.zeros((MMAX+1,MMAX+1), dtype=np.complex128)
     m_even = slice(0, MMAX+1, 2)
     m_odd = slice(1, MMAX, 2)
-    n_even = len(m_even)
-    n_odd = len(m_odd)
 
     if np.isclose([th[0],th[nlat-1]], [0.0,np.pi]).all():
         # global case (includes poles)
         # non-endpoints
         n_th = np.exp(1j * np.einsum("h...,n...->nh...", th[1:nlat-1], mm))
         f[m_even,:] = 2.0*np.einsum("mh...,nh...->mn", d[m_even,1:nlat-1],n_th.real)
-        f[m_odd,:] = 2.0*np.einsum("mh...,nh...->mn", d[m_even,1:nlat-1],n_th.imag)
+        f[m_odd,:] = 2.0*np.einsum("mh...,nh...->mn", d[m_odd,1:nlat-1],n_th.imag)
         # endpoints
         c_th = d[:,0]*np.cos(th[0]) + d[:,nlat-1]*np.cos(th[nlat-1])
         s_th = d[:,0]*np.sin(th[0]) + d[:,nlat-1]*np.sin(th[nlat-1])
@@ -310,14 +304,16 @@ def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
     # n and k must have like parities
 
     # m = even terms
-    k_even = np.zeros((n_even, n_even))
     mm = np.arange(m_even.start, m_even.stop, m_even.step)
+    n_even = len(mm)
+    k_even = np.zeros((n_even, n_even))
     for n in range(0,MMAX+2,2):
         k_even[:,n//2] = 0.5*(1.0/(1.0-mm-n) + 1.0/(1.0+mm-n) +
             1.0/(1.0-mm+n) + 1.0/(1.0+mm+n))
 
-    k_odd = np.zeros((n_odd, n_odd))
     mm = np.arange(m_odd.start, m_odd.stop, m_odd.step)
+    n_odd = len(mm)
+    k_odd = np.zeros((n_odd, n_odd))
     for n in range(1,MMAX+1,2):
         k_odd[:,(n-1)//2] = 0.5*(1.0/(1-mm-n) + 1.0/(1+mm-n) +
             1.0/(1-mm+n) + 1.0/(1+mm+n))
@@ -334,15 +330,19 @@ def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
         Ylms.slm[l_odd,m] = np.einsum("n...,lm...->l", f.imag[m,m_odd], temp)
 
     # m = odd terms
+    mm = np.arange(m_even.start, m_even.stop, m_even.step)
+    n_even = len(mm)
     k_even = np.zeros((n_even,n_even))
     for n in range(0,MMAX+2,2):
-        k_even[:,n//2] = 0.5*(-1.0/(1-m_even-n) + 1.0/(1.0+m_even-n) +
-            1.0/(1.0-m_even+n) - 1.0/(1.0+m_even+n))
+        k_even[:,n//2] = 0.5*(-1.0/(1-mm-n) + 1.0/(1.0+mm-n) +
+            1.0/(1.0-mm+n) - 1.0/(1.0+mm+n))
 
+    mm = np.arange(m_odd.start, m_odd.stop, m_odd.step)
+    n_odd = len(mm)
     k_odd = np.zeros((n_odd,n_odd))
     for n in range(1,MMAX+1,2):
-        k_odd[:,(n-1)//2] = 0.5*(-1.0/(1-m_odd-n) + 1.0/(1.0+m_odd-n) +
-            1.0/(1.0-m_odd+n) - 1.0/(1.0+m_odd+n))
+        k_odd[:,(n-1)//2] = 0.5*(-1.0/(1-mm-n) + 1.0/(1.0+mm-n) +
+            1.0/(1.0-mm+n) - 1.0/(1.0+mm+n))
 
     # calculate spherical harmonics for m == odd terms
     l_even = np.arange(2,LMAX+1,2)# do not in include l=0

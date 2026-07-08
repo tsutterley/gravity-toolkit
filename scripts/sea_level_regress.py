@@ -347,7 +347,7 @@ def sea_level_regress(PROC, DREL, DSET, LMAX,
         )
         # convert phase from -180:180 to 0:360
         ph.data = np.where(
-            ph.data < 0 & np.logical_not(ph.mask), ph.data + 360.0, ph.data
+            (ph.data < 0) & np.logical_not(ph.mask), ph.data + 360.0, ph.data
         )
         # Amplitude Error
         comp1=out.error[indy,indx,j]*out.data[indy,indx,j]/amp.data[indy,indx]

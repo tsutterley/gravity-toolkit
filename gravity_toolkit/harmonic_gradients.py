@@ -221,16 +221,18 @@ def geostrophic_currents(clm1, slm1, lon, lat,
     mm = np.arange(0, MMAX+1)
     # real (cosine) and imaginary (sine) components
     Ylm = clm[LMIN:LMAX+1,mm,:] - 1j * slm[LMIN:LMAX+1,mm,:]
-    # summation over all spherical harmonic degrees
+    # convolve legendre polynomials and truncate to degree and order
     iint = 1.0/(np.cos(th)*np.sin(th))
-    pconv = np.einsum("h...,lmh...,lmd...->mhd...", iint, PLM, Ylm)
+    plm = np.einsum("h...,lmh...->lmh...", iint, PLM[LMIN:LMAX+1,:MMAX+1,:])
+    # summation over all spherical harmonic degrees
+    pconv = np.einsum("lmh...,lmd...->mhd...", plm, Ylm)
 
     # calculating cos(m*phi) and sin(m*phi) using Euler's formula
     m_phi = np.exp(1j * np.einsum("m...,p...->mp...", mm, phi))
     # output geostrophic current fields
-    currents = np.zeros((phmax,thmax,2))
+    currents = np.empty((phmax,thmax,2))
     # summation of cosine and sine harmonics
-    currents = np.einsum("mp...,mhd...->phd...", m_phi, pconv)
+    currents[:] = np.einsum("mp...,mhd...->phd...", m_phi, pconv)
 
     # return the current fields and drop imaginary component
     return currents.real

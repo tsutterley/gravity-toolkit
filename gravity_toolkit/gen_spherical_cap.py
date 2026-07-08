@@ -233,12 +233,7 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     # this would be the plm for the center of the spherical cap
     # used to rotate the spherical cap to point lat/lon
     if PLM is None:
-        plmout,_ = plm_holmes(LMAX, np.cos(th))
-        # truncate precomputed plms to order
-        plmout = np.squeeze(plmout[:,:MMAX+1,:])
-    else:
-        # truncate precomputed plms to degree and order
-        plmout = PLM[:LMAX+1,:MMAX+1]
+        PLM, _ = plm_holmes(LMAX, np.cos(th))
 
     # calculate array of m values ranging from 0 to MMAX (harmonic orders)
     # MMAX+1 as there are MMAX+1 elements between 0 and MMAX
@@ -256,7 +251,7 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
     # rotate spherical cap to be centered at lat/lon
-    plm = np.einsum("lm...,l...->lm...", plmout, pl_alpha)
+    plm = np.einsum("lm...,l...->lm...", PLM[:LMAX+1,:MMAX+1], pl_alpha)
     # multiplying clm by cos(m*phi) and slm by sin(m*phi)
     # to get a field of spherical harmonics
     ylm = np.einsum("lm...,m...->lm...", plm, d)

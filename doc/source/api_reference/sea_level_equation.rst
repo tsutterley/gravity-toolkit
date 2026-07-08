@@ -20,5 +20,3 @@ Calling Sequence
 .. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/sea_level_equation.py
 
 .. autofunction:: gravity_toolkit.sea_level_equation
-
-.. autofunction:: gravity_toolkit.sea_level_equation._clenshaw

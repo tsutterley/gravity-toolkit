@@ -106,7 +106,7 @@ def harmonic_summation(clm1, slm1, lon, lat,
     Ylm.imag[LMIN:LMAX+1,mm] = -slm1[LMIN:LMAX+1,mm]
     # Calculate fourier coefficients from legendre coefficients
     # summation over all spherical harmonic degrees
-    pconv = np.einsum("lmh...,lm...->mh...", PLM, Ylm)
+    pconv = np.einsum("lmh...,lm...->mh...", PLM[:LMAX+1,:MMAX+1,:], Ylm)
     # calculating cos(m*phi) and sin(m*phi) using Euler's formula
     m_phi = np.exp(1j * np.einsum("m...,p...->mp...", mm, phi))
     # summation of cosine and sine harmonics

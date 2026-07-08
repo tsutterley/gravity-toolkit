@@ -1727,10 +1727,6 @@ class spatial(object):
         """In-place add values to a ``spatial`` object"""
         return self.offset(other)
 
-    def __idiv__(self, other):
-        """In-place divide values from a ``spatial`` object"""
-        return self.scale(1.0 / other)
-
     def __imul__(self, other):
         """In-place multiply values from a ``spatial`` object"""
         return self.scale(other)
@@ -1742,6 +1738,10 @@ class spatial(object):
     def __isub__(self, other):
         """In-place subtract values from a ``spatial`` object"""
         return self.offset(-other)
+
+    def __itruediv__(self, other):
+        """In-place divide values from a ``spatial`` object"""
+        return self.scale(1.0 / other)
 
     def __mul__(self, other):
         """Multiply values from a ``spatial`` object"""

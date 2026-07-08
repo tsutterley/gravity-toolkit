@@ -1911,13 +1911,6 @@ class harmonics(object):
         """In-place add values to a ``harmonics`` object"""
         return self.add(other)
 
-    def __idiv__(self, other):
-        """In-place divide values from a ``harmonics`` object"""
-        if isinstance(other, (int, float, np.ndarray)):
-            return self.scale(1.0 / other)
-        else:
-            return self.divide(other)
-
     def __imul__(self, other):
         """In-place multiply values from a ``harmonics`` object"""
         if isinstance(other, (int, float, np.ndarray)):
@@ -1932,6 +1925,13 @@ class harmonics(object):
     def __isub__(self, other):
         """In-place subtract values from a ``harmonics`` object"""
         return self.subtract(other)
+
+    def __itruediv__(self, other):
+        """In-place divide values from a ``harmonics`` object"""
+        if isinstance(other, (int, float, np.ndarray)):
+            return self.scale(1.0 / other)
+        else:
+            return self.divide(other)
 
     def __mul__(self, other):
         """Multiply values from a ``harmonics`` object"""

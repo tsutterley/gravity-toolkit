@@ -18,5 +18,3 @@ Calling Sequence
 .. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/clenshaw_summation.py
 
 .. autofunction:: gravity_toolkit.clenshaw_summation
-
-.. autofunction:: gravity_toolkit.clenshaw_summation._clenshaw
