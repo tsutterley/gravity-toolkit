@@ -1720,12 +1720,15 @@ class spatial(object):
 
     def __div__(self, other):
         """Divide values from a ``spatial`` object"""
-        temp = self.copy()
-        return temp.scale(1.0 / other)
+        return self.__truediv__(other)
     
     def __iadd__(self, other):
         """In-place add values to a ``spatial`` object"""
         return self.offset(other)
+
+    def __idiv__(self, other):
+        """In-place divide values from a ``spatial`` object"""
+        return self.__itruediv__(other)
 
     def __imul__(self, other):
         """In-place multiply values from a ``spatial`` object"""

@@ -99,7 +99,7 @@ COMMAND LINE OPTIONS:
         HDF5
     --ocean-file X: Index file for ocean model harmonics
     --mean-file X: GRACE/GRACE-FO mean file to remove from the harmonic data
-    --mean-format X: Input data format for GRACE/GRACE-FO mean file'
+    --mean-format X: Input data format for GRACE/GRACE-FO mean file
     --remove-file X: Monthly files to be removed from the GRACE/GRACE-FO data
     --remove-format X: Input data format for files to be removed
         ascii
@@ -914,12 +914,13 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
     # Convert inverted solutions into fully normalized spherical harmonics
     # restore geocenter variation from glacial isostatic adjustment (GIA)
     # restore atmospheric jump corrections from Fagiolini (2015) if applicable
+    # restore auxiliary removed spherical harmonics if applicable
     # for each of the geocenter solutions (C10, C11, S11)
     # for the iterative case this will be the final iteration
     DEG1 = gravtk.geocenter()
-    DEG1.C10 = DMAT[0,:]/dfactor[1] + gia.C10[:] + atm.C10[:] + remove.C10[t]
-    DEG1.C11 = DMAT[1,:]/dfactor[1] + gia.C11[:] + atm.C11[:] + remove.C11[t]
-    DEG1.S11 = DMAT[2,:]/dfactor[1] + gia.S11[:] + atm.S11[:] + remove.S11[t]
+    DEG1.C10 = DMAT[0,:]/dfactor[1] + gia.C10[:] + atm.C10[:] + remove.C10[:]
+    DEG1.C11 = DMAT[1,:]/dfactor[1] + gia.C11[:] + atm.C11[:] + remove.C11[:]
+    DEG1.S11 = DMAT[2,:]/dfactor[1] + gia.S11[:] + atm.S11[:] + remove.S11[:]
     # remove mean of geocenter for each component
     DEG1.mean(apply=True)
     # calculate geocenter variations with dealiasing restored

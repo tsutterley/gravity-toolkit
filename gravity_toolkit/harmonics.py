@@ -1901,15 +1901,15 @@ class harmonics(object):
 
     def __div__(self, other):
         """Divide values from a ``harmonics`` object"""
-        temp = self.copy()
-        if isinstance(other, (int, float, np.ndarray)):
-            return temp.scale(1.0 / other)
-        else:
-            return temp.divide(other)
+        return self.__truediv__(other)
 
     def __iadd__(self, other):
         """In-place add values to a ``harmonics`` object"""
         return self.add(other)
+
+    def __idiv__(self, other):
+        """In-place divide values from a ``harmonics`` object"""
+        return self.__itruediv__(other)
 
     def __imul__(self, other):
         """In-place multiply values from a ``harmonics`` object"""

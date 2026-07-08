@@ -806,11 +806,11 @@ def monte_carlo_degree_one(base_dir, PROC, DREL, LMAX, RAD,
                 DMAT, res, rnk, s = scipy.linalg.lstsq(IMAT, (CMAT-GMAT),
                     lapack_driver=SOLVER)
             # save geocenter for iteration and time t after restoring fields
-            iteration.C10[t,n_iter] = DMAT[0,t]/dfactor[1] + \
+            iteration.C10[t,n_iter] = DMAT[0]/dfactor[1] + \
                 gia.C10[t] + atm.C10[t] + remove.C10[t]
-            iteration.C11[t,n_iter] = DMAT[1,t]/dfactor[1] + \
+            iteration.C11[t,n_iter] = DMAT[1]/dfactor[1] + \
                 gia.C11[t] + atm.C11[t] + remove.C11[t]
-            iteration.S11[t,n_iter] = DMAT[2,t]/dfactor[1] + \
+            iteration.S11[t,n_iter] = DMAT[2]/dfactor[1] + \
                 gia.S11[t] + atm.S11[t] + remove.S11[t]
         # remove mean of each solution for iteration
         iteration.C10[:,n_iter] -= iteration.C10[:,n_iter].mean()

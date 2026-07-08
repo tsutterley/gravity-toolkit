@@ -174,16 +174,14 @@ def clenshaw_summation(clm, slm, lon, lat,
     m_phi[:,LMAX+1] = np.exp(1j * (LMAX + 1) * phi)
     m_phi[:,LMAX] = np.exp(1j * LMAX*phi)
     # calculate summation for order LMAX
-    g = np.einsum("h...,p...->ph...", cs_m[:,LMAX], m_phi[:,LMAX])
-    s_m = g.real
+    s_m = (cs_m[:,LMAX]*m_phi[:,LMAX]).real
     # iterate to calculate complete summation
     for m in range(LMAX-1, 0, -1):
         # calculate summation for order m
         m_phi[:,m] = cos_phi_2*m_phi[:,m+1] - m_phi[:,m+2]
         a_m = np.sqrt((2.0*m + 3.0)/(2.0*m + 2.0))
-        g = np.einsum("h...,p...->ph...", cs_m[:,m], m_phi[:,m])
         # update summation and discard imaginary component
-        s_m = a_m*u*s_m + g.real
+        s_m = a_m*u*s_m + (cs_m[:,m]*m_phi[:,m]).real
     # calculate spatial field
     spatial = np.sqrt(3.0)*u*s_m + cs_m[:,0].real
     # return the calculated spatial field
