@@ -2,7 +2,6 @@
 u"""
 test_sea_level.py (07/2026)
 """
-import pytest
 import inspect
 import pathlib
 import numpy as np
@@ -53,3 +52,24 @@ def test_sea_level():
     difference = validation.data - sea_level
     valid_difference = difference[np.isfinite(difference)]
     assert np.all(np.abs(valid_difference) < 1e-8)
+
+def test_harmonics():
+    # read land function file
+    LANDMASK = filepath.joinpath('land.fcn.1_deg.gz')
+    landsea = gravtk.spatial().from_ascii(LANDMASK,
+        date=False, spacing=[1.0, 1.0], nlat=180, nlon=360,
+        extent=[0.5,359.5,-89.5,89.5], compression='gzip')
+    # calculate ocean function from land function
+    land_function = landsea.data.T
+    ocean_function = 1.0 - land_function
+    # maximum spherical harmonic degree
+    LMAX = 60
+    # calculate spherical harmonics using integration and fourier methods
+    YlmI = gravtk.gen_harmonics(ocean_function, landsea.lon, landsea.lat,
+        LMAX=LMAX, METHOD="integration")
+    YlmF = gravtk.gen_harmonics(ocean_function, landsea.lon, landsea.lat,
+        LMAX=LMAX, METHOD="fourier")
+    # check that amplitudes of harmonic data are nearly equal
+    difference = YlmI.amplitude - YlmF.amplitude
+    harmonic_eps = np.finfo(np.float16).eps
+    assert np.all(np.abs(difference) < harmonic_eps)

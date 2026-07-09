@@ -50,7 +50,7 @@ def harmonic_gradients(clm1, slm1, lon, lat,
     LMIN=0, LMAX=60, MMAX=None):
     """
     Calculates the gradient of a scalar field from a series of
-    spherical harmonics
+    spherical harmonics :cite:p:`Driscoll:1994bp`
 
     Parameters
     ----------
@@ -87,7 +87,6 @@ def harmonic_gradients(clm1, slm1, lon, lat,
     # Colatitude in radians
     th = np.radians(90.0 - np.squeeze(lat))
     thmax = len(th)
-    phimax = len(phi)
 
     # spherical harmonic degree and order
     ll = np.arange(0,LMAX+1)# lmax+1 to include lmax
@@ -96,27 +95,27 @@ def harmonic_gradients(clm1, slm1, lon, lat,
     Ylm = np.zeros((LMAX+1, MMAX+1), dtype=np.complex128)
     # Truncating harmonics to degree and order LMAX
     # removing coefficients below LMIN and above MMAX
-    Ylm.imag[LMIN:LMAX+1,mm] = -clm1[LMIN:LMAX+1,mm].copy()
-    Ylm.real[LMIN:LMAX+1,mm] = -slm1[LMIN:LMAX+1,mm].copy()
-    dlm = np.einsum("l...,lm...->lm", np.sqrt((ll+1.0)*ll), Ylm)
+    Ylm.real[LMIN:LMAX+1,mm] = clm1[LMIN:LMAX+1,mm].copy()
+    Ylm.imag[LMIN:LMAX+1,mm] = -slm1[LMIN:LMAX+1,mm].copy()
+    dlm = np.einsum("l...,lm...->lm", np.sqrt((ll+1.0)*ll), -1j*Ylm)
 
     # generate Vlm coefficients (vlm and wlm)
-    vlm, wlm = legendre_gradient(LMAX, MMAX)
+    Vlmk, Wlmk = legendre_gradient(LMAX, MMAX)
     # even and odd spherical harmonic orders
     m_even = np.arange(0,MMAX+2,2)
     m_odd = np.arange(1,MMAX,2)
 
-    # Euler's formula for theta * n and m * phi
-    n_th = np.exp(1j * np.einsum("h...,n...->nh...", th, ll))
+    # Euler's formula for theta * k and m * phi
+    k_th = np.exp(1j * np.einsum("h...,k...->kh...", th, ll))
     m_phi = np.exp(1j * np.einsum("m...,p...->mp...", mm, phi))
     # Calculate fourier coefficients from legendre coefficients
     d = np.zeros((LMAX+1,thmax,2), dtype=np.complex128)
-    wtmp = np.einsum("lmn...,lm...->mn", wlm, dlm)
-    vtmp = np.einsum("lmn...,lm...->mn", vlm, dlm)
-    d[m_even,:,0] = np.einsum("mn...,nh...->mh", wtmp[m_even,:], n_th.imag)
-    d[m_even,:,1] = np.einsum("mn...,nh...->mh", vtmp[m_even,:], n_th.imag)
-    d[m_odd,:,0] = np.einsum("mn...,nh...->mh", wtmp[m_odd,:], n_th.real)
-    d[m_odd,:,1] = np.einsum("mn...,nh...->mh", vtmp[m_odd,:], n_th.real)
+    wtmp = np.einsum("lmk...,lm...->mk", Wlmk, dlm)
+    vtmp = np.einsum("lmk...,lm...->mk", Vlmk, dlm)
+    d[m_even,:,0] = np.einsum("mk...,kh...->mh", wtmp[m_even,:], k_th.imag)
+    d[m_even,:,1] = np.einsum("mk...,kh...->mh", vtmp[m_even,:], k_th.imag)
+    d[m_odd,:,0] = np.einsum("mk...,kh...->mh", wtmp[m_odd,:], k_th.real)
+    d[m_odd,:,1] = np.einsum("mk...,kh...->mh", vtmp[m_odd,:], k_th.real)
     # calculate the zonal and meridional gradients of the scalar field
     gradients = np.einsum("mp...,mhd...->phd...", m_phi, d)
     # return the gradient fields and drop imaginary component
@@ -220,7 +219,7 @@ def geostrophic_currents(clm1, slm1, lon, lat,
     # removing coefficients below LMIN and above MMAX
     mm = np.arange(0, MMAX+1)
     # real (cosine) and imaginary (sine) components
-    Ylm = clm[LMIN:LMAX+1,mm,:] - 1j * slm[LMIN:LMAX+1,mm,:]
+    Ylm = clm[LMIN:LMAX+1,:MMAX+1,:] - 1j * slm[LMIN:LMAX+1,:MMAX+1,:]
     # convolve legendre polynomials and truncate to degree and order
     iint = 1.0/(np.cos(th)*np.sin(th))
     plm = np.einsum("h...,lmh...->lmh...", iint, PLM[LMIN:LMAX+1,:MMAX+1,:])
