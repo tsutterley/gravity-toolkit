@@ -603,7 +603,8 @@ def arguments():
         help='Input grid files')
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Working data directory')
     # Input data format (ascii, netCDF4, HDF5)
     parser.add_argument('--format','-F',

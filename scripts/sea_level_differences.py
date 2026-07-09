@@ -160,7 +160,8 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Output directory for spatial files')
     # GRACE/GRACE-FO data processing center
     parser.add_argument('--center','-c',

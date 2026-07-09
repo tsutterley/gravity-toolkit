@@ -708,7 +708,8 @@ def arguments():
         help='Input grid file')
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Working data directory')
     # plot regions
     parser.add_argument('--region','-r',

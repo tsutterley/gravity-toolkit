@@ -707,7 +707,8 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Working data directory')
     # Data processing center or satellite mission
     parser.add_argument('--center','-c',

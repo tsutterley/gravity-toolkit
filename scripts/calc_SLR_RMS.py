@@ -195,7 +195,8 @@ def arguments():
     )
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Working data directory')
     # start and end GRACE/GRACE-FO months
     parser.add_argument('--start','-S',

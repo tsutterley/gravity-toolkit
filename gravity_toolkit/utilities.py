@@ -123,6 +123,7 @@ def get_data_path(relpath: list | str | pathlib.Path):
 def get_cache_path(
     relpath: list | str | pathlib.Path | None = None,
     appname="gravtk",
+    ensure_exists=True,
 ):
     """
     Get the path to the user cache directory for an application
@@ -133,6 +134,8 @@ def get_cache_path(
         Relative path
     appname: str, default 'gravtk'
         Application name
+    ensure_exists: bool, default True
+        Verify that the cache directory exists
     """
     # check for custom environment variable for cache directory
     cache_dir = os.environ.get("GRAVTK_CACHE_DIR")
@@ -144,7 +147,7 @@ def get_cache_path(
     else:
         # platform-specific cache directory
         filepath = platformdirs.user_cache_path(
-            appname=appname, ensure_exists=True
+            appname=appname, ensure_exists=ensure_exists
         )
     # append relative path to cache directory
     if isinstance(relpath, list):

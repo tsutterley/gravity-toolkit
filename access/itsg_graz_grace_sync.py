@@ -224,7 +224,8 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Working data directory')
     # ITSG GRAZ releases
     choices = ['Grace2014','Grace2016','Grace2018','Grace_operational']

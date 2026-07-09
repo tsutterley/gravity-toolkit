@@ -181,7 +181,8 @@ def arguments():
         help='Input index file with spherical harmonic data files')
     # output working data directory
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Output directory for sea level files')
     parser.add_argument('--file-prefix','-P',
         type=str,
