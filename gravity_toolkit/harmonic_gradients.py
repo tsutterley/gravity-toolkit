@@ -2,7 +2,7 @@
 u"""
 harmonic_gradients.py
 Original IDL code calc_grad.pro written by Sean Swenson
-Adapted by Tyler Sutterley (03/2023)
+Adapted by Tyler Sutterley (07/2026)
 
 Calculates the zonal and meridional gradients of a scalar field
 from a series of spherical harmonics
@@ -29,6 +29,8 @@ PROGRAM DEPENDENCIES:
         Legendre functions
 
 UPDATE HISTORY:
+    Updated 07/2026: use np.einsum for spherical harmonic summations
+        use np.radians to convert from degrees to radians
     Updated 03/2023: improve typing for variables in docstrings
         added geostrophic currents program from Wahr et al. (2002)
     Updated 10/2022: cleaned up program for public release
@@ -48,7 +50,7 @@ def harmonic_gradients(clm1, slm1, lon, lat,
     LMIN=0, LMAX=60, MMAX=None):
     """
     Calculates the gradient of a scalar field from a series of
-    spherical harmonics
+    spherical harmonics :cite:p:`Driscoll:1994bp`
 
     Parameters
     ----------
@@ -81,87 +83,50 @@ def harmonic_gradients(clm1, slm1, lon, lat,
         MMAX = np.copy(LMAX)
 
     # Longitude in radians
-    phi = (np.squeeze(lon)*np.pi/180.0)[np.newaxis,:]
+    phi = np.radians(np.squeeze(lon))
     # Colatitude in radians
-    th = (90.0 - np.squeeze(lat))*np.pi/180.0
-    thmax = len(np.squeeze(lat))
-    phimax = len(np.squeeze(lon))
+    th = np.radians(90.0 - np.squeeze(lat))
+    thmax = len(th)
 
+    # spherical harmonic degree and order
+    ll = np.arange(0,LMAX+1)# lmax+1 to include lmax
+    mm = np.arange(0,MMAX+1)# mmax+1 to include mmax
+    # real (cosine) and imaginary (sine) components
+    Ylm = np.zeros((LMAX+1, MMAX+1), dtype=np.complex128)
     # Truncating harmonics to degree and order LMAX
     # removing coefficients below LMIN and above MMAX
-    mm = np.arange(0,MMAX+1)
-    clm = np.zeros((LMAX+1, MMAX+1))
-    slm = np.zeros((LMAX+1, MMAX+1))
-    clm[LMIN:LMAX+1,mm] = clm1[LMIN:LMAX+1,mm]
-    slm[LMIN:LMAX+1,mm] = slm1[LMIN:LMAX+1,mm]
-    # spherical harmonic degree and order
-    ll = np.arange(0,LMAX+1)[np.newaxis, :]# lmax+1 to include lmax
-    mm = np.arange(0,MMAX+1)[:, np.newaxis]# mmax+1 to include mmax
+    Ylm.real[LMIN:LMAX+1,:MMAX+1] = clm1[LMIN:LMAX+1,:MMAX+1].copy()
+    Ylm.imag[LMIN:LMAX+1,:MMAX+1] = -slm1[LMIN:LMAX+1,:MMAX+1].copy()
+    dlm = np.einsum("l...,lm...->lm", np.sqrt((ll+1.0)*ll), -1j*Ylm)
 
     # generate Vlm coefficients (vlm and wlm)
-    vlm, wlm = legendre_gradient(LMAX, MMAX)
+    Vlmk, Wlmk = legendre_gradient(LMAX, MMAX)
+    # even and odd spherical harmonic orders
+    m_even = np.arange(0, MMAX+2, 2)
+    m_odd = np.arange(1, MMAX, 2)
 
-    dlm = np.zeros((LMAX+1,LMAX+1,2))
-    # minus sign is because lat and theta change with opposite sign
-    for l in range(0,LMAX+1):
-        dlm[l,:,0] = -clm[l,:]*np.sqrt((l+1.0)*l)
-        dlm[l,:,1] = -slm[l,:]*np.sqrt((l+1.0)*l)
-
-    m_even = np.arange(0,MMAX+2,2)
-    m_odd = np.arange(1,MMAX,2)
-
+    # Euler's formula for theta * k and m * phi
+    k_th = np.exp(1j * np.einsum("h...,k...->kh...", th, ll))
+    m_phi = np.exp(1j * np.einsum("m...,p...->mp...", mm, phi))
     # Calculate fourier coefficients from legendre coefficients
-    d_cos = np.zeros((LMAX+1,thmax,2))
-    d_sin = np.zeros((LMAX+1,thmax,2))
-    cnk = np.cos(np.dot(th[:,np.newaxis],ll))
-    snk = np.sin(np.dot(th[:,np.newaxis],ll))
-
-    wtmp = np.zeros((len(m_even),LMAX+1,2))
-    vtmp = np.zeros((len(m_even),LMAX+1,2))
-    # m = even terms (vlm,wlm sine series)
-    for n in range(0,LMAX+1):
-        wtmp[:,n,0] = np.sum(wlm[:,m_even,n]*dlm[:,m_even,0],axis=0)
-        wtmp[:,n,1] = np.sum(wlm[:,m_even,n]*dlm[:,m_even,1],axis=0)
-        vtmp[:,n,0] = np.sum(vlm[:,m_even,n]*dlm[:,m_even,0],axis=0)
-        vtmp[:,n,1] = np.sum(vlm[:,m_even,n]*dlm[:,m_even,1],axis=0)
-
-    d_cos[m_even,:,0] = np.dot(wtmp[:,:,1],np.transpose(snk))
-    d_sin[m_even,:,0] = np.dot(-wtmp[:,:,0],np.transpose(snk))
-    d_cos[m_even,:,1] = np.dot(vtmp[:,:,1],np.transpose(snk))
-    d_sin[m_even,:,1] = np.dot(-vtmp[:,:,0],np.transpose(snk))
-
-    # m = odd terms (vlm,wlm cosine series)
-    wtmp = np.zeros((len(m_odd),LMAX+1,2))
-    vtmp = np.zeros((len(m_odd),LMAX+1,2))
-    for n in range(0,LMAX+1):
-        wtmp[:,n,0] = np.sum(wlm[:,m_odd,n]*dlm[:,m_odd,0],axis=0)
-        wtmp[:,n,1] = np.sum(wlm[:,m_odd,n]*dlm[:,m_odd,1],axis=0)
-        vtmp[:,n,0] = np.sum(vlm[:,m_odd,n]*dlm[:,m_odd,0],axis=0)
-        vtmp[:,n,1] = np.sum(vlm[:,m_odd,n]*dlm[:,m_odd,1],axis=0)
-
-    d_cos[m_odd,:,0] = np.dot(wtmp[:,:,1],np.transpose(cnk))
-    d_sin[m_odd,:,0] = np.dot(-wtmp[:,:,0],np.transpose(cnk))
-    d_cos[m_odd,:,1] = np.dot(vtmp[:,:,1],np.transpose(cnk))
-    d_sin[m_odd,:,1] = np.dot(-vtmp[:,:,0],np.transpose(cnk))
-
-    # Calculating cos(m*phi) and sin(m*phi)
-    ccos = np.cos(np.dot(mm,phi))
-    ssin = np.sin(np.dot(mm,phi))
-    # Final signal recovery from fourier coefficients
-    gradients = np.zeros((phimax,thmax,2))
-    gradients[:,:,0] = np.dot(np.transpose(ccos), d_cos[:,:,0]) + \
-        np.dot(np.transpose(ssin), d_sin[:,:,0])
-    gradients[:,:,1] = np.dot(np.transpose(ccos), d_cos[:,:,1]) + \
-        np.dot(np.transpose(ssin), d_sin[:,:,1])
-    # return the gradient fields
-    return gradients
+    d = np.zeros((LMAX+1, thmax, 2), dtype=np.complex128)
+    wtmp = np.einsum("lmk...,lm...->mk", Wlmk[:,:MMAX+1,:], dlm)
+    vtmp = np.einsum("lmk...,lm...->mk", Vlmk[:,:MMAX+1,:], dlm)
+    d[m_even,:,0] = np.einsum("mk...,kh...->mh", wtmp[m_even,:], k_th.imag)
+    d[m_even,:,1] = np.einsum("mk...,kh...->mh", vtmp[m_even,:], k_th.imag)
+    d[m_odd,:,0] = np.einsum("mk...,kh...->mh", wtmp[m_odd,:], k_th.real)
+    d[m_odd,:,1] = np.einsum("mk...,kh...->mh", vtmp[m_odd,:], k_th.real)
+    # calculate the zonal and meridional gradients of the scalar field
+    gradients = np.einsum("mp...,mhd...->phd...", m_phi, d)
+    # return the gradient fields and drop imaginary component
+    return gradients.real
 
 def geostrophic_currents(clm1, slm1, lon, lat,
     LMIN=0, LMAX=60, MMAX=None, RAD=0,
     DENSITY=1.035, LOVE=None, PLM=None):
     r"""
-    Converts data from spherical harmonic coefficients to a
-    spatial fields of ocean geostrophic currents following
+    Converts data from spherical harmonic coefficients to spatial
+    fields of approximate ocean geostrophic currents following
     :cite:p:`Wahr:1998hy,Wahr:2002ie`
 
     Parameters
@@ -205,10 +170,10 @@ def geostrophic_currents(clm1, slm1, lon, lat,
         MMAX = np.copy(LMAX)
 
     # Longitude in radians
-    phi = (np.squeeze(lon)*np.pi/180.0)[np.newaxis,:]
+    phi = np.radians(np.squeeze(lon))
     phmax = len(lon)
     # colatitude in radians
-    th = (90.0 - np.squeeze(lat))*np.pi/180.0
+    th = np.radians(90.0 - np.squeeze(lat))
     thmax = len(th)
 
     # Gaussian Smoothing
@@ -230,7 +195,8 @@ def geostrophic_currents(clm1, slm1, lon, lat,
     # smooth harmonics and convert to output units
     clm = np.zeros((LMAX+1, MMAX+1, 2))
     slm = np.zeros((LMAX+1, MMAX+1, 2))
-    # zonal flow harmonics
+    # zonal flow harmonics (equation 3)
+    # differentiating Legendre polynomials with respect to longitude
     for l in range(1, LMAX):
         # truncate to degree and order
         mm = np.arange(0, np.min([l,MMAX])+1)
@@ -240,7 +206,8 @@ def geostrophic_currents(clm1, slm1, lon, lat,
             np.sqrt(((l+1)**2 - mm**2)*(2.0*l + 3.0)/(2.0*l + 1))
         clm[l,mm,0] = coeff*wl[l]*(temp1*clm1[l-1,mm] - temp2*clm1[l+1,mm])
         slm[l,mm,0] = coeff*wl[l]*(temp1*slm1[l-1,mm] - temp2*slm1[l+1,mm])
-    # meridional flow harmonics
+    # meridional flow harmonics (equation 4)
+    # differentiating Legendre polynomials with respect to colatitude
     for l in range(0, LMAX+1):
         # truncate to degree and order
         mm = np.arange(0, np.min([l,MMAX])+1)
@@ -251,32 +218,20 @@ def geostrophic_currents(clm1, slm1, lon, lat,
     # Truncating harmonics to degree and order LMAX
     # removing coefficients below LMIN and above MMAX
     mm = np.arange(0, MMAX+1)
-    clm[LMIN:LMAX+1,mm,:] = clm[LMIN:LMAX+1,mm,:]
-    slm[LMIN:LMAX+1,mm,:] = slm[LMIN:LMAX+1,mm,:]
+    # real (cosine) and imaginary (sine) components
+    Ylm = clm[LMIN:LMAX+1,:MMAX+1,:] - 1j * slm[LMIN:LMAX+1,:MMAX+1,:]
+    # convolve legendre polynomials and truncate to degree and order
+    iint = 1.0/(np.cos(th)*np.sin(th))
+    plm = np.einsum("h...,lmh...->lmh...", iint, PLM[LMIN:LMAX+1,:MMAX+1,:])
+    # summation over all spherical harmonic degrees
+    pconv = np.einsum("lmh...,lmd...->mhd...", plm, Ylm)
 
-    # Calculate fourier coefficients from legendre coefficients
-    d_cos = np.zeros((MMAX+1,thmax,2))# [m,th]
-    d_sin = np.zeros((MMAX+1,thmax,2))# [m,th]
-    for k in range(0,thmax):
-        # summation over all spherical harmonic degrees
-        temp = 1.0/(np.cos(th[k])*np.sin(th[k]))
-        # for each direction of flow
-        for d in range(2):
-            d_cos[:,k,d] = temp*np.sum(PLM[:,mm,k]*clm[:,mm,d],axis=0)
-            d_sin[:,k,d] = temp*np.sum(PLM[:,mm,k]*slm[:,mm,d],axis=0)
-
-    # Final signal recovery from fourier coefficients
-    m = np.arange(0,MMAX+1)[:,np.newaxis]
-    # Calculating cos(m*phi) and sin(m*phi)
-    ccos = np.cos(np.dot(m,phi))
-    ssin = np.sin(np.dot(m,phi))
+    # calculating cos(m*phi) and sin(m*phi) using Euler's formula
+    m_phi = np.exp(1j * np.einsum("m...,p...->mp...", mm, phi))
     # output geostrophic current fields
-    currents = np.zeros((phmax,thmax,2))
-    # for each direction of flow
-    for d in range(2):
-        # summation of cosine and sine harmonics
-        currents[:,:,d] = np.dot(np.transpose(ccos),d_cos[:,:,d]) + \
-            np.dot(np.transpose(ssin),d_sin[:,:,d])
+    currents = np.empty((phmax,thmax,2))
+    # summation of cosine and sine harmonics
+    currents[:] = np.einsum("mp...,mhd...->phd...", m_phi, pconv)
 
-    # return the current fields
-    return currents
+    # return the current fields and drop imaginary component
+    return currents.real

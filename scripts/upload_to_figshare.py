@@ -71,7 +71,8 @@ def arguments():
     )
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Working data directory')
     # figshare credentials
     parser.add_argument('--user','-U',

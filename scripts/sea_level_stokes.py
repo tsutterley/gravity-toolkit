@@ -172,7 +172,7 @@ def sea_level_stokes(PROC, DREL, DSET, LMAX,
     dlon,dlat = landsea.spacing
     nlat, nlon = landsea.shape
     # calculate Fully-Normalized Legendre Polynomials
-    th = (90.0 - landsea.lat)*np.pi/180.0
+    th = np.radians(90.0 - landsea.lat)
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(th))
 
     # create index file for calc_mascon.py
@@ -291,7 +291,8 @@ def arguments():
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Output directory for mascon files')
     # GRACE/GRACE-FO data processing center
     parser.add_argument('--center','-c',

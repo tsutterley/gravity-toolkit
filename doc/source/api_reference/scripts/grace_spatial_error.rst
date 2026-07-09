@@ -1,6 +1,6 @@
-======================
-grace_spatial_error.py
-======================
+==========================
+``grace_spatial_error.py``
+==========================
 
 - Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports spatial error field following :cite:t:`Wahr:2006bx`
 - Filters and smooths data with specified processing algorithms :cite:p:`Jekeli:1981vj,Swenson:2006hu`

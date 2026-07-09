@@ -1,3 +1,5 @@
+.. _resources:
+
 =========
 Resources
 =========
@@ -31,6 +33,7 @@ Product Information
 
 Processing Standards
 ####################
+
 - `GRACE-FO CSR Level-2 Processing Standards Document <https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-docs/gracefo/open/docs/GRACE-FO_L2-CSR_ProcStds_v1.1.pdf>`_
 - `GRACE-FO GFZ Level-2 Processing Standards Document <https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-docs/gracefo/open/docs/GRACE-FO_L2-GFZ_ProcStds_v1.0.pdf>`_
 - `GRACE-FO JPL Level-2 Processing Standards Document <https://archive.podaac.earthdata.nasa.gov/podaac-ops-cumulus-docs/gracefo/open/docs/GRACE-FO_L2-JPL_ProcStds_v1.0.pdf>`_

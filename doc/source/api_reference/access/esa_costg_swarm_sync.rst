@@ -1,6 +1,6 @@
-=======================
-esa_costg_swarm_sync.py
-=======================
+===========================
+``esa_costg_swarm_sync.py``
+===========================
 
 - Syncs Swarm gravity field products from the `ESA Swarm Science Server <https://earth.esa.int/eogateway/missions/swarm/data>`_
 - Creates an index file for each data product

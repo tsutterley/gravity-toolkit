@@ -109,7 +109,7 @@ def combine_sea_level_data(index_file,
     dlon,dlat = landsea.spacing
     nlat, nlon = landsea.shape
     # longitude and colatitude in radians
-    th = (90.0 - np.squeeze(landsea.lat))*np.pi/180.0
+    th = np.radians(90.0 - np.squeeze(landsea.lat))
 
     # Calculating Legendre Polynomials using Holmes and Featherstone relation
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(th))
@@ -178,7 +178,8 @@ def arguments():
         type=pathlib.Path,
         help='Input index file with spherical harmonic data files')
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Output directory for files')
     parser.add_argument('--file-prefix','-P',
         type=str,

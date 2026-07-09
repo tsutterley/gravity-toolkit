@@ -1,6 +1,6 @@
-=========
-utilities
-=========
+=============
+``utilities``
+=============
 
 Download and management utilities for syncing time and auxiliary files
 
@@ -17,6 +17,14 @@ General Methods
 ===============
 
 .. autofunction:: gravity_toolkit.utilities.get_data_path
+
+.. autofunction:: gravity_toolkit.utilities.get_cache_path
+
+.. autofunction:: gravity_toolkit.utilities.import_dependency
+
+.. autofunction:: gravity_toolkit.utilities.dependency_available
+
+.. autofunction:: gravity_toolkit.utilities.is_valid_url
 
 .. autoclass:: gravity_toolkit.utilities.reify
     :members:

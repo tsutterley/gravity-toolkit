@@ -103,7 +103,7 @@ def plot_SLR_azimuthal(base_dir, PROC, DREL, START_MON, END_MON, MISSING):
         'CSR SLR','GSFC SLR','GFZ GravIS']
     plot_zorder = [0,3,1,2]
     fig_text = {'C21':'a)','S21':'b)'}
-    plot_ylabel = {'C21':'C$\mathregular{_{21}}$','S21':'S$\mathregular{_{21}}$'}
+    plot_ylabel = {'C21':r'C$\mathregular{_{21}}$','S21':r'S$\mathregular{_{21}}$'}
     CSR = dict(time=CSR_CS2['time'],month=CSR_CS2['month'])
     GSFC = dict(time=GSFC_CS2['time'],month=GSFC_CS2['month'])
     GFZ = dict(time=GFZ_CS2['time'],month=GFZ_CS2['month'])
@@ -280,7 +280,8 @@ def arguments():
     )
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Working data directory')
     # GRACE/GRACE-FO data processing center
     parser.add_argument('--center','-C',

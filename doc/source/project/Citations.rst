@@ -38,18 +38,33 @@ Dependencies
 
 This software is also dependent on other commonly used Python packages:
 
-- `cartopy: Python package designed for geospatial data processing <https://scitools.org.uk/cartopy/docs/latest/>`_
+- `boto3: Amazon Web Services (AWS) SDK for Python <https://boto3.amazonaws.com/v1/documentation/api/latest/index.html>`_
 - `future: Compatibility layer between Python 2 and Python 3 <https://python-future.org/>`_
-- `h5py: Python interface for Hierarchal Data Format 5 (HDF5) <https://www.h5py.org/>`_
-- `ipywidgets: interactive HTML widgets for Jupyter notebooks and IPython <https://ipywidgets.readthedocs.io/en/latest/>`_
 - `lxml: processing XML and HTML in Python <https://pypi.python.org/pypi/lxml>`_
 - `matplotlib: Python 2D plotting library <https://matplotlib.org/>`_
 - `netCDF4: Python interface to the netCDF C library <https://unidata.github.io/netcdf4-python/>`_
 - `numpy: Scientific Computing Tools For Python <https://numpy.org>`_
+- `platformdirs: Python module for determining platform-specific directories <https://pypi.org/project/platformdirs/>`_
 - `python-dateutil: powerful extensions to datetime <https://dateutil.readthedocs.io/en/stable/>`_
 - `PyYAML: YAML parser and emitter for Python <https://github.com/yaml/pyyaml>`_
 - `scipy: Scientific Tools for Python <https://docs.scipy.org/doc/>`_
+
+Optional Dependencies
+---------------------
+
+- `cartopy: Python package designed for geospatial data processing <https://scitools.org.uk/cartopy/docs/latest/>`_
+- `dask: Parallel computing with task scheduling <https://www.dask.org/>`_
+- `geoid-toolkit: Python utilities for calculating geoid heights from static gravity field coefficients <https://github.com/tsutterley/geoid-toolkit/>`_
+- `gdal: Pythonic interface to the Geospatial Data Abstraction Library (GDAL) <https://pypi.python.org/pypi/GDAL>`_
+- `h5py: Python interface for Hierarchal Data Format 5 (HDF5) <https://www.h5py.org/>`_
+- `ipywidgets: interactive HTML widgets for Jupyter notebooks and IPython <https://ipywidgets.readthedocs.io/en/latest/>`_
+- `obstore: Simple, high-throughput Python interface for object storage <https://developmentseed.org/obstore>`_
+- `pyarrow: Apache Arrow Python bindings <https://arrow.apache.org/docs/python/>`_
+- `pyshp: Python read/write support for ESRI Shapefile format <https://github.com/GeospatialPython/pyshp>`_
+- `s3fs: Pythonic file interface to S3 built on top of botocore <https://s3fs.readthedocs.io/en/latest/>`_
+- `shapely: PostGIS-ish operations outside a database context for Python <http://toblerity.org/shapely/index.html>`_
 - `tkinter: Python interface to the Tcl/Tk GUI toolkit <https://docs.python.org/3/library/tkinter.html>`_
+- `zarr: Chunked, compressed, N-dimensional arrays in Python <https://zarr.readthedocs.io/en/stable/>`_
 
 Disclaimer
 ##########

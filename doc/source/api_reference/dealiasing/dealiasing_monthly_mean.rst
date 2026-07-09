@@ -1,6 +1,6 @@
-==========================
-dealiasing_monthly_mean.py
-==========================
+==============================
+``dealiasing_monthly_mean.py``
+==============================
 
 - Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product and outputs monthly the mean for a specific GRACE/GRACE-FO processing center and data release
 

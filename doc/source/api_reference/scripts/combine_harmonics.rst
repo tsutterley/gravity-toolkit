@@ -1,6 +1,6 @@
-====================
-combine_harmonics.py
-====================
+========================
+``combine_harmonics.py``
+========================
 
 - Converts a file from the spherical harmonic domain into the spatial domain :cite:p:`Wahr:1998hy`
 

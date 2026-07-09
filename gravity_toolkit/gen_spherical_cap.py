@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 gen_spherical_cap.py
-Written by Tyler Sutterley (06/2023)
+Written by Tyler Sutterley (07/2026)
 Calculates gravitational spherical harmonic coefficients for a spherical cap
 
 Creating a spherical cap with generating angle alpha is a 2 step process:
@@ -61,6 +61,8 @@ REFERENCES:
         https://doi.org/10.1007/s00190-011-0522-7
 
 UPDATE HISTORY:
+    Updated 07/2026: use np.einsum for spherical harmonic summations
+        use np.radians to convert from degrees to radians
     Updated 06/2023: modified custom units case to not convert to cmwe
     Updated 03/2023: simplified unit degree factors using units class
         improve typing for variables in docstrings
@@ -147,8 +149,8 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
         MMAX = np.copy(LMAX)
 
     # convert lon and lat to radians
-    phi = lon*np.pi/180.0# Longitude in radians
-    th = (90.0 - lat)*np.pi/180.0# Colatitude in radians
+    phi = np.radians(lon)# Longitude in radians
+    th = np.radians(90.0 - lat)# Colatitude in radians
 
     # Earth Parameters
     factors = gravity_toolkit.units(lmax=LMAX)
@@ -160,7 +162,7 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     if (RAD_CAP != 0):
         # if given spherical cap radius in degrees
         # converting to radians
-        alpha = RAD_CAP*np.pi/180.0
+        alpha = np.radians(RAD_CAP)
     elif (AREA != 0):
         # if given spherical cap area in cm^2
         # radius in centimeters
@@ -231,12 +233,7 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     # this would be the plm for the center of the spherical cap
     # used to rotate the spherical cap to point lat/lon
     if PLM is None:
-        plmout,_ = plm_holmes(LMAX, np.cos(th))
-        # truncate precomputed plms to order
-        plmout = np.squeeze(plmout[:,:MMAX+1,:])
-    else:
-        # truncate precomputed plms to degree and order
-        plmout = PLM[:LMAX+1,:MMAX+1]
+        PLM, _ = plm_holmes(LMAX, np.cos(th))
 
     # calculate array of m values ranging from 0 to MMAX (harmonic orders)
     # MMAX+1 as there are MMAX+1 elements between 0 and MMAX
@@ -247,29 +244,20 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     # data normally is 1 for a uniform 1cm water equivalent layer
     # but can be a mass point if reconstructing a spherical harmonic field
     # NOTE: NOT a matrix multiplication as data (and phi) is a single point
-    dcos = unit_conv*data*np.cos(m*phi)
-    dsin = unit_conv*data*np.sin(m*phi)
+    d = unit_conv*data*np.exp(1j*m*phi)
 
     # Multiplying by plm_alpha (F_l from Jacob 2012)
     plm = np.zeros((LMAX+1, MMAX+1))
-    # Initializing preliminary spherical harmonic matrices
-    yclm = np.zeros((LMAX+1, MMAX+1))
-    yslm = np.zeros((LMAX+1, MMAX+1))
     # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
-    Ylms.clm = np.zeros((LMAX+1, MMAX+1))
-    Ylms.slm = np.zeros((LMAX+1, MMAX+1))
-    for m in range(0,MMAX+1):# MMAX+1 to include MMAX
-        l = np.arange(m,LMAX+1)# LMAX+1 to include LMAX
-        # rotate spherical cap to be centered at lat/lon
-        plm[l,m] = plmout[l,m]*pl_alpha[l]
-        # multiplying clm by cos(m*phi) and slm by sin(m*phi)
-        # to get a field of spherical harmonics
-        yclm[l,m] = plm[l,m]*dcos[m]
-        yslm[l,m] = plm[l,m]*dsin[m]
-        # multiplying by factors to convert to geoid coefficients
-        Ylms.clm[l,m] = dfactor[l]*yclm[l,m]
-        Ylms.slm[l,m] = dfactor[l]*yslm[l,m]
+    # rotate spherical cap to be centered at lat/lon
+    plm = np.einsum("lm...,l...->lm...", PLM[:LMAX+1,:MMAX+1], pl_alpha)
+    # multiplying clm by cos(m*phi) and slm by sin(m*phi)
+    # to get a field of spherical harmonics
+    ylm = np.einsum("lm...,m...->lm...", plm, d)
+    # Multiplying by factors to convert to fully normalized coefficients
+    Ylms.clm = np.einsum("l...,lm...->lm...", dfactor, ylm.real)
+    Ylms.slm = np.einsum("l...,lm...->lm...", dfactor, ylm.imag)
 
     # return the output spherical harmonics object
     return Ylms

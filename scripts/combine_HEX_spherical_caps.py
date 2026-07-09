@@ -305,7 +305,7 @@ def combine_HEX_spherical_caps(PROC, DREL, DSET, LMAX, RAD,
         # output GRACE regional time-series
         total_mass = grace_reg[i]
         total_thick = 1e15*total_mass/area_reg[i]
-        total_error = np.sqrt(grace_error[i]**2 + statistical_reg[i]**2)
+        total_error = np.hypot(grace_error[i], statistical_reg[i])
         thick_error = 1e15*total_error/area_reg[i]
         # total area in kilometers^2
         area_km = area_reg[i]/1e10
@@ -334,7 +334,8 @@ def arguments():
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Output directory for mascon files')
     # GRACE/GRACE-FO data processing center
     parser.add_argument('--center','-c',

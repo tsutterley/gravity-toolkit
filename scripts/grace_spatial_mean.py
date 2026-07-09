@@ -392,7 +392,8 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Output directory for spatial files')
     # GRACE/GRACE-FO flags
     # 'wSLR_C20_wDEG1'

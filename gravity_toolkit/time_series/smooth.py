@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 smooth.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (07/2026)
 
 Computes a moving average of a time-series using three possible routines:
     1) centered moving average
@@ -48,6 +48,7 @@ PYTHON DEPENDENCIES:
     scipy: Scientific Tools for Python (https://docs.scipy.org/doc/)
 
 UPDATE HISTORY:
+    Updated 07/2026: use np.hypot to calculate the sum of two squares
     Updated 01/2023: refactored time series analysis functions
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 05/2021: define int/float precision to prevent deprecation warning
@@ -224,13 +225,13 @@ def smooth(t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0,
             # annual component
             AS,AC = beta_mat[SEAS:SEAS+2]
             dannual[ran] += wi*np.dot(TMAT[:,SEAS:SEAS+2],[AS,AC])
-            annamp[ran] += wi*np.sqrt(AS**2 + AC**2)
-            annphase[ran] += wi*np.arctan2(AC,AS)*180.0/np.pi
+            annamp[ran] += wi*np.hypot(AS, AC)
+            annphase[ran] += wi*np.degrees(np.arctan2(AC, AS))
             # semi-annual component
             SS,SC = beta_mat[SEAS+2:SEAS+4]
             dsemian[ran] += wi*np.dot(TMAT[:,SEAS+2:SEAS+4],[SS,SC])
-            semiamp[ran] += wi*np.sqrt(SS**2 + SC**2)
-            semiphase[ran] += wi*np.arctan2(SC,SS)*180.0/np.pi
+            semiamp[ran] += wi*np.hypot(SS, SC)
+            semiphase[ran] += wi*np.degrees(np.arctan2(SC, SS))
             # add weights
             weight[ran] += wi
         # divide weighted smoothed time-series by weights
@@ -326,13 +327,13 @@ def smooth(t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0,
             # annual component
             AS,AC = beta_mat[SEAS:SEAS+2]
             dannual[i] = np.dot(TMAT[HFWTH,SEAS:SEAS+2],[AS,AC])
-            annphase[i] = np.arctan2(AC,AS)*180.0/np.pi
-            annamp[i] = np.sqrt(AS**2 + AC**2)
+            annphase[i] = np.degrees(np.arctan2(AC, AS))
+            annamp[i] = np.hypot(AS, AC)
             # semi-annual component
             SS,SC = beta_mat[SEAS+2:SEAS+4]
             dsemian[i] = np.dot(TMAT[HFWTH,SEAS+2:SEAS+4],[SS,SC])
-            semiamp[i] = np.sqrt(SS**2 + SC**2)
-            semiphase[i] = np.arctan2(SC,SS)*180.0/np.pi
+            semiamp[i] = np.hypot(SS, SC)
+            semiphase[i] = np.degrees(np.arctan2(SC, SS))
             # noise component
             dnoise[i] = d_in[i+HFWTH] - dsmth[i] - dseason[i]
             # reduced time-series

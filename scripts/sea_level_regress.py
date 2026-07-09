@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 sea_level_regress.py
-Written by Tyler Sutterley (06/2023)
+Written by Tyler Sutterley (07/2026)
 
 Reads in sea level grid files and calculates the trends at
     each grid point following an input regression model
@@ -57,6 +57,7 @@ PROGRAM DEPENDENCIES:
     spatial.py: spatial data class for reading, writing and processing data
 
 UPDATE HISTORY:
+    Updated 07/2026: use np.hypot to calculate the sum of two squares
     Updated 06/2023: append amplitude and phase titles when creating flags
         more tidal aliasing periods using values from Ray and Luthcke (2006)
     Updated 05/2023: split S2 tidal aliasing terms into GRACE and GRACE-FO eras
@@ -345,16 +346,17 @@ def sea_level_regress(PROC, DREL, DSET, LMAX,
             out.data[indy,indx,j], out.data[indy,indx,j+1]
         )
         # convert phase from -180:180 to 0:360
-        ii,jj = np.nonzero((ph.data < 0) & np.logical_not(ph.mask))
-        ph.data[ii,jj] += 360.0
+        ph.data = np.where(
+            (ph.data < 0) & np.logical_not(ph.mask), ph.data + 360.0, ph.data
+        )
         # Amplitude Error
         comp1=out.error[indy,indx,j]*out.data[indy,indx,j]/amp.data[indy,indx]
         comp2=out.error[indy,indx,j+1]*out.data[indy,indx,j+1]/amp.data[indy,indx]
-        amp.error[indy,indx] = np.sqrt(comp1**2 + comp2**2)
+        amp.error[indy,indx] = np.hypot(comp1, comp2)
         # Phase Error (degrees)
         comp1=out.error[indy,indx,j]*out.data[indy,indx,j+1]/(amp.data[indy,indx]**2)
         comp2=out.error[indy,indx,j+1]*out.data[indy,indx,j]/(amp.data[indy,indx]**2)
-        ph.error[indy,indx] = (180.0/np.pi)*np.sqrt(comp1**2 + comp2**2)
+        ph.error[indy,indx] = np.degrees(np.hypot(comp1, comp2))
 
         # output file names for amplitude and phase
         f2 = (ITERATION, dset_str, gia_str, ocean_str, EXPANSION,
@@ -502,7 +504,8 @@ def arguments():
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Output directory for mascon files')
     # GRACE/GRACE-FO data processing center
     parser.add_argument('--center','-c',

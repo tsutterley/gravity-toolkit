@@ -1,6 +1,6 @@
-==============
-calc_mascon.py
-==============
+==================
+``calc_mascon.py``
+==================
 
 - Reads in GRACE/GRACE-FO spherical harmonic coefficients
 - Correct spherical harmonics with the specified GIA model group

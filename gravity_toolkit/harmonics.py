@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonics.py
-Written by Tyler Sutterley (06/2024)
+Written by Tyler Sutterley (07/2026)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -25,6 +25,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 07/2026: add dunder (magic) methods for mathematical operations
     Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 05/2024: make subscriptable and allow item assignment
     Updated 10/2023: place time and month variables in try/except block
@@ -1892,6 +1893,71 @@ class harmonics(object):
             properties.append(f"    start_month: {min(self.month)}")
             properties.append(f"    end_month: {max(self.month)}")
         return '\n'.join(properties)
+
+    def __add__(self, other):
+        """Add values to a ``harmonics`` object"""
+        temp = self.copy()
+        return temp.add(other)
+
+    def __div__(self, other):
+        """Divide values from a ``harmonics`` object"""
+        return self.__truediv__(other)
+
+    def __iadd__(self, other):
+        """In-place add values to a ``harmonics`` object"""
+        return self.add(other)
+
+    def __idiv__(self, other):
+        """In-place divide values from a ``harmonics`` object"""
+        return self.__itruediv__(other)
+
+    def __imul__(self, other):
+        """In-place multiply values from a ``harmonics`` object"""
+        if isinstance(other, (int, float, np.ndarray)):
+            return self.scale(other)
+        else:
+            return self.multiply(other)
+
+    def __ipow__(self, other):
+        """In-place raise values from a ``harmonics`` object to a power"""
+        return self.power(other)
+
+    def __isub__(self, other):
+        """In-place subtract values from a ``harmonics`` object"""
+        return self.subtract(other)
+
+    def __itruediv__(self, other):
+        """In-place divide values from a ``harmonics`` object"""
+        if isinstance(other, (int, float, np.ndarray)):
+            return self.scale(1.0 / other)
+        else:
+            return self.divide(other)
+
+    def __mul__(self, other):
+        """Multiply values from a ``harmonics`` object"""
+        temp = self.copy()
+        if isinstance(other, (int, float, np.ndarray)):
+            return temp.scale(other)
+        else:
+            return temp.multiply(other)
+    
+    def __pow__(self, other):
+        """Raise values from a ``harmonics`` object to a power"""
+        temp = self.copy()
+        return temp.power(other)
+    
+    def __sub__(self, other):
+        """Subtract values from a ``harmonics`` object"""
+        temp = self.copy()
+        return temp.subtract(other)
+
+    def __truediv__(self, other):
+        """Divide values from a ``harmonics`` object"""
+        temp = self.copy()
+        if isinstance(other, (int, float, np.ndarray)):
+            return temp.scale(1.0 / other)
+        else:
+            return temp.divide(other)
 
     def __len__(self):
         """Number of months

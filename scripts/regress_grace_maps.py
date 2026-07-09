@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 regress_grace_maps.py
-Written by Tyler Sutterley (06/2023)
+Written by Tyler Sutterley (07/2026)
 
 Reads in GRACE/GRACE-FO spatial files and fits a regression model
     at each grid point
@@ -60,6 +60,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 07/2026: use np.hypot to calculate the sum of two squares
     Updated 06/2023: append amplitude and phase titles when creating flags
         more tidal aliasing periods using values from Ray and Luthcke (2006)
     Updated 05/2023: split S2 tidal aliasing terms into GRACE and GRACE-FO eras
@@ -358,16 +359,15 @@ def regress_grace_maps(LMAX, RAD,
             out.data[:,:,j], out.data[:,:,j+1]
         )
         # convert phase from -180:180 to 0:360
-        ii,jj = np.nonzero(ph.data < 0)
-        ph.data[ii,jj] += 360.0
+        ph.data = np.where(ph.data < 0, ph.data + 360.0, ph.data)
         # Amplitude Error
         comp1 = out.error[:,:,j]*out.data[:,:,j]/amp.data
         comp2 = out.error[:,:,j+1]*out.data[:,:,j+1]/amp.data
-        amp.error = np.sqrt(comp1**2 + comp2**2)
+        amp.error = np.hypot(comp1, comp2)
         # Phase Error (degrees)
         comp1 = out.error[:,:,j]*out.data[:,:,j+1]/(amp.data**2)
         comp2 = out.error[:,:,j+1]*out.data[:,:,j]/(amp.data**2)
-        ph.error = (180.0/np.pi)*np.sqrt(comp1**2 + comp2**2)
+        ph.error = np.degrees(np.hypot(comp1, comp2))
 
         # output file names for amplitude, phase and errors
         f2 = (FILE_PREFIX, units, LMAX, order_str,
@@ -515,7 +515,8 @@ def arguments():
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Output directory for spatial files')
     parser.add_argument('--file-prefix','-P',
         type=str,

@@ -1,6 +1,6 @@
-=======================
-itsg_graz_grace_sync.py
-=======================
+===========================
+``itsg_graz_grace_sync.py``
+===========================
 
 - Syncs GRACE/GRACE-FO and auxiliary data from the `ITSG GRAZ server <https://www.tugraz.at/institute/ifg/downloads/gravity-field-models>`_
 - Creates an index file for each data product

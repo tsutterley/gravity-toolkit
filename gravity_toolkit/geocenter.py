@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter.py
-Written by Tyler Sutterley (06/2024)
+Written by Tyler Sutterley (07/2026)
 Data class for reading and processing geocenter data
 
 PYTHON DEPENDENCIES:
@@ -15,6 +15,7 @@ PYTHON DEPENDENCIES:
         https://github.com/yaml/pyyaml
 
 UPDATE HISTORY:
+    Updated 07/2026: add dunder (magic) methods for mathematical operations
     Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 05/2024: make subscriptable and allow item assignment
     Updated 09/2023: add group option to netCDF read function
@@ -79,7 +80,7 @@ class geocenter(object):
         time variable of the spherical harmonics
     month: np.ndarray
         GRACE/GRACE-FO months variable of the spherical harmonics
-    radius: float, default 6371000.790009159
+    radius: float, default 6371000790.009159
         Average Radius of the Earth [mm]
     """
     np.seterr(invalid='ignore')
@@ -297,8 +298,8 @@ class geocenter(object):
         Reads monthly geocenter files from `satellite laser ranging
         provided by CSR <http://download.csr.utexas.edu/pub/slr/geocenter/>`_
 
-            - `RL04`: GCN_RL04.txt
-            - `RL05`: GCN_RL05.txt
+            - ``RL04``: GCN_RL04.txt
+            - ``RL05``: GCN_RL05.txt
 
         `New CF-CM geocenter dataset
         <http://download.csr.utexas.edu/pub/slr/geocenter/GCN_L1_L2_30d_CF-CM.txt>`_
@@ -1217,6 +1218,71 @@ class geocenter(object):
             properties.append(f"    start_month: {min(self.month)}")
             properties.append(f"    end_month: {max(self.month)}")
         return '\n'.join(properties)
+
+    def __add__(self, other):
+        """Add values to a ``geocenter`` object"""
+        temp = self.copy()
+        return temp.add(other)
+
+    def __div__(self, other):
+        """Divide values from a ``geocenter`` object"""
+        return self.__truediv__(other)
+
+    def __iadd__(self, other):
+        """In-place add values to a ``geocenter`` object"""
+        return self.add(other)
+
+    def __idiv__(self, other):
+        """In-place divide values from a ``geocenter`` object"""
+        return self.__itruediv__(other)
+
+    def __imul__(self, other):
+        """In-place multiply values from a ``geocenter`` object"""
+        if isinstance(other, (int, float, np.ndarray)):
+            return self.scale(other)
+        else:
+            return self.multiply(other)
+
+    def __ipow__(self, other):
+        """In-place raise values from a ``geocenter`` object to a power"""
+        return self.power(other)
+
+    def __isub__(self, other):
+        """In-place subtract values from a ``geocenter`` object"""
+        return self.subtract(other)
+
+    def __itruediv__(self, other):
+        """In-place divide values from a ``geocenter`` object"""
+        if isinstance(other, (int, float, np.ndarray)):
+            return self.scale(1.0 / other)
+        else:
+            return self.divide(other)
+
+    def __mul__(self, other):
+        """Multiply values from a ``geocenter`` object"""
+        temp = self.copy()
+        if isinstance(other, (int, float, np.ndarray)):
+            return temp.scale(other)
+        else:
+            return temp.multiply(other)
+    
+    def __pow__(self, other):
+        """Raise values from a ``geocenter`` object to a power"""
+        temp = self.copy()
+        return temp.power(other)
+    
+    def __sub__(self, other):
+        """Subtract values from a ``geocenter`` object"""
+        temp = self.copy()
+        return temp.subtract(other)
+
+    def __truediv__(self, other):
+        """Divide values from a ``geocenter`` object"""
+        temp = self.copy()
+        if isinstance(other, (int, float, np.ndarray)):
+            return temp.scale(1.0 / other)
+        else:
+            return temp.divide(other)
 
     def __len__(self):
         """Number of months

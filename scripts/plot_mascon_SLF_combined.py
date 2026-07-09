@@ -33,12 +33,7 @@ import pathlib
 import argparse
 import warnings
 import numpy as np
-import gravity_toolkit.time
-import gravity_toolkit.units
-import gravity_toolkit.spatial
-import gravity_toolkit.utilities
-from gravity_toolkit.gen_harmonics import gen_harmonics
-from gravity_toolkit.read_GIA_model import read_GIA_model
+import gravity_toolkit as gravtk
 
 # attempt imports
 try:
@@ -129,8 +124,8 @@ def plot_mascon_SLF_combined(base_dir,PROC,DREL,START_MON,END_MON,MISSING):
     # Land-Sea Mask (with Antarctica from Rignot et al., 2017)
     # 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
     # Open the land-sea NetCDF file for reading
-    LSMASK = gravity_toolkit.utilities.get_data_path(['data','landsea_hd.nc'])
-    landsea = gravity_toolkit.spatial().from_netCDF4(LSMASK,
+    LSMASK = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
+    landsea = gravtk.spatial().from_netCDF4(LSMASK,
         date=False, varname='LSMASK')
     # create land function
     nth,nphi = landsea.shape
@@ -142,11 +137,11 @@ def plot_mascon_SLF_combined(base_dir,PROC,DREL,START_MON,END_MON,MISSING):
     ocean_function = 1.0 - land_function
     # convert ocean function into a series of spherical harmonics
     # (Note that LMAX=0 in the call to gen_harmonics)
-    Ylms = gen_harmonics(ocean_function.T, landsea.lon, landsea.lat,
+    Ylms = gravtk.gen_harmonics(ocean_function.T, landsea.lon, landsea.lat,
         LMAX=0, PLM=np.ones((1,1,nth)))
     # total area of ocean calculated by integrating the ocean function
     # Average Radius of the Earth [mm]
-    rad_e = 10.0*gravity_toolkit.units().rad_e
+    rad_e = 10.0*gravtk.units().rad_e
     ocean_area = 4.0*np.pi*(rad_e**2)*Ylms.clm[0,0]
 
     # Setting output error alpha with confidence interval
@@ -271,7 +266,7 @@ def plot_mascon_SLF_combined(base_dir,PROC,DREL,START_MON,END_MON,MISSING):
             subdir = sd.format(PROC,DREL,SLF[i],LMAX,START_MON,END_MON)
             # read each GIA model
             for k,GIA_FILE in enumerate(gia_files[g]):
-                gia_Ylms = read_GIA_model(base_dir.joinpath(*GIA_FILE), GIA=g)
+                gia_Ylms = gravtk.read_GIA_model(base_dir.joinpath(*GIA_FILE), GIA=g)
                 gia_str = gia_Ylms['title']
                 input_file = ff.format(gia_str,reg,'',atm_str,ocean_str,LMAX,gw_str,ds_str)
                 dinput = np.loadtxt(mascon_dir.joinpath(subdir,input_file))
@@ -326,7 +321,7 @@ def plot_mascon_SLF_combined(base_dir,PROC,DREL,START_MON,END_MON,MISSING):
                 (tstar*gia_corrected_error[-1])**2)/ocean_area
 
         # vertical line denoting the accelerometer shutoff
-        acc = gravity_toolkit.time.convert_calendar_decimal(2016,9,
+        acc = gravtk.time.convert_calendar_decimal(2016,9,
             day=3,hour=12,minute=12)
         ax.axvline(acc,color='0.5',ls='dashed',lw=0.5,dashes=(12,6))
         # vertical lines for end of the GRACE mission and start of GRACE-FO
@@ -451,7 +446,7 @@ def plot_mascon_SLF_combined(base_dir,PROC,DREL,START_MON,END_MON,MISSING):
             subdir = sd.format(PROC,DREL,SLF[i],LMAX,START_MON,END_MON)
             # read each GIA model
             for k,GIA_FILE in enumerate(gia_files[g]):
-                gia_Ylms = read_GIA_model(base_dir.joinpath(*GIA_FILE), GIA=g)
+                gia_Ylms = gravtk.read_GIA_model(base_dir.joinpath(*GIA_FILE), GIA=g)
                 gia_str = gia_Ylms['title']
                 input_file = ff.format(gia_str,reg,'',atm_str,ocean_str,LMAX,gw_str,ds_str)
                 dinput = np.loadtxt(mascon_dir.joinpath(subdir,input_file))
@@ -485,7 +480,7 @@ def plot_mascon_SLF_combined(base_dir,PROC,DREL,START_MON,END_MON,MISSING):
             error_m1 = np.copy(grace_error)
 
         # vertical line denoting the accelerometer shutoff
-        acc = gravity_toolkit.time.convert_calendar_decimal(2016,9,
+        acc = gravtk.time.convert_calendar_decimal(2016,9,
             day=3,hour=12,minute=12)
         ax.axvline(acc,color='0.5',ls='dashed',lw=0.5,dashes=(12,6))
         # vertical lines for end of the GRACE mission and start of GRACE-FO
@@ -548,7 +543,8 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Working data directory')
     # GRACE/GRACE-FO data processing center
     parser.add_argument('--center','-c',

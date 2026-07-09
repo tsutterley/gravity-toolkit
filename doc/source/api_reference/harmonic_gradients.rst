@@ -1,6 +1,6 @@
-==================
-harmonic_gradients
-==================
+======================
+``harmonic_gradients``
+======================
 
 - Calculates the zonal and meridional gradients of a scalar field from a series of spherical harmonics
 

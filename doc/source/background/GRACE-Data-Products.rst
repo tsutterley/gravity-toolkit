@@ -1,6 +1,23 @@
-=================
-Data File Formats
-=================
+=============
+Data Products
+=============
+
+Data Processing
+###############
+
+There are three main processing centers that create the Level-2 spherical harmonic data as part of the GRACE/GRACE-FO Science Data System (SDS):
+the `University of Texas Center for Space Research (CSR) <http://www2.csr.utexas.edu/grace/>`_,
+the `German Research Centre for Geosciences (GeoForschungsZentrum, GFZ) <https://www.gfz-potsdam.de/en/grace/>`_ and
+the `Jet Propulsion Laboratory (JPL) <https://grace.jpl.nasa.gov/>`_.
+
+GRACE/GRACE-FO data is freely available in the US from
+the `NASA Physical Oceanography Distributed Active Archive Center (PO.DAAC) <https://podaac.jpl.nasa.gov/grace>`_ and
+internationally from the `GFZ Information System and Data Center (ISDC) <http://isdc.gfz-potsdam.de/grace-isdc/>`_.
+
+.. tip::
+    There are programs within this repository that can sync with both of these data archives:
+    :py:mod:`podaac_cumulus.py` for `PO.DAAC AWS <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/podaac_cumulus.py>`_ and
+    :py:mod:`gfz_isdc_grace_ftp.py` for the `GFZ ISDC <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/gfz_isdc_grace_ftp.py>`_.
 
 Product Identifier
 ##################

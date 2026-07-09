@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 geocenter_spatial_maps.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (07/2026)
 
 Reads in GRACE/GRACE-FO geocenter coefficients and exports trends
     in the monthly spatial fields in millimeters water equivalent
@@ -90,6 +90,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 07/2026: use np.radians to convert from degrees to radians
     Updated 05/2023: split S2 tidal aliasing terms into GRACE and GRACE-FO eras
         use pathlib to define and operate on paths
     Updated 01/2023: refactored time series analysis functions
@@ -265,7 +266,7 @@ def geocenter_spatial_maps(base_dir, PROC, DREL,
         nlat = len(grid.lat)
 
     # Computing plms for converting to spatial domain
-    theta = (90.0-grid.lat)*np.pi/180.0
+    theta = np.radians(90.0-grid.lat)
     PLM, dPLM = gravtk.plm_holmes(2, np.cos(theta))
     # fit coefficients
     fits = ['x1','x2','SS','SC','AS','AC','S2SGRC','S2CGRC','S2SGFO','S2CGFO']
@@ -342,8 +343,7 @@ def geocenter_spatial_maps(base_dir, PROC, DREL,
         # output phase to file
         for key in ['SP','AP','S2PGRC','S2PGFO']:
             # convert phase from -180:180 to 0:360
-            ix,iy = np.nonzero(var[key] < 0)
-            var[key][ix,iy] += 360.0
+            var[key] = np.where(var[key] < 0, var[key] + 360.0, var[key])
             # copy variables to output grid
             grid.data = np.copy(var[key])
             grid.time = np.copy(MEAN.time)
@@ -415,10 +415,12 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Working data directory')
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Output directory for spatial files')
     # Data processing center or satellite mission
     parser.add_argument('--center','-c',

@@ -16,15 +16,14 @@ keywords = [
 
 authors = [
     {name = "Tyler Sutterley"},
-    {name = "Hugo Lecomte"},
-    {name = "Yara Mohajerani"},
-    {name = "Isabella Velicogna"},
     {email = "tsutterl@uw.edu"}
 ]
-maintainers = [{ name = "gravity-toolkit contributors" }]
+maintainers = [
+    { name = "gravity-toolkit contributors" }
+]
 license = "MIT"
 license-files = ["LICENSE"]
-readme = "README.rst"
+readme = {file = "README.md", content-type = "text/markdown"}
 
 requires-python = "~=3.6"
 dependencies = [
@@ -34,6 +33,7 @@ dependencies = [
     "matplotlib",
     "netCDF4",
     "numpy",
+    "platformdirs",
     "python-dateutil",
     "pyyaml",
     "scipy>=1.10.1",
@@ -44,13 +44,12 @@ classifiers=[
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Physics",
 ]
 
@@ -62,8 +61,10 @@ Issues = "https://github.com/tsutterley/gravity-toolkit/issues"
 
 [project.optional-dependencies]
 doc = ["docutils", "graphviz", "myst-nb", "numpydoc", "sphinx", "sphinx-argparse>=0.4", "sphinxcontrib-bibtex", "sphinx-design", "sphinx_rtd_theme"]
-all = ["cartopy", "geoid-toolkit", "h5py", "jupyterlab", "jupyterlab_widgets", "notebook", "shapely"]
+all = ["geoid-toolkit", "h5py", "jupyterlab", "jupyterlab_widgets", "notebook"]
+aws = ["dask", "obstore", "pyarrow", "s3fs", "zarr>=3"]
 dev = ["flake8", "pytest>=4.6", "pytest-cov", "pytest-xdist"]
+map = ["cartopy", "gdal", "pyshp", "shapely"]
 
 [tool.setuptools.packages.find]
 exclude = ["test*", "run*"]
@@ -103,6 +104,29 @@ precision = 2
 [tool.ruff]
 line-length = 80
 indent-width = 4
+exclude = [
+    ".git",
+    ".pixi",
+    "build",
+    "run",
+    "test",
+]
+
+[tool.ruff.lint]
+select = [
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    # ruff-specific
+    "RUF",
+]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
@@ -110,6 +134,7 @@ convention = "numpy"
 [tool.ruff.format]
 quote-style = "single"
 indent-style = "space"
+line-ending = "auto"
 docstring-code-format = false
 
 [tool.pixi.workspace]
@@ -124,8 +149,10 @@ gravity-toolkit = { path = ".", editable = true }
 [tool.pixi.environments]
 default = { solve-group = "default" }
 all = { features = ["all"], solve-group = "default" }
-dev = { features = ["all", "dev", "doc"], solve-group = "default" }
+aws = { features = ["all", "aws"], solve-group = "default" }
+dev = { features = ["all", "dev", "map", "doc"], solve-group = "default" }
 doc = { features = ["all", "doc"], solve-group = "default" }
+map = { features = ["all", "map"], solve-group = "default" }
 
 [tool.pixi.tasks.start]
 cmd = "jupyter lab"
@@ -138,10 +165,16 @@ cmd = "pixi workspace export conda-environment {{ flags }} > environment.yml"
 description = "Export workspace to a conda environment file" 
 
 [tool.pixi.feature.doc.tasks.docs]
-args = [ { "arg" = "flags", "default" = "" } ]
-cmd = "make html {{ flags }}"
+args = [ { "arg" = "builder", "default" = "html"}, { "arg" = "flags", "default" = "" } ]
+cmd = "make {{ builder }} {{ flags }}"
 cwd = "doc"
-description = "Create HTML documentation with sphinx"
+description = "Create documentation with sphinx"
+
+[tool.pixi.feature.doc.tasks.clean-docs]
+args = [ { "arg" = "builder", "default" = "html"}, { "arg" = "flags", "default" = "" } ]
+cmd = "make clean && make {{ builder }} {{ flags }}"
+cwd = "doc"
+description = "Remove build artifacts and rebuild the documentation with sphinx"
 
 [tool.pixi.feature.dev.tasks.test]
 args = [ { "arg" = "flags", "default" = "" }, { "arg" = "test", "default" = "." } ]
@@ -166,12 +199,12 @@ lxml = "*"
 matplotlib-base = "*"
 netcdf4 = "*"
 numpy = "*"
+platformdirs = "*"
 python-dateutil = "*"
 pyyaml = "*"
 scipy = "*"
 
 [tool.pixi.feature.all.dependencies]
-cartopy = "*"
 geoid-toolkit = "*"
 h5py = "*"
 ipympl = "*"
@@ -179,7 +212,13 @@ ipywidgets = "*"
 jupyterlab = "*"
 jupyterlab_widgets = "*"
 notebook = "*"
-shapely = "*"
+
+[tool.pixi.feature.aws.dependencies]
+dask = "*"
+obstore = "*"
+pyarrow = "*"
+s3fs = "*"
+zarr = ">=3"
 
 [tool.pixi.feature.dev.dependencies]
 flake8 = "*"
@@ -198,3 +237,9 @@ sphinx-argparse = "*"
 sphinxcontrib-bibtex = "*"
 sphinx-design = "*"
 sphinx_rtd_theme = "*"
+
+[tool.pixi.feature.map.dependencies]
+cartopy = "*"
+gdal = "*"
+pyshp = "*"
+shapely = "*"
