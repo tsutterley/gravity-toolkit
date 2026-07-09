@@ -1,6 +1,6 @@
-=====================
-time_series.piecewise
-=====================
+=========================
+``time_series.piecewise``
+=========================
 
 - Fits a synthetic signal to data over a time period by ordinary or weighted least-squares for breakpoint analysis
 

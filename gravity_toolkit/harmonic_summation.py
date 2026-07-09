@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 harmonic_summation.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (07/2026)
 
 Returns the spatial field for a series of spherical harmonics
 
@@ -30,6 +30,8 @@ PROGRAM DEPENDENCIES:
     units.py: class for converting spherical harmonic data to specific units
 
 UPDATE HISTORY:
+    Updated 07/2026: use np.einsum for spherical harmonic summations
+        use np.radians to convert from degrees to radians
     Updated 04/2023: allow love numbers to be None for custom units case
     Updated 03/2023: allow units inputs to be strings for named types
         improve typing for variables in docstrings
@@ -85,41 +87,32 @@ def harmonic_summation(clm1, slm1, lon, lat,
     if MMAX is None:
         MMAX = np.copy(LMAX)
 
-    # Longitude in radians
-    phi = (np.squeeze(lon)*np.pi/180.0)[np.newaxis,:]
+    # longitude in radians
+    phi = np.radians(np.squeeze(lon))
     # colatitude in radians
-    th = (90.0 - np.squeeze(lat))*np.pi/180.0
-    thmax = len(th)
+    th = np.radians(90.0 - np.squeeze(lat))
 
     # if plms are not pre-computed: calculate Legendre polynomials
     if PLM is None:
         PLM, dPLM = plm_holmes(LMAX, np.cos(th))
 
+    # spherical harmonic order
+    mm = np.arange(0,MMAX+1)# mmax+1 to include mmax
+    # real (cosine) and imaginary (sine) components
+    Ylm = np.zeros((LMAX+1, MMAX+1), dtype=np.complex128)
     # Truncating harmonics to degree and order LMAX
     # removing coefficients below LMIN and above MMAX
-    mm = np.arange(0, MMAX+1)
-    clm = np.zeros((LMAX+1, MMAX+1))
-    slm = np.zeros((LMAX+1, MMAX+1))
-    clm[LMIN:LMAX+1,mm] = clm1[LMIN:LMAX+1,mm]
-    slm[LMIN:LMAX+1,mm] = slm1[LMIN:LMAX+1,mm]
+    Ylm.real[LMIN:LMAX+1,mm] = clm1[LMIN:LMAX+1,mm]
+    Ylm.imag[LMIN:LMAX+1,mm] = -slm1[LMIN:LMAX+1,mm]
     # Calculate fourier coefficients from legendre coefficients
-    d_cos = np.zeros((MMAX+1,thmax))# [m,th]
-    d_sin = np.zeros((MMAX+1,thmax))# [m,th]
-    for k in range(0,thmax):
-        # summation over all spherical harmonic degrees
-        d_cos[:,k] = np.sum(PLM[:,mm,k]*clm[:,mm],axis=0)
-        d_sin[:,k] = np.sum(PLM[:,mm,k]*slm[:,mm],axis=0)
-
-    # Final signal recovery from fourier coefficients
-    m = np.arange(0,MMAX+1)[:,np.newaxis]
-    # Calculating cos(m*phi) and sin(m*phi)
-    ccos = np.cos(np.dot(m,phi))
-    ssin = np.sin(np.dot(m,phi))
+    # summation over all spherical harmonic degrees
+    pconv = np.einsum("lmh...,lm...->mh...", PLM[:LMAX+1,:MMAX+1,:], Ylm)
+    # calculating cos(m*phi) and sin(m*phi) using Euler's formula
+    m_phi = np.exp(1j * np.einsum("m...,p...->mp...", mm, phi))
     # summation of cosine and sine harmonics
-    s = np.dot(np.transpose(ccos),d_cos) + np.dot(np.transpose(ssin),d_sin)
-
-    # return output data
-    return s
+    spatial = np.einsum("mp...,mh...->ph...", m_phi, pconv)
+    # return output data and drop imaginary component
+    return spatial.real
 
 def harmonic_transform(clm1, slm1, lon, lat,
     LMIN=0, LMAX=60, MMAX=None, PLM=None):
@@ -164,30 +157,26 @@ def harmonic_transform(clm1, slm1, lon, lat,
     # number of longitudinal points
     phimax = len(np.squeeze(lon))
     # colatitude in radians
-    th = (90.0 - np.squeeze(lat))*np.pi/180.0
+    th = np.radians(90.0 - np.squeeze(lat))
     thmax = len(th)
 
     # if plms are not pre-computed: calculate Legendre polynomials
     if PLM is None:
-        PLM, dPLM = plm_holmes(LMAX, np.cos(th))
+        PLM, _ = plm_holmes(LMAX, np.cos(th))
 
-    # combined Ylms and Fourier coefficients (complex)
-    Ylms = np.zeros((LMAX+1, MMAX+1),dtype=np.complex128)
-    delta_M = np.zeros((MMAX+1,thmax),dtype=np.complex128)# [m,th]
-    # Real (cosine) and imaginary (sine) components
+    # real (cosine) and imaginary (sine) components
+    Ylm = np.zeros((LMAX+1, MMAX+1), dtype=np.complex128)
     # Truncating harmonics to degree and order LMAX
     # removing coefficients below LMIN and above MMAX
-    Ylms[LMIN:LMAX+1,:MMAX+1] = clm1[LMIN:LMAX+1,0:MMAX+1] - \
-        slm1[LMIN:LMAX+1,0:MMAX+1]*1j
+    Ylm.real[LMIN:LMAX+1,:MMAX+1] = clm1[LMIN:LMAX+1,:MMAX+1]
+    Ylm.imag[LMIN:LMAX+1,:MMAX+1] = -slm1[LMIN:LMAX+1,:MMAX+1]
     # calculate Ylms summation for each theta band
-    for k in range(0,thmax):
-        # summation over all spherical harmonic degrees
-        delta_M[:,k] = np.sum(PLM[:,:,k]*Ylms[:,:],axis=0)/2.0
+    d = np.einsum("lmh...,lm...->mh...", PLM[:LMAX+1,:MMAX+1,:], Ylm / 2.0)
 
     # output spatial field from FFT transformation
-    s = np.zeros((phimax,thmax))
+    s = np.zeros((phimax, thmax))
     # calculate fft for each theta band (over phis with axis=0)
-    s[:-1,:] = 2.0*(phimax-1)*np.fft.ifft(delta_M,n=phimax-1,axis=0).real
+    s[:-1,:] = 2.0*(phimax-1)*np.fft.ifft(d, n=phimax-1, axis=0).real
     # complete sphere (values at 360 == values at 0)
     s[-1,:] = s[0,:]
 
@@ -269,14 +258,11 @@ def stokes_summation(clm1, slm1, lon, lat,
     else:
         raise ValueError(f'Unknown units {UNITS}')
 
-    # truncate to degree and order
-    mm = np.arange(0, MMAX+1)
+    # spherical harmonic order
+    mm = np.arange(0,MMAX+1)# mmax+1 to include mmax
     # smooth harmonics and convert to output units
-    clm = np.zeros((LMAX+1, MMAX+1))
-    slm = np.zeros((LMAX+1, MMAX+1))
-    for l in range(0, LMAX+1):# LMAX+1 to include LMAX
-        clm[l,:] = wl[l]*dfactor[l]*clm1[l,mm]
-        slm[l,:] = wl[l]*dfactor[l]*slm1[l,mm]
+    clm = np.einsum("l,l,lm->lm", wl, dfactor, clm1[:, mm])
+    slm = np.einsum("l,l,lm->lm", wl, dfactor, slm1[:, mm])
 
     # return the spatial field
     return harmonic_summation(clm, slm, lon, lat,

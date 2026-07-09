@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 amplitude.py
-Written by Tyler Sutterley (01/2023)
+Written by Tyler Sutterley (07/2026)
 
 Calculate the amplitude and phase of a harmonic function from calculated
     sine and cosine of a series of measurements
@@ -21,6 +21,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 07/2026: use np.radians to convert from degrees to radians
     Updated 01/2023: refactored time series analysis functions
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 07/2020: added function docstrings
@@ -49,5 +50,5 @@ def amplitude(bsin, bcos):
         phase from the harmonic functions in degrees
     """
     ampl = np.sqrt(bsin**2.0 + bcos**2.0)
-    ph = 180.0*np.arctan2(bcos, bsin)/np.pi
-    return (ampl,ph)
+    ph = np.degrees(np.arctan2(bcos, bsin))
+    return (ampl, ph)

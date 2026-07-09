@@ -441,7 +441,7 @@ def calc_sensitivity_kernel(LMAX, RAD,
             n_lat = len(grid.lat)
 
         # Computing plms for converting to spatial domain
-        theta = (90.0-grid.lat)*np.pi/180.0
+        theta = np.radians(90.0 - grid.lat)
         PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(theta))
 
         # for each mascon
@@ -516,7 +516,8 @@ def arguments():
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Output directory for mascon files')
     # minimum spherical harmonic degree
     parser.add_argument('--lmin',

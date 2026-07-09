@@ -1,6 +1,6 @@
-=========================
-plot_global_grid_3maps.py
-=========================
+=============================
+``plot_global_grid_3maps.py``
+=============================
 
 - Creates 3 GMT-like plots on a global Plate Carr\ |eacute|\e (Equirectangular) projection
 

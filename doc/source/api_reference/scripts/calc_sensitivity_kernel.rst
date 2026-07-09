@@ -1,6 +1,6 @@
-==========================
-calc_sensitivity_kernel.py
-==========================
+==============================
+``calc_sensitivity_kernel.py``
+==============================
 
 - Calculates spatial sensitivity kernels through a least-squares mascon procedure following :cite:t:`Tiwari:2009bx,Jacob:2012gv`
 

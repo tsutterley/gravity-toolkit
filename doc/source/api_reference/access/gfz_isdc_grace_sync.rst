@@ -1,6 +1,6 @@
-======================
-gfz_isdc_grace_sync.py
-======================
+==========================
+``gfz_isdc_grace_sync.py``
+==========================
 
 - Syncs GRACE/GRACE-FO and auxiliary data from the `GFZ Information System and Data Center (ISDC) <http://isdc.gfz-potsdam.de/grace-isdc/>`_
 - Syncs CSR/GFZ/JPL Level-2 spherical harmonic files

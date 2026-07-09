@@ -1,6 +1,6 @@
-==================
-calc_degree_one.py
-==================
+======================
+``calc_degree_one.py``
+======================
 
 - Calculates degree 1 variations using GRACE/GRACE-FO coefficients of degree 2 and greater, and modeled ocean bottom pressure variations  :cite:p:`Swenson:2008cr,Sutterley:2019bx`.
 

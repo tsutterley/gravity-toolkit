@@ -143,7 +143,7 @@ def C50(SLR_file, C50_MEAN=0.0, DATE=None, HEADER=True):
                 YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
                     MJD+2400000.5, format='tuple')
                 # converting from month, day, year into decimal year
-                dinput['time'][t] = gravity_toolkit.time.convert_calendar_decimal(
+                dinput['time'][t], = gravity_toolkit.time.convert_calendar_decimal(
                     YY, MM, day=DD, hour=hh)
                 # Spherical Harmonic data for line
                 dinput['data'][t] = np.float64(line_contents[10])

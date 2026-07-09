@@ -1,6 +1,6 @@
-=======================
-grace_mean_harmonics.py
-=======================
+===========================
+``grace_mean_harmonics.py``
+===========================
 
 - Calculates the temporal mean of the GRACE/GRACE-FO spherical harmonics for a specified date range
 - Used to estimate the static gravitational field over a given date rage

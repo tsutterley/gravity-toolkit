@@ -187,7 +187,7 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     attributes['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
 
     # calculate associated Legendre polynomials
-    th = (90.0 - input_spatial.lat)*np.pi/180.0
+    th = np.radians(90.0 - input_spatial.lat)
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(th))
 
     # create list of harmonics objects

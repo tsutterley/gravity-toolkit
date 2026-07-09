@@ -1,6 +1,6 @@
-===================
-make_grace_index.py
-===================
+=======================
+``make_grace_index.py``
+=======================
 
 - Creates index files of GRACE/GRACE-FO Level-2 spherical harmonic data files
 

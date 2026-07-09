@@ -1,6 +1,6 @@
-=======================
-plot_GrIS_grid_5maps.py
-=======================
+===========================
+``plot_GrIS_grid_5maps.py``
+===========================
 
 - Creates 5 GMT-like plots for the Greenland Ice Sheet on a NSIDC polar stereographic north (3413) projection
 

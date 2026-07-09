@@ -1,6 +1,6 @@
-=================
-read_love_numbers
-=================
+=====================
+``read_love_numbers``
+=====================
 
 - Reads sets of load Love/Shida numbers computed using outputs from the Preliminary Reference Earth Model (PREM) or other Earth models
 - Linearly interpolates load Love/Shida numbers for missing degrees

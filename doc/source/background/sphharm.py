@@ -28,8 +28,8 @@ Plm = Plm.reshape((lmax+1, lmax+1, nlat, nlon))
 projection = ccrs.Orthographic(central_longitude=0.0, central_latitude=0.0)
 
 # plot spherical harmonics
-fig = plt.figure(num=1, figsize=(12,7))
-patch = mpatches.Rectangle((0, 0), 0.445, 1, color='0.975',
+fig = plt.figure(num=1, figsize=(12,7), facecolor="#fcfcfc")
+patch = mpatches.Rectangle((0, 0), 0.445, 1, color='0.95',
     zorder=0, transform=fig.transFigure)
 fig.add_artist(patch)
 
