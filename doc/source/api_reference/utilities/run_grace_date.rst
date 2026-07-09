@@ -1,6 +1,6 @@
-=================
-run_grace_date.py
-=================
+=====================
+``run_grace_date.py``
+=====================
 
 - Wrapper program for running GRACE date and months programs
 - Reads GRACE/GRACE-FO index files

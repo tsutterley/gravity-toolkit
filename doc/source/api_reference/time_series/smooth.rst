@@ -1,6 +1,6 @@
-==================
-time_series.smooth
-==================
+======================
+``time_series.smooth``
+======================
 
 - Computes the moving average of a time-series
 

@@ -1,15 +1,15 @@
-=======
-spatial
-=======
+===========
+``spatial``
+===========
 
 Spatial data class for reading, writing and processing spatial data
 
  - Can read ascii, netCDF4, HDF5 files
  - Can read from an index of the above file types
- - Can merge a list of ``spatial`` objects into a single object
+ - Can merge a list of :py:class:`spatial` objects into a single object
  - Can subset to a list of GRACE/GRACE-FO months
- - Can calculate the mean field of a ``spatial`` object
- - Can output ``spatial`` objects to ascii, netCDF4 or HDF5 files
+ - Can calculate the mean field of a :py:class:`spatial` object
+ - Can output :py:class:`spatial` objects to ascii, netCDF4 or HDF5 files
 
 Calling Sequence
 ================

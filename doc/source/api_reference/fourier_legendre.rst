@@ -1,6 +1,6 @@
-================
-fourier_legendre
-================
+====================
+``fourier_legendre``
+====================
 
 - Computes Fourier coefficients of the associated Legendre functions
 

@@ -478,11 +478,11 @@ def scale_grace_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
     grid.mask = np.zeros((nlat, nlon, nfiles),dtype=bool)
 
     # Computing plms for converting to spatial domain
-    phi = grid.lon[np.newaxis,:]*np.pi/180.0
-    theta = (90.0-grid.lat)*np.pi/180.0
+    phi = np.radians(grid.lon[np.newaxis,:])
+    theta = np.radians(90.0 - grid.lat)
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(theta))
     # square of legendre polynomials truncated to order MMAX
-    mm = np.arange(0,MMAX+1)
+    mm = np.arange(0, MMAX+1)
     PLM2 = PLM[:,mm,:]**2
 
     # dfactor is the degree dependent coefficients
@@ -675,10 +675,12 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Working data directory')
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Output directory for spatial files')
     parser.add_argument('--file-prefix','-P',
         type=str,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 u"""
 itsg_graz_grace_sync.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (07/2026)
 Syncs GRACE/GRACE-FO and auxiliary data from the ITSG GRAZ server
 
 CALLING SEQUENCE:
@@ -39,6 +39,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 07/2026: ITSG GRACE server moved from outgoing to pub
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -82,7 +83,7 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
         logging.basicConfig(level=logging.INFO)
 
     # ITSG GRAZ server
-    HOST = ['http://ftp.tugraz.at','outgoing','ITSG','GRACE']
+    HOST = ['http://ftp.tugraz.at','pub','ITSG','GRACE']
     # open connection with ITSG GRAZ server at remote directory
     release_directory = f'ITSG-{RELEASE}'
     # regular expression operators for ITSG data and models
@@ -223,7 +224,8 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Working data directory')
     # ITSG GRAZ releases
     choices = ['Grace2014','Grace2016','Grace2018','Grace_operational']

@@ -1,6 +1,6 @@
-====================
-convert_harmonics.py
-====================
+========================
+``convert_harmonics.py``
+========================
 
 - Converts a file from the spatial domain into the spherical harmonic domain :cite:p:`Wahr:1998hy`
 

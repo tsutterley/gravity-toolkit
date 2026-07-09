@@ -1,6 +1,6 @@
-==========================
-plot_AIS_regional_movie.py
-==========================
+==============================
+``plot_AIS_regional_movie.py``
+==============================
 
 - Creates GMT-like animations for sub-regions of Antarctica on a polar stereographic south (3031) projection
 

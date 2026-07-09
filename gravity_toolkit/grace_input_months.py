@@ -682,7 +682,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         for i,grace_month in enumerate(months):
             count = np.count_nonzero(C20_input['month'] == grace_month)
             if (count != 0):
-                k, = np.nonzero(C20_input['month'] == grace_month)
+                k, = np.flatnonzero(C20_input['month'] == grace_month)
                 grace_Ylms['clm'][2,0,i] = np.copy(C20_input['data'][k])
                 grace_Ylms['eclm'][2,0,i] = np.copy(C20_input['error'][k])
 
@@ -697,7 +697,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         for i,grace_month in enumerate(months):
             count = np.count_nonzero(C21_input['month'] == grace_month)
             if (count != 0) and (grace_month > 176):
-                k, = np.nonzero(C21_input['month'] == grace_month)
+                k, = np.flatnonzero(C21_input['month'] == grace_month)
                 grace_Ylms['clm'][2,1,i] = np.copy(C21_input['C2m'][k])
                 grace_Ylms['slm'][2,1,i] = np.copy(C21_input['S2m'][k])
                 grace_Ylms['eclm'][2,1,i] = np.copy(C21_input['eC2m'][k])
@@ -714,7 +714,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         for i,grace_month in enumerate(months):
             count = np.count_nonzero(C22_input['month'] == grace_month)
             if (count != 0) and (grace_month > 176):
-                k, = np.nonzero(C22_input['month'] == grace_month)
+                k, = np.flatnonzero(C22_input['month'] == grace_month)
                 grace_Ylms['clm'][2,2,i] = np.copy(C22_input['C2m'][k])
                 grace_Ylms['slm'][2,2,i] = np.copy(C22_input['S2m'][k])
                 grace_Ylms['eclm'][2,2,i] = np.copy(C22_input['eC2m'][k])
@@ -731,7 +731,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         for i,grace_month in enumerate(months):
             count = np.count_nonzero(C30_input['month'] == grace_month)
             if (count != 0) and (grace_month > 176):
-                k, = np.nonzero(C30_input['month'] == grace_month)
+                k, = np.flatnonzero(C30_input['month'] == grace_month)
                 grace_Ylms['clm'][3,0,i] = np.copy(C30_input['data'][k])
                 grace_Ylms['eclm'][3,0,i] = np.copy(C30_input['error'][k])
 
@@ -746,7 +746,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         for i,grace_month in enumerate(months):
             count = np.count_nonzero(C40_input['month'] == grace_month)
             if (count != 0) and (grace_month > 176):
-                k, = np.nonzero(C40_input['month'] == grace_month)
+                k, = np.flatnonzero(C40_input['month'] == grace_month)
                 grace_Ylms['clm'][4,0,i] = np.copy(C40_input['data'][k])
                 grace_Ylms['eclm'][4,0,i] = np.copy(C40_input['error'][k])
 
@@ -761,7 +761,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
         for i,grace_month in enumerate(months):
             count = np.count_nonzero(C50_input['month'] == grace_month)
             if (count != 0) and (grace_month > 176):
-                k, = np.nonzero(C50_input['month'] == grace_month)
+                k, = np.flatnonzero(C50_input['month'] == grace_month)
                 grace_Ylms['clm'][5,0,i] = np.copy(C50_input['data'][k])
                 grace_Ylms['eclm'][5,0,i] = np.copy(C50_input['error'][k])
 
@@ -790,7 +790,7 @@ def grace_input_months(base_dir, PROC, DREL, DSET, LMAX, start_mon, end_mon,
                 raise IOError(f'No Matching Geocenter Months ({gm})')
         # for each considered date
         for i,grace_month in enumerate(months):
-            k, = np.nonzero(DEG1_input.month == grace_month)
+            k, = np.flatnonzero(DEG1_input.month == grace_month)
             count = np.count_nonzero(DEG1_input.month == grace_month)
             # Degree 1 is missing for particular month
             if (count == 0) and kwargs['MODEL_DEG1']:

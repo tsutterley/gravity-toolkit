@@ -39,7 +39,7 @@ def test_harmonics():
     RAD = 250.0
 
     # calculate colatitudes of input distribution
-    theta = (90.0 - input_distribution.lat)*np.pi/180.0
+    theta = np.radians(90.0 - input_distribution.lat)
     # use fortran thresholds for colatitude bounds
     theta[theta > np.arccos(-0.9999999)] = np.arccos(-0.9999999)
     theta[theta < np.arccos(0.9999999)] = np.arccos(0.9999999)
@@ -68,13 +68,14 @@ def test_harmonics():
     dfactor = gravtk.units(lmax=LMAX).harmonic(*LOVE)
     wt = 2.0*np.pi*gravtk.gauss_weights(RAD,LMAX)
     smooth_Ylms.convolve(dfactor.cmwe*wt)
+    transform_Ylms = smooth_Ylms.copy()
     # convert harmonics back to spatial domain at same grid spacing
     test_distribution = gravtk.harmonic_summation(smooth_Ylms.clm,
         smooth_Ylms.slm, input_distribution.lon, input_distribution.lat,
         LMAX=LMAX, PLM=PLM).T
     # convert harmonics using fast-fourier transform method
-    test_transform = gravtk.harmonic_transform(smooth_Ylms.clm,
-        smooth_Ylms.slm, input_distribution.lon, input_distribution.lat,
+    test_transform = gravtk.harmonic_transform(transform_Ylms.clm,
+        transform_Ylms.slm, input_distribution.lon, input_distribution.lat,
         LMAX=LMAX, PLM=PLM).T
     # convert harmonics back to spatial domain using wrapper function
     test_combine = gravtk.stokes_summation(test_Ylms.clm,

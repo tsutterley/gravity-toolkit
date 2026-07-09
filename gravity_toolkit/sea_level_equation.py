@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 u"""
-sea_level_equation.py (06/2025)
+sea_level_equation.py (07/2026)
 Solves the sea level equation with the option of including polar motion feedback
 Uses a Clenshaw summation to calculate the spherical harmonic summation
 
@@ -37,7 +37,6 @@ OPTIONS:
     ITERATIONS: maximum number of iterations for the solver
     PLM: input Legendre polynomials
     FILL_VALUE: value used over land points
-    ASTYPE: floating point precision for calculating Clenshaw summation
     SCALE: scaling factor to prevent underflow in Clenshaw summation
 
 PYTHON DEPENDENCIES:
@@ -91,6 +90,8 @@ REFERENCES:
         https://doi.org/10.1029/JB090iB11p09363
 
 UPDATE HISTORY:
+    Updated 07/2026: use np.einsum for spherical harmonic summations
+        use np.radians to convert from degrees to radians
     Updated 06/2025: added option to set the density of sea water (g/cm^3)
     Updated 03/2023: improve typing for variables in docstrings
     Updated 01/2023: refactored associated legendre polynomials
@@ -131,8 +132,7 @@ from gravity_toolkit.units import units
 # PURPOSE: Computes Sea Level Fingerprints including polar motion feedback
 def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     LOVE=None, BODY_TIDE_LOVE=0, FLUID_LOVE=0, DENSITY=1.0, POLAR=True, 
-    ITERATIONS=6, PLM=None, FILL_VALUE=0, ASTYPE=np.longdouble, SCALE=1e-280,
-    **kwargs):
+    ITERATIONS=6, PLM=None, FILL_VALUE=0, SCALE=1e-280, **kwargs):
     r"""
     Solves the sea level equation with the option of including
     polar motion feedback :cite:p:`Farrell:1976hm,Kendall:2005ds,Mitrovica:2003cq`
@@ -180,8 +180,6 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
         Legendre polynomials
     FILL_VALUE: float, default 0
         Invalid value used over land points
-    ASTYPE: np.dtype, default np.longdouble
-        Floating point precision for calculating Clenshaw summation
     SCALE: float, default 1e-280
         Scaling factor to prevent underflow in Clenshaw summation
 
@@ -192,17 +190,17 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     """
 
     # dimensions of land function
-    nphi,nth = np.shape(land_function)
+    nphi, nth = np.shape(land_function)
     # calculate colatitude and longitude in radians
-    th = (90.0 - glat)*np.pi/180.0
-    phi = np.squeeze(glon*np.pi/180.0)
+    th = np.radians(90.0 - glat)
+    phi = np.radians(np.squeeze(glon))
     # calculate ocean function from land function
     ocean_function = 1.0 - land_function
     # indices of the ocean function
     ii,jj = np.nonzero(ocean_function)
 
     # extract arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = LOVE
+    hl, kl, ll = LOVE
     # density of water [g/cm^3]
     rho_water = np.float64(DENSITY)
     # Earth Parameters
@@ -271,21 +269,25 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
 
     # calculate coefh and coefp for each degree and order
     # see equation 11 from Tamisiea et al (2010)
-    coefh = np.zeros((LMAX+1,LMAX+1))
-    coefp = np.zeros((LMAX+1,LMAX+1))
+    coefh = np.zeros((LMAX+1, LMAX+1))
+    coefp = np.zeros((LMAX+1, LMAX+1))
     for l in range(LMAX+1):
+        m = np.arange(0, l+1)
+        # tilt factor for degree l
+        gamma_l = (1.0 + kl[l] - hl[l])
         # coefh and coefp will be the same for all orders except for degree 2
         # and order 1 (if POLAR motion feedback is included)
-        m = np.arange(0,l+1)
-        coefh[l,m] = 3.0*rho_water*(1.0 + kl[l] - hl[l])/rho_e/np.float64(2*l+1)
-        coefp[l,m] = (1.0 + kl[l] - hl[l])/(kl[l] + 1.0)
+        coefh[l,m] = 3.0*rho_water*gamma_l/rho_e/np.float64(2*l+1)
+        coefp[l,m] = gamma_l/(kl[l] + 1.0)
         # if degree 2 and POLAR parameter is set
         if (l == 2) and POLAR:
+            # tilt factor for body tides
+            gamma_2b = (1.0 + k2b - h2b)
             # calculate coefficient for polar motion feedback and add to coefs
             # For small perturbations in rotation vector: driving potential
             # will be dominated by degree two and order one polar wander
             # effects (quadrantal geometry effects) (Kendall et al., 2005)
-            coefpmf = (1.0 + k2b - h2b)*(1.0 + kl[l])/(klf - k2b)
+            coefpmf = gamma_2b*(1.0 + kl[l])/(klf - k2b)
             # add effects of polar motion feedback to order 1 coefficients
             coefh[l,1] += 3.0*rho_water*coefpmf/rho_e/np.float64(2*l+1)
             coefp[l,1] += coefpmf/(kl[l] + 1.0)
@@ -295,15 +297,15 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
         # calculate Legendre polynomials using Holmes and Featherstone relation
         PLM, dPLM = plm_holmes(LMAX, np.cos(th))
     # calculate sin of colatitudes
-    gth,gphi = np.meshgrid(th, phi)
+    gth, gphi = np.meshgrid(th, phi)
     u = np.sin(gth[ii,jj])
     # indices of spherical harmonics for calculating eps
-    l1,m1 = np.tril_indices(LMAX+1)
+    l1, m1 = np.tril_indices(LMAX+1)
 
     # total mass of the surface mass load [g] from harmonics
     tmass = 4.0*np.pi*(rad_e**3.0)*rho_e*loadClm[0,0]/3.0
     # convert ocean function into a series of spherical harmonics
-    ocean_Ylms = gen_harmonics(ocean_function,glon,glat,LMAX=LMAX,PLM=PLM)
+    ocean_Ylms = gen_harmonics(ocean_function, glon, glat, LMAX=LMAX, PLM=PLM)
     # total area of ocean calculated by integrating the ocean function
     ocean_area = 4.0*np.pi*ocean_Ylms.clm[0,0]
 
@@ -316,8 +318,12 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     logging.info(f'Total Ocean Area: {ocean_area:0.10g}')
     logging.info(f'Uniform Ocean Height: {sea_height:0.10g}')
 
+    # allocate for output sea level field
+    sea_level = np.empty((nphi, nth))
+    # complex load spherical harmonics
+    loadYlms = loadClm - 1j*loadSlm
     # distribute sea height over ocean harmonics
-    height_Ylms = ocean_Ylms.scale(sea_height)
+    height_Ylms = ocean_Ylms * sea_height
     # iterate solutions until convergence or reaching total iterations
     n_iter = 1
     # use maximum eps values from Mitrovica and Peltier (1991)
@@ -325,42 +331,38 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     eps = np.inf
     eps_max = 1e-4
     while (eps > eps_max) and (n_iter <= ITERATIONS):
-        # allocate for sea level field of iteration
-        sea_level = np.zeros((nphi,nth))
+        # zero out the sea level field for this iteration
+        sea_level[:,:] = 0.0
         # calculate combined spherical harmonics for Clenshaw summation
-        clm1 = coefh*height_Ylms.clm + rad_e*coefp*loadClm
-        slm1 = coefh*height_Ylms.slm + rad_e*coefp*loadSlm
+        Ylm1 = coefh*height_Ylms.ilm + rad_e*coefp*loadYlms
         # calculate clenshaw summations over colatitudes
-        s_m_c = np.zeros((nth,LMAX*2+2))
+        cs_m = np.zeros((nth, LMAX+1), dtype=np.clongdouble)
         for m in range(LMAX, -1, -1):
-            s_m_c[:,2*m:2*m+2] = clenshaw_s_m(np.cos(th), m, clm1, slm1, LMAX,
-                ASTYPE=ASTYPE, SCALE=SCALE)
+            cs_m[:,m] = _clenshaw(np.cos(th), m, Ylm1, LMAX, SCALE=SCALE)
 
         # calculate cos(phi)
         cos_phi_2 = 2.0*np.cos(phi)
         # matrix of cos/sin m*phi summation
-        cos_m_phi = np.zeros((nphi,LMAX+2),dtype=ASTYPE)
-        sin_m_phi = np.zeros((nphi,LMAX+2),dtype=ASTYPE)
+        m_phi = np.zeros((nphi, LMAX+2), dtype=np.clongdouble)
         # initialize matrix with values at lmax+1 and lmax
-        cos_m_phi[:,LMAX+1] = np.cos(ASTYPE(LMAX + 1)*phi)
-        sin_m_phi[:,LMAX+1] = np.sin(ASTYPE(LMAX + 1)*phi)
-        cos_m_phi[:,LMAX] = np.cos(ASTYPE(LMAX)*phi)
-        sin_m_phi[:,LMAX] = np.sin(ASTYPE(LMAX)*phi)
+        m_phi[:,LMAX+1] = np.exp(1j * (LMAX + 1) * phi)
+        m_phi[:,LMAX] = np.exp(1j * LMAX*phi)
         # calculate summation
-        gc=np.multiply(s_m_c[np.newaxis,:,2*LMAX],cos_m_phi[:,np.newaxis,LMAX])
-        gs=np.multiply(s_m_c[np.newaxis,:,2*LMAX+1],sin_m_phi[:,np.newaxis,LMAX])
-        s_m = gc[ii,jj] + gs[ii,jj]
+        g = np.einsum("h...,p...->ph...", cs_m[:,LMAX], m_phi[:,LMAX])
+        # discard imaginary component
+        s_m = g[ii,jj].real
         # iterate to calculate complete summation
         for m in range(LMAX-1, 0, -1):
-            cos_m_phi[:,m] = cos_phi_2*cos_m_phi[:,m+1] - cos_m_phi[:,m+2]
-            sin_m_phi[:,m] = cos_phi_2*sin_m_phi[:,m+1] - sin_m_phi[:,m+2]
-            a_m = np.sqrt((2.0*m+3.0)/(2.0*m+2.0))
-            gc=np.multiply(s_m_c[np.newaxis,:,2*m],cos_m_phi[:,np.newaxis,m])
-            gs=np.multiply(s_m_c[np.newaxis,:,2*m+1],sin_m_phi[:,np.newaxis,m])
-            s_m = a_m*u*s_m + gc[ii,jj] + gs[ii,jj]
+            # calculate summation for order m
+            m_phi[:,m] = cos_phi_2*m_phi[:,m+1] - m_phi[:,m+2]
+            a_m = np.sqrt((2.0*m + 3.0)/(2.0*m + 2.0))
+            g = np.einsum("h...,p...->ph...", cs_m[:,m], m_phi[:,m])
+            # update summation and discard imaginary component
+            s_m = a_m*u*s_m + g[ii,jj].real
+        # add the l=0/m=0 term
+        gs_m = np.kron(np.ones((nphi, 1)), cs_m.real[:, 0])
         # calculate new sea level for iteration
-        gsmc,gcmp = np.meshgrid(s_m_c[:,0],cos_m_phi[:,0])
-        sea_level[ii,jj] = np.sqrt(3.0)*u*s_m + gsmc[ii,jj]
+        sea_level[ii,jj] = np.sqrt(3.0)*u*s_m + gs_m[ii,jj]
 
         # calculate spherical harmonic field for iteration
         Ylms = gen_harmonics(sea_level, glon, glat, LMAX=LMAX, PLM=PLM)
@@ -383,11 +385,10 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
         # Equation 48 of Mitrovica and Peltier (1991)
         # add difference to total sea level field to force mass conservation
         sea_level += sea_height*ocean_function[:,:]
-        uniform_Ylms = ocean_Ylms.scale(sea_height)
-        Ylms.add(uniform_Ylms)
+        Ylms += ocean_Ylms * sea_height
         # calculate eps to determine if solution is appropriately converged
-        mod1 = np.sqrt(height_Ylms.clm**2 + height_Ylms.slm**2)
-        mod2 = np.sqrt(Ylms.clm**2 + Ylms.slm**2)
+        mod1 = np.hypot(height_Ylms.clm, height_Ylms.slm)
+        mod2 = np.hypot(Ylms.clm, Ylms.slm)
         eps = np.abs(np.sum(mod2[l1,m1] - mod1[l1,m1])/np.sum(mod1[l1,m1]))
         # save height harmonics for use in the next iteration
         height_Ylms = Ylms.copy()
@@ -397,8 +398,8 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     # calculate final total mass for sanity check
     omass = 4.0*np.pi*(rad_e**2.0)*rho_water*height_Ylms.clm[0,0]
     # if verbose output: sanity check of masses
-    logging.info('Original Total Ocean Mass: {0:0.10g}'.format(-tmass/1e15))
-    logging.info('Final Iterated Ocean Mass: {0:0.10g}'.format(omass/1e15))
+    logging.info(f'Original Total Ocean Mass: {-tmass/1e15:0.10g}')
+    logging.info(f'Final Iterated Ocean Mass: {omass/1e15:0.10g}')
 
     # set final invalid points to fill value if applicable
     if (FILL_VALUE != 0):
@@ -410,9 +411,7 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
 
 # PURPOSE: compute Clenshaw summation of the fully normalized associated
 # Legendre's function for constant order m
-def clenshaw_s_m(t, m, clm1, slm1, lmax,
-    ASTYPE=np.longdouble, SCALE=1e-280
-    ):
+def _clenshaw(t, m, Ylm1, lmax, SCALE=1e-280):
     """
     Compute conditioned arrays for Clenshaw summation from the fully-normalized
     associated Legendre's function for an order m
@@ -423,14 +422,10 @@ def clenshaw_s_m(t, m, clm1, slm1, lmax,
         elements ranging from -1 to 1, typically cos(th)
     m: int
         spherical harmonic order
-    clm1: np.ndarray
-        cosine spherical harmonics
-    slm1: np.ndarray
-        sine spherical harmonics
+    Ylm1: np.ndarray
+        complex form of spherical harmonics
     lmax: int
         maximum spherical harmonic degree
-    ASTYPE: np.dtype, default np.longdouble
-        floating point precision for calculating Clenshaw summation
     SCALE: float, default 1e-280
         scaling factor to prevent underflow in Clenshaw summation
 
@@ -441,49 +436,40 @@ def clenshaw_s_m(t, m, clm1, slm1, lmax,
     """
     # allocate for output matrix
     N = len(t)
-    s_m = np.zeros((N,2),dtype=ASTYPE)
+    s_m = np.zeros((N), dtype=np.clongdouble)
     # scaling to prevent overflow
-    clm = SCALE*clm1.astype(ASTYPE)
-    slm = SCALE*slm1.astype(ASTYPE)
+    ylm = SCALE*Ylm1.astype(np.clongdouble)
     # convert lmax and m to float
-    lm = ASTYPE(lmax)
-    mm = ASTYPE(m)
+    lm = np.float64(lmax)
+    mm = np.float64(m)
     if (m == lmax):
-        s_m[:,0] = np.copy(clm[lmax,lmax])
-        s_m[:,1] = np.copy(slm[lmax,lmax])
+        s_m[:] = np.copy(ylm[lmax,lmax])
     elif (m == (lmax-1)):
         a_lm = np.sqrt(((2.0*lm-1.0)*(2.0*lm+1.0))/((lm-mm)*(lm+mm)))*t
-        s_m[:,0] = a_lm*clm[lmax,lmax-1] + clm[lmax-1,lmax-1]
-        s_m[:,1] = a_lm*slm[lmax,lmax-1] + slm[lmax-1,lmax-1]
+        s_m[:] = a_lm*ylm[lmax,lmax-1] + ylm[lmax-1,lmax-1]
     elif ((m <= (lmax-2)) and (m >= 1)):
-        s_mm_c_pre_2 = np.copy(clm[lmax,m])
-        s_mm_s_pre_2 = np.copy(slm[lmax,m])
+        s_mm_minus_2 = np.copy(ylm[lmax,m])
         a_lm = np.sqrt(((2.0*lm-1.0)*(2.0*lm+1.0))/((lm-mm)*(lm+mm)))*t
-        s_mm_c_pre_1 = a_lm*s_mm_c_pre_2 + clm[lmax-1,m]
-        s_mm_s_pre_1 = a_lm*s_mm_s_pre_2 + slm[lmax-1,m]
+        s_mm_minus_1 = a_lm*s_mm_minus_2 + ylm[lmax-1,m]
         for l in range(lmax-2, m-1, -1):
-            ll = ASTYPE(l)
+            ll = np.float64(l)
             a_lm=np.sqrt(((2.0*ll+1.0)*(2.0*ll+3.0))/((ll+1.0-mm)*(ll+1.0+mm)))*t
             b_lm=np.sqrt(((2.*ll+5.)*(ll+mm+1.)*(ll-mm+1.))/((ll+2.-mm)*(ll+2.+mm)*(2.*ll+1.)))
-            s_mm_c = a_lm * s_mm_c_pre_1 - b_lm * s_mm_c_pre_2 + clm[l,m]
-            s_mm_s = a_lm * s_mm_s_pre_1 - b_lm * s_mm_s_pre_2 + slm[l,m]
-            s_mm_c_pre_2 = np.copy(s_mm_c_pre_1)
-            s_mm_s_pre_2 = np.copy(s_mm_s_pre_1)
-            s_mm_c_pre_1 = np.copy(s_mm_c)
-            s_mm_s_pre_1 = np.copy(s_mm_s)
-        s_m[:,0] = np.copy(s_mm_c)
-        s_m[:,1] = np.copy(s_mm_s)
+            s_mm_l = a_lm * s_mm_minus_1 - b_lm * s_mm_minus_2 + ylm[l,m]
+            s_mm_minus_2 = np.copy(s_mm_minus_1)
+            s_mm_minus_1 = np.copy(s_mm_l)
+        s_m[:] = np.copy(s_mm_l)
     elif (m == 0):
-        s_mm_c_pre_2 = np.copy(clm[lmax,0])
+        s_mm_minus_2 = np.copy(ylm[lmax,0])
         a_lm = np.sqrt(((2.0*lm-1.0)*(2.0*lm+1.0))/(lm*lm))*t
-        s_mm_c_pre_1 = a_lm * s_mm_c_pre_2 + clm[lmax-1,0]
+        s_mm_minus_1 = a_lm * s_mm_minus_2 + ylm[lmax-1,0]
         for l in range(lmax-2, m-1, -1):
-            ll = ASTYPE(l)
+            ll = np.float64(l)
             a_lm=np.sqrt(((2.0*ll+1.0)*(2.0*ll+3.0))/((ll+1.0)*(ll+1.0)))*t
             b_lm=np.sqrt(((2.0*ll+5.0)*(ll+1.0)*(ll+1.0))/((ll+2.0)*(ll+2.0)*(2.0*ll+1.0)))
-            s_mm_c = a_lm * s_mm_c_pre_1 - b_lm * s_mm_c_pre_2 + clm[l,0]
-            s_mm_c_pre_2 = np.copy(s_mm_c_pre_1)
-            s_mm_c_pre_1 = np.copy(s_mm_c)
-        s_m[:,0] = np.copy(s_mm_c)
+            s_mm_l = a_lm * s_mm_minus_1 - b_lm * s_mm_minus_2 + ylm[l,0]
+            s_mm_minus_2 = np.copy(s_mm_minus_1)
+            s_mm_minus_1 = np.copy(s_mm_l)
+        s_m[:] = np.copy(s_mm_l)
     # return rescaled s_m
     return s_m/SCALE

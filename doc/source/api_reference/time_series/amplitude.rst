@@ -1,6 +1,6 @@
-=====================
-time_series.amplitude
-=====================
+=========================
+``time_series.amplitude``
+=========================
 
 - Calculate the amplitude and phase of a harmonic function from calculated sine and cosine of a series of measurements
 

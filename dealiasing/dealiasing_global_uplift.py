@@ -239,7 +239,7 @@ def dealiasing_global_uplift(base_dir,
     attributes['time']['standard_name'] = 'time'
 
     # Computing plms for converting to spatial domain
-    theta = (90.0 - grid.lat)*np.pi/180.0
+    theta = np.radians(90.0 - grid.lat)
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(theta))
 
     # for each tar file
@@ -414,10 +414,12 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Working data directory')
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Output directory for spatial files')
     # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',

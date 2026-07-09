@@ -426,7 +426,7 @@ def grace_spatial_maps(base_dir, PROC, DREL, DSET, LMAX, RAD,
         nlat = len(grid.lat)
 
     # Computing plms for converting to spatial domain
-    theta = (90.0-grid.lat)*np.pi/180.0
+    theta = np.radians(90.0 - grid.lat)
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(theta))
 
     # output spatial units
@@ -537,10 +537,12 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Working data directory')
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path,
+        default=gravtk.utilities.get_cache_path(ensure_exists=False),
         help='Output directory for spatial files')
     parser.add_argument('--file-prefix','-P',
         type=str,
