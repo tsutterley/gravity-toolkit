@@ -1,0 +1,39 @@
+name: "Sphinx Build"
+
+on:
+  pull_request:
+    paths:
+      - gravity_toolkit/**
+      - doc/**
+      - .github/workflows/sphinx-build.yml
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# set permissions for the workflow
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  docs:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    env:
+      SPHINXOPTS: "--fail-on-warning --fresh-env --keep-going --warning-file=sphinx.log"
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+    - uses: actions/checkout@v6
+    - name: Set up pixi environment
+      uses: prefix-dev/setup-pixi@v0.9.6
+    - name: Compile Sphinx Documentation
+      run: |
+        # run a build of the documentation
+        pixi run --environment=dev docs
+    - name: Archive Sphinx Warnings
+      if: github.event.pull_request.head.repo.full_name == github.repository
+      uses: actions/upload-artifact@v6
+      with:
+        name: sphinx-log
+        path: doc/sphinx.log

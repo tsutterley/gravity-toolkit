@@ -408,7 +408,7 @@ def model_degree_one(input_file, LMAX, RAD,
         # Multiplying by c/s(phi#m) to get surface density in cmwe (lon,lat)
         # ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
         # The summation over spherical harmonic order is in this multiplication
-        rmass = np.einsum("mp...,mh...->ph...", m_phi, pconv)
+        rmass = np.einsum("mp...,mh...->ph...", m_phi, pconv).real
         # calculate G matrix parameters through a summation of each latitude
         # summation of integration factors, Legendre polynomials,
         # (convolution of order and harmonics) and the ocean mass at t
@@ -442,7 +442,7 @@ def model_degree_one(input_file, LMAX, RAD,
             # Multiplying by c/s(phi#m) to get surface density in cm w.e. (lonxlat)
             # ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
             # The summation over spherical harmonic order is in this multiplication
-            lmass = np.einsum("mp...,mh...->ph...", m_phi, pconv)
+            lmass = np.einsum("mp...,mh...->ph...", m_phi, pconv).real
 
             # use sea level fingerprints or eustatic from land components
             if FINGERPRINT:
@@ -708,7 +708,7 @@ def arguments():
         help='Input index file with spherical harmonic data files')
     # output working data directory
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
         help='Output directory for files')
     parser.add_argument('--file-prefix','-P',
         type=str,

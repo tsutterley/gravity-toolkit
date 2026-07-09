@@ -1,6 +1,6 @@
-=====================
-grace_raster_grids.py
-=====================
+=========================
+``grace_raster_grids.py``
+=========================
 
 - Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports projected spatial fields
 - Correct spherical harmonics with the specified GIA model group

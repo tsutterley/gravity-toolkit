@@ -289,7 +289,7 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
         help='Output directory for spatial files')
     parser.add_argument('--file-prefix','-P',
         type=str,

@@ -58,10 +58,10 @@ Getting the kernels "just right" in order to isolate regions of interest takes s
 
 The set of least-squares mascon programs have been used in :cite:p:`Velicogna:2014km`
 and other publications for regional time series analysis.
-The ``calc_mascon.py`` program additionally calculates the GRACE/GRACE-FO error
+The :py:mod:`calc_mascon.py` program additionally calculates the GRACE/GRACE-FO error
 harmonics following :cite:t:`Wahr:2006bx`.
 
-The ``calc_mascon.py`` program will output a text file of the time series for each mascon
+The :py:mod:`calc_mascon.py` program will output a text file of the time series for each mascon
 with columns: GRACE/GRACE-FO month, mid-month date in decimal-year format,
 estimated monthly mass anomaly [Gt], estimated monthly error [Gt], and
 mascon area [km\ :sup:`2`].

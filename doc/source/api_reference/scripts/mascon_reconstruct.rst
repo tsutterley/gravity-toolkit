@@ -1,6 +1,6 @@
-=====================
-mascon_reconstruct.py
-=====================
+=========================
+``mascon_reconstruct.py``
+=========================
 
 - Calculates the equivalent spherical harmonics from a mascon time series
 

@@ -1,6 +1,6 @@
-===================
-associated_legendre
-===================
+=======================
+``associated_legendre``
+=======================
 
 - Computes fully-normalized associated Legendre Polynomials and their first derivative for a vector of ``x`` values
 

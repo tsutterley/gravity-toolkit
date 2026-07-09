@@ -213,7 +213,7 @@ def arguments():
     )
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
         help='Working data directory')
     # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',

@@ -319,10 +319,10 @@ def arguments():
         help='GLDAS land surface model')
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
         help='Working data directory')
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
         help='Output directory for mascon files')
     # start and end GRACE/GRACE-FO months
     parser.add_argument('--start','-S',

@@ -80,7 +80,7 @@ class geocenter(object):
         time variable of the spherical harmonics
     month: np.ndarray
         GRACE/GRACE-FO months variable of the spherical harmonics
-    radius: float, default 6371000.790009159
+    radius: float, default 6371000790.009159
         Average Radius of the Earth [mm]
     """
     np.seterr(invalid='ignore')
@@ -298,8 +298,8 @@ class geocenter(object):
         Reads monthly geocenter files from `satellite laser ranging
         provided by CSR <http://download.csr.utexas.edu/pub/slr/geocenter/>`_
 
-            - `RL04`: GCN_RL04.txt
-            - `RL05`: GCN_RL05.txt
+            - ``RL04``: GCN_RL04.txt
+            - ``RL05``: GCN_RL05.txt
 
         `New CF-CM geocenter dataset
         <http://download.csr.utexas.edu/pub/slr/geocenter/GCN_L1_L2_30d_CF-CM.txt>`_

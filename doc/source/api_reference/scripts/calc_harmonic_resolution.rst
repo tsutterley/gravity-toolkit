@@ -1,6 +1,6 @@
-===========================
-calc_harmonic_resolution.py
-===========================
+===============================
+``calc_harmonic_resolution.py``
+===============================
 
 - Calculates the spatial resolution that can be resolved by the spherical harmonics of a certain degree :cite:p:`Barthelmes:2013fy,HofmannWellenhof:2006hy`
 - Default method uses the smallest half-wavelength that can be resolved

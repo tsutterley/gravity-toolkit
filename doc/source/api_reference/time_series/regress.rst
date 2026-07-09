@@ -1,6 +1,6 @@
-===================
-time_series.regress
-===================
+=======================
+``time_series.regress``
+=======================
 
 - Fits a synthetic signal to data over a time period by ordinary or weighted least-squares
 

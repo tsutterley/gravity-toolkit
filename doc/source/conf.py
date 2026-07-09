@@ -12,12 +12,17 @@
 #
 import os
 # import sys
+import logging
 import datetime
+import warnings
+
 # sys.path.insert(0, os.path.abspath('.'))
 import importlib.metadata
 
 
 # -- Project information -----------------------------------------------------
+on_rtd = os.environ.get("READTHEDOCS") == "True"
+on_github = os.environ.get("GITHUB_ACTIONS") == "true"
 
 # package metadata
 metadata = importlib.metadata.metadata("gravity-toolkit")
@@ -30,6 +35,23 @@ author = 'Tyler C. Sutterley'
 version = metadata["version"]
 # append "v" before the version
 release = f"v{version}"
+
+# filter out numfig warnings when building documentation, see
+# https://github.com/sphinx-doc/sphinx/issues/10316
+# https://github.com/sphinx-doc/sphinx/pull/14446
+class numfig_filter(logging.Filter):
+    def filter(self, record):
+        warning_type = getattr(record, "type", "")
+        warning_subtype = getattr(record, "subtype", "")
+        suppress_warning = (
+            f"{warning_type}.{warning_subtype}" == "html.numfig_format"
+            or record.getMessage().startswith("numfig_format")
+        )
+        return not suppress_warning
+
+# suppress warnings in examples and documentation
+if on_rtd:
+    warnings.filterwarnings("ignore")
 
 # -- General configuration ---------------------------------------------------
 
@@ -54,6 +76,21 @@ source_suffix = {
     ".ipynb": "myst-nb",
 }
 nb_execution_mode = "off"
+# execute notebooks on build
+if on_rtd:
+    nb_execution_mode = "auto"
+    nb_execution_excludepatterns = [
+        "notebooks/*.ipynb",
+    ]
+    nb_output_stderr = "remove-warn"
+elif on_github:
+    nb_execution_mode = "off"
+else:
+    nb_execution_mode = "auto"
+    nb_execution_excludepatterns = [
+        "notebooks/*.ipynb",
+    ]
+    nb_output_stderr = "remove-warn"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -85,10 +122,16 @@ html_show_sourcelink = False
 html_show_sphinx = True
 html_show_copyright = True
 
+numfig_format = {
+    "code-block": None,
+    "figure": "Figure %s:",
+    "table": "Table %s:",
+}
+
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "logo_only": True,
 }
@@ -96,18 +139,35 @@ html_theme_options = {
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_logo = "_assets/logo.png"
-html_static_path = ['_static']
-repository_url = f"https://github.com/tsutterley/gravity-toolkit"
+html_logo = "_assets/gravity_logo.png"
+html_static_path = ["_static"]
+# fetch the project urls
+project_urls = {}
+for project_url in metadata.get_all("Project-URL"):
+    name, _, url = project_url.partition(", ")
+    project_urls[name.lower()] = url
+# fetch the repository url
+github_url = project_urls.get("repository")
+*_, github_user, github_repo = github_url.split("/")
+# add html context
 html_context = {
+    "display_github": True,
+    "github_user": github_user,
+    "github_repo": github_repo,
+    "github_version": "main",
+    "conf_py_path": "/doc/source/",
     "menu_links": [
         (
             '<i class="fa fa-github fa-fw"></i> Source Code',
-            repository_url,
+            github_url,
         ),
         (
             '<i class="fa fa-book fa-fw"></i> License',
-            f"{repository_url}/blob/main/LICENSE",
+            f"{github_url}/blob/main/LICENSE",
+        ),
+        (
+            '<i class="fa fa-comment fa-fw"></i> Discussions',
+            f"{github_url}/discussions",
         ),
     ],
 }

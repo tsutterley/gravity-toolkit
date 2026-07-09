@@ -1,6 +1,6 @@
-==================
-grace_months_index
-==================
+======================
+``grace_months_index``
+======================
 
 - Creates an index of dates for all GRACE/GRACE-FO processing centers
 

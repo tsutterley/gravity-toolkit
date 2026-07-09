@@ -69,7 +69,7 @@ import pathlib
 import argparse
 import calendar
 import numpy as np
-from gravity_toolkit.time import grace_to_calendar
+import gravity_toolkit as gravtk
 
 def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
     """
@@ -141,7 +141,7 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
     # max_mon+1 to include max_mon
     for m in range(4, max_mon+1):
         # finding the month name e.g. Apr
-        calendar_year,calendar_month = grace_to_calendar(m)
+        calendar_year,calendar_month = gravtk.time.grace_to_calendar(m)
         month_string = calendar.month_abbr[calendar_month]
         # create list object for output string
         output_string = []
@@ -190,7 +190,7 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
         help='Working data directory')
     # GRACE/GRACE-FO data release
     parser.add_argument('--release','-r',

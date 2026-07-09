@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 u"""
 utilities.py
-Written by Tyler Sutterley (10/2025)
-Download and management utilities for syncing time and auxiliary files
+Written by Tyler Sutterley (07/2026)
+Download and management utilities for syncing files
 
 PYTHON DEPENDENCIES:
     lxml: processing XML and HTML in Python
         https://pypi.python.org/pypi/lxml
+    platformdirs: Python module for determining platform-specific directories
+        https://pypi.org/project/platformdirs/
 
 UPDATE HISTORY:
+    Updated 07/2026: can use an environment variable to set cache directory
+        this overrides the default platform-specific cache directory
     Updated 10/2025: switch from_gfz to https as ftp server is being retired
     Updated 11/2024: simplify unique file name function
         add function to scrape GSFC website for GRACE mascon urls
@@ -83,14 +87,17 @@ import importlib
 import posixpath
 import lxml.etree
 import subprocess
+import platformdirs
 import calendar,time
+
 if sys.version_info[0] == 2:
     from cookielib import CookieJar
     from urllib import urlencode
+    from urlparse import urlparse
     import urllib2
 else:
     from http.cookiejar import CookieJar
-    from urllib.parse import urlencode
+    from urllib.parse import urlencode, urlparse
     import urllib.request as urllib2
 
 # PURPOSE: get absolute path within a package from a relative path
@@ -112,12 +119,46 @@ def get_data_path(relpath: list | str | pathlib.Path):
     elif isinstance(relpath, str):
         return filepath.joinpath(relpath)
 
+# PURPOSE: get the path to the user cache directory
+def get_cache_path(
+    relpath: list | str | pathlib.Path | None = None,
+    appname="gravtk",
+):
+    """
+    Get the path to the user cache directory for an application
+
+    Parameters
+    ----------
+    relpath: list, str, pathlib.Path or None
+        Relative path
+    appname: str, default 'gravtk'
+        Application name
+    """
+    # check for custom environment variable for cache directory
+    cache_dir = os.environ.get("GRAVTK_CACHE_DIR")
+    if cache_dir:
+        # custom environment variable for cache directory
+        filepath = pathlib.Path(cache_dir).expanduser().absolute()
+        # ensure that the cache directory exists
+        filepath.mkdir(parents=True, exist_ok=True)
+    else:
+        # platform-specific cache directory
+        filepath = platformdirs.user_cache_path(
+            appname=appname, ensure_exists=True
+        )
+    # append relative path to cache directory
+    if isinstance(relpath, list):
+        # use *splat operator to extract from list
+        filepath = filepath.joinpath(*relpath)
+    elif isinstance(relpath, (str, pathlib.Path)):
+        filepath = filepath.joinpath(relpath)
+    return pathlib.Path(filepath)
 
 def import_dependency(
-        name: str,
-        extra: str = "",
-        raise_exception: bool = False
-    ):
+    name: str,
+    extra: str = "",
+    raise_exception: bool = False,
+):
     """
     Import an optional dependency
 
@@ -138,11 +179,11 @@ def import_dependency(
         Imported module
     """
     # check if the module name is a string
-    msg = f"Invalid module name: '{name}'; must be a string"
-    assert isinstance(name, str), msg
+    if not isinstance(name, str):
+        raise TypeError(f"Invalid module name: '{name}'; must be a string")
     # default error if module cannot be imported
     err = f"Missing optional dependency '{name}'. {extra}"
-    module = type('module', (), {})
+    module = type("module", (), {})
     # try to import the module
     try:
         module = importlib.import_module(name)
@@ -153,6 +194,53 @@ def import_dependency(
             logging.debug(err)
     # return the module
     return module
+
+def dependency_available(
+    name: str,
+    minversion: str | None = None,
+):
+    """
+    Checks whether a module is installed without importing it
+
+    Adapted from ``xarray.namedarray.utils.module_available``
+
+    Parameters
+    ----------
+    name: str
+        Module name
+    minversion : str, optional
+        Minimum version of the module
+
+    Returns
+    -------
+    available : bool
+        Whether the module is installed
+    """
+    # check if module is available
+    if importlib.util.find_spec(name) is None:
+        return False
+    # check if the version is greater than the minimum required
+    if minversion is not None:
+        version = importlib.metadata.version(name)
+        return version >= minversion
+    # return if both checks are passed
+    return True
+
+def is_valid_url(url: str) -> bool:
+    """
+    Checks if a string is a valid URL
+
+    Parameters
+    ----------
+    url: str
+        URL to check
+    """
+    try:
+        result = urlparse(str(url))
+        return all([result.scheme, result.netloc])
+    except AttributeError:
+        return False
+
 
 class reify(object):
     """Class decorator that puts the result of the method it

@@ -1,6 +1,6 @@
-=========================
-monte_carlo_degree_one.py
-=========================
+=============================
+``monte_carlo_degree_one.py``
+=============================
 
 - Estimates uncertainties in degree 1 using GRACE/GRACE-FO coefficients of degree 2 and greater, and modeled ocean bottom pressure variations in a Monte Carlo scheme :cite:p:`Swenson:2008cr,Sutterley:2019bx`.
 - Calculates the estimated spherical harmonic errors following :cite:t:`Wahr:2006bx`

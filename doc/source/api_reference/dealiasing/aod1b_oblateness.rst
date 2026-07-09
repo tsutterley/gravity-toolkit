@@ -1,6 +1,6 @@
-===================
-aod1b_oblateness.py
-===================
+=======================
+``aod1b_oblateness.py``
+=======================
 
 - Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
 

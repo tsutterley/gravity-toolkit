@@ -1,6 +1,6 @@
-===========================
-gfz_isdc_dealiasing_sync.py
-===========================
+===============================
+``gfz_isdc_dealiasing_sync.py``
+===============================
 
 - Syncs GRACE Level-1b dealiasing products from the `GFZ Information System and Data Center (ISDC) <http://isdc.gfz-potsdam.de/grace-isdc/>`_
 - Optionally outputs as monthly tar files

@@ -95,23 +95,23 @@ def harmonic_gradients(clm1, slm1, lon, lat,
     Ylm = np.zeros((LMAX+1, MMAX+1), dtype=np.complex128)
     # Truncating harmonics to degree and order LMAX
     # removing coefficients below LMIN and above MMAX
-    Ylm.real[LMIN:LMAX+1,mm] = clm1[LMIN:LMAX+1,mm].copy()
-    Ylm.imag[LMIN:LMAX+1,mm] = -slm1[LMIN:LMAX+1,mm].copy()
+    Ylm.real[LMIN:LMAX+1,:MMAX+1] = clm1[LMIN:LMAX+1,:MMAX+1].copy()
+    Ylm.imag[LMIN:LMAX+1,:MMAX+1] = -slm1[LMIN:LMAX+1,:MMAX+1].copy()
     dlm = np.einsum("l...,lm...->lm", np.sqrt((ll+1.0)*ll), -1j*Ylm)
 
     # generate Vlm coefficients (vlm and wlm)
     Vlmk, Wlmk = legendre_gradient(LMAX, MMAX)
     # even and odd spherical harmonic orders
-    m_even = np.arange(0,MMAX+2,2)
-    m_odd = np.arange(1,MMAX,2)
+    m_even = np.arange(0, MMAX+2, 2)
+    m_odd = np.arange(1, MMAX, 2)
 
     # Euler's formula for theta * k and m * phi
     k_th = np.exp(1j * np.einsum("h...,k...->kh...", th, ll))
     m_phi = np.exp(1j * np.einsum("m...,p...->mp...", mm, phi))
     # Calculate fourier coefficients from legendre coefficients
-    d = np.zeros((LMAX+1,thmax,2), dtype=np.complex128)
-    wtmp = np.einsum("lmk...,lm...->mk", Wlmk, dlm)
-    vtmp = np.einsum("lmk...,lm...->mk", Vlmk, dlm)
+    d = np.zeros((LMAX+1, thmax, 2), dtype=np.complex128)
+    wtmp = np.einsum("lmk...,lm...->mk", Wlmk[:,:MMAX+1,:], dlm)
+    vtmp = np.einsum("lmk...,lm...->mk", Vlmk[:,:MMAX+1,:], dlm)
     d[m_even,:,0] = np.einsum("mk...,kh...->mh", wtmp[m_even,:], k_th.imag)
     d[m_even,:,1] = np.einsum("mk...,kh...->mh", vtmp[m_even,:], k_th.imag)
     d[m_odd,:,0] = np.einsum("mk...,kh...->mh", wtmp[m_odd,:], k_th.real)

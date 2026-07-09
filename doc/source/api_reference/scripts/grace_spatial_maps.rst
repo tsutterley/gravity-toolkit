@@ -1,6 +1,6 @@
-=====================
-grace_spatial_maps.py
-=====================
+=========================
+``grace_spatial_maps.py``
+=========================
 
 - Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports monthly spatial fields
 - Correct spherical harmonics with the specified GIA model group

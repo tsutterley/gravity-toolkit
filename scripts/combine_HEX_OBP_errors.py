@@ -356,10 +356,10 @@ def arguments():
         help='ECCO Models')
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
         help='Working data directory')
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
         help='Output directory for mascon files')
     # GRACE/GRACE-FO Level-2 data product
     parser.add_argument('--product','-p',

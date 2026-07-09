@@ -178,7 +178,7 @@ def arguments():
         type=pathlib.Path,
         help='Input index file with spherical harmonic data files')
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
         help='Output directory for files')
     parser.add_argument('--file-prefix','-P',
         type=str,

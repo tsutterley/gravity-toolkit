@@ -523,7 +523,7 @@ def arguments():
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     parser.add_argument('--output-directory','-O',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
         help='Output directory for spatial files')
     parser.add_argument('--file-prefix','-P',
         type=str,

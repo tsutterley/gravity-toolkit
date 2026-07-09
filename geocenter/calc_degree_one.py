@@ -773,7 +773,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
         # Multiplying by c/s(phi#m) to get surface density in cmwe (lon,lat)
         # ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
         # The summation over spherical harmonic order is in this multiplication
-        rmass = np.einsum("mp...,mh...->ph...", m_phi, pconv)
+        rmass = np.einsum("mp...,mh...->ph...", m_phi, pconv).real
         # calculate G matrix parameters through a summation of each latitude
         # summation of integration factors, Legendre polynomials,
         # (convolution of order and harmonics) and the ocean mass at t
@@ -814,7 +814,7 @@ def calc_degree_one(base_dir, PROC, DREL, MODEL, LMAX, RAD,
             # Multiplying by c/s(phi#m) to get surface density in cm w.e. (lonxlat)
             # ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
             # The summation over spherical harmonic order is in this multiplication
-            lmass = np.einsum("mp...,mh...->ph...", m_phi, pconv)
+            lmass = np.einsum("mp...,mh...->ph...", m_phi, pconv).real
 
             # use sea level fingerprints or eustatic from GRACE land components
             if FINGERPRINT:
@@ -1457,7 +1457,7 @@ def arguments():
     # command line parameters
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
         help='Working data directory')
     # GRACE/GRACE-FO data processing center
     parser.add_argument('--center','-c',

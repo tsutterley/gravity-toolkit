@@ -108,7 +108,7 @@ import logging
 import pathlib
 import argparse
 import numpy as np
-import gravity_toolkit.time
+import gravity_toolkit as gravtk
 
 # PURPOSE: parses GRACE/GRACE-FO data files and assigns month numbers
 def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
@@ -186,13 +186,13 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     for t,infile in enumerate(input_files):
         if PROC in ('GRAZ','Swarm',):
             # get date lists for the start and end of fields
-            start_date,end_date = gravity_toolkit.time.parse_gfc_file(
+            start_date,end_date = gravtk.time.parse_gfc_file(
                 infile, PROC, DSET)
             # start and end year
             start_yr[t] = np.float64(start_date[0])
             end_yr[t] = np.float64(end_date[0])
             # number of days in each month for the calendar year
-            dpm = gravity_toolkit.time.calendar_days(start_yr[t])
+            dpm = gravtk.time.calendar_days(start_yr[t])
             # start and end day of the year
             start_day[t] = np.sum(dpm[:start_date[1]-1]) + start_date[2] + \
                 start_date[3]/24. + start_date[4]/1440. + start_date[5]/86400.
@@ -200,7 +200,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
                 end_date[3]/24. + end_date[4]/1440. + end_date[5]/86400.
         else:
             # get date lists for the start and end of fields
-            start_date,end_date = gravity_toolkit.time.parse_grace_file(infile)
+            start_date,end_date = gravtk.time.parse_grace_file(infile)
             # start and end year
             start_yr[t] = np.float64(start_date[0])
             end_yr[t] = np.float64(end_date[0])
@@ -209,17 +209,17 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
             end_day[t] = np.float64(end_date[1])
 
         # number of days in the starting year for leap and standard years
-        dpy = gravity_toolkit.time.calendar_days(start_yr[t]).sum()
+        dpy = gravtk.time.calendar_days(start_yr[t]).sum()
         # end date taking into account measurements taken on different years
         end_cyclic = (end_yr[t]-start_yr[t])*dpy + end_day[t]
         # calculate mid-month value
         mid_day[t] = np.mean([start_day[t], end_cyclic])
 
         # calculate Modified Julian Day from start_yr and mid_day
-        MJD = gravity_toolkit.time.convert_calendar_dates(start_yr[t],
+        MJD = gravtk.time.convert_calendar_dates(start_yr[t],
             1.0,mid_day[t],epoch=(1858,11,17,0,0,0))
         # convert from Modified Julian Days to calendar dates
-        cal_date = gravity_toolkit.time.convert_julian(MJD+2400000.5)
+        cal_date = gravtk.time.convert_julian(MJD+2400000.5)
 
         # Calculating the mid-month date in decimal form
         tdec[t] = start_yr[t] + mid_day[t]/dpy
@@ -233,7 +233,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
             year = 2002 + iyr
             # add all days from prior years to count
             # number of days in year i (if leap year or standard year)
-            count += gravity_toolkit.time.calendar_days(year).sum()
+            count += gravtk.time.calendar_days(year).sum()
 
         # calculating the total number of days since 2002
         tot_days[t] = np.mean([count+start_day[t], count+end_cyclic])
@@ -245,7 +245,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
             # calculate the GRACE/GRACE-FO month (Apr02 == 004)
             # https://grace.jpl.nasa.gov/data/grace-months/
             # Notes on special months (e.g. 119, 120) below
-            mon[t] = gravity_toolkit.time.calendar_to_grace(
+            mon[t] = gravtk.time.calendar_to_grace(
                 cal_date['year'],cal_date['month'])
 
     # The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
@@ -254,7 +254,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     # For CSR and GFZ: Nov 2011 (119) is centered in Oct 2011 (118)
     # For JPL: Dec 2011 (120) is centered in Jan 2012 (121)
     # For all: May 2015 (161) is centered in Apr 2015 (160)
-    mon = gravity_toolkit.time.adjust_months(mon)
+    mon = gravtk.time.adjust_months(mon)
 
     # Output GRACE/GRACE-FO date ascii file
     if OUTPUT:
@@ -296,7 +296,7 @@ def arguments():
     )
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
         help='Working data directory')
     # Data processing center or satellite mission
     parser.add_argument('--center','-c',

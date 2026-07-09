@@ -1,6 +1,6 @@
-==============
-gen_point_load
-==============
+==================
+``gen_point_load``
+==================
 
 - Calculates gravitational spherical harmonic coefficients for point masses
 
@@ -18,4 +18,4 @@ Calling Sequence
 
 .. autofunction:: gravity_toolkit.gen_point_load
 
-.. autofunction:: gravity_toolkit.gen_point_load.spherical_harmonic_matrix
+.. autofunction:: gravity_toolkit.gen_point_load._complex_harmonics

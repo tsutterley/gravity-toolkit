@@ -162,23 +162,21 @@ def harmonic_transform(clm1, slm1, lon, lat,
 
     # if plms are not pre-computed: calculate Legendre polynomials
     if PLM is None:
-        PLM, dPLM = plm_holmes(LMAX, np.cos(th))
+        PLM, _ = plm_holmes(LMAX, np.cos(th))
 
-    # spherical harmonic order
-    mm = np.arange(0,MMAX+1)# mmax+1 to include mmax
     # real (cosine) and imaginary (sine) components
     Ylm = np.zeros((LMAX+1, MMAX+1), dtype=np.complex128)
     # Truncating harmonics to degree and order LMAX
     # removing coefficients below LMIN and above MMAX
-    Ylm.real[LMIN:LMAX+1,mm] = clm1[LMIN:LMAX+1,mm]
-    Ylm.imag[LMIN:LMAX+1,mm] = -slm1[LMIN:LMAX+1,mm]
+    Ylm.real[LMIN:LMAX+1,:MMAX+1] = clm1[LMIN:LMAX+1,:MMAX+1]
+    Ylm.imag[LMIN:LMAX+1,:MMAX+1] = -slm1[LMIN:LMAX+1,:MMAX+1]
     # calculate Ylms summation for each theta band
-    delta_M = np.einsum("lmh...,lm...->mh...", PLM, Ylm / 2.0)
+    d = np.einsum("lmh...,lm...->mh...", PLM[:LMAX+1,:MMAX+1,:], Ylm / 2.0)
 
     # output spatial field from FFT transformation
-    s = np.zeros((phimax,thmax))
+    s = np.zeros((phimax, thmax))
     # calculate fft for each theta band (over phis with axis=0)
-    s[:-1,:] = 2.0*(phimax-1)*np.fft.ifft(delta_M,n=phimax-1,axis=0).real
+    s[:-1,:] = 2.0*(phimax-1)*np.fft.ifft(d, n=phimax-1, axis=0).real
     # complete sphere (values at 360 == values at 0)
     s[-1,:] = s[0,:]
 

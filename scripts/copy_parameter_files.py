@@ -300,7 +300,7 @@ def arguments():
         help='Parameter files containing specific variables for each analysis')
     # working data directory
     parser.add_argument('--directory','-D',
-        type=pathlib.Path, default=pathlib.Path.cwd(),
+        type=pathlib.Path, default=gravtk.utilities.get_cache_path(),
         help='Working data directory')
     # start and end GRACE/GRACE-FO months
     parser.add_argument('--start','-S',

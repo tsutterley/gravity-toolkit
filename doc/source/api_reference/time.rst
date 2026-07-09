@@ -1,6 +1,6 @@
-====
-time
-====
+========
+``time``
+========
 
 Utilities for calculating time operations
 

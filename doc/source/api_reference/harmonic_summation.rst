@@ -1,6 +1,6 @@
-==================
-harmonic_summation
-==================
+======================
+``harmonic_summation``
+======================
 
 - Returns the spatial field for a series of spherical harmonics
 
