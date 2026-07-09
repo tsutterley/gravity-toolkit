@@ -75,7 +75,6 @@ source_suffix = {
     ".rst": "restructuredtext",
     ".ipynb": "myst-nb",
 }
-nb_execution_mode = "off"
 # execute notebooks on build
 if on_rtd:
     nb_execution_mode = "auto"
