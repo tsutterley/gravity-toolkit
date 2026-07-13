@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 C20.py
 Written by Tyler Sutterley (05/2023)
 
@@ -105,10 +105,12 @@ UPDATE HISTORY:
         Will accommodate upcoming GRACE RL05, which will use different SLR files
     Written 12/2011
 """
+
 import re
 import pathlib
 import numpy as np
 import gravity_toolkit.time
+
 
 # PURPOSE: read oblateness data from Satellite Laser Ranging (SLR)
 def C20(SLR_file, AOD=True, HEADER=True):
@@ -145,7 +147,7 @@ def C20(SLR_file, AOD=True, HEADER=True):
     # output dictionary with data variables
     dinput = {}
     # determine if imported file is from PO.DAAC or CSR
-    if bool(re.search(r'C20_RL\d+', SLR_file.name ,re.I)):
+    if bool(re.search(r'C20_RL\d+', SLR_file.name, re.I)):
         # SLR C20 file from CSR
         # Just for checking new months when TN series isn't up to date as the
         # SLR estimates always use the full set of days in each calendar month.
@@ -157,8 +159,16 @@ def C20(SLR_file, AOD=True, HEADER=True):
         # Column 5: Mean value of Atmosphere-Ocean De-aliasing model (1E-10)
         # Columns 6-7: Start and end dates of data used in solution
         dtype = {}
-        dtype['names'] = ('time','C20','delta','sigma','AOD','start','end')
-        dtype['formats'] = ('f','f8','f','f','f','f','f')
+        dtype['names'] = (
+            'time',
+            'C20',
+            'delta',
+            'sigma',
+            'AOD',
+            'start',
+            'end',
+        )
+        dtype['formats'] = ('f', 'f8', 'f', 'f', 'f', 'f', 'f')
         # header text is commented and won't be read
         file_input = np.loadtxt(SLR_file, dtype=dtype)
         # date and GRACE/GRACE-FO month
@@ -167,13 +177,13 @@ def C20(SLR_file, AOD=True, HEADER=True):
         # monthly spherical harmonic replacement solutions
         dinput['data'] = file_input['C20'].copy()
         # monthly spherical harmonic formal standard deviations
-        dinput['error'] = file_input['sigma']*1e-10
+        dinput['error'] = file_input['sigma'] * 1e-10
         # Background gravity model includes solid earth and ocean tides, solid
         # earth and ocean pole tides, and the Atmosphere-Ocean De-aliasing
         # product. The monthly mean of the AOD model has been restored.
         if AOD:
             # Removing AOD product that was restored in the solution
-            dinput['data'] -= file_input['AOD']*1e-10
+            dinput['data'] -= file_input['AOD'] * 1e-10
     elif bool(re.search(r'GFZ_(RL\d+)_C20_SLR', SLR_file.name, re.I)):
         # SLR C20 file from GFZ
         # Column 1: MJD of BEGINNING of solution span
@@ -192,7 +202,7 @@ def C20(SLR_file, AOD=True, HEADER=True):
             # file line at count
             line = file_contents[count]
             # find PRODUCT: within line to set HEADER flag to False when found
-            HEADER = not bool(re.match(r'PRODUCT:+',line))
+            HEADER = not bool(re.match(r'PRODUCT:+', line))
             # add 1 to counter
             count += 1
 
@@ -200,7 +210,7 @@ def C20(SLR_file, AOD=True, HEADER=True):
         n_mon = file_lines - count
         # date and GRACE/GRACE-FO month
         dinput['time'] = np.zeros((n_mon))
-        dinput['month'] = np.zeros((n_mon),dtype=np.int64)
+        dinput['month'] = np.zeros((n_mon), dtype=np.int64)
         # monthly spherical harmonic replacement solutions
         dinput['data'] = np.zeros((n_mon))
         # monthly spherical harmonic formal standard deviations
@@ -211,21 +221,22 @@ def C20(SLR_file, AOD=True, HEADER=True):
         for line in file_contents[count:]:
             # find numerical instances in line including exponents,
             # decimal points and negatives
-            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
+            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?', line)
             # check if line has G* or Gm flags
-            if bool(re.search(r'(G\*|Gm)',line)):
+            if bool(re.search(r'(G\*|Gm)', line)):
                 # reading decimal year for start of span
                 dinput['time'][t] = np.float64(line_contents[1])
                 # Spherical Harmonic data for line
                 dinput['data'][t] = np.float64(line_contents[2])
-                dinput['error'][t] = np.float64(line_contents[4])*1e-10
+                dinput['error'][t] = np.float64(line_contents[4]) * 1e-10
                 # GRACE/GRACE-FO month of SLR solutions
                 dinput['month'][t] = gravity_toolkit.time.calendar_to_grace(
-                    dinput['time'][t], around=np.round)
+                    dinput['time'][t], around=np.round
+                )
                 # add to t count
                 t += 1
         # truncate variables if necessary
-        for key,val in dinput.items():
+        for key, val in dinput.items():
             dinput[key] = val[:t]
 
     elif bool(re.search(r'GRAVIS-2B_GFZOP', SLR_file.name, re.I)):
@@ -247,7 +258,7 @@ def C20(SLR_file, AOD=True, HEADER=True):
             # file line at count
             line = file_contents[count]
             # find PRODUCT: within line to set HEADER flag to False when found
-            HEADER = not bool(re.match(r'PRODUCT:+',line))
+            HEADER = not bool(re.match(r'PRODUCT:+', line))
             # add 1 to counter
             count += 1
 
@@ -266,22 +277,23 @@ def C20(SLR_file, AOD=True, HEADER=True):
         for line in file_contents[count:]:
             # find numerical instances in line including exponents,
             # decimal points and negatives
-            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
+            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?', line)
             count = len(line_contents)
             # check for empty lines
-            if (count > 0):
+            if count > 0:
                 # reading decimal year for start of span
                 dinput['time'][t] = np.float64(line_contents[1])
                 # Spherical Harmonic data for line
                 dinput['data'][t] = np.float64(line_contents[2])
-                dinput['error'][t] = np.float64(line_contents[4])*1e-10
+                dinput['error'][t] = np.float64(line_contents[4]) * 1e-10
                 # GRACE/GRACE-FO month of SLR solutions
                 dinput['month'][t] = gravity_toolkit.time.calendar_to_grace(
-                    dinput['time'][t], around=np.round)
+                    dinput['time'][t], around=np.round
+                )
                 # add to t count
                 t += 1
         # truncate variables if necessary
-        for key,val in dinput.items():
+        for key, val in dinput.items():
             dinput[key] = val[:t]
 
     elif bool(re.search(r'TN-(11|14)', SLR_file.name, re.I)):
@@ -298,7 +310,7 @@ def C20(SLR_file, AOD=True, HEADER=True):
             # file line at count
             line = file_contents[count]
             # find PRODUCT: within line to set HEADER flag to False when found
-            HEADER = not bool(re.match(r'PRODUCT:+',line,re.IGNORECASE))
+            HEADER = not bool(re.match(r'PRODUCT:+', line, re.IGNORECASE))
             # add 1 to counter
             count += 1
 
@@ -306,7 +318,7 @@ def C20(SLR_file, AOD=True, HEADER=True):
         n_mon = file_lines - count
         # date and GRACE/GRACE-FO month
         dinput['time'] = np.zeros((n_mon))
-        dinput['month'] = np.zeros((n_mon),dtype=np.int64)
+        dinput['month'] = np.zeros((n_mon), dtype=np.int64)
         # monthly spherical harmonic replacement solutions
         dinput['data'] = np.zeros((n_mon))
         # monthly spherical harmonic formal standard deviations
@@ -317,31 +329,36 @@ def C20(SLR_file, AOD=True, HEADER=True):
         for line in file_contents[count:]:
             # find numerical instances in line including exponents,
             # decimal points and negatives
-            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
+            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?', line)
             # check for empty lines as there are
             # slight differences in RL04 TN-05_C20_SLR.txt
             # with blanks between the PRODUCT: line and the data
             count = len(line_contents)
             # if count is greater than 0
-            if (count > 0):
+            if count > 0:
                 # modified julian date for line
                 MJD = np.float64(line_contents[0])
                 # converting from MJD into month, day and year
-                YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
-                    MJD+2400000.5, format='tuple')
+                YY, MM, DD, hh, mm, ss = gravity_toolkit.time.convert_julian(
+                    MJD + 2400000.5, format='tuple'
+                )
                 # converting from month, day, year into decimal year
-                dinput['time'][t], = gravity_toolkit.time.convert_calendar_decimal(
-                    YY, MM, day=DD, hour=hh)
+                (dinput['time'][t],) = (
+                    gravity_toolkit.time.convert_calendar_decimal(
+                        YY, MM, day=DD, hour=hh
+                    )
+                )
                 # Spherical Harmonic data for line
                 dinput['data'][t] = np.float64(line_contents[2])
-                dinput['error'][t] = np.float64(line_contents[4])*1e-10
+                dinput['error'][t] = np.float64(line_contents[4]) * 1e-10
                 # GRACE/GRACE-FO month of SLR solutions
                 dinput['month'][t] = gravity_toolkit.time.calendar_to_grace(
-                    dinput['time'][t], around=np.round)
+                    dinput['time'][t], around=np.round
+                )
                 # add to t count
                 t += 1
         # truncate variables if necessary
-        for key,val in dinput.items():
+        for key, val in dinput.items():
             dinput[key] = val[:t]
     else:
         # SLR C20 file from PO.DAAC
@@ -357,7 +374,7 @@ def C20(SLR_file, AOD=True, HEADER=True):
             # file line at count
             line = file_contents[count]
             # find PRODUCT: within line to set HEADER flag to False when found
-            HEADER = not bool(re.match(r'PRODUCT:+',line))
+            HEADER = not bool(re.match(r'PRODUCT:+', line))
             # add 1 to counter
             count += 1
 
@@ -370,33 +387,35 @@ def C20(SLR_file, AOD=True, HEADER=True):
         # monthly spherical harmonic formal standard deviations
         eC20_input = np.zeros((n_mon))
         # flag denoting if replacement solution
-        slr_flag = np.zeros((n_mon),dtype=bool)
+        slr_flag = np.zeros((n_mon), dtype=bool)
         # time count
         t = 0
         # for every other line:
         for line in file_contents[count:]:
             # find numerical instances in line including exponents,
             # decimal points and negatives
-            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
+            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?', line)
             # check for empty lines as there are
             # slight differences in RL04 TN-05_C20_SLR.txt
             # with blanks between the PRODUCT: line and the data
             count = len(line_contents)
             # if count is greater than 0
-            if (count > 0):
+            if count > 0:
                 # modified julian date for line
                 MJD = np.float64(line_contents[0])
                 # converting from MJD into month, day and year
-                YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
-                    MJD+2400000.5, format='tuple')
+                YY, MM, DD, hh, mm, ss = gravity_toolkit.time.convert_julian(
+                    MJD + 2400000.5, format='tuple'
+                )
                 # converting from month, day, year into decimal year
-                date_conv[t], = gravity_toolkit.time.convert_calendar_decimal(
-                    YY, MM, day=DD, hour=hh)
+                (date_conv[t],) = gravity_toolkit.time.convert_calendar_decimal(
+                    YY, MM, day=DD, hour=hh
+                )
                 # Spherical Harmonic data for line
                 C20_input[t] = np.float64(line_contents[2])
-                eC20_input[t] = np.float64(line_contents[4])*1e-10
+                eC20_input[t] = np.float64(line_contents[4]) * 1e-10
                 # line has * flag
-                if bool(re.search(r'\*',line)):
+                if bool(re.search(r'\*', line)):
                     slr_flag[t] = True
                 # add to t count
                 t += 1
@@ -408,7 +427,7 @@ def C20(SLR_file, AOD=True, HEADER=True):
         slr_flag = slr_flag[:t]
 
         # GRACE/GRACE-FO month of SLR solutions
-        mon = gravity_toolkit.time.calendar_to_grace(date_conv,around=np.round)
+        mon = gravity_toolkit.time.calendar_to_grace(date_conv, around=np.round)
         # number of unique months
         dinput['month'] = np.unique(mon)
         n_uniq = len(dinput['month'])
@@ -423,14 +442,14 @@ def C20(SLR_file, AOD=True, HEADER=True):
         for t in range(n_uniq):
             count = np.count_nonzero(mon == dinput['month'][t])
             # there is only one solution for the month
-            if (count == 1):
+            if count == 1:
                 i = np.nonzero(mon == dinput['month'][t])
                 dinput['time'][t] = date_conv[i]
                 dinput['data'][t] = C20_input[i]
                 dinput['error'][t] = eC20_input[i]
             # there is a special solution for the month
             # will the solution flagged with slr_flag
-            elif (count == 2):
+            elif count == 2:
                 i = np.nonzero((mon == dinput['month'][t]) & slr_flag)
                 dinput['time'][t] = date_conv[i]
                 dinput['data'][t] = C20_input[i]

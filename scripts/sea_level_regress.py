@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 sea_level_regress.py
 Written by Tyler Sutterley (07/2026)
 
@@ -92,6 +92,7 @@ UPDATE HISTORY:
     Updated 08/2017: running at 0.5x0.5 degrees
     Written 08/2017
 """
+
 from __future__ import print_function, division
 
 import sys
@@ -104,6 +105,7 @@ import traceback
 import numpy as np
 import gravity_toolkit as gravtk
 
+
 # PURPOSE: keep track of threads
 def info(args):
     logging.info(pathlib.Path(sys.argv[0]).name)
@@ -113,8 +115,13 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
+
 # program module to run with specified parameters
-def sea_level_regress(PROC, DREL, DSET, LMAX,
+def sea_level_regress(
+    PROC,
+    DREL,
+    DSET,
+    LMAX,
     START=None,
     END=None,
     MISSING=None,
@@ -129,15 +136,15 @@ def sea_level_regress(PROC, DREL, DSET, LMAX,
     LANDMASK=None,
     OUTPUT_DIRECTORY=None,
     VERBOSE=0,
-    MODE=0o775):
-
+    MODE=0o775,
+):
     # output directory setup
     OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
     if not OUTPUT_DIRECTORY.exists():
         OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
 
     # GRACE/GRACE-FO months
-    months = sorted(set(np.arange(START,END+1)) - set(MISSING))
+    months = sorted(set(np.arange(START, END + 1)) - set(MISSING))
     nmon = len(months)
     # output filename suffix
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')[DATAFORM]
@@ -153,20 +160,23 @@ def sea_level_regress(PROC, DREL, DSET, LMAX,
 
     # input and output file formats
     input_format = 'SLF_ITERATION_{0}{1}{2}{3}_L{4:d}_{5:03d}.{6}'
-    output_format = 'SLF_ITERATION_{0}{1}{2}{3}_L{4:d}_{5}{6}_{7:03d}-{8:03d}.{9}'
+    output_format = (
+        'SLF_ITERATION_{0}{1}{2}{3}_L{4:d}_{5}{6}_{7:03d}-{8:03d}.{9}'
+    )
 
     # Land-Sea Mask with Antarctica from Rignot (2017) and Greenland from GEUS
     # 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
     # Open the land-sea NetCDF4 file for reading
-    landsea = gravtk.spatial().from_netCDF4(LANDMASK, date=False,
-        varname='LSMASK')
-    dlon,dlat = landsea.spacing
+    landsea = gravtk.spatial().from_netCDF4(
+        LANDMASK, date=False, varname='LSMASK'
+    )
+    dlon, dlat = landsea.spacing
     nlat, nlon = landsea.shape
     # create land function
-    land_function = np.zeros((nlat, nlon),dtype=np.float64)
+    land_function = np.zeros((nlat, nlon), dtype=np.float64)
     # combine land and island levels for land function
-    indy,indx = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))
-    land_function[indy,indx] = 1.0
+    indy, indx = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))
+    land_function[indy, indx] = 1.0
     # calculate ocean function from land function
     ocean_function = 1.0 - land_function
     # bad value and land function as mask
@@ -177,21 +187,29 @@ def sea_level_regress(PROC, DREL, DSET, LMAX,
     spatial_list = []
     for t in range(0, nmon):
         # sea level file for month
-        fi = input_format.format(ITERATION,dset_str,gia_str,ocean_str,
-            EXPANSION,months[t],suffix)
+        fi = input_format.format(
+            ITERATION,
+            dset_str,
+            gia_str,
+            ocean_str,
+            EXPANSION,
+            months[t],
+            suffix,
+        )
         INPUT_FILE = OUTPUT_DIRECTORY.joinpath(fi)
         # read sea level file
-        if (DATAFORM == 'ascii'):
-            dinput = gravtk.spatial().from_ascii(INPUT_FILE,
-                spacing=[dlon,dlat], nlon=nlon, nlat=nlat)
-        elif (DATAFORM == 'netCDF4'):
+        if DATAFORM == 'ascii':
+            dinput = gravtk.spatial().from_ascii(
+                INPUT_FILE, spacing=[dlon, dlat], nlon=nlon, nlat=nlat
+            )
+        elif DATAFORM == 'netCDF4':
             # netcdf (.nc)
             dinput = gravtk.spatial().from_netCDF4(INPUT_FILE)
-        elif (DATAFORM == 'HDF5'):
+        elif DATAFORM == 'HDF5':
             # HDF5 (.H5)
             dinput = gravtk.spatial().from_HDF5(INPUT_FILE)
         # append to spatial list
-        dinput.replace_invalid(FILL_VALUE,mask=MASK)
+        dinput.replace_invalid(FILL_VALUE, mask=MASK)
         spatial_list.append(dinput)
 
     # concatenate list to single spatial object
@@ -199,14 +217,16 @@ def sea_level_regress(PROC, DREL, DSET, LMAX,
     spatial_list = None
 
     # Setting output parameters for each fit type
-    coef_str = ['x{0:d}'.format(o) for o in range(ORDER+1)]
-    unit_suffix = [' yr^{0:d}'.format(-o) if o else '' for o in range(ORDER+1)]
-    if (ORDER == 0):# Mean
+    coef_str = ['x{0:d}'.format(o) for o in range(ORDER + 1)]
+    unit_suffix = [
+        ' yr^{0:d}'.format(-o) if o else '' for o in range(ORDER + 1)
+    ]
+    if ORDER == 0:  # Mean
         fit_longname = ['Mean']
-    elif (ORDER == 1):# Trend
-        fit_longname = ['Constant','Trend']
-    elif (ORDER == 2):# Quadratic
-        fit_longname = ['Constant','Linear','Quadratic']
+    elif ORDER == 1:  # Trend
+        fit_longname = ['Constant', 'Trend']
+    elif ORDER == 2:  # Quadratic
+        fit_longname = ['Constant', 'Linear', 'Quadratic']
 
     # amplitude string for cyclical components
     amp_str = []
@@ -227,28 +247,29 @@ def sea_level_regress(PROC, DREL, DSET, LMAX,
     # extra terms for tidal aliasing components or custom fits
     TERMS = []
     term_index = []
-    for i,c in enumerate(CYCLES):
+    for i, c in enumerate(CYCLES):
         # check if fitting with semi-annual or annual terms
-        if (c == 0.5):
-            coef_str.extend(['SS','SC'])
+        if c == 0.5:
+            coef_str.extend(['SS', 'SC'])
             amp_str.append('SEMI')
             amp_title['SEMI'] = 'Semi-Annual Amplitude'
             ph_title['SEMI'] = 'Semi-Annual Phase'
             fit_longname.extend(['Semi-Annual Sine', 'Semi-Annual Cosine'])
-            unit_suffix.extend(['',''])
-        elif (c == 1.0):
-            coef_str.extend(['AS','AC'])
+            unit_suffix.extend(['', ''])
+        elif c == 1.0:
+            coef_str.extend(['AS', 'AC'])
             amp_str.append('ANN')
             amp_title['ANN'] = 'Annual Amplitude'
             ph_title['ANN'] = 'Annual Phase'
             fit_longname.extend(['Annual Sine', 'Annual Cosine'])
-            unit_suffix.extend(['',''])
+            unit_suffix.extend(['', ''])
         # check if fitting with tidal aliasing terms
-        for t,period in tidal_aliasing.items():
-            if np.isclose(c, (period/365.25)):
+        for t, period in tidal_aliasing.items():
+            if np.isclose(c, (period / 365.25)):
                 # terms for tidal aliasing during GRACE and GRACE-FO periods
-                TERMS.extend(gravtk.time_series.aliasing_terms(grid.time,
-                    period=period))
+                TERMS.extend(
+                    gravtk.time_series.aliasing_terms(grid.time, period=period)
+                )
                 # labels for tidal aliasing during GRACE period
                 coef_str.extend([f'{t}SGRC', f'{t}CGRC'])
                 amp_str.append(f'{t}GRC')
@@ -256,7 +277,7 @@ def sea_level_regress(PROC, DREL, DSET, LMAX,
                 ph_title[f'{t}GRC'] = f'{t} Tidal Alias (GRACE) Phase'
                 fit_longname.append(f'{t} Tidal Alias (GRACE) Sine')
                 fit_longname.append(f'{t} Tidal Alias (GRACE) Cosine')
-                unit_suffix.extend(['',''])
+                unit_suffix.extend(['', ''])
                 # labels for tidal aliasing during GRACE-FO period
                 coef_str.extend([f'{t}SGFO', f'{t}CGFO'])
                 amp_str.append(f'{t}GFO')
@@ -264,7 +285,7 @@ def sea_level_regress(PROC, DREL, DSET, LMAX,
                 ph_title[f'{t}GFO'] = f'{t} Tidal Alias (GRACE-FO) Phase'
                 fit_longname.append(f'{t} Tidal Alias (GRACE-FO) Sine')
                 fit_longname.append(f'{t} Tidal Alias (GRACE-FO) Cosine')
-                unit_suffix.extend(['',''])
+                unit_suffix.extend(['', ''])
                 # index to remove the original tidal aliasing term
                 term_index.append(i)
     # remove the original tidal aliasing terms
@@ -272,7 +293,7 @@ def sea_level_regress(PROC, DREL, DSET, LMAX,
 
     # Fitting seasonal components
     ncomp = len(coef_str)
-    ncycles = 2*len(CYCLES) + len(TERMS)
+    ncycles = 2 * len(CYCLES) + len(TERMS)
     # confidence interval for regression fit errors
     CONF = 0.95
 
@@ -280,44 +301,60 @@ def sea_level_regress(PROC, DREL, DSET, LMAX,
     out = dinput.zeros_like()
     out.data = np.zeros((nlat, nlon, ncomp))
     out.error = np.zeros((nlat, nlon, ncomp))
-    out.mask = np.ones((nlat, nlon, ncomp),dtype=bool)
+    out.mask = np.ones((nlat, nlon, ncomp), dtype=bool)
     # Fit Significance
     FS = {}
     # SSE: Sum of Squares Error
     # AIC: Akaike information criterion
     # BIC: Bayesian information criterion
     # R2Adj: Adjusted Coefficient of Determination
-    for key in ['SSE','AIC','BIC','R2Adj']:
+    for key in ['SSE', 'AIC', 'BIC', 'R2Adj']:
         FS[key] = dinput.zeros_like()
 
     # valid values for ocean function
-    indy,indx = np.nonzero(ocean_function)
+    indy, indx = np.nonzero(ocean_function)
     # calculate the regression coefficients and fit significance
-    for i,j in zip(indy,indx):
+    for i, j in zip(indy, indx):
         # Calculating the regression coefficients
-        tsbeta = gravtk.time_series.regress(grid.time, grid.data[i,j,:],
-            ORDER=ORDER, CYCLES=CYCLES, TERMS=TERMS, CONF=CONF)
+        tsbeta = gravtk.time_series.regress(
+            grid.time,
+            grid.data[i, j, :],
+            ORDER=ORDER,
+            CYCLES=CYCLES,
+            TERMS=TERMS,
+            CONF=CONF,
+        )
         # save regression components
         for k in range(0, ncomp):
-            out.data[i,j,k] = tsbeta['beta'][k]
-            out.error[i,j,k] = tsbeta['error'][k]
-            out.mask[i,j,k] = False
+            out.data[i, j, k] = tsbeta['beta'][k]
+            out.error[i, j, k] = tsbeta['error'][k]
+            out.mask[i, j, k] = False
         # Fit significance terms
         # Degrees of Freedom
         nu = tsbeta['DOF']
         # Converting Mean Square Error to Sum of Squares Error
-        FS['SSE'].data[i,j] = tsbeta['MSE']*nu
-        FS['AIC'].data[i,j] = tsbeta['AIC']
-        FS['BIC'].data[i,j] = tsbeta['BIC']
-        FS['R2Adj'].data[i,j] = tsbeta['R2Adj']
+        FS['SSE'].data[i, j] = tsbeta['MSE'] * nu
+        FS['AIC'].data[i, j] = tsbeta['AIC']
+        FS['BIC'].data[i, j] = tsbeta['BIC']
+        FS['R2Adj'].data[i, j] = tsbeta['R2Adj']
 
     # list of output files
     output_files = []
     # Output spatial files
-    for i in range(0,ncomp):
+    for i in range(0, ncomp):
         # output spatial file name
-        f1 = (ITERATION, dset_str, gia_str, ocean_str, EXPANSION,
-            coef_str[i], '', START, END, suffix)
+        f1 = (
+            ITERATION,
+            dset_str,
+            gia_str,
+            ocean_str,
+            EXPANSION,
+            coef_str[i],
+            '',
+            START,
+            END,
+            suffix,
+        )
         file1 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f1))
         # full attributes
         UNITS_TITLE = f'centimeters{unit_suffix[i]}'
@@ -325,44 +362,90 @@ def sea_level_regress(PROC, DREL, DSET, LMAX,
         FILE_TITLE = f'Sea_Level_Fingerprint_{fit_longname[i]}'
         # output regression fit and fit error to file
         output = out.index(i, date=False)
-        output_data(output, FILENAME=file1, DATAFORM=DATAFORM,
-            UNITS=UNITS_TITLE, LONGNAME=LONGNAME, TITLE=FILE_TITLE,
-            CONF=CONF, VERBOSE=VERBOSE, MODE=MODE)
+        output_data(
+            output,
+            FILENAME=file1,
+            DATAFORM=DATAFORM,
+            UNITS=UNITS_TITLE,
+            LONGNAME=LONGNAME,
+            TITLE=FILE_TITLE,
+            CONF=CONF,
+            VERBOSE=VERBOSE,
+            MODE=MODE,
+        )
         # add output files to list object
         output_files.append(file1)
 
     # if fitting coefficients with seasonal components
     # output amplitude and phase of cyclical components
-    for i,flag in enumerate(amp_str):
+    for i, flag in enumerate(amp_str):
         # Indice pointing to the cyclical components
-        j = 1 + ORDER + 2*i
+        j = 1 + ORDER + 2 * i
         # Allocating memory for output amplitude and phase
         amp = dinput.zeros_like()
         amp.error = np.zeros((nlat, nlon))
         ph = dinput.zeros_like()
         ph.error = np.zeros((nlat, nlon))
         # calculating amplitude and phase of spatial field
-        amp.data[indy,indx],ph.data[indy,indx] = gravtk.time_series.amplitude(
-            out.data[indy,indx,j], out.data[indy,indx,j+1]
+        amp.data[indy, indx], ph.data[indy, indx] = (
+            gravtk.time_series.amplitude(
+                out.data[indy, indx, j], out.data[indy, indx, j + 1]
+            )
         )
         # convert phase from -180:180 to 0:360
         ph.data = np.where(
             (ph.data < 0) & np.logical_not(ph.mask), ph.data + 360.0, ph.data
         )
         # Amplitude Error
-        comp1=out.error[indy,indx,j]*out.data[indy,indx,j]/amp.data[indy,indx]
-        comp2=out.error[indy,indx,j+1]*out.data[indy,indx,j+1]/amp.data[indy,indx]
-        amp.error[indy,indx] = np.hypot(comp1, comp2)
+        comp1 = (
+            out.error[indy, indx, j]
+            * out.data[indy, indx, j]
+            / amp.data[indy, indx]
+        )
+        comp2 = (
+            out.error[indy, indx, j + 1]
+            * out.data[indy, indx, j + 1]
+            / amp.data[indy, indx]
+        )
+        amp.error[indy, indx] = np.hypot(comp1, comp2)
         # Phase Error (degrees)
-        comp1=out.error[indy,indx,j]*out.data[indy,indx,j+1]/(amp.data[indy,indx]**2)
-        comp2=out.error[indy,indx,j+1]*out.data[indy,indx,j]/(amp.data[indy,indx]**2)
-        ph.error[indy,indx] = np.degrees(np.hypot(comp1, comp2))
+        comp1 = (
+            out.error[indy, indx, j]
+            * out.data[indy, indx, j + 1]
+            / (amp.data[indy, indx] ** 2)
+        )
+        comp2 = (
+            out.error[indy, indx, j + 1]
+            * out.data[indy, indx, j]
+            / (amp.data[indy, indx] ** 2)
+        )
+        ph.error[indy, indx] = np.degrees(np.hypot(comp1, comp2))
 
         # output file names for amplitude and phase
-        f2 = (ITERATION, dset_str, gia_str, ocean_str, EXPANSION,
-            flag, '_AMPL', START, END, suffix)
-        f3 = (ITERATION, dset_str, gia_str, ocean_str, EXPANSION,
-            flag, '_PHASE', START, END, suffix)
+        f2 = (
+            ITERATION,
+            dset_str,
+            gia_str,
+            ocean_str,
+            EXPANSION,
+            flag,
+            '_AMPL',
+            START,
+            END,
+            suffix,
+        )
+        f3 = (
+            ITERATION,
+            dset_str,
+            gia_str,
+            ocean_str,
+            EXPANSION,
+            flag,
+            '_PHASE',
+            START,
+            END,
+            suffix,
+        )
         file2 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f2))
         file3 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f3))
         # full attributes
@@ -372,12 +455,28 @@ def sea_level_regress(PROC, DREL, DSET, LMAX,
         AMP_TITLE = f'Sea_Level_Fingerprint_{amp_title[flag]}'
         PH_TITLE = f'Sea_Level_Fingerprint_{ph_title[flag]}'
         # Output seasonal amplitude and phase to files
-        output_data(amp, FILENAME=file2, DATAFORM=DATAFORM,
-            UNITS=AMP_UNITS, LONGNAME=LONGNAME, TITLE=AMP_TITLE,
-            CONF=CONF, VERBOSE=VERBOSE, MODE=MODE)
-        output_data(ph, FILENAME=file3, DATAFORM=DATAFORM,
-            UNITS=PH_UNITS, LONGNAME='Phase', TITLE=PH_TITLE,
-            CONF=CONF, VERBOSE=VERBOSE, MODE=MODE)
+        output_data(
+            amp,
+            FILENAME=file2,
+            DATAFORM=DATAFORM,
+            UNITS=AMP_UNITS,
+            LONGNAME=LONGNAME,
+            TITLE=AMP_TITLE,
+            CONF=CONF,
+            VERBOSE=VERBOSE,
+            MODE=MODE,
+        )
+        output_data(
+            ph,
+            FILENAME=file3,
+            DATAFORM=DATAFORM,
+            UNITS=PH_UNITS,
+            LONGNAME='Phase',
+            TITLE=PH_TITLE,
+            CONF=CONF,
+            VERBOSE=VERBOSE,
+            MODE=MODE,
+        )
         # add output files to list object
         output_files.append(file2)
         output_files.append(file3)
@@ -389,27 +488,54 @@ def sea_level_regress(PROC, DREL, DSET, LMAX,
     signif_longname['BIC'] = 'Bayesian information criterion'
     signif_longname['R2Adj'] = 'Adjusted Coefficient of Determination'
     # for each fit significance term
-    for key,fs in FS.items():
+    for key, fs in FS.items():
         # output file names for fit significance
         signif_str = f'{key}_'
-        f4 = (ITERATION, dset_str, gia_str, ocean_str, EXPANSION,
-            signif_str, coef_str[ORDER], START, END, suffix)
+        f4 = (
+            ITERATION,
+            dset_str,
+            gia_str,
+            ocean_str,
+            EXPANSION,
+            signif_str,
+            coef_str[ORDER],
+            START,
+            END,
+            suffix,
+        )
         file4 = OUTPUT_DIRECTORY.joinpath(output_format.format(*f4))
         # full attributes
         LONGNAME = signif_longname[key]
         # output fit significance to file
-        output_data(fs, FILENAME=file4, DATAFORM=DATAFORM,
-            UNITS=key, LONGNAME=LONGNAME, TITLE=nu,
-            VERBOSE=VERBOSE, MODE=MODE)
+        output_data(
+            fs,
+            FILENAME=file4,
+            DATAFORM=DATAFORM,
+            UNITS=key,
+            LONGNAME=LONGNAME,
+            TITLE=nu,
+            VERBOSE=VERBOSE,
+            MODE=MODE,
+        )
         # add output files to list object
         output_files.append(file4)
 
     # return the list of output files
     return output_files
 
+
 # PURPOSE: wrapper function for outputting data to file
-def output_data(data, FILENAME=None, DATAFORM=None, UNITS=None,
-    LONGNAME=None, TITLE=None, CONF=0, VERBOSE=0, MODE=0o775):
+def output_data(
+    data,
+    FILENAME=None,
+    DATAFORM=None,
+    UNITS=None,
+    LONGNAME=None,
+    TITLE=None,
+    CONF=0,
+    VERBOSE=0,
+    MODE=0o775,
+):
     # field mapping for output regression data
     field_mapping = {}
     field_mapping['lat'] = 'lat'
@@ -434,30 +560,43 @@ def output_data(data, FILENAME=None, DATAFORM=None, UNITS=None,
     attributes['error']['description'] = 'Uncertainty_in_model_fit'
     attributes['error']['long_name'] = LONGNAME
     attributes['error']['units'] = UNITS
-    attributes['error']['confidence'] = 100*CONF
+    attributes['error']['confidence'] = 100 * CONF
     # output global attributes
     REFERENCE = f'Output from {pathlib.Path(sys.argv[0]).name}'
     # write to output file
-    if (DATAFORM == 'ascii'):
+    if DATAFORM == 'ascii':
         # ascii (.txt)
         data.to_ascii(FILENAME, date=False, verbose=VERBOSE)
-    elif (DATAFORM == 'netCDF4'):
+    elif DATAFORM == 'netCDF4':
         # netcdf (.nc)
-        data.to_netCDF4(FILENAME, date=False, verbose=VERBOSE,
-            field_mapping=field_mapping, attributes=attributes,
-            title=TITLE, reference=REFERENCE)
-    elif (DATAFORM == 'HDF5'):
+        data.to_netCDF4(
+            FILENAME,
+            date=False,
+            verbose=VERBOSE,
+            field_mapping=field_mapping,
+            attributes=attributes,
+            title=TITLE,
+            reference=REFERENCE,
+        )
+    elif DATAFORM == 'HDF5':
         # HDF5 (.H5)
-        data.to_HDF5(FILENAME, date=False, verbose=VERBOSE,
-            field_mapping=field_mapping, attributes=attributes,
-            title=TITLE, reference=REFERENCE)
+        data.to_HDF5(
+            FILENAME,
+            date=False,
+            verbose=VERBOSE,
+            field_mapping=field_mapping,
+            attributes=attributes,
+            title=TITLE,
+            reference=REFERENCE,
+        )
     # change the permissions mode of the output file
     FILENAME.chmod(mode=MODE)
+
 
 # PURPOSE: print a file log for the sea level regression calculation
 def output_log_file(input_arguments, output_files):
     # format: sea_level_regress_run_2002-04-01_PID-70335.log
-    args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
+    args = (time.strftime('%Y-%m-%d', time.localtime()), os.getpid())
     LOGFILE = 'sea_level_regress_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
     DIRECTORY = pathlib.Path(input_arguments.output_directory)
@@ -474,10 +613,11 @@ def output_log_file(input_arguments, output_files):
     # close the log file
     fid.close()
 
+
 # PURPOSE: print a error file log for the sea level regression calculation
 def output_error_log_file(input_arguments):
     # format: failed_sea_level_regress_run_2002-04-01_PID-70335.log
-    args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
+    args = (time.strftime('%Y-%m-%d', time.localtime()), os.getpid())
     LOGFILE = 'failed_sea_level_regress_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
     DIRECTORY = pathlib.Path(input_arguments.output_directory)
@@ -493,48 +633,116 @@ def output_error_log_file(input_arguments):
     # close the log file
     fid.close()
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Reads in sea level grid files and calculates the
             trends at each grid point following an input regression model
             """,
-        fromfile_prefix_chars="@"
+        fromfile_prefix_chars='@',
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
-    parser.add_argument('--output-directory','-O',
+    parser.add_argument(
+        '--output-directory',
+        '-O',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Output directory for mascon files')
+        help='Output directory for mascon files',
+    )
     # GRACE/GRACE-FO data processing center
-    parser.add_argument('--center','-c',
-        metavar='PROC', type=str, required=True,
-        help='GRACE/GRACE-FO Processing Center')
+    parser.add_argument(
+        '--center',
+        '-c',
+        metavar='PROC',
+        type=str,
+        required=True,
+        help='GRACE/GRACE-FO Processing Center',
+    )
     # GRACE/GRACE-FO data release
-    parser.add_argument('--release','-r',
-        metavar='DREL', type=str, default='RL06',
-        help='GRACE/GRACE-FO Data Release')
+    parser.add_argument(
+        '--release',
+        '-r',
+        metavar='DREL',
+        type=str,
+        default='RL06',
+        help='GRACE/GRACE-FO Data Release',
+    )
     # GRACE/GRACE-FO Level-2 data product
-    parser.add_argument('--product','-p',
-        metavar='DSET', type=str, default='GSM',
-        help='GRACE/GRACE-FO Level-2 data product')
+    parser.add_argument(
+        '--product',
+        '-p',
+        metavar='DSET',
+        type=str,
+        default='GSM',
+        help='GRACE/GRACE-FO Level-2 data product',
+    )
     # maximum spherical harmonic degree and order
-    parser.add_argument('--lmax','-l',
-        type=int, default=60,
-        help='Maximum spherical harmonic degree')
+    parser.add_argument(
+        '--lmax',
+        '-l',
+        type=int,
+        default=60,
+        help='Maximum spherical harmonic degree',
+    )
     # start and end GRACE/GRACE-FO months
-    parser.add_argument('--start','-S',
+    parser.add_argument(
+        '--start',
+        '-S',
         type=int,
-        help='Starting GRACE/GRACE_FO month for time series regression')
-    parser.add_argument('--end','-E',
+        help='Starting GRACE/GRACE_FO month for time series regression',
+    )
+    parser.add_argument(
+        '--end',
+        '-E',
         type=int,
-        help='Ending GRACE/GRACE_FO month for time series regression')
-    MISSING = [6,7,18,109,114,125,130,135,140,141,146,151,156,162,166,167,
-        172,177,178,182,187,188,189,190,191,192,193,194,195,196,197,200,201]
-    parser.add_argument('--missing','-N',
-        metavar='MISSING', type=int, nargs='+', default=MISSING,
-        help='Missing GRACE/GRACE-FO months')
+        help='Ending GRACE/GRACE_FO month for time series regression',
+    )
+    MISSING = [
+        6,
+        7,
+        18,
+        109,
+        114,
+        125,
+        130,
+        135,
+        140,
+        141,
+        146,
+        151,
+        156,
+        162,
+        166,
+        167,
+        172,
+        177,
+        178,
+        182,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        200,
+        201,
+    ]
+    parser.add_argument(
+        '--missing',
+        '-N',
+        metavar='MISSING',
+        type=int,
+        nargs='+',
+        default=MISSING,
+        help='Missing GRACE/GRACE-FO months',
+    )
     # GIA model type list
     models = {}
     models['IJ05-R2'] = 'Ivins R2 GIA Models'
@@ -550,65 +758,105 @@ def arguments():
     models['netCDF4'] = 'reformatted GIA in netCDF4 format'
     models['HDF5'] = 'reformatted GIA in HDF5 format'
     # GIA model type
-    parser.add_argument('--gia','-G',
-        type=str, metavar='GIA', choices=models.keys(),
-        help='GIA model type to read')
+    parser.add_argument(
+        '--gia',
+        '-G',
+        type=str,
+        metavar='GIA',
+        choices=models.keys(),
+        help='GIA model type to read',
+    )
     # full path to GIA file
-    parser.add_argument('--gia-file',
-        type=pathlib.Path,
-        help='GIA file to read')
+    parser.add_argument(
+        '--gia-file', type=pathlib.Path, help='GIA file to read'
+    )
     # input data format (ascii, netCDF4, HDF5)
-    parser.add_argument('--format','-F',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
-        help='Input/output data format')
-    parser.add_argument('--redistribute-mascons',
-        default=False, action='store_true',
-        help='Redistribute mascon mass over the ocean')
+    parser.add_argument(
+        '--format',
+        '-F',
+        type=str,
+        default='netCDF4',
+        choices=['ascii', 'netCDF4', 'HDF5'],
+        help='Input/output data format',
+    )
+    parser.add_argument(
+        '--redistribute-mascons',
+        default=False,
+        action='store_true',
+        help='Redistribute mascon mass over the ocean',
+    )
     # sea level fingerprint parameters
-    parser.add_argument('--iteration','-I',
-        type=int, default=1,
-        help='Sea level fingerprint iteration')
-    parser.add_argument('--expansion','-e',
-        type=int, default=240,
-        help='Spherical harmonic expansion for sea level fingerprints')
+    parser.add_argument(
+        '--iteration',
+        '-I',
+        type=int,
+        default=1,
+        help='Sea level fingerprint iteration',
+    )
+    parser.add_argument(
+        '--expansion',
+        '-e',
+        type=int,
+        default=240,
+        help='Spherical harmonic expansion for sea level fingerprints',
+    )
     # regression parameters
     # 0: mean
     # 1: trend
     # 2: acceleration
-    parser.add_argument('--order',
-        type=int, default=2,
-        help='Regression fit polynomial order')
+    parser.add_argument(
+        '--order', type=int, default=2, help='Regression fit polynomial order'
+    )
     # regression fit cyclical terms
-    parser.add_argument('--cycles',
-        type=float, default=[0.5,1.0,161.0/365.25], nargs='+',
-        help='Regression fit cyclical terms')
+    parser.add_argument(
+        '--cycles',
+        type=float,
+        default=[0.5, 1.0, 161.0 / 365.25],
+        nargs='+',
+        help='Regression fit cyclical terms',
+    )
     # land-sea mask for redistributing mascon mass and land water flux
-    lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
-    parser.add_argument('--mask',
-        type=pathlib.Path, default=lsmask,
-        help='Land-sea mask for redistributing mascon mass and land water flux')
+    lsmask = gravtk.utilities.get_data_path(['data', 'landsea_hd.nc'])
+    parser.add_argument(
+        '--mask',
+        type=pathlib.Path,
+        default=lsmask,
+        help='Land-sea mask for redistributing mascon mass and land water flux',
+    )
     # Output log file for each job in forms
     # sea_level_regress_run_2002-04-01_PID-00000.log
     # failed_sea_level_regress_run_2002-04-01_PID-00000.log
-    parser.add_argument('--log',
-        default=False, action='store_true',
-        help='Output log file for each job')
+    parser.add_argument(
+        '--log',
+        default=False,
+        action='store_true',
+        help='Output log file for each job',
+    )
     # print information about each input and output file
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of run',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -637,18 +885,20 @@ def main():
             LANDMASK=args.mask,
             OUTPUT_DIRECTORY=args.output_directory,
             VERBOSE=args.verbose,
-            MODE=args.mode)
+            MODE=args.mode,
+        )
     except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
-        if args.log:# write failed job completion log file
+        if args.log:  # write failed job completion log file
             output_error_log_file(args)
     else:
-        if args.log:# write successful job completion log file
-            output_log_file(args,output_files)
+        if args.log:  # write successful job completion log file
+            output_log_file(args, output_files)
+
 
 # run main program
 if __name__ == '__main__':

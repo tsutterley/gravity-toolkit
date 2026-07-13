@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 sea_level_difference.py
 Written by Tyler Sutterley (05/2023)
 
@@ -47,6 +47,7 @@ UPDATE HISTORY:
     Updated 06/2018: using getopt to set parameters
     Written 08/2017
 """
+
 import sys
 import os
 import logging
@@ -55,6 +56,7 @@ import argparse
 import traceback
 import numpy as np
 import gravity_toolkit as gravtk
+
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -65,8 +67,12 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
+
 # PURPOSE: calculate the SLF error map
-def sea_level_difference(PROC, DREL, DSET,
+def sea_level_difference(
+    PROC,
+    DREL,
+    DSET,
     START=None,
     END=None,
     DATAFORM=None,
@@ -77,8 +83,8 @@ def sea_level_difference(PROC, DREL, DSET,
     LANDMASK=None,
     RUNS=None,
     VERBOSE=0,
-    MODE=0o775):
-
+    MODE=0o775,
+):
     # output directory setup
     OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
     if not OUTPUT_DIRECTORY.exists():
@@ -101,15 +107,16 @@ def sea_level_difference(PROC, DREL, DSET,
     # Land-Sea Mask with Antarctica from Rignot (2017) and Greenland from GEUS
     # 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
     # Open the land-sea NetCDF4 file for reading
-    landsea = gravtk.spatial().from_netCDF4(LANDMASK, date=False,
-        varname='LSMASK')
-    dlon,dlat = landsea.spacing
+    landsea = gravtk.spatial().from_netCDF4(
+        LANDMASK, date=False, varname='LSMASK'
+    )
+    dlon, dlat = landsea.spacing
     nlat, nlon = landsea.shape
     # create land function
-    land_function = np.zeros((nlat, nlon),dtype=np.float64)
+    land_function = np.zeros((nlat, nlon), dtype=np.float64)
     # combine land and island levels for land function
-    indy,indx = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))
-    land_function[indy,indx] = 1.0
+    indy, indx = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))
+    land_function[indy, indx] = 1.0
 
     # calculate deviations of monte carlo fields from zero
     VARIANCE = landsea.zeros_like()
@@ -118,18 +125,24 @@ def sea_level_difference(PROC, DREL, DSET,
     VARIANCE.fill_value = -9999.0
     for n in range(RUNS):
         # read SLF files
-        F1 = slf_pattern.format(ITERATION,dset_str,ocean_str,EXPANSION,
-            n,suffix[DATAFORM])
+        F1 = slf_pattern.format(
+            ITERATION, dset_str, ocean_str, EXPANSION, n, suffix[DATAFORM]
+        )
         FILE1 = OUTPUT_DIRECTORY.joinpath(F1)
-        val = gravtk.spatial().from_file(FILE1,
-            format=DATAFORM, date=False, spacing=[dlon,dlat],
-            nlon=nlon, nlat=nlat)
+        val = gravtk.spatial().from_file(
+            FILE1,
+            format=DATAFORM,
+            date=False,
+            spacing=[dlon, dlat],
+            nlon=nlon,
+            nlat=nlat,
+        )
         VARIANCE.data += val.power(2.0).data
         VARIANCE.mask |= val.mask
     # update mask
     VARIANCE.update_mask()
     # calculate RMS of variance
-    ERROR = VARIANCE.scale(1.0/(RUNS-1.0)).power(0.5)
+    ERROR = VARIANCE.scale(1.0 / (RUNS - 1.0)).power(0.5)
     ERROR.update_mask()
 
     # attributes for output files
@@ -139,89 +152,146 @@ def sea_level_difference(PROC, DREL, DSET,
     attributes['title'] = 'Sea_Level_Fingerprint'
     attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
     # save to file
-    F2 = file_format.format(ITERATION,dset_str,ocean_str,EXPANSION,
-        START,END,suffix[DATAFORM])
+    F2 = file_format.format(
+        ITERATION, dset_str, ocean_str, EXPANSION, START, END, suffix[DATAFORM]
+    )
     FILE2 = OUTPUT_DIRECTORY.joinpath(F2)
-    ERROR.to_file(FILE2, format=DATAFORM,
-        date=False, verbose=VERBOSE, **attributes)
+    ERROR.to_file(
+        FILE2, format=DATAFORM, date=False, verbose=VERBOSE, **attributes
+    )
     # change the permissions mode
     FILE2.chmod(mode=MODE)
     # add to output file list
     output_files.append(FILE2)
+
 
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Calculates the sea level fingerprint error map
             """,
-        fromfile_prefix_chars="@"
+        fromfile_prefix_chars='@',
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # working data directory
-    parser.add_argument('--output-directory','-O',
+    parser.add_argument(
+        '--output-directory',
+        '-O',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Output directory for spatial files')
+        help='Output directory for spatial files',
+    )
     # GRACE/GRACE-FO data processing center
-    parser.add_argument('--center','-c',
-        metavar='PROC', type=str, required=True,
-        help='GRACE/GRACE-FO Processing Center')
+    parser.add_argument(
+        '--center',
+        '-c',
+        metavar='PROC',
+        type=str,
+        required=True,
+        help='GRACE/GRACE-FO Processing Center',
+    )
     # GRACE/GRACE-FO data release
-    parser.add_argument('--release','-r',
-        metavar='DREL', type=str, default='RL06',
-        help='GRACE/GRACE-FO Data Release')
+    parser.add_argument(
+        '--release',
+        '-r',
+        metavar='DREL',
+        type=str,
+        default='RL06',
+        help='GRACE/GRACE-FO Data Release',
+    )
     # GRACE/GRACE-FO Level-2 data product
-    parser.add_argument('--product','-p',
-        metavar='DSET', type=str, default='GSM',
-        help='GRACE/GRACE-FO Level-2 data product')
+    parser.add_argument(
+        '--product',
+        '-p',
+        metavar='DSET',
+        type=str,
+        default='GSM',
+        help='GRACE/GRACE-FO Level-2 data product',
+    )
     # start and end GRACE/GRACE-FO months
-    parser.add_argument('--start','-S',
-        type=int, default=4,
-        help='Starting GRACE/GRACE-FO month')
-    parser.add_argument('--end','-E',
-        type=int, default=232,
-        help='Ending GRACE/GRACE-FO month')
+    parser.add_argument(
+        '--start',
+        '-S',
+        type=int,
+        default=4,
+        help='Starting GRACE/GRACE-FO month',
+    )
+    parser.add_argument(
+        '--end', '-E', type=int, default=232, help='Ending GRACE/GRACE-FO month'
+    )
     # input data format (ascii, netCDF4, HDF5)
-    parser.add_argument('--format','-F',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
-        help='Input/output data format')
+    parser.add_argument(
+        '--format',
+        '-F',
+        type=str,
+        default='netCDF4',
+        choices=['ascii', 'netCDF4', 'HDF5'],
+        help='Input/output data format',
+    )
     # mascon parameters
-    parser.add_argument('--redistribute-mascons',
-        default=False, action='store_true',
-        help='Redistribute mascon mass over the ocean')
+    parser.add_argument(
+        '--redistribute-mascons',
+        default=False,
+        action='store_true',
+        help='Redistribute mascon mass over the ocean',
+    )
     # sea level fingerprint parameters
-    parser.add_argument('--iteration','-I',
-        type=int, default=1,
-        help='Sea level fingerprint iteration')
-    parser.add_argument('--expansion','-e',
-        type=int, default=240,
-        help='Spherical harmonic expansion for sea level fingerprints')
+    parser.add_argument(
+        '--iteration',
+        '-I',
+        type=int,
+        default=1,
+        help='Sea level fingerprint iteration',
+    )
+    parser.add_argument(
+        '--expansion',
+        '-e',
+        type=int,
+        default=240,
+        help='Spherical harmonic expansion for sea level fingerprints',
+    )
     # land-sea mask for redistributing mascon mass and land water flux
-    lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
-    parser.add_argument('--mask',
-        type=pathlib.Path, default=lsmask,
-        help='Land-sea mask for redistributing mascon mass and land water flux')
+    lsmask = gravtk.utilities.get_data_path(['data', 'landsea_hd.nc'])
+    parser.add_argument(
+        '--mask',
+        type=pathlib.Path,
+        default=lsmask,
+        help='Land-sea mask for redistributing mascon mass and land water flux',
+    )
     # number of monte carlo iterations
-    parser.add_argument('--runs','-R',
-        type=int, default=10000,
-        help='Number of Monte Carlo iterations')
+    parser.add_argument(
+        '--runs',
+        '-R',
+        type=int,
+        default=10000,
+        help='Number of Monte Carlo iterations',
+    )
     # print information about each input and output file
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of run',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -245,13 +315,15 @@ def main():
             RUNS=args.runs,
             OUTPUT_DIRECTORY=args.output_directory,
             VERBOSE=args.verbose,
-            MODE=args.mode)
+            MODE=args.mode,
+        )
     except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
+
 
 # run main program
 if __name__ == '__main__':

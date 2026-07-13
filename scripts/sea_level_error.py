@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 sea_level_error.py
 Written by Tyler Sutterley (05/2023)
 Reads in sea level grid error files and converts to spherical
@@ -78,6 +78,7 @@ UPDATE HISTORY:
     Updated 06/2018: using python3 compatible octal and input
     Written 04/2018
 """
+
 from __future__ import print_function
 
 import sys
@@ -91,6 +92,7 @@ import numpy as np
 
 import gravity_toolkit as gravtk
 
+
 # PURPOSE: keep track of threads
 def info(args):
     logging.info(pathlib.Path(sys.argv[0]).name)
@@ -100,8 +102,13 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
+
 # program module to run with specified parameters
-def sea_level_error(PROC, DREL, DSET, LMAX,
+def sea_level_error(
+    PROC,
+    DREL,
+    DSET,
+    LMAX,
     MMAX=None,
     LOVE_NUMBERS=0,
     REFERENCE=None,
@@ -112,8 +119,8 @@ def sea_level_error(PROC, DREL, DSET, LMAX,
     RUNS=0,
     LANDMASK=None,
     OUTPUT_DIRECTORY=None,
-    MODE=0o775):
-
+    MODE=0o775,
+):
     # output directory setup
     OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
     if not OUTPUT_DIRECTORY.exists():
@@ -122,8 +129,9 @@ def sea_level_error(PROC, DREL, DSET, LMAX,
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
 
     # read load love numbers
-    LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
-        REFERENCE=REFERENCE)
+    LOVE = gravtk.load_love_numbers(
+        LMAX, LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE=REFERENCE
+    )
 
     # for datasets not GSM: will add a label for the dataset
     dset_str = '' if (DSET == 'GSM') else f'_{DSET}'
@@ -135,16 +143,17 @@ def sea_level_error(PROC, DREL, DSET, LMAX,
     # Land-Sea Mask with Antarctica from Rignot (2017) and Greenland from GEUS
     # 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
     # Open the land-sea NetCDF4 file for reading
-    landsea = gravtk.spatial().from_netCDF4(LANDMASK, date=False,
-        varname='LSMASK')
-    dlon,dlat = landsea.spacing
+    landsea = gravtk.spatial().from_netCDF4(
+        LANDMASK, date=False, varname='LSMASK'
+    )
+    dlon, dlat = landsea.spacing
     nlat, nlon = landsea.shape
     # calculate Fully-Normalized Legendre Polynomials
     th = np.radians(90.0 - landsea.lat)
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(th))
 
     # create index file for least_squares_mascons.py
-    args = (ITERATION,dset_str,ocean_str,LMAX,order_str)
+    args = (ITERATION, dset_str, ocean_str, LMAX, order_str)
     INDEX = 'SLF_MC_ITERATION_{0}_INDEX{1}{2}_CLM_L{3:d}{4}.txt'.format(*args)
     index_file = OUTPUT_DIRECTORY.joinpath(INDEX)
     fid = index_file.open(mode='w', encoding='utf8')
@@ -160,36 +169,66 @@ def sea_level_error(PROC, DREL, DSET, LMAX,
     output_files = []
     for n in range(0, RUNS):
         # sea level file for iteration (spatial fields)
-        SLF = file_format.format(ITERATION,dset_str,ocean_str,'',
-            EXPANSION,'',n,suffix[DATAFORM])
+        SLF = file_format.format(
+            ITERATION,
+            dset_str,
+            ocean_str,
+            '',
+            EXPANSION,
+            '',
+            n,
+            suffix[DATAFORM],
+        )
         INPUT_FILE = OUTPUT_DIRECTORY.joinpath(SLF)
         # read sea level file
-        if (DATAFORM == 'ascii'):
+        if DATAFORM == 'ascii':
             # ascii (.txt)
-            dinput = gravtk.spatial().from_ascii(INPUT_FILE,
-                date=False, spacing=[dlon,dlat], nlat=nlat, nlon=nlon)
-        elif (DATAFORM == 'netCDF4'):
+            dinput = gravtk.spatial().from_ascii(
+                INPUT_FILE,
+                date=False,
+                spacing=[dlon, dlat],
+                nlat=nlat,
+                nlon=nlon,
+            )
+        elif DATAFORM == 'netCDF4':
             # netcdf (.nc)
             dinput = gravtk.spatial().from_netCDF4(INPUT_FILE, date=False)
-        elif (DATAFORM == 'HDF5'):
+        elif DATAFORM == 'HDF5':
             # HDF5 (.H5)
             dinput = gravtk.spatial().from_HDF5(INPUT_FILE, date=False)
 
         # Converting sea level field into spherical harmonics (can truncate)
-        Ylms = gravtk.gen_stokes(dinput.data.T, dinput.lon, dinput.lat,
-            UNITS=1, LMIN=0, LMAX=LMAX, MMAX=MMAX, LOVE=LOVE, PLM=PLM)
+        Ylms = gravtk.gen_stokes(
+            dinput.data.T,
+            dinput.lon,
+            dinput.lat,
+            UNITS=1,
+            LMIN=0,
+            LMAX=LMAX,
+            MMAX=MMAX,
+            LOVE=LOVE,
+            PLM=PLM,
+        )
 
         # output (truncated) spherical harmonics to file
-        FILE = file_format.format(ITERATION,dset_str,ocean_str,'_CLM',
-            LMAX,order_str,n,suffix[DATAFORM])
+        FILE = file_format.format(
+            ITERATION,
+            dset_str,
+            ocean_str,
+            '_CLM',
+            LMAX,
+            order_str,
+            n,
+            suffix[DATAFORM],
+        )
         OUTPUT_FILE = OUTPUT_DIRECTORY.joinpath(FILE)
-        if (DATAFORM == 'ascii'):
+        if DATAFORM == 'ascii':
             # ascii (.txt)
             Ylms.to_ascii(OUTPUT_FILE, date=False)
-        elif (DATAFORM == 'netCDF4'):
+        elif DATAFORM == 'netCDF4':
             # netcdf (.nc)
             Ylms.to_netCDF4(OUTPUT_FILE, date=False, **attributes)
-        elif (DATAFORM == 'HDF5'):
+        elif DATAFORM == 'HDF5':
             # HDF5 (.H5)
             Ylms.to_HDF5(OUTPUT_FILE, date=False, **attributes)
         # change output file permissions mode to MODE
@@ -205,10 +244,11 @@ def sea_level_error(PROC, DREL, DSET, LMAX,
     # return the list of output files
     return output_files
 
+
 # PURPOSE: print a file log for the sea level harmonics calculation
 def output_log_file(input_arguments, output_files):
     # format: sea_level_error_run_2002-04-01_PID-70335.log
-    args = (time.strftime('%Y-%m-%d',time.localtime()),os.getpid())
+    args = (time.strftime('%Y-%m-%d', time.localtime()), os.getpid())
     LOGFILE = 'sea_level_error_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
     DIRECTORY = pathlib.Path(input_arguments.output_directory)
@@ -225,10 +265,11 @@ def output_log_file(input_arguments, output_files):
     # close the log file
     fid.close()
 
+
 # PURPOSE: print a error file log for the sea level harmonics calculation
 def output_error_log_file(input_arguments):
     # format: failed_sea_level_error_run_2002-04-01_PID-70335.log
-    args = (time.strftime('%Y-%m-%d',time.localtime()),os.getpid())
+    args = (time.strftime('%Y-%m-%d', time.localtime()), os.getpid())
     LOGFILE = 'failed_sea_level_error_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
     DIRECTORY = pathlib.Path(input_arguments.output_directory)
@@ -244,98 +285,168 @@ def output_error_log_file(input_arguments):
     # close the log file
     fid.close()
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Reads in sea level grid error files and converts
             to spherical harmonics
             """,
-        fromfile_prefix_chars="@"
+        fromfile_prefix_chars='@',
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
-    parser.add_argument('--output-directory','-O',
+    parser.add_argument(
+        '--output-directory',
+        '-O',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Output directory for mascon files')
+        help='Output directory for mascon files',
+    )
     # GRACE/GRACE-FO data processing center
-    parser.add_argument('--center','-c',
-        metavar='PROC', type=str, required=True,
-        help='GRACE/GRACE-FO Processing Center')
+    parser.add_argument(
+        '--center',
+        '-c',
+        metavar='PROC',
+        type=str,
+        required=True,
+        help='GRACE/GRACE-FO Processing Center',
+    )
     # GRACE/GRACE-FO data release
-    parser.add_argument('--release','-r',
-        metavar='DREL', type=str, default='RL06',
-        help='GRACE/GRACE-FO Data Release')
+    parser.add_argument(
+        '--release',
+        '-r',
+        metavar='DREL',
+        type=str,
+        default='RL06',
+        help='GRACE/GRACE-FO Data Release',
+    )
     # GRACE/GRACE-FO Level-2 data product
-    parser.add_argument('--product','-p',
-        metavar='DSET', type=str, default='GSM',
-        help='GRACE/GRACE-FO Level-2 data product')
+    parser.add_argument(
+        '--product',
+        '-p',
+        metavar='DSET',
+        type=str,
+        default='GSM',
+        help='GRACE/GRACE-FO Level-2 data product',
+    )
     # maximum spherical harmonic degree and order
-    parser.add_argument('--lmax','-l',
-        type=int, default=60,
-        help='Maximum spherical harmonic degree')
-    parser.add_argument('--mmax','-m',
-        type=int, default=None,
-        help='Maximum spherical harmonic order')
+    parser.add_argument(
+        '--lmax',
+        '-l',
+        type=int,
+        default=60,
+        help='Maximum spherical harmonic degree',
+    )
+    parser.add_argument(
+        '--mmax',
+        '-m',
+        type=int,
+        default=None,
+        help='Maximum spherical harmonic order',
+    )
     # different treatments of the load Love numbers
     # 0: Han and Wahr (1995) values from PREM
     # 1: Gegout (2005) values from PREM
     # 2: Wang et al. (2012) values from PREM
     # 3: Wang et al. (2012) values from PREM with hard sediment
     # 4: Wang et al. (2012) values from PREM with soft sediment
-    parser.add_argument('--love','-n',
-        type=int, default=0, choices=[0,1,2,3,4],
-        help='Treatment of the Load Love numbers')
+    parser.add_argument(
+        '--love',
+        '-n',
+        type=int,
+        default=0,
+        choices=[0, 1, 2, 3, 4],
+        help='Treatment of the Load Love numbers',
+    )
     # option for setting reference frame for gravitational load love number
     # reference frame options (CF, CM, CE)
-    parser.add_argument('--reference',
-        type=str.upper, default='CF', choices=['CF','CM','CE'],
-        help='Reference frame for load Love numbers')
+    parser.add_argument(
+        '--reference',
+        type=str.upper,
+        default='CF',
+        choices=['CF', 'CM', 'CE'],
+        help='Reference frame for load Love numbers',
+    )
     # input data format (ascii, netCDF4, HDF5)
-    parser.add_argument('--format','-F',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
-        help='Input/output data format')
-    parser.add_argument('--redistribute-mascons',
-        default=False, action='store_true',
-        help='Redistribute mascon mass over the ocean')
+    parser.add_argument(
+        '--format',
+        '-F',
+        type=str,
+        default='netCDF4',
+        choices=['ascii', 'netCDF4', 'HDF5'],
+        help='Input/output data format',
+    )
+    parser.add_argument(
+        '--redistribute-mascons',
+        default=False,
+        action='store_true',
+        help='Redistribute mascon mass over the ocean',
+    )
     # sea level fingerprint parameters
-    parser.add_argument('--iteration','-I',
-        type=int, default=1,
-        help='Sea level fingerprint iteration')
-    parser.add_argument('--expansion','-e',
-        type=int, default=240,
-        help='Spherical harmonic expansion for sea level fingerprints')
+    parser.add_argument(
+        '--iteration',
+        '-I',
+        type=int,
+        default=1,
+        help='Sea level fingerprint iteration',
+    )
+    parser.add_argument(
+        '--expansion',
+        '-e',
+        type=int,
+        default=240,
+        help='Spherical harmonic expansion for sea level fingerprints',
+    )
     # number of monte carlo iterations
-    parser.add_argument('--runs',
-        type=int, default=10000,
-        help='Number of Monte Carlo iterations')
+    parser.add_argument(
+        '--runs',
+        type=int,
+        default=10000,
+        help='Number of Monte Carlo iterations',
+    )
     # land-sea mask for redistributing mascon mass and land water flux
-    lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
-    parser.add_argument('--mask',
-        type=pathlib.Path, default=lsmask,
-        help='Land-sea mask for redistributing mascon mass and land water flux')
+    lsmask = gravtk.utilities.get_data_path(['data', 'landsea_hd.nc'])
+    parser.add_argument(
+        '--mask',
+        type=pathlib.Path,
+        default=lsmask,
+        help='Land-sea mask for redistributing mascon mass and land water flux',
+    )
     # Output log file for each job in forms
     # sea_level_error_run_2002-04-01_PID-00000.log
     # sea_level_error_failed_run_2002-04-01_PID-00000.log
-    parser.add_argument('--log',
-        default=False, action='store_true',
-        help='Output log file for each job')
+    parser.add_argument(
+        '--log',
+        default=False,
+        action='store_true',
+        help='Output log file for each job',
+    )
     # print information about processing run
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of processing run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of processing run',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -360,18 +471,20 @@ def main():
             RUNS=args.runs,
             LANDMASK=args.mask,
             OUTPUT_DIRECTORY=args.output_directory,
-            MODE=args.mode)
+            MODE=args.mode,
+        )
     except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
-        if args.log:# write failed job completion log file
+        if args.log:  # write failed job completion log file
             output_error_log_file(args)
     else:
-        if args.log:# write successful job completion log file
-            output_log_file(args,output_files)
+        if args.log:  # write successful job completion log file
+            output_log_file(args, output_files)
+
 
 # run main program
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 calc_harmonic_resolution.py
 Written by Tyler Sutterley (04/2022)
 
@@ -36,8 +36,10 @@ UPDATE HISTORY:
     Updated 08/2013: changed SPH_CAP option to (Y/N)
     Written 01/2013
 """
+
 import argparse
 import numpy as np
+
 
 # PURPOSE: Calculates minimum spatial resolution that can be resolved
 # from spherical harmonics of a maximum degree
@@ -59,39 +61,56 @@ def calc_harmonic_resolution(LMAX, RADIUS=6371.0008, SPH_CAP=False):
         # Smallest diameter of a spherical cap that can be resolved by the
         # harmonics.  Size of the smallest bump, half-wavelength, which can
         # be produced by the clm/slm
-        psi_min = 4.0*RADIUS*np.arcsin(1.0/(LMAX+1.0))
+        psi_min = 4.0 * RADIUS * np.arcsin(1.0 / (LMAX + 1.0))
     else:
         # Shortest half-wavelength that can be resolved by the clm/slm
         # This estimation is based on the number of possible zeros along
         # the equator
-        psi_min = np.pi*RADIUS/LMAX
+        psi_min = np.pi * RADIUS / LMAX
     return psi_min
+
 
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--lmax','-l', metavar='LMAX',
-        type=int, nargs='+',
-        help='maximum degree of spherical harmonics')
-    parser.add_argument('--radius','-R',
-        type=float, default=6371.0008,
-        help='Average radius of the Earth in kilometers')
-    parser.add_argument('--cap','-C',
-        default=False, action='store_true',
-        help='Calculate smallest possible bump that can be resolved')
+    parser.add_argument(
+        '--lmax',
+        '-l',
+        metavar='LMAX',
+        type=int,
+        nargs='+',
+        help='maximum degree of spherical harmonics',
+    )
+    parser.add_argument(
+        '--radius',
+        '-R',
+        type=float,
+        default=6371.0008,
+        help='Average radius of the Earth in kilometers',
+    )
+    parser.add_argument(
+        '--cap',
+        '-C',
+        default=False,
+        action='store_true',
+        help='Calculate smallest possible bump that can be resolved',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
     # for each entered spherical harmonic degree
     for LMAX in args.lmax:
-        psi_min = calc_harmonic_resolution(LMAX,
-            RADIUS=args.radius, SPH_CAP=args.cap)
-        print('{0:5d}: {1:0.4f} km'.format(LMAX,psi_min))
+        psi_min = calc_harmonic_resolution(
+            LMAX, RADIUS=args.radius, SPH_CAP=args.cap
+        )
+        print('{0:5d}: {1:0.4f} km'.format(LMAX, psi_min))
+
 
 # run main program
 if __name__ == '__main__':

@@ -7,7 +7,12 @@ on:
   pull_request:
     paths:
       - gravity_toolkit/**
+      - access/**
+      - dealiasing/**
+      - geocenter/**
+      - mapping/**
       - scripts/**
+      - utilities/**
       - test/**
       - .github/workflows/python-request.yml
   schedule:

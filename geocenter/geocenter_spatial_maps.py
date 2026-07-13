@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 geocenter_spatial_maps.py
 Written by Tyler Sutterley (07/2026)
 
@@ -118,6 +118,7 @@ UPDATE HISTORY:
         include 161-day S2 tidal aliasing terms in regression
     Written 10/2018
 """
+
 from __future__ import print_function
 
 import sys
@@ -131,6 +132,7 @@ import traceback
 import numpy as np
 import gravity_toolkit as gravtk
 
+
 # PURPOSE: keep track of threads
 def info(args):
     logging.info(pathlib.Path(sys.argv[0]).name)
@@ -140,9 +142,13 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
+
 # PURPOSE: import GRACE/GRACE-FO geocenter files for a given months range
 # Converts the GRACE/GRACE-FO harmonics applying the specified procedures
-def geocenter_spatial_maps(base_dir, PROC, DREL,
+def geocenter_spatial_maps(
+    base_dir,
+    PROC,
+    DREL,
     START=None,
     END=None,
     MISSING=None,
@@ -161,8 +167,8 @@ def geocenter_spatial_maps(base_dir, PROC, DREL,
     SLR_C50=None,
     DATAFORM=None,
     OUTPUT_DIRECTORY=None,
-    MODE=0o775):
-
+    MODE=0o775,
+):
     # input directory setup
     base_dir = pathlib.Path(base_dir).expanduser().absolute()
     grace_dir = base_dir.joinpath('geocenter')
@@ -178,10 +184,10 @@ def geocenter_spatial_maps(base_dir, PROC, DREL,
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
 
     # GRACE months
-    GAP = [187,188,189,190,191,192,193,194,195,196,197]
-    months = sorted(set(np.arange(START,END+1)) - set(MISSING))
+    GAP = [187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197]
+    months = sorted(set(np.arange(START, END + 1)) - set(MISSING))
     # labels for Release-6
-    model_str = 'OMCT' if DREL in ('RL04','RL05') else 'MPIOM'
+    model_str = 'OMCT' if DREL in ('RL04', 'RL05') else 'MPIOM'
     # labels for each scenario
     FLAGS = []
     # FLAGS.append('')
@@ -191,37 +197,38 @@ def geocenter_spatial_maps(base_dir, PROC, DREL,
     gia_str = '_AW13_ice6g_GA'
     ds_str = '_FL' if DESTRIPE else ''
     # output flag for low-degree harmonic replacements
-    if SLR_21 in ('CSR','GFZ','GSFC'):
+    if SLR_21 in ('CSR', 'GFZ', 'GSFC'):
         C21_str = f'_w{SLR_21}_21'
     else:
         C21_str = ''
-    if SLR_22 in ('CSR','GSFC'):
+    if SLR_22 in ('CSR', 'GSFC'):
         C22_str = f'_w{SLR_22}_22'
     else:
         C22_str = ''
     if SLR_C30 in ('GSFC',):
         # C30 replacement now default for all solutions
         C30_str = ''
-    elif SLR_C30 in ('CSR','GFZ','LARES'):
+    elif SLR_C30 in ('CSR', 'GFZ', 'LARES'):
         C30_str = f'_w{SLR_C30}_C30'
     else:
         C30_str = ''
-    if SLR_C40 in ('CSR','GSFC','LARES'):
+    if SLR_C40 in ('CSR', 'GSFC', 'LARES'):
         C40_str = f'_w{SLR_C40}_C40'
     else:
         C40_str = ''
-    if SLR_C50 in ('CSR','GSFC','LARES'):
+    if SLR_C50 in ('CSR', 'GSFC', 'LARES'):
         C50_str = f'_w{SLR_C50}_C50'
     else:
         C50_str = ''
     # combine satellite laser ranging flags
-    slr_str = ''.join([C21_str,C22_str,C30_str,C40_str,C50_str])
+    slr_str = ''.join([C21_str, C22_str, C30_str, C40_str, C50_str])
     # degree one coefficient labels
-    coef_labels = ['C10','C11','S11']
+    coef_labels = ['C10', 'C11', 'S11']
 
     # read arrays of kl, hl, and ll Love Numbers
-    hl,kl,ll = gravtk.load_love_numbers(1, LOVE_NUMBERS=LOVE_NUMBERS,
-        REFERENCE=REFERENCE)
+    hl, kl, ll = gravtk.load_love_numbers(
+        1, LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE=REFERENCE
+    )
     # set gravitational load love number to a specific value
     if LOVE_K1:
         kl[1] = np.copy(LOVE_K1)
@@ -229,10 +236,12 @@ def geocenter_spatial_maps(base_dir, PROC, DREL,
     # mmwe, millimeters water equivalent
     unit_label = 'mmwe'
     unit_name = 'Equivalent_Water_Thickness'
-    dfactor = gravtk.units(lmax=1).harmonic(hl,kl,ll).mmwe
+    dfactor = gravtk.units(lmax=1).harmonic(hl, kl, ll).mmwe
     # attributes for output files
     attributes = {}
-    attributes['field_mapping'] = dict(lon='lon', lat='lat', data='z', time='time')
+    attributes['field_mapping'] = dict(
+        lon='lon', lat='lat', data='z', time='time'
+    )
     attributes['time_units'] = 'years'
     attributes['time_longname'] = 'Date_in_Decimal_Years'
     attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
@@ -243,85 +252,117 @@ def geocenter_spatial_maps(base_dir, PROC, DREL,
     # Output spatial data object
     grid = gravtk.spatial()
     # Output Degree Spacing
-    dlon,dlat = (DDEG[0],DDEG[0]) if (len(DDEG) == 1) else (DDEG[0],DDEG[1])
+    dlon, dlat = (DDEG[0], DDEG[0]) if (len(DDEG) == 1) else (DDEG[0], DDEG[1])
     # Output Degree Interval
-    if (INTERVAL == 1):
+    if INTERVAL == 1:
         # (-180:180,90:-90)
-        nlon = np.int64((360.0/dlon)+1.0)
-        nlat = np.int64((180.0/dlat)+1.0)
-        grid.lon = -180 + dlon*np.arange(0,nlon)
-        grid.lat = 90.0 - dlat*np.arange(0,nlat)
-    elif (INTERVAL == 2):
+        nlon = np.int64((360.0 / dlon) + 1.0)
+        nlat = np.int64((180.0 / dlat) + 1.0)
+        grid.lon = -180 + dlon * np.arange(0, nlon)
+        grid.lat = 90.0 - dlat * np.arange(0, nlat)
+    elif INTERVAL == 2:
         # (Degree spacing)/2
-        grid.lon = np.arange(-180+dlon/2.0,180+dlon/2.0,dlon)
-        grid.lat = np.arange(90.0-dlat/2.0,-90.0-dlat/2.0,-dlat)
+        grid.lon = np.arange(-180 + dlon / 2.0, 180 + dlon / 2.0, dlon)
+        grid.lat = np.arange(90.0 - dlat / 2.0, -90.0 - dlat / 2.0, -dlat)
         nlon = len(grid.lon)
         nlat = len(grid.lat)
-    elif (INTERVAL == 3):
+    elif INTERVAL == 3:
         # non-global grid set with BOUNDS parameter
-        minlon,maxlon,minlat,maxlat = BOUNDS.copy()
-        grid.lon = np.arange(minlon+dlon/2.0, maxlon+dlon/2.0, dlon)
-        grid.lat = np.arange(maxlat-dlat/2.0, minlat-dlat/2.0, -dlat)
+        minlon, maxlon, minlat, maxlat = BOUNDS.copy()
+        grid.lon = np.arange(minlon + dlon / 2.0, maxlon + dlon / 2.0, dlon)
+        grid.lat = np.arange(maxlat - dlat / 2.0, minlat - dlat / 2.0, -dlat)
         nlon = len(grid.lon)
         nlat = len(grid.lat)
 
     # Computing plms for converting to spatial domain
-    theta = np.radians(90.0-grid.lat)
+    theta = np.radians(90.0 - grid.lat)
     PLM, dPLM = gravtk.plm_holmes(2, np.cos(theta))
     # fit coefficients
-    fits = ['x1','x2','SS','SC','AS','AC','S2SGRC','S2CGRC','S2SGFO','S2CGFO']
+    fits = [
+        'x1',
+        'x2',
+        'SS',
+        'SC',
+        'AS',
+        'AC',
+        'S2SGRC',
+        'S2CGRC',
+        'S2SGFO',
+        'S2CGFO',
+    ]
 
     # for each test run
-    for i,input_flag in enumerate(FLAGS):
+    for i, input_flag in enumerate(FLAGS):
         # read geocenter file for processing center and model
-        fargs = (PROC,DREL,model_str,input_flag,slr_str,gia_str,ds_str)
+        fargs = (PROC, DREL, model_str, input_flag, slr_str, gia_str, ds_str)
         grace_file = '{0}_{1}_{2}{3}{4}{5}{6}.txt'.format(*fargs)
         DEG1 = gravtk.geocenter().from_UCI(grace_dir.joinpath(grace_file))
         # indices for months
-        kk,=np.nonzero((DEG1.month >= START) & (DEG1.month <= END))
+        (kk,) = np.nonzero((DEG1.month >= START) & (DEG1.month <= END))
         MEAN = DEG1.mean(indices=kk)
         # if data is Release-5: remove ECMWF jump corrections
-        if (DREL == 'RL05'):
-            DEG1.C10[kk] -= atm_corr['clm'][1,0,:]
-            DEG1.C11[kk] -= atm_corr['clm'][1,1,:]
-            DEG1.S11[kk] -= atm_corr['slm'][1,1,:]
+        if DREL == 'RL05':
+            DEG1.C10[kk] -= atm_corr['clm'][1, 0, :]
+            DEG1.C11[kk] -= atm_corr['clm'][1, 1, :]
+            DEG1.S11[kk] -= atm_corr['slm'][1, 1, :]
         # create dictionary for extracting regressed coefficients
         Ylm = {}
-        for k,f in enumerate(fits):
+        for k, f in enumerate(fits):
             Ylm[f] = np.zeros((3))
         # calculate regression over each coefficient
-        for j,key in enumerate(coef_labels):
+        for j, key in enumerate(coef_labels):
             val = getattr(DEG1, key)
             # calculate regression coefficients
             TERMS = gravtk.time_series.aliasing_terms(DEG1.time[kk])
-            x1 = gravtk.time_series.regress(DEG1.time[kk], dfactor[1]*val[kk],
-                ORDER=1, CYCLES=[0.5,1.0], TERMS=TERMS,
-                CONF=0.95, AICc=True)
-            x2 = gravtk.time_series.regress(DEG1.time[kk], dfactor[1]*val[kk],
-                ORDER=2, CYCLES=[0.5,1.0], TERMS=TERMS,
-                CONF=0.95, AICc=True)
+            x1 = gravtk.time_series.regress(
+                DEG1.time[kk],
+                dfactor[1] * val[kk],
+                ORDER=1,
+                CYCLES=[0.5, 1.0],
+                TERMS=TERMS,
+                CONF=0.95,
+                AICc=True,
+            )
+            x2 = gravtk.time_series.regress(
+                DEG1.time[kk],
+                dfactor[1] * val[kk],
+                ORDER=2,
+                CYCLES=[0.5, 1.0],
+                TERMS=TERMS,
+                CONF=0.95,
+                AICc=True,
+            )
             # save coefficients
-            for k,f in enumerate(fits):
-                Ylm[f][j] = x1['beta'][k+1]
+            for k, f in enumerate(fits):
+                Ylm[f][j] = x1['beta'][k + 1]
         # extract Ylms and convert to spatial
         var = {}
-        for k,f in enumerate(fits):
-            clm = np.zeros((2,2))
-            slm = np.zeros((2,2))
-            clm[1,0] = Ylm[f][0]
-            clm[1,1] = Ylm[f][1]
-            slm[1,1] = Ylm[f][2]
-            var[f] = gravtk.harmonic_summation(clm, slm, grid.lon, grid.lat,
-                LMAX=1, MMAX=1, PLM=PLM[:2,:2,:]).T
+        for k, f in enumerate(fits):
+            clm = np.zeros((2, 2))
+            slm = np.zeros((2, 2))
+            clm[1, 0] = Ylm[f][0]
+            clm[1, 1] = Ylm[f][1]
+            slm[1, 1] = Ylm[f][2]
+            var[f] = gravtk.harmonic_summation(
+                clm, slm, grid.lon, grid.lat, LMAX=1, MMAX=1, PLM=PLM[:2, :2, :]
+            ).T
         # amplitude and phase of cyclical components
-        var['SA'],var['SP'] = gravtk.time_series.amplitude(var['SS'],var['SC'])
-        var['AA'],var['AP'] = gravtk.time_series.amplitude(var['AS'],var['AC'])
-        var['S2AGRC'],var['S2PGRC'] = gravtk.time_series.amplitude(var['S2SGRC'],var['S2CGRC'])
-        var['S2AGFO'],var['S2PGFO'] = gravtk.time_series.amplitude(var['S2SGFO'],var['S2CGFO'])
+        var['SA'], var['SP'] = gravtk.time_series.amplitude(
+            var['SS'], var['SC']
+        )
+        var['AA'], var['AP'] = gravtk.time_series.amplitude(
+            var['AS'], var['AC']
+        )
+        var['S2AGRC'], var['S2PGRC'] = gravtk.time_series.amplitude(
+            var['S2SGRC'], var['S2CGRC']
+        )
+        var['S2AGFO'], var['S2PGFO'] = gravtk.time_series.amplitude(
+            var['S2SGFO'], var['S2CGFO']
+        )
 
         # out regression coefficients and amplitudes to file
         unit_suffix = [' yr^-1', ' yr^-2', '', '', '']
-        for j,key in enumerate(['x1','x2','SA','AA','S2AGRC','S2AGFO']):
+        for j, key in enumerate(['x1', 'x2', 'SA', 'AA', 'S2AGRC', 'S2AGFO']):
             # copy variables to output grid
             grid.data = np.copy(var[key])
             grid.mask = np.zeros_like(grid.data, dtype=bool)
@@ -331,8 +372,18 @@ def geocenter_spatial_maps(base_dir, PROC, DREL,
             attributes['longname'] = copy.copy(unit_name)
             attributes['title'] = copy.copy(key)
             # save to file
-            FILE = file_format.format(PROC,DREL,model_str,input_flag,
-                slr_str,gia_str,unit_label,key,ds_str,suffix[DATAFORM])
+            FILE = file_format.format(
+                PROC,
+                DREL,
+                model_str,
+                input_flag,
+                slr_str,
+                gia_str,
+                unit_label,
+                key,
+                ds_str,
+                suffix[DATAFORM],
+            )
             OUTPUT_FILE = OUTPUT_DIRECTORY.joinpath(FILE)
             grid.to_file(OUTPUT_FILE, format=DATAFORM, **attributes)
             # add file to output list
@@ -341,7 +392,7 @@ def geocenter_spatial_maps(base_dir, PROC, DREL,
             OUTPUT_FILE.chmod(mode=MODE)
 
         # output phase to file
-        for key in ['SP','AP','S2PGRC','S2PGFO']:
+        for key in ['SP', 'AP', 'S2PGRC', 'S2PGFO']:
             # convert phase from -180:180 to 0:360
             var[key] = np.where(var[key] < 0, var[key] + 360.0, var[key])
             # copy variables to output grid
@@ -352,8 +403,18 @@ def geocenter_spatial_maps(base_dir, PROC, DREL,
             attributes['longname'] = 'Phase'
             attributes['title'] = copy.copy(key)
             # save to file
-            FILE = file_format.format(PROC,DREL,model_str,input_flag,
-                slr_str,gia_str,unit_label,key,ds_str,suffix[DATAFORM])
+            FILE = file_format.format(
+                PROC,
+                DREL,
+                model_str,
+                input_flag,
+                slr_str,
+                gia_str,
+                unit_label,
+                key,
+                ds_str,
+                suffix[DATAFORM],
+            )
             OUTPUT_FILE = OUTPUT_DIRECTORY.joinpath(FILE)
             grid.to_file(OUTPUT_FILE, format=DATAFORM, **attributes)
             # add file to output list
@@ -363,10 +424,11 @@ def geocenter_spatial_maps(base_dir, PROC, DREL,
     # return the list of output files
     return output_files
 
+
 # PURPOSE: print a file log for the geocenter analysis
 def output_log_file(input_arguments, output_files):
     # format: geocenter_run_2002-04-01_PID-70335.log
-    args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
+    args = (time.strftime('%Y-%m-%d', time.localtime()), os.getpid())
     LOGFILE = 'geocenter_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
     DIRECTORY = pathlib.Path(input_arguments.output_directory)
@@ -383,10 +445,11 @@ def output_log_file(input_arguments, output_files):
     # close the log file
     fid.close()
 
+
 # PURPOSE: print a error file log for the geocenter analysis
 def output_error_log_file(input_arguments):
     # format: geocenter_failed_run_2002-04-01_PID-70335.log
-    args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
+    args = (time.strftime('%Y-%m-%d', time.localtime()), os.getpid())
     LOGFILE = 'geocenter_failed_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
     DIRECTORY = pathlib.Path(input_arguments.output_directory)
@@ -402,6 +465,7 @@ def output_error_log_file(input_arguments):
     # close the log file
     fid.close()
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
@@ -409,116 +473,248 @@ def arguments():
             and exports trends in the monthly spatial fields in
             millimeters water equivalent
             """,
-        fromfile_prefix_chars="@"
+        fromfile_prefix_chars='@',
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # working data directory
-    parser.add_argument('--directory','-D',
+    parser.add_argument(
+        '--directory',
+        '-D',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Working data directory')
-    parser.add_argument('--output-directory','-O',
+        help='Working data directory',
+    )
+    parser.add_argument(
+        '--output-directory',
+        '-O',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Output directory for spatial files')
+        help='Output directory for spatial files',
+    )
     # Data processing center or satellite mission
-    parser.add_argument('--center','-c',
-        metavar='PROC', type=str, required=True,
-        help='GRACE/GRACE-FO Processing Center')
+    parser.add_argument(
+        '--center',
+        '-c',
+        metavar='PROC',
+        type=str,
+        required=True,
+        help='GRACE/GRACE-FO Processing Center',
+    )
     # GRACE/GRACE-FO data release
-    parser.add_argument('--release','-r',
-        metavar='DREL', type=str, default='RL06',
-        help='GRACE/GRACE-FO Data Release')
+    parser.add_argument(
+        '--release',
+        '-r',
+        metavar='DREL',
+        type=str,
+        default='RL06',
+        help='GRACE/GRACE-FO Data Release',
+    )
     # start and end GRACE/GRACE-FO months
-    parser.add_argument('--start','-S',
-        type=int, default=4,
-        help='Starting GRACE/GRACE-FO month')
-    parser.add_argument('--end','-E',
-        type=int, default=232,
-        help='Ending GRACE/GRACE-FO month')
-    MISSING = [6,7,18,109,114,125,130,135,140,141,146,151,156,162,166,167,
-        172,177,178,182,187,188,189,190,191,192,193,194,195,196,197,200,201]
-    parser.add_argument('--missing','-N',
-        metavar='MISSING', type=int, nargs='+', default=MISSING,
-        help='Missing GRACE/GRACE-FO months')
+    parser.add_argument(
+        '--start',
+        '-S',
+        type=int,
+        default=4,
+        help='Starting GRACE/GRACE-FO month',
+    )
+    parser.add_argument(
+        '--end', '-E', type=int, default=232, help='Ending GRACE/GRACE-FO month'
+    )
+    MISSING = [
+        6,
+        7,
+        18,
+        109,
+        114,
+        125,
+        130,
+        135,
+        140,
+        141,
+        146,
+        151,
+        156,
+        162,
+        166,
+        167,
+        172,
+        177,
+        178,
+        182,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        200,
+        201,
+    ]
+    parser.add_argument(
+        '--missing',
+        '-N',
+        metavar='MISSING',
+        type=int,
+        nargs='+',
+        default=MISSING,
+        help='Missing GRACE/GRACE-FO months',
+    )
     # different treatments of the load Love numbers
     # 0: Han and Wahr (1995) values from PREM
     # 1: Gegout (2005) values from PREM
     # 2: Wang et al. (2012) values from PREM
     # 3: Wang et al. (2012) values from PREM with hard sediment
     # 4: Wang et al. (2012) values from PREM with soft sediment
-    parser.add_argument('--love','-n',
-        type=int, default=0, choices=[0,1,2,3,4],
-        help='Treatment of the Load Love numbers')
-    parser.add_argument('--kl','-k',
-        type=float, default=0.021,
-        help='Degree 1 gravitational Load Love number')
+    parser.add_argument(
+        '--love',
+        '-n',
+        type=int,
+        default=0,
+        choices=[0, 1, 2, 3, 4],
+        help='Treatment of the Load Love numbers',
+    )
+    parser.add_argument(
+        '--kl',
+        '-k',
+        type=float,
+        default=0.021,
+        help='Degree 1 gravitational Load Love number',
+    )
     # option for setting reference frame for gravitational load love number
     # reference frame options (CF, CM, CE)
-    parser.add_argument('--reference',
-        type=str.upper, default='CF', choices=['CF','CM','CE'],
-        help='Reference frame for load Love numbers')
+    parser.add_argument(
+        '--reference',
+        type=str.upper,
+        default='CF',
+        choices=['CF', 'CM', 'CE'],
+        help='Reference frame for load Love numbers',
+    )
     # Use a decorrelation (destriping) filter
-    parser.add_argument('--destripe','-d',
-        default=False, action='store_true',
-        help='Use decorrelation (destriping) filter')
+    parser.add_argument(
+        '--destripe',
+        '-d',
+        default=False,
+        action='store_true',
+        help='Use decorrelation (destriping) filter',
+    )
     # output grid parameters
-    parser.add_argument('--spacing',
-        type=float, nargs='+', default=[0.5,0.5], metavar=('dlon','dlat'),
-        help='Spatial resolution of output data')
-    parser.add_argument('--interval',
-        type=int, default=2, choices=[1,2,3],
-        help=('Output grid interval '
-            '(1: global, 2: centered global, 3: non-global)'))
-    parser.add_argument('--bounds',
-        type=float, nargs=4, metavar=('lon_min','lon_max','lat_min','lat_max'),
-        help='Bounding box for non-global grid')
+    parser.add_argument(
+        '--spacing',
+        type=float,
+        nargs='+',
+        default=[0.5, 0.5],
+        metavar=('dlon', 'dlat'),
+        help='Spatial resolution of output data',
+    )
+    parser.add_argument(
+        '--interval',
+        type=int,
+        default=2,
+        choices=[1, 2, 3],
+        help=(
+            'Output grid interval '
+            '(1: global, 2: centered global, 3: non-global)'
+        ),
+    )
+    parser.add_argument(
+        '--bounds',
+        type=float,
+        nargs=4,
+        metavar=('lon_min', 'lon_max', 'lat_min', 'lat_max'),
+        help='Bounding box for non-global grid',
+    )
     # replace low degree harmonics with values from Satellite Laser Ranging
-    parser.add_argument('--slr-c20',
-        type=str, default=None, choices=['CSR','GFZ','GSFC'],
-        help='Replace C20 coefficients with SLR values')
-    parser.add_argument('--slr-21',
-        type=str, default=None, choices=['CSR','GFZ','GSFC'],
-        help='Replace C21 and S21 coefficients with SLR values')
-    parser.add_argument('--slr-22',
-        type=str, default=None, choices=['CSR','GSFC'],
-        help='Replace C22 and S22 coefficients with SLR values')
-    parser.add_argument('--slr-c30',
-        type=str, default=None, choices=['CSR','GFZ','GSFC','LARES'],
-        help='Replace C30 coefficients with SLR values')
-    parser.add_argument('--slr-c40',
-        type=str, default=None, choices=['CSR','GSFC','LARES'],
-        help='Replace C40 coefficients with SLR values')
-    parser.add_argument('--slr-c50',
-        type=str, default=None, choices=['CSR','GSFC','LARES'],
-        help='Replace C50 coefficients with SLR values')
+    parser.add_argument(
+        '--slr-c20',
+        type=str,
+        default=None,
+        choices=['CSR', 'GFZ', 'GSFC'],
+        help='Replace C20 coefficients with SLR values',
+    )
+    parser.add_argument(
+        '--slr-21',
+        type=str,
+        default=None,
+        choices=['CSR', 'GFZ', 'GSFC'],
+        help='Replace C21 and S21 coefficients with SLR values',
+    )
+    parser.add_argument(
+        '--slr-22',
+        type=str,
+        default=None,
+        choices=['CSR', 'GSFC'],
+        help='Replace C22 and S22 coefficients with SLR values',
+    )
+    parser.add_argument(
+        '--slr-c30',
+        type=str,
+        default=None,
+        choices=['CSR', 'GFZ', 'GSFC', 'LARES'],
+        help='Replace C30 coefficients with SLR values',
+    )
+    parser.add_argument(
+        '--slr-c40',
+        type=str,
+        default=None,
+        choices=['CSR', 'GSFC', 'LARES'],
+        help='Replace C40 coefficients with SLR values',
+    )
+    parser.add_argument(
+        '--slr-c50',
+        type=str,
+        default=None,
+        choices=['CSR', 'GSFC', 'LARES'],
+        help='Replace C50 coefficients with SLR values',
+    )
     # Output data format (ascii, netCDF4, HDF5)
-    parser.add_argument('--format','-F',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
-        help='Output data format')
+    parser.add_argument(
+        '--format',
+        '-F',
+        type=str,
+        default='netCDF4',
+        choices=['ascii', 'netCDF4', 'HDF5'],
+        help='Output data format',
+    )
     # Output log file for each job in forms
     # geocenter_run_2002-04-01_PID-00000.log
     # geocenter_failed_run_2002-04-01_PID-00000.log
-    parser.add_argument('--log',
-        default=False, action='store_true',
-        help='Output log file for each job')
+    parser.add_argument(
+        '--log',
+        default=False,
+        action='store_true',
+        help='Output log file for each job',
+    )
     # print information about each input and output file
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of run',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -550,18 +746,20 @@ def main():
             SLR_C50=args.slr_c50,
             DATAFORM=args.format,
             OUTPUT_DIRECTORY=args.output_directory,
-            MODE=args.mode)
+            MODE=args.mode,
+        )
     except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
-        if args.log:# write failed job completion log file
+        if args.log:  # write failed job completion log file
             output_error_log_file(args)
     else:
-        if args.log:# write successful job completion log file
-            output_log_file(args,output_files)
+        if args.log:  # write successful job completion log file
+            output_log_file(args, output_files)
+
 
 # run main program
 if __name__ == '__main__':

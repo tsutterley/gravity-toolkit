@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 C40.py
 Written by Tyler Sutterley (05/2023)
 
@@ -47,11 +47,13 @@ UPDATE HISTORY:
     Updated 01/2023: refactored satellite laser ranging read functions
     Written 09/2022
 """
+
 import re
 import pathlib
 import numpy as np
 import gravity_toolkit.time
 import gravity_toolkit.read_SLR_harmonics
+
 
 # PURPOSE: read Degree 4 zonal data from Satellite Laser Ranging (SLR)
 def C40(SLR_file, C40_MEAN=0.0, DATE=None, **kwargs):
@@ -91,18 +93,21 @@ def C40(SLR_file, C40_MEAN=0.0, DATE=None, **kwargs):
         # read 5x5 + 6,1 file from GSFC and extract coefficients
         Ylms = gravity_toolkit.read_SLR_harmonics(SLR_file, HEADER=True)
         # calculate 28-day moving-average solution from 7-day arcs
-        dinput.update(gravity_toolkit.convert_weekly(Ylms['time'],
-            Ylms['clm'][4,0,:], DATE=DATE, NEIGHBORS=28))
+        dinput.update(
+            gravity_toolkit.convert_weekly(
+                Ylms['time'], Ylms['clm'][4, 0, :], DATE=DATE, NEIGHBORS=28
+            )
+        )
         # no estimated spherical harmonic errors
-        dinput['error'] = np.zeros_like(DATE,dtype='f8')
+        dinput['error'] = np.zeros_like(DATE, dtype='f8')
     elif bool(re.search(r'C40_LARES', SLR_file.name, re.I)):
         # read LARES filtered values
         LARES_input = np.loadtxt(SLR_file, skiprows=1)
-        dinput['time'] = LARES_input[:,0].copy()
+        dinput['time'] = LARES_input[:, 0].copy()
         # convert C40 from anomalies to absolute
-        dinput['data'] = 1e-10*LARES_input[:,1] + C40_MEAN
+        dinput['data'] = 1e-10 * LARES_input[:, 1] + C40_MEAN
         # filtered data does not have errors
-        dinput['error'] = np.zeros_like(LARES_input[:,1])
+        dinput['error'] = np.zeros_like(LARES_input[:, 1])
         # calculate GRACE/GRACE-FO month
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
     else:
@@ -110,13 +115,14 @@ def C40(SLR_file, C40_MEAN=0.0, DATE=None, **kwargs):
         Ylms = gravity_toolkit.read_SLR_harmonics(SLR_file, HEADER=True)
         # extract dates, C40 harmonics and errors
         dinput['time'] = Ylms['time'].copy()
-        dinput['data'] = Ylms['clm'][4,0,:].copy()
-        dinput['error'] = Ylms['error']['clm'][4,0,:].copy()
+        dinput['data'] = Ylms['clm'][4, 0, :].copy()
+        dinput['error'] = Ylms['error']['clm'][4, 0, :].copy()
         # converting from MJD into month, day and year
-        YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
-            Ylms['MJD']+2400000.5, format='tuple')
+        YY, MM, DD, hh, mm, ss = gravity_toolkit.time.convert_julian(
+            Ylms['MJD'] + 2400000.5, format='tuple'
+        )
         # calculate GRACE/GRACE-FO month
-        dinput['month'] = gravity_toolkit.time.calendar_to_grace(YY,MM)
+        dinput['month'] = gravity_toolkit.time.calendar_to_grace(YY, MM)
 
     # The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
     # Accelerometer shutoffs make the relation between month number

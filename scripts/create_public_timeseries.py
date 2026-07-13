@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 create_public_timeseries.py
 Written by Tyler Sutterley (10/2023)
 Creates public time series files
@@ -10,6 +10,7 @@ UPDATE HISTORY:
     Updated 03/2023: updated with public repository functions
     Written 08/2019
 """
+
 from __future__ import print_function
 
 import sys
@@ -29,6 +30,7 @@ import gravity_toolkit as gravtk
 filename = inspect.getframeinfo(inspect.currentframe()).filename
 filepath = pathlib.Path(filename).absolute().parent
 
+
 # PURPOSE: keep track of threads
 def info(args):
     logging.info(pathlib.Path(sys.argv[0]).name)
@@ -38,8 +40,15 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
+
 # program module to run with specified parameters
-def create_public_timeseries(base_dir, PROC, DREL, DSET, LMAX, RAD,
+def create_public_timeseries(
+    base_dir,
+    PROC,
+    DREL,
+    DSET,
+    LMAX,
+    RAD,
     START_MON=None,
     END_MON=None,
     MISSING=None,
@@ -51,11 +60,11 @@ def create_public_timeseries(base_dir, PROC, DREL, DSET, LMAX, RAD,
     REDISTRIBUTE_MASCONS=False,
     ITERATION=None,
     OUTPUT_DIRECTORY=None,
-    MODE=0o775):
-
+    MODE=0o775,
+):
     # input directory setup
     base_dir = pathlib.Path(base_dir).expanduser().absolute()
-    mascon_dir = base_dir.joinpath('GRACE','mascons')
+    mascon_dir = base_dir.joinpath('GRACE', 'mascons')
     # output directory setup
     OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
     if not OUTPUT_DIRECTORY.exists():
@@ -79,20 +88,28 @@ def create_public_timeseries(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # mascon distribution over the ocean
     ocean_str = 'OCN_' if REDISTRIBUTE_MASCONS else ''
     # version flags
-    VERSION = ['v0','']
+    VERSION = ['v0', '']
     DATA_VERSION = 1
 
     # list of all months
-    months = sorted(set(np.arange(START_MON,END_MON+1)) - set(MISSING))
+    months = sorted(set(np.arange(START_MON, END_MON + 1)) - set(MISSING))
     nmon = len(months)
 
     # start and end GRACE months for correction data
-    OBP_START,OBP_END = (4,254)
-    ATM_START,ATM_END = (4,251)
-    GLDAS_START,GLDAS_END = (4,254)
+    OBP_START, OBP_END = (4, 254)
+    ATM_START, ATM_END = (4, 251)
+    GLDAS_START, GLDAS_END = (4, 254)
 
     # input directory
-    FLAG={1:'_SLF1',2:'_SLF2',3:'_SLF3',4:'_SLF4',5:'_SLF5',6:'_SLF6',7:'_SLF7'}
+    FLAG = {
+        1: '_SLF1',
+        2: '_SLF2',
+        3: '_SLF3',
+        4: '_SLF4',
+        5: '_SLF5',
+        6: '_SLF6',
+        7: '_SLF7',
+    }
     # subdirectory and input file formats
     sd = 'HEX_{0}_{1}{2}_SPH_CAP_MSCNS{3}_L{4:d}_{5:03d}-{6:03d}'
     ff = '{0}_{1}{2}_SPH_CAP_{3}{4}L{5:d}{6}{7}.txt'
@@ -100,12 +117,24 @@ def create_public_timeseries(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # data summary
     MISSION = 'GRACE/GRACE-FO'
     SUMMARY = []
-    SUMMARY.append(('Regional ice mass balance time series derived from {0} '
-        'mission measurements').format(MISSION))
-    SUMMARY.append(('Glacial Isostatic Adjustment (GIA) estimates from '
-        f'{GIA_Ylms_rate.citation} [{GIA_Ylms_rate.title}] have been removed'))
-    SUMMARY.append(('Terrestrial water storage (TWS) anomalies from {0} '
-        'have been removed (Rodell et al., 2004).').format('GLDAS NOAHv2.1'))
+    SUMMARY.append(
+        (
+            'Regional ice mass balance time series derived from {0} '
+            'mission measurements'
+        ).format(MISSION)
+    )
+    SUMMARY.append(
+        (
+            'Glacial Isostatic Adjustment (GIA) estimates from '
+            f'{GIA_Ylms_rate.citation} [{GIA_Ylms_rate.title}] have been removed'
+        )
+    )
+    SUMMARY.append(
+        (
+            'Terrestrial water storage (TWS) anomalies from {0} '
+            'have been removed (Rodell et al., 2004).'
+        ).format('GLDAS NOAHv2.1')
+    )
     # data project
     PROJECT = []
     PROJECT.append('NASA Gravity Recovery And Climate Experiment (GRACE)')
@@ -125,38 +154,54 @@ def create_public_timeseries(base_dir, PROC, DREL, DSET, LMAX, RAD,
     VOCABULARY = 'NASA Global Change Master Directory (GCMD) Science Keywords'
     # work acknowledgements
     ACKNOWLEDGEMENT = []
-    ACKNOWLEDGEMENT.append(('Work was supported by an appointment to the NASA '
-        'Postdoctoral Program at NASA Goddard Space Flight Center, '
-        'administered by Universities Space Research Association under '
-        'contract with NASA'))
-    ACKNOWLEDGEMENT.append(('GRACE is a joint mission of NASA (USA) and DLR '
-        '(Germany)'))
-    if (DREL == 'RL06'):
-        ACKNOWLEDGEMENT.append('GRACE-FO is a joint mission of NASA (USA) and '
-            'GFZ (Germany)')
+    ACKNOWLEDGEMENT.append(
+        (
+            'Work was supported by an appointment to the NASA '
+            'Postdoctoral Program at NASA Goddard Space Flight Center, '
+            'administered by Universities Space Research Association under '
+            'contract with NASA'
+        )
+    )
+    ACKNOWLEDGEMENT.append(
+        ('GRACE is a joint mission of NASA (USA) and DLR (Germany)')
+    )
+    if DREL == 'RL06':
+        ACKNOWLEDGEMENT.append(
+            'GRACE-FO is a joint mission of NASA (USA) and GFZ (Germany)'
+        )
     # data version
     PRODUCT_VERSION = f'Release-{DREL[2:]}.{DATA_VERSION}'
     # product reference
     REFERENCE = []
-    REFERENCE.append(('I. Velicogna, Y. Mohajerani, G. A, F. Landerer, '
-        'J. Mouginot, B. Noel, E. Rignot and T. Sutterley, '
-        '"Continuity of ice sheet mass loss in Greenland and Antarctica '
-        'from the GRACE and GRACE Follow-On missions", '
-        'Geophysical Research Letters, 47, (2020). '
-        'https://doi.org/10.1029/2020GL087291'))
-    REFERENCE.append(('T. C. Sutterley, I. Velicogna, and C.-W. Hsu, '
-        '"Self-Consistent Ice Mass Balance and Regional Sea Level from '
-        'Time-Variable Gravity", Earth and Space Science, 7(3), (2020). '
-        'https://doi.org/10.1029/2019EA000860'))
+    REFERENCE.append(
+        (
+            'I. Velicogna, Y. Mohajerani, G. A, F. Landerer, '
+            'J. Mouginot, B. Noel, E. Rignot and T. Sutterley, '
+            '"Continuity of ice sheet mass loss in Greenland and Antarctica '
+            'from the GRACE and GRACE Follow-On missions", '
+            'Geophysical Research Letters, 47, (2020). '
+            'https://doi.org/10.1029/2020GL087291'
+        )
+    )
+    REFERENCE.append(
+        (
+            'T. C. Sutterley, I. Velicogna, and C.-W. Hsu, '
+            '"Self-Consistent Ice Mass Balance and Regional Sea Level from '
+            'Time-Variable Gravity", Earth and Space Science, 7(3), (2020). '
+            'https://doi.org/10.1029/2019EA000860'
+        )
+    )
     # append GIA reference
     if GIA_Ylms_rate.reference is not None:
         REFERENCE.append(GIA_Ylms_rate.reference)
-    REFERENCE.append('M. Rodell, P. R. Houser, U. Jambor, J. Gottschalck, K. '
+    REFERENCE.append(
+        'M. Rodell, P. R. Houser, U. Jambor, J. Gottschalck, K. '
         'Mitchell, C.-J. Meng, K. Arsenault, B. Cosgrove, J. Radakovich, M. '
         'Bosilovich, J. K. Entin, J. P. and Walker, D. Lohmann, and D. Toll, '
         '"The Global Land Data Assimilation System." Bulletin of the American '
         'Meteorological Society, 85(3), 381-394, (2004). '
-        'https://doi.org/10.1175/BAMS-85-3-381')
+        'https://doi.org/10.1175/BAMS-85-3-381'
+    )
     # product creators and institutions
     CREATORS = 'Tyler C. Sutterley, Isabella Velicogna, and Chia-Wei Hsu'
     EMAILS = 'tsutterl@uw.edu, isabella@uci.edu, and chiaweih@email.arizona.edu'
@@ -166,44 +211,72 @@ def create_public_timeseries(base_dir, PROC, DREL, DSET, LMAX, RAD,
     INSTITUTION.append('University of California, Irvine')
 
     # open output zipfile containing regional files
-    ZFILE = '{0}_SPH_CAP_{1}_L{2:d}{3}.zip'.format(gia_str,'RAD1.5',LMAX,gw_str)
+    ZFILE = '{0}_SPH_CAP_{1}_L{2:d}{3}.zip'.format(
+        gia_str, 'RAD1.5', LMAX, gw_str
+    )
     OUTPUT_FILE = OUTPUT_DIRECTORY.joinpath(ZFILE)
     zp = zipfile.ZipFile(OUTPUT_FILE, mode='w')
 
     # run for specific regions
     regions = []
-    AIS_regions = ['AIS','WAIS','EAIS','APIS']
-    GIS_regions = ['GIS','NW','NN','NE','SW','SE']
+    AIS_regions = ['AIS', 'WAIS', 'EAIS', 'APIS']
+    GIS_regions = ['GIS', 'NW', 'NN', 'NE', 'SW', 'SE']
     # GIC_regions = ['CBI','CDE','ICL','SVB','FJL','SZEM','NZEM','ALK']
-    HEM = ['S']*len(AIS_regions) + ['N']*len(GIS_regions) #+ ['N']*len(GIC_regions)
-    remove = ['AIS']*len(AIS_regions) + ['ARC']*len(GIS_regions) #+ ['ARC']*len(GIC_regions)
+    HEM = ['S'] * len(AIS_regions) + ['N'] * len(
+        GIS_regions
+    )  # + ['N']*len(GIC_regions)
+    remove = ['AIS'] * len(AIS_regions) + ['ARC'] * len(
+        GIS_regions
+    )  # + ['ARC']*len(GIC_regions)
     regions.extend(AIS_regions)
     regions.extend(GIS_regions)
     # regions.extend(GIC_regions)
     # for each region
-    for h,reg,rem in zip(HEM,regions,remove):
+    for h, reg, rem in zip(HEM, regions, remove):
         # read ocean bottom pressure leakage file
-        subdir = sd.format('AOD1B',DREL,'','',LMAX,OBP_START,OBP_END)
-        OBP_file = ff.format('ECCO-GAD_OBP_Residuals',reg,'','',ocean_str,LMAX,gw_str,ds_str)
-        OBP_input = np.loadtxt(mascon_dir.joinpath(subdir,OBP_file))[:nmon,:]
+        subdir = sd.format('AOD1B', DREL, '', '', LMAX, OBP_START, OBP_END)
+        OBP_file = ff.format(
+            'ECCO-GAD_OBP_Residuals',
+            reg,
+            '',
+            '',
+            ocean_str,
+            LMAX,
+            gw_str,
+            ds_str,
+        )
+        OBP_input = np.loadtxt(mascon_dir.joinpath(subdir, OBP_file))[:nmon, :]
         # read atmospheric pressure leakage file
-        subdir = sd.format('AOD1B',DREL,'','',LMAX,ATM_START,ATM_END)
+        subdir = sd.format('AOD1B', DREL, '', '', LMAX, ATM_START, ATM_END)
         # ATM_file = ff.format('ATM-GAA_Residuals',reg,'_3D','',ocean_str,LMAX,gw_str)
         # ATM_file = ff.format('ATM_Differences',reg,'_3D','',ocean_str,LMAX,gw_str,ds_str)
-        ATM_file = ff.format('ATM_Differences',reg,'','',ocean_str,LMAX,gw_str,ds_str)
-        ATM_input = np.loadtxt(mascon_dir.joinpath(subdir,ATM_file))[:nmon,:]
+        ATM_file = ff.format(
+            'ATM_Differences', reg, '', '', ocean_str, LMAX, gw_str, ds_str
+        )
+        ATM_input = np.loadtxt(mascon_dir.joinpath(subdir, ATM_file))[:nmon, :]
         # read GLDAS terrestrial water RMS file
-        subdir = sd.format('GLDAS','TWC_V2.1_RMS','','',LMAX,GLDAS_START,GLDAS_END)
-        TWC_file = ff.format('GLDAS_TWC_RMS',reg,'','RAD1.5_','',LMAX,gw_str,ds_str)
-        TWC_input = np.loadtxt(base_dir.joinpath('GLDAS',subdir,TWC_file))[:nmon,:]
-        isvalid, = np.nonzero(np.isfinite(TWC_input[:,2]) &
-            (TWC_input[:,0] >= START_MON) & (TWC_input[:,0] <= END_MON))
-        TWC_RMS = np.sqrt(np.sum(TWC_input[isvalid,2]**2)/len(isvalid))
+        subdir = sd.format(
+            'GLDAS', 'TWC_V2.1_RMS', '', '', LMAX, GLDAS_START, GLDAS_END
+        )
+        TWC_file = ff.format(
+            'GLDAS_TWC_RMS', reg, '', 'RAD1.5_', '', LMAX, gw_str, ds_str
+        )
+        TWC_input = np.loadtxt(base_dir.joinpath('GLDAS', subdir, TWC_file))[
+            :nmon, :
+        ]
+        (isvalid,) = np.nonzero(
+            np.isfinite(TWC_input[:, 2])
+            & (TWC_input[:, 0] >= START_MON)
+            & (TWC_input[:, 0] <= END_MON)
+        )
+        TWC_RMS = np.sqrt(np.sum(TWC_input[isvalid, 2] ** 2) / len(isvalid))
         # input estimated SLF monte carlo variance file and calculate RMS
-        subdir = sd.format(PROC,DREL,'','_MC',LMAX,START_MON,END_MON)
-        SLF_file = ff.format('MC',reg,'','RAD1.5_',ocean_str,LMAX,gw_str,ds_str)
-        SLF_input = np.loadtxt(mascon_dir.joinpath(subdir,SLF_file))
-        SLF_RMS = np.sqrt(np.sum(SLF_input[:,1]**2)/len(SLF_input))
+        subdir = sd.format(PROC, DREL, '', '_MC', LMAX, START_MON, END_MON)
+        SLF_file = ff.format(
+            'MC', reg, '', 'RAD1.5_', ocean_str, LMAX, gw_str, ds_str
+        )
+        SLF_input = np.loadtxt(mascon_dir.joinpath(subdir, SLF_file))
+        SLF_RMS = np.sqrt(np.sum(SLF_input[:, 1] ** 2) / len(SLF_input))
         # calculate mean of RMS over multiple reanalyses
         OBP_RMS = 0.0
         ATM_RMS = 0.0
@@ -211,32 +284,49 @@ def create_public_timeseries(base_dir, PROC, DREL, DSET, LMAX, RAD,
         #     ivalid, = np.nonzero(np.isfinite(OBP_input[:,j+3]))
         #     valid_count = np.count_nonzero(np.isfinite(OBP_input[:,j+3]))
         #     OBP_RMS += np.sqrt(np.sum(OBP_input[ivalid,j+3]**2)/valid_count)
-        ivalid, = np.nonzero(np.isfinite(OBP_input[:,2]))
-        valid_count = np.count_nonzero(np.isfinite(OBP_input[:,2]))
-        OBP_RMS += np.sqrt(np.sum(OBP_input[ivalid,2]**2)/valid_count)
+        (ivalid,) = np.nonzero(np.isfinite(OBP_input[:, 2]))
+        valid_count = np.count_nonzero(np.isfinite(OBP_input[:, 2]))
+        OBP_RMS += np.sqrt(np.sum(OBP_input[ivalid, 2] ** 2) / valid_count)
         # for j in range(4):
         #     ivalid, = np.nonzero(np.isfinite(ATM_input[:,j+3]))
         #     valid_count = np.count_nonzero(np.isfinite(ATM_input[:,j+3]))
         #     ATM_RMS += np.sqrt(np.sum(OBP_input[ATM_input,j+3]**2)/valid_count)
-        ivalid, = np.nonzero(np.isfinite(ATM_input[:,2]))
-        valid_count = np.count_nonzero(np.isfinite(ATM_input[:,2]))
-        ATM_RMS += np.sqrt(np.sum(ATM_input[ivalid,2]**2)/valid_count)
+        (ivalid,) = np.nonzero(np.isfinite(ATM_input[:, 2]))
+        valid_count = np.count_nonzero(np.isfinite(ATM_input[:, 2]))
+        ATM_RMS += np.sqrt(np.sum(ATM_input[ivalid, 2] ** 2) / valid_count)
         # # divide by the number of reanalyses
         # OBP_RMS /= 2.0
         # ATM_RMS /= 4.0
 
         # input mascon file for GIA correction
-        subdir = sd.format(PROC,DREL,VERSION[DATA_VERSION],
-            FLAG[ITERATION],LMAX,START_MON,END_MON)
-        input_file = ff.format(gia_str,reg,'',atm_str,ocean_str,LMAX,gw_str,'')
-        dinput = np.loadtxt(mascon_dir.joinpath(subdir,input_file))
-        mon = dinput[:nmon,0].astype(np.int64)
-        tdec = dinput[:nmon,1]
-        mass = dinput[:nmon,2]
-        satellite_error = dinput[:nmon,3]**2
+        subdir = sd.format(
+            PROC,
+            DREL,
+            VERSION[DATA_VERSION],
+            FLAG[ITERATION],
+            LMAX,
+            START_MON,
+            END_MON,
+        )
+        input_file = ff.format(
+            gia_str, reg, '', atm_str, ocean_str, LMAX, gw_str, ''
+        )
+        dinput = np.loadtxt(mascon_dir.joinpath(subdir, input_file))
+        mon = dinput[:nmon, 0].astype(np.int64)
+        tdec = dinput[:nmon, 1]
+        mass = dinput[:nmon, 2]
+        satellite_error = dinput[:nmon, 3] ** 2
         # calculate total combined error
-        grace_error = np.sqrt(np.sum(satellite_error + SLF_RMS**2 +
-            OBP_RMS**2 + ATM_RMS**2 + TWC_RMS**2)/nmon)
+        grace_error = np.sqrt(
+            np.sum(
+                satellite_error
+                + SLF_RMS**2
+                + OBP_RMS**2
+                + ATM_RMS**2
+                + TWC_RMS**2
+            )
+            / nmon
+        )
 
         # open output file as in-memory object
         fid = io.StringIO()
@@ -245,16 +335,21 @@ def create_public_timeseries(base_dir, PROC, DREL, DSET, LMAX, RAD,
         fid.write('{0}:\n'.format('header'))
         # data dimensions
         fid.write('  {0}:\n'.format('dimensions'))
-        fid.write('    {0:22}: {1:d}\n'.format('time',nmon))
+        fid.write('    {0:22}: {1:d}\n'.format('time', nmon))
         fid.write('\n')
         fid.write('  {0}:\n'.format('global_attributes'))
-        fid.write('    {0:22}: {1}\n'.format('summary','. '.join(SUMMARY)))
-        fid.write('    {0:22}: {1}\n'.format('project',', '.join(PROJECT)))
-        fid.write('    {0:22}: {1}\n'.format('keywords',', '.join(KEYWORDS)))
-        fid.write('    {0:22}: {1}\n'.format('keywords_vocabulary',VOCABULARY))
-        fid.write('    {0:22}: {1}\n'.format('acknowledgement',
-            '.  '.join(ACKNOWLEDGEMENT)))
-        fid.write('    {0:22}: {1}\n'.format('product_version',PRODUCT_VERSION))
+        fid.write('    {0:22}: {1}\n'.format('summary', '. '.join(SUMMARY)))
+        fid.write('    {0:22}: {1}\n'.format('project', ', '.join(PROJECT)))
+        fid.write('    {0:22}: {1}\n'.format('keywords', ', '.join(KEYWORDS)))
+        fid.write('    {0:22}: {1}\n'.format('keywords_vocabulary', VOCABULARY))
+        fid.write(
+            '    {0:22}: {1}\n'.format(
+                'acknowledgement', '.  '.join(ACKNOWLEDGEMENT)
+            )
+        )
+        fid.write(
+            '    {0:22}: {1}\n'.format('product_version', PRODUCT_VERSION)
+        )
         fid.write('    {0:22}:\n'.format('references'))
         for ref in REFERENCE:
             fid.write('      - {0}\n'.format(ref))
@@ -262,21 +357,31 @@ def create_public_timeseries(base_dir, PROC, DREL, DSET, LMAX, RAD,
         fid.write('    {0:22}: {1}\n'.format('creator_email', EMAILS))
         fid.write('    {0:22}: {1}\n'.format('creator_url', URL))
         fid.write('    {0:22}: {1}\n'.format('creator_type', 'group'))
-        fid.write('    {0:22}: {1}\n'.format('creator_institution',', '.join(INSTITUTION)))
+        fid.write(
+            '    {0:22}: {1}\n'.format(
+                'creator_institution', ', '.join(INSTITUTION)
+            )
+        )
         # date range and date created
-        calendar_year = np.floor((mon-1)/12 + 2002.0)
-        calendar_month = ((mon-1) % 12) + 1
-        start_time = '{0:4.0f}-{1:02.0f}'.format(calendar_year[0],calendar_month[0])
+        calendar_year = np.floor((mon - 1) / 12 + 2002.0)
+        calendar_month = ((mon - 1) % 12) + 1
+        start_time = '{0:4.0f}-{1:02.0f}'.format(
+            calendar_year[0], calendar_month[0]
+        )
         fid.write('    {0:22}: {1}\n'.format('time_coverage_start', start_time))
-        end_time = '{0:4.0f}-{1:02.0f}'.format(calendar_year[-1],calendar_month[-1])
+        end_time = '{0:4.0f}-{1:02.0f}'.format(
+            calendar_year[-1], calendar_month[-1]
+        )
         fid.write('    {0:22}: {1}\n'.format('time_coverage_end', end_time))
-        today = time.strftime('%Y-%m-%d',time.localtime())
+        today = time.strftime('%Y-%m-%d', time.localtime())
         fid.write('    {0:22}: {1}\n'.format('date_created', today))
         fid.write('\n')
         # non-standard attributes
         fid.write('  {0}:\n'.format('non-standard_attributes'))
         # data format
-        fid.write('    {0:22}: {1}\n'.format('formatting_string','(i4,3f11.4)'))
+        fid.write(
+            '    {0:22}: {1}\n'.format('formatting_string', '(i4,3f11.4)')
+        )
         fid.write('\n')
         # variables
         fid.write('  {0}:\n'.format('variables'))
@@ -312,72 +417,155 @@ def create_public_timeseries(base_dir, PROC, DREL, DSET, LMAX, RAD,
         fid.write('\n\n# End of YAML header\n')
         # add data
         for m in range(nmon):
-            args = (mon[m],tdec[m],mass[m],grace_error)
+            args = (mon[m], tdec[m], mass[m], grace_error)
             fid.write('{0:4d}{1:11.4f}{2:11.4f}{3:11.4f}\n'.format(*args))
         # rewind in-memory file object
         fid.seek(0)
         # write in-memory object to zip
-        zp.writestr(ff.format(gia_str,reg,'','','',LMAX,gw_str,''), fid.read())
+        zp.writestr(
+            ff.format(gia_str, reg, '', '', '', LMAX, gw_str, ''), fid.read()
+        )
 
     # change output file permissions mode to MODE
     OUTPUT_FILE.chmod(mode=MODE)
+
 
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Creates public data for a mascon time series
             """,
-        fromfile_prefix_chars="@"
+        fromfile_prefix_chars='@',
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
-    parser.add_argument('--directory','-D',
+    parser.add_argument(
+        '--directory',
+        '-D',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Working data directory')
-    parser.add_argument('--output-directory','-O',
+        help='Working data directory',
+    )
+    parser.add_argument(
+        '--output-directory',
+        '-O',
         type=pathlib.Path,
         default=filepath,
-        help='Output directory for public data files')
+        help='Output directory for public data files',
+    )
     # GRACE/GRACE-FO data processing center
-    parser.add_argument('--center','-c',
-        metavar='PROC', type=str, required=True,
-        help='GRACE/GRACE-FO Processing Center')
+    parser.add_argument(
+        '--center',
+        '-c',
+        metavar='PROC',
+        type=str,
+        required=True,
+        help='GRACE/GRACE-FO Processing Center',
+    )
     # GRACE/GRACE-FO data release
-    parser.add_argument('--release','-r',
-        metavar='DREL', type=str, default='RL06',
-        help='GRACE/GRACE-FO Data Release')
+    parser.add_argument(
+        '--release',
+        '-r',
+        metavar='DREL',
+        type=str,
+        default='RL06',
+        help='GRACE/GRACE-FO Data Release',
+    )
     # GRACE/GRACE-FO Level-2 data product
-    parser.add_argument('--product','-p',
-        metavar='DSET', type=str, default='GSM',
-        help='GRACE/GRACE-FO Level-2 data product')
+    parser.add_argument(
+        '--product',
+        '-p',
+        metavar='DSET',
+        type=str,
+        default='GSM',
+        help='GRACE/GRACE-FO Level-2 data product',
+    )
     # maximum spherical harmonic degree and order
-    parser.add_argument('--lmax','-l',
-        type=int, default=60,
-        help='Maximum spherical harmonic degree')
-    parser.add_argument('--mmax','-m',
-        type=int, default=None,
-        help='Maximum spherical harmonic order')
+    parser.add_argument(
+        '--lmax',
+        '-l',
+        type=int,
+        default=60,
+        help='Maximum spherical harmonic degree',
+    )
+    parser.add_argument(
+        '--mmax',
+        '-m',
+        type=int,
+        default=None,
+        help='Maximum spherical harmonic order',
+    )
     # start and end GRACE/GRACE-FO months
-    parser.add_argument('--start','-S',
-        type=int, default=4,
-        help='Starting GRACE/GRACE-FO month')
-    parser.add_argument('--end','-E',
-        type=int, default=232,
-        help='Ending GRACE/GRACE-FO month')
-    MISSING = [6,7,18,109,114,125,130,135,140,141,146,151,156,162,166,167,
-        172,177,178,182,187,188,189,190,191,192,193,194,195,196,197,200,201]
-    parser.add_argument('--missing','-N',
-        metavar='MISSING', type=int, nargs='+', default=MISSING,
-        help='Missing GRACE/GRACE-FO months')
+    parser.add_argument(
+        '--start',
+        '-S',
+        type=int,
+        default=4,
+        help='Starting GRACE/GRACE-FO month',
+    )
+    parser.add_argument(
+        '--end', '-E', type=int, default=232, help='Ending GRACE/GRACE-FO month'
+    )
+    MISSING = [
+        6,
+        7,
+        18,
+        109,
+        114,
+        125,
+        130,
+        135,
+        140,
+        141,
+        146,
+        151,
+        156,
+        162,
+        166,
+        167,
+        172,
+        177,
+        178,
+        182,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        200,
+        201,
+    ]
+    parser.add_argument(
+        '--missing',
+        '-N',
+        metavar='MISSING',
+        type=int,
+        nargs='+',
+        default=MISSING,
+        help='Missing GRACE/GRACE-FO months',
+    )
     # Gaussian smoothing radius (km)
-    parser.add_argument('--radius','-R',
-        type=float, default=0,
-        help='Gaussian smoothing radius (km)')
+    parser.add_argument(
+        '--radius',
+        '-R',
+        type=float,
+        default=0,
+        help='Gaussian smoothing radius (km)',
+    )
     # Use a decorrelation (destriping) filter
-    parser.add_argument('--destripe','-d',
-        default=False, action='store_true',
-        help='Use decorrelation (destriping) filter')
+    parser.add_argument(
+        '--destripe',
+        '-d',
+        default=False,
+        action='store_true',
+        help='Use decorrelation (destriping) filter',
+    )
     # GIA model type list
     models = {}
     models['IJ05-R2'] = 'Ivins R2 GIA Models'
@@ -393,40 +581,64 @@ def arguments():
     models['netCDF4'] = 'reformatted GIA in netCDF4 format'
     models['HDF5'] = 'reformatted GIA in HDF5 format'
     # GIA model type
-    parser.add_argument('--gia','-G',
-        type=str, metavar='GIA', choices=models.keys(),
-        help='GIA model type to read')
+    parser.add_argument(
+        '--gia',
+        '-G',
+        type=str,
+        metavar='GIA',
+        choices=models.keys(),
+        help='GIA model type to read',
+    )
     # full path to GIA file
-    parser.add_argument('--gia-file',
-        type=pathlib.Path,
-        help='GIA file to read')
+    parser.add_argument(
+        '--gia-file', type=pathlib.Path, help='GIA file to read'
+    )
     # use atmospheric jump corrections from Fagiolini et al. (2015)
-    parser.add_argument('--atm-correction',
-        default=False, action='store_true',
-        help='Apply atmospheric jump correction coefficients')
-    parser.add_argument('--redistribute-mascons',
-        default=False, action='store_true',
-        help='Redistribute mascon mass over the ocean')
+    parser.add_argument(
+        '--atm-correction',
+        default=False,
+        action='store_true',
+        help='Apply atmospheric jump correction coefficients',
+    )
+    parser.add_argument(
+        '--redistribute-mascons',
+        default=False,
+        action='store_true',
+        help='Redistribute mascon mass over the ocean',
+    )
     # sea level fingerprint parameters
-    parser.add_argument('--iteration','-I',
-        type=int, default=1,
-        help='Sea level fingerprint iteration')
+    parser.add_argument(
+        '--iteration',
+        '-I',
+        type=int,
+        default=1,
+        help='Sea level fingerprint iteration',
+    )
     # print information about each input and output file
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of run',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -454,13 +666,15 @@ def main():
             REDISTRIBUTE_MASCONS=args.redistribute_mascons,
             ITERATION=args.iteration,
             OUTPUT_DIRECTORY=args.output_directory,
-            MODE=args.mode)
+            MODE=args.mode,
+        )
     except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
+
 
 # run main program
 if __name__ == '__main__':

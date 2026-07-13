@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 model_degree_one.py
 Written by Tyler Sutterley (07/2026)
 
@@ -153,6 +153,7 @@ UPDATE HISTORY:
     Updated 06/2019: added parameter LANDMASK for setting the land-sea mask
     Written 10/2018
 """
+
 from __future__ import print_function
 
 import sys
@@ -175,7 +176,8 @@ try:
     import matplotlib.offsetbox
     from matplotlib.ticker import MultipleLocator
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("matplotlib not available", ImportWarning)
+    warnings.warn('matplotlib not available', ImportWarning)
+
 
 # PURPOSE: keep track of threads
 def info(args):
@@ -185,6 +187,7 @@ def info(args):
     if hasattr(os, 'getppid'):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
+
 
 # PURPOSE: model the seasonal component of an initial degree 1 model
 # using preliminary estimates of annual and semi-annual variations from LWM
@@ -210,17 +213,24 @@ def model_seasonal_geocenter(grace_date):
     SAPz = 75.0
     # calculate each geocenter component from the amplitude and phase
     # converting the phase from degrees to radians
-    X = AAx*np.sin(2.0*np.pi*grace_date + np.radians(APx)) + \
-        SAAx*np.sin(4.0*np.pi*grace_date + np.radians(SAPx))
-    Y = AAy*np.sin(2.0*np.pi*grace_date + np.radians(APy)) + \
-        SAAy*np.sin(4.0*np.pi*grace_date + np.radians(SAPy))
-    Z = AAz*np.sin(2.0*np.pi*grace_date + np.radians(APz)) + \
-        SAAz*np.sin(4.0*np.pi*grace_date + np.radians(SAPz))
-    DEG1 = gravtk.geocenter(X=X-X.mean(), Y=Y-Y.mean(), Z=Z-Z.mean())
+    X = AAx * np.sin(
+        2.0 * np.pi * grace_date + np.radians(APx)
+    ) + SAAx * np.sin(4.0 * np.pi * grace_date + np.radians(SAPx))
+    Y = AAy * np.sin(
+        2.0 * np.pi * grace_date + np.radians(APy)
+    ) + SAAy * np.sin(4.0 * np.pi * grace_date + np.radians(SAPy))
+    Z = AAz * np.sin(
+        2.0 * np.pi * grace_date + np.radians(APz)
+    ) + SAAz * np.sin(4.0 * np.pi * grace_date + np.radians(SAPz))
+    DEG1 = gravtk.geocenter(X=X - X.mean(), Y=Y - Y.mean(), Z=Z - Z.mean())
     return DEG1.from_cartesian()
 
+
 # PURPOSE: calculate a geocenter time-series
-def model_degree_one(input_file, LMAX, RAD,
+def model_degree_one(
+    input_file,
+    LMAX,
+    RAD,
     MMAX=None,
     DESTRIPE=False,
     LOVE_NUMBERS=0,
@@ -235,8 +245,8 @@ def model_degree_one(input_file, LMAX, RAD,
     EXPANSION=None,
     LANDMASK=None,
     PLOT=False,
-    MODE=0o775):
-
+    MODE=0o775,
+):
     # create output directory if currently non-existent
     OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
     if not OUTPUT_DIRECTORY.exists():
@@ -247,8 +257,9 @@ def model_degree_one(input_file, LMAX, RAD,
     slf_str = 'SLF_' if FINGERPRINT else ''
 
     # read load love numbers
-    LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
-        REFERENCE='CF', FORMAT='class')
+    LOVE = gravtk.load_love_numbers(
+        LMAX, LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE='CF', FORMAT='class'
+    )
     # set gravitational load love number to a specific value
     if LOVE_K1:
         LOVE.kl[1] = np.copy(LOVE_K1)
@@ -258,8 +269,8 @@ def model_degree_one(input_file, LMAX, RAD,
 
     # Earth Parameters
     factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
-    rho_e = factors.rho_e# Average Density of the Earth [g/cm^3]
-    rad_e = factors.rad_e# Average Radius of the Earth [cm]
+    rho_e = factors.rho_e  # Average Density of the Earth [g/cm^3]
+    rad_e = factors.rad_e  # Average Radius of the Earth [cm]
     l = factors.l
     # Factor for converting to Mass SH
     dfactor = factors.get('cmwe')
@@ -267,23 +278,25 @@ def model_degree_one(input_file, LMAX, RAD,
     # Read Smoothed Ocean and Land Functions
     # smoothed functions are from the read_ocean_function.py program
     # Open the land-sea NetCDF file for reading
-    landsea = gravtk.spatial().from_netCDF4(LANDMASK, date=False, varname='LSMASK')
+    landsea = gravtk.spatial().from_netCDF4(
+        LANDMASK, date=False, varname='LSMASK'
+    )
     # degree spacing and grid dimensions
     # will create spatial fields with same dimensions
-    dlon,dlat = landsea.spacing
+    dlon, dlat = landsea.spacing
     nlat, nlon = landsea.shape
     # spatial parameters in radians
     dphi = np.radians(dlon)
     dth = np.radians(dlat)
     # longitude and colatitude in radians
-    phi = np.radians(landsea.lon[np.newaxis,:])
+    phi = np.radians(landsea.lon[np.newaxis, :])
     th = np.radians(90.0 - np.squeeze(landsea.lat))
     # create land function
-    land_function = np.zeros((nlon, nlat),dtype=np.float64)
+    land_function = np.zeros((nlon, nlat), dtype=np.float64)
     # extract land function from file
     # combine land and island levels for land function
-    indx,indy = np.nonzero((landsea.data.T >= 1) & (landsea.data.T <= 3))
-    land_function[indx,indy] = 1.0
+    indx, indy = np.nonzero((landsea.data.T >= 1) & (landsea.data.T <= 3))
+    land_function[indx, indy] = 1.0
     # calculate ocean function from land function
     ocean_function = 1.0 - land_function
 
@@ -293,15 +306,23 @@ def model_degree_one(input_file, LMAX, RAD,
     # calculate spherical harmonics of ocean function to degree 1
     # mass is equivalent to 1 cm ocean height change
     # eustatic ratio = -land total/ocean total
-    ocean_Ylms = gravtk.gen_stokes(ocean_function, landsea.lon, landsea.lat,
-        UNITS=1, LMIN=0, LMAX=1, LOVE=LOVE, PLM=PLM[:2,:2,:])
+    ocean_Ylms = gravtk.gen_stokes(
+        ocean_function,
+        landsea.lon,
+        landsea.lat,
+        UNITS=1,
+        LMIN=0,
+        LMAX=1,
+        LOVE=LOVE,
+        PLM=PLM[:2, :2, :],
+    )
 
     # Gaussian Smoothing (Jekeli, 1981)
-    if (RAD != 0):
-        wt = 2.0*np.pi*gravtk.gauss_weights(RAD,LMAX)
+    if RAD != 0:
+        wt = 2.0 * np.pi * gravtk.gauss_weights(RAD, LMAX)
     else:
         # else = 1
-        wt = np.ones((LMAX+1))
+        wt = np.ones((LMAX + 1))
 
     # input spherical harmonic datafiles
     # input spherical harmonic datafile index
@@ -311,9 +332,13 @@ def model_degree_one(input_file, LMAX, RAD,
     # number of files within the index
     n_files = data_Ylms.shape[-1]
     # truncate to degree and order
-    data_Ylms.truncate(lmax=LMAX,mmax=MMAX)
+    data_Ylms.truncate(lmax=LMAX, mmax=MMAX)
     # save original geocenter for file in mm w.e.
-    DATA = gravtk.geocenter().from_harmonics(data_Ylms).scale(10.0*(rho_e*rad_e))
+    DATA = (
+        gravtk.geocenter()
+        .from_harmonics(data_Ylms)
+        .scale(10.0 * (rho_e * rad_e))
+    )
     DATA.mean(apply=True)
     # extract date variables
     if DATE:
@@ -330,21 +355,23 @@ def model_degree_one(input_file, LMAX, RAD,
     # output [m,phi]
     m = data_Ylms.m
     # Integration factors (solid angle)
-    int_fact = np.sin(th)*dphi*dth
+    int_fact = np.sin(th) * dphi * dth
     # 4-pi normalization
-    norm = 1.0/(4.0*np.pi)
+    norm = 1.0 / (4.0 * np.pi)
     # calculating cos(m*phi) and sin(m*phi) using Euler's formula
-    m_phi = np.exp(1j * np.einsum("m...,p...->mp...", m, phi))
+    m_phi = np.exp(1j * np.einsum('m...,p...->mp...', m, phi))
 
     # Legendre polynomials for degree 1
-    P10 = np.squeeze(PLM[1,0,:])
-    P11 = np.squeeze(PLM[1,1,:])
+    P10 = np.squeeze(PLM[1, 0, :])
+    P11 = np.squeeze(PLM[1, 1, :])
     # PLM for spherical harmonic degrees 2+ up to LMAX
     # converted into mass and smoothed if specified
-    plmout = np.zeros((LMAX+1, MMAX+1, nlat))
+    plmout = np.zeros((LMAX + 1, MMAX + 1, nlat))
     # convert to smoothed coefficients of mass
     # Convolving plms with degree dependent factor and smoothing
-    plmout[:] = np.einsum("l,l,lmh->lmh", dfactor, wt, PLM[:LMAX+1,:MMAX+1,:])
+    plmout[:] = np.einsum(
+        'l,l,lmh->lmh', dfactor, wt, PLM[: LMAX + 1, : MMAX + 1, :]
+    )
 
     # Initializing 3x3 I-Parameter matrix
     # (see equations 12 and 13 of Swenson et al., 2008)
@@ -352,21 +379,39 @@ def model_degree_one(input_file, LMAX, RAD,
     # I-Parameter matrix accounts for the fact that the GRACE data only
     # includes spherical harmonic degrees greater than or equal to 2
     # C10, C11, S11
-    PC10 = np.einsum("h...,p...->ph...", P10, m_phi[0,:].real)
-    PC11 = np.einsum("h...,p...->ph...", P11, m_phi[1,:].real)
-    PS11 = np.einsum("h...,p...->ph...", P11, m_phi[1,:].imag)
+    PC10 = np.einsum('h...,p...->ph...', P10, m_phi[0, :].real)
+    PC11 = np.einsum('h...,p...->ph...', P11, m_phi[1, :].real)
+    PS11 = np.einsum('h...,p...->ph...', P11, m_phi[1, :].imag)
     # C10: C10, C11, S11
-    IMAT[0,0] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC10, ocean_function, PC10)
-    IMAT[1,0] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC10, ocean_function, PC11)
-    IMAT[2,0] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC10, ocean_function, PS11)
+    IMAT[0, 0] = norm * np.einsum(
+        'h...,ph...,ph...,ph...->...', int_fact, PC10, ocean_function, PC10
+    )
+    IMAT[1, 0] = norm * np.einsum(
+        'h...,ph...,ph...,ph...->...', int_fact, PC10, ocean_function, PC11
+    )
+    IMAT[2, 0] = norm * np.einsum(
+        'h...,ph...,ph...,ph...->...', int_fact, PC10, ocean_function, PS11
+    )
     # C11: C10, C11, S11
-    IMAT[0,1] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC11, ocean_function, PC10)
-    IMAT[1,1] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC11, ocean_function, PC11)
-    IMAT[2,1] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC11, ocean_function, PS11)
+    IMAT[0, 1] = norm * np.einsum(
+        'h...,ph...,ph...,ph...->...', int_fact, PC11, ocean_function, PC10
+    )
+    IMAT[1, 1] = norm * np.einsum(
+        'h...,ph...,ph...,ph...->...', int_fact, PC11, ocean_function, PC11
+    )
+    IMAT[2, 1] = norm * np.einsum(
+        'h...,ph...,ph...,ph...->...', int_fact, PC11, ocean_function, PS11
+    )
     # S11: C10, C11, S11
-    IMAT[0,2] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PS11, ocean_function, PC10)
-    IMAT[1,2] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PS11, ocean_function, PC11)
-    IMAT[2,2] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PS11, ocean_function, PS11)
+    IMAT[0, 2] = norm * np.einsum(
+        'h...,ph...,ph...,ph...->...', int_fact, PS11, ocean_function, PC10
+    )
+    IMAT[1, 2] = norm * np.einsum(
+        'h...,ph...,ph...,ph...->...', int_fact, PS11, ocean_function, PC11
+    )
+    IMAT[2, 2] = norm * np.einsum(
+        'h...,ph...,ph...,ph...->...', int_fact, PS11, ocean_function, PS11
+    )
 
     # get seasonal variations of an initial geocenter correction
     # for use in the land water mass calculation
@@ -391,7 +436,7 @@ def model_degree_one(input_file, LMAX, RAD,
     G.C11 = np.zeros((n_files))
     G.S11 = np.zeros((n_files))
     # DMAT is the degree one matrix ((C10,C11,S11) x Time) in terms of mass
-    DMAT = np.zeros((3,n_files))
+    DMAT = np.zeros((3, n_files))
     # degree 1 iterations
     iteration = gravtk.geocenter()
     iteration.C10 = np.zeros((n_files, max_iter))
@@ -403,46 +448,56 @@ def model_degree_one(input_file, LMAX, RAD,
         # Summing product of plms and c/slms over all SH degrees >= 2
         Ylms = data_Ylms.index(t)
         # subset GRACE to degrees 2+ for calculating ocean mass
-        l2 = slice(2, LMAX+1)
-        pconv = np.einsum("lmh...,lm...->mh...", plmout[l2, :, :], Ylms.ilm[l2, :])
+        l2 = slice(2, LMAX + 1)
+        pconv = np.einsum(
+            'lmh...,lm...->mh...', plmout[l2, :, :], Ylms.ilm[l2, :]
+        )
         # Multiplying by c/s(phi#m) to get surface density in cmwe (lon,lat)
         # ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
         # The summation over spherical harmonic order is in this multiplication
-        rmass = np.einsum("mp...,mh...->ph...", m_phi, pconv).real
+        rmass = np.einsum('mp...,mh...->ph...', m_phi, pconv).real
         # calculate G matrix parameters through a summation of each latitude
         # summation of integration factors, Legendre polynomials,
         # (convolution of order and harmonics) and the ocean mass at t
-        G.C10[t] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC10, ocean_function, rmass)
-        G.C11[t] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PC11, ocean_function, rmass)
-        G.S11[t] = norm*np.einsum("h...,ph...,ph...,ph...->...", int_fact, PS11, ocean_function, rmass)
+        G.C10[t] = norm * np.einsum(
+            'h...,ph...,ph...,ph...->...', int_fact, PC10, ocean_function, rmass
+        )
+        G.C11[t] = norm * np.einsum(
+            'h...,ph...,ph...,ph...->...', int_fact, PC11, ocean_function, rmass
+        )
+        G.S11[t] = norm * np.einsum(
+            'h...,ph...,ph...,ph...->...', int_fact, PS11, ocean_function, rmass
+        )
 
     # calculate degree one solution for each iteration (or single if not)
     while (eps > eps_max) and (n_iter < max_iter):
         # for each file
         for t in range(n_files):
             # calculate eustatic component (can iterate)
-            if (n_iter == 0):
+            if n_iter == 0:
                 # for first iteration (will be only iteration if not ITERATIVE):
                 # seasonal component of geocenter variation for land water
-                data_Ylms.clm[1,0,t] = seasonal_geocenter.C10[t]
-                data_Ylms.clm[1,1,t] = seasonal_geocenter.C11[t]
-                data_Ylms.slm[1,1,t] = seasonal_geocenter.S11[t]
+                data_Ylms.clm[1, 0, t] = seasonal_geocenter.C10[t]
+                data_Ylms.clm[1, 1, t] = seasonal_geocenter.C11[t]
+                data_Ylms.slm[1, 1, t] = seasonal_geocenter.S11[t]
             else:
                 # for all others: use previous iteration of inversion
                 # for each of the geocenter solutions (C10, C11, S11)
-                data_Ylms.clm[1,0,t] = iteration.C10[t,n_iter-1]
-                data_Ylms.clm[1,1,t] = iteration.C11[t,n_iter-1]
-                data_Ylms.slm[1,1,t] = iteration.S11[t,n_iter-1]
+                data_Ylms.clm[1, 0, t] = iteration.C10[t, n_iter - 1]
+                data_Ylms.clm[1, 1, t] = iteration.C11[t, n_iter - 1]
+                data_Ylms.slm[1, 1, t] = iteration.S11[t, n_iter - 1]
 
             # Summing product of plms and c/slms over all SH degrees
             Ylms = data_Ylms.index(t)
-            l1 = slice(1, LMAX+1)
-            pconv = np.einsum("lmh...,lm...->mh...", plmout[l1, :, :], Ylms.ilm[l1, :])
+            l1 = slice(1, LMAX + 1)
+            pconv = np.einsum(
+                'lmh...,lm...->mh...', plmout[l1, :, :], Ylms.ilm[l1, :]
+            )
 
             # Multiplying by c/s(phi#m) to get surface density in cm w.e. (lonxlat)
             # ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
             # The summation over spherical harmonic order is in this multiplication
-            lmass = np.einsum("mp...,mh...->ph...", m_phi, pconv).real
+            lmass = np.einsum('mp...,mh...->ph...', m_phi, pconv).real
 
             # use sea level fingerprints or eustatic from land components
             if FINGERPRINT:
@@ -452,40 +507,81 @@ def model_degree_one(input_file, LMAX, RAD,
                 # NOTE: this is an unscaled estimate that uses the
                 # buffered land function when solving the sea-level equation.
                 # possible improvement using scaled estimate with real coastlines
-                land_Ylms = gravtk.gen_stokes(land_function*lmass,
-                    landsea.lon, landsea.lat, UNITS=1, LMIN=0, LMAX=EXPANSION,
-                    PLM=PLM, LOVE=LOVE)
+                land_Ylms = gravtk.gen_stokes(
+                    land_function * lmass,
+                    landsea.lon,
+                    landsea.lat,
+                    UNITS=1,
+                    LMIN=0,
+                    LMAX=EXPANSION,
+                    PLM=PLM,
+                    LOVE=LOVE,
+                )
                 # 2) calculate sea level fingerprints of land mass at time t
                 # use maximum of 3 iterations for computational efficiency
-                sea_level = gravtk.sea_level_equation(land_Ylms.clm, land_Ylms.slm,
-                    landsea.lon, landsea.lat, land_function, LMAX=EXPANSION,
-                    LOVE=LOVE, BODY_TIDE_LOVE=0, FLUID_LOVE=0, ITERATIONS=3,
-                    POLAR=True, PLM=PLM, FILL_VALUE=0)
+                sea_level = gravtk.sea_level_equation(
+                    land_Ylms.clm,
+                    land_Ylms.slm,
+                    landsea.lon,
+                    landsea.lat,
+                    land_function,
+                    LMAX=EXPANSION,
+                    LOVE=LOVE,
+                    BODY_TIDE_LOVE=0,
+                    FLUID_LOVE=0,
+                    ITERATIONS=3,
+                    POLAR=True,
+                    PLM=PLM,
+                    FILL_VALUE=0,
+                )
                 # 3) convert sea level fingerprints into spherical harmonics
-                slf_Ylms = gravtk.gen_stokes(sea_level, landsea.lon, landsea.lat,
-                    UNITS=1, LMIN=0, LMAX=1, PLM=PLM[:2,:2,:], LOVE=LOVE)
+                slf_Ylms = gravtk.gen_stokes(
+                    sea_level,
+                    landsea.lon,
+                    landsea.lat,
+                    UNITS=1,
+                    LMIN=0,
+                    LMAX=1,
+                    PLM=PLM[:2, :2, :],
+                    LOVE=LOVE,
+                )
                 # 4) convert the slf degree 1 harmonics to mass with dfactor
-                eustatic = gravtk.geocenter().from_harmonics(slf_Ylms).scale(dfactor[1])
+                eustatic = (
+                    gravtk.geocenter()
+                    .from_harmonics(slf_Ylms)
+                    .scale(dfactor[1])
+                )
             else:
                 # steps to calculate eustatic component from land-water change:
                 # 1) calculate total mass of 1 cm of ocean height (calculated above)
                 # 2) calculate total land mass at time t (data*land function)
                 # NOTE: possible improvement using the sea-level equation to solve
                 # for the spatial pattern of sea level from the land water mass
-                land_Ylms = gravtk.gen_stokes(land_function*lmass,
-                    landsea.lon, landsea.lat, UNITS=1, LMIN=0, LMAX=1,
-                    PLM=PLM[:2,:2,:], LOVE=LOVE)
+                land_Ylms = gravtk.gen_stokes(
+                    land_function * lmass,
+                    landsea.lon,
+                    landsea.lat,
+                    UNITS=1,
+                    LMIN=0,
+                    LMAX=1,
+                    PLM=PLM[:2, :2, :],
+                    LOVE=LOVE,
+                )
                 # 3) calculate ratio between the total land mass and the total mass
                 # of 1 cm of ocean height (negative as positive land = sea level drop)
                 # this converts the total land change to ocean height change
-                eustatic_ratio = -land_Ylms.clm[0,0]/ocean_Ylms.clm[0,0]
+                eustatic_ratio = -land_Ylms.clm[0, 0] / ocean_Ylms.clm[0, 0]
                 # 4) scale degree one coefficients of ocean function with ratio
                 # and convert the eustatic degree 1 harmonics to mass with dfactor
-                scale_factor = eustatic_ratio*dfactor[1]
-                eustatic = gravtk.geocenter().from_harmonics(ocean_Ylms).scale(scale_factor)
+                scale_factor = eustatic_ratio * dfactor[1]
+                eustatic = (
+                    gravtk.geocenter()
+                    .from_harmonics(ocean_Ylms)
+                    .scale(scale_factor)
+                )
 
             # eustatic coefficients of degree 1
-            CMAT = np.array([eustatic.C10,eustatic.C11,eustatic.S11])
+            CMAT = np.array([eustatic.C10, eustatic.C11, eustatic.S11])
             # G Matrix for time t
             GMAT = np.array([G.C10[t], G.C11[t], G.S11[t]])
             # calculate degree 1 solution for iteration
@@ -493,28 +589,41 @@ def model_degree_one(input_file, LMAX, RAD,
             # whereby the initial degree one coefficients are used to update
             # the G Matrix until (C10, C11, S11) converge
             # calculates min(eustatic from land - measured ocean)
-            if (SOLVER == 'inv'):
-                DMAT[:,t] = np.dot(np.linalg.inv(IMAT), (CMAT-GMAT))
-            elif (SOLVER == 'lstsq'):
-                DMAT[:,t] = np.linalg.lstsq(IMAT, (CMAT-GMAT), rcond=-1)[0]
+            if SOLVER == 'inv':
+                DMAT[:, t] = np.dot(np.linalg.inv(IMAT), (CMAT - GMAT))
+            elif SOLVER == 'lstsq':
+                DMAT[:, t] = np.linalg.lstsq(IMAT, (CMAT - GMAT), rcond=-1)[0]
             elif SOLVER in ('gelsd', 'gelsy', 'gelss'):
-                DMAT[:,t], res, rnk, s = scipy.linalg.lstsq(IMAT, (CMAT-GMAT),
-                    lapack_driver=SOLVER)
+                DMAT[:, t], res, rnk, s = scipy.linalg.lstsq(
+                    IMAT, (CMAT - GMAT), lapack_driver=SOLVER
+                )
             # save geocenter for iteration and time t
-            iteration.C10[t,n_iter] = DMAT[0,t]/dfactor[1]
-            iteration.C11[t,n_iter] = DMAT[1,t]/dfactor[1]
-            iteration.S11[t,n_iter] = DMAT[2,t]/dfactor[1]
+            iteration.C10[t, n_iter] = DMAT[0, t] / dfactor[1]
+            iteration.C11[t, n_iter] = DMAT[1, t] / dfactor[1]
+            iteration.S11[t, n_iter] = DMAT[2, t] / dfactor[1]
         # remove mean of each solution for iteration
-        iteration.C10[:,n_iter] -= iteration.C10[:,n_iter].mean()
-        iteration.C11[:,n_iter] -= iteration.C11[:,n_iter].mean()
-        iteration.S11[:,n_iter] -= iteration.S11[:,n_iter].mean()
+        iteration.C10[:, n_iter] -= iteration.C10[:, n_iter].mean()
+        iteration.C11[:, n_iter] -= iteration.C11[:, n_iter].mean()
+        iteration.S11[:, n_iter] -= iteration.S11[:, n_iter].mean()
         # calculate difference between original geocenter coefficients and the
         # calculated coefficients for each of the geocenter solutions
-        sigma_C10 = np.sum((data_Ylms.clm[1,0,:] - iteration.C10[:,n_iter])**2)
-        sigma_C11 = np.sum((data_Ylms.clm[1,1,:] - iteration.C11[:,n_iter])**2)
-        sigma_S11 = np.sum((data_Ylms.slm[1,1,:] - iteration.S11[:,n_iter])**2)
-        power = data_Ylms.clm[1,0,t]**2 + data_Ylms.clm[1,1,t]**2 + data_Ylms.slm[1,1,t]**2
-        eps = np.sqrt(sigma_C10 + sigma_C11 + sigma_S11)/np.sqrt(np.sum(power))
+        sigma_C10 = np.sum(
+            (data_Ylms.clm[1, 0, :] - iteration.C10[:, n_iter]) ** 2
+        )
+        sigma_C11 = np.sum(
+            (data_Ylms.clm[1, 1, :] - iteration.C11[:, n_iter]) ** 2
+        )
+        sigma_S11 = np.sum(
+            (data_Ylms.slm[1, 1, :] - iteration.S11[:, n_iter]) ** 2
+        )
+        power = (
+            data_Ylms.clm[1, 0, t] ** 2
+            + data_Ylms.clm[1, 1, t] ** 2
+            + data_Ylms.slm[1, 1, t] ** 2
+        )
+        eps = np.sqrt(sigma_C10 + sigma_C11 + sigma_S11) / np.sqrt(
+            np.sum(power)
+        )
         # add 1 to n_iter counter
         n_iter += 1
 
@@ -522,15 +631,15 @@ def model_degree_one(input_file, LMAX, RAD,
     # for each of the geocenter solutions (C10, C11, S11)
     # for the iterative case this will be the final iteration
     DEG1 = gravtk.geocenter()
-    DEG1.C10,DEG1.C11,DEG1.S11 = DMAT/dfactor[1]
+    DEG1.C10, DEG1.C11, DEG1.S11 = DMAT / dfactor[1]
     DEG1.mean(apply=True)
     # calculate harmonics in mm w.e.
-    mmwe = DEG1.scale(10.0*(rho_e*rad_e))
+    mmwe = DEG1.scale(10.0 * (rho_e * rad_e))
 
     # output degree 1 coefficients
     # 1: mm water equivalent of recovered
     # 2: mm water equivalent of actual
-    args = (FILE_PREFIX,slf_str,iter_str,ds_str)
+    args = (FILE_PREFIX, slf_str, iter_str, ds_str)
     FILE1 = OUTPUT_DIRECTORY.joinpath('{0}{1}{2}mmwe{3}.txt'.format(*args))
     fid1 = FILE1.open(mode='w', encoding='utf8')
     output_files.append(FILE1)
@@ -538,20 +647,28 @@ def model_degree_one(input_file, LMAX, RAD,
     fid2 = FILE2.open(mode='w', encoding='utf8')
     output_files.append(FILE2)
     # print Swenson file headers
-    print("  Degree 1 coefficients, mm equivalent water thickness", file=fid1)
-    print("  Degree 1 coefficients, mm equivalent water thickness", file=fid2)
+    print('  Degree 1 coefficients, mm equivalent water thickness', file=fid1)
+    print('  Degree 1 coefficients, mm equivalent water thickness', file=fid2)
     print("  format='(4f9.2,i9)'", file=fid1)
     print("  format='(4f9.2,i9)'", file=fid2)
-    args = ['Time','C10','C11','S11','Month']
+    args = ['Time', 'C10', 'C11', 'S11', 'Month']
     print(''.join('{:>9}'.format(s) for s in args), file=fid1)
     print(''.join('{:>9}'.format(s) for s in args), file=fid2)
     # for each file
     for t in range(n_files):
         # output geocenter coefficients to file
-        print('{0:9.2f}{1:9.2f}{2:9.2f}{3:9.2f}      {4:03d}'.format(tdec[t],
-            mmwe.C10[t], mmwe.C11[t], mmwe.S11[t], mon[t]), file=fid1)
-        print('{0:9.2f}{1:9.2f}{2:9.2f}{3:9.2f}      {4:03d}'.format(tdec[t],
-            DATA.C10[t], DATA.C11[t], DATA.S11[t], mon[t]), file=fid2)
+        print(
+            '{0:9.2f}{1:9.2f}{2:9.2f}{3:9.2f}      {4:03d}'.format(
+                tdec[t], mmwe.C10[t], mmwe.C11[t], mmwe.S11[t], mon[t]
+            ),
+            file=fid1,
+        )
+        print(
+            '{0:9.2f}{1:9.2f}{2:9.2f}{3:9.2f}      {4:03d}'.format(
+                tdec[t], DATA.C10[t], DATA.C11[t], DATA.S11[t], mon[t]
+            ),
+            file=fid2,
+        )
     # close the output files
     fid1.close()
     fid2.close()
@@ -563,8 +680,9 @@ def model_degree_one(input_file, LMAX, RAD,
     if PLOT:
         # 3 row plot (C10, C11 and S11)
         ax = {}
-        fig, (ax[0], ax[1], ax[2]) = plt.subplots(num=1, nrows=3, sharex=True,
-            sharey=True, figsize=(6,9))
+        fig, (ax[0], ax[1], ax[2]) = plt.subplots(
+            num=1, nrows=3, sharex=True, sharey=True, figsize=(6, 9)
+        )
         # plot original geocenter
         ax[0].plot(tdec, DATA.C10, 'b', lw=2)
         ax[1].plot(tdec, DATA.C11, 'b', lw=2)
@@ -578,24 +696,32 @@ def model_degree_one(input_file, LMAX, RAD,
         ax[1].set_ylabel('[mm]', fontsize=14)
         ax[2].set_ylabel('[mm]', fontsize=14)
         ax[2].set_xlabel('Time [Yr]', fontsize=14)
-        #ax[2].set_xlim(2003,2007)
-        #ax[2].set_ylim(-6,6)
-        #ax[2].xaxis.set_ticks(np.arange(2003,2008,1))
-        #ax[2].xaxis.set_minor_locator(MultipleLocator(0.25))
-        #ax[2].yaxis.set_ticks(np.arange(-6,8,2))
+        # ax[2].set_xlim(2003,2007)
+        # ax[2].set_ylim(-6,6)
+        # ax[2].xaxis.set_ticks(np.arange(2003,2008,1))
+        # ax[2].xaxis.set_minor_locator(MultipleLocator(0.25))
+        # ax[2].yaxis.set_ticks(np.arange(-6,8,2))
         ax[2].xaxis.get_major_formatter().set_useOffset(False)
         # add axis labels and adjust font sizes for axis ticks
-        for i,lbl in enumerate(['C10','C11','S11']):
+        for i, lbl in enumerate(['C10', 'C11', 'S11']):
             # axis label
-            artist = matplotlib.offsetbox.AnchoredText(lbl, pad=0.0,
-                frameon=False, loc=2, prop=dict(size=16,weight='bold'))
+            artist = matplotlib.offsetbox.AnchoredText(
+                lbl,
+                pad=0.0,
+                frameon=False,
+                loc=2,
+                prop=dict(size=16, weight='bold'),
+            )
             ax[i].add_artist(artist)
             # axes tick adjustments
-            ax[i].tick_params(axis='both', which='both',
-                labelsize=14, direction='in')
+            ax[i].tick_params(
+                axis='both', which='both', labelsize=14, direction='in'
+            )
         # adjust locations of subplots and save to file
-        fig.subplots_adjust(left=0.1,right=0.96,bottom=0.06,top=0.98,hspace=0.1)
-        args = (FILE_PREFIX,slf_str,iter_str,ds_str)
+        fig.subplots_adjust(
+            left=0.1, right=0.96, bottom=0.06, top=0.98, hspace=0.1
+        )
+        args = (FILE_PREFIX, slf_str, iter_str, ds_str)
         FILE = '{0}{1}{2}Comparison{3}.pdf'.format(*args)
         PLOT1 = OUTPUT_DIRECTORY.joinpath(FILE)
         plt.savefig(PLOT1, format='pdf')
@@ -608,37 +734,54 @@ def model_degree_one(input_file, LMAX, RAD,
     if PLOT and ITERATIVE:
         # 3 row plot (C10, C11 and S11)
         ax = {}
-        fig, (ax[0],ax[1],ax[2]) = plt.subplots(num=1, nrows=3, sharex=True,
-            figsize=(6,9))
+        fig, (ax[0], ax[1], ax[2]) = plt.subplots(
+            num=1, nrows=3, sharex=True, figsize=(6, 9)
+        )
         # show solutions for each iteration
-        plot_colors = iter(cm.rainbow(np.linspace(0,1,n_iter)))
+        plot_colors = iter(cm.rainbow(np.linspace(0, 1, n_iter)))
         for j in range(n_iter):
             color_j = next(plot_colors)
             # C10, C11 and S11
-            ax[0].plot(mon,10.*(iteration.C10[:,j]*dfactor[1]),color=color_j)
-            ax[1].plot(mon,10.*(iteration.C11[:,j]*dfactor[1]),color=color_j)
-            ax[2].plot(mon,10.*(iteration.S11[:,j]*dfactor[1]),color=color_j)
+            ax[0].plot(
+                mon, 10.0 * (iteration.C10[:, j] * dfactor[1]), color=color_j
+            )
+            ax[1].plot(
+                mon, 10.0 * (iteration.C11[:, j] * dfactor[1]), color=color_j
+            )
+            ax[2].plot(
+                mon, 10.0 * (iteration.S11[:, j] * dfactor[1]), color=color_j
+            )
         # labels and set limits
         ax[0].set_ylabel('mm', fontsize=14)
         ax[1].set_ylabel('mm', fontsize=14)
         ax[2].set_ylabel('mm', fontsize=14)
         ax[2].set_xlabel('Grace Month', fontsize=14)
-        ax[2].set_xlim(np.floor(mon[0]/10.)*10.,np.ceil(mon[-1]/10.)*10.)
+        ax[2].set_xlim(
+            np.floor(mon[0] / 10.0) * 10.0, np.ceil(mon[-1] / 10.0) * 10.0
+        )
         ax[2].xaxis.set_minor_locator(MultipleLocator(5))
         ax[2].xaxis.get_major_formatter().set_useOffset(False)
         # add axis labels and adjust font sizes for axis ticks
-        fig_labels = ['C10','C11','S11']
+        fig_labels = ['C10', 'C11', 'S11']
         for i in range(3):
             # axis label
-            artist = matplotlib.offsetbox.AnchoredText(fig_labels[i], pad=0.,
-                frameon=False, loc=2, prop=dict(size=16,weight='bold'))
+            artist = matplotlib.offsetbox.AnchoredText(
+                fig_labels[i],
+                pad=0.0,
+                frameon=False,
+                loc=2,
+                prop=dict(size=16, weight='bold'),
+            )
             ax[i].add_artist(artist)
             # axes tick adjustments
-            ax[i].tick_params(axis='both', which='both',
-                labelsize=14, direction='in')
+            ax[i].tick_params(
+                axis='both', which='both', labelsize=14, direction='in'
+            )
         # adjust locations of subplots and save to file
-        fig.subplots_adjust(left=0.12,right=0.94,bottom=0.06,top=0.98,hspace=0.1)
-        args = (FILE_PREFIX,slf_str,ds_str)
+        fig.subplots_adjust(
+            left=0.12, right=0.94, bottom=0.06, top=0.98, hspace=0.1
+        )
+        args = (FILE_PREFIX, slf_str, ds_str)
         FILE = '{0}{1}Geocenter_Iterative{2}.pdf'.format(*args)
         PLOT2 = OUTPUT_DIRECTORY.joinpath(FILE)
         plt.savefig(PLOT2, format='pdf')
@@ -650,10 +793,11 @@ def model_degree_one(input_file, LMAX, RAD,
     # return the list of output files and the number of iterations
     return (output_files, n_iter)
 
+
 # PURPOSE: print a file log for the model degree one analysis
 def output_log_file(input_arguments, output_files, n_iter):
     # format: model_degree_one_run_2002-04-01_PID-70335.log
-    args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
+    args = (time.strftime('%Y-%m-%d', time.localtime()), os.getpid())
     LOGFILE = 'model_degree_one_run_{0}_PID-{1:d}.log'.format(*args)
     DIRECTORY = pathlib.Path(input_arguments.output_directory)
     # create a unique log and open the log file
@@ -673,10 +817,11 @@ def output_log_file(input_arguments, output_files, n_iter):
     # close the log file
     fid.close()
 
+
 # PURPOSE: print a error file log for the model degree one analysis
 def output_error_log_file(input_arguments):
     # format: model_degree_one_failed_run_2002-04-01_PID-70335.log
-    args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
+    args = (time.strftime('%Y-%m-%d', time.localtime()), os.getpid())
     LOGFILE = 'model_degree_one_failed_run_{0}_PID-{1:d}.log'.format(*args)
     DIRECTORY = pathlib.Path(input_arguments.output_directory)
     # create a unique log and open the log file
@@ -692,6 +837,7 @@ def output_error_log_file(input_arguments):
     # close the log file
     fid.close()
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
@@ -699,96 +845,162 @@ def arguments():
             coefficients of degree 2 and greater for testing the reliability
             of the algorithm
             """,
-        fromfile_prefix_chars="@"
+        fromfile_prefix_chars='@',
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
-    parser.add_argument('infile',
+    parser.add_argument(
+        'infile',
         type=pathlib.Path,
-        help='Input index file with spherical harmonic data files')
+        help='Input index file with spherical harmonic data files',
+    )
     # output working data directory
-    parser.add_argument('--output-directory','-O',
+    parser.add_argument(
+        '--output-directory',
+        '-O',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Output directory for files')
-    parser.add_argument('--file-prefix','-P',
-        type=str,
-        help='Prefix string for output files')
-    parser.add_argument('--date','-D',
-        default=False, action='store_true',
-        help='Model harmonics are a time series')
+        help='Output directory for files',
+    )
+    parser.add_argument(
+        '--file-prefix', '-P', type=str, help='Prefix string for output files'
+    )
+    parser.add_argument(
+        '--date',
+        '-D',
+        default=False,
+        action='store_true',
+        help='Model harmonics are a time series',
+    )
     # different treatments of the load Love numbers
     # 0: Han and Wahr (1995) values from PREM
     # 1: Gegout (2005) values from PREM
     # 2: Wang et al. (2012) values from PREM
     # 3: Wang et al. (2012) values from PREM with hard sediment
     # 4: Wang et al. (2012) values from PREM with soft sediment
-    parser.add_argument('--love','-n',
-        type=int, default=0, choices=[0,1,2,3,4],
-        help='Treatment of the Load Love numbers')
-    parser.add_argument('--kl','-k',
-        type=float, default=0.021,
-        help='Degree 1 gravitational Load Love number')
+    parser.add_argument(
+        '--love',
+        '-n',
+        type=int,
+        default=0,
+        choices=[0, 1, 2, 3, 4],
+        help='Treatment of the Load Love numbers',
+    )
+    parser.add_argument(
+        '--kl',
+        '-k',
+        type=float,
+        default=0.021,
+        help='Degree 1 gravitational Load Love number',
+    )
     # Gaussian smoothing radius (km)
-    parser.add_argument('--radius','-R',
-        type=float, default=0,
-        help='Gaussian smoothing radius (km)')
+    parser.add_argument(
+        '--radius',
+        '-R',
+        type=float,
+        default=0,
+        help='Gaussian smoothing radius (km)',
+    )
     # Use a decorrelation (destriping) filter
-    parser.add_argument('--destripe','-d',
-        default=False, action='store_true',
-        help='Use decorrelation (destriping) filter')
+    parser.add_argument(
+        '--destripe',
+        '-d',
+        default=False,
+        action='store_true',
+        help='Use decorrelation (destriping) filter',
+    )
     # input data format (ascii, netCDF4, HDF5)
-    parser.add_argument('--format','-F',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
-        help='Input data format for ocean models')
+    parser.add_argument(
+        '--format',
+        '-F',
+        type=str,
+        default='netCDF4',
+        choices=['ascii', 'netCDF4', 'HDF5'],
+        help='Input data format for ocean models',
+    )
     # run with iterative scheme
-    parser.add_argument('--iterative',
-        default=False, action='store_true',
-        help='Iterate degree one solutions')
+    parser.add_argument(
+        '--iterative',
+        default=False,
+        action='store_true',
+        help='Iterate degree one solutions',
+    )
     # least squares solver
-    choices = ('inv','lstsq','gelsd', 'gelsy', 'gelss')
-    parser.add_argument('--solver','-s',
-        type=str, default='lstsq', choices=choices,
-        help='Least squares solver for degree one solutions')
+    choices = ('inv', 'lstsq', 'gelsd', 'gelsy', 'gelss')
+    parser.add_argument(
+        '--solver',
+        '-s',
+        type=str,
+        default='lstsq',
+        choices=choices,
+        help='Least squares solver for degree one solutions',
+    )
     # run with sea level fingerprints
-    parser.add_argument('--fingerprint',
-        default=False, action='store_true',
-        help='Redistribute land-water flux using sea level fingerprints')
-    parser.add_argument('--expansion','-e',
-        type=int, default=240,
-        help='Spherical harmonic expansion for sea level fingerprints')
+    parser.add_argument(
+        '--fingerprint',
+        default=False,
+        action='store_true',
+        help='Redistribute land-water flux using sea level fingerprints',
+    )
+    parser.add_argument(
+        '--expansion',
+        '-e',
+        type=int,
+        default=240,
+        help='Spherical harmonic expansion for sea level fingerprints',
+    )
     # land-sea mask for calculating ocean mass and land water flux
-    land_mask_file = gravtk.utilities.get_data_path(['data','land_fcn_300km.nc'])
-    parser.add_argument('--mask',
+    land_mask_file = gravtk.utilities.get_data_path(
+        ['data', 'land_fcn_300km.nc']
+    )
+    parser.add_argument(
+        '--mask',
         type=pathlib.Path,
         default=land_mask_file,
-        help='Land-sea mask for calculating ocean mass and land water flux')
+        help='Land-sea mask for calculating ocean mass and land water flux',
+    )
     # create output plots
-    parser.add_argument('--plot','-p',
-        default=False, action='store_true',
-        help='Create output plots for components and iterations')
+    parser.add_argument(
+        '--plot',
+        '-p',
+        default=False,
+        action='store_true',
+        help='Create output plots for components and iterations',
+    )
     # Output log file for each job in forms
     # model_degree_one_run_2002-04-01_PID-00000.log
     # model_degree_one_failed_run_2002-04-01_PID-00000.log
-    parser.add_argument('--log',
-        default=False, action='store_true',
-        help='Output log file for each job')
+    parser.add_argument(
+        '--log',
+        default=False,
+        action='store_true',
+        help='Output log file for each job',
+    )
     # print information about processing run
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of processing run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of processing run',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -798,7 +1010,7 @@ def main():
     try:
         info(args)
         # run model_degree_one algorithm with parameters
-        output_files,n_iter = model_degree_one(
+        output_files, n_iter = model_degree_one(
             args.infile,
             args.lmax,
             args.radius,
@@ -816,18 +1028,20 @@ def main():
             EXPANSION=args.expansion,
             LANDMASK=args.mask,
             PLOT=args.plot,
-            MODE=args.mode)
+            MODE=args.mode,
+        )
     except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
-        if args.log:# write failed job completion log file
+        if args.log:  # write failed job completion log file
             output_error_log_file(args)
     else:
-        if args.log:# write successful job completion log file
-            output_log_file(args,output_files,n_iter)
+        if args.log:  # write successful job completion log file
+            output_log_file(args, output_files, n_iter)
+
 
 # run main program
 if __name__ == '__main__':

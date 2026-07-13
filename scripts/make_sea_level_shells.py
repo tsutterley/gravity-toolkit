@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 make_sea_level_shells.py
 Written by Tyler Sutterley (05/2023)
 
@@ -63,6 +63,7 @@ UPDATE HISTORY:
     Updated 11/2018: can vary the land-sea mask
     Written 09/2018
 """
+
 from __future__ import print_function
 
 import sys
@@ -74,6 +75,7 @@ import traceback
 import numpy as np
 import gravity_toolkit as gravtk
 
+
 # PURPOSE: keep track of threads
 def info(args):
     logging.info(pathlib.Path(sys.argv[0]).name)
@@ -83,8 +85,10 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
+
 # PURPOSE: create a shell script for running the sea level program
-def make_sea_level_shells(input_file,
+def make_sea_level_shells(
+    input_file,
     DATE=False,
     LOVE_NUMBERS=0,
     BODY_TIDE_LOVE=0,
@@ -97,8 +101,8 @@ def make_sea_level_shells(input_file,
     OUTPUT_DIRECTORY=None,
     FILE_PREFIX=None,
     VERBOSE=0,
-    MODE=0o775):
-
+    MODE=0o775,
+):
     # create output directory if currently non-existent
     OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
     if not OUTPUT_DIRECTORY.exists():
@@ -134,8 +138,9 @@ def make_sea_level_shells(input_file,
     verbosity_flag = ' --verbose' if VERBOSE else ''
 
     # input spherical harmonic data and get GRACE/GRACE-FO months
-    Ylms = gravtk.harmonics().from_index(input_file, format=DATAFORM,
-        date=True, sort=True)
+    Ylms = gravtk.harmonics().from_index(
+        input_file, format=DATAFORM, date=True, sort=True
+    )
 
     # create sea level shell script
     f1 = f'{FILE_PREFIX}INDEX_L{EXPANSION:d}.sh'
@@ -146,110 +151,176 @@ def make_sea_level_shells(input_file,
     # output file format
     file_format = '{0}L{1:d}_{2:03d}.{3}'
     # formatting string for each line in the shell script
-    shell_format='{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11} --mode {12} -V {13} {14}'
+    shell_format = (
+        '{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11} --mode {12} -V {13} {14}'
+    )
     # for each grace month and input file
     for grace_month in sorted(Ylms.month):
         # input file
         input_Ylms = Ylms.subset(grace_month)
-        input_load, = input_Ylms.filename
+        (input_load,) = input_Ylms.filename
         # output file
-        args = (FILE_PREFIX,EXPANSION,grace_month,suffix[DATAFORM])
+        args = (FILE_PREFIX, EXPANSION, grace_month, suffix[DATAFORM])
         output_slf = OUTPUT_DIRECTORY.joinpath(file_format.format(*args))
         # print shell script commands
-        args = (child_program, expansion_flag, polar_flag, love_flag,
-            body_flag, fluid_flag, reference_flag, date_flag, mask_flag,
-            iter_flag, format_flag, verbosity_flag, oct(MODE),
+        args = (
+            child_program,
+            expansion_flag,
+            polar_flag,
+            love_flag,
+            body_flag,
+            fluid_flag,
+            reference_flag,
+            date_flag,
+            mask_flag,
+            iter_flag,
+            format_flag,
+            verbosity_flag,
+            oct(MODE),
             Ylms.compressuser(input_load),
-            gravtk.spatial().compressuser(output_slf))
+            gravtk.spatial().compressuser(output_slf),
+        )
         print(shell_format.format(*args), file=fid)
     # close the shell script
     fid.close()
     # change the permissions mode of the shell script
     output_shell_script.chmod(mode=MODE)
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Creates a shell script for running sea level code
             """,
-        fromfile_prefix_chars="@"
+        fromfile_prefix_chars='@',
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
-    parser.add_argument('infile',
+    parser.add_argument(
+        'infile',
         type=pathlib.Path,
-        help='Input index file with spherical harmonic data files')
+        help='Input index file with spherical harmonic data files',
+    )
     # output working data directory
-    parser.add_argument('--output-directory','-O',
+    parser.add_argument(
+        '--output-directory',
+        '-O',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Output directory for sea level files')
-    parser.add_argument('--file-prefix','-P',
-        type=str,
-        help='Prefix string for output files')
-    parser.add_argument('--date','-D',
-        default=False, action='store_true',
-        help='Model harmonics are a time series')
+        help='Output directory for sea level files',
+    )
+    parser.add_argument(
+        '--file-prefix', '-P', type=str, help='Prefix string for output files'
+    )
+    parser.add_argument(
+        '--date',
+        '-D',
+        default=False,
+        action='store_true',
+        help='Model harmonics are a time series',
+    )
     # different treatments of the load Love numbers
     # 0: Han and Wahr (1995) values from PREM
     # 1: Gegout (2005) values from PREM
     # 2: Wang et al. (2012) values from PREM
     # 3: Wang et al. (2012) values from PREM with hard sediment
     # 4: Wang et al. (2012) values from PREM with soft sediment
-    parser.add_argument('--love','-n',
-        type=int, default=0, choices=[0,1,2,3,4],
-        help='Treatment of the Load Love numbers')
+    parser.add_argument(
+        '--love',
+        '-n',
+        type=int,
+        default=0,
+        choices=[0, 1, 2, 3, 4],
+        help='Treatment of the Load Love numbers',
+    )
     # different treatments of the body tide Love numbers of degree 2
     # 0: Wahr (1981) and Wahr (1985) values from PREM
     # 1: Farrell (1972) values from Gutenberg-Bullen oceanic mantle model
-    parser.add_argument('--body','-b',
-        type=int, default=0, choices=[0,1],
-        help='Treatment of the body tide Love number')
+    parser.add_argument(
+        '--body',
+        '-b',
+        type=int,
+        default=0,
+        choices=[0, 1],
+        help='Treatment of the body tide Love number',
+    )
     # different treatments of the fluid Love number of gravitational potential
     # 0: Han and Wahr (1989) fluid love number
     # 1: Munk and MacDonald (1960) secular love number
     # 2: Munk and MacDonald (1960) fluid love number
     # 3: Lambeck (1980) fluid love number
-    parser.add_argument('--fluid','-f',
-        type=int, default=0, choices=[0,1,2,3],
-        help='Treatment of the fluid Love number')
+    parser.add_argument(
+        '--fluid',
+        '-f',
+        type=int,
+        default=0,
+        choices=[0, 1, 2, 3],
+        help='Treatment of the fluid Love number',
+    )
     # option for polar feedback
-    parser.add_argument('--polar-feedback',
-        default=False, action='store_true',
-        help='Include effects of polar feedback')
+    parser.add_argument(
+        '--polar-feedback',
+        default=False,
+        action='store_true',
+        help='Include effects of polar feedback',
+    )
     # option for setting reference frame for gravitational load love number
     # reference frame options (CF, CM, CE)
-    parser.add_argument('--reference',
-        type=str.upper, default='CF', choices=['CF','CM','CE'],
-        help='Reference frame for load Love numbers')
+    parser.add_argument(
+        '--reference',
+        type=str.upper,
+        default='CF',
+        choices=['CF', 'CM', 'CE'],
+        help='Reference frame for load Love numbers',
+    )
     # input data format (ascii, netCDF4, HDF5)
-    parser.add_argument('--format','-F',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
-        help='Input/output data format')
+    parser.add_argument(
+        '--format',
+        '-F',
+        type=str,
+        default='netCDF4',
+        choices=['ascii', 'netCDF4', 'HDF5'],
+        help='Input/output data format',
+    )
     # sea level fingerprint parameters
-    parser.add_argument('--expansion','-e',
-        type=int, default=240,
-        help='Spherical harmonic expansion for sea level fingerprints')
+    parser.add_argument(
+        '--expansion',
+        '-e',
+        type=int,
+        default=240,
+        help='Spherical harmonic expansion for sea level fingerprints',
+    )
     # land-sea mask for redistributing mascon mass and land water flux
-    parser.add_argument('--mask',
+    parser.add_argument(
+        '--mask',
         type=pathlib.Path,
-        help='Land-sea mask for redistributing mascon mass and land water flux')
+        help='Land-sea mask for redistributing mascon mass and land water flux',
+    )
     # print information about each input and output file
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of run',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -259,7 +330,8 @@ def main():
     try:
         info(args)
         # run make_sea_level_shells algorithm with parameters
-        make_sea_level_shells(args.infile,
+        make_sea_level_shells(
+            args.infile,
             DATE=args.date,
             LOVE_NUMBERS=args.love,
             BODY_TIDE_LOVE=args.body,
@@ -272,13 +344,15 @@ def main():
             OUTPUT_DIRECTORY=args.output_directory,
             FILE_PREFIX=args.file_prefix,
             VERBOSE=args.verbose,
-            MODE=args.mode)
+            MODE=args.mode,
+        )
     except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
+
 
 # run main program
 if __name__ == '__main__':

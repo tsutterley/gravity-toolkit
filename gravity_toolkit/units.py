@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 units.py
 Written by Tyler Sutterley (05/2024)
 Contributions by Hugo Lecomte
@@ -26,9 +26,11 @@ UPDATE HISTORY:
     Updated 04/2020: include earth parameters as attributes
     Written 03/2020
 """
+
 from __future__ import annotations
 
 import numpy as np
+
 
 class units(object):
     r"""
@@ -54,12 +56,15 @@ class units(object):
     l: int
         spherical harmonic degree up to ``lmax``
     """
+
     np.seterr(invalid='ignore')
-    def __init__(self,
-                 lmax: int | None = None,
-                 a_axis: float = 6.378137e8,
-                 flat: float = 1.0/298.257223563
-        ):
+
+    def __init__(
+        self,
+        lmax: int | None = None,
+        a_axis: float = 6.378137e8,
+        flat: float = 1.0 / 298.257223563,
+    ):
         # Earth Parameters
         # universal gravitational constant [dyn*cm^2/g^2]
         self.G = 6.67430e-8
@@ -91,31 +96,27 @@ class units(object):
         self.Pa = None
         self.lmax = lmax
         # calculate spherical harmonic degree (0 is falsy)
-        self.l = np.arange(self.lmax+1) if (self.lmax is not None) else None
+        self.l = np.arange(self.lmax + 1) if (self.lmax is not None) else None
 
     @property
     def b_axis(self) -> float:
-        """semi-minor axis of the Earth's ellipsoid in cm
-        """
-        return (1.0 - self.flat)*self.a_axis
+        """semi-minor axis of the Earth's ellipsoid in cm"""
+        return (1.0 - self.flat) * self.a_axis
 
     @property
     def rad_e(self) -> float:
-        """average radius of the Earth in cm with the same volume as the ellipsoid
-        """
-        return self.a_axis*(1.0 - self.flat)**(1.0/3.0)
+        """average radius of the Earth in cm with the same volume as the ellipsoid"""
+        return self.a_axis * (1.0 - self.flat) ** (1.0 / 3.0)
 
     @property
     def rho_e(self) -> float:
-        r"""average density of the Earth in g/cm\ :sup:`3`
-        """
-        return 0.75*self.GM/(self.G*np.pi*self.rad_e**3)
+        r"""average density of the Earth in g/cm\ :sup:`3`"""
+        return 0.75 * self.GM / (self.G * np.pi * self.rad_e**3)
 
     @property
     def mass(self) -> float:
-        """approximate mass of the Earth in g
-        """
-        return (4.0/3.0)*np.pi*self.rho_e*self.rad_e**3
+        """approximate mass of the Earth in g"""
+        return (4.0 / 3.0) * np.pi * self.rho_e * self.rad_e**3
 
     def harmonic(self, hl, kl, ll, **kwargs):
         """
@@ -163,36 +164,59 @@ class units(object):
         # set default keyword arguments
         kwargs.setdefault('include_elastic', True)
         kwargs.setdefault('include_ellipsoidal', False)
-        fraction = np.ones((self.lmax+1))
+        fraction = np.ones((self.lmax + 1))
         # compensate for elastic deformation within the solid earth
         if kwargs['include_elastic']:
             fraction += kl[self.l]
         # include effects for Earth's oblateness
         if kwargs['include_ellipsoidal']:
-            fraction /= (1.0 - self.flat)
+            fraction /= 1.0 - self.flat
         # degree dependent coefficients
         # norm, fully normalized spherical harmonics
-        self.norm = np.ones((self.lmax+1))
+        self.norm = np.ones((self.lmax + 1))
         # cmwe, centimeters water equivalent [g/cm^2]
-        self.cmwe = self.rho_e*self.rad_e*(2.0*self.l+1.0)/fraction/3.0
+        self.cmwe = (
+            self.rho_e * self.rad_e * (2.0 * self.l + 1.0) / fraction / 3.0
+        )
         # mmwe, millimeters water equivalent [kg/m^2]
-        self.mmwe = 10.0*self.rho_e*self.rad_e*(2.0*self.l+1.0)/fraction/3.0
+        self.mmwe = (
+            10.0
+            * self.rho_e
+            * self.rad_e
+            * (2.0 * self.l + 1.0)
+            / fraction
+            / 3.0
+        )
         # mmGH, millimeters geoid height
-        self.mmGH = np.ones((self.lmax+1))*(10.0*self.rad_e)
+        self.mmGH = np.ones((self.lmax + 1)) * (10.0 * self.rad_e)
         # mmCU, millimeters elastic crustal deformation (uplift)
-        self.mmCU = 10.0*self.rad_e*hl[self.l]/fraction
+        self.mmCU = 10.0 * self.rad_e * hl[self.l] / fraction
         # mmCH, millimeters elastic crustal deformation (horizontal)
-        self.mmCH = 10.0*self.rad_e*ll[self.l]/fraction
+        self.mmCH = 10.0 * self.rad_e * ll[self.l] / fraction
         # cmVCU, centimeters viscoelastic crustal uplift
-        self.cmVCU = self.rad_e*(2.0*self.l+1.0)/2.0
+        self.cmVCU = self.rad_e * (2.0 * self.l + 1.0) / 2.0
         # mVCU, meters viscoelastic crustal uplift
-        self.mVCU = self.rad_e*(2.0*self.l+1.0)/200.0
+        self.mVCU = self.rad_e * (2.0 * self.l + 1.0) / 200.0
         # microGal, microGal gravity perturbations
-        self.microGal = 1.e6*self.GM*(self.l+1.0)/(self.rad_e**2.0)
+        self.microGal = 1.0e6 * self.GM * (self.l + 1.0) / (self.rad_e**2.0)
         # mbar, millibar equivalent surface pressure
-        self.mbar = self.g_wmo*self.rho_e*self.rad_e*(2.0*self.l+1.0)/fraction/3e3
+        self.mbar = (
+            self.g_wmo
+            * self.rho_e
+            * self.rad_e
+            * (2.0 * self.l + 1.0)
+            / fraction
+            / 3e3
+        )
         # Pa, pascals equivalent surface pressure
-        self.Pa = self.g_wmo*self.rho_e*self.rad_e*(2.0*self.l+1.0)/fraction/30.0
+        self.Pa = (
+            self.g_wmo
+            * self.rho_e
+            * self.rad_e
+            * (2.0 * self.l + 1.0)
+            / fraction
+            / 30.0
+        )
         # return the degree dependent unit conversions
         return self
 
@@ -228,21 +252,33 @@ class units(object):
         """
         # set default keyword arguments
         kwargs.setdefault('include_elastic', True)
-        fraction = np.ones((self.lmax+1))
+        fraction = np.ones((self.lmax + 1))
         # compensate for elastic deformation within the solid earth
         if kwargs['include_elastic']:
             fraction += kl[self.l]
         # degree dependent coefficients
         # norm, fully normalized spherical harmonics
-        self.norm = np.ones((self.lmax+1))
+        self.norm = np.ones((self.lmax + 1))
         # cmwe, centimeters water equivalent [g/cm^2]
-        self.cmwe = 3.0*fraction/(1.0+2.0*self.l)/(4.0*np.pi*self.rad_e*self.rho_e)
+        self.cmwe = (
+            3.0
+            * fraction
+            / (1.0 + 2.0 * self.l)
+            / (4.0 * np.pi * self.rad_e * self.rho_e)
+        )
         # mmwe, millimeters water equivalent [kg/m^2]
-        self.mmwe = 3.0*fraction/(1.0+2.0*self.l)/(40.0*np.pi*self.rad_e*self.rho_e)
+        self.mmwe = (
+            3.0
+            * fraction
+            / (1.0 + 2.0 * self.l)
+            / (40.0 * np.pi * self.rad_e * self.rho_e)
+        )
         # mmGH, millimeters geoid height
-        self.mmGH = np.ones((self.lmax+1))/(4.0*np.pi*self.rad_e)
+        self.mmGH = np.ones((self.lmax + 1)) / (4.0 * np.pi * self.rad_e)
         # microGal, microGal gravity perturbations
-        self.microGal = (self.rad_e**2.0)/(4.0*np.pi*1.e6*self.GM)/(self.l+1.0)
+        self.microGal = (
+            (self.rad_e**2.0) / (4.0 * np.pi * 1.0e6 * self.GM) / (self.l + 1.0)
+        )
         # return the degree dependent unit conversions
         return self
 
@@ -271,13 +307,13 @@ class units(object):
             Named unit code for spherical harmonics or spatial fields
         """
         named_units = [
-            'norm', # 0: keep original scale
-            'cmwe', # 1: cmwe, centimeters water equivalent
-            'mmGH', # 2: mmGH, mm geoid height
-            'mmCU', # 3: mmCU, mm elastic crustal deformation
-            'microGal', # 4: microGal, microGal gravity perturbations
-            'mbar', # 5: mbar, equivalent surface pressure
-            'cmVCU' # 6: cmVCU, cm viscoelastic crustal uplift (GIA)
+            'norm',  # 0: keep original scale
+            'cmwe',  # 1: cmwe, centimeters water equivalent
+            'mmGH',  # 2: mmGH, mm geoid height
+            'mmCU',  # 3: mmCU, mm elastic crustal deformation
+            'microGal',  # 4: microGal, microGal gravity perturbations
+            'mbar',  # 5: mbar, equivalent surface pressure
+            'cmVCU',  # 6: cmVCU, cm viscoelastic crustal uplift (GIA)
         ]
         try:
             return named_units[var]
@@ -299,12 +335,12 @@ class units(object):
             mmwe=('mm', 'Equivalent_Water_Thickness'),
             cmwe=('cm', 'Equivalent_Water_Thickness'),
             mmGH=('mm', 'Geoid_Height'),
-            mmCU=('mm','Elastic_Crustal_Uplift'),
-            mmCH=('mm','Horizontal_Elastic_Crustal_Deformation'),
-            microGal=(u'\u03BCGal', 'Gravitational_Undulation'),
+            mmCU=('mm', 'Elastic_Crustal_Uplift'),
+            mmCH=('mm', 'Horizontal_Elastic_Crustal_Deformation'),
+            microGal=('\u03bcGal', 'Gravitational_Undulation'),
             mbar=('mbar', 'Equivalent_Surface_Pressure'),
             cmVCU=('cm', 'Viscoelastic_Crustal_Uplift'),
-            mVCU=('meters', 'Viscoelastic_Crustal_Uplift')
+            mVCU=('meters', 'Viscoelastic_Crustal_Uplift'),
         )
         try:
             return named_attributes[var]

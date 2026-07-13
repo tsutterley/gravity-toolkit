@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 read_love_numbers.py
 Written by Tyler Sutterley (11/2024)
 
@@ -88,6 +88,7 @@ UPDATE HISTORY:
     Updated 05/2013: python updates and comment updates
     Written 01/2012
 """
+
 import io
 import re
 import logging
@@ -98,9 +99,16 @@ from gravity_toolkit.utilities import get_data_path
 # default maximum degree and order in case of infinite
 _default_max_degree = 100000
 
+
 # PURPOSE: read load Love/Shida numbers from PREM
-def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
-    COLUMNS=['l','hl','kl','ll'], REFERENCE='CE', FORMAT='tuple'):
+def read_love_numbers(
+    love_numbers_file,
+    LMAX=None,
+    HEADER=2,
+    COLUMNS=['l', 'hl', 'kl', 'll'],
+    REFERENCE='CE',
+    FORMAT='tuple',
+):
     """
     Reads PREM load Love/Shida numbers file and applies isomorphic
     parameters :cite:p:`Dziewonski:1981bz,Blewitt:2003bz`
@@ -163,77 +171,79 @@ def read_love_numbers(love_numbers_file, LMAX=None, HEADER=2,
     # dictionary of output Love/Shida numbers
     love = {}
     # spherical harmonic degree
-    love['l'] = np.arange(LMAX+1)
+    love['l'] = np.arange(LMAX + 1)
     # vertical displacement hl
     # gravitational potential kl
     # horizontal displacement ll (Shida number)
-    for n in ('hl','kl','ll'):
-        love[n] = np.zeros((LMAX+1))
+    for n in ('hl', 'kl', 'll'):
+        love[n] = np.zeros((LMAX + 1))
     # check if needing to interpolate between degrees
-    flag = np.ones((LMAX+1),dtype=bool)
+    flag = np.ones((LMAX + 1), dtype=bool)
     # for each line in the file (skipping header lines)
     for file_line in file_contents[HEADER:]:
         # find numerical instances in line
         # replacing fortran double precision exponential
-        love_numbers = rx.findall(file_line.replace('D','E'))
+        love_numbers = rx.findall(file_line.replace('D', 'E'))
         # spherical harmonic degree
         degree = love_numbers[COLUMNS.index('l')]
         l = _default_max_degree if (degree == 'inf') else int(degree)
         # truncate to spherical harmonic degree LMAX
-        if (l <= LMAX):
+        if l <= LMAX:
             # convert Love/Shida numbers to float
             # vertical displacement hl
             # gravitational potential kl
             # horizontal displacement ll (Shida number)
-            for n in ('hl','kl','ll'):
+            for n in ('hl', 'kl', 'll'):
                 love[n][l] = np.float64(love_numbers[COLUMNS.index(n)])
             # set interpolation flag for degree
             flag[l] = False
 
     # return Love/Shida numbers in output format
-    if (LMAX == 0):
+    if LMAX == 0:
         return love_number_formatter(love, FORMAT=FORMAT)
 
     # if needing to linearly interpolate Love/Shida numbers
     if np.any(flag):
         # linearly interpolate following Wahr (1998)
-        for n in ('hl','kl','ll'):
-            love[n][flag] = np.interp(love['l'][flag],
-                love['l'][~flag], love[n][~flag])
+        for n in ('hl', 'kl', 'll'):
+            love[n][flag] = np.interp(
+                love['l'][flag], love['l'][~flag], love[n][~flag]
+            )
 
     # if needing to linearly extrapolate Love/Shida numbers
     # NOTE: use caution if extrapolating far beyond the
     # maximum degree of the Love/Shida numbers dataset
-    for lint in range(l,LMAX+1):
+    for lint in range(l, LMAX + 1):
         # linearly extrapolate to maximum degree
-        for n in ('hl','kl','ll'):
-            love[n][lint] = 2.0*love[n][lint-1] - love[n][lint-2]
+        for n in ('hl', 'kl', 'll'):
+            love[n][lint] = 2.0 * love[n][lint - 1] - love[n][lint - 2]
 
     # calculate isomorphic parameters for different reference frames
     # From Blewitt (2003), Wahr (1998), Trupin (1992) and Farrell (1972)
-    if (REFERENCE.upper() == 'CF'):
+    if REFERENCE.upper() == 'CF':
         # Center of Surface Figure
-        alpha = (love['hl'][1] + 2.0*love['ll'][1])/3.0
-    elif (REFERENCE.upper() == 'CL'):
+        alpha = (love['hl'][1] + 2.0 * love['ll'][1]) / 3.0
+    elif REFERENCE.upper() == 'CL':
         # Center of Surface Lateral Figure
         alpha = love['ll'][1].copy()
-    elif (REFERENCE.upper() == 'CH'):
+    elif REFERENCE.upper() == 'CH':
         # Center of Surface Height Figure
         alpha = love['hl'][1].copy()
-    elif (REFERENCE.upper() == 'CM'):
+    elif REFERENCE.upper() == 'CM':
         # Center of Mass of Earth System
         alpha = 1.0
-    elif (REFERENCE.upper() == 'CE'):
+    elif REFERENCE.upper() == 'CE':
         # Center of Mass of Solid Earth
         alpha = 0.0
     else:
         raise Exception(f'Invalid Reference Frame {REFERENCE}')
     # apply isomorphic parameters
-    for n in ('hl','kl','ll'):
+    for n in ('hl', 'kl', 'll'):
         love[n][1] -= alpha
 
     # return Love/Shida numbers in output format
     return love_number_formatter(love, FORMAT=FORMAT)
+
 
 # PURPOSE: return load Love/Shida numbers in a particular format
 def love_number_formatter(love, FORMAT='tuple'):
@@ -262,14 +272,15 @@ def love_number_formatter(love, FORMAT='tuple'):
     ll: np.ndarray
         Love (Shida) number of Horizontal Displacement
     """
-    if (FORMAT == 'dict'):
+    if FORMAT == 'dict':
         return love
-    elif (FORMAT == 'tuple'):
+    elif FORMAT == 'tuple':
         return (love['hl'], love['kl'], love['ll'])
-    elif (FORMAT == 'zip'):
+    elif FORMAT == 'zip':
         return zip(love['hl'], love['kl'], love['ll'])
-    elif (FORMAT == 'class'):
+    elif FORMAT == 'class':
         return love_numbers().from_dict(love)
+
 
 # PURPOSE: read input file and extract contents
 def extract_love_numbers(love_numbers_file):
@@ -284,7 +295,9 @@ def extract_love_numbers(love_numbers_file):
     # check if input Love/Shida numbers are a string or bytesIO object
     if isinstance(love_numbers_file, (str, pathlib.Path)):
         # tilde expansion of load love number data file
-        love_numbers_file = pathlib.Path(love_numbers_file).expanduser().absolute()
+        love_numbers_file = (
+            pathlib.Path(love_numbers_file).expanduser().absolute()
+        )
         # check that load Love/Shida number data file is present in file system
         if not love_numbers_file.exists():
             raise FileNotFoundError(f'{str(love_numbers_file)} not found')
@@ -296,6 +309,7 @@ def extract_love_numbers(love_numbers_file):
         return love_numbers_file.read().decode('utf8').splitlines()
     else:
         raise ValueError('Invalid Love/Shida numbers file input')
+
 
 # PURPOSE: read load Love/Shida numbers for a range of spherical harmonic degrees
 def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
@@ -340,48 +354,52 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
         Love (Shida) number of Horizontal Displacement
     """
     # load Love/Shida numbers file
-    if (LOVE_NUMBERS == 0):
+    if LOVE_NUMBERS == 0:
         # PREM outputs from Han and Wahr (1995)
         # https://doi.org/10.1111/j.1365-246X.1995.tb01819.x
-        love_numbers_file = get_data_path(['data','love_numbers'])
+        love_numbers_file = get_data_path(['data', 'love_numbers'])
         model = 'PREM'
         citation = 'Han and Wahr (1995)'
         header = 2
-        columns = ['l','hl','kl','ll']
-    elif (LOVE_NUMBERS == 1):
+        columns = ['l', 'hl', 'kl', 'll']
+    elif LOVE_NUMBERS == 1:
         # PREM outputs from Gegout (2005)
         # http://gemini.gsfc.nasa.gov/aplo/
-        love_numbers_file = get_data_path(['data','Load_Love2_CE.dat'])
+        love_numbers_file = get_data_path(['data', 'Load_Love2_CE.dat'])
         model = 'PREM'
         citation = 'Gegout et al. (2010)'
         header = 3
-        columns = ['l','hl','ll','kl']
-    elif (LOVE_NUMBERS == 2):
+        columns = ['l', 'hl', 'll', 'kl']
+    elif LOVE_NUMBERS == 2:
         # PREM outputs from Wang et al. (2012)
         # https://doi.org/10.1016/j.cageo.2012.06.022
-        love_numbers_file = get_data_path(['data','PREM-LLNs-truncated.dat'])
+        love_numbers_file = get_data_path(['data', 'PREM-LLNs-truncated.dat'])
         model = 'PREM'
         citation = 'Wang et al. (2012)'
         header = 1
-        columns = ['l','hl','ll','kl','nl','nk']
-    elif (LOVE_NUMBERS == 3):
+        columns = ['l', 'hl', 'll', 'kl', 'nl', 'nk']
+    elif LOVE_NUMBERS == 3:
         # PREM hard outputs from Wang et al. (2012)
         # case with 0.46 kilometers thick hard sediment
         # https://doi.org/10.1016/j.cageo.2012.06.022
-        love_numbers_file = get_data_path(['data','PREMhard-LLNs-truncated.dat'])
+        love_numbers_file = get_data_path(
+            ['data', 'PREMhard-LLNs-truncated.dat']
+        )
         model = 'PREMhard'
         citation = 'Wang et al. (2012)'
         header = 1
-        columns = ['l','hl','ll','kl','nl','nk']
-    elif (LOVE_NUMBERS == 4):
+        columns = ['l', 'hl', 'll', 'kl', 'nl', 'nk']
+    elif LOVE_NUMBERS == 4:
         # PREM soft outputs from Wang et al. (2012)
         # case with 0.52 kilometers thick soft sediment
         # https://doi.org/10.1016/j.cageo.2012.06.022
-        love_numbers_file = get_data_path(['data','PREMsoft-LLNs-truncated.dat'])
+        love_numbers_file = get_data_path(
+            ['data', 'PREMsoft-LLNs-truncated.dat']
+        )
         model = 'PREMsoft'
         citation = 'Wang et al. (2012)'
         header = 1
-        columns = ['l','hl','ll','kl','nl','nk']
+        columns = ['l', 'hl', 'll', 'kl', 'nl', 'nk']
     else:
         raise ValueError(f'Unknown Love Numbers Type {LOVE_NUMBERS:d}')
     # validate as pathlib object
@@ -393,16 +411,23 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
     # however, as we are linearly extrapolating out, do not make
     # LMAX too much larger than 696
     # read arrays of kl, hl, and ll Love/Shida Numbers
-    love = read_love_numbers(love_numbers_file, LMAX=LMAX, HEADER=header,
-        COLUMNS=columns, REFERENCE=REFERENCE, FORMAT=FORMAT)
+    love = read_love_numbers(
+        love_numbers_file,
+        LMAX=LMAX,
+        HEADER=header,
+        COLUMNS=columns,
+        REFERENCE=REFERENCE,
+        FORMAT=FORMAT,
+    )
     # append model and filename attributes to class
-    if (FORMAT == 'class'):
+    if FORMAT == 'class':
         love.filename = love_numbers_file.name
         love.reference = REFERENCE
         love.model = model
         love.citation = citation
     # return the load love numbers
     return love
+
 
 class love_numbers(object):
     """
@@ -434,21 +459,23 @@ class love_numbers(object):
     filename: str
         input filename of Load Love/Shida Numbers
     """
+
     np.seterr(invalid='ignore')
+
     def __init__(self, **kwargs):
         # set default keyword arguments
-        kwargs.setdefault('lmax',None)
+        kwargs.setdefault('lmax', None)
         # set default class attributes
-        self.hl=[]
-        self.kl=[]
-        self.ll=[]
-        self.lmax=kwargs['lmax']
+        self.hl = []
+        self.kl = []
+        self.ll = []
+        self.lmax = kwargs['lmax']
         # calculate spherical harmonic degree (0 is falsy)
-        self.l=np.arange(self.lmax+1) if (self.lmax is not None) else None
-        self.reference=None
-        self.model=None
-        self.citation=None
-        self.filename=None
+        self.l = np.arange(self.lmax + 1) if (self.lmax is not None) else None
+        self.reference = None
+        self.model = None
+        self.citation = None
+        self.filename = None
 
     def from_dict(self, d):
         """
@@ -460,7 +487,7 @@ class love_numbers(object):
             dictionary object to be converted
         """
         # retrieve each Load Love/Shida Number
-        for key in ('hl','kl','ll'):
+        for key in ('hl', 'kl', 'll'):
             setattr(self, key, d.get(key))
         self.lmax = len(self.hl) - 1
         # calculate spherical harmonic degree
@@ -478,7 +505,7 @@ class love_numbers(object):
         """
         # retrieve each Load Love/Shida Number
         d = {}
-        for key in ('hl','kl','ll'):
+        for key in ('hl', 'kl', 'll'):
             d[key] = getattr(self, key)
         return d
 
@@ -513,19 +540,19 @@ class love_numbers(object):
         """
         # calculate isomorphic parameters for different reference frames
         # From Blewitt (2003), Wahr (1998), Trupin (1992) and Farrell (1972)
-        if (reference.upper() == 'CF'):
+        if reference.upper() == 'CF':
             # Center of Surface Figure
-            alpha = (self.hl[1] + 2.0*self.ll[1])/3.0
-        elif (reference.upper() == 'CL'):
+            alpha = (self.hl[1] + 2.0 * self.ll[1]) / 3.0
+        elif reference.upper() == 'CL':
             # Center of Surface Lateral Figure
             alpha = self.ll[1].copy()
-        elif (reference.upper() == 'CH'):
+        elif reference.upper() == 'CH':
             # Center of Surface Height Figure
             alpha = self.hl[1].copy()
-        elif (reference.upper() == 'CM'):
+        elif reference.upper() == 'CM':
             # Center of Mass of Earth System
             alpha = 1.0
-        elif (reference.upper() == 'CE'):
+        elif reference.upper() == 'CE':
             # Center of Mass of Solid Earth
             alpha = 0.0
         else:
@@ -543,27 +570,24 @@ class love_numbers(object):
         Update the dimensions of the ``love_numbers`` object
         """
         # calculate spherical harmonic degree (0 is falsy)
-        self.l=np.arange(self.lmax+1) if (self.lmax is not None) else None
+        self.l = np.arange(self.lmax + 1) if (self.lmax is not None) else None
         return self
 
     def __str__(self):
-        """String representation of the ``love_numbers`` object
-        """
+        """String representation of the ``love_numbers`` object"""
         properties = ['gravity_toolkit.love_numbers']
-        properties.append(f"    citation: {self.citation}")
-        properties.append(f"    earth_model: {self.model}")
-        properties.append(f"    max_degree: {self.lmax}")
-        properties.append(f"    reference: {self.reference}")
+        properties.append(f'    citation: {self.citation}')
+        properties.append(f'    earth_model: {self.model}')
+        properties.append(f'    max_degree: {self.lmax}')
+        properties.append(f'    reference: {self.reference}')
         return '\n'.join(properties)
 
     def __len__(self):
-        """Number of degrees
-        """
+        """Number of degrees"""
         return len(self.l)
 
     def __iter__(self):
-        """Iterate over load Love/Shida numbers variables
-        """
+        """Iterate over load Love/Shida numbers variables"""
         yield self.hl
         yield self.kl
         yield self.ll

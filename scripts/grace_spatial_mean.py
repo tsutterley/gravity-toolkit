@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 grace_spatial_mean.py
 Written by Tyler Sutterley (05/2024)
 
@@ -80,6 +80,7 @@ UPDATE HISTORY:
         set grid dimensions, calculate mean of ICE-6G VM5 GIA models
     Written 08/2017
 """
+
 import sys
 import os
 import copy
@@ -107,6 +108,7 @@ gia_mean_str['ICE6G-D'] = '_ICE6G-D_mean'
 gia_mean_str['AW13-ICE6G'] = '_AW13_ICE6G_mean'
 gia_mean_str['ascii'] = '_AW13_IJ05_ICE6G_mean'
 
+
 # PURPOSE: keep track of threads
 def info(args):
     logging.info(pathlib.Path(sys.argv[0]).name)
@@ -116,8 +118,14 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
+
 # PURPOSE: calculate the GRACE/GRACE-FO mean maps for a set of GIA models
-def grace_spatial_mean(PROC, DREL, DSET, LMAX, RAD,
+def grace_spatial_mean(
+    PROC,
+    DREL,
+    DSET,
+    LMAX,
+    RAD,
     START=None,
     END=None,
     MMAX=None,
@@ -133,8 +141,8 @@ def grace_spatial_mean(PROC, DREL, DSET, LMAX, RAD,
     OUTPUT_DIRECTORY=None,
     FLAG=None,
     VERBOSE=0,
-    MODE=0o775):
-
+    MODE=0o775,
+):
     # recursively create output directory if not currently existing
     OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
     if not OUTPUT_DIRECTORY.exists():
@@ -165,24 +173,24 @@ def grace_spatial_mean(PROC, DREL, DSET, LMAX, RAD,
     units_name, units_longname = gravtk.units.get_attributes(units)
 
     # input GRACE file format
-    ff='{0}_{1}_{2}{3}_{4}_{5}_L{6:d}{7}{8}{9}_{10}_{11:03d}-{12:03d}.{13}'
+    ff = '{0}_{1}_{2}{3}_{4}_{5}_L{6:d}{7}{8}{9}_{10}_{11:03d}-{12:03d}.{13}'
 
     # Output Degree Spacing
-    dlon,dlat = (DDEG[0],DDEG[0]) if (len(DDEG) == 1) else (DDEG[0],DDEG[1])
+    dlon, dlat = (DDEG[0], DDEG[0]) if (len(DDEG) == 1) else (DDEG[0], DDEG[1])
     # Output Degree Interval
-    if (INTERVAL == 1):
+    if INTERVAL == 1:
         # (-180:180,90:-90)
-        nlon = np.int64((360.0/dlon)+1.0)
-        nlat = np.int64((180.0/dlat)+1.0)
-    elif (INTERVAL == 2):
+        nlon = np.int64((360.0 / dlon) + 1.0)
+        nlat = np.int64((180.0 / dlat) + 1.0)
+    elif INTERVAL == 2:
         # (Degree spacing)/2
-        nlon = np.int64(360.0/dlon)
-        nlat = np.int64(180.0/dlat)
-    elif (INTERVAL == 3):
+        nlon = np.int64(360.0 / dlon)
+        nlat = np.int64(180.0 / dlat)
+    elif INTERVAL == 3:
         # non-global grid set with BOUNDS parameter
-        minlon,maxlon,minlat,maxlat = BOUNDS.copy()
-        nlon = np.int64((maxlon-minlon)/dlon)
-        nlat = np.int64((maxlat-minlat)/dlat)
+        minlon, maxlon, minlat, maxlat = BOUNDS.copy()
+        nlon = np.int64((maxlon - minlon) / dlon)
+        nlat = np.int64((maxlat - minlat) / dlat)
 
     # allocate lists for input variables
     dinput = {}
@@ -200,142 +208,279 @@ def grace_spatial_mean(PROC, DREL, DSET, LMAX, RAD,
     # number of rheologies and ice histories to run
     N = len(GIA_FILES)
     # iterate GIA models
-    for h,GIA_FILE in enumerate(GIA_FILES):
+    for h, GIA_FILE in enumerate(GIA_FILES):
         # input GIA spherical harmonic datafiles
-        GIA_FILE = pathlib.Path(GIA_FILE).expanduser().absolute() if GIA else None
-        GIA_Ylms_rate = gravtk.gia(lmax=LMAX).from_GIA(GIA_FILE, GIA=GIA, mmax=MMAX)
+        GIA_FILE = (
+            pathlib.Path(GIA_FILE).expanduser().absolute() if GIA else None
+        )
+        GIA_Ylms_rate = gravtk.gia(lmax=LMAX).from_GIA(
+            GIA_FILE, GIA=GIA, mmax=MMAX
+        )
         gia_str = f'_{GIA_Ylms_rate.title}'
         # read mass trend file and mass trend error files
-        for key in ['x1','x2']:
-            F1 = ff.format(PROC,DREL,DSET,gia_str,FLAG,units,LMAX,
-                order_str,gw_str,ds_str,key,START,END,suffix[DATAFORM])
+        for key in ['x1', 'x2']:
+            F1 = ff.format(
+                PROC,
+                DREL,
+                DSET,
+                gia_str,
+                FLAG,
+                units,
+                LMAX,
+                order_str,
+                gw_str,
+                ds_str,
+                key,
+                START,
+                END,
+                suffix[DATAFORM],
+            )
             INPUT_FILE = OUTPUT_DIRECTORY.joinpath(F1)
-            field_mapping = dict(lon='lon', lat='lat', data='data', error='error')
-            temp = gravtk.spatial().from_file(INPUT_FILE,
-                format=DATAFORM, date=False, spacing=[dlon,dlat],
-                nlon=nlon, nlat=nlat, field_mapping=field_mapping)
+            field_mapping = dict(
+                lon='lon', lat='lat', data='data', error='error'
+            )
+            temp = gravtk.spatial().from_file(
+                INPUT_FILE,
+                format=DATAFORM,
+                date=False,
+                spacing=[dlon, dlat],
+                nlon=nlon,
+                nlat=nlat,
+                field_mapping=field_mapping,
+            )
             dinput[key].append(temp)
         # read AIC files
-        for key in ['AIC_x0','AIC_x1','AIC_x2']:
-            F1 = ff.format(PROC,DREL,DSET,gia_str,FLAG,units,LMAX,
-                order_str,gw_str,ds_str,key,START,END,suffix[DATAFORM])
+        for key in ['AIC_x0', 'AIC_x1', 'AIC_x2']:
+            F1 = ff.format(
+                PROC,
+                DREL,
+                DSET,
+                gia_str,
+                FLAG,
+                units,
+                LMAX,
+                order_str,
+                gw_str,
+                ds_str,
+                key,
+                START,
+                END,
+                suffix[DATAFORM],
+            )
             INPUT_FILE = OUTPUT_DIRECTORY.joinpath(F1)
             field_mapping = dict(lon='lon', lat='lat', data='data')
-            temp = gravtk.spatial().from_file(INPUT_FILE,
-                format=DATAFORM, date=False, field_mapping=field_mapping,
-                spacing=[dlon,dlat], nlon=nlon, nlat=nlat)
+            temp = gravtk.spatial().from_file(
+                INPUT_FILE,
+                format=DATAFORM,
+                date=False,
+                field_mapping=field_mapping,
+                spacing=[dlon, dlat],
+                nlon=nlon,
+                nlat=nlat,
+            )
             dinput[key].append(temp)
         # read SSE files
-        for key in ['SSE_x0','SSE_x1','SSE_x2']:
-            F1 = ff.format(PROC,DREL,DSET,gia_str,FLAG,units,LMAX,
-                order_str,gw_str,ds_str,key,START,END,suffix[DATAFORM])
+        for key in ['SSE_x0', 'SSE_x1', 'SSE_x2']:
+            F1 = ff.format(
+                PROC,
+                DREL,
+                DSET,
+                gia_str,
+                FLAG,
+                units,
+                LMAX,
+                order_str,
+                gw_str,
+                ds_str,
+                key,
+                START,
+                END,
+                suffix[DATAFORM],
+            )
             INPUT_FILE = OUTPUT_DIRECTORY.joinpath(F1)
             field_mapping = dict(lon='lon', lat='lat', data='data')
-            temp = gravtk.spatial().from_file(INPUT_FILE,
-                format=DATAFORM, date=False, field_mapping=field_mapping,
-                spacing=[dlon,dlat], nlon=nlon, nlat=nlat)
+            temp = gravtk.spatial().from_file(
+                INPUT_FILE,
+                format=DATAFORM,
+                date=False,
+                field_mapping=field_mapping,
+                spacing=[dlon, dlat],
+                nlon=nlon,
+                nlat=nlat,
+            )
             dinput[key].append(temp)
             # save degrees of freedom for fit order
-            order = key.replace('SSE_','')
+            order = key.replace('SSE_', '')
             DOF[order] = int(temp.attributes['ROOT']['title'])
 
     # create combined spatial objects
     output = {}
     output_units = {}
     # calculate mean GIA-corrected x1 change (for all Earth rheologies)
-    x1 = gravtk.spatial().from_list(dinput['x1'],date=False)
+    x1 = gravtk.spatial().from_list(dinput['x1'], date=False)
     output['x1'] = x1.mean()
-    output_units['x1'] = '{0} yr^{1:d}'.format(units_name,-1)
+    output_units['x1'] = '{0} yr^{1:d}'.format(units_name, -1)
     # calculate mean acceleration x2 change (for all Earth rheologies)
-    x2 = gravtk.spatial().from_list(dinput['x2'],date=False)
+    x2 = gravtk.spatial().from_list(dinput['x2'], date=False)
     output['x2'] = x2.mean().scale(2.0)
-    output_units['x2'] = '{0} yr^{1:d}'.format(units_name,-2)
+    output_units['x2'] = '{0} yr^{1:d}'.format(units_name, -2)
     # GRACE satellite error component
-    e1 = x1.copy(); e1.data = np.copy(x1.error)
-    output['x1'].error = e1.sum(power=2.0).scale(1.0/N).power(0.5).data
-    e2 = x2.copy(); e2.data = np.copy(x2.error)
-    output['x2'].error = e2.sum(power=2.0).scale(4.0/N).power(0.5).data
+    e1 = x1.copy()
+    e1.data = np.copy(x1.error)
+    output['x1'].error = e1.sum(power=2.0).scale(1.0 / N).power(0.5).data
+    e2 = x2.copy()
+    e2.data = np.copy(x2.error)
+    output['x2'].error = e2.sum(power=2.0).scale(4.0 / N).power(0.5).data
     # significance means
-    AICx0 = gravtk.spatial().from_list(dinput['AIC_x0'],date=False).mean()
-    AICx1 = gravtk.spatial().from_list(dinput['AIC_x1'],date=False).mean()
-    AICx2 = gravtk.spatial().from_list(dinput['AIC_x2'],date=False).mean()
+    AICx0 = gravtk.spatial().from_list(dinput['AIC_x0'], date=False).mean()
+    AICx1 = gravtk.spatial().from_list(dinput['AIC_x1'], date=False).mean()
+    AICx2 = gravtk.spatial().from_list(dinput['AIC_x2'], date=False).mean()
     # calculate residual sum of squares means
-    s0 = gravtk.spatial().from_list(dinput['SSE_x0'],date=False)
-    SSEx0 = s0.sum(power=2.0).scale(1.0/N).power(0.5)
-    s1 = gravtk.spatial().from_list(dinput['SSE_x1'],date=False)
-    SSEx1 = s1.sum(power=2.0).scale(1.0/N).power(0.5)
-    s2 = gravtk.spatial().from_list(dinput['SSE_x2'],date=False)
-    SSEx2 = s2.sum(power=2.0).scale(1.0/N).power(0.5)
+    s0 = gravtk.spatial().from_list(dinput['SSE_x0'], date=False)
+    SSEx0 = s0.sum(power=2.0).scale(1.0 / N).power(0.5)
+    s1 = gravtk.spatial().from_list(dinput['SSE_x1'], date=False)
+    SSEx1 = s1.sum(power=2.0).scale(1.0 / N).power(0.5)
+    s2 = gravtk.spatial().from_list(dinput['SSE_x2'], date=False)
+    SSEx2 = s2.sum(power=2.0).scale(1.0 / N).power(0.5)
 
     # invalid value for masked grids
     fill_value = -9999.0
     # masked trend values
-    ii,jj = np.nonzero((np.abs(output['x1'].data) <= output['x1'].error) |
-        (AICx1.data >= AICx0.data))
+    ii, jj = np.nonzero(
+        (np.abs(output['x1'].data) <= output['x1'].error)
+        | (AICx1.data >= AICx0.data)
+    )
     output['MASKED_x1'] = output['x1'].copy()
     output['MASKED_x1'].fill_value = fill_value
-    output['MASKED_x1'].mask[ii,jj] = True
+    output['MASKED_x1'].mask[ii, jj] = True
     output['MASKED_x1'].update_mask()
-    output_units['MASKED_x1'] = '{0} yr^{1:d}'.format(units_name,-1)
+    output_units['MASKED_x1'] = '{0} yr^{1:d}'.format(units_name, -1)
     # write masked acceleration values to file
-    ii,jj = np.nonzero((np.abs(output['x2'].data) <= output['x2'].error) |
-        (AICx2.data >= AICx1.data))
+    ii, jj = np.nonzero(
+        (np.abs(output['x2'].data) <= output['x2'].error)
+        | (AICx2.data >= AICx1.data)
+    )
     output['MASKED_x2'] = output['x2'].copy()
     output['MASKED_x2'].fill_value = fill_value
-    output['MASKED_x2'].mask[ii,jj] = True
+    output['MASKED_x2'].mask[ii, jj] = True
     output['MASKED_x2'].update_mask()
-    output_units['MASKED_x2'] = '{0} yr^{1:d}'.format(units_name,-2)
+    output_units['MASKED_x2'] = '{0} yr^{1:d}'.format(units_name, -2)
 
     # attributes for output files
     title = 'GRACE/GRACE-FO Spatial Data'
     # output data to file
-    for key,val in output.items():
-        F2 = ff.format(PROC,DREL,DSET,gia_mean_str[GIA],FLAG,units,
-            LMAX,order_str,gw_str,ds_str,key,START,END,suffix[DATAFORM])
+    for key, val in output.items():
+        F2 = ff.format(
+            PROC,
+            DREL,
+            DSET,
+            gia_mean_str[GIA],
+            FLAG,
+            units,
+            LMAX,
+            order_str,
+            gw_str,
+            ds_str,
+            key,
+            START,
+            END,
+            suffix[DATAFORM],
+        )
         OUTPUT_FILE = OUTPUT_DIRECTORY.joinpath(F2)
-        output_data(val, FILENAME=OUTPUT_FILE, DATAFORM=DATAFORM,
-            UNITS=output_units[key], LONGNAME=units_longname,
-            TITLE=title, CONF=0.95, VERBOSE=VERBOSE, MODE=MODE)
+        output_data(
+            val,
+            FILENAME=OUTPUT_FILE,
+            DATAFORM=DATAFORM,
+            UNITS=output_units[key],
+            LONGNAME=units_longname,
+            TITLE=title,
+            CONF=0.95,
+            VERBOSE=VERBOSE,
+            MODE=MODE,
+        )
         # add to output file list
         output_files.append(OUTPUT_FILE)
 
     # Calculate F-statistics
     output['F_x1'] = SSEx1.zeros_like()
-    output['F_x1'].data = (SSEx0.data - SSEx1.data) / \
-        (DOF['x0'] - DOF['x1'])*(SSEx1.data / DOF['x1'])
+    output['F_x1'].data = (
+        (SSEx0.data - SSEx1.data)
+        / (DOF['x0'] - DOF['x1'])
+        * (SSEx1.data / DOF['x1'])
+    )
     output['F_x2'] = SSEx2.zeros_like()
-    output['F_x2'].data  = (SSEx1.data - SSEx2.data) / \
-        (DOF['x1'] - DOF['x2'])*(SSEx2.data / DOF['x2'])
+    output['F_x2'].data = (
+        (SSEx1.data - SSEx2.data)
+        / (DOF['x1'] - DOF['x2'])
+        * (SSEx2.data / DOF['x2'])
+    )
     # calculate F-test p-values
     output['P_x1'] = SSEx1.zeros_like()
-    output['P_x1'].data = 1.0 - scipy.stats.f.cdf(output['F_x1'].data,
-        DOF['x0'] - DOF['x1'], DOF['x1'])
+    output['P_x1'].data = 1.0 - scipy.stats.f.cdf(
+        output['F_x1'].data, DOF['x0'] - DOF['x1'], DOF['x1']
+    )
     output['P_x2'] = SSEx2.zeros_like()
-    output['P_x2'].data = 1.0 - scipy.stats.f.cdf(output['F_x2'].data,
-        DOF['x1'] - DOF['x2'], DOF['x2'])
+    output['P_x2'].data = 1.0 - scipy.stats.f.cdf(
+        output['F_x2'].data, DOF['x1'] - DOF['x2'], DOF['x2']
+    )
 
     # for each F-test significance term
-    signif_longname = {'F_x1':'F Statistic','F_x2':'F Statistic',
-        'P_x1':'F-test P-value','P_x2':'F-test P-value'}
+    signif_longname = {
+        'F_x1': 'F Statistic',
+        'F_x2': 'F Statistic',
+        'P_x1': 'F-test P-value',
+        'P_x2': 'F-test P-value',
+    }
     # output data to file
     for key in ['F_x1', 'F_x2', 'P_x1', 'P_x2']:
         # F-test significance term
         # output file names for fit significance
-        F3 = ff.format(PROC,DREL,DSET,gia_mean_str[GIA],FLAG,units,
-            LMAX,order_str,gw_str,ds_str,key,START,END,suffix[DATAFORM])
+        F3 = ff.format(
+            PROC,
+            DREL,
+            DSET,
+            gia_mean_str[GIA],
+            FLAG,
+            units,
+            LMAX,
+            order_str,
+            gw_str,
+            ds_str,
+            key,
+            START,
+            END,
+            suffix[DATAFORM],
+        )
         OUTPUT_FILE = OUTPUT_DIRECTORY.joinpath(F3)
-        output_data(output[key], FILENAME=OUTPUT_FILE,
-            DATAFORM=DATAFORM, UNITS='1', LONGNAME=signif_longname[key],
-            TITLE=title, VERBOSE=VERBOSE, MODE=MODE)
+        output_data(
+            output[key],
+            FILENAME=OUTPUT_FILE,
+            DATAFORM=DATAFORM,
+            UNITS='1',
+            LONGNAME=signif_longname[key],
+            TITLE=title,
+            VERBOSE=VERBOSE,
+            MODE=MODE,
+        )
         # add to output file list
         output_files.append(OUTPUT_FILE)
 
     # return the list of files
     return output_files
 
+
 # PURPOSE: wrapper function for outputting data to file
-def output_data(data, FILENAME=None, DATAFORM=None, UNITS=None,
-    LONGNAME=None, TITLE=None, CONF=0, VERBOSE=0, MODE=0o775):
+def output_data(
+    data,
+    FILENAME=None,
+    DATAFORM=None,
+    UNITS=None,
+    LONGNAME=None,
+    TITLE=None,
+    CONF=0,
+    VERBOSE=0,
+    MODE=0o775,
+):
     # field mapping for output regression data
     field_mapping = {}
     field_mapping['lat'] = 'lat'
@@ -360,25 +505,38 @@ def output_data(data, FILENAME=None, DATAFORM=None, UNITS=None,
     attributes['error']['description'] = 'Uncertainty in model fit'
     attributes['error']['long_name'] = LONGNAME
     attributes['error']['units'] = UNITS
-    attributes['error']['confidence'] = 100*CONF
+    attributes['error']['confidence'] = 100 * CONF
     # output global attributes
     REFERENCE = f'Output from {pathlib.Path(sys.argv[0]).name}'
     # write to output file
-    if (DATAFORM == 'ascii'):
+    if DATAFORM == 'ascii':
         # ascii (.txt)
         data.to_ascii(FILENAME, date=False, verbose=VERBOSE)
-    elif (DATAFORM == 'netCDF4'):
+    elif DATAFORM == 'netCDF4':
         # netcdf (.nc)
-        data.to_netCDF4(FILENAME, date=False, verbose=VERBOSE,
-            field_mapping=field_mapping, attributes=attributes,
-            title=TITLE, reference=REFERENCE)
-    elif (DATAFORM == 'HDF5'):
+        data.to_netCDF4(
+            FILENAME,
+            date=False,
+            verbose=VERBOSE,
+            field_mapping=field_mapping,
+            attributes=attributes,
+            title=TITLE,
+            reference=REFERENCE,
+        )
+    elif DATAFORM == 'HDF5':
         # HDF5 (.H5)
-        data.to_HDF5(FILENAME, date=False, verbose=VERBOSE,
-            field_mapping=field_mapping, attributes=attributes,
-            title=TITLE, reference=REFERENCE)
+        data.to_HDF5(
+            FILENAME,
+            date=False,
+            verbose=VERBOSE,
+            field_mapping=field_mapping,
+            attributes=attributes,
+            title=TITLE,
+            reference=REFERENCE,
+        )
     # change the permissions mode of the output file
     FILENAME.chmod(mode=MODE)
+
 
 # PURPOSE: create argument parser
 def arguments():
@@ -386,71 +544,133 @@ def arguments():
         description="""Calculates the mean GRACE/GRACE-FO trend for a range
             of GIA outputs
             """,
-        fromfile_prefix_chars="@"
+        fromfile_prefix_chars='@',
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # working data directory
-    parser.add_argument('--output-directory','-O',
+    parser.add_argument(
+        '--output-directory',
+        '-O',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Output directory for spatial files')
+        help='Output directory for spatial files',
+    )
     # GRACE/GRACE-FO flags
     # 'wSLR_C20_wDEG1'
     # 'rmTWC'
     # 'rmSLF_rmTWC'
-    parser.add_argument('--flag','-f',
-        type=str, default='rmSLF_rmTWC',
-        help='GRACE/GRACE-FO specific data flags')
+    parser.add_argument(
+        '--flag',
+        '-f',
+        type=str,
+        default='rmSLF_rmTWC',
+        help='GRACE/GRACE-FO specific data flags',
+    )
     # GRACE/GRACE-FO data processing center
-    parser.add_argument('--center','-c',
-        metavar='PROC', type=str, required=True,
-        help='GRACE/GRACE-FO Processing Center')
+    parser.add_argument(
+        '--center',
+        '-c',
+        metavar='PROC',
+        type=str,
+        required=True,
+        help='GRACE/GRACE-FO Processing Center',
+    )
     # GRACE/GRACE-FO data release
-    parser.add_argument('--release','-r',
-        metavar='DREL', type=str, default='RL06',
-        help='GRACE/GRACE-FO Data Release')
+    parser.add_argument(
+        '--release',
+        '-r',
+        metavar='DREL',
+        type=str,
+        default='RL06',
+        help='GRACE/GRACE-FO Data Release',
+    )
     # GRACE/GRACE-FO Level-2 data product
-    parser.add_argument('--product','-p',
-        metavar='DSET', type=str, default='GSM',
-        help='GRACE/GRACE-FO Level-2 data product')
+    parser.add_argument(
+        '--product',
+        '-p',
+        metavar='DSET',
+        type=str,
+        default='GSM',
+        help='GRACE/GRACE-FO Level-2 data product',
+    )
     # maximum spherical harmonic degree and order
-    parser.add_argument('--lmax','-l',
-        type=int, default=60,
-        help='Maximum spherical harmonic degree')
-    parser.add_argument('--mmax','-m',
-        type=int, default=None,
-        help='Maximum spherical harmonic order')
+    parser.add_argument(
+        '--lmax',
+        '-l',
+        type=int,
+        default=60,
+        help='Maximum spherical harmonic degree',
+    )
+    parser.add_argument(
+        '--mmax',
+        '-m',
+        type=int,
+        default=None,
+        help='Maximum spherical harmonic order',
+    )
     # start and end GRACE/GRACE-FO months
-    parser.add_argument('--start','-S',
-        type=int, default=4,
-        help='Starting GRACE/GRACE-FO month')
-    parser.add_argument('--end','-E',
-        type=int, default=232,
-        help='Ending GRACE/GRACE-FO month')
+    parser.add_argument(
+        '--start',
+        '-S',
+        type=int,
+        default=4,
+        help='Starting GRACE/GRACE-FO month',
+    )
+    parser.add_argument(
+        '--end', '-E', type=int, default=232, help='Ending GRACE/GRACE-FO month'
+    )
     # Gaussian smoothing radius (km)
-    parser.add_argument('--radius','-R',
-        type=float, default=0,
-        help='Gaussian smoothing radius (km)')
+    parser.add_argument(
+        '--radius',
+        '-R',
+        type=float,
+        default=0,
+        help='Gaussian smoothing radius (km)',
+    )
     # Use a decorrelation (destriping) filter
-    parser.add_argument('--destripe','-d',
-        default=False, action='store_true',
-        help='Use decorrelation (destriping) filter')
+    parser.add_argument(
+        '--destripe',
+        '-d',
+        default=False,
+        action='store_true',
+        help='Use decorrelation (destriping) filter',
+    )
     # output units
-    parser.add_argument('--units','-U',
-        type=int, default=1, choices=[1,2,3,4,5],
-        help='Output units')
+    parser.add_argument(
+        '--units',
+        '-U',
+        type=int,
+        default=1,
+        choices=[1, 2, 3, 4, 5],
+        help='Output units',
+    )
     # output grid parameters
-    parser.add_argument('--spacing',
-        type=float, nargs='+', default=[0.5,0.5], metavar=('dlon','dlat'),
-        help='Spatial resolution of output data')
-    parser.add_argument('--interval',
-        type=int, default=2, choices=[1,2,3],
-        help=('Output grid interval '
-            '(1: global, 2: centered global, 3: non-global)'))
-    parser.add_argument('--bounds',
-        type=float, nargs=4, metavar=('lon_min','lon_max','lat_min','lat_max'),
-        help='Bounding box for non-global grid')
+    parser.add_argument(
+        '--spacing',
+        type=float,
+        nargs='+',
+        default=[0.5, 0.5],
+        metavar=('dlon', 'dlat'),
+        help='Spatial resolution of output data',
+    )
+    parser.add_argument(
+        '--interval',
+        type=int,
+        default=2,
+        choices=[1, 2, 3],
+        help=(
+            'Output grid interval '
+            '(1: global, 2: centered global, 3: non-global)'
+        ),
+    )
+    parser.add_argument(
+        '--bounds',
+        type=float,
+        nargs=4,
+        metavar=('lon_min', 'lon_max', 'lat_min', 'lat_max'),
+        help='Bounding box for non-global grid',
+    )
     # GIA model type list
     models = {}
     models['IJ05-R2'] = 'Ivins R2 GIA Models'
@@ -466,36 +686,58 @@ def arguments():
     models['netCDF4'] = 'reformatted GIA in netCDF4 format'
     models['HDF5'] = 'reformatted GIA in HDF5 format'
     # GIA model type
-    parser.add_argument('--gia','-G',
-        type=str, metavar='GIA', choices=models.keys(),
-        help='GIA model type to read')
+    parser.add_argument(
+        '--gia',
+        '-G',
+        type=str,
+        metavar='GIA',
+        choices=models.keys(),
+        help='GIA model type to read',
+    )
     # full path to GIA file
-    parser.add_argument('--gia-file',
-        type=pathlib.Path,
-        nargs='+', help='GIA files to read')
+    parser.add_argument(
+        '--gia-file', type=pathlib.Path, nargs='+', help='GIA files to read'
+    )
     # input data format (ascii, netCDF4, HDF5)
-    parser.add_argument('--format','-F',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
-        help='Input/output data format')
-    parser.add_argument('--redistribute-removed',
-        default=False, action='store_true',
-        help='Redistribute removed mass fields over the ocean')
+    parser.add_argument(
+        '--format',
+        '-F',
+        type=str,
+        default='netCDF4',
+        choices=['ascii', 'netCDF4', 'HDF5'],
+        help='Input/output data format',
+    )
+    parser.add_argument(
+        '--redistribute-removed',
+        default=False,
+        action='store_true',
+        help='Redistribute removed mass fields over the ocean',
+    )
     # print information about each input and output file
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of run',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -526,13 +768,15 @@ def main():
             OUTPUT_DIRECTORY=args.output_directory,
             FLAG=args.flag,
             VERBOSE=args.verbose,
-            MODE=args.mode)
+            MODE=args.mode,
+        )
     except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
+
 
 # run main program
 if __name__ == '__main__':
