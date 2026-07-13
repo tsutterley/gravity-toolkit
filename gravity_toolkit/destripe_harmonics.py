@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 destripe_harmonics.py
 Original Fortran program remove_errors.f written by Isabella Velicogna
 Adapted by Chia-Wei Hsu (05/2018)
@@ -56,17 +56,19 @@ UPDATE HISTORY:
     Updated 05/2015: added parameter MMAX for MMAX != LMAX
     Updated 02/2014: generalization for GRACE GUI and other routines
 """
+
 import numpy as np
 
+
 def destripe_harmonics(
-        clm1,
-        slm1,
-        LMIN=2,
-        LMAX=60,
-        MMAX=None,
-        ROUND=True,
-        NARROW=False,
-    ):
+    clm1,
+    slm1,
+    LMIN=2,
+    LMAX=60,
+    MMAX=None,
+    ROUND=True,
+    NARROW=False,
+):
     """
     Filters spherical harmonic coefficients for correlated striping errors
     :cite:p:`Swenson:2006hu`
@@ -110,14 +112,14 @@ def destripe_harmonics(
     # matrix size declarations
     clmeven = np.zeros((LMAX), dtype=np.float64)
     slmeven = np.zeros((LMAX), dtype=np.float64)
-    clmodd = np.zeros((LMAX+1), dtype=np.float64)
-    slmodd = np.zeros((LMAX+1), dtype=np.float64)
-    clmsm = np.zeros((LMAX+1, MMAX+1), dtype=np.float64)
-    slmsm = np.zeros((LMAX+1, MMAX+1), dtype=np.float64)
+    clmodd = np.zeros((LMAX + 1), dtype=np.float64)
+    slmodd = np.zeros((LMAX + 1), dtype=np.float64)
+    clmsm = np.zeros((LMAX + 1, MMAX + 1), dtype=np.float64)
+    slmsm = np.zeros((LMAX + 1, MMAX + 1), dtype=np.float64)
 
     # start of the smoothing over orders (m)
-    for m in range(int(MMAX+1)):
-        smooth = np.exp(-np.float64(m)/10.0)*15.0
+    for m in range(int(MMAX + 1)):
+        smooth = np.exp(-np.float64(m) / 10.0) * 15.0
         if ROUND:
             # round(smooth) to nearest even instead of int(smooth)
             nsmooth = np.around(smooth)
@@ -125,28 +127,28 @@ def destripe_harmonics(
             # Sean's method for finding nsmooth (use floor of smooth)
             nsmooth = np.int64(smooth)
 
-        if (nsmooth < 2):
+        if nsmooth < 2:
             # Isabella's method of picking nsmooth sets minimum to 2
             nsmooth = np.int64(2)
 
-        rmat = np.zeros((3,3), dtype=np.float64)
-        lll = np.arange(np.float64(nsmooth)*2.+1.)-np.float64(nsmooth)
+        rmat = np.zeros((3, 3), dtype=np.float64)
+        lll = np.arange(np.float64(nsmooth) * 2.0 + 1.0) - np.float64(nsmooth)
         # create design matrix to have the following form:
         #    [    1     ll     ll^2   ]
         #    [    ll    ll^2   ll^3   ]
         #    [    ll^2  ll^3   ll^4   ]
-        for i,ill in enumerate(lll):
-            rmat[0,0] += 1.0
-            rmat[0,1] += ill
-            rmat[0,2] += ill**2
+        for i, ill in enumerate(lll):
+            rmat[0, 0] += 1.0
+            rmat[0, 1] += ill
+            rmat[0, 2] += ill**2
 
-            rmat[1,0] += ill
-            rmat[1,1] += ill**2
-            rmat[1,2] += ill**3
+            rmat[1, 0] += ill
+            rmat[1, 1] += ill**2
+            rmat[1, 2] += ill**3
 
-            rmat[2,0] += ill**2
-            rmat[2,1] += ill**3
-            rmat[2,2] += ill**4
+            rmat[2, 0] += ill**2
+            rmat[2, 1] += ill**3
+            rmat[2, 2] += ill**4
 
         # put the even and odd l's into their own arrays
         ieven = -1
@@ -154,133 +156,157 @@ def destripe_harmonics(
         leven = np.zeros((LMAX), dtype=np.int64)
         lodd = np.zeros((LMAX), dtype=np.int64)
 
-        for l in range(int(m),int(LMAX+1)):
+        for l in range(int(m), int(LMAX + 1)):
             # check if degree is odd or even
-            if np.remainder(l,2).astype(bool):
+            if np.remainder(l, 2).astype(bool):
                 iodd += 1
                 lodd[iodd] = l
-                clmodd[iodd] = clm1[l,m].copy()
-                slmodd[iodd] = slm1[l,m].copy()
+                clmodd[iodd] = clm1[l, m].copy()
+                slmodd[iodd] = slm1[l, m].copy()
             else:
                 ieven += 1
                 leven[ieven] = l
-                clmeven[ieven] = clm1[l,m].copy()
-                slmeven[ieven] = slm1[l,m].copy()
+                clmeven[ieven] = clm1[l, m].copy()
+                slmeven[ieven] = slm1[l, m].copy()
 
         # smooth, by fitting a quadratic polynomial to 7 points at a time
         # deal with even stokes coefficients
         l1 = 0
         l2 = ieven
 
-        if (l1 > (l2-2*nsmooth)):
-            for l in range(l1,l2+1):
+        if l1 > (l2 - 2 * nsmooth):
+            for l in range(l1, l2 + 1):
                 if NARROW:
                     # Sean's method
                     # Clm=Slm=0 if number of points is less than window size
-                    clmsm[leven[l],m] = 0.0
-                    slmsm[leven[l],m] = 0.0
+                    clmsm[leven[l], m] = 0.0
+                    slmsm[leven[l], m] = 0.0
                 else:
                     # Isabella's method
                     # Clm and Slm passed through unaltered
-                    clmsm[leven[l],m] = clm1[leven[l],m].copy()
-                    slmsm[leven[l],m] = slm1[leven[l],m].copy()
+                    clmsm[leven[l], m] = clm1[leven[l], m].copy()
+                    slmsm[leven[l], m] = slm1[leven[l], m].copy()
         else:
-            for l in range(int(l1+nsmooth),int(l2-nsmooth+1)):
+            for l in range(int(l1 + nsmooth), int(l2 - nsmooth + 1)):
                 rhsc = np.zeros((3), dtype=np.float64)
                 rhss = np.zeros((3), dtype=np.float64)
-                for ll in range(int(-nsmooth),int(nsmooth+1)):
-                    rhsc[0] += clmeven[l+ll]
-                    rhsc[1] += clmeven[l+ll]*np.float64(ll)
-                    rhsc[2] += clmeven[l+ll]*np.float64(ll**2)
-                    rhss[0] += slmeven[l+ll]
-                    rhss[1] += slmeven[l+ll]*np.float64(ll)
-                    rhss[2] += slmeven[l+ll]*np.float64(ll**2)
+                for ll in range(int(-nsmooth), int(nsmooth + 1)):
+                    rhsc[0] += clmeven[l + ll]
+                    rhsc[1] += clmeven[l + ll] * np.float64(ll)
+                    rhsc[2] += clmeven[l + ll] * np.float64(ll**2)
+                    rhss[0] += slmeven[l + ll]
+                    rhss[1] += slmeven[l + ll] * np.float64(ll)
+                    rhss[2] += slmeven[l + ll] * np.float64(ll**2)
 
                 # fit design matrix to coefficients
                 # to get beta parameters
-                bhsc = np.linalg.lstsq(rmat,rhsc.T,rcond=-1)[0]
-                bhss = np.linalg.lstsq(rmat,rhss.T,rcond=-1)[0]
+                bhsc = np.linalg.lstsq(rmat, rhsc.T, rcond=-1)[0]
+                bhss = np.linalg.lstsq(rmat, rhss.T, rcond=-1)[0]
 
                 # all other l is assigned as bhsc
-                clmsm[leven[l],m] = bhsc[0].copy()
+                clmsm[leven[l], m] = bhsc[0].copy()
                 # all other l is assigned as bhss
-                slmsm[leven[l],m] = bhss[0].copy()
+                slmsm[leven[l], m] = bhss[0].copy()
 
-                if (l == (l1+nsmooth)):
+                if l == (l1 + nsmooth):
                     # deal with l=l1+nsmooth
-                    for ll in range(int(-nsmooth),0):
-                        clmsm[leven[l+ll],m] = bhsc[0]+bhsc[1]*np.float64(ll) + \
-                            bhsc[2]*np.float64(ll**2)
-                        slmsm[leven[l+ll],m] = bhss[0]+bhss[1]*np.float64(ll) + \
-                            bhss[2]*np.float64(ll**2)
+                    for ll in range(int(-nsmooth), 0):
+                        clmsm[leven[l + ll], m] = (
+                            bhsc[0]
+                            + bhsc[1] * np.float64(ll)
+                            + bhsc[2] * np.float64(ll**2)
+                        )
+                        slmsm[leven[l + ll], m] = (
+                            bhss[0]
+                            + bhss[1] * np.float64(ll)
+                            + bhss[2] * np.float64(ll**2)
+                        )
 
-                if (l == (l2-nsmooth)):
+                if l == (l2 - nsmooth):
                     # deal with l=l2-nsmnooth
-                    for ll in range(1,int(nsmooth+1)):
-                        clmsm[leven[l+ll],m] = bhsc[0]+bhsc[1]*np.float64(ll) + \
-                            bhsc[2]*np.float64(ll**2)
-                        slmsm[leven[l+ll],m] = bhss[0]+bhss[1]*np.float64(ll) + \
-                            bhss[2]*np.float64(ll**2)
+                    for ll in range(1, int(nsmooth + 1)):
+                        clmsm[leven[l + ll], m] = (
+                            bhsc[0]
+                            + bhsc[1] * np.float64(ll)
+                            + bhsc[2] * np.float64(ll**2)
+                        )
+                        slmsm[leven[l + ll], m] = (
+                            bhss[0]
+                            + bhss[1] * np.float64(ll)
+                            + bhss[2] * np.float64(ll**2)
+                        )
 
         # deal with odd stokes coefficients
         l1 = 0
         l2 = iodd
 
-        if (l1 > (l2-2*nsmooth)):
-            for l in range(l1,l2+1):
+        if l1 > (l2 - 2 * nsmooth):
+            for l in range(l1, l2 + 1):
                 if NARROW:
                     # Sean's method
                     # Clm=Slm=0 if number of points is less than window size
-                    clmsm[lodd[l],m] = 0.0
-                    slmsm[lodd[l],m] = 0.0
+                    clmsm[lodd[l], m] = 0.0
+                    slmsm[lodd[l], m] = 0.0
                 else:
                     # Isabella's method
                     # Clm and Slm passed through unaltered
-                    clmsm[lodd[l],m] = clm1[lodd[l],m].copy()
-                    slmsm[lodd[l],m] = slm1[lodd[l],m].copy()
+                    clmsm[lodd[l], m] = clm1[lodd[l], m].copy()
+                    slmsm[lodd[l], m] = slm1[lodd[l], m].copy()
         else:
-            for l in range(int(l1+nsmooth),int(l2-nsmooth+1)):
+            for l in range(int(l1 + nsmooth), int(l2 - nsmooth + 1)):
                 rhsc = np.zeros((3), dtype=np.float64)
                 rhss = np.zeros((3), dtype=np.float64)
-                for ll in range(int(-nsmooth),int(nsmooth+1)):
-                    rhsc[0] += clmodd[l+ll]
-                    rhsc[1] += clmodd[l+ll]*np.float64(ll)
-                    rhsc[2] += clmodd[l+ll]*np.float64(ll**2)
-                    rhss[0] += slmodd[l+ll]
-                    rhss[1] += slmodd[l+ll]*np.float64(ll)
-                    rhss[2] += slmodd[l+ll]*np.float64(ll**2)
+                for ll in range(int(-nsmooth), int(nsmooth + 1)):
+                    rhsc[0] += clmodd[l + ll]
+                    rhsc[1] += clmodd[l + ll] * np.float64(ll)
+                    rhsc[2] += clmodd[l + ll] * np.float64(ll**2)
+                    rhss[0] += slmodd[l + ll]
+                    rhss[1] += slmodd[l + ll] * np.float64(ll)
+                    rhss[2] += slmodd[l + ll] * np.float64(ll**2)
 
                 # fit design matrix to coefficients
                 # to get beta parameters
-                bhsc = np.linalg.lstsq(rmat,rhsc.T,rcond=-1)[0]
-                bhss = np.linalg.lstsq(rmat,rhss.T,rcond=-1)[0]
+                bhsc = np.linalg.lstsq(rmat, rhsc.T, rcond=-1)[0]
+                bhss = np.linalg.lstsq(rmat, rhss.T, rcond=-1)[0]
 
                 # all other l is assigned as bhsc
-                clmsm[lodd[l],m] = bhsc[0].copy()
+                clmsm[lodd[l], m] = bhsc[0].copy()
                 # all other l is assigned as bhss
-                slmsm[lodd[l],m] = bhss[0].copy()
+                slmsm[lodd[l], m] = bhss[0].copy()
 
-                if (l == (l1+nsmooth)):
+                if l == (l1 + nsmooth):
                     # deal with l=l1+nsmooth
-                    for ll in range(int(-nsmooth),0):
-                        clmsm[lodd[l+ll],m] = bhsc[0]+bhsc[1]*np.float64(ll) + \
-                            bhsc[2]*np.float64(ll**2)
-                        slmsm[lodd[l+ll],m] = bhss[0]+bhss[1]*np.float64(ll) + \
-                            bhss[2]*np.float64(ll**2)
+                    for ll in range(int(-nsmooth), 0):
+                        clmsm[lodd[l + ll], m] = (
+                            bhsc[0]
+                            + bhsc[1] * np.float64(ll)
+                            + bhsc[2] * np.float64(ll**2)
+                        )
+                        slmsm[lodd[l + ll], m] = (
+                            bhss[0]
+                            + bhss[1] * np.float64(ll)
+                            + bhss[2] * np.float64(ll**2)
+                        )
 
-                if (l == (l2-nsmooth)):
+                if l == (l2 - nsmooth):
                     # deal with l=l2-nsmnooth
-                    for ll in range(1,int(nsmooth+1)):
-                        clmsm[lodd[l+ll],m] = bhsc[0]+bhsc[1]*np.float64(ll) + \
-                            bhsc[2]*np.float64(ll**2)
-                        slmsm[lodd[l+ll],m] = bhss[0]+bhss[1]*np.float64(ll) + \
-                            bhss[2]*np.float64(ll**2)
+                    for ll in range(1, int(nsmooth + 1)):
+                        clmsm[lodd[l + ll], m] = (
+                            bhsc[0]
+                            + bhsc[1] * np.float64(ll)
+                            + bhsc[2] * np.float64(ll**2)
+                        )
+                        slmsm[lodd[l + ll], m] = (
+                            bhss[0]
+                            + bhss[1] * np.float64(ll)
+                            + bhss[2] * np.float64(ll**2)
+                        )
 
         # deal with m greater than or equal to 5
-        for l in range(int(m),int(LMAX+1)):
-            if (m >= 5):
+        for l in range(int(m), int(LMAX + 1)):
+            if m >= 5:
                 # remove smoothed clm/slm from original spherical harmonics
-                Wclm[l,m] -= clmsm[l,m]
-                Wslm[l,m] -= slmsm[l,m]
+                Wclm[l, m] -= clmsm[l, m]
+                Wslm[l, m] -= slmsm[l, m]
 
-    return {'clm':Wclm,'slm':Wslm}
+    return {'clm': Wclm, 'slm': Wslm}

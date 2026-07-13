@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 mascons.py
 Written by Tyler Sutterley (07/2026)
 Conversion routines for publicly available GRACE/GRACE-FO mascon solutions
@@ -26,9 +26,11 @@ UPDATE HISTORY:
     Updated 12/2015: added TRANSPOSE option to output spatial routines
     Written 07/2013
 """
+
 import copy
 import warnings
 import numpy as np
+
 
 def to_gsfc(gdata, lon, lat, lon_center, lat_center, lon_span, lat_span):
     """
@@ -78,36 +80,40 @@ def to_gsfc(gdata, lon, lat, lon_center, lat_center, lon_span, lat_span):
     mascon_array['data'] = np.zeros((nmas))
     mascon_array['lon_center'] = np.zeros((nmas))
     mascon_array['lat_center'] = np.zeros((nmas))
-    for k in range(0,nmas):
+    for k in range(0, nmas):
         # create latitudinal and longitudinal bounds for mascon k
         if (lat_center[k] == 90.0) | (lat_center[k] == -90.0):
             # NH and SH polar mascons
-            lon_bound = [0.0,360.0]
-            lat_bound = lat_center[k] + np.array([-1.0,1.0])*lat_span[k]
+            lon_bound = [0.0, 360.0]
+            lat_bound = lat_center[k] + np.array([-1.0, 1.0]) * lat_span[k]
         else:
             # convert from mascon centers to mascon bounds
-            lon_bound = lon_center[k] + np.array([-0.5,0.5])*lon_span[k]
-            lat_bound = lat_center[k] + np.array([-0.5,0.5])*lat_span[k]
+            lon_bound = lon_center[k] + np.array([-0.5, 0.5]) * lon_span[k]
+            lat_bound = lat_center[k] + np.array([-0.5, 0.5]) * lat_span[k]
         # if mascon is centered on +/-180: use 0:360
-        if ((lon_bound[0] <= 180.0) & (lon_bound[1] >= 180.0)):
+        if (lon_bound[0] <= 180.0) & (lon_bound[1] >= 180.0):
             ilon = alon.copy()
-        elif ((lon_bound[0] <= -180.0) & (lon_bound[1] >= -180.0)):
+        elif (lon_bound[0] <= -180.0) & (lon_bound[1] >= -180.0):
             lon_bound += 360.0
             ilon = alon.copy()
         else:
             ilon = lon.copy()
         # indices for grid points within the mascon
-        I, = np.flatnonzero((lat >= lat_bound[0]) & (lat < lat_bound[1]))
-        J, = np.flatnonzero((ilon >= lon_bound[0]) & (ilon < lon_bound[1]))
-        I,J = (I[np.newaxis,:], J[:,np.newaxis])
+        (I,) = np.flatnonzero((lat >= lat_bound[0]) & (lat < lat_bound[1]))
+        (J,) = np.flatnonzero((ilon >= lon_bound[0]) & (ilon < lon_bound[1]))
+        I, J = (I[np.newaxis, :], J[:, np.newaxis])
         # calculate average data for mascon bin
-        mascon_array['data'][k] = np.mean((np.cos(np.radians(lat[I])) /
-            np.mean(np.cos(np.radians(lat[I]))))*gdata[I,J]/len(I))
+        mascon_array['data'][k] = np.mean(
+            (np.cos(np.radians(lat[I])) / np.mean(np.cos(np.radians(lat[I]))))
+            * gdata[I, J]
+            / len(I)
+        )
         mascon_array['lat_center'][k] = lat_center[k]
         mascon_array['lon_center'][k] = lon_center[k]
 
     # return python dictionary with the mascon array data, lon and lat
     return mascon_array
+
 
 def to_jpl(gdata, lon, lat, lon_bound, lat_bound):
     """
@@ -139,7 +145,7 @@ def to_jpl(gdata, lon, lat, lon_bound, lat_bound):
         row vector of longitude values for mascons
     """
     # mascon dimensions
-    nmas,nvar = lat_bound.shape
+    nmas, nvar = lat_bound.shape
     # remove singleton dimensions
     lat = np.squeeze(lat)
     lon = np.squeeze(lon)
@@ -148,36 +154,47 @@ def to_jpl(gdata, lon, lat, lon_bound, lat_bound):
     # for that bin
     mascon_array = {}
     mascon_array['data'] = np.zeros((nmas))
-    mascon_array['mask'] = np.zeros((nmas),dtype=bool)
+    mascon_array['mask'] = np.zeros((nmas), dtype=bool)
     mascon_array['lon'] = np.zeros((nmas))
     mascon_array['lat'] = np.zeros((nmas))
-    for k in range(0,nmas):
+    for k in range(0, nmas):
         # indices for grid points within the mascon
-        I, = np.flatnonzero((lat >= lat_bound[k,1]) & (lat < lat_bound[k,0]))
-        J, = np.flatnonzero((lon >= lon_bound[k,0]) & (lon < lon_bound[k,2]))
-        nlt = np.count_nonzero((lat >= lat_bound[k,1]) & (lat < lat_bound[k,0]))
-        I,J = (I[np.newaxis,:], J[:,np.newaxis])
+        (I,) = np.flatnonzero(
+            (lat >= lat_bound[k, 1]) & (lat < lat_bound[k, 0])
+        )
+        (J,) = np.flatnonzero(
+            (lon >= lon_bound[k, 0]) & (lon < lon_bound[k, 2])
+        )
+        nlt = np.count_nonzero(
+            (lat >= lat_bound[k, 1]) & (lat < lat_bound[k, 0])
+        )
+        I, J = (I[np.newaxis, :], J[:, np.newaxis])
         # calculate average data for mascon bin
-        mascon_array['data'][k] = np.mean((np.cos(np.radians(lat[I])) /
-            np.mean(np.cos(np.radians(lat[I]))))*gdata[I,J]/nlt)
+        mascon_array['data'][k] = np.mean(
+            (np.cos(np.radians(lat[I])) / np.mean(np.cos(np.radians(lat[I]))))
+            * gdata[I, J]
+            / nlt
+        )
         # calculate coordinates of mascon center
-        mascon_array['lat'][k] = (lat_bound[k,1]+lat_bound[k,0])/2.0
-        mascon_array['lon'][k] = (lon_bound[k,1]+lon_bound[k,2])/2.0
+        mascon_array['lat'][k] = (lat_bound[k, 1] + lat_bound[k, 0]) / 2.0
+        mascon_array['lon'][k] = (lon_bound[k, 1] + lon_bound[k, 2]) / 2.0
         mascon_array['mask'][k] = bool(nlt == 0)
         # Do a check at the poles to make the lat/lon equal to +/-90/0
-        if (np.abs(lat_bound[k,0]) == 90):
-            mascon_array['lat'][k] = lat_bound[k,0]
+        if np.abs(lat_bound[k, 0]) == 90:
+            mascon_array['lat'][k] = lat_bound[k, 0]
             mascon_array['lon'][k] = 0.0
-        if (np.abs(lat_bound[k,1]) == 90):
-            mascon_array['lat'][k] = lat_bound[k,1]
+        if np.abs(lat_bound[k, 1]) == 90:
+            mascon_array['lat'][k] = lat_bound[k, 1]
             mascon_array['lon'][k] = 0.0
     # replace invalid data with 0
     mascon_array['data'][mascon_array['mask']] = 0.0
     # return python dictionary with the mascon array data, lon and lat
     return mascon_array
 
-def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
-    **kwargs):
+
+def from_gsfc(
+    mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span, **kwargs
+):
     """
     Converts an input GSFC mascon array to an output gridded field
     :cite:p:`Luthcke:2013ep`
@@ -208,10 +225,13 @@ def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
     kwargs.setdefault('transpose', False)
     # raise warnings for deprecated keyword arguments
     deprecated_keywords = dict(TRANSPOSE='transpose')
-    for old,new in deprecated_keywords.items():
+    for old, new in deprecated_keywords.items():
         if old in kwargs.keys():
-            warnings.warn(f"""Deprecated keyword argument {old}.
-                Changed to '{new}'""", DeprecationWarning)
+            warnings.warn(
+                f"""Deprecated keyword argument {old}.
+                Changed to '{new}'""",
+                DeprecationWarning,
+            )
             # set renamed argument to not break workflows
             kwargs[new] = copy.copy(kwargs[old])
 
@@ -221,9 +241,13 @@ def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
     lon_center = np.where(lon_center > 180, lon_center - 360.0, lon_center)
 
     # Define output latitude and longitude grids
-    lon = np.arange(-180.0+grid_spacing/2.0,180.0+grid_spacing/2.0,grid_spacing)
-    lat = np.arange(90.0-grid_spacing/2.0,-90.0-grid_spacing/2.0,-grid_spacing)
-    nlon, nlat = (len(lon),len(lat))
+    lon = np.arange(
+        -180.0 + grid_spacing / 2.0, 180.0 + grid_spacing / 2.0, grid_spacing
+    )
+    lat = np.arange(
+        90.0 - grid_spacing / 2.0, -90.0 - grid_spacing / 2.0, -grid_spacing
+    )
+    nlon, nlat = (len(lon), len(lat))
     # for mascons centered on 180: use 0:360
     alon = np.copy(lon)
     alon = np.where(alon < 0, alon + 360.0, alon)
@@ -234,31 +258,32 @@ def from_gsfc(mscdata, grid_spacing, lon_center, lat_center, lon_span, lat_span,
         # create latitudinal and longitudinal bounds for mascon k
         if (lat_center[k] == 90.0) | (lat_center[k] == -90.0):
             # NH and SH polar mascons
-            lon_bound = [0.0,360.0]
-            lat_bound = lat_center[k] + np.array([-1.0,1.0])*lat_span[k]
+            lon_bound = [0.0, 360.0]
+            lat_bound = lat_center[k] + np.array([-1.0, 1.0]) * lat_span[k]
         else:
             # convert from mascon centers to mascon bounds
-            lon_bound = lon_center[k] + np.array([-0.5,0.5])*lon_span[k]
-            lat_bound = lat_center[k] + np.array([-0.5,0.5])*lat_span[k]
+            lon_bound = lon_center[k] + np.array([-0.5, 0.5]) * lon_span[k]
+            lat_bound = lat_center[k] + np.array([-0.5, 0.5]) * lat_span[k]
         # if mascon is centered on +/-180: use 0:360
-        if ((lon_bound[0] <= 180.0) & (lon_bound[1] >= 180.0)):
+        if (lon_bound[0] <= 180.0) & (lon_bound[1] >= 180.0):
             ilon = alon.copy()
-        elif ((lon_bound[0] <= -180.0) & (lon_bound[1] >= -180.0)):
+        elif (lon_bound[0] <= -180.0) & (lon_bound[1] >= -180.0):
             lon_bound += 360.0
             ilon = alon.copy()
         else:
             ilon = lon.copy()
         # indices for grid points within the mascon
-        I, = np.flatnonzero((lat >= lat_bound[0]) & (lat < lat_bound[1]))
-        J, = np.flatnonzero((ilon >= lon_bound[0]) & (ilon < lon_bound[1]))
-        I,J = (I[np.newaxis,:], J[:,np.newaxis])
-        mdata[I,J] = mscdata[k]
+        (I,) = np.flatnonzero((lat >= lat_bound[0]) & (lat < lat_bound[1]))
+        (J,) = np.flatnonzero((ilon >= lon_bound[0]) & (ilon < lon_bound[1]))
+        I, J = (I[np.newaxis, :], J[:, np.newaxis])
+        mdata[I, J] = mscdata[k]
 
     # return array
     if kwargs['transpose']:
         return mdata.T
     else:
         return mdata
+
 
 def from_jpl(mscdata, grid_spacing, lon_bound, lat_bound, **kwargs):
     """
@@ -287,30 +312,41 @@ def from_jpl(mscdata, grid_spacing, lon_bound, lat_bound, **kwargs):
     kwargs.setdefault('transpose', False)
     # raise warnings for deprecated keyword arguments
     deprecated_keywords = dict(TRANSPOSE='transpose')
-    for old,new in deprecated_keywords.items():
+    for old, new in deprecated_keywords.items():
         if old in kwargs.keys():
-            warnings.warn(f"""Deprecated keyword argument {old}.
-                Changed to '{new}'""", DeprecationWarning)
+            warnings.warn(
+                f"""Deprecated keyword argument {old}.
+                Changed to '{new}'""",
+                DeprecationWarning,
+            )
             # set renamed argument to not break workflows
             kwargs[new] = copy.copy(kwargs[old])
 
     # mascon dimensions
-    nmas,nvar = lat_bound.shape
+    nmas, nvar = lat_bound.shape
 
     # Define latitude and longitude grids
     # output lon will not include 360
     # output lat will not include 90
-    lon = np.arange(grid_spacing/2.0, 360.0+grid_spacing/2.0, grid_spacing)
-    lat = np.arange(-90.0+grid_spacing/2.0, 90.0+grid_spacing/2.0, grid_spacing)
-    nlon, nlat = (len(lon),len(lat))
+    lon = np.arange(
+        grid_spacing / 2.0, 360.0 + grid_spacing / 2.0, grid_spacing
+    )
+    lat = np.arange(
+        -90.0 + grid_spacing / 2.0, 90.0 + grid_spacing / 2.0, grid_spacing
+    )
+    nlon, nlat = (len(lon), len(lat))
 
     # loop over each mascon bin and assign value to grid points inside bin:
     mdata = np.zeros((nlat, nlon))
     for k in range(0, nmas):
-        I, = np.flatnonzero((lat >= lat_bound[k,1]) & (lat < lat_bound[k,0]))
-        J, = np.flatnonzero((lon >= lon_bound[k,0]) & (lon < lon_bound[k,2]))
-        I,J = (I[np.newaxis,:], J[:,np.newaxis])
-        mdata[I,J] = mscdata[k]
+        (I,) = np.flatnonzero(
+            (lat >= lat_bound[k, 1]) & (lat < lat_bound[k, 0])
+        )
+        (J,) = np.flatnonzero(
+            (lon >= lon_bound[k, 0]) & (lon < lon_bound[k, 2])
+        )
+        I, J = (I[np.newaxis, :], J[:, np.newaxis])
+        mdata[I, J] = mscdata[k]
 
     # return array
     if kwargs['transpose']:

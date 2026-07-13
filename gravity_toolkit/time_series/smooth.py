@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 smooth.py
 Written by Tyler Sutterley (07/2026)
 
@@ -78,12 +78,15 @@ UPDATE HISTORY:
     Updated 03/2012: added Loess smoothing following Velicogna (2009)
     Written 12/2011
 """
+
 import numpy as np
 import scipy.stats
 import scipy.special
 
-def smooth(t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0,
-    STDEV=0, CONF=0):
+
+def smooth(
+    t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0, STDEV=0, CONF=0
+):
     """
     Computes the moving average of a time-series
 
@@ -145,10 +148,10 @@ def smooth(t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0,
     SEAS = 2
 
     # set either the standard deviation or the confidence interval
-    if (STDEV != 0):
+    if STDEV != 0:
         # Setting the standard deviation of the output error
-        alpha = 1.0 - scipy.special.erf(STDEV/np.sqrt(2.0))
-    elif (CONF != 0):
+        alpha = 1.0 - scipy.special.erf(STDEV / np.sqrt(2.0))
+    elif CONF != 0:
         # Setting the confidence interval of the output error
         alpha = 1.0 - CONF
     else:
@@ -161,14 +164,16 @@ def smooth(t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0,
         # equal to mean of Jan:Dec and Feb:Jan+1 for HFWTH 6
         # problematic with GRACE due to missing months within time-series
         # output time
-        tout = t_in[HFWTH:nmax-HFWTH]
-        smth = np.zeros((nmax-2*HFWTH))
-        for k in range(0, (nmax-(2*HFWTH))):
+        tout = t_in[HFWTH : nmax - HFWTH]
+        smth = np.zeros((nmax - 2 * HFWTH))
+        for k in range(0, (nmax - (2 * HFWTH))):
             # centered moving average sum[2:i-1] + 0.5[1] + 0.5[i]
-            smth[k] = np.sum(d_in[k+1:k+2*HFWTH]) + 0.5*(d_in[k]+d_in[k+2*HFWTH])
-        dsmth = smth/(2*HFWTH)
-        return {'data':dsmth, 'time':tout}
-    elif WEIGHT in (1,2):
+            smth[k] = np.sum(d_in[k + 1 : k + 2 * HFWTH]) + 0.5 * (
+                d_in[k] + d_in[k + 2 * HFWTH]
+            )
+        dsmth = smth / (2 * HFWTH)
+        return {'data': dsmth, 'time': tout}
+    elif WEIGHT in (1, 2):
         # weighted moving average calculated from the least-squares of window
         # and removing An/SAn signal.  models entire range of dates
         # for a HFWTH of 6 (remove annual)
@@ -179,18 +184,25 @@ def smooth(t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0,
         # smoothed time-series = sum(smth*weights)/sum(weights)the weight array
         # output time = input time
         tout = np.copy(t_in)
-        if (WEIGHT == 1):
+        if WEIGHT == 1:
             # linear weights (range from 1:HFWTH+1:-1)
-            wi = np.concatenate((np.arange(1,HFWTH+2,dtype=np.float64),
-                np.arange(HFWTH,0,-1,dtype=np.float64)),axis=0)
-        elif (WEIGHT == 2):
+            wi = np.concatenate(
+                (
+                    np.arange(1, HFWTH + 2, dtype=np.float64),
+                    np.arange(HFWTH, 0, -1, dtype=np.float64),
+                ),
+                axis=0,
+            )
+        elif WEIGHT == 2:
             # gaussian weights
             # default standard deviation of 2
             stdev = 2.0
             # gaussian function over range 2*HFWTH
             # centered on HFWTH
-            xi=np.arange(0, 2*HFWTH+1)
-            wi=np.exp(-(xi-HFWTH)**2/(2.0*stdev**2))/(stdev*np.sqrt(2.0*np.pi))
+            xi = np.arange(0, 2 * HFWTH + 1)
+            wi = np.exp(-((xi - HFWTH) ** 2) / (2.0 * stdev**2)) / (
+                stdev * np.sqrt(2.0 * np.pi)
+            )
 
         dsmth = np.zeros((nmax))
         dseason = np.zeros((nmax))
@@ -201,37 +213,37 @@ def smooth(t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0,
         semiamp = np.zeros((nmax))
         semiphase = np.zeros((nmax))
         weight = np.zeros((nmax))
-        for i in range(0, (nmax-(2*HFWTH))):
-            ran = i + np.arange(0, 2*HFWTH+1)
-            P_x0 = np.ones((2*HFWTH+1))# Constant Term
-            P_x1 = t_in[ran]# Linear Term
+        for i in range(0, (nmax - (2 * HFWTH))):
+            ran = i + np.arange(0, 2 * HFWTH + 1)
+            P_x0 = np.ones((2 * HFWTH + 1))  # Constant Term
+            P_x1 = t_in[ran]  # Linear Term
             # Annual term = 2*pi*t*harmonic
-            P_asin = np.sin(2*np.pi*t_in[ran])
-            P_acos = np.cos(2*np.pi*t_in[ran])
-            #Semi-Annual = 4*pi*t*harmonic
-            P_ssin = np.sin(4*np.pi*t_in[ran])
-            P_scos = np.cos(4*np.pi*t_in[ran])
+            P_asin = np.sin(2 * np.pi * t_in[ran])
+            P_acos = np.cos(2 * np.pi * t_in[ran])
+            # Semi-Annual = 4*pi*t*harmonic
+            P_ssin = np.sin(4 * np.pi * t_in[ran])
+            P_scos = np.cos(4 * np.pi * t_in[ran])
             # x0,x1,AS,AC,SS,SC
             TMAT = np.array([P_x0, P_x1, P_asin, P_acos, P_ssin, P_scos])
             TMAT = np.transpose(TMAT)
             # Least-Squares fitting
             # (the [0] denotes coefficients output)standard
-            beta_mat = np.linalg.lstsq(TMAT,d_in[ran],rcond=-1)[0]
+            beta_mat = np.linalg.lstsq(TMAT, d_in[ran], rcond=-1)[0]
             # Calculating the output components
             # add weighted smoothed time series
-            dsmth[ran] += wi*np.dot(TMAT[:,0:SEAS],beta_mat[0:SEAS])
+            dsmth[ran] += wi * np.dot(TMAT[:, 0:SEAS], beta_mat[0:SEAS])
             # seasonal component
-            dseason[ran] += wi*np.dot(TMAT[:,SEAS:],beta_mat[SEAS:])
+            dseason[ran] += wi * np.dot(TMAT[:, SEAS:], beta_mat[SEAS:])
             # annual component
-            AS,AC = beta_mat[SEAS:SEAS+2]
-            dannual[ran] += wi*np.dot(TMAT[:,SEAS:SEAS+2],[AS,AC])
-            annamp[ran] += wi*np.hypot(AS, AC)
-            annphase[ran] += wi*np.degrees(np.arctan2(AC, AS))
+            AS, AC = beta_mat[SEAS : SEAS + 2]
+            dannual[ran] += wi * np.dot(TMAT[:, SEAS : SEAS + 2], [AS, AC])
+            annamp[ran] += wi * np.hypot(AS, AC)
+            annphase[ran] += wi * np.degrees(np.arctan2(AC, AS))
             # semi-annual component
-            SS,SC = beta_mat[SEAS+2:SEAS+4]
-            dsemian[ran] += wi*np.dot(TMAT[:,SEAS+2:SEAS+4],[SS,SC])
-            semiamp[ran] += wi*np.hypot(SS, SC)
-            semiphase[ran] += wi*np.degrees(np.arctan2(SC, SS))
+            SS, SC = beta_mat[SEAS + 2 : SEAS + 4]
+            dsemian[ran] += wi * np.dot(TMAT[:, SEAS + 2 : SEAS + 4], [SS, SC])
+            semiamp[ran] += wi * np.hypot(SS, SC)
+            semiphase[ran] += wi * np.degrees(np.arctan2(SC, SS))
             # add weights
             weight[ran] += wi
         # divide weighted smoothed time-series by weights
@@ -246,64 +258,78 @@ def smooth(t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0,
         semiphase /= weight
         # noise = data - smoothed - seasonal
         dnoise = d_in - dsmth - dseason
-        return {'data':dsmth, 'seasonal':dseason, 'annual':dannual,
-            'annamp':annamp, 'annphase':annphase, 'semiann':dsemian,
-            'semiamp':semiamp, 'semiphase':semiphase, 'noise':dnoise,
-            'time':tout, 'weight':weight}
+        return {
+            'data': dsmth,
+            'seasonal': dseason,
+            'annual': dannual,
+            'annamp': annamp,
+            'annphase': annphase,
+            'semiann': dsemian,
+            'semiamp': semiamp,
+            'semiphase': semiphase,
+            'noise': dnoise,
+            'time': tout,
+            'weight': weight,
+        }
     else:
         # Moving average calculated from least-squares of window
         # and removing An/SAn signal
         # output time
-        tout = t_in[HFWTH:nmax-HFWTH]
-        dsmth = np.zeros((nmax-2*HFWTH))
-        dtrend = np.zeros((nmax-2*HFWTH))
-        derror = np.zeros((nmax-2*HFWTH))
-        dseason = np.zeros((nmax-2*HFWTH))
-        dannual = np.zeros((nmax-2*HFWTH))
-        annamp = np.zeros((nmax-2*HFWTH))
-        annphase = np.zeros((nmax-2*HFWTH))
-        dsemian = np.zeros((nmax-2*HFWTH))
-        semiamp = np.zeros((nmax-2*HFWTH))
-        semiphase = np.zeros((nmax-2*HFWTH))
-        dnoise = np.zeros((nmax-2*HFWTH))
-        dreduce = np.zeros((nmax-2*HFWTH))
-        for i in range(0, (nmax-(2*HFWTH))):
-            ran = i + np.arange(0, 2*HFWTH+1)
-            P_x0 = np.ones((2*HFWTH+1))# Constant Term
-            P_x1 = t_in[ran]# Linear Term
+        tout = t_in[HFWTH : nmax - HFWTH]
+        dsmth = np.zeros((nmax - 2 * HFWTH))
+        dtrend = np.zeros((nmax - 2 * HFWTH))
+        derror = np.zeros((nmax - 2 * HFWTH))
+        dseason = np.zeros((nmax - 2 * HFWTH))
+        dannual = np.zeros((nmax - 2 * HFWTH))
+        annamp = np.zeros((nmax - 2 * HFWTH))
+        annphase = np.zeros((nmax - 2 * HFWTH))
+        dsemian = np.zeros((nmax - 2 * HFWTH))
+        semiamp = np.zeros((nmax - 2 * HFWTH))
+        semiphase = np.zeros((nmax - 2 * HFWTH))
+        dnoise = np.zeros((nmax - 2 * HFWTH))
+        dreduce = np.zeros((nmax - 2 * HFWTH))
+        for i in range(0, (nmax - (2 * HFWTH))):
+            ran = i + np.arange(0, 2 * HFWTH + 1)
+            P_x0 = np.ones((2 * HFWTH + 1))  # Constant Term
+            P_x1 = t_in[ran]  # Linear Term
             # Annual term = 2*pi*t*harmonic
-            P_asin = np.sin(2*np.pi*t_in[ran])
-            P_acos = np.cos(2*np.pi*t_in[ran])
-            #Semi-Annual = 4*pi*t*harmonic
-            P_ssin = np.sin(4*np.pi*t_in[ran])
-            P_scos = np.cos(4*np.pi*t_in[ran])
+            P_asin = np.sin(2 * np.pi * t_in[ran])
+            P_acos = np.cos(2 * np.pi * t_in[ran])
+            # Semi-Annual = 4*pi*t*harmonic
+            P_ssin = np.sin(4 * np.pi * t_in[ran])
+            P_scos = np.cos(4 * np.pi * t_in[ran])
             # x0,x1,AS,AC,SS,SC
             TMAT = np.array([P_x0, P_x1, P_asin, P_acos, P_ssin, P_scos])
             TMAT = np.transpose(TMAT)
             # Least-Squares fitting
             # (the [0] denotes coefficients output)
-            beta_mat = np.linalg.lstsq(TMAT,d_in[ran],rcond=-1)[0]
+            beta_mat = np.linalg.lstsq(TMAT, d_in[ran], rcond=-1)[0]
             n_terms = len(beta_mat)
 
-            if (DATA_ERR != 0):
+            if DATA_ERR != 0:
                 # LEAST-SQUARES CASE WITH KNOWN AND EQUAL ERROR
-                P_err = DATA_ERR*np.ones((2*HFWTH+1))
-                Hinv = np.linalg.inv(np.dot(np.transpose(TMAT),TMAT))
+                P_err = DATA_ERR * np.ones((2 * HFWTH + 1))
+                Hinv = np.linalg.inv(np.dot(np.transpose(TMAT), TMAT))
                 #    Normal Equations
-                NORMEQ = np.dot(Hinv,np.transpose(TMAT))
+                NORMEQ = np.dot(Hinv, np.transpose(TMAT))
                 beta_err = np.zeros((n_terms))
-                for n in range(0,n_terms):
-                    beta_err[n] = np.sqrt(np.sum((NORMEQ[n,:]*P_err)**2))
+                for n in range(0, n_terms):
+                    beta_err[n] = np.sqrt(np.sum((NORMEQ[n, :] * P_err) ** 2))
             else:
                 # Error Analysis
                 # Degrees of Freedom
-                nu = (2*HFWTH+1) - n_terms
+                nu = (2 * HFWTH + 1) - n_terms
                 # Mean square error
-                MSE = np.dot(np.transpose(d_in[ran] - np.dot(TMAT,beta_mat)),
-                    (d_in[ran] - np.dot(TMAT,beta_mat)))/nu
+                MSE = (
+                    np.dot(
+                        np.transpose(d_in[ran] - np.dot(TMAT, beta_mat)),
+                        (d_in[ran] - np.dot(TMAT, beta_mat)),
+                    )
+                    / nu
+                )
                 # Covariance Matrix
                 # Multiplying the design matrix by itself
-                Hinv = np.linalg.inv(np.dot(np.transpose(TMAT),TMAT))
+                Hinv = np.linalg.inv(np.dot(np.transpose(TMAT), TMAT))
                 # Taking the diagonal components of the cov matrix
                 hdiag = np.diag(Hinv)
 
@@ -311,35 +337,46 @@ def smooth(t_in, d_in, HFWTH=6, MOVING=False, DATA_ERR=0, WEIGHT=0,
                 # Regression with Errors with Unknown Standard Deviations
                 # Student T-Distribution with D.O.F. nu
                 #    t.ppf parallels tinv in matlab
-                tstar = scipy.stats.t.ppf(1.0-(alpha/2.0),nu)
+                tstar = scipy.stats.t.ppf(1.0 - (alpha / 2.0), nu)
                 # beta_err is the error for each coefficient
                 # beta_err = t(nu,1-alpha/2)*standard error
-                st_err = np.sqrt(MSE*hdiag)
-                beta_err = tstar*st_err
+                st_err = np.sqrt(MSE * hdiag)
+                beta_err = tstar * st_err
 
             # Calculating the output components
             # smoothed time series
-            dsmth[i] = np.dot(TMAT[HFWTH,0:SEAS],beta_mat[0:SEAS])
-            dtrend[i] = np.copy(beta_mat[1])# Instantaneous data trend
-            derror[i] = np.copy(beta_err[1])# Error in trend
+            dsmth[i] = np.dot(TMAT[HFWTH, 0:SEAS], beta_mat[0:SEAS])
+            dtrend[i] = np.copy(beta_mat[1])  # Instantaneous data trend
+            derror[i] = np.copy(beta_err[1])  # Error in trend
             # seasonal component
-            dseason[i] = np.dot(TMAT[HFWTH,SEAS:],beta_mat[SEAS:])
+            dseason[i] = np.dot(TMAT[HFWTH, SEAS:], beta_mat[SEAS:])
             # annual component
-            AS,AC = beta_mat[SEAS:SEAS+2]
-            dannual[i] = np.dot(TMAT[HFWTH,SEAS:SEAS+2],[AS,AC])
+            AS, AC = beta_mat[SEAS : SEAS + 2]
+            dannual[i] = np.dot(TMAT[HFWTH, SEAS : SEAS + 2], [AS, AC])
             annphase[i] = np.degrees(np.arctan2(AC, AS))
             annamp[i] = np.hypot(AS, AC)
             # semi-annual component
-            SS,SC = beta_mat[SEAS+2:SEAS+4]
-            dsemian[i] = np.dot(TMAT[HFWTH,SEAS+2:SEAS+4],[SS,SC])
+            SS, SC = beta_mat[SEAS + 2 : SEAS + 4]
+            dsemian[i] = np.dot(TMAT[HFWTH, SEAS + 2 : SEAS + 4], [SS, SC])
             semiamp[i] = np.hypot(SS, SC)
             semiphase[i] = np.degrees(np.arctan2(SC, SS))
             # noise component
-            dnoise[i] = d_in[i+HFWTH] - dsmth[i] - dseason[i]
+            dnoise[i] = d_in[i + HFWTH] - dsmth[i] - dseason[i]
             # reduced time-series
-            dreduce[i] = d_in[i+HFWTH]
+            dreduce[i] = d_in[i + HFWTH]
 
-        return {'data':dsmth, 'trend':dtrend, 'error':derror,
-            'seasonal':dseason, 'annual':dannual, 'annphase':annphase,
-            'annamp':annamp, 'semiann':dsemian, 'semiamp':semiamp,
-            'semiphase':semiphase, 'noise':dnoise, 'time':tout, 'reduce':dreduce}
+        return {
+            'data': dsmth,
+            'trend': dtrend,
+            'error': derror,
+            'seasonal': dseason,
+            'annual': dannual,
+            'annphase': annphase,
+            'annamp': annamp,
+            'semiann': dsemian,
+            'semiamp': semiamp,
+            'semiphase': semiphase,
+            'noise': dnoise,
+            'time': tout,
+            'reduce': dreduce,
+        }

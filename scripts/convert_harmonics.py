@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 convert_harmonics.py
 Written by Tyler Sutterley (10/2023)
 Converts a file from the spatial domain into the spherical harmonic domain
@@ -87,6 +87,7 @@ UPDATE HISTORY:
     Updated 04/2020: updates to reading load love numbers
     Written 10/2019
 """
+
 from __future__ import print_function
 
 import sys
@@ -100,6 +101,7 @@ import traceback
 import numpy as np
 import gravity_toolkit as gravtk
 
+
 # PURPOSE: keep track of threads
 def info(args):
     logging.info(pathlib.Path(sys.argv[0]).name)
@@ -109,8 +111,11 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
+
 # PURPOSE: converts from the spatial domain into the spherical harmonic domain
-def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
+def convert_harmonics(
+    INPUT_FILE,
+    OUTPUT_FILE,
     LMAX=None,
     MMAX=None,
     UNITS=None,
@@ -122,8 +127,8 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     HEADER=None,
     DATAFORM=None,
     DATE=False,
-    MODE=0o775):
-
+    MODE=0o775,
+):
     # verify inputs
     INPUT_FILE = pathlib.Path(INPUT_FILE).expanduser().absolute()
     OUTPUT_FILE = pathlib.Path(OUTPUT_FILE).expanduser().absolute()
@@ -140,38 +145,50 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
         MMAX = np.copy(LMAX)
 
     # Grid spacing
-    dlon,dlat = (DDEG,DDEG) if (np.ndim(DDEG) == 0) else (DDEG[0],DDEG[1])
+    dlon, dlat = (DDEG, DDEG) if (np.ndim(DDEG) == 0) else (DDEG[0], DDEG[1])
     # Grid dimensions
-    if (INTERVAL == 1):# (0:360, 90:-90)
-        nlon = np.int64((360.0/dlon)+1.0)
-        nlat = np.int64((180.0/dlat)+1.0)
-    elif (INTERVAL == 2):# degree spacing/2
-        nlon = np.int64((360.0/dlon))
-        nlat = np.int64((180.0/dlat))
+    if INTERVAL == 1:  # (0:360, 90:-90)
+        nlon = np.int64((360.0 / dlon) + 1.0)
+        nlat = np.int64((180.0 / dlat) + 1.0)
+    elif INTERVAL == 2:  # degree spacing/2
+        nlon = np.int64((360.0 / dlon))
+        nlat = np.int64((180.0 / dlat))
 
     # read spatial file in data format
     # expand dimensions
-    if (DATAFORM == 'ascii'):
+    if DATAFORM == 'ascii':
         # ascii (.txt)
-        input_spatial = gravtk.spatial(fill_value=FILL_VALUE).from_ascii(
-            INPUT_FILE, header=HEADER, spacing=[dlon,dlat], nlat=nlat,
-            nlon=nlon, date=DATE).expand_dims()
-    elif (DATAFORM == 'netCDF4'):
+        input_spatial = (
+            gravtk.spatial(fill_value=FILL_VALUE)
+            .from_ascii(
+                INPUT_FILE,
+                header=HEADER,
+                spacing=[dlon, dlat],
+                nlat=nlat,
+                nlon=nlon,
+                date=DATE,
+            )
+            .expand_dims()
+        )
+    elif DATAFORM == 'netCDF4':
         # netcdf (.nc)
-        input_spatial = gravtk.spatial().from_netCDF4(
-            INPUT_FILE, date=DATE).expand_dims()
-    elif (DATAFORM == 'HDF5'):
+        input_spatial = (
+            gravtk.spatial().from_netCDF4(INPUT_FILE, date=DATE).expand_dims()
+        )
+    elif DATAFORM == 'HDF5':
         # HDF5 (.H5)
-        input_spatial = gravtk.spatial().from_HDF5(
-            INPUT_FILE, date=DATE).expand_dims()
+        input_spatial = (
+            gravtk.spatial().from_HDF5(INPUT_FILE, date=DATE).expand_dims()
+        )
     # convert missing values to zero
     input_spatial.replace_invalid(0.0)
     # input data shape
     nlat, nlon, nt = input_spatial.shape
 
     # read arrays of kl, hl, and ll Love Numbers
-    LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
-        REFERENCE=REFERENCE, FORMAT='class')
+    LOVE = gravtk.load_love_numbers(
+        LMAX, LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE=REFERENCE, FORMAT='class'
+    )
     # add attributes for earth parameters
     attributes['earth_model'] = LOVE.model
     attributes['earth_love_numbers'] = LOVE.citation
@@ -192,11 +209,19 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
 
     # create list of harmonics objects
     Ylms_list = []
-    for i,spatial_data in enumerate(input_spatial):
+    for i, spatial_data in enumerate(input_spatial):
         # convert spatial field to spherical harmonics
-        output_Ylms = gravtk.gen_stokes(spatial_data.data.T,
-            spatial_data.lon, spatial_data.lat, UNITS=UNITS,
-            LMIN=0, LMAX=LMAX, MMAX=MMAX, PLM=PLM, LOVE=LOVE)
+        output_Ylms = gravtk.gen_stokes(
+            spatial_data.data.T,
+            spatial_data.lon,
+            spatial_data.lat,
+            UNITS=UNITS,
+            LMIN=0,
+            LMAX=LMAX,
+            MMAX=MMAX,
+            PLM=PLM,
+            LOVE=LOVE,
+        )
         # calculate date information
         if DATE:
             output_Ylms.time = np.copy(spatial_data.time)
@@ -213,89 +238,146 @@ def convert_harmonics(INPUT_FILE, OUTPUT_FILE,
     # change output permissions level to MODE
     OUTPUT_FILE.chmod(mode=MODE)
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Converts a file from the spatial domain into the
             spherical harmonic domain
             """,
-        fromfile_prefix_chars="@"
+        fromfile_prefix_chars='@',
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # input and output file
-    parser.add_argument('infile',
-        type=pathlib.Path, nargs='?',
-        help='Input spatial file')
-    parser.add_argument('outfile',
-        type=pathlib.Path, nargs='?',
-        help='Output harmonic file')
+    parser.add_argument(
+        'infile', type=pathlib.Path, nargs='?', help='Input spatial file'
+    )
+    parser.add_argument(
+        'outfile', type=pathlib.Path, nargs='?', help='Output harmonic file'
+    )
     # maximum spherical harmonic degree and order
-    parser.add_argument('--lmax','-l',
-        type=int, default=60,
-        help='Maximum spherical harmonic degree')
-    parser.add_argument('--mmax','-m',
-        type=int, default=None,
-        help='Maximum spherical harmonic order')
+    parser.add_argument(
+        '--lmax',
+        '-l',
+        type=int,
+        default=60,
+        help='Maximum spherical harmonic degree',
+    )
+    parser.add_argument(
+        '--mmax',
+        '-m',
+        type=int,
+        default=None,
+        help='Maximum spherical harmonic order',
+    )
     # different treatments of the load Love numbers
     # 0: Han and Wahr (1995) values from PREM
     # 1: Gegout (2005) values from PREM
     # 2: Wang et al. (2012) values from PREM
     # 3: Wang et al. (2012) values from PREM with hard sediment
     # 4: Wang et al. (2012) values from PREM with soft sediment
-    parser.add_argument('--love','-n',
-        type=int, default=0, choices=[0,1,2,3,4],
-        help='Treatment of the Load Love numbers')
+    parser.add_argument(
+        '--love',
+        '-n',
+        type=int,
+        default=0,
+        choices=[0, 1, 2, 3, 4],
+        help='Treatment of the Load Love numbers',
+    )
     # option for setting reference frame for gravitational load love number
     # reference frame options (CF, CM, CE)
-    parser.add_argument('--reference',
-        type=str.upper, default='CF', choices=['CF','CM','CE'],
-        help='Reference frame for load Love numbers')
+    parser.add_argument(
+        '--reference',
+        type=str.upper,
+        default='CF',
+        choices=['CF', 'CM', 'CE'],
+        help='Reference frame for load Love numbers',
+    )
     # input units
     # 1: cm of water thickness (cmwe)
     # 2: Gigatonnes (Gt)
     # 3: mm of water thickness kg/m^2
-    parser.add_argument('--units','-U',
-        type=int, default=1, choices=[1,2,3],
-        help='Input units of spatial fields')
-    # output grid parameters
-    parser.add_argument('--spacing','-S',
-        type=float, nargs='+', default=[0.5,0.5], metavar=('dlon','dlat'),
-        help='Spatial resolution of input data')
-    parser.add_argument('--interval','-I',
-        type=int, default=2, choices=[1,2],
-        help='Input grid interval (1: global, 2: centered global)')
-    # fill value for ascii
-    parser.add_argument('--fill-value','-f',
-        type=float,
-        help='Set fill_value for input spatial fields')
-    # ascii parameters
-    parser.add_argument('--header',
+    parser.add_argument(
+        '--units',
+        '-U',
         type=int,
-        help='Number of header rows to skip in input ascii files')
+        default=1,
+        choices=[1, 2, 3],
+        help='Input units of spatial fields',
+    )
+    # output grid parameters
+    parser.add_argument(
+        '--spacing',
+        '-S',
+        type=float,
+        nargs='+',
+        default=[0.5, 0.5],
+        metavar=('dlon', 'dlat'),
+        help='Spatial resolution of input data',
+    )
+    parser.add_argument(
+        '--interval',
+        '-I',
+        type=int,
+        default=2,
+        choices=[1, 2],
+        help='Input grid interval (1: global, 2: centered global)',
+    )
+    # fill value for ascii
+    parser.add_argument(
+        '--fill-value',
+        '-f',
+        type=float,
+        help='Set fill_value for input spatial fields',
+    )
+    # ascii parameters
+    parser.add_argument(
+        '--header',
+        type=int,
+        help='Number of header rows to skip in input ascii files',
+    )
     # input and output data format (ascii, netCDF4, HDF5)
-    parser.add_argument('--format','-F',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
-        help='Input and output data format')
+    parser.add_argument(
+        '--format',
+        '-F',
+        type=str,
+        default='netCDF4',
+        choices=['ascii', 'netCDF4', 'HDF5'],
+        help='Input and output data format',
+    )
     # Input and output files have date information
-    parser.add_argument('--date','-D',
-        default=False, action='store_true',
-        help='Input and output files have date information')
+    parser.add_argument(
+        '--date',
+        '-D',
+        default=False,
+        action='store_true',
+        help='Input and output files have date information',
+    )
     # print information about each input and output file
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of run',
+    )
     # permissions mode of the output files (octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -304,7 +386,9 @@ def main():
     # run program with parameters
     try:
         info(args)
-        convert_harmonics(args.infile, args.outfile,
+        convert_harmonics(
+            args.infile,
+            args.outfile,
             LMAX=args.lmax,
             MMAX=args.mmax,
             LOVE_NUMBERS=args.love,
@@ -316,13 +400,15 @@ def main():
             HEADER=args.header,
             DATAFORM=args.format,
             DATE=args.date,
-            MODE=args.mode)
+            MODE=args.mode,
+        )
     except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
+
 
 # run main program
 if __name__ == '__main__':

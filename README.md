@@ -24,6 +24,7 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
     <td>
         <a href="https://gravity-toolkit.readthedocs.io/en/latest/?badge=latest" alt="Documentation Status"><img src="https://readthedocs.org/projects/gravity-toolkit/badge/?version=latest"></a>
         <a href="https://github.com/tsutterley/gravity-toolkit/actions/workflows/python-request.yml" alt="Build"><img src="https://github.com/tsutterley/gravity-toolkit/actions/workflows/python-request.yml/badge.svg"></a>
+        <a href="https://github.com/tsutterley/gravity-toolkit/actions/workflows/ruff-format.yml" alt="Ruff"><img src="https://github.com/tsutterley/gravity-toolkit/actions/workflows/ruff-format.yml/badge.svg"></a>
     </td>
   </tr>
   <tr>

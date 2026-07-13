@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 aod1b_oblateness.py
 Written by Tyler Sutterley (05/2023)
 Contributions by Hugo Lecomte (03/2021)
@@ -57,6 +57,7 @@ UPDATE HISTORY:
     Updated 05-06/2016: oba=ocean bottom pressure, absolute import of shutil
     Written 05/2016
 """
+
 from __future__ import print_function, division
 
 import sys
@@ -69,12 +70,9 @@ import argparse
 import numpy as np
 import gravity_toolkit as gravtk
 
+
 # program module to read the C20 coefficients of the AOD1b data
-def aod1b_oblateness(base_dir,
-    DREL='',
-    DSET='',
-    CLOBBER=False,
-    MODE=0o775):
+def aod1b_oblateness(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775):
     """
     Creates monthly files of oblateness (C20) variations at 6-hour intervals
     from GRACE/GRACE-FO level-1b dealiasing data files
@@ -114,7 +112,7 @@ def aod1b_oblateness(base_dir,
     # set number of hours in a file
     # set the atmospheric and ocean model for a given release
     # set the maximum degree and order of a release
-    if DREL in ('RL01','RL02','RL03','RL04','RL05'):
+    if DREL in ('RL01', 'RL02', 'RL03', 'RL04', 'RL05'):
         # for 00, 06, 12 and 18
         n_time = 4
         ATMOSPHERE = 'ECMWF'
@@ -129,7 +127,7 @@ def aod1b_oblateness(base_dir,
     else:
         raise ValueError('Invalid data release')
     # Calculating the number of cos and sin harmonics up to LMAX
-    n_harm = (LMAX**2 + 3*LMAX)//2 + 1
+    n_harm = (LMAX**2 + 3 * LMAX) // 2 + 1
 
     # AOD1B data products
     product = {}
@@ -140,7 +138,7 @@ def aod1b_oblateness(base_dir,
 
     # AOD1B directory and output oblateness directory
     base_dir = pathlib.Path(base_dir).expanduser().absolute()
-    grace_dir = base_dir.joinpath('AOD1B',DREL)
+    grace_dir = base_dir.joinpath('AOD1B', DREL)
     output_dir = grace_dir.joinpath('oblateness')
     output_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
 
@@ -150,8 +148,8 @@ def aod1b_oblateness(base_dir,
     # for each tar file
     for input_file in sorted(input_tar_files):
         # extract the year and month from the file
-        YY,MM,SFX = tx.findall(input_file.name).pop()
-        YY,MM = np.array([YY, MM], dtype=np.int64)
+        YY, MM, SFX = tx.findall(input_file.name).pop()
+        YY, MM = np.array([YY, MM], dtype=np.int64)
         # output monthly oblateness file
         FILE = f'AOD1B_{DREL}_{DSET}_{YY:4d}_{MM:02d}.txt'
         output_file = output_dir.joinpath(FILE)
@@ -164,7 +162,7 @@ def aod1b_oblateness(base_dir,
             input_mtime = input_file.stat().st_mtime
             output_mtime = output_file.stat().st_mtime
             # if input tar file is newer: overwrite the output file
-            if (input_mtime > output_mtime):
+            if input_mtime > output_mtime:
                 TEST = True
                 OVERWRITE = ' (overwrite)'
         else:
@@ -177,10 +175,10 @@ def aod1b_oblateness(base_dir,
             logging.info(f'{str(output_file)}{OVERWRITE}')
             # open output monthly oblateness file
             f = output_file.open(mode='w', encoding='utf8')
-            args = ('Oblateness time series',DREL,DSET)
+            args = ('Oblateness time series', DREL, DSET)
             print('# {0} from {1} AOD1b {2} Product'.format(*args), file=f)
             print('# {0}'.format(product[DSET]), file=f)
-            print('# {0:^15}    {1:^15}'.format('ISO-Time','C20'), file=f)
+            print('# {0:^15}    {1:^15}'.format('ISO-Time', 'C20'), file=f)
 
             # open the AOD1B monthly tar file
             tar = tarfile.open(name=str(input_file), mode='r:gz')
@@ -190,21 +188,21 @@ def aod1b_oblateness(base_dir,
                 # track tar file members
                 logging.debug(member.name)
                 # get calendar day from file
-                DD,SFX = fx.findall(member.name).pop()
+                DD, SFX = fx.findall(member.name).pop()
                 DD = np.int64(DD)
                 # open datafile for day
-                if (SFX == '.gz'):
+                if SFX == '.gz':
                     fid = gzip.GzipFile(fileobj=tar.extractfile(member))
                 else:
                     fid = tar.extractfile(member)
                 # C20 spherical harmonics for day and hours
                 C20 = np.zeros((n_time))
-                hours = np.zeros((n_time),dtype=np.int64)
+                hours = np.zeros((n_time), dtype=np.int64)
 
                 # create counter for hour in dataset
                 c = 0
                 # while loop ends when dataset is read
-                while (c < n_time):
+                while c < n_time:
                     # read line
                     file_contents = fid.readline().decode('ISO-8859-1')
                     # find file header for data product
@@ -212,10 +210,10 @@ def aod1b_oblateness(base_dir,
                         # track file header lines
                         logging.debug(file_contents)
                         # extract hour from header and convert to float
-                        HH, = re.findall(r'(\d+):\d+:\d+',file_contents)
+                        (HH,) = re.findall(r'(\d+):\d+:\d+', file_contents)
                         hours[c] = np.int64(HH)
                         # read each line of spherical harmonics
-                        for k in range(0,n_harm):
+                        for k in range(0, n_harm):
                             file_contents = fid.readline().decode('ISO-8859-1')
                             # find numerical instances in the data line
                             line_contents = rx.findall(file_contents)
@@ -230,7 +228,7 @@ def aod1b_oblateness(base_dir,
                 fid.close()
                 # write to file for each hour
                 for h in range(4):
-                    print(fstr.format(YY,MM,DD,hours[h],C20[h]),file=f)
+                    print(fstr.format(YY, MM, DD, hours[h], C20[h]), file=f)
 
             # close the tar file
             tar.close()
@@ -239,50 +237,77 @@ def aod1b_oblateness(base_dir,
             # set the permissions mode of the output file
             output_file.chmod(mode=MODE)
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Creates monthly files of oblateness (C20)
             variations at 3 or 6-hour intervals
             """,
-        fromfile_prefix_chars="@"
+        fromfile_prefix_chars='@',
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # working data directory
-    parser.add_argument('--directory','-D',
+    parser.add_argument(
+        '--directory',
+        '-D',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Working data directory')
+        help='Working data directory',
+    )
     # GRACE/GRACE-FO data release
-    parser.add_argument('--release','-r',
-        metavar='DREL', type=str, default='',
-        help='GRACE/GRACE-FO Data Release')
+    parser.add_argument(
+        '--release',
+        '-r',
+        metavar='DREL',
+        type=str,
+        default='',
+        help='GRACE/GRACE-FO Data Release',
+    )
     # GRACE/GRACE-FO level-1b dealiasing product
-    parser.add_argument('--product','-p',
-        metavar='DSET', type=str.lower, nargs='+',
-        choices=['atm','ocn','glo','oba'],
-        help='GRACE/GRACE-FO Level-1b data product')
+    parser.add_argument(
+        '--product',
+        '-p',
+        metavar='DSET',
+        type=str.lower,
+        nargs='+',
+        choices=['atm', 'ocn', 'glo', 'oba'],
+        help='GRACE/GRACE-FO Level-1b data product',
+    )
     # clobber will overwrite the existing data
-    parser.add_argument('--clobber','-C',
-        default=False, action='store_true',
-        help='Overwrite existing data')
+    parser.add_argument(
+        '--clobber',
+        '-C',
+        default=False,
+        action='store_true',
+        help='Overwrite existing data',
+    )
     # verbose will output information about each output file
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of processing run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of processing run',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -291,11 +316,14 @@ def main():
     # for each entered AOD1B dataset
     for DSET in args.product:
         # run AOD1b oblateness program with parameters
-        aod1b_oblateness(args.directory,
+        aod1b_oblateness(
+            args.directory,
             DREL=args.release,
             DSET=DSET,
             CLOBBER=args.clobber,
-            MODE=args.mode)
+            MODE=args.mode,
+        )
+
 
 # run main program
 if __name__ == '__main__':

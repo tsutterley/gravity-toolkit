@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 piecewise.py
 Written by Tyler Sutterley (07/2026)
 
@@ -93,13 +93,25 @@ UPDATE HISTORY:
     Updated 01/2012: added std weighting for a error weighted least-squares
     Written 10/2011
 """
+
 import numpy as np
 import scipy.stats
 import scipy.special
 
-def piecewise(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
-    CYCLES=[0.5,1.0], TERMS=[], DATA_ERR=0, WEIGHT=False,
-    STDEV=0, CONF=0, AICc=False):
+
+def piecewise(
+    t_in,
+    d_in,
+    BREAK_TIME=None,
+    BREAKPOINT=None,
+    CYCLES=[0.5, 1.0],
+    TERMS=[],
+    DATA_ERR=0,
+    WEIGHT=False,
+    STDEV=0,
+    CONF=0,
+    AICc=False,
+):
     r"""
     Fits a synthetic signal to data over a time period by ordinary or
     weighted least-squares for breakpoint analysis :cite:p:`Toms:2003gv`
@@ -197,8 +209,8 @@ def piecewise(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
     DMAT.append(P_x1)
     # add cyclical terms (0.5=semi-annual, 1=annual)
     for c in CYCLES:
-        DMAT.append(np.sin(2.0*np.pi*t_in/np.float64(c)))
-        DMAT.append(np.cos(2.0*np.pi*t_in/np.float64(c)))
+        DMAT.append(np.sin(2.0 * np.pi * t_in / np.float64(c)))
+        DMAT.append(np.cos(2.0 * np.pi * t_in / np.float64(c)))
     # add additional terms to the design matrix
     for t in TERMS:
         DMAT.append(t)
@@ -208,41 +220,41 @@ def piecewise(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
     # Calculating Least-Squares Coefficients
     if WEIGHT:
         # Weighted Least-Squares fitting
-        if (np.ndim(DATA_ERR) == 0):
+        if np.ndim(DATA_ERR) == 0:
             raise ValueError('Input DATA_ERR for Weighted Least-Squares')
         # check if any error values are 0 (prevent infinite weights)
         if np.count_nonzero(DATA_ERR == 0.0):
             # change to minimum floating point value
             DATA_ERR[DATA_ERR == 0.0] = np.finfo(np.float64).eps
         # Weight Precision
-        wi = np.squeeze(DATA_ERR**(-2))
+        wi = np.squeeze(DATA_ERR ** (-2))
         # If uncorrelated weights are the diagonal
         W = np.diag(wi)
         # Least-Squares fitting
         # Temporary Matrix: Inv(X'.W.X)
-        TM1 = np.linalg.inv(np.dot(np.transpose(DMAT),np.dot(W,DMAT)))
+        TM1 = np.linalg.inv(np.dot(np.transpose(DMAT), np.dot(W, DMAT)))
         # Temporary Matrix: (X'.W.Y)
-        TM2 = np.dot(np.transpose(DMAT),np.dot(W,d_in))
+        TM2 = np.dot(np.transpose(DMAT), np.dot(W, d_in))
         # Least Squares Solutions: Inv(X'.W.X).(X'.W.Y)
-        beta_mat = np.dot(TM1,TM2)
-    else:# Standard Least-Squares fitting (the [0] denotes coefficients output)
-        beta_mat = np.linalg.lstsq(DMAT,d_in,rcond=-1)[0]
+        beta_mat = np.dot(TM1, TM2)
+    else:  # Standard Least-Squares fitting (the [0] denotes coefficients output)
+        beta_mat = np.linalg.lstsq(DMAT, d_in, rcond=-1)[0]
         # Weights are equal
         wi = 1.0
 
     # Calculating trend2 = beta1 + beta2
     # beta2 = change in linear term from beta1
-    beta_out = np.copy(beta_mat)# output beta
+    beta_out = np.copy(beta_mat)  # output beta
     beta_out[2] = beta_mat[1] + beta_mat[2]
 
     # number of terms in least-squares solution
     n_terms = len(beta_mat)
     # modelled time-series
-    mod = np.dot(DMAT,beta_mat)
+    mod = np.dot(DMAT, beta_mat)
     # time-series residuals
-    res = d_in[0:nmax] - np.dot(DMAT,beta_mat)
+    res = d_in[0:nmax] - np.dot(DMAT, beta_mat)
     # Fitted Values without climate oscillations
-    simple = np.dot(DMAT[:,0:3],beta_mat[0:3])
+    simple = np.dot(DMAT[:, 0:3], beta_mat[0:3])
 
     # Error Analysis
     # nu = Degrees of Freedom = number of measurements-number of parameters
@@ -250,101 +262,141 @@ def piecewise(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
 
     # calculating R^2 values
     # SStotal = sum((Y-mean(Y))**2)
-    SStotal = np.dot(np.transpose(d_in[0:nmax] - np.mean(d_in[0:nmax])),
-        (d_in[0:nmax] - np.mean(d_in[0:nmax])))
+    SStotal = np.dot(
+        np.transpose(d_in[0:nmax] - np.mean(d_in[0:nmax])),
+        (d_in[0:nmax] - np.mean(d_in[0:nmax])),
+    )
     # SSerror = sum((Y-X*B)**2)
-    SSerror = np.dot(np.transpose(d_in[0:nmax] - np.dot(DMAT,beta_mat)),
-        (d_in[0:nmax] - np.dot(DMAT,beta_mat)))
+    SSerror = np.dot(
+        np.transpose(d_in[0:nmax] - np.dot(DMAT, beta_mat)),
+        (d_in[0:nmax] - np.dot(DMAT, beta_mat)),
+    )
     # R**2 term = 1- SSerror/SStotal
-    rsquare = 1.0 - (SSerror/SStotal)
+    rsquare = 1.0 - (SSerror / SStotal)
     # Adjusted R**2 term: weighted by degrees of freedom
-    rsq_adj = 1.0 - (SSerror/SStotal)*np.float64((nmax-1.0)/nu)
+    rsq_adj = 1.0 - (SSerror / SStotal) * np.float64((nmax - 1.0) / nu)
     # Fit Criterion
     # number of parameters including the intercept and the variance
     K = np.float64(n_terms + 1)
     # Log-Likelihood with weights (if unweighted, weight portions == 0)
     # log(L) = -0.5*n*log(sigma^2) - 0.5*n*log(2*pi) - 0.5*n
-    #log_lik = -0.5*nmax*(np.log(2.0 * np.pi) + 1.0 + np.log(np.sum((res**2)/nmax)))
-    log_lik = 0.5*(np.sum(np.log(wi)) - nmax*(np.log(2.0 * np.pi) + 1.0 -
-        np.log(nmax) + np.log(np.sum(wi * (res**2)))))
+    # log_lik = -0.5*nmax*(np.log(2.0 * np.pi) + 1.0 + np.log(np.sum((res**2)/nmax)))
+    log_lik = 0.5 * (
+        np.sum(np.log(wi))
+        - nmax
+        * (
+            np.log(2.0 * np.pi)
+            + 1.0
+            - np.log(nmax)
+            + np.log(np.sum(wi * (res**2)))
+        )
+    )
 
     # Aikaike's Information Criterion
-    AIC = -2.0*log_lik + 2.0*K
+    AIC = -2.0 * log_lik + 2.0 * K
     if AICc:
         # Second-Order AIC correcting for small sample sizes (restricted)
         # Burnham and Anderson (2002) advocate use of AICc where
         # ratio num/K is small
         # A small ratio is defined in the definition at approximately < 40
-        AIC += (2.0*K*(K+1.0))/(nmax - K - 1.0)
+        AIC += (2.0 * K * (K + 1.0)) / (nmax - K - 1.0)
 
     # Bayesian Information Criterion (Schwarz Criterion)
-    BIC = -2.0*log_lik + np.log(nmax)*K
+    BIC = -2.0 * log_lik + np.log(nmax) * K
 
     # Error Analysis
     if WEIGHT:
         # WEIGHTED LEAST-SQUARES CASE (unequal error)
         # Covariance Matrix
-        Hinv = np.linalg.inv(np.dot(np.transpose(DMAT),np.dot(W,DMAT)))
+        Hinv = np.linalg.inv(np.dot(np.transpose(DMAT), np.dot(W, DMAT)))
         # Normal Equations
-        NORMEQ = np.dot(Hinv,np.transpose(np.dot(W,DMAT)))
+        NORMEQ = np.dot(Hinv, np.transpose(np.dot(W, DMAT)))
         temp_err = np.zeros((n_terms))
         # Propagating RMS errors
-        for i in range(0,n_terms):
-            temp_err[i] = np.sqrt(np.sum((NORMEQ[i,:]*DATA_ERR)**2))
+        for i in range(0, n_terms):
+            temp_err[i] = np.sqrt(np.sum((NORMEQ[i, :] * DATA_ERR) ** 2))
 
         # Recalculating beta2 error
         beta_err = np.copy(temp_err)
         beta_err[2] = np.hypot(temp_err[1], temp_err[2])
         # Weighted sum of squares Error
-        WSSE = np.dot(np.transpose(wi*(d_in[0:nmax] - np.dot(DMAT,beta_mat))),
-            wi*(d_in[0:nmax] - np.dot(DMAT,beta_mat)))/np.float64(nu)
+        WSSE = np.dot(
+            np.transpose(wi * (d_in[0:nmax] - np.dot(DMAT, beta_mat))),
+            wi * (d_in[0:nmax] - np.dot(DMAT, beta_mat)),
+        ) / np.float64(nu)
 
-        return {'beta':beta_out, 'error':beta_err, 'R2':rsquare,
-            'R2Adj':rsq_adj, 'WSSE':WSSE, 'AIC':AIC, 'BIC':BIC,
-            'LOGLIK':log_lik, 'model':mod, 'residual':res,
-            'N':n_terms, 'DOF':nu, 'cov_mat':Hinv}
+        return {
+            'beta': beta_out,
+            'error': beta_err,
+            'R2': rsquare,
+            'R2Adj': rsq_adj,
+            'WSSE': WSSE,
+            'AIC': AIC,
+            'BIC': BIC,
+            'LOGLIK': log_lik,
+            'model': mod,
+            'residual': res,
+            'N': n_terms,
+            'DOF': nu,
+            'cov_mat': Hinv,
+        }
 
-    elif ((not WEIGHT) and (DATA_ERR != 0)):
+    elif (not WEIGHT) and (DATA_ERR != 0):
         # LEAST-SQUARES CASE WITH KNOWN AND EQUAL ERROR
-        P_err = DATA_ERR*np.ones((nmax))
-        Hinv = np.linalg.inv(np.dot(np.transpose(DMAT),DMAT))
+        P_err = DATA_ERR * np.ones((nmax))
+        Hinv = np.linalg.inv(np.dot(np.transpose(DMAT), DMAT))
         # Normal Equations
-        NORMEQ = np.dot(Hinv,np.transpose(DMAT))
+        NORMEQ = np.dot(Hinv, np.transpose(DMAT))
         temp_err = np.zeros((n_terms))
-        for i in range(0,n_terms):
-            temp_err[i] = np.sum((NORMEQ[i,:]*P_err)**2)
+        for i in range(0, n_terms):
+            temp_err[i] = np.sum((NORMEQ[i, :] * P_err) ** 2)
         # Recalculating beta2 error
         beta_err = np.copy(temp_err)
         beta_err[2] = np.hypot(temp_err[1], temp_err[2])
         # Mean square error
-        MSE = np.dot(np.transpose(d_in[0:nmax] - np.dot(DMAT,beta_mat)),
-            (d_in[0:nmax] - np.dot(DMAT,beta_mat)))/np.float64(nu)
+        MSE = np.dot(
+            np.transpose(d_in[0:nmax] - np.dot(DMAT, beta_mat)),
+            (d_in[0:nmax] - np.dot(DMAT, beta_mat)),
+        ) / np.float64(nu)
 
-        return {'beta':beta_out, 'error':beta_err, 'R2':rsquare,
-            'R2Adj':rsq_adj, 'MSE':MSE, 'AIC':AIC, 'BIC':BIC,
-            'LOGLIK':log_lik, 'model':mod, 'residual':res,
-            'N':n_terms, 'DOF':nu, 'cov_mat':Hinv}
+        return {
+            'beta': beta_out,
+            'error': beta_err,
+            'R2': rsquare,
+            'R2Adj': rsq_adj,
+            'MSE': MSE,
+            'AIC': AIC,
+            'BIC': BIC,
+            'LOGLIK': log_lik,
+            'model': mod,
+            'residual': res,
+            'N': n_terms,
+            'DOF': nu,
+            'cov_mat': Hinv,
+        }
     else:
         # STANDARD LEAST-SQUARES CASE
         # Regression with Errors with Unknown Standard Deviations
         # MSE = (1/nu)*sum((Y-X*B)**2)
         # Mean square error
-        MSE = np.dot(np.transpose(d_in[0:nmax] - np.dot(DMAT,beta_mat)),
-            (d_in[0:nmax] - np.dot(DMAT,beta_mat)))/np.float64(nu)
+        MSE = np.dot(
+            np.transpose(d_in[0:nmax] - np.dot(DMAT, beta_mat)),
+            (d_in[0:nmax] - np.dot(DMAT, beta_mat)),
+        ) / np.float64(nu)
         # Root mean square error
         RMSE = np.sqrt(MSE)
         # Normalized root mean square error
-        NRMSE = RMSE/(np.max(d_in[0:nmax])-np.min(d_in[0:nmax]))
+        NRMSE = RMSE / (np.max(d_in[0:nmax]) - np.min(d_in[0:nmax]))
         # Covariance Matrix
         # Multiplying the design matrix by itself
-        Hinv = np.linalg.inv(np.dot(np.transpose(DMAT),DMAT))
+        Hinv = np.linalg.inv(np.dot(np.transpose(DMAT), DMAT))
         # Taking the diagonal components of the cov matrix
         hdiag = np.diag(Hinv)
         # set either the standard deviation or the confidence interval
-        if (STDEV != 0):
+        if STDEV != 0:
             # Setting the standard deviation of the output error
-            alpha = 1.0 - scipy.special.erf(STDEV/np.sqrt(2.0))
-        elif (CONF != 0):
+            alpha = 1.0 - scipy.special.erf(STDEV / np.sqrt(2.0))
+        elif CONF != 0:
             # Setting the confidence interval of the output error
             alpha = 1.0 - CONF
         else:
@@ -352,11 +404,11 @@ def piecewise(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
             alpha = 1.0 - (0.95)
         # Student T-Distribution with D.O.F. nu
         # t.ppf parallels tinv in matlab
-        tstar = scipy.stats.t.ppf(1.0-(alpha/2.0),nu)
+        tstar = scipy.stats.t.ppf(1.0 - (alpha / 2.0), nu)
         # beta_err is the error for each coefficient
         # beta_err = t(nu,1-alpha/2)*standard error
-        temp_std = np.sqrt(MSE*hdiag)
-        temp_err = tstar*temp_std
+        temp_std = np.sqrt(MSE * hdiag)
+        temp_err = tstar * temp_std
 
         # Recalculating standard error for beta2
         st_err = np.copy(temp_std)
@@ -365,7 +417,21 @@ def piecewise(t_in, d_in, BREAK_TIME=None, BREAKPOINT=None,
         beta_err = np.copy(temp_err)
         beta_err[2] = np.hypot(temp_err[1], temp_err[2])
 
-        return {'beta':beta_out, 'error':beta_err, 'std_err':st_err, 'R2':rsquare,
-            'R2Adj':rsq_adj, 'MSE':MSE, 'NRMSE':NRMSE, 'AIC':AIC, 'BIC':BIC,
-            'LOGLIK':log_lik, 'model':mod, 'simple': simple, 'residual':res,
-            'N':n_terms, 'DOF': nu, 'cov_mat':Hinv}
+        return {
+            'beta': beta_out,
+            'error': beta_err,
+            'std_err': st_err,
+            'R2': rsquare,
+            'R2Adj': rsq_adj,
+            'MSE': MSE,
+            'NRMSE': NRMSE,
+            'AIC': AIC,
+            'BIC': BIC,
+            'LOGLIK': log_lik,
+            'model': mod,
+            'simple': simple,
+            'residual': res,
+            'N': n_terms,
+            'DOF': nu,
+            'cov_mat': Hinv,
+        }

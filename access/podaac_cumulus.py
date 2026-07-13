@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 podaac_cumulus.py
 Written by Tyler Sutterley (11/2024)
 
@@ -70,6 +70,7 @@ UPDATE HISTORY:
         use argparse descriptions within sphinx documentation
     Written 03/2022 with release of PO.DAAC Cumulus
 """
+
 from __future__ import print_function
 
 import sys
@@ -83,17 +84,28 @@ import pathlib
 import argparse
 import gravity_toolkit as gravtk
 
-# PURPOSE: sync local GRACE/GRACE-FO files with JPL PO.DAAC AWS S3 bucket
-def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
-    AOD1B=False, ENDPOINT='s3', TIMEOUT=None, GZIP=False, LOG=False,
-    CLOBBER=False, MODE=None):
 
+# PURPOSE: sync local GRACE/GRACE-FO files with JPL PO.DAAC AWS S3 bucket
+def podaac_cumulus(
+    client,
+    DIRECTORY,
+    PROC=[],
+    DREL=[],
+    VERSION=[],
+    AOD1B=False,
+    ENDPOINT='s3',
+    TIMEOUT=None,
+    GZIP=False,
+    LOG=False,
+    CLOBBER=False,
+    MODE=None,
+):
     # check if directory exists and recursively create if not
     DIRECTORY = pathlib.Path(DIRECTORY).expanduser().absolute()
     DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
 
     # mission shortnames
-    shortname = {'grace':'GRAC', 'grace-fo':'GRFO'}
+    shortname = {'grace': 'GRAC', 'grace-fo': 'GRFO'}
     # default bucket for GRACE/GRACE-FO bucket
     bucket = gravtk.utilities._s3_buckets['podaac']
     # datasets for each processing center
@@ -135,13 +147,17 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
             for version in set(VERSION):
                 # query CMR for product metadata
                 urls = gravtk.utilities.cmr_metadata(
-                    mission='grace-fo', center=pr, release=rl,
-                    version=version, provider='POCLOUD',
-                    endpoint='documentation')
+                    mission='grace-fo',
+                    center=pr,
+                    release=rl,
+                    version=version,
+                    provider='POCLOUD',
+                    endpoint='documentation',
+                )
 
                 # TN-13 JPL degree 1 files
                 try:
-                    url, = [url for url in urls if R1.search(url)]
+                    (url,) = [url for url in urls if R1.search(url)]
                 except ValueError as exc:
                     logging.info('No TN-13 Files Available')
                     url = None
@@ -150,18 +166,25 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                     local_file = local_dir.joinpath(granule)
                 # access auxiliary data from endpoint
                 if (ENDPOINT == 'data') and (url is not None):
-                    http_pull_file(url, mtime, local_file,
-                        TIMEOUT=TIMEOUT, CLOBBER=CLOBBER, MODE=MODE)
+                    http_pull_file(
+                        url,
+                        mtime,
+                        local_file,
+                        TIMEOUT=TIMEOUT,
+                        CLOBBER=CLOBBER,
+                        MODE=MODE,
+                    )
                 elif (ENDPOINT == 's3') and (url is not None):
                     bucket = gravtk.utilities.s3_bucket(url)
                     key = gravtk.utilities.s3_key(url)
                     response = client.get_object(Bucket=bucket, Key=key)
-                    s3_pull_file(response, mtime, local_file,
-                        CLOBBER=CLOBBER, MODE=MODE)
+                    s3_pull_file(
+                        response, mtime, local_file, CLOBBER=CLOBBER, MODE=MODE
+                    )
 
                 # TN-14 SLR C2,0 and C3,0 files
                 try:
-                    url, = [url for url in urls if R2.search(url)]
+                    (url,) = [url for url in urls if R2.search(url)]
                 except ValueError as exc:
                     logging.info('No TN-14 Files Available')
                     url = None
@@ -170,14 +193,21 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                     local_file = DIRECTORY.joinpath(granule)
                 # access auxiliary data from endpoint
                 if (ENDPOINT == 'data') and (url is not None):
-                    http_pull_file(url, mtime, local_file,
-                        TIMEOUT=TIMEOUT, CLOBBER=CLOBBER, MODE=MODE)
+                    http_pull_file(
+                        url,
+                        mtime,
+                        local_file,
+                        TIMEOUT=TIMEOUT,
+                        CLOBBER=CLOBBER,
+                        MODE=MODE,
+                    )
                 elif (ENDPOINT == 's3') and (url is not None):
                     bucket = gravtk.utilities.s3_bucket(url)
                     key = gravtk.utilities.s3_key(url)
                     response = client.get_object(Bucket=bucket, Key=key)
-                    s3_pull_file(response, mtime, local_file,
-                        CLOBBER=CLOBBER, MODE=MODE)
+                    s3_pull_file(
+                        response, mtime, local_file, CLOBBER=CLOBBER, MODE=MODE
+                    )
 
     # GRACE/GRACE-FO AOD1B dealiasing products
     if AOD1B:
@@ -187,41 +217,56 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
             # print string of exact data product
             logging.info(f'GFZ/AOD1B/{rl}')
             # local directory for exact data product
-            local_dir = DIRECTORY.joinpath('AOD1B',rl)
+            local_dir = DIRECTORY.joinpath('AOD1B', rl)
             # check if directory exists and recursively create if not
             local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
             # test connection to s3 bucket
-            if (ENDPOINT == 's3'):
+            if ENDPOINT == 's3':
                 # get shortname for CMR query
-                cmr_shortname, = gravtk.utilities.cmr_product_shortname(
-                    mission='grace', center='GFZ', release=rl, level='L1B')
+                (cmr_shortname,) = gravtk.utilities.cmr_product_shortname(
+                    mission='grace', center='GFZ', release=rl, level='L1B'
+                )
                 # attempt to list objects in s3 bucket
                 try:
-                    objects = client.list_objects(Bucket=bucket,
-                        Prefix=cmr_shortname)
+                    objects = client.list_objects(
+                        Bucket=bucket, Prefix=cmr_shortname
+                    )
                 except Exception as exc:
                     message = f'Error accessing S3 bucket {bucket}'
                     raise Exception(message) from exc
             # query CMR for dataset
-            ids,urls,mtimes = gravtk.utilities.cmr(
-                mission='grace', level='L1B', center='GFZ', release=rl,
-                product='AOD1B', start_date='2002-01-01T00:00:00',
-                provider='POCLOUD', endpoint=ENDPOINT)
+            ids, urls, mtimes = gravtk.utilities.cmr(
+                mission='grace',
+                level='L1B',
+                center='GFZ',
+                release=rl,
+                product='AOD1B',
+                start_date='2002-01-01T00:00:00',
+                provider='POCLOUD',
+                endpoint=ENDPOINT,
+            )
             # for each model id and url
-            for id,url,mtime in zip(ids,urls,mtimes):
+            for id, url, mtime in zip(ids, urls, mtimes):
                 # retrieve GRACE/GRACE-FO files
                 granule = gravtk.utilities.url_split(url)[-1]
                 local_file = local_dir.joinpath(granule)
                 # access data from endpoint
-                if (ENDPOINT == 'data'):
-                    http_pull_file(url, mtime, local_file,
-                        TIMEOUT=TIMEOUT, CLOBBER=CLOBBER, MODE=MODE)
-                elif (ENDPOINT == 's3'):
+                if ENDPOINT == 'data':
+                    http_pull_file(
+                        url,
+                        mtime,
+                        local_file,
+                        TIMEOUT=TIMEOUT,
+                        CLOBBER=CLOBBER,
+                        MODE=MODE,
+                    )
+                elif ENDPOINT == 's3':
                     bucket = gravtk.utilities.s3_bucket(url)
                     key = gravtk.utilities.s3_key(url)
                     response = client.get_object(Bucket=bucket, Key=key)
-                    s3_pull_file(response, mtime, local_file,
-                        CLOBBER=CLOBBER, MODE=MODE)
+                    s3_pull_file(
+                        response, mtime, local_file, CLOBBER=CLOBBER, MODE=MODE
+                    )
 
     # GRACE/GRACE-FO level-2 spherical harmonic products
     logging.info('GRACE/GRACE-FO L2 Global Spherical Harmonics:')
@@ -238,49 +283,76 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
                 # list of GRACE/GRACE-FO files for index
                 grace_files = []
                 # for each satellite mission (grace, grace-fo)
-                for i,mi in enumerate(['grace','grace-fo']):
+                for i, mi in enumerate(['grace', 'grace-fo']):
                     # print string of exact data product
                     logging.info(f'{mi} {pr}/{rl}/{ds}')
                     # test connection to s3 bucket
-                    if (ENDPOINT == 's3'):
+                    if ENDPOINT == 's3':
                         # get shortname for CMR query
-                        cmr_shortname, = gravtk.utilities.cmr_product_shortname(
-                            mission=mi, center=pr, release=rl, product=ds)
+                        (cmr_shortname,) = (
+                            gravtk.utilities.cmr_product_shortname(
+                                mission=mi, center=pr, release=rl, product=ds
+                            )
+                        )
                         # attempt to list objects in s3 bucket
                         try:
-                            objects = client.list_objects(Bucket=bucket,
-                                Prefix=cmr_shortname)
+                            objects = client.list_objects(
+                                Bucket=bucket, Prefix=cmr_shortname
+                            )
                         except Exception as exc:
                             message = f'Error accessing S3 bucket {bucket}'
                             raise Exception(message) from exc
                     # query CMR for dataset
-                    ids,urls,mtimes = gravtk.utilities.cmr(
-                        mission=mi, center=pr, release=rl, product=ds,
-                        version=VERSION[i], provider='POCLOUD',
-                        endpoint=ENDPOINT)
+                    ids, urls, mtimes = gravtk.utilities.cmr(
+                        mission=mi,
+                        center=pr,
+                        release=rl,
+                        product=ds,
+                        version=VERSION[i],
+                        provider='POCLOUD',
+                        endpoint=ENDPOINT,
+                    )
                     # regular expression operator for data product
                     rx = gravtk.utilities.compile_regex_pattern(
-                        pr, rl, ds, mission=shortname[mi])
+                        pr, rl, ds, mission=shortname[mi]
+                    )
                     # for each model id and url
-                    for id,url,mtime in zip(ids,urls,mtimes):
+                    for id, url, mtime in zip(ids, urls, mtimes):
                         # retrieve GRACE/GRACE-FO files
                         granule = gravtk.utilities.url_split(url)[-1]
                         suffix = '.gz' if GZIP else ''
                         local_file = local_dir.joinpath(f'{granule}{suffix}')
                         # access data from endpoint
-                        if (ENDPOINT == 'data'):
-                            http_pull_file(url, mtime, local_file,
-                                GZIP=GZIP, TIMEOUT=TIMEOUT,
-                                CLOBBER=CLOBBER, MODE=MODE)
-                        elif (ENDPOINT == 's3'):
+                        if ENDPOINT == 'data':
+                            http_pull_file(
+                                url,
+                                mtime,
+                                local_file,
+                                GZIP=GZIP,
+                                TIMEOUT=TIMEOUT,
+                                CLOBBER=CLOBBER,
+                                MODE=MODE,
+                            )
+                        elif ENDPOINT == 's3':
                             bucket = gravtk.utilities.s3_bucket(url)
                             key = gravtk.utilities.s3_key(url)
                             response = client.get_object(Bucket=bucket, Key=key)
-                            s3_pull_file(response, mtime, local_file,
-                                GZIP=GZIP, CLOBBER=CLOBBER, MODE=MODE)
+                            s3_pull_file(
+                                response,
+                                mtime,
+                                local_file,
+                                GZIP=GZIP,
+                                CLOBBER=CLOBBER,
+                                MODE=MODE,
+                            )
                     # find local GRACE/GRACE-FO files to create index
-                    granules = sorted([f.name for f in local_dir.iterdir()
-                        if rx.match(f.name)])
+                    granules = sorted(
+                        [
+                            f.name
+                            for f in local_dir.iterdir()
+                            if rx.match(f.name)
+                        ]
+                    )
                     # reduce list of GRACE/GRACE-FO files to unique dates
                     granules = gravtk.time.reduce_by_date(granules)
                     # extend list of GRACE/GRACE-FO files with granules
@@ -298,10 +370,18 @@ def podaac_cumulus(client, DIRECTORY, PROC=[], DREL=[], VERSION=[],
     if LOG:
         LOGFILE.chmod(mode=MODE)
 
+
 # PURPOSE: pull file from a remote host checking if file exists locally
 # and if the remote file is newer than the local file
-def http_pull_file(remote_file, remote_mtime, local_file,
-    GZIP=False, TIMEOUT=120, CLOBBER=False, MODE=0o775):
+def http_pull_file(
+    remote_file,
+    remote_mtime,
+    local_file,
+    GZIP=False,
+    TIMEOUT=120,
+    CLOBBER=False,
+    MODE=0o775,
+):
     # if file exists in file system: check if remote file is newer
     TEST = False
     OVERWRITE = ' (clobber)'
@@ -311,8 +391,9 @@ def http_pull_file(remote_file, remote_mtime, local_file,
         # check last modification time of local file
         local_mtime = local_file.stat().st_mtime
         # if remote file is newer: overwrite the local file
-        if (gravtk.utilities.even(remote_mtime) >
-            gravtk.utilities.even(local_mtime)):
+        if gravtk.utilities.even(remote_mtime) > gravtk.utilities.even(
+            local_mtime
+        ):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
@@ -329,8 +410,7 @@ def http_pull_file(remote_file, remote_mtime, local_file,
         # There are a range of exceptions that can be thrown here
         # including HTTPError and URLError.
         request = gravtk.utilities.urllib2.Request(remote_file)
-        response = gravtk.utilities.urllib2.urlopen(request,
-            timeout=TIMEOUT)
+        response = gravtk.utilities.urllib2.urlopen(request, timeout=TIMEOUT)
         # copy remote file contents to local file
         if GZIP:
             with gzip.GzipFile(local_file, 'wb', 9, None, remote_mtime) as f:
@@ -342,10 +422,12 @@ def http_pull_file(remote_file, remote_mtime, local_file,
         os.utime(local_file, (local_file.stat().st_atime, remote_mtime))
         local_file.chmod(mode=MODE)
 
+
 # PURPOSE: pull file from AWS s3 bucket checking if file exists locally
 # and if the remote file is newer than the local file
-def s3_pull_file(response, remote_mtime, local_file,
-    GZIP=False, CLOBBER=False, MODE=0o775):
+def s3_pull_file(
+    response, remote_mtime, local_file, GZIP=False, CLOBBER=False, MODE=0o775
+):
     # if file exists in file system: check if remote file is newer
     TEST = False
     OVERWRITE = ' (clobber)'
@@ -355,8 +437,9 @@ def s3_pull_file(response, remote_mtime, local_file,
         # check last modification time of local file
         local_mtime = local_file.stat().st_mtime
         # if remote file is newer: overwrite the local file
-        if (gravtk.utilities.even(remote_mtime) >
-            gravtk.utilities.even(local_mtime)):
+        if gravtk.utilities.even(remote_mtime) > gravtk.utilities.even(
+            local_mtime
+        ):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
@@ -379,6 +462,7 @@ def s3_pull_file(response, remote_mtime, local_file,
         os.utime(local_file, (local_file.stat().st_atime, remote_mtime))
         local_file.chmod(mode=MODE)
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
@@ -388,72 +472,133 @@ def arguments():
     )
     # command line parameters
     # NASA Earthdata credentials
-    parser.add_argument('--user','-U',
-        type=str, default=os.environ.get('EARTHDATA_USERNAME'),
-        help='Username for NASA Earthdata Login')
-    parser.add_argument('--password','-W',
-        type=str, default=os.environ.get('EARTHDATA_PASSWORD'),
-        help='Password for NASA Earthdata Login')
-    parser.add_argument('--netrc','-N',
-        type=pathlib.Path, default=pathlib.Path.home().joinpath('.netrc'),
-        help='Path to .netrc file for authentication')
+    parser.add_argument(
+        '--user',
+        '-U',
+        type=str,
+        default=os.environ.get('EARTHDATA_USERNAME'),
+        help='Username for NASA Earthdata Login',
+    )
+    parser.add_argument(
+        '--password',
+        '-W',
+        type=str,
+        default=os.environ.get('EARTHDATA_PASSWORD'),
+        help='Password for NASA Earthdata Login',
+    )
+    parser.add_argument(
+        '--netrc',
+        '-N',
+        type=pathlib.Path,
+        default=pathlib.Path.home().joinpath('.netrc'),
+        help='Path to .netrc file for authentication',
+    )
     # working data directory
-    parser.add_argument('--directory','-D',
+    parser.add_argument(
+        '--directory',
+        '-D',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Working data directory')
+        help='Working data directory',
+    )
     # GRACE/GRACE-FO processing center
-    parser.add_argument('--center','-c',
-        metavar='PROC', type=str, nargs='+',
-        default=['CSR','GFZ','JPL'], choices=['CSR','GFZ','JPL'],
-        help='GRACE/GRACE-FO processing center')
+    parser.add_argument(
+        '--center',
+        '-c',
+        metavar='PROC',
+        type=str,
+        nargs='+',
+        default=['CSR', 'GFZ', 'JPL'],
+        choices=['CSR', 'GFZ', 'JPL'],
+        help='GRACE/GRACE-FO processing center',
+    )
     # GRACE/GRACE-FO data release
-    parser.add_argument('--release','-r',
-        metavar='DREL', type=str, nargs='+',
+    parser.add_argument(
+        '--release',
+        '-r',
+        metavar='DREL',
+        type=str,
+        nargs='+',
         default=['RL06'],
-        help='GRACE/GRACE-FO data release')
+        help='GRACE/GRACE-FO data release',
+    )
     # GRACE/GRACE-FO data version
-    parser.add_argument('--version','-v',
-        metavar='VERSION', type=str, nargs=2,
-        default=['0','3'],
-        help='GRACE/GRACE-FO Level-2 data version')
+    parser.add_argument(
+        '--version',
+        '-v',
+        metavar='VERSION',
+        type=str,
+        nargs=2,
+        default=['0', '3'],
+        help='GRACE/GRACE-FO Level-2 data version',
+    )
     # GRACE/GRACE-FO dealiasing products
-    parser.add_argument('--aod1b','-a',
-        default=False, action='store_true',
-        help='Sync GRACE/GRACE-FO Level-1B dealiasing products')
+    parser.add_argument(
+        '--aod1b',
+        '-a',
+        default=False,
+        action='store_true',
+        help='Sync GRACE/GRACE-FO Level-1B dealiasing products',
+    )
     # CMR endpoint type
-    parser.add_argument('--endpoint','-e',
-        type=str, default='data', choices=['s3','data'],
-        help='CMR url endpoint type')
+    parser.add_argument(
+        '--endpoint',
+        '-e',
+        type=str,
+        default='data',
+        choices=['s3', 'data'],
+        help='CMR url endpoint type',
+    )
     # connection timeout
-    parser.add_argument('--timeout','-t',
-        type=int, default=360,
-        help='Timeout in seconds for blocking operations')
+    parser.add_argument(
+        '--timeout',
+        '-t',
+        type=int,
+        default=360,
+        help='Timeout in seconds for blocking operations',
+    )
     # output compressed files
-    parser.add_argument('--gzip','-G',
-        default=False, action='store_true',
-        help='Compress output GRACE/GRACE-FO Level-2 granules')
+    parser.add_argument(
+        '--gzip',
+        '-G',
+        default=False,
+        action='store_true',
+        help='Compress output GRACE/GRACE-FO Level-2 granules',
+    )
     # Output log file in form
     # PODAAC_sync_2002-04-01.log
-    parser.add_argument('--log','-l',
-        default=False, action='store_true',
-        help='Output log file')
+    parser.add_argument(
+        '--log',
+        '-l',
+        default=False,
+        action='store_true',
+        help='Output log file',
+    )
     # sync options
-    parser.add_argument('--clobber','-C',
-        default=False, action='store_true',
-        help='Overwrite existing data in transfer')
+    parser.add_argument(
+        '--clobber',
+        '-C',
+        default=False,
+        action='store_true',
+        help='Overwrite existing data in transfer',
+    )
     # permissions mode of the directories and files synced (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permission mode of directories and files synced')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permission mode of directories and files synced',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # NASA Earthdata hostname
     URS = 'urs.earthdata.nasa.gov'
@@ -461,26 +606,40 @@ def main():
     HOST = 'https://archive.podaac.earthdata.nasa.gov/s3credentials'
     # There are a range of exceptions that can be thrown here
     # including HTTPError and URLError.
-    if (args.endpoint == 's3'):
+    if args.endpoint == 's3':
         # build opener for s3 client access
-        opener = gravtk.utilities.attempt_login(URS,
-            username=args.user, password=args.password,
-            netrc=args.netrc)
+        opener = gravtk.utilities.attempt_login(
+            URS, username=args.user, password=args.password, netrc=args.netrc
+        )
         # Create and submit request to create AWS session
         client = gravtk.utilities.s3_client(HOST, args.timeout)
     else:
         # build opener for data client access
-        opener = gravtk.utilities.attempt_login(URS,
-            username=args.user, password=args.password,
-            netrc=args.netrc, authorization_header=False)
+        opener = gravtk.utilities.attempt_login(
+            URS,
+            username=args.user,
+            password=args.password,
+            netrc=args.netrc,
+            authorization_header=False,
+        )
         client = None
 
     # retrieve data objects from s3 client or data endpoints
-    podaac_cumulus(client, args.directory, PROC=args.center,
-        DREL=args.release, VERSION=args.version, AOD1B=args.aod1b,
-        ENDPOINT=args.endpoint, TIMEOUT=args.timeout,
-        GZIP=args.gzip, LOG=args.log, CLOBBER=args.clobber,
-        MODE=args.mode)
+    podaac_cumulus(
+        client,
+        args.directory,
+        PROC=args.center,
+        DREL=args.release,
+        VERSION=args.version,
+        AOD1B=args.aod1b,
+        ENDPOINT=args.endpoint,
+        TIMEOUT=args.timeout,
+        GZIP=args.gzip,
+        LOG=args.log,
+        CLOBBER=args.clobber,
+        MODE=args.mode,
+    )
+
 
 # run main program
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 gfz_isdc_grace_sync.py
 Written by Tyler Sutterley (10/2025)
 Syncs GRACE/GRACE-FO data from the GFZ Information System and Data Center (ISDC)
@@ -59,6 +59,7 @@ UPDATE HISTORY:
         added GRACE Follow-On data sync
     Written 08/2018
 """
+
 from __future__ import print_function
 
 import sys
@@ -74,11 +75,20 @@ import argparse
 import posixpath
 import gravity_toolkit as gravtk
 
-# PURPOSE: sync local GRACE/GRACE-FO files with GFZ ISDC server
-def gfz_isdc_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
-    NEWSLETTERS=False, TIMEOUT=None, LOG=False, LIST=False,
-    CLOBBER=False, MODE=None):
 
+# PURPOSE: sync local GRACE/GRACE-FO files with GFZ ISDC server
+def gfz_isdc_grace_sync(
+    DIRECTORY,
+    PROC=[],
+    DREL=[],
+    VERSION=[],
+    NEWSLETTERS=False,
+    TIMEOUT=None,
+    LOG=False,
+    LIST=False,
+    CLOBBER=False,
+    MODE=None,
+):
     # check if directory exists and recursively create if not
     DIRECTORY = pathlib.Path(DIRECTORY).expanduser().absolute()
     DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
@@ -86,7 +96,7 @@ def gfz_isdc_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     # GFZ ISDC https host
     HOST = 'https://isdc-data.gfz.de/'
     # mission shortnames
-    shortname = {'grace':'GRAC', 'grace-fo':'GRFO'}
+    shortname = {'grace': 'GRAC', 'grace-fo': 'GRFO'}
     # datasets for each processing center
     DSET = {}
     DSET['CSR'] = ['GAC', 'GAD', 'GSM']
@@ -97,7 +107,7 @@ def gfz_isdc_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     if LOG:
         # output to log file
         # format: GFZ_ISDC_sync_2002-04-01.log
-        today = time.strftime('%Y-%m-%d',time.localtime())
+        today = time.strftime('%Y-%m-%d', time.localtime())
         LOGFILE = DIRECTORY.joinpath(f'GFZ_ISDC_sync_{today}.log')
         logging.basicConfig(filename=LOGFILE, level=logging.INFO)
         logging.info(f'GFZ ISDC Sync Log ({today})')
@@ -116,51 +126,78 @@ def gfz_isdc_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     # compile regular expression operator for remote files
     R1 = re.compile(r'TN-13_GEOC_(CSR|GFZ|JPL)_(.*?).txt$', re.VERBOSE)
     # get filenames from remote directory
-    remote_files,remote_mtimes = http_list(
-        [HOST,'grace-fo','DOCUMENTS','TECHNICAL_NOTES'],
-        timeout=TIMEOUT, pattern=R1, sort=True)
+    remote_files, remote_mtimes = http_list(
+        [HOST, 'grace-fo', 'DOCUMENTS', 'TECHNICAL_NOTES'],
+        timeout=TIMEOUT,
+        pattern=R1,
+        sort=True,
+    )
     # for each file on the remote server
-    for fi,remote_mtime in zip(remote_files,remote_mtimes):
+    for fi, remote_mtime in zip(remote_files, remote_mtimes):
         # extract filename from regex object
-        remote_path = [HOST,'grace-fo','DOCUMENTS','TECHNICAL_NOTES',fi]
+        remote_path = [HOST, 'grace-fo', 'DOCUMENTS', 'TECHNICAL_NOTES', fi]
         local_file = local_dir.joinpath(fi)
-        http_pull_file(remote_path, remote_mtime,
-            local_file, TIMEOUT=TIMEOUT, LIST=LIST,
-            CLOBBER=CLOBBER, MODE=MODE)
+        http_pull_file(
+            remote_path,
+            remote_mtime,
+            local_file,
+            TIMEOUT=TIMEOUT,
+            LIST=LIST,
+            CLOBBER=CLOBBER,
+            MODE=MODE,
+        )
 
     # SLR C2,0 coefficients
     logging.info('C2,0 Coefficients:')
     # compile regular expression operator for remote files
     R1 = re.compile(r'TN-(05|07|11)_C20_SLR_RL(.*?).txt$', re.VERBOSE)
     # get filenames from remote directory
-    remote_files,remote_mtimes = http_list(
-        [HOST,'grace','DOCUMENTS','TECHNICAL_NOTES'],
-        timeout=TIMEOUT, pattern=R1, sort=True)
+    remote_files, remote_mtimes = http_list(
+        [HOST, 'grace', 'DOCUMENTS', 'TECHNICAL_NOTES'],
+        timeout=TIMEOUT,
+        pattern=R1,
+        sort=True,
+    )
     # for each file on the remote server
-    for fi,remote_mtime in zip(remote_files,remote_mtimes):
+    for fi, remote_mtime in zip(remote_files, remote_mtimes):
         # extract filename from regex object
-        remote_path = [HOST,'grace','DOCUMENTS','TECHNICAL_NOTES',fi]
-        local_file = DIRECTORY.joinpath(re.sub(r'(_RL.*?).txt','.txt',fi))
-        http_pull_file(remote_path, remote_mtime,
-            local_file, TIMEOUT=TIMEOUT, LIST=LIST,
-            CLOBBER=CLOBBER, MODE=MODE)
+        remote_path = [HOST, 'grace', 'DOCUMENTS', 'TECHNICAL_NOTES', fi]
+        local_file = DIRECTORY.joinpath(re.sub(r'(_RL.*?).txt', '.txt', fi))
+        http_pull_file(
+            remote_path,
+            remote_mtime,
+            local_file,
+            TIMEOUT=TIMEOUT,
+            LIST=LIST,
+            CLOBBER=CLOBBER,
+            MODE=MODE,
+        )
 
     # SLR C3,0 coefficients
     logging.info('C3,0 Coefficients:')
     # compile regular expression operator for remote files
     R1 = re.compile(r'TN-(14)_C30_C20_SLR_GSFC.txt$', re.VERBOSE)
     # get filenames from remote directory
-    remote_files,remote_mtimes = http_list(
-        [HOST,'grace-fo','DOCUMENTS','TECHNICAL_NOTES'],
-        timeout=TIMEOUT, pattern=R1, sort=True)
+    remote_files, remote_mtimes = http_list(
+        [HOST, 'grace-fo', 'DOCUMENTS', 'TECHNICAL_NOTES'],
+        timeout=TIMEOUT,
+        pattern=R1,
+        sort=True,
+    )
     # for each file on the remote server
-    for fi,remote_mtime in zip(remote_files,remote_mtimes):
+    for fi, remote_mtime in zip(remote_files, remote_mtimes):
         # extract filename from regex object
-        remote_path = [HOST,'grace-fo','DOCUMENTS','TECHNICAL_NOTES',fi]
-        local_file = DIRECTORY.joinpath(re.sub(r'(SLR_GSFC)','GSFC_SLR',fi))
-        http_pull_file(remote_path, remote_mtime,
-            local_file, TIMEOUT=TIMEOUT, LIST=LIST,
-            CLOBBER=CLOBBER, MODE=MODE)
+        remote_path = [HOST, 'grace-fo', 'DOCUMENTS', 'TECHNICAL_NOTES', fi]
+        local_file = DIRECTORY.joinpath(re.sub(r'(SLR_GSFC)', 'GSFC_SLR', fi))
+        http_pull_file(
+            remote_path,
+            remote_mtime,
+            local_file,
+            TIMEOUT=TIMEOUT,
+            LIST=LIST,
+            CLOBBER=CLOBBER,
+            MODE=MODE,
+        )
 
     # TN-08 GAE, TN-09 GAF and TN-10 GAG ECMWF atmosphere correction products
     logging.info('TN-08 GAE, TN-09 GAF and TN-10 GAG products:')
@@ -171,17 +208,26 @@ def gfz_isdc_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     # compile regular expression operator for remote files
     R1 = re.compile(r'({0}|{1}|{2})'.format(*ECMWF_files), re.VERBOSE)
     # get filenames from remote directory
-    remote_files,remote_mtimes = http_list(
-        [HOST,'grace','DOCUMENTS','TECHNICAL_NOTES'],
-        timeout=TIMEOUT, pattern=R1, sort=True)
+    remote_files, remote_mtimes = http_list(
+        [HOST, 'grace', 'DOCUMENTS', 'TECHNICAL_NOTES'],
+        timeout=TIMEOUT,
+        pattern=R1,
+        sort=True,
+    )
     # for each file on the remote server
-    for fi,remote_mtime in zip(remote_files,remote_mtimes):
+    for fi, remote_mtime in zip(remote_files, remote_mtimes):
         # extract filename from regex object
-        remote_path = [HOST,'grace','DOCUMENTS','TECHNICAL_NOTES',fi]
+        remote_path = [HOST, 'grace', 'DOCUMENTS', 'TECHNICAL_NOTES', fi]
         local_file = DIRECTORY.joinpath(fi)
-        http_pull_file(remote_path, remote_mtime,
-            local_file, TIMEOUT=TIMEOUT, LIST=LIST,
-            CLOBBER=CLOBBER, MODE=MODE)
+        http_pull_file(
+            remote_path,
+            remote_mtime,
+            local_file,
+            TIMEOUT=TIMEOUT,
+            LIST=LIST,
+            CLOBBER=CLOBBER,
+            MODE=MODE,
+        )
 
     # GRACE and GRACE-FO newsletters
     if NEWSLETTERS:
@@ -190,30 +236,41 @@ def gfz_isdc_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
         # check if newsletters directory exists and recursively create if not
         local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
         # for each satellite mission (grace, grace-fo)
-        for i,mi in enumerate(['grace','grace-fo']):
+        for i, mi in enumerate(['grace', 'grace-fo']):
             logging.info(f'{mi} Newsletters:')
             # compile regular expression operator for remote files
-            NAME = mi.upper().replace('-','_')
+            NAME = mi.upper().replace('-', '_')
             R1 = re.compile(rf'{NAME}_SDS_NL_(\d+).pdf', re.VERBOSE)
             # find years for GRACE/GRACE-FO newsletters
-            years,_  = http_list([HOST,mi,'DOCUMENTS','NEWSLETTER'],
-                timeout=TIMEOUT, pattern=r'\d+',
-                sort=True)
+            years, _ = http_list(
+                [HOST, mi, 'DOCUMENTS', 'NEWSLETTER'],
+                timeout=TIMEOUT,
+                pattern=r'\d+',
+                sort=True,
+            )
             # for each year of GRACE/GRACE-FO newsletters
             for Y in years:
                 # find GRACE/GRACE-FO newsletters
-                remote_files,remote_mtimes = http_list(
-                    [HOST,mi,'DOCUMENTS','NEWSLETTER',Y],
-                    timeout=TIMEOUT, pattern=R1,
-                    sort=True)
+                remote_files, remote_mtimes = http_list(
+                    [HOST, mi, 'DOCUMENTS', 'NEWSLETTER', Y],
+                    timeout=TIMEOUT,
+                    pattern=R1,
+                    sort=True,
+                )
                 # for each file on the remote server
-                for fi,remote_mtime in zip(remote_files,remote_mtimes):
+                for fi, remote_mtime in zip(remote_files, remote_mtimes):
                     # extract filename from regex object
-                    remote_path = [HOST,mi,'DOCUMENTS','NEWSLETTER',Y,fi]
+                    remote_path = [HOST, mi, 'DOCUMENTS', 'NEWSLETTER', Y, fi]
                     local_file = local_dir.joinpath(fi)
-                    http_pull_file(remote_path, remote_mtime,
-                        local_file, TIMEOUT=TIMEOUT, LIST=LIST,
-                        CLOBBER=CLOBBER, MODE=MODE)
+                    http_pull_file(
+                        remote_path,
+                        remote_mtime,
+                        local_file,
+                        TIMEOUT=TIMEOUT,
+                        LIST=LIST,
+                        CLOBBER=CLOBBER,
+                        MODE=MODE,
+                    )
 
     # GRACE/GRACE-FO level-2 spherical harmonic products
     logging.info('GRACE/GRACE-FO L2 Global Spherical Harmonics:')
@@ -230,9 +287,9 @@ def gfz_isdc_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
                 # list of GRACE/GRACE-FO files for index
                 grace_files = []
                 # for each satellite mission (grace, grace-fo)
-                for i,mi in enumerate(['grace','grace-fo']):
+                for i, mi in enumerate(['grace', 'grace-fo']):
                     # modifiers for intermediate data releases
-                    if (int(VERSION[i]) > 0):
+                    if int(VERSION[i]) > 0:
                         drel_str = f'{rl}.{VERSION[i]}'
                     else:
                         drel_str = copy.copy(rl)
@@ -241,22 +298,37 @@ def gfz_isdc_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
                     # compile the regular expression operator to find files
                     R1 = re.compile(rf'({ds}-(.*?)(gz|txt|dif))')
                     # get filenames from remote directory
-                    remote_files,remote_mtimes = http_list(
-                        [HOST,mi,'Level-2',pr,drel_str], timeout=TIMEOUT,
-                        pattern=R1, sort=True)
-                    for fi,remote_mtime in zip(remote_files,remote_mtimes):
+                    remote_files, remote_mtimes = http_list(
+                        [HOST, mi, 'Level-2', pr, drel_str],
+                        timeout=TIMEOUT,
+                        pattern=R1,
+                        sort=True,
+                    )
+                    for fi, remote_mtime in zip(remote_files, remote_mtimes):
                         # extract filename from regex object
-                        remote_path = [HOST,mi,'Level-2',pr,drel_str,fi]
+                        remote_path = [HOST, mi, 'Level-2', pr, drel_str, fi]
                         local_file = local_dir.joinpath(fi)
-                        http_pull_file(remote_path, remote_mtime,
-                            local_file, TIMEOUT=TIMEOUT, LIST=LIST,
-                            CLOBBER=CLOBBER, MODE=MODE)
+                        http_pull_file(
+                            remote_path,
+                            remote_mtime,
+                            local_file,
+                            TIMEOUT=TIMEOUT,
+                            LIST=LIST,
+                            CLOBBER=CLOBBER,
+                            MODE=MODE,
+                        )
                     # regular expression operator for data product
                     rx = gravtk.utilities.compile_regex_pattern(
-                        pr, rl, ds, mission=shortname[mi])
+                        pr, rl, ds, mission=shortname[mi]
+                    )
                     # find local GRACE/GRACE-FO files to create index
-                    granules = sorted([f.name for f in local_dir.iterdir()
-                        if rx.match(f.name)])
+                    granules = sorted(
+                        [
+                            f.name
+                            for f in local_dir.iterdir()
+                            if rx.match(f.name)
+                        ]
+                    )
                     # reduce list of GRACE/GRACE-FO files to unique dates
                     granules = gravtk.time.reduce_by_date(granules)
                     # extend list of GRACE/GRACE-FO files with granules
@@ -274,14 +346,15 @@ def gfz_isdc_grace_sync(DIRECTORY, PROC=[], DREL=[], VERSION=[],
     if LOG:
         LOGFILE.chmod(mode=MODE)
 
+
 # PURPOSE: list a directory on the GFZ https server
 def http_list(
-        HOST: str | list,
-        timeout: int | None = None,
-        context: ssl.SSLContext = gravtk.utilities._default_ssl_context,
-        pattern: str | re.Pattern = '',
-        sort: bool = False
-    ):
+    HOST: str | list,
+    timeout: int | None = None,
+    context: ssl.SSLContext = gravtk.utilities._default_ssl_context,
+    pattern: str | re.Pattern = '',
+    sort: bool = False,
+):
     """
     List a directory on the GFZ https Server
 
@@ -315,8 +388,9 @@ def http_list(
     try:
         # Create and submit request.
         request = gravtk.utilities.urllib2.Request(posixpath.join(*HOST))
-        response = gravtk.utilities.urllib2.urlopen(request,
-            timeout=timeout, context=context)
+        response = gravtk.utilities.urllib2.urlopen(
+            request, timeout=timeout, context=context
+        )
     except Exception as exc:
         raise Exception('List error from {0}'.format(posixpath.join(*HOST)))
     # read the directory listing
@@ -324,32 +398,41 @@ def http_list(
     # read and parse request for files (column names and modified times)
     lines = [l for l in contents if rx.search(l.decode('utf-8'))]
     # column names and last modified times
-    colnames = [None]*len(lines)
-    collastmod = [None]*len(lines)
+    colnames = [None] * len(lines)
+    collastmod = [None] * len(lines)
     for i, l in enumerate(lines):
         colnames[i], lastmod = rx.findall(l.decode('utf-8')).pop()
         # get the Unix timestamp value for a modification time
-        collastmod[i] = gravtk.utilities.get_unix_time(lastmod,
-            format='%Y-%m-%d %H:%M')
+        collastmod[i] = gravtk.utilities.get_unix_time(
+            lastmod, format='%Y-%m-%d %H:%M'
+        )
     # reduce using regular expression pattern
     if pattern:
-        i = [i for i,f in enumerate(colnames) if re.search(pattern, f)]
+        i = [i for i, f in enumerate(colnames) if re.search(pattern, f)]
         # reduce list of column names and last modified times
         colnames = [colnames[indice] for indice in i]
         collastmod = [collastmod[indice] for indice in i]
     # sort the list
     if sort:
-        i = [i for i,j in sorted(enumerate(colnames), key=lambda i: i[1])]
+        i = [i for i, j in sorted(enumerate(colnames), key=lambda i: i[1])]
         # sort list of column names and last modified times
         colnames = [colnames[indice] for indice in i]
         collastmod = [collastmod[indice] for indice in i]
     # return the list of column names and last modified times
     return (colnames, collastmod)
 
+
 # PURPOSE: pull file from a remote host checking if file exists locally
 # and if the remote file is newer than the local file
-def http_pull_file(remote_path, remote_mtime, local_file,
-    TIMEOUT=0, LIST=False, CLOBBER=False, MODE=0o775):
+def http_pull_file(
+    remote_path,
+    remote_mtime,
+    local_file,
+    TIMEOUT=0,
+    LIST=False,
+    CLOBBER=False,
+    MODE=0o775,
+):
     # verify inputs for remote http host
     if isinstance(remote_path, str):
         remote_path = gravtk.utilities.url_split(remote_path)
@@ -364,8 +447,9 @@ def http_pull_file(remote_path, remote_mtime, local_file,
         # check last modification time of local file
         local_mtime = local_file.stat().st_mtime
         # if remote file is newer: overwrite the local file
-        if (gravtk.utilities.even(remote_mtime) >
-            gravtk.utilities.even(local_mtime)):
+        if gravtk.utilities.even(remote_mtime) > gravtk.utilities.even(
+            local_mtime
+        ):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
@@ -381,8 +465,9 @@ def http_pull_file(remote_path, remote_mtime, local_file,
             # Create and submit request. There are a wide range of exceptions
             # that can be thrown here, including HTTPError and URLError.
             request = gravtk.utilities.urllib2.Request(remote_file)
-            response = gravtk.utilities.urllib2.urlopen(request,
-                timeout=TIMEOUT)
+            response = gravtk.utilities.urllib2.urlopen(
+                request, timeout=TIMEOUT
+            )
             # chunked transfer encoding size
             CHUNK = 16 * 1024
             # copy contents to local file using chunked transfer encoding
@@ -393,6 +478,7 @@ def http_pull_file(remote_path, remote_mtime, local_file,
             os.utime(local_file, (local_file.stat().st_atime, remote_mtime))
             local_file.chmod(mode=MODE)
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
@@ -402,69 +488,122 @@ def arguments():
     )
     # command line parameters
     # working data directory
-    parser.add_argument('--directory','-D',
+    parser.add_argument(
+        '--directory',
+        '-D',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Working data directory')
+        help='Working data directory',
+    )
     # GRACE/GRACE-FO processing center
-    parser.add_argument('--center','-c',
-        metavar='PROC', type=str, nargs='+',
-        default=['CSR','GFZ','JPL'], choices=['CSR','GFZ','JPL'],
-        help='GRACE/GRACE-FO processing center')
+    parser.add_argument(
+        '--center',
+        '-c',
+        metavar='PROC',
+        type=str,
+        nargs='+',
+        default=['CSR', 'GFZ', 'JPL'],
+        choices=['CSR', 'GFZ', 'JPL'],
+        help='GRACE/GRACE-FO processing center',
+    )
     # GRACE/GRACE-FO data release
-    parser.add_argument('--release','-r',
-        metavar='DREL', type=str, nargs='+',
-        default=['RL06'], choices=['RL04','RL05','RL06'],
-        help='GRACE/GRACE-FO data release')
+    parser.add_argument(
+        '--release',
+        '-r',
+        metavar='DREL',
+        type=str,
+        nargs='+',
+        default=['RL06'],
+        choices=['RL04', 'RL05', 'RL06'],
+        help='GRACE/GRACE-FO data release',
+    )
     # GRACE/GRACE-FO data version
-    parser.add_argument('--version','-v',
-        metavar='VERSION', type=str, nargs=2,
-        default=['0','1'],
-        help='GRACE/GRACE-FO Level-2 data version')
+    parser.add_argument(
+        '--version',
+        '-v',
+        metavar='VERSION',
+        type=str,
+        nargs=2,
+        default=['0', '1'],
+        help='GRACE/GRACE-FO Level-2 data version',
+    )
     # GRACE/GRACE-FO newsletters
-    parser.add_argument('--newsletters','-n',
-        default=False, action='store_true',
-        help='Sync GRACE/GRACE-FO Newsletters')
+    parser.add_argument(
+        '--newsletters',
+        '-n',
+        default=False,
+        action='store_true',
+        help='Sync GRACE/GRACE-FO Newsletters',
+    )
     # connection timeout
-    parser.add_argument('--timeout','-t',
-        type=int, default=360,
-        help='Timeout in seconds for blocking operations')
+    parser.add_argument(
+        '--timeout',
+        '-t',
+        type=int,
+        default=360,
+        help='Timeout in seconds for blocking operations',
+    )
     # Output log file in form
     # GFZ_ISDC_sync_2002-04-01.log
-    parser.add_argument('--log','-l',
-        default=False, action='store_true',
-        help='Output log file')
+    parser.add_argument(
+        '--log',
+        '-l',
+        default=False,
+        action='store_true',
+        help='Output log file',
+    )
     # sync options
-    parser.add_argument('--list','-L',
-        default=False, action='store_true',
-        help='Only print files that could be transferred')
-    parser.add_argument('--clobber','-C',
-        default=False, action='store_true',
-        help='Overwrite existing data in transfer')
+    parser.add_argument(
+        '--list',
+        '-L',
+        default=False,
+        action='store_true',
+        help='Only print files that could be transferred',
+    )
+    parser.add_argument(
+        '--clobber',
+        '-C',
+        default=False,
+        action='store_true',
+        help='Overwrite existing data in transfer',
+    )
     # permissions mode of the directories and files synced (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permission mode of directories and files synced')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permission mode of directories and files synced',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # GFZ ISDC https host
     HOST = 'https://isdc-data.gfz.de/'
     # check internet connection before attempting to run program
     if gravtk.utilities.check_connection(HOST):
-        gfz_isdc_grace_sync(args.directory, PROC=args.center,
-            DREL=args.release, VERSION=args.version,
-            NEWSLETTERS=args.newsletters, TIMEOUT=args.timeout,
-            LIST=args.list, LOG=args.log, CLOBBER=args.clobber,
-            MODE=args.mode)
+        gfz_isdc_grace_sync(
+            args.directory,
+            PROC=args.center,
+            DREL=args.release,
+            VERSION=args.version,
+            NEWSLETTERS=args.newsletters,
+            TIMEOUT=args.timeout,
+            LIST=args.list,
+            LOG=args.log,
+            CLOBBER=args.clobber,
+            MODE=args.mode,
+        )
     else:
         raise RuntimeError('Check internet connection')
+
 
 # run main program
 if __name__ == '__main__':

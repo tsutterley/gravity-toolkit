@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 grace_months_index.py
 Written by Tyler Sutterley (05/2023)
 
@@ -63,6 +63,7 @@ UPDATE HISTORY:
     Updated 05/2013: added years to month label
     Written 07/2012
 """
+
 from __future__ import print_function
 
 import pathlib
@@ -71,7 +72,8 @@ import calendar
 import numpy as np
 import gravity_toolkit as gravtk
 
-def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
+
+def grace_months_index(base_dir, DREL=['RL06', 'rl06v2.0'], MODE=None):
     """
     Creates a file with the start and end days for each dataset
 
@@ -114,18 +116,19 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
             # read GRACE/GRACE-FO date ascii file
             grace_date_file = grace_dir.joinpath(f'{pr}_{rl}_DATES.txt')
             # names and formats of GRACE/GRACE-FO date ascii file
-            names = ('t','mon','styr','stday','endyr','endday','total')
-            formats = ('f','i','i','i','i','i','i')
-            dtype = np.dtype({'names':names, 'formats':formats})
+            names = ('t', 'mon', 'styr', 'stday', 'endyr', 'endday', 'total')
+            formats = ('f', 'i', 'i', 'i', 'i', 'i', 'i')
+            dtype = np.dtype({'names': names, 'formats': formats})
             # check that the GRACE/GRACE-FO date file exists
             if grace_date_file.exists():
                 # Setting the dictionary key e.g. 'CSR_RL04'
                 var_name = f'{pr}_{rl}'
                 # skip the header line
-                var_info[var_name] = np.loadtxt(grace_date_file,
-                    skiprows=1, dtype=dtype)
+                var_info[var_name] = np.loadtxt(
+                    grace_date_file, skiprows=1, dtype=dtype
+                )
                 # Finding the maximum month measured
-                if (var_info[var_name]['mon'].max() > max_mon):
+                if var_info[var_name]['mon'].max() > max_mon:
                     # if the maximum month in this dataset is greater
                     # than the previously read datasets
                     max_mon = np.int64(var_info[var_name]['mon'].max())
@@ -139,9 +142,9 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
     # for each possible month
     # GRACE starts at month 004 (April 2002)
     # max_mon+1 to include max_mon
-    for m in range(4, max_mon+1):
+    for m in range(4, max_mon + 1):
         # finding the month name e.g. Apr
-        calendar_year,calendar_month = gravtk.time.grace_to_calendar(m)
+        calendar_year, calendar_month = gravtk.time.grace_to_calendar(m)
         month_string = calendar.month_abbr[calendar_month]
         # create list object for output string
         output_string = []
@@ -150,20 +153,21 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
             # find if the month of data exists
             # exists will be greater than 0 if there is a match
             exists = np.count_nonzero(var_info[var]['mon'] == m)
-            if (exists != 0):
+            if exists != 0:
                 # if there is a matching month
                 # indice of matching month
-                ind, = np.nonzero(var_info[var]['mon'] == m)
+                (ind,) = np.nonzero(var_info[var]['mon'] == m)
                 # start date
-                st_yr, = var_info[var]['styr'][ind]
-                st_day, = var_info[var]['stday'][ind]
+                (st_yr,) = var_info[var]['styr'][ind]
+                (st_day,) = var_info[var]['stday'][ind]
                 # end date
-                end_yr, = var_info[var]['endyr'][ind]
-                end_day, = var_info[var]['endday'][ind]
+                (end_yr,) = var_info[var]['endyr'][ind]
+                (end_day,) = var_info[var]['endday'][ind]
                 # output string is the date range
                 # string format: 2002_102--2002_120
-                output_string.append(f'{st_yr:4d}_{st_day:03d}--'
-                    f'{end_yr:4d}_{end_day:03d}')
+                output_string.append(
+                    f'{st_yr:4d}_{st_day:03d}--{end_yr:4d}_{end_day:03d}'
+                )
             else:
                 # if there is no matching month = missing
                 output_string.append(' ** missing **   ')
@@ -180,6 +184,7 @@ def grace_months_index(base_dir, DREL=['RL06','rl06v2.0'], MODE=None):
     # set the permissions level of the output file
     grace_months_file.chmod(mode=MODE)
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
@@ -189,30 +194,44 @@ def arguments():
     )
     # command line parameters
     # working data directory
-    parser.add_argument('--directory','-D',
+    parser.add_argument(
+        '--directory',
+        '-D',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Working data directory')
+        help='Working data directory',
+    )
     # GRACE/GRACE-FO data release
-    parser.add_argument('--release','-r',
-        metavar='DREL', type=str, nargs='+',
-        default=['RL06','rl06v2.0'],
-        help='GRACE/GRACE-FO Data Release')
+    parser.add_argument(
+        '--release',
+        '-r',
+        metavar='DREL',
+        type=str,
+        nargs='+',
+        default=['RL06', 'rl06v2.0'],
+        help='GRACE/GRACE-FO Data Release',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # run GRACE/GRACE-FO months program
     grace_months_index(args.directory, DREL=args.release, MODE=args.mode)
+
 
 # run main program
 if __name__ == '__main__':

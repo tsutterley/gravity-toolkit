@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 itsg_graz_grace_sync.py
 Written by Tyler Sutterley (07/2026)
 Syncs GRACE/GRACE-FO and auxiliary data from the ITSG GRAZ server
@@ -47,6 +47,7 @@ UPDATE HISTORY:
     Updated 10/2021: using python logging for handling verbose output
     Written 09/2021
 """
+
 from __future__ import print_function
 
 import sys
@@ -60,10 +61,18 @@ import argparse
 import posixpath
 import gravity_toolkit as gravtk
 
-# PURPOSE: sync local GRACE/GRACE-FO files with ITSG GRAZ server
-def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
-    LOG=False, LIST=False, MODE=0o775, CLOBBER=False):
 
+# PURPOSE: sync local GRACE/GRACE-FO files with ITSG GRAZ server
+def itsg_graz_grace_sync(
+    DIRECTORY,
+    RELEASE=None,
+    LMAX=None,
+    TIMEOUT=0,
+    LOG=False,
+    LIST=False,
+    MODE=0o775,
+    CLOBBER=False,
+):
     # check if directory exists and recursively create if not
     DIRECTORY = pathlib.Path(DIRECTORY).expanduser().absolute()
     DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
@@ -72,7 +81,7 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
     if LOG:
         # output to log file
         # format: ITSG_GRAZ_GRACE_sync_2002-04-01.log
-        today = time.strftime('%Y-%m-%d',time.localtime())
+        today = time.strftime('%Y-%m-%d', time.localtime())
         LOGFILE = DIRECTORY.joinpath(f'ITSG_GRAZ_GRACE_sync_{today}.log')
         logging.basicConfig(filename=LOGFILE, level=logging.INFO)
         logging.info(f'ITSG GRAZ GRACE Sync Log ({today})')
@@ -83,7 +92,7 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
         logging.basicConfig(level=logging.INFO)
 
     # ITSG GRAZ server
-    HOST = ['http://ftp.tugraz.at','pub','ITSG','GRACE']
+    HOST = ['http://ftp.tugraz.at', 'pub', 'ITSG', 'GRACE']
     # open connection with ITSG GRAZ server at remote directory
     release_directory = f'ITSG-{RELEASE}'
     # regular expression operators for ITSG data and models
@@ -96,8 +105,10 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
     itsg_products.append(r'Grace2016')
     itsg_products.append(r'Grace2018')
     itsg_products.append(r'Grace_operational')
-    itsg_pattern = (r'(AOD1B_RL\d+|model|ITSG)[-_]({0})(_n\d+)?_'
-        r'(\d+)-(\d+)(\.gfc)').format(r'|'.join(itsg_products))
+    itsg_pattern = (
+        r'(AOD1B_RL\d+|model|ITSG)[-_]({0})(_n\d+)?_'
+        r'(\d+)-(\d+)(\.gfc)'
+    ).format(r'|'.join(itsg_products))
     R1 = re.compile(itsg_pattern, re.VERBOSE | re.IGNORECASE)
     # local directory for release
     DREL = {}
@@ -114,52 +125,69 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
 
     # sync ITSG GRAZ dealiasing products
     subdir = 'background' if (RELEASE == 'Grace2014') else 'monthly_background'
-    REMOTE = [*HOST,release_directory,'monthly',subdir]
-    files,mtimes = gravtk.utilities.http_list(REMOTE,
-        timeout=TIMEOUT,pattern=R1,sort=True)
+    REMOTE = [*HOST, release_directory, 'monthly', subdir]
+    files, mtimes = gravtk.utilities.http_list(
+        REMOTE, timeout=TIMEOUT, pattern=R1, sort=True
+    )
     # for each file on the remote directory
-    for colname,remote_mtime in zip(files,mtimes):
+    for colname, remote_mtime in zip(files, mtimes):
         # extract parameters from input filename
-        PFX,PRD,trunc,year,month,SFX = R1.findall(colname).pop()
+        PFX, PRD, trunc, year, month, SFX = R1.findall(colname).pop()
         # local directory for output GRAZ data
-        local_dir = DIRECTORY.joinpath('GRAZ',DREL[RELEASE],DEALIASING[PRD])
+        local_dir = DIRECTORY.joinpath('GRAZ', DREL[RELEASE], DEALIASING[PRD])
         # check if local directory exists and recursively create if not
         local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
         # local and remote versions of the file
         local_file = local_dir.joinpath(colname)
-        remote_file = posixpath.join(*REMOTE,colname)
+        remote_file = posixpath.join(*REMOTE, colname)
         # copy file from remote directory comparing modified dates
-        http_pull_file(remote_file, remote_mtime, local_file,
-            TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER, MODE=MODE)
+        http_pull_file(
+            remote_file,
+            remote_mtime,
+            local_file,
+            TIMEOUT=TIMEOUT,
+            LIST=LIST,
+            CLOBBER=CLOBBER,
+            MODE=MODE,
+        )
 
     # sync ITSG GRAZ data for truncation
     subdir = f'monthly_n{LMAX:d}'
-    REMOTE = [*HOST,release_directory,'monthly',subdir]
-    files,mtimes = gravtk.utilities.http_list(REMOTE,
-        timeout=TIMEOUT,pattern=R1,sort=True)
+    REMOTE = [*HOST, release_directory, 'monthly', subdir]
+    files, mtimes = gravtk.utilities.http_list(
+        REMOTE, timeout=TIMEOUT, pattern=R1, sort=True
+    )
     # local directory for output GRAZ data
-    local_dir = DIRECTORY.joinpath('GRAZ',DREL[RELEASE],'GSM')
+    local_dir = DIRECTORY.joinpath('GRAZ', DREL[RELEASE], 'GSM')
     # check if local directory exists and recursively create if not
     local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
     # for each file on the remote directory
-    for colname,remote_mtime in zip(files,mtimes):
+    for colname, remote_mtime in zip(files, mtimes):
         # local and remote versions of the file
         local_file = local_dir.joinpath(colname)
-        remote_file = posixpath.join(*REMOTE,colname)
+        remote_file = posixpath.join(*REMOTE, colname)
         # copy file from remote directory comparing modified dates
-        http_pull_file(remote_file, remote_mtime, local_file,
-            TIMEOUT=TIMEOUT, LIST=LIST, CLOBBER=CLOBBER, MODE=MODE)
+        http_pull_file(
+            remote_file,
+            remote_mtime,
+            local_file,
+            TIMEOUT=TIMEOUT,
+            LIST=LIST,
+            CLOBBER=CLOBBER,
+            MODE=MODE,
+        )
 
     # create index file for GRACE/GRACE-FO L2 Spherical Harmonic Data
     # DATA PRODUCTS (GAC, GAD, GSM, GAA, GAB)
-    for ds in ['GAA','GAB','GAC','GAD','GSM']:
+    for ds in ['GAA', 'GAB', 'GAC', 'GAD', 'GSM']:
         # local directory for exact data product
-        local_dir = DIRECTORY.joinpath('GRAZ',DREL[RELEASE],ds)
+        local_dir = DIRECTORY.joinpath('GRAZ', DREL[RELEASE], ds)
         if not local_dir.exists():
             continue
         # find local GRACE files to create index
-        grace_files = sorted([f.name for f in local_dir.iterdir()
-            if R1.match(f.name)])
+        grace_files = sorted(
+            [f.name for f in local_dir.iterdir() if R1.match(f.name)]
+        )
         # outputting GRACE filenames to index
         index_file = local_dir.joinpath('index.txt')
         with index_file.open(mode='w', encoding='utf8') as fid:
@@ -172,10 +200,18 @@ def itsg_graz_grace_sync(DIRECTORY, RELEASE=None, LMAX=None, TIMEOUT=0,
     if LOG:
         LOGFILE.chmod(mode=MODE)
 
+
 # PURPOSE: pull file from a remote host checking if file exists locally
 # and if the remote file is newer than the local file
-def http_pull_file(remote_file,remote_mtime,local_file,
-    TIMEOUT=0,LIST=False,CLOBBER=False,MODE=0o775):
+def http_pull_file(
+    remote_file,
+    remote_mtime,
+    local_file,
+    TIMEOUT=0,
+    LIST=False,
+    CLOBBER=False,
+    MODE=0o775,
+):
     # if file exists in file system: check if remote file is newer
     TEST = False
     OVERWRITE = ' (clobber)'
@@ -185,8 +221,9 @@ def http_pull_file(remote_file,remote_mtime,local_file,
         # check last modification time of local file
         local_mtime = local_file.stat().st_mtime
         # if remote file is newer: overwrite the local file
-        if (gravtk.utilities.even(remote_mtime) >
-            gravtk.utilities.even(local_mtime)):
+        if gravtk.utilities.even(remote_mtime) > gravtk.utilities.even(
+            local_mtime
+        ):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
@@ -202,8 +239,9 @@ def http_pull_file(remote_file,remote_mtime,local_file,
             # Create and submit request. There are a wide range of exceptions
             # that can be thrown here, including HTTPError and URLError.
             request = gravtk.utilities.urllib2.Request(remote_file)
-            response = gravtk.utilities.urllib2.urlopen(request,
-                timeout=TIMEOUT)
+            response = gravtk.utilities.urllib2.urlopen(
+                request, timeout=TIMEOUT
+            )
             # chunked transfer encoding size
             CHUNK = 16 * 1024
             # copy contents to local file using chunked transfer encoding
@@ -214,6 +252,7 @@ def http_pull_file(remote_file,remote_mtime,local_file,
             os.utime(local_file, (local_file.stat().st_atime, remote_mtime))
             local_file.chmod(mode=MODE)
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
@@ -223,56 +262,98 @@ def arguments():
     )
     # command line parameters
     # working data directory
-    parser.add_argument('--directory','-D',
+    parser.add_argument(
+        '--directory',
+        '-D',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Working data directory')
+        help='Working data directory',
+    )
     # ITSG GRAZ releases
-    choices = ['Grace2014','Grace2016','Grace2018','Grace_operational']
-    parser.add_argument('--release','-r',
-        type=str, nargs='+', metavar='DREL',
-        default=['Grace2018','Grace_operational'],choices=choices,
-        help='GRAZ Data Releases to sync')
-    parser.add_argument('--lmax',
-        type=int, default=60, choices=[60,96,120],
-        help='Maximum degree and order of GRAZ products')
+    choices = ['Grace2014', 'Grace2016', 'Grace2018', 'Grace_operational']
+    parser.add_argument(
+        '--release',
+        '-r',
+        type=str,
+        nargs='+',
+        metavar='DREL',
+        default=['Grace2018', 'Grace_operational'],
+        choices=choices,
+        help='GRAZ Data Releases to sync',
+    )
+    parser.add_argument(
+        '--lmax',
+        type=int,
+        default=60,
+        choices=[60, 96, 120],
+        help='Maximum degree and order of GRAZ products',
+    )
     # connection timeout
-    parser.add_argument('--timeout','-t',
-        type=int, default=360,
-        help='Timeout in seconds for blocking operations')
+    parser.add_argument(
+        '--timeout',
+        '-t',
+        type=int,
+        default=360,
+        help='Timeout in seconds for blocking operations',
+    )
     # Output log file in form
     # ITSG_GRAZ_GRACE_sync_2002-04-01.log
-    parser.add_argument('--log','-l',
-        default=False, action='store_true',
-        help='Output log file')
+    parser.add_argument(
+        '--log',
+        '-l',
+        default=False,
+        action='store_true',
+        help='Output log file',
+    )
     # sync options
-    parser.add_argument('--list','-L',
-        default=False, action='store_true',
-        help='Only print files that could be transferred')
-    parser.add_argument('--clobber','-C',
-        default=False, action='store_true',
-        help='Overwrite existing data in transfer')
+    parser.add_argument(
+        '--list',
+        '-L',
+        default=False,
+        action='store_true',
+        help='Only print files that could be transferred',
+    )
+    parser.add_argument(
+        '--clobber',
+        '-C',
+        default=False,
+        action='store_true',
+        help='Overwrite existing data in transfer',
+    )
     # permissions mode of the directories and files synced (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permission mode of directories and files synced')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permission mode of directories and files synced',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # check internet connection before attempting to run program
     HOST = posixpath.join('http://ftp.tugraz.at')
     if gravtk.utilities.check_connection(HOST):
         # for each ITSG GRAZ release
         for RELEASE in args.release:
-            itsg_graz_grace_sync(args.directory, RELEASE=RELEASE,
-                LMAX=args.lmax, TIMEOUT=args.timeout, LOG=args.log,
-                LIST=args.list, CLOBBER=args.clobber, MODE=args.mode)
+            itsg_graz_grace_sync(
+                args.directory,
+                RELEASE=RELEASE,
+                LMAX=args.lmax,
+                TIMEOUT=args.timeout,
+                LOG=args.log,
+                LIST=args.list,
+                CLOBBER=args.clobber,
+                MODE=args.mode,
+            )
+
 
 # run main program
 if __name__ == '__main__':

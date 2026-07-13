@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 ocean_stokes.py
 Written by Tyler Sutterley (08/2023)
 
@@ -59,13 +59,16 @@ UPDATE HISTORY:
     Updated 05/2015: added parameter MMAX for MMAX != LMAX
     Written 03/2015
 """
+
 import pathlib
 import numpy as np
 from gravity_toolkit.spatial import spatial
 from gravity_toolkit.gen_stokes import gen_stokes
 
-def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
-    SIMPLIFY=False):
+
+def ocean_stokes(
+    LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK', SIMPLIFY=False
+):
     """
     Reads a land-sea mask and converts to a series of spherical harmonics
     for ocean areas
@@ -105,27 +108,36 @@ def ocean_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
     # Read Land-Sea Mask of specified input file
     # 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
     # Open the land-sea NetCDF file for reading
-    landsea = spatial().from_netCDF4(LANDMASK,
-        date=False, varname=VARNAME)
+    landsea = spatial().from_netCDF4(LANDMASK, date=False, varname=VARNAME)
     # create land function
-    nth,nphi = landsea.shape
-    land_function = np.zeros((nth,nphi), dtype=np.float64)
+    nth, nphi = landsea.shape
+    land_function = np.zeros((nth, nphi), dtype=np.float64)
     # combine land and island levels for land function
-    indx,indy = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))
-    land_function[indx,indy] = 1.0
+    indx, indy = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))
+    land_function[indx, indy] = 1.0
     # remove isolated points if specified
     if SIMPLIFY:
         land_function -= find_isolated_points(land_function)
     # ocean function reciprocal of land function
     ocean_function = 1.0 - land_function
     # convert to spherical harmonics (1 cm w.e.)
-    Ylms = gen_stokes(ocean_function.T, landsea.lon, landsea.lat,
-        UNITS=1, LMIN=0, LMAX=LMAX, MMAX=MMAX, LOVE=LOVE)
+    Ylms = gen_stokes(
+        ocean_function.T,
+        landsea.lon,
+        landsea.lat,
+        UNITS=1,
+        LMIN=0,
+        LMAX=LMAX,
+        MMAX=MMAX,
+        LOVE=LOVE,
+    )
     # return the spherical harmonic coefficients
     return Ylms
 
-def land_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
-    SIMPLIFY=False):
+
+def land_stokes(
+    LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK', SIMPLIFY=False
+):
     """
     Reads a land-sea mask and converts to a series of spherical harmonics
     for land areas
@@ -165,22 +177,30 @@ def land_stokes(LANDMASK, LMAX, MMAX=None, LOVE=None, VARNAME='LSMASK',
     # Read Land-Sea Mask of specified input file
     # 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
     # Open the land-sea NetCDF file for reading
-    landsea = spatial().from_netCDF4(LANDMASK,
-        date=False, varname=VARNAME)
+    landsea = spatial().from_netCDF4(LANDMASK, date=False, varname=VARNAME)
     # create land function
-    nth,nphi = landsea.shape
-    land_function = np.zeros((nth,nphi), dtype=np.float64)
+    nth, nphi = landsea.shape
+    land_function = np.zeros((nth, nphi), dtype=np.float64)
     # combine land and island levels for land function
-    indx,indy = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))
-    land_function[indx,indy] = 1.0
+    indx, indy = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))
+    land_function[indx, indy] = 1.0
     # remove isolated points if specified
     if SIMPLIFY:
         land_function -= find_isolated_points(land_function)
     # convert to spherical harmonics (1 cm w.e.)
-    Ylms = gen_stokes(land_function.T, landsea.lon, landsea.lat,
-        UNITS=1, LMIN=0, LMAX=LMAX, MMAX=MMAX, LOVE=LOVE)
+    Ylms = gen_stokes(
+        land_function.T,
+        landsea.lon,
+        landsea.lat,
+        UNITS=1,
+        LMIN=0,
+        LMAX=LMAX,
+        MMAX=MMAX,
+        LOVE=LOVE,
+    )
     # return the spherical harmonic coefficients
     return Ylms
+
 
 def find_isolated_points(mask):
     """
@@ -196,16 +216,16 @@ def find_isolated_points(mask):
     isolated: np.ndarray
         simplified land-sea mask
     """
-    nth,_ = mask.shape
-    laplacian = -4.0*np.copy(mask)
-    laplacian += mask*np.roll(mask,1,axis=1)
-    laplacian += mask*np.roll(mask,-1,axis=1)
-    temp = np.roll(mask,1,axis=0)
-    temp[0,:] = mask[1,:]
-    laplacian += mask*temp
-    temp = np.roll(mask,-1,axis=0)
-    temp[nth-1,:] = mask[nth-2,:]
-    laplacian += mask*temp
+    nth, _ = mask.shape
+    laplacian = -4.0 * np.copy(mask)
+    laplacian += mask * np.roll(mask, 1, axis=1)
+    laplacian += mask * np.roll(mask, -1, axis=1)
+    temp = np.roll(mask, 1, axis=0)
+    temp[0, :] = mask[1, :]
+    laplacian += mask * temp
+    temp = np.roll(mask, -1, axis=0)
+    temp[nth - 1, :] = mask[nth - 2, :]
+    laplacian += mask * temp
     # create mask of isolated points
     isolated = np.where(np.abs(laplacian) >= 3, 1, 0)
     return isolated

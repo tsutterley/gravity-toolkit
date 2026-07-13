@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 gen_averaging_kernel.py
 Original IDL code gen_wclms_me.pro written by Sean Swenson
 Adapted by Tyler Sutterley (06/2023)
@@ -54,11 +54,24 @@ UPDATE HISTORY:
     Updated 05/2015: added parameter MMAX for MMAX != LMAX
     Written 05/2013
 """
+
 import numpy as np
 import gravity_toolkit.units
 
-def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
-    LMAX=60, MMAX=None, CUTOFF=1e-15, UNITS=0, LOVE=None):
+
+def gen_averaging_kernel(
+    gclm,
+    gslm,
+    eclm,
+    eslm,
+    sigma,
+    hw,
+    LMAX=60,
+    MMAX=None,
+    CUTOFF=1e-15,
+    UNITS=0,
+    LOVE=None,
+):
     r"""
     Generates averaging kernel coefficients which minimize the
     total error following :cite:t:`Swenson:2002hs`
@@ -108,65 +121,65 @@ def gen_averaging_kernel(gclm, gslm, eclm, eslm, sigma, hw,
     # Earth Parameters
     factors = gravity_toolkit.units(lmax=LMAX)
     # extract arrays of kl, hl, and ll Love Numbers
-    if (UNITS == 0):
+    if UNITS == 0:
         # Input coefficients are fully-normalized
         dfactor = factors.harmonic(*LOVE).cmwe
-    elif (UNITS == 1):
+    elif UNITS == 1:
         # Inputs coefficients are mass (cmwe)
-        dfactor = np.ones((LMAX+1))
+        dfactor = np.ones((LMAX + 1))
     # average radius of the earth (km)
-    rad_e = factors.rad_e/1e5
+    rad_e = factors.rad_e / 1e5
 
     # allocate for gaussian function
-    gl = np.zeros((LMAX+1))
+    gl = np.zeros((LMAX + 1))
     # calculate gaussian weights using recursion
-    b = np.log(2.0)/(1.0-np.cos(hw/rad_e))
+    b = np.log(2.0) / (1.0 - np.cos(hw / rad_e))
     # weight for degree 0
-    gl[0] = (1.0-np.exp(-2.0*b))/b
+    gl[0] = (1.0 - np.exp(-2.0 * b)) / b
     # weight for degree 1
-    gl[1] = (1.0+np.exp(-2.0*b))/b - (1.0-np.exp(-2.0*b))/b**2
+    gl[1] = (1.0 + np.exp(-2.0 * b)) / b - (1.0 - np.exp(-2.0 * b)) / b**2
     # valid flag
     valid = True
     # spherical harmonic degree
     l = 2
     # generate Legendre coefficients of Gaussian correlation function
-    while (valid and (l <= LMAX)):
-        gl[l] = (1.0 - 2.0*l)/b*gl[l-1] + gl[l-2]
+    while valid and (l <= LMAX):
+        gl[l] = (1.0 - 2.0 * l) / b * gl[l - 1] + gl[l - 2]
         # check validity
-        if (gl[l] < CUTOFF):
-            gl[l:LMAX+1] = CUTOFF
+        if gl[l] < CUTOFF:
+            gl[l : LMAX + 1] = CUTOFF
             valid = False
         # add to counter for spherical harmonic degree
         l += 1
 
     # Convert sigma to correlation function amplitude
-    area = np.copy(gclm[0,0])
-    temp_0 = np.zeros((LMAX+1))
-    for l in range(0,LMAX+1):# equivalent to 0:LMAX
-        mm = np.min([MMAX,l])# find min of MMAX and l
-        m = np.arange(0,mm+1)# create m array 0:l or 0:MMAX
-        temp_0[l] = (gl[l]/2.0)*np.sum(gclm[l,m]**2 + gslm[l,m]**2)
+    area = np.copy(gclm[0, 0])
+    temp_0 = np.zeros((LMAX + 1))
+    for l in range(0, LMAX + 1):  # equivalent to 0:LMAX
+        mm = np.min([MMAX, l])  # find min of MMAX and l
+        m = np.arange(0, mm + 1)  # create m array 0:l or 0:MMAX
+        temp_0[l] = (gl[l] / 2.0) * np.sum(gclm[l, m] ** 2 + gslm[l, m] ** 2)
 
     # divide by the square of the area under the kernel
-    temp = np.sum(temp_0)/area**2
+    temp = np.sum(temp_0) / area**2
     # signal variance
-    sigma_0 = sigma/np.sqrt(temp)
+    sigma_0 = sigma / np.sqrt(temp)
 
     # Compute averaging kernel coefficients
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
-    Ylms.clm = np.zeros((LMAX+1, MMAX+1))
-    Ylms.slm = np.zeros((LMAX+1, MMAX+1))
+    Ylms.clm = np.zeros((LMAX + 1, MMAX + 1))
+    Ylms.slm = np.zeros((LMAX + 1, MMAX + 1))
     # for each spherical harmonic degree
-    for l in range(0,LMAX+1):# equivalent to 0:lmax
+    for l in range(0, LMAX + 1):  # equivalent to 0:lmax
         # inverse of smoothed signal variance in output units
-        ldivg = (dfactor[l]**2)/(gl[l]*sigma_0**2)
+        ldivg = (dfactor[l] ** 2) / (gl[l] * sigma_0**2)
         # for each valid spherical harmonic order
-        mm = np.min([MMAX,l])
-        for m in range(0,mm+1):
-            temp = 1.0 + 2.0*ldivg*eclm[l,m]**2
-            Ylms.clm[l,m] = gclm[l,m]/temp
-            temp = 1.0 + 2.0*ldivg*eslm[l,m]**2
-            Ylms.slm[l,m] = gslm[l,m]/temp
+        mm = np.min([MMAX, l])
+        for m in range(0, mm + 1):
+            temp = 1.0 + 2.0 * ldivg * eclm[l, m] ** 2
+            Ylms.clm[l, m] = gclm[l, m] / temp
+            temp = 1.0 + 2.0 * ldivg * eslm[l, m] ** 2
+            Ylms.slm[l, m] = gslm[l, m] / temp
 
     # return kernels divided by the area under the kernel
-    return Ylms.scale(1.0/area)
+    return Ylms.scale(1.0 / area)

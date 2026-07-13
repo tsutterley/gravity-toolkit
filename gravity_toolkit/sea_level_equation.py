@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 sea_level_equation.py (07/2026)
 Solves the sea level equation with the option of including polar motion feedback
 Uses a Clenshaw summation to calculate the spherical harmonic summation
@@ -123,16 +123,33 @@ UPDATE HISTORY:
         set the permissions mode of the output files with --mode
     Written 09/2016
 """
+
 import logging
 import numpy as np
 from gravity_toolkit.gen_harmonics import gen_harmonics
 from gravity_toolkit.associated_legendre import plm_holmes
 from gravity_toolkit.units import units
 
+
 # PURPOSE: Computes Sea Level Fingerprints including polar motion feedback
-def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
-    LOVE=None, BODY_TIDE_LOVE=0, FLUID_LOVE=0, DENSITY=1.0, POLAR=True, 
-    ITERATIONS=6, PLM=None, FILL_VALUE=0, SCALE=1e-280, **kwargs):
+def sea_level_equation(
+    loadClm,
+    loadSlm,
+    glon,
+    glat,
+    land_function,
+    LMAX=0,
+    LOVE=None,
+    BODY_TIDE_LOVE=0,
+    FLUID_LOVE=0,
+    DENSITY=1.0,
+    POLAR=True,
+    ITERATIONS=6,
+    PLM=None,
+    FILL_VALUE=0,
+    SCALE=1e-280,
+    **kwargs,
+):
     r"""
     Solves the sea level equation with the option of including
     polar motion feedback :cite:p:`Farrell:1976hm,Kendall:2005ds,Mitrovica:2003cq`
@@ -197,7 +214,7 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     # calculate ocean function from land function
     ocean_function = 1.0 - land_function
     # indices of the ocean function
-    ii,jj = np.nonzero(ocean_function)
+    ii, jj = np.nonzero(ocean_function)
 
     # extract arrays of kl, hl, and ll Love Numbers
     hl, kl, ll = LOVE
@@ -211,86 +228,88 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     rad_e = factors.rad_e
 
     # different treatments of the body tide Love numbers of degree 2
-    if isinstance(BODY_TIDE_LOVE,(list,tuple)):
+    if isinstance(BODY_TIDE_LOVE, (list, tuple)):
         # use custom defined values
-        k2b,h2b = BODY_TIDE_LOVE
-    elif (BODY_TIDE_LOVE == 0):
+        k2b, h2b = BODY_TIDE_LOVE
+    elif BODY_TIDE_LOVE == 0:
         # Wahr (1981) and Wahr (1985) values from PREM
         k2b = 0.298
         h2b = 0.604
-    elif (BODY_TIDE_LOVE == 1):
+    elif BODY_TIDE_LOVE == 1:
         # Farrell (1972) values from Gutenberg-Bullen oceanic mantle model
         k2b = 0.3055
         h2b = 0.6149
 
     # different treatments of the fluid Love number of gravitational potential
-    if isinstance(FLUID_LOVE,(list,tuple)):
+    if isinstance(FLUID_LOVE, (list, tuple)):
         # use custom defined value
-        klf, = FLUID_LOVE
-    elif (FLUID_LOVE == 0):
+        (klf,) = FLUID_LOVE
+    elif FLUID_LOVE == 0:
         # Han and Wahr (1989) fluid love number
         # klf = 3.0*G*(C-A)/(rad_e**5*omega**2)
         # klf = 3.0*G*H0*A/(rad_e**5*omega**2)
-        G = 6.6740e-11# gravitational constant [m^3/(kg*s^2)]
-        Re = 6.371e6# mean radius of the Earth [m]
-        A_moi = 8.0077e+37# mean equatorial moment of inertia [kg m^2]
-        omega = 7.292115e-5# mean rotation rate of the Earth [radians/s]
-        H0 = 0.00328475# dynamical ellipticity (C_moi-A_moi)/A_moi
-        klf = 3.0*G*H0*A_moi*(Re**-5)*(omega**-2)
-        klf = 0.00328475/0.00348118
-    if (FLUID_LOVE == 1):
+        G = 6.6740e-11  # gravitational constant [m^3/(kg*s^2)]
+        Re = 6.371e6  # mean radius of the Earth [m]
+        A_moi = 8.0077e37  # mean equatorial moment of inertia [kg m^2]
+        omega = 7.292115e-5  # mean rotation rate of the Earth [radians/s]
+        H0 = 0.00328475  # dynamical ellipticity (C_moi-A_moi)/A_moi
+        klf = 3.0 * G * H0 * A_moi * (Re**-5) * (omega**-2)
+        klf = 0.00328475 / 0.00348118
+    if FLUID_LOVE == 1:
         # Munk and MacDonald (1960) secular love number with IERS and PREM values
-        GM = 3.98004418e14# geocentric gravitational constant [m^3/s^2]
-        Re = 6.371e6# mean radius of the Earth [m]
-        omega = 7.292115e-5# mean rotation rate of the Earth [radians/s]
-        C_moi = 0.33068# reduced polar moment of inertia (C/Ma^2)
-        H = 1.0/305.51# precessional constant (C_moi-A_moi)/C_moi
-        klf = 3.0*GM*H*C_moi/(Re**3*omega**2)
-    elif (FLUID_LOVE == 2):
+        GM = 3.98004418e14  # geocentric gravitational constant [m^3/s^2]
+        Re = 6.371e6  # mean radius of the Earth [m]
+        omega = 7.292115e-5  # mean rotation rate of the Earth [radians/s]
+        C_moi = 0.33068  # reduced polar moment of inertia (C/Ma^2)
+        H = 1.0 / 305.51  # precessional constant (C_moi-A_moi)/C_moi
+        klf = 3.0 * GM * H * C_moi / (Re**3 * omega**2)
+    elif FLUID_LOVE == 2:
         # Munk and MacDonald (1960) fluid love number with IERS and WGS84 values
-        flat = 1.0/298.257223563# flattening of the WGS84 ellipsoid
-        Re = 6.371e6# mean radius of the Earth [m]
-        omega = 7.292115e-5# mean rotation rate of the Earth [radians/s]
-        ge = 9.80665# standard gravity (mean gravitational acceleration) [m/s^2]
-        klf = 2.0*flat*ge/(omega**2*Re) - 1.0
-    elif (FLUID_LOVE == 3):
+        flat = 1.0 / 298.257223563  # flattening of the WGS84 ellipsoid
+        Re = 6.371e6  # mean radius of the Earth [m]
+        omega = 7.292115e-5  # mean rotation rate of the Earth [radians/s]
+        ge = 9.80665  # standard gravity (mean gravitational acceleration) [m/s^2]
+        klf = 2.0 * flat * ge / (omega**2 * Re) - 1.0
+    elif FLUID_LOVE == 3:
         # Fluid love number from Lambeck (1980)
         # klf = 3.0*(C-A)*G/(omega**2*rad_e**5) = 3.0*GM*C20/(omega**2*rad_e**3)
-        G = 6.672e-11# gravitational constant [m^3/(kg*s^2)]
-        M = 5.974e+24# mass of the Earth [kg]
-        R = 6.378140e6# equatorial radius of the Earth [m]
-        Re = 6.3710121e6# mean radius of the Earth [m]
-        omega = 7.292115e-5# mean rotation rate of the Earth [radians/s]
-        A_moi = 0.3295*M*R**2# mean equatorial moment of inertia [kg m^2]
-        H = 0.003275# precessional constant (C_moi-A_moi)/C_moi
-        C_moi = -A_moi/(H-1.0)# mean polar moment of inertia [kg m^2]
-        klf = 3.0*(C_moi-A_moi)*G*(omega**-2)*(Re**-5)
+        G = 6.672e-11  # gravitational constant [m^3/(kg*s^2)]
+        M = 5.974e24  # mass of the Earth [kg]
+        R = 6.378140e6  # equatorial radius of the Earth [m]
+        Re = 6.3710121e6  # mean radius of the Earth [m]
+        omega = 7.292115e-5  # mean rotation rate of the Earth [radians/s]
+        A_moi = 0.3295 * M * R**2  # mean equatorial moment of inertia [kg m^2]
+        H = 0.003275  # precessional constant (C_moi-A_moi)/C_moi
+        C_moi = -A_moi / (H - 1.0)  # mean polar moment of inertia [kg m^2]
+        klf = 3.0 * (C_moi - A_moi) * G * (omega**-2) * (Re**-5)
         klf = 0.942
 
     # calculate coefh and coefp for each degree and order
     # see equation 11 from Tamisiea et al (2010)
-    coefh = np.zeros((LMAX+1, LMAX+1))
-    coefp = np.zeros((LMAX+1, LMAX+1))
-    for l in range(LMAX+1):
-        m = np.arange(0, l+1)
+    coefh = np.zeros((LMAX + 1, LMAX + 1))
+    coefp = np.zeros((LMAX + 1, LMAX + 1))
+    for l in range(LMAX + 1):
+        m = np.arange(0, l + 1)
         # tilt factor for degree l
-        gamma_l = (1.0 + kl[l] - hl[l])
+        gamma_l = 1.0 + kl[l] - hl[l]
         # coefh and coefp will be the same for all orders except for degree 2
         # and order 1 (if POLAR motion feedback is included)
-        coefh[l,m] = 3.0*rho_water*gamma_l/rho_e/np.float64(2*l+1)
-        coefp[l,m] = gamma_l/(kl[l] + 1.0)
+        coefh[l, m] = 3.0 * rho_water * gamma_l / rho_e / np.float64(2 * l + 1)
+        coefp[l, m] = gamma_l / (kl[l] + 1.0)
         # if degree 2 and POLAR parameter is set
         if (l == 2) and POLAR:
             # tilt factor for body tides
-            gamma_2b = (1.0 + k2b - h2b)
+            gamma_2b = 1.0 + k2b - h2b
             # calculate coefficient for polar motion feedback and add to coefs
             # For small perturbations in rotation vector: driving potential
             # will be dominated by degree two and order one polar wander
             # effects (quadrantal geometry effects) (Kendall et al., 2005)
-            coefpmf = gamma_2b*(1.0 + kl[l])/(klf - k2b)
+            coefpmf = gamma_2b * (1.0 + kl[l]) / (klf - k2b)
             # add effects of polar motion feedback to order 1 coefficients
-            coefh[l,1] += 3.0*rho_water*coefpmf/rho_e/np.float64(2*l+1)
-            coefp[l,1] += coefpmf/(kl[l] + 1.0)
+            coefh[l, 1] += (
+                3.0 * rho_water * coefpmf / rho_e / np.float64(2 * l + 1)
+            )
+            coefp[l, 1] += coefpmf / (kl[l] + 1.0)
 
     # added option to precompute plms to improve computational speed
     if PLM is None:
@@ -298,21 +317,21 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
         PLM, dPLM = plm_holmes(LMAX, np.cos(th))
     # calculate sin of colatitudes
     gth, gphi = np.meshgrid(th, phi)
-    u = np.sin(gth[ii,jj])
+    u = np.sin(gth[ii, jj])
     # indices of spherical harmonics for calculating eps
-    l1, m1 = np.tril_indices(LMAX+1)
+    l1, m1 = np.tril_indices(LMAX + 1)
 
     # total mass of the surface mass load [g] from harmonics
-    tmass = 4.0*np.pi*(rad_e**3.0)*rho_e*loadClm[0,0]/3.0
+    tmass = 4.0 * np.pi * (rad_e**3.0) * rho_e * loadClm[0, 0] / 3.0
     # convert ocean function into a series of spherical harmonics
     ocean_Ylms = gen_harmonics(ocean_function, glon, glat, LMAX=LMAX, PLM=PLM)
     # total area of ocean calculated by integrating the ocean function
-    ocean_area = 4.0*np.pi*ocean_Ylms.clm[0,0]
+    ocean_area = 4.0 * np.pi * ocean_Ylms.clm[0, 0]
 
     # uniform distribution as initial guess of the ocean change following
     # Mitrovica and Peltier (1991) doi:10.1029/91JB01284
     # sea level height change
-    sea_height = -tmass/rho_water/rad_e**2/ocean_area
+    sea_height = -tmass / rho_water / rad_e**2 / ocean_area
 
     # if verbose output: print ocean area and uniform sea level height
     logging.info(f'Total Ocean Area: {ocean_area:0.10g}')
@@ -321,12 +340,12 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     # allocate for output sea level field
     sea_level = np.empty((nphi, nth))
     # complex load spherical harmonics
-    loadYlms = loadClm - 1j*loadSlm
+    loadYlms = loadClm - 1j * loadSlm
     # distribute sea height over ocean harmonics
     height_Ylms = ocean_Ylms * sea_height
     # calculating cos(m*phi) and sin(m*phi) using Euler's formula
-    mm = np.arange(0, LMAX+1)
-    m_phi = np.exp(1j * np.einsum("m...,p...->pm...", mm, phi))
+    mm = np.arange(0, LMAX + 1)
+    m_phi = np.exp(1j * np.einsum('m...,p...->pm...', mm, phi))
 
     # iterate solutions until convergence or reaching total iterations
     n_iter = 1
@@ -336,39 +355,35 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     eps_max = 1e-4
     while (eps > eps_max) and (n_iter <= ITERATIONS):
         # zero out the sea level field for this iteration
-        sea_level[:,:] = 0.0
+        sea_level[:, :] = 0.0
         # calculate combined spherical harmonics for Clenshaw summation
-        Ylm1 = coefh*height_Ylms.ilm + rad_e*coefp*loadYlms
-        # calculate clenshaw summations over colatitudes
-        cs_m = np.zeros((nth, LMAX+1), dtype=np.clongdouble)
-        for m in range(LMAX, -1, -1):
-            cs_m[:,m] = _clenshaw(np.cos(th), m, Ylm1, LMAX, SCALE=SCALE)
+        Ylm1 = coefh * height_Ylms.ilm + rad_e * coefp * loadYlms
 
-        # calculate summation
-        g = np.einsum("h...,p...->ph...", cs_m[:,LMAX], m_phi[:,LMAX])
-        # discard imaginary component
-        s_m = g[ii,jj].real
+        # initate summation
+        s_m = 0.0
         # iterate to calculate complete summation
-        for m in range(LMAX-1, 0, -1):
+        for m in range(LMAX, 0, -1):
             # calculate summation for order m
-            a_m = np.sqrt((2.0*m + 3.0)/(2.0*m + 2.0))
-            g = np.einsum("h...,p...->ph...", cs_m[:,m], m_phi[:,m])
+            a_m = np.sqrt((2.0 * m + 3.0) / (2.0 * m + 2.0))
+            cs_m = _clenshaw(np.cos(th), m, Ylm1, LMAX, SCALE=SCALE)
+            g = np.einsum('h...,p...->ph...', cs_m, m_phi[:, m])
             # update summation and discard imaginary component
-            s_m = a_m*u*s_m + g[ii,jj].real
+            s_m = a_m * u * s_m + g[ii, jj].real
         # add the l=0/m=0 term
-        gs_m = np.kron(np.ones((nphi, 1)), cs_m.real[:, 0])
+        cs_m = _clenshaw(np.cos(th), 0, Ylm1, LMAX, SCALE=SCALE)
+        gs_m = np.kron(np.ones((nphi, 1)), cs_m.real)
         # calculate new sea level for iteration
-        sea_level[ii,jj] = np.sqrt(3.0)*u*s_m + gs_m[ii,jj]
+        sea_level[ii, jj] = np.sqrt(3.0) * u * s_m + gs_m[ii, jj]
 
         # calculate spherical harmonic field for iteration
         Ylms = gen_harmonics(sea_level, glon, glat, LMAX=LMAX, PLM=PLM)
         # total sea level height for iteration
         # integrated total rmass will differ as sea_level is only over ocean
         # whereas the crustal and gravitational effects are global
-        rmass = 4.0*np.pi*Ylms.clm[0,0]
+        rmass = 4.0 * np.pi * Ylms.clm[0, 0]
         # mass anomaly converted to ocean height to ensure mass conservation
         # (this is the gravitational perturbation (Delta Phi)/g)
-        sea_height = (-tmass/rho_water/rad_e**2 - rmass)/ocean_area
+        sea_height = (-tmass / rho_water / rad_e**2 - rmass) / ocean_area
 
         # if verbose output: print iteration, mass and anomaly for convergence
         logging.info(f'Iteration: {n_iter:d}')
@@ -380,30 +395,31 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
         # constrained by invoking conservation of mass of the surface load
         # Equation 48 of Mitrovica and Peltier (1991)
         # add difference to total sea level field to force mass conservation
-        sea_level += sea_height*ocean_function[:,:]
+        sea_level += sea_height * ocean_function[:, :]
         Ylms += ocean_Ylms * sea_height
         # calculate eps to determine if solution is appropriately converged
         mod1 = np.hypot(height_Ylms.clm, height_Ylms.slm)
         mod2 = np.hypot(Ylms.clm, Ylms.slm)
-        eps = np.abs(np.sum(mod2[l1,m1] - mod1[l1,m1])/np.sum(mod1[l1,m1]))
+        eps = np.abs(np.sum(mod2[l1, m1] - mod1[l1, m1]) / np.sum(mod1[l1, m1]))
         # save height harmonics for use in the next iteration
         height_Ylms = Ylms.copy()
         # add 1 to n_iter
         n_iter += 1
 
     # calculate final total mass for sanity check
-    omass = 4.0*np.pi*(rad_e**2.0)*rho_water*height_Ylms.clm[0,0]
+    omass = 4.0 * np.pi * (rad_e**2.0) * rho_water * height_Ylms.clm[0, 0]
     # if verbose output: sanity check of masses
-    logging.info(f'Original Total Ocean Mass: {-tmass/1e15:0.10g}')
-    logging.info(f'Final Iterated Ocean Mass: {omass/1e15:0.10g}')
+    logging.info(f'Original Total Ocean Mass: {-tmass / 1e15:0.10g}')
+    logging.info(f'Final Iterated Ocean Mass: {omass / 1e15:0.10g}')
 
     # set final invalid points to fill value if applicable
-    if (FILL_VALUE != 0):
-        ii,jj = np.nonzero(land_function)
-        sea_level[ii,jj] = FILL_VALUE
+    if FILL_VALUE != 0:
+        ii, jj = np.nonzero(land_function)
+        sea_level[ii, jj] = FILL_VALUE
 
     # return the sea level spatial field
     return sea_level
+
 
 # PURPOSE: compute Clenshaw summation of the fully normalized associated
 # Legendre's function for constant order m
@@ -434,38 +450,66 @@ def _clenshaw(t, m, Ylm1, lmax, SCALE=1e-280):
     N = len(t)
     s_m = np.zeros((N), dtype=np.clongdouble)
     # scaling to prevent overflow
-    ylm = SCALE*Ylm1.astype(np.clongdouble)
+    ylm = SCALE * Ylm1.astype(np.clongdouble)
     # convert lmax and m to float
     lm = np.float64(lmax)
     mm = np.float64(m)
-    if (m == lmax):
-        s_m[:] = np.copy(ylm[lmax,lmax])
-    elif (m == (lmax-1)):
-        a_lm = np.sqrt(((2.0*lm-1.0)*(2.0*lm+1.0))/((lm-mm)*(lm+mm)))*t
-        s_m[:] = a_lm*ylm[lmax,lmax-1] + ylm[lmax-1,lmax-1]
-    elif ((m <= (lmax-2)) and (m >= 1)):
-        s_mm_minus_2 = np.copy(ylm[lmax,m])
-        a_lm = np.sqrt(((2.0*lm-1.0)*(2.0*lm+1.0))/((lm-mm)*(lm+mm)))*t
-        s_mm_minus_1 = a_lm*s_mm_minus_2 + ylm[lmax-1,m]
-        for l in range(lmax-2, m-1, -1):
+    if m == lmax:
+        s_m[:] = np.copy(ylm[lmax, lmax])
+    elif m == (lmax - 1):
+        a_lm = (
+            np.sqrt(
+                ((2.0 * lm - 1.0) * (2.0 * lm + 1.0)) / ((lm - mm) * (lm + mm))
+            )
+            * t
+        )
+        s_m[:] = a_lm * ylm[lmax, lmax - 1] + ylm[lmax - 1, lmax - 1]
+    elif (m <= (lmax - 2)) and (m >= 1):
+        s_mm_minus_2 = np.copy(ylm[lmax, m])
+        a_lm = (
+            np.sqrt(
+                ((2.0 * lm - 1.0) * (2.0 * lm + 1.0)) / ((lm - mm) * (lm + mm))
+            )
+            * t
+        )
+        s_mm_minus_1 = a_lm * s_mm_minus_2 + ylm[lmax - 1, m]
+        for l in range(lmax - 2, m - 1, -1):
             ll = np.float64(l)
-            a_lm=np.sqrt(((2.0*ll+1.0)*(2.0*ll+3.0))/((ll+1.0-mm)*(ll+1.0+mm)))*t
-            b_lm=np.sqrt(((2.*ll+5.)*(ll+mm+1.)*(ll-mm+1.))/((ll+2.-mm)*(ll+2.+mm)*(2.*ll+1.)))
-            s_mm_l = a_lm * s_mm_minus_1 - b_lm * s_mm_minus_2 + ylm[l,m]
+            a_lm = (
+                np.sqrt(
+                    ((2.0 * ll + 1.0) * (2.0 * ll + 3.0))
+                    / ((ll + 1.0 - mm) * (ll + 1.0 + mm))
+                )
+                * t
+            )
+            b_lm = np.sqrt(
+                ((2.0 * ll + 5.0) * (ll + mm + 1.0) * (ll - mm + 1.0))
+                / ((ll + 2.0 - mm) * (ll + 2.0 + mm) * (2.0 * ll + 1.0))
+            )
+            s_mm_l = a_lm * s_mm_minus_1 - b_lm * s_mm_minus_2 + ylm[l, m]
             s_mm_minus_2 = np.copy(s_mm_minus_1)
             s_mm_minus_1 = np.copy(s_mm_l)
         s_m[:] = np.copy(s_mm_l)
-    elif (m == 0):
-        s_mm_minus_2 = np.copy(ylm[lmax,0])
-        a_lm = np.sqrt(((2.0*lm-1.0)*(2.0*lm+1.0))/(lm*lm))*t
-        s_mm_minus_1 = a_lm * s_mm_minus_2 + ylm[lmax-1,0]
-        for l in range(lmax-2, m-1, -1):
+    elif m == 0:
+        s_mm_minus_2 = np.copy(ylm[lmax, 0])
+        a_lm = np.sqrt(((2.0 * lm - 1.0) * (2.0 * lm + 1.0)) / (lm * lm)) * t
+        s_mm_minus_1 = a_lm * s_mm_minus_2 + ylm[lmax - 1, 0]
+        for l in range(lmax - 2, m - 1, -1):
             ll = np.float64(l)
-            a_lm=np.sqrt(((2.0*ll+1.0)*(2.0*ll+3.0))/((ll+1.0)*(ll+1.0)))*t
-            b_lm=np.sqrt(((2.0*ll+5.0)*(ll+1.0)*(ll+1.0))/((ll+2.0)*(ll+2.0)*(2.0*ll+1.0)))
-            s_mm_l = a_lm * s_mm_minus_1 - b_lm * s_mm_minus_2 + ylm[l,0]
+            a_lm = (
+                np.sqrt(
+                    ((2.0 * ll + 1.0) * (2.0 * ll + 3.0))
+                    / ((ll + 1.0) * (ll + 1.0))
+                )
+                * t
+            )
+            b_lm = np.sqrt(
+                ((2.0 * ll + 5.0) * (ll + 1.0) * (ll + 1.0))
+                / ((ll + 2.0) * (ll + 2.0) * (2.0 * ll + 1.0))
+            )
+            s_mm_l = a_lm * s_mm_minus_1 - b_lm * s_mm_minus_2 + ylm[l, 0]
             s_mm_minus_2 = np.copy(s_mm_minus_1)
             s_mm_minus_1 = np.copy(s_mm_l)
         s_m[:] = np.copy(s_mm_l)
     # return rescaled s_m
-    return s_m/SCALE
+    return s_m / SCALE

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 gen_point_load.py
 Written by Tyler Sutterley (07/2026)
 Calculates gravitational spherical harmonic coefficients for point masses
@@ -59,10 +59,12 @@ UPDATE HISTORY:
     Updated 07/2020: added function docstrings
     Written 05/2020
 """
+
 import numpy as np
 import gravity_toolkit.units
 import gravity_toolkit.harmonics
 from gravity_toolkit.legendre import legendre
+
 
 def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
     """
@@ -119,32 +121,33 @@ def gen_point_load(data, lon, lat, LMAX=60, MMAX=None, UNITS=1, LOVE=None):
         # custom units
         dfactor = np.copy(UNITS)
         int_fact[:] = 1.0
-    elif (UNITS == 1):
+    elif UNITS == 1:
         # Default Parameter: Input in grams (g)
-        dfactor = factors.spatial(*LOVE).cmwe/(factors.rad_e**2)
+        dfactor = factors.spatial(*LOVE).cmwe / (factors.rad_e**2)
         int_fact[:] = 1.0
-    elif (UNITS == 2):
+    elif UNITS == 2:
         # Input in gigatonnes (Gt)
-        dfactor = factors.spatial(*LOVE).cmwe/(factors.rad_e**2)
+        dfactor = factors.spatial(*LOVE).cmwe / (factors.rad_e**2)
         int_fact[:] = 1e15
     else:
         raise ValueError(f'Unknown units {UNITS}')
     # flattened form of data converted to units
-    D = int_fact*data.flatten()
+    D = int_fact * data.flatten()
 
     # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
-    Ylms.clm = np.zeros((LMAX+1, MMAX+1))
-    Ylms.slm = np.zeros((LMAX+1, MMAX+1))
+    Ylms.clm = np.zeros((LMAX + 1, MMAX + 1))
+    Ylms.slm = np.zeros((LMAX + 1, MMAX + 1))
     # for each degree l
-    for l in range(LMAX+1):
-        m1 = np.min([l,MMAX]) + 1
+    for l in range(LMAX + 1):
+        m1 = np.min([l, MMAX]) + 1
         SPH = _complex_harmonics(l, D, phi, theta, dfactor[l])
         # truncate to spherical harmonic order and save to output
-        Ylms.clm[l,:m1] = SPH.real[:m1]
-        Ylms.slm[l,:m1] = SPH.imag[:m1]
+        Ylms.clm[l, :m1] = SPH.real[:m1]
+        Ylms.slm[l, :m1] = SPH.imag[:m1]
     # return the output spherical harmonics object
     return Ylms
+
 
 # calculate spherical harmonics of degree l evaluated at (theta,phi)
 def _complex_harmonics(l, data, phi, theta, coeff):
@@ -173,12 +176,12 @@ def _complex_harmonics(l, data, phi, theta, coeff):
     # calculate normalized legendre polynomials (order, points)
     Pl = legendre(l, np.cos(theta), NORMALIZE=True)
     # spherical harmonic orders up to degree l
-    m = np.arange(0, l+1)
+    m = np.arange(0, l + 1)
     # calculate Euler's of order m multiplied by azimuth phi
-    m_phi = np.exp(1j * np.einsum("m...,p...->mp...", m, phi))
+    m_phi = np.exp(1j * np.einsum('m...,p...->mp...', m, phi))
     # reshape data to (order, points)
-    D = np.kron(np.ones((l+1, 1)), data[np.newaxis, :])
+    D = np.kron(np.ones((l + 1, 1)), data[np.newaxis, :])
     # calculate spherical harmonics summing over all points
-    Yl = np.einsum("mp...,mp...,mp...->m...", D, Pl, m_phi)
+    Yl = np.einsum('mp...,mp...,mp...->m...', D, Pl, m_phi)
     # return harmonics for degree l multiplied by coefficients
-    return coeff*Yl
+    return coeff * Yl

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 harmonic_summation.py
 Written by Tyler Sutterley (07/2026)
 
@@ -45,13 +45,16 @@ UPDATE HISTORY:
     Updated 05/2015: added parameter MMAX for MMAX != LMAX.
     Written 05/2013
 """
+
 import numpy as np
 from gravity_toolkit.associated_legendre import plm_holmes
 from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.units import units
 
-def harmonic_summation(clm1, slm1, lon, lat,
-    LMIN=0, LMAX=60, MMAX=None, PLM=None):
+
+def harmonic_summation(
+    clm1, slm1, lon, lat, LMIN=0, LMAX=60, MMAX=None, PLM=None
+):
     """
     Converts data from spherical harmonic coefficients to a spatial field
 
@@ -81,8 +84,8 @@ def harmonic_summation(clm1, slm1, lon, lat,
     """
 
     # if LMAX is not specified, will use the size of the input harmonics
-    if (LMAX == 0):
-        LMAX = np.shape(clm1)[0]-1
+    if LMAX == 0:
+        LMAX = np.shape(clm1)[0] - 1
     # upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:
         MMAX = np.copy(LMAX)
@@ -97,25 +100,29 @@ def harmonic_summation(clm1, slm1, lon, lat,
         PLM, dPLM = plm_holmes(LMAX, np.cos(th))
 
     # spherical harmonic order
-    mm = np.arange(0,MMAX+1)# mmax+1 to include mmax
+    mm = np.arange(0, MMAX + 1)  # mmax+1 to include mmax
     # real (cosine) and imaginary (sine) components
-    Ylm = np.zeros((LMAX+1, MMAX+1), dtype=np.complex128)
+    Ylm = np.zeros((LMAX + 1, MMAX + 1), dtype=np.complex128)
     # Truncating harmonics to degree and order LMAX
     # removing coefficients below LMIN and above MMAX
-    Ylm.real[LMIN:LMAX+1,mm] = clm1[LMIN:LMAX+1,mm]
-    Ylm.imag[LMIN:LMAX+1,mm] = -slm1[LMIN:LMAX+1,mm]
+    Ylm.real[LMIN : LMAX + 1, mm] = clm1[LMIN : LMAX + 1, mm]
+    Ylm.imag[LMIN : LMAX + 1, mm] = -slm1[LMIN : LMAX + 1, mm]
     # Calculate fourier coefficients from legendre coefficients
     # summation over all spherical harmonic degrees
-    pconv = np.einsum("lmh...,lm...->mh...", PLM[:LMAX+1,:MMAX+1,:], Ylm)
+    pconv = np.einsum(
+        'lmh...,lm...->mh...', PLM[: LMAX + 1, : MMAX + 1, :], Ylm
+    )
     # calculating cos(m*phi) and sin(m*phi) using Euler's formula
-    m_phi = np.exp(1j * np.einsum("m...,p...->mp...", mm, phi))
+    m_phi = np.exp(1j * np.einsum('m...,p...->mp...', mm, phi))
     # summation of cosine and sine harmonics
-    spatial = np.einsum("mp...,mh...->ph...", m_phi, pconv)
+    spatial = np.einsum('mp...,mh...->ph...', m_phi, pconv)
     # return output data and drop imaginary component
     return spatial.real
 
-def harmonic_transform(clm1, slm1, lon, lat,
-    LMIN=0, LMAX=60, MMAX=None, PLM=None):
+
+def harmonic_transform(
+    clm1, slm1, lon, lat, LMIN=0, LMAX=60, MMAX=None, PLM=None
+):
     """
     Converts data from spherical harmonic coefficients to a spatial field
     using Fast-Fourier Transforms
@@ -145,8 +152,8 @@ def harmonic_transform(clm1, slm1, lon, lat,
         spatial field
     """
     # if LMAX is not specified, will use the size of the input harmonics
-    if (LMAX == 0):
-        LMAX = np.shape(clm1)[0]-1
+    if LMAX == 0:
+        LMAX = np.shape(clm1)[0] - 1
     # upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:
         MMAX = np.copy(LMAX)
@@ -165,26 +172,40 @@ def harmonic_transform(clm1, slm1, lon, lat,
         PLM, _ = plm_holmes(LMAX, np.cos(th))
 
     # real (cosine) and imaginary (sine) components
-    Ylm = np.zeros((LMAX+1, MMAX+1), dtype=np.complex128)
+    Ylm = np.zeros((LMAX + 1, MMAX + 1), dtype=np.complex128)
     # Truncating harmonics to degree and order LMAX
     # removing coefficients below LMIN and above MMAX
-    Ylm.real[LMIN:LMAX+1,:MMAX+1] = clm1[LMIN:LMAX+1,:MMAX+1]
-    Ylm.imag[LMIN:LMAX+1,:MMAX+1] = -slm1[LMIN:LMAX+1,:MMAX+1]
+    Ylm.real[LMIN : LMAX + 1, : MMAX + 1] = clm1[LMIN : LMAX + 1, : MMAX + 1]
+    Ylm.imag[LMIN : LMAX + 1, : MMAX + 1] = -slm1[LMIN : LMAX + 1, : MMAX + 1]
     # calculate Ylms summation for each theta band
-    d = np.einsum("lmh...,lm...->mh...", PLM[:LMAX+1,:MMAX+1,:], Ylm / 2.0)
+    d = np.einsum(
+        'lmh...,lm...->mh...', PLM[: LMAX + 1, : MMAX + 1, :], Ylm / 2.0
+    )
 
     # output spatial field from FFT transformation
     s = np.zeros((phimax, thmax))
     # calculate fft for each theta band (over phis with axis=0)
-    s[:-1,:] = 2.0*(phimax-1)*np.fft.ifft(d, n=phimax-1, axis=0).real
+    s[:-1, :] = 2.0 * (phimax - 1) * np.fft.ifft(d, n=phimax - 1, axis=0).real
     # complete sphere (values at 360 == values at 0)
-    s[-1,:] = s[0,:]
+    s[-1, :] = s[0, :]
 
     # return output data
     return s
 
-def stokes_summation(clm1, slm1, lon, lat,
-    LMIN=0, LMAX=60, MMAX=None, RAD=0, UNITS=0, LOVE=None, PLM=None):
+
+def stokes_summation(
+    clm1,
+    slm1,
+    lon,
+    lat,
+    LMIN=0,
+    LMAX=60,
+    MMAX=None,
+    RAD=0,
+    UNITS=0,
+    LOVE=None,
+    PLM=None,
+):
     r"""
     Converts data from spherical harmonic coefficients to a spatial field
     :cite:p:`Wahr:1998hy`
@@ -230,23 +251,23 @@ def stokes_summation(clm1, slm1, lon, lat,
         spatial field
     """
     # if LMAX is not specified, will use the size of the input harmonics
-    if (LMAX == 0):
-        LMAX = np.shape(clm1)[0]-1
+    if LMAX == 0:
+        LMAX = np.shape(clm1)[0] - 1
     # upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:
         MMAX = np.copy(LMAX)
 
     # Gaussian Smoothing
-    if (RAD != 0):
-        wl = 2.0*np.pi*gauss_weights(RAD, LMAX)
+    if RAD != 0:
+        wl = 2.0 * np.pi * gauss_weights(RAD, LMAX)
     else:
         # else = 1
-        wl = np.ones((LMAX+1))
+        wl = np.ones((LMAX + 1))
 
     # Setting units factor for output
     # dfactor is the degree dependent coefficients
     factors = units(lmax=LMAX)
-    if isinstance(UNITS, (list,np.ndarray)):
+    if isinstance(UNITS, (list, np.ndarray)):
         # custom units
         dfactor = np.copy(UNITS)
     elif isinstance(UNITS, str):
@@ -259,11 +280,12 @@ def stokes_summation(clm1, slm1, lon, lat,
         raise ValueError(f'Unknown units {UNITS}')
 
     # spherical harmonic order
-    mm = np.arange(0,MMAX+1)# mmax+1 to include mmax
+    mm = np.arange(0, MMAX + 1)  # mmax+1 to include mmax
     # smooth harmonics and convert to output units
-    clm = np.einsum("l,l,lm->lm", wl, dfactor, clm1[:, mm])
-    slm = np.einsum("l,l,lm->lm", wl, dfactor, slm1[:, mm])
+    clm = np.einsum('l,l,lm->lm', wl, dfactor, clm1[:, mm])
+    slm = np.einsum('l,l,lm->lm', wl, dfactor, slm1[:, mm])
 
     # return the spatial field
-    return harmonic_summation(clm, slm, lon, lat,
-        LMIN=LMIN, LMAX=LMAX, MMAX=MMAX, PLM=PLM)
+    return harmonic_summation(
+        clm, slm, lon, lat, LMIN=LMIN, LMAX=LMAX, MMAX=MMAX, PLM=PLM
+    )

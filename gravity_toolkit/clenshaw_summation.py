@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 clenshaw_summation.py
 Written by Tyler Sutterley (07/2026)
 Calculates the spatial field for a series of spherical harmonics for a
@@ -67,18 +67,24 @@ UPDATE HISTORY:
         simplified love number extrapolation if LMAX is greater than 696
     Written 08/2017
 """
+
 import numpy as np
 from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.units import units
 
-def clenshaw_summation(clm, slm, lon, lat,
-        RAD=0,
-        UNITS=0,
-        LMAX=0,
-        LOVE=None,
-        ASTYPE=np.longdouble,
-        SCALE=1e-280
-    ):
+
+def clenshaw_summation(
+    clm,
+    slm,
+    lon,
+    lat,
+    RAD=0,
+    UNITS=0,
+    LMAX=0,
+    LOVE=None,
+    ASTYPE=np.longdouble,
+    SCALE=1e-280,
+):
     r"""
     Calculates the spatial field for a series of spherical harmonics for a
     sequence of ungridded points :cite:p:`Holmes:2002ff,Tscherning:1982tu`
@@ -121,7 +127,7 @@ def clenshaw_summation(clm, slm, lon, lat,
     """
 
     # check if lat and lon are the same size
-    if (len(lat) != len(lon)):
+    if len(lat) != len(lon):
         raise ValueError('Incompatible vector dimensions (lon, lat)')
 
     # calculate colatitude and longitude in radians
@@ -135,16 +141,16 @@ def clenshaw_summation(clm, slm, lon, lat,
     npts = len(th)
 
     # Gaussian Smoothing
-    if (RAD != 0):
-        wl = 2.0*np.pi*gauss_weights(RAD, LMAX)
+    if RAD != 0:
+        wl = 2.0 * np.pi * gauss_weights(RAD, LMAX)
     else:
         # else = 1
-        wl = np.ones((LMAX+1))
+        wl = np.ones((LMAX + 1))
 
     # Setting units factor for output
     # dfactor is the degree dependent coefficients
     factors = units(lmax=LMAX)
-    if isinstance(UNITS, (list,np.ndarray)):
+    if isinstance(UNITS, (list, np.ndarray)):
         # custom units
         dfactor = np.copy(UNITS)
     elif isinstance(UNITS, str):
@@ -159,28 +165,27 @@ def clenshaw_summation(clm, slm, lon, lat,
     # complex spherical harmonics
     ylm = clm - 1j * slm
     # smooth degree dependent factors
-    f = dfactor*wl
-    # calculate arrays for clenshaw summations over colatitudes
-    cs_m = np.zeros((npts, LMAX+1), dtype=np.clongdouble)
-    for m in range(LMAX, -1, -1):
-        # convolve harmonics with unit factors and smoothing
-        cs_m[:, m] = _clenshaw(t, f, m, ylm, LMAX, SCALE=SCALE)
+    f = dfactor * wl
 
     # calculating cos(m*phi) and sin(m*phi) using Euler's formula
-    mm = np.arange(0, LMAX+1)
-    m_phi = np.exp(1j * np.einsum("m...,p...->pm...", mm, phi))
-    # calculate summation for order LMAX
-    s_m = (cs_m[:,LMAX] * m_phi[:,LMAX]).real
+    mm = np.arange(0, LMAX + 1)
+    m_phi = np.exp(1j * np.einsum('m...,p...->pm...', mm, phi))
+
+    # initiate summation
+    s_m = 0.0
     # iterate to calculate complete summation
-    for m in range(LMAX-1, 0, -1):
+    for m in range(LMAX, 0, -1):
         # calculate summation for order m
-        a_m = np.sqrt((2.0*m + 3.0)/(2.0*m + 2.0))
+        a_m = np.sqrt((2.0 * m + 3.0) / (2.0 * m + 2.0))
+        cs_m = _clenshaw(t, f, m, ylm, LMAX, SCALE=SCALE)
         # update summation and discard imaginary component
-        s_m = a_m*u*s_m + (cs_m[:,m] * m_phi[:,m]).real
+        s_m = a_m * u * s_m + (cs_m * m_phi[:, m]).real
     # add the final terms to calculate spatial field
-    spatial = np.sqrt(3.0)*u*s_m + cs_m[:,0].real
+    cs_m = _clenshaw(t, f, 0, ylm, LMAX, SCALE=SCALE)
+    spatial = np.sqrt(3.0) * u * s_m + cs_m.real
     # return the calculated spatial field
     return spatial
+
 
 # PURPOSE: compute Clenshaw summation of the fully normalized associated
 # Legendre's function for constant order m
@@ -213,38 +218,73 @@ def _clenshaw(t, f, m, Ylm1, lmax, SCALE=1e-280):
     N = len(t)
     cs_m = np.zeros((N), dtype=np.clongdouble)
     # scaling to prevent overflow
-    ylm = SCALE*Ylm1.astype(np.clongdouble)
+    ylm = SCALE * Ylm1.astype(np.clongdouble)
     # convert lmax and m to float
     lm = np.float64(lmax)
     mm = np.float64(m)
-    if (m == lmax):
-        cs_m[:] = f[lmax]*ylm[lmax,lmax]
-    elif (m == (lmax-1)):
-        a_lm = np.sqrt(((2.0*lm-1.0)*(2.0*lm+1.0))/((lm-mm)*(lm+mm)))*t
-        cs_m[:] = a_lm*f[lmax]*ylm[lmax,lmax-1] + f[lmax-1]*ylm[lmax-1,lmax-1]
-    elif ((m <= (lmax-2)) and (m >= 1)):
-        s_mm_minus_2 = f[lmax]*ylm[lmax,m]
-        a_lm = np.sqrt(((2.0*lm-1.0)*(2.0*lm+1.0))/((lm-mm)*(lm+mm)))*t
-        s_mm_minus_1 = a_lm*s_mm_minus_2 + f[lmax-1]*ylm[lmax-1,m]
-        for l in range(lmax-2, m-1, -1):
+    if m == lmax:
+        cs_m[:] = f[lmax] * ylm[lmax, lmax]
+    elif m == (lmax - 1):
+        a_lm = (
+            np.sqrt(
+                ((2.0 * lm - 1.0) * (2.0 * lm + 1.0)) / ((lm - mm) * (lm + mm))
+            )
+            * t
+        )
+        cs_m[:] = (
+            a_lm * f[lmax] * ylm[lmax, lmax - 1]
+            + f[lmax - 1] * ylm[lmax - 1, lmax - 1]
+        )
+    elif (m <= (lmax - 2)) and (m >= 1):
+        s_mm_minus_2 = f[lmax] * ylm[lmax, m]
+        a_lm = (
+            np.sqrt(
+                ((2.0 * lm - 1.0) * (2.0 * lm + 1.0)) / ((lm - mm) * (lm + mm))
+            )
+            * t
+        )
+        s_mm_minus_1 = a_lm * s_mm_minus_2 + f[lmax - 1] * ylm[lmax - 1, m]
+        for l in range(lmax - 2, m - 1, -1):
             ll = np.float64(l)
-            a_lm=np.sqrt(((2.0*ll+1.0)*(2.0*ll+3.0))/((ll+1.0-mm)*(ll+1.0+mm)))*t
-            b_lm=np.sqrt(((2.*ll+5.)*(ll+mm+1.)*(ll-mm+1.))/((ll+2.-mm)*(ll+2.+mm)*(2.*ll+1.)))
-            s_mm_l = a_lm * s_mm_minus_1 - b_lm * s_mm_minus_2 + f[l]*ylm[l,m]
+            a_lm = (
+                np.sqrt(
+                    ((2.0 * ll + 1.0) * (2.0 * ll + 3.0))
+                    / ((ll + 1.0 - mm) * (ll + 1.0 + mm))
+                )
+                * t
+            )
+            b_lm = np.sqrt(
+                ((2.0 * ll + 5.0) * (ll + mm + 1.0) * (ll - mm + 1.0))
+                / ((ll + 2.0 - mm) * (ll + 2.0 + mm) * (2.0 * ll + 1.0))
+            )
+            s_mm_l = (
+                a_lm * s_mm_minus_1 - b_lm * s_mm_minus_2 + f[l] * ylm[l, m]
+            )
             s_mm_minus_2 = np.copy(s_mm_minus_1)
             s_mm_minus_1 = np.copy(s_mm_l)
         cs_m[:] = np.copy(s_mm_l)
-    elif (m == 0):
-        s_mm_minus_2 = f[lmax]*ylm[lmax,0]
-        a_lm = np.sqrt(((2.0*lm-1.0)*(2.0*lm+1.0))/(lm*lm))*t
-        s_mm_minus_1 = a_lm * s_mm_minus_2 + f[lmax-1]*ylm[lmax-1,0]
-        for l in range(lmax-2, m-1, -1):
+    elif m == 0:
+        s_mm_minus_2 = f[lmax] * ylm[lmax, 0]
+        a_lm = np.sqrt(((2.0 * lm - 1.0) * (2.0 * lm + 1.0)) / (lm * lm)) * t
+        s_mm_minus_1 = a_lm * s_mm_minus_2 + f[lmax - 1] * ylm[lmax - 1, 0]
+        for l in range(lmax - 2, m - 1, -1):
             ll = np.float64(l)
-            a_lm=np.sqrt(((2.0*ll+1.0)*(2.0*ll+3.0))/((ll+1.0)*(ll+1.0)))*t
-            b_lm=np.sqrt(((2.0*ll+5.0)*(ll+1.0)*(ll+1.0))/((ll+2.0)*(ll+2.0)*(2.0*ll+1.0)))
-            s_mm_l = a_lm * s_mm_minus_1 - b_lm * s_mm_minus_2 + f[l]*ylm[l,0]
+            a_lm = (
+                np.sqrt(
+                    ((2.0 * ll + 1.0) * (2.0 * ll + 3.0))
+                    / ((ll + 1.0) * (ll + 1.0))
+                )
+                * t
+            )
+            b_lm = np.sqrt(
+                ((2.0 * ll + 5.0) * (ll + 1.0) * (ll + 1.0))
+                / ((ll + 2.0) * (ll + 2.0) * (2.0 * ll + 1.0))
+            )
+            s_mm_l = (
+                a_lm * s_mm_minus_1 - b_lm * s_mm_minus_2 + f[l] * ylm[l, 0]
+            )
             s_mm_minus_2 = np.copy(s_mm_minus_1)
             s_mm_minus_1 = np.copy(s_mm_l)
         cs_m[:] = np.copy(s_mm_l)
     # return rescaled cs_m
-    return cs_m/SCALE
+    return cs_m / SCALE
