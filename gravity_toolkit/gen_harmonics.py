@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 gen_harmonics.py
 Written by Tyler Sutterley (07/2026)
 Converts data from the spatial domain to spherical harmonic coefficients
@@ -63,10 +63,12 @@ UPDATE HISTORY:
     Updated 05/2015: updated output for MMAX != LMAX
     Written 05/2013
 """
+
 import numpy as np
 import gravity_toolkit.harmonics
 from gravity_toolkit.associated_legendre import plm_holmes
 from gravity_toolkit.fourier_legendre import fourier_legendre
+
 
 def gen_harmonics(data, lon, lat, **kwargs):
     """
@@ -105,10 +107,10 @@ def gen_harmonics(data, lon, lat, **kwargs):
         spherical harmonic order to MMAX
     """
     # set default keyword arguments
-    kwargs.setdefault('LMAX',60)
-    kwargs.setdefault('MMAX',None)
-    kwargs.setdefault('PLM',0)
-    kwargs.setdefault('METHOD','integration')
+    kwargs.setdefault('LMAX', 60)
+    kwargs.setdefault('MMAX', None)
+    kwargs.setdefault('PLM', 0)
+    kwargs.setdefault('METHOD', 'integration')
     # upper bound of spherical harmonic orders (default = LMAX)
     if kwargs['MMAX'] is None:
         kwargs['MMAX'] = np.copy(kwargs['LMAX'])
@@ -119,12 +121,13 @@ def gen_harmonics(data, lon, lat, **kwargs):
     sz = np.shape(data)
     dinput = np.transpose(data) if (sz[0] == len(lat)) else np.copy(data)
     # convert spatial field into spherical harmonics
-    if (kwargs['METHOD'].lower() == 'integration'):
+    if kwargs['METHOD'].lower() == 'integration':
         Ylms = integration(dinput, lon, lat, **kwargs)
-    elif (kwargs['METHOD'].lower() == 'fourier'):
+    elif kwargs['METHOD'].lower() == 'fourier':
         Ylms = fourier(dinput, lon, lat, **kwargs)
     # return the output spherical harmonics object
     return Ylms
+
 
 def integration(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
     """
@@ -160,43 +163,46 @@ def integration(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
     phi = np.radians(np.squeeze(lon))
     th = np.radians(90.0 - np.squeeze(lat))
     # reformatting longitudes to range 0:360 (if previously -180:180)
-    phi = np.where(phi < 0, phi + 2.0*np.pi, phi)
+    phi = np.where(phi < 0, phi + 2.0 * np.pi, phi)
     # grid step in radians
     dphi = np.abs(phi[1] - phi[0])
     dth = np.abs(th[1] - th[0])
 
     # LMAX+1 as there are LMAX+1 elements between 0 and LMAX
-    ll = np.arange(LMAX+1)
-    mm = np.arange(MMAX+1)
+    ll = np.arange(LMAX + 1)
+    mm = np.arange(MMAX + 1)
     # Calculating cos/sin of phi arrays (output [m,phi])
-    m_phi = np.exp(1j * np.einsum("m...,p...->mp...", mm, phi))
+    m_phi = np.exp(1j * np.einsum('m...,p...->mp...', mm, phi))
 
     # Multiplying sin(th) with differentials of theta and phi
     # to calculate the integration factor at each latitude
-    int_fact = np.sin(th)*dphi*dth
-    coeff = 1.0/(4.0*np.pi)
+    int_fact = np.sin(th) * dphi * dth
+    coeff = 1.0 / (4.0 * np.pi)
 
     # Calculate polynomials using Holmes and Featherstone (2002) relation
-    if (np.ndim(PLM) == 0):
+    if np.ndim(PLM) == 0:
         PLM, dplm = plm_holmes(LMAX, np.cos(th))
     # Multiply plms by integration factors [sin(theta)*dtheta*dphi]
     # truncate plms to maximum spherical harmonic order if MMAX < LMAX
-    plm = np.einsum("lmh...,h...->lmh...", PLM[:LMAX+1,:MMAX+1,:], int_fact)
+    plm = np.einsum(
+        'lmh...,h...->lmh...', PLM[: LMAX + 1, : MMAX + 1, :], int_fact
+    )
     # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
-    Ylms.clm = np.zeros((LMAX+1, MMAX+1))
-    Ylms.slm = np.zeros((LMAX+1, MMAX+1))
+    Ylms.clm = np.zeros((LMAX + 1, MMAX + 1))
+    Ylms.slm = np.zeros((LMAX + 1, MMAX + 1))
     # Multiplying gridded data with sin/cos of m#phis (output [m,theta])
     # This will sum through all phis in the dot product
-    d = np.einsum("mp...,ph...->mh...", m_phi, data)
+    d = np.einsum('mp...,ph...->mh...', m_phi, data)
     # Summing product of plms and data over all latitudes
-    ylm = np.einsum("lmh...,mh...->lm...", plm, d)
+    ylm = np.einsum('lmh...,mh...->lm...', plm, d)
     # convert to output normalization (4-pi normalized harmonics)
     # truncate to MMAX if specified (if l > MMAX)
-    Ylms.clm = coeff*ylm.real[:LMAX+1, :MMAX+1]
-    Ylms.slm = coeff*ylm.imag[:LMAX+1, :MMAX+1]
+    Ylms.clm = coeff * ylm.real[: LMAX + 1, : MMAX + 1]
+    Ylms.slm = coeff * ylm.imag[: LMAX + 1, : MMAX + 1]
     # return the output spherical harmonics object
     return Ylms
+
 
 def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
     """
@@ -236,16 +242,16 @@ def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
     phi = np.radians(np.squeeze(lon))
     th = np.radians(90.0 - np.squeeze(lat))
     # reformatting longitudes to range 0:360 (if previously -180:180)
-    phi = np.where(phi < 0, phi + 2.0*np.pi, phi)
+    phi = np.where(phi < 0, phi + 2.0 * np.pi, phi)
     # grid step in radians
     dphi = np.abs(phi[1] - phi[0])
     dth = np.abs(th[1] - th[0])
 
     # MMAX+1 to include MMAX
-    mm = np.arange(MMAX+1)
+    mm = np.arange(MMAX + 1)
     # Calculate cos and sin coefficients of signal
-    m_phi = np.exp(1j * np.einsum("m...,p...->mp...", mm, phi))
-    d = np.einsum("mp...,ph...->mh...", m_phi, data)
+    m_phi = np.exp(1j * np.einsum('m...,p...->mp...', mm, phi))
+    d = np.einsum('mp...,ph...->mh...', m_phi, data)
     # normalize coefficients
     d[0, :] *= 1.0 / nlon
     d[1:, :] *= 2.0 / nlon
@@ -254,41 +260,47 @@ def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
     # Because the function is defined on (0,pi)
     # it can be expanded in just cosine terms.
     # this routine assumes that 0 and pi are not included
-    f = np.zeros((MMAX+1,MMAX+1), dtype=np.complex128)
-    m_even = slice(0, MMAX+1, 2)
+    f = np.zeros((MMAX + 1, MMAX + 1), dtype=np.complex128)
+    m_even = slice(0, MMAX + 1, 2)
     m_odd = slice(1, MMAX, 2)
 
-    if np.isclose([th[0],th[nlat-1]], [0.0,np.pi]).all():
+    if np.isclose([th[0], th[nlat - 1]], [0.0, np.pi]).all():
         # global case (includes poles)
         # non-endpoints
-        k_th = np.exp(1j * np.einsum("h...,k...->kh...", th[1:nlat-1], mm))
-        f[m_even,:] = 2.0*np.einsum("mh...,kh...->mk", d[m_even,1:nlat-1],k_th.real)
-        f[m_odd,:] = 2.0*np.einsum("mh...,kh...->mk", d[m_odd,1:nlat-1],k_th.imag)
+        k_th = np.exp(1j * np.einsum('h...,k...->kh...', th[1 : nlat - 1], mm))
+        f[m_even, :] = 2.0 * np.einsum(
+            'mh...,kh...->mk', d[m_even, 1 : nlat - 1], k_th.real
+        )
+        f[m_odd, :] = 2.0 * np.einsum(
+            'mh...,kh...->mk', d[m_odd, 1 : nlat - 1], k_th.imag
+        )
         # endpoints
-        k_th = np.exp(1j * mm* th[0])
-        f[m_even,:] += np.einsum("m...,k...->mk", d[m_even,0], k_th)
-        f[m_odd,:] += np.einsum("m...,k...->mk", d[m_odd,0], k_th)
-        k_th = np.exp(1j * mm * th[nlat-1])
-        f[m_even,:] += np.einsum("m...,k...->mk", d[m_even,nlat-1], k_th)
-        f[m_odd,:] += np.einsum("m...,k...->mk", d[m_odd,nlat-1], k_th)
-    elif not np.isclose([th[0],th[nlat-1]], [0.0,np.pi]).any():
-        k_th = np.exp(1j * np.einsum("h...,k...->kh...", th, mm))
-        f[m_even,:] = 2.0*np.einsum("mh...,kh...->mk", d[m_even,:],k_th.real)
-        f[m_odd,:] = 2.0*np.einsum("mh...,kh...->mk", d[m_odd,:],k_th.imag)
+        k_th = np.exp(1j * mm * th[0])
+        f[m_even, :] += np.einsum('m...,k...->mk', d[m_even, 0], k_th)
+        f[m_odd, :] += np.einsum('m...,k...->mk', d[m_odd, 0], k_th)
+        k_th = np.exp(1j * mm * th[nlat - 1])
+        f[m_even, :] += np.einsum('m...,k...->mk', d[m_even, nlat - 1], k_th)
+        f[m_odd, :] += np.einsum('m...,k...->mk', d[m_odd, nlat - 1], k_th)
+    elif not np.isclose([th[0], th[nlat - 1]], [0.0, np.pi]).any():
+        k_th = np.exp(1j * np.einsum('h...,k...->kh...', th, mm))
+        f[m_even, :] = 2.0 * np.einsum(
+            'mh...,kh...->mk', d[m_even, :], k_th.real
+        )
+        f[m_odd, :] = 2.0 * np.einsum('mh...,kh...->mk', d[m_odd, :], k_th.imag)
     else:
         raise ValueError('Latitude coordinates incompatible')
 
     # Normalize theta fourier coefficients
-    f[:,0] *= 1.0/(2.0*nlat)
-    f[:,1:MMAX+1] *= 1.0/nlat
+    f[:, 0] *= 1.0 / (2.0 * nlat)
+    f[:, 1 : MMAX + 1] *= 1.0 / nlat
     # Correct normalization for the incomplete coverage of the sphere
-    f[:] *= nlon*dphi/(2.0*np.pi) * nlat*dth/np.pi
+    f[:] *= nlon * dphi / (2.0 * np.pi) * nlat * dth / np.pi
 
     # Calculate cos and sin coefficients of Legendre functions
     # Expand m = even terms in a cosine series
     # Expand m = odd terms in a sine series
     # Both are stride 2
-    if (np.ndim(PLM) == 0):
+    if np.ndim(PLM) == 0:
         Almk = fourier_legendre(LMAX, MMAX)
     else:
         # use precomputed alms to improve computational speed
@@ -296,67 +308,87 @@ def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
 
     # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
-    Ylms.clm = np.zeros((LMAX+1, MMAX+1))
-    Ylms.slm = np.zeros((LMAX+1, MMAX+1))
+    Ylms.clm = np.zeros((LMAX + 1, MMAX + 1))
+    Ylms.slm = np.zeros((LMAX + 1, MMAX + 1))
 
     # calculate spherical harmonics for m == even terms
     # even l terms (l even, m even, k even)
-    l_even = slice(0, LMAX+1, 2)
+    l_even = slice(0, LMAX + 1, 2)
     n_even = np.arange(m_even.start, m_even.stop, m_even.step)
     k_even = np.zeros((len(n_even), len(n_even)))
-    for k in range(0,MMAX+2,2):
-        k_even[:,k//2] = 0.5*(1.0/(1.0-n_even-k) + 1.0/(1.0+n_even-k) +
-            1.0/(1.0-n_even+k) + 1.0/(1.0+n_even+k))
+    for k in range(0, MMAX + 2, 2):
+        k_even[:, k // 2] = 0.5 * (
+            1.0 / (1.0 - n_even - k)
+            + 1.0 / (1.0 + n_even - k)
+            + 1.0 / (1.0 - n_even + k)
+            + 1.0 / (1.0 + n_even + k)
+        )
     # calculate summation over coefficients
-    Aeven = np.einsum("lmk...,kn...->lmn...", Almk[l_even,m_even,m_even], k_even)
-    Yeven = np.einsum("lmn...,mn...->lm...", Aeven, f[m_even,m_even])
-    Ylms.clm[l_even,m_even] = Yeven.real
-    Ylms.slm[l_even,m_even] = Yeven.imag
+    Aeven = np.einsum(
+        'lmk...,kn...->lmn...', Almk[l_even, m_even, m_even], k_even
+    )
+    Yeven = np.einsum('lmn...,mn...->lm...', Aeven, f[m_even, m_even])
+    Ylms.clm[l_even, m_even] = Yeven.real
+    Ylms.slm[l_even, m_even] = Yeven.imag
 
     # odd l terms (l odd, m even, k odd)
     l_odd = slice(1, LMAX, 2)
     n_odd = np.arange(m_odd.start, m_odd.stop, m_odd.step)
     k_odd = np.zeros((len(n_odd), len(n_odd)))
-    for k in range(1, MMAX+1, 2):
-        k_odd[:,(k-1)//2] = 0.5*(1.0/(1.0-n_odd-k) + 1.0/(1.0+n_odd-k) +
-            1.0/(1.0-n_odd+k) + 1.0/(1.0+n_odd+k))
+    for k in range(1, MMAX + 1, 2):
+        k_odd[:, (k - 1) // 2] = 0.5 * (
+            1.0 / (1.0 - n_odd - k)
+            + 1.0 / (1.0 + n_odd - k)
+            + 1.0 / (1.0 - n_odd + k)
+            + 1.0 / (1.0 + n_odd + k)
+        )
     # calculate summation over coefficients
-    Aodd = np.einsum("lmk...,kn...->lmn...", Almk[l_odd,m_even,m_odd], k_odd)
-    Yodd = np.einsum("lmn...,mn...->lm...", Aodd, f[m_even,m_odd])
-    Ylms.clm[l_odd,m_even] = Yodd.real
-    Ylms.slm[l_odd,m_even] = Yodd.imag
+    Aodd = np.einsum('lmk...,kn...->lmn...', Almk[l_odd, m_even, m_odd], k_odd)
+    Yodd = np.einsum('lmn...,mn...->lm...', Aodd, f[m_even, m_odd])
+    Ylms.clm[l_odd, m_even] = Yodd.real
+    Ylms.slm[l_odd, m_even] = Yodd.imag
 
     # calculate spherical harmonics for m == odd terms
     # even l terms (l even, m odd, k even)
-    l_even = slice(2, LMAX+1, 2)# do not in include l=0
+    l_even = slice(2, LMAX + 1, 2)  # do not in include l=0
     n_even = np.arange(m_even.start, m_even.stop, m_even.step)
     k_even = np.zeros((len(n_even), len(n_even)))
-    for k in range(0,MMAX+2,2):
-        k_even[:,k//2] = 0.5*(-1.0/(1.0-n_even-k) + 1.0/(1.0+n_even-k) +
-            1.0/(1.0-n_even+k) - 1.0/(1.0+n_even+k))
-    Aeven = np.einsum("lmk...,kn...->lmn...", Almk[l_even,m_odd,m_even], k_even)
-    Yeven = np.einsum("lmn...,mn...->lm...", Aeven, f[m_odd,m_even])
-    Ylms.clm[l_even,m_odd] = Yeven.real
-    Ylms.slm[l_even,m_odd] = Yeven.imag
+    for k in range(0, MMAX + 2, 2):
+        k_even[:, k // 2] = 0.5 * (
+            -1.0 / (1.0 - n_even - k)
+            + 1.0 / (1.0 + n_even - k)
+            + 1.0 / (1.0 - n_even + k)
+            - 1.0 / (1.0 + n_even + k)
+        )
+    Aeven = np.einsum(
+        'lmk...,kn...->lmn...', Almk[l_even, m_odd, m_even], k_even
+    )
+    Yeven = np.einsum('lmn...,mn...->lm...', Aeven, f[m_odd, m_even])
+    Ylms.clm[l_even, m_odd] = Yeven.real
+    Ylms.slm[l_even, m_odd] = Yeven.imag
 
     # odd l terms (l odd, m odd, k odd)
     l_odd = slice(1, LMAX, 2)
     n_odd = np.arange(m_odd.start, m_odd.stop, m_odd.step)
     k_odd = np.zeros((len(n_odd), len(n_odd)))
-    for k in range(1,MMAX+1,2):
-        k_odd[:,(k-1)//2] = 0.5*(-1.0/(1.0-n_odd-k) + 1.0/(1.0+n_odd-k) +
-            1.0/(1.0-n_odd+k) - 1.0/(1.0+n_odd+k))
+    for k in range(1, MMAX + 1, 2):
+        k_odd[:, (k - 1) // 2] = 0.5 * (
+            -1.0 / (1.0 - n_odd - k)
+            + 1.0 / (1.0 + n_odd - k)
+            + 1.0 / (1.0 - n_odd + k)
+            - 1.0 / (1.0 + n_odd + k)
+        )
     # calculate summation over coefficients
-    Aodd = np.einsum("lmk...,kn...->lmn...", Almk[l_odd,m_odd,m_odd], k_odd)
-    Yodd = np.einsum("lmn...,mn...->lm...", Aodd, f[m_odd,m_odd])
-    Ylms.clm[l_odd,m_odd] = Yodd.real
-    Ylms.slm[l_odd,m_odd] = Yodd.imag
+    Aodd = np.einsum('lmk...,kn...->lmn...', Almk[l_odd, m_odd, m_odd], k_odd)
+    Yodd = np.einsum('lmn...,mn...->lm...', Aodd, f[m_odd, m_odd])
+    Ylms.clm[l_odd, m_odd] = Yodd.real
+    Ylms.slm[l_odd, m_odd] = Yodd.imag
 
     # Divide by Plm normalization
-    Ylms.clm[:,0] /= 2.0
-    Ylms.slm[:,0] /= 2.0
-    Ylms.clm[:,1:MMAX+1] /= 4.0
-    Ylms.slm[:,1:MMAX+1] /= 4.0
+    Ylms.clm[:, 0] /= 2.0
+    Ylms.slm[:, 0] /= 2.0
+    Ylms.clm[:, 1 : MMAX + 1] /= 4.0
+    Ylms.slm[:, 1 : MMAX + 1] /= 4.0
 
     # return the output spherical harmonics object
     return Ylms

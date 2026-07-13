@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 simple_parallel_shell.py
 Written by Tyler Sutterley (05/2023)
 Runs a shell script in parallel using python multiprocessing
@@ -21,6 +21,7 @@ UPDATE HISTORY:
     Updated 11/2019: remove commented lines from list of commands
     Written 10/2019
 """
+
 from __future__ import print_function
 
 import sys
@@ -34,13 +35,15 @@ import traceback
 import subprocess
 import multiprocessing
 
+
 # PURPOSE: converts a command line argument into an environment dictionary
 def argtoenv(arg):
     output = {}
     for item in arg.split(','):
-        key,val = item.split(':')
+        key, val = item.split(':')
         output[key] = pathlib.Path(val).expanduser().absolute()
     return output
+
 
 # PURPOSE: run command and handle error exceptions
 def execute_command(comm, shell=False, env=None, verbose=False):
@@ -64,6 +67,7 @@ def execute_command(comm, shell=False, env=None, verbose=False):
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
@@ -72,32 +76,49 @@ def arguments():
             """
     )
     # command line parameters
-    parser.add_argument('files',
-        type=pathlib.Path, nargs='+',
-        help='Shell script files to run')
+    parser.add_argument(
+        'files', type=pathlib.Path, nargs='+', help='Shell script files to run'
+    )
     # number of processes to run in parallel
-    parser.add_argument('--np','-P',
-        metavar='PROCESSES', type=int, default=0,
-        help='Number of processes to run in parallel')
+    parser.add_argument(
+        '--np',
+        '-P',
+        metavar='PROCESSES',
+        type=int,
+        default=0,
+        help='Number of processes to run in parallel',
+    )
     # Mapping of environment variables
-    parser.add_argument('--environment','-E',
+    parser.add_argument(
+        '--environment',
+        '-E',
         type=argtoenv,
-        help='Mapping of environment variables')
+        help='Mapping of environment variables',
+    )
     # Run specified commands through the shell
-    parser.add_argument('--shell','-S',
-        default=False, action='store_true',
-        help='Run specified commands through the shell')
-    parser.add_argument('--verbose','-V',
-        default=False, action='store_true',
-        help='Verbose output of run')
+    parser.add_argument(
+        '--shell',
+        '-S',
+        default=False,
+        action='store_true',
+        help='Run specified commands through the shell',
+    )
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        default=False,
+        action='store_true',
+        help='Verbose output of run',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create list of commands to run from all input shell script files
     command_list = []
@@ -107,17 +128,18 @@ def main():
         input_shell_file = pathlib.Path(fi).expanduser().absolute()
         with input_shell_file.open(mode='r', encoding='utf-8') as f:
             # connect lines that have a line continuation before splitting
-            file_contents = f.read().replace('\r\n','\n').replace('\\\n','')
+            file_contents = f.read().replace('\r\n', '\n').replace('\\\n', '')
             command_list.extend(file_contents.splitlines())
     # reduce command list to valid and uncommented lines
-    command_list = [l for l in command_list if re.match(r'^(?!#)(.+?)',l)]
+    command_list = [l for l in command_list if re.match(r'^(?!#)(.+?)', l)]
 
     # run in parallel with multiprocessing Pool
     pool = multiprocessing.Pool(processes=args.np)
     # for each command
     for comm in command_list:
-        kwds = dict(env=args.environment, shell=args.shell,
-            verbose=args.verbose)
+        kwds = dict(
+            env=args.environment, shell=args.shell, verbose=args.verbose
+        )
         pool.apply_async(execute_command, args=(comm,), kwds=kwds)
     # start multiprocessing jobs
     # close the pool
@@ -125,6 +147,7 @@ def main():
     pool.close()
     # exit the completed processes
     pool.join()
+
 
 # run main program
 if __name__ == '__main__':

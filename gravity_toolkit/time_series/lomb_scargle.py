@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 lomb_scargle.py
 Written by Tyler Sutterley (06/2024)
 
@@ -53,8 +53,10 @@ UPDATE HISTORY:
     Updated 01/2015: added centroid output
     Written 08/2013
 """
+
 import numpy as np
 import scipy.signal
+
 
 def lomb_scargle(t_in, d_in, **kwargs):
     """
@@ -110,15 +112,15 @@ def lomb_scargle(t_in, d_in, **kwargs):
 
     # number of independent measurements
     nmax = np.count_nonzero(np.isfinite(d_in))
-    nyquist = 1.0/(2.0*np.mean(t_in[1:] - t_in[0:-1]))
+    nyquist = 1.0 / (2.0 * np.mean(t_in[1:] - t_in[0:-1]))
 
     # angular frequency range
     if kwargs['OMEGA']:
         OMEGA = np.atleast_1d(kwargs['OMEGA'])
     elif kwargs['FREQUENCY']:
-        OMEGA = np.atleast_1d(kwargs['FREQUENCY'])/(2.0*np.pi)
+        OMEGA = np.atleast_1d(kwargs['FREQUENCY']) / (2.0 * np.pi)
     elif kwargs['PERIOD']:
-        OMEGA = (2.0*np.pi)/np.atleast_1d(kwargs['PERIOD'])
+        OMEGA = (2.0 * np.pi) / np.atleast_1d(kwargs['PERIOD'])
     else:
         raise ValueError('Frequency range must be defined')
 
@@ -132,34 +134,42 @@ def lomb_scargle(t_in, d_in, **kwargs):
     # analysis based on sample size.  From Horne and Baliunas,
     # "A Prescription for Period Analysis of Unevenly Sampled Time Series",
     # The Astrophysical Journal, 392: 757-763, 1986.
-    independent_freq = np.round(-6.362 + 1.193*nmax + 0.00098*nmax**2)
+    independent_freq = np.round(-6.362 + 1.193 * nmax + 0.00098 * nmax**2)
     # if less than 1 independent frequency: set equal to 1
     independent_freq = np.maximum(independent_freq, 1)
 
     # scaling the date (t[0] = 0)
     t = t_in - t_in[0]
     # periods and frequencies considered
-    frequency = angular_freq/(2.0*np.pi)
-    period = 2.0*np.pi/angular_freq
+    frequency = angular_freq / (2.0 * np.pi)
+    period = 2.0 * np.pi / angular_freq
     # scaling the data to be mean 0 with variance 1
-    data_norm = (d_in - d_in.mean())/d_in.std()
+    data_norm = (d_in - d_in.mean()) / d_in.std()
     # computing the lomb-scargle periodogram
     # "normalized" spectral density refers to variance term in denominator
     # PowerDensity has exponential probability distribution with unit mean
     # can calculate normalized as described in Scipy reference
-    PowerDensity = scipy.signal.lombscargle(t, data_norm, angular_freq,
-        normalize=kwargs['NORMALIZE'])
+    PowerDensity = scipy.signal.lombscargle(
+        t, data_norm, angular_freq, normalize=kwargs['NORMALIZE']
+    )
     # probability of frequencies (NULL test, significance of peak)
-    probability = 1.0 - (1.0-np.exp(-PowerDensity))**independent_freq
+    probability = 1.0 - (1.0 - np.exp(-PowerDensity)) ** independent_freq
     # probability contours
     p = np.atleast_1d(kwargs['p'])
-    contour = -np.log(1.0 - (1 - p)**(1.0/independent_freq))
+    contour = -np.log(1.0 - (1 - p) ** (1.0 / independent_freq))
     # period at peak (maximum probability)
     ipeak = np.argmax(PowerDensity)
     peak = period[ipeak]
     # period at signal centroid
-    centroid = np.sum(period*PowerDensity)/np.sum(PowerDensity)
+    centroid = np.sum(period * PowerDensity) / np.sum(PowerDensity)
 
-    return {'PowerDensity':PowerDensity, 'Probability':probability, 
-        'frequency':frequency, 'period':period, 'contour':contour,
-        'Nyquist':nyquist, 'peak':peak, 'centroid':centroid}
+    return {
+        'PowerDensity': PowerDensity,
+        'Probability': probability,
+        'frequency': frequency,
+        'period': period,
+        'contour': contour,
+        'Nyquist': nyquist,
+        'peak': peak,
+        'centroid': centroid,
+    }

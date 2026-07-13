@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 copy_parameter_files.py
 Written by Tyler Sutterley (05/2023)
 copies a set of parameter files for the latest months with updated missing
@@ -80,6 +80,7 @@ UPDATE HISTORY:
     Updated 02/2016: added lines for MMAX==LMAX
     Written 12/2015
 """
+
 from __future__ import print_function
 
 import sys
@@ -92,11 +93,24 @@ import argparse
 import numpy as np
 import gravity_toolkit as gravtk
 
-# PURPOSE: read listed parameter file and write a new one for month range
-def copy_parameter_files(base_dir, parameter_file, NEW_START, NEW_END, NEW_DREL,
-    NEW_DSET, LMAX=None, MMAX=None, DEG1=None, SLR_C20=None, SLR_C30=None,
-    COMMENTS=False, OVERWRITE=False, MODE=0o775):
 
+# PURPOSE: read listed parameter file and write a new one for month range
+def copy_parameter_files(
+    base_dir,
+    parameter_file,
+    NEW_START,
+    NEW_END,
+    NEW_DREL,
+    NEW_DSET,
+    LMAX=None,
+    MMAX=None,
+    DEG1=None,
+    SLR_C20=None,
+    SLR_C30=None,
+    COMMENTS=False,
+    OVERWRITE=False,
+    MODE=0o775,
+):
     # read prior parameter file
     # Opening parameter file and assigning file ID object (fid)
     parameter_file = pathlib.Path(parameter_file).expanduser().absolute()
@@ -119,7 +133,7 @@ def copy_parameter_files(base_dir, parameter_file, NEW_START, NEW_END, NEW_DREL,
     if NEW_DREL is None:
         NEW_DREL = parameters['--release']
         drel_str = ''
-    elif (NEW_DREL == OLD_DREL):
+    elif NEW_DREL == OLD_DREL:
         drel_str = ''
     else:
         drel_str = '_{NEW_DREL}'
@@ -129,7 +143,7 @@ def copy_parameter_files(base_dir, parameter_file, NEW_START, NEW_END, NEW_DREL,
     if NEW_DSET is None:
         NEW_DSET = parameters['--product']
         dset_str = ''
-    elif (NEW_DSET == OLD_DSET):
+    elif NEW_DSET == OLD_DSET:
         dset_str = ''
     else:
         dset_str = f'_{NEW_DSET}'
@@ -158,9 +172,11 @@ def copy_parameter_files(base_dir, parameter_file, NEW_START, NEW_END, NEW_DREL,
     # previous date range from parameter file
     OLD_START = np.int64(parameters['--start'])
     OLD_END = np.int64(parameters['--end'])
-    OLD_MISSING = np.array(parameters['--missing'].split(','),dtype=np.int64)
+    OLD_MISSING = np.array(parameters['--missing'].split(','), dtype=np.int64)
     # get the latest GRACE months for output data set
-    grace_months = gravtk.grace_find_months(base_dir, PROC, NEW_DREL, DSET=NEW_DSET)
+    grace_months = gravtk.grace_find_months(
+        base_dir, PROC, NEW_DREL, DSET=NEW_DSET
+    )
     # default start and end months are the first and latest months
     if NEW_START is None:
         NEW_START = grace_months['start']
@@ -173,7 +189,9 @@ def copy_parameter_files(base_dir, parameter_file, NEW_START, NEW_END, NEW_DREL,
     mapping = []
     mapping.append(('parameters', f'parameters{drel_str}{dset_str}'))
     mapping.append((f'L{LMAX:d}', f'L{LMAX:d}{order_str}'))
-    mapping.append((f'{OLD_START:03d}-{OLD_END:03d}', f'{NEW_START:03d}-{NEW_END:03d}'))
+    mapping.append(
+        (f'{OLD_START:03d}-{OLD_END:03d}', f'{NEW_START:03d}-{NEW_END:03d}')
+    )
     FILE = copy.copy(parameter_file.name)
     for key, val in mapping:
         FILE = FILE.replace(key, val)
@@ -188,16 +206,19 @@ def copy_parameter_files(base_dir, parameter_file, NEW_START, NEW_END, NEW_DREL,
         part = fileline.split()
         comments = ' '.join(p for p in part[2:])
         # filling the parameter definition variables
-        regex = r'(\-\-output\-directory|\-\-reconstruct\-file|\-\-remove\-file)'
-        if bool(re.match(regex,part[0])):
+        regex = (
+            r'(\-\-output\-directory|\-\-reconstruct\-file|\-\-remove\-file)'
+        )
+        if bool(re.match(regex, part[0])):
             # add MMAX string for order 30 solutions
             # replace the old starting month with the new one
             # replace the old ending month with the new one
             # replace the old dataset string with the new dataset string
             mapping = []
             mapping.append(('L60', f'L60{order_str}'))
-            mapping.append((f'{OLD_START:03d}-{OLD_END:03d}'
-                f'{NEW_START:03d}-{NEW_END:03d}'))
+            mapping.append(
+                (f'{OLD_START:03d}-{OLD_END:03d}{NEW_START:03d}-{NEW_END:03d}')
+            )
             mapping.append((OLD_DREL, NEW_DREL))
             mapping.append((OLD_DSET, NEW_DSET))
             for key, val in mapping:
@@ -211,59 +232,63 @@ def copy_parameter_files(base_dir, parameter_file, NEW_START, NEW_END, NEW_DREL,
             # replace the old dataset string with the new dataset string
             mapping = []
             mapping.append(('L60', f'L60{order_str}'))
-            mapping.append((f'{OLD_START:03d}-{OLD_END:03d}',
-                f'{NEW_START:03d}-{NEW_END:03d}'))
+            mapping.append(
+                (
+                    f'{OLD_START:03d}-{OLD_END:03d}',
+                    f'{NEW_START:03d}-{NEW_END:03d}',
+                )
+            )
             mapping.append((OLD_DSET, NEW_DSET))
             for key, val in mapping:
                 fileline = fileline.replace(key, val)
             print(fileline, file=fid)
 
-        elif (part[0] == '--start'):
+        elif part[0] == '--start':
             # replace the old starting month with the new one
             mapping = [(f'{OLD_START:d}', f'{OLD_START:d}')]
             for key, val in mapping:
                 fileline = fileline.replace(key, val)
             print(fileline, file=fid)
 
-        elif (part[0] == '--end'):
+        elif part[0] == '--end':
             # replace the old ending month with the new one
             mapping = [(f'{OLD_END:d}', f'{NEW_END:d}')]
             for key, val in mapping:
                 fileline = fileline.replace(key, val)
             print(fileline, file=fid)
 
-        elif (part[0] == '--missing'):
+        elif part[0] == '--missing':
             # update the missing months
             missing = ' '.join(f'{m:d}' for m in NEW_MISSING)
             print(f'{part[0]}\t{missing}\t{comments}', file=fid)
 
-        elif (part[0] == '--release'):
+        elif part[0] == '--release':
             # replace the old release with the new one
             mapping = [(OLD_DREL, NEW_DREL)]
             for key, val in mapping:
                 fileline = fileline.replace(key, val)
             print(fileline, file=fid)
 
-        elif (part[0] == '--product'):
+        elif part[0] == '--product':
             # replace the old product with the new one
             mapping = [(OLD_DSET, NEW_DSET)]
             for key, val in mapping:
                 fileline = fileline.replace(key, val)
             print(fileline, file=fid)
 
-        elif (part[0] == '--geocenter'):
+        elif part[0] == '--geocenter':
             # Geocenter correction to DEG1
             print(f'{part[0]}\t{DEG1}\t{comments}', file=fid)
 
-        elif (part[0] == '--slr-c20'):
+        elif part[0] == '--slr-c20':
             # Oblateness correction
             print(f'{part[0]}\t{SLR_C20}\t{comments}', file=fid)
 
-        elif (part[0] == '--slr-c30'):
+        elif part[0] == '--slr-c30':
             # C30 correction
             print(f'{part[0]}\t{SLR_C30}\t{comments}', file=fid)
 
-        elif (part[0] == '--lmax'):
+        elif part[0] == '--lmax':
             # LMAX to new spherical harmonic degree
             print(f'{part[0]}\t{LMAX:d}\t{comments}', file=fid)
 
@@ -287,6 +312,7 @@ def copy_parameter_files(base_dir, parameter_file, NEW_START, NEW_END, NEW_DREL,
     if OVERWRITE:
         parameter_file.unlink()
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
@@ -295,70 +321,131 @@ def arguments():
             """
     )
     # command line parameters
-    parser.add_argument('parameters',
-        type=pathlib.Path, nargs='+',
-        help='Parameter files containing specific variables for each analysis')
+    parser.add_argument(
+        'parameters',
+        type=pathlib.Path,
+        nargs='+',
+        help='Parameter files containing specific variables for each analysis',
+    )
     # working data directory
-    parser.add_argument('--directory','-D',
+    parser.add_argument(
+        '--directory',
+        '-D',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Working data directory')
+        help='Working data directory',
+    )
     # start and end GRACE/GRACE-FO months
-    parser.add_argument('--start','-S',
-        type=int, default=None,
-        help='Starting GRACE/GRACE-FO month for output file')
-    parser.add_argument('--end','-E',
-        type=int, default=None,
-        help='Ending GRACE/GRACE-FO month for output file')
+    parser.add_argument(
+        '--start',
+        '-S',
+        type=int,
+        default=None,
+        help='Starting GRACE/GRACE-FO month for output file',
+    )
+    parser.add_argument(
+        '--end',
+        '-E',
+        type=int,
+        default=None,
+        help='Ending GRACE/GRACE-FO month for output file',
+    )
     # GRACE/GRACE-FO data release
-    parser.add_argument('--release','-r',
-        metavar='DREL', type=str, default=None,
-        help='GRACE/GRACE-FO Data Release')
+    parser.add_argument(
+        '--release',
+        '-r',
+        metavar='DREL',
+        type=str,
+        default=None,
+        help='GRACE/GRACE-FO Data Release',
+    )
     # GRACE/GRACE-FO data product
-    parser.add_argument('--product','-p',
-        metavar='DSET', type=str, default=None,
-        help='GRACE/GRACE-FO Data Product')
+    parser.add_argument(
+        '--product',
+        '-p',
+        metavar='DSET',
+        type=str,
+        default=None,
+        help='GRACE/GRACE-FO Data Product',
+    )
     # maximum spherical harmonic degree and order
-    parser.add_argument('--lmax','-l',
-        type=int, default=60,
-        help='Maximum spherical harmonic degree')
-    parser.add_argument('--mmax','-m',
-        type=int, default=None,
-        help='Maximum spherical harmonic order')
+    parser.add_argument(
+        '--lmax',
+        '-l',
+        type=int,
+        default=60,
+        help='Maximum spherical harmonic degree',
+    )
+    parser.add_argument(
+        '--mmax',
+        '-m',
+        type=int,
+        default=None,
+        help='Maximum spherical harmonic order',
+    )
     # geocenter, oblateness and low degree zonals
-    parser.add_argument('--geocenter',
-        type=str, metavar='DEG1', default=None,
-        help='Geocenter Product to use in file')
-    parser.add_argument('--slr-c20',
-        type=str, metavar='C20', default=None,
-        help='C20 Product to use in file')
-    parser.add_argument('--slr-c30',
-        type=str, metavar='C30', default=None,
-        help='C30 Product to use in file')
+    parser.add_argument(
+        '--geocenter',
+        type=str,
+        metavar='DEG1',
+        default=None,
+        help='Geocenter Product to use in file',
+    )
+    parser.add_argument(
+        '--slr-c20',
+        type=str,
+        metavar='C20',
+        default=None,
+        help='C20 Product to use in file',
+    )
+    parser.add_argument(
+        '--slr-c30',
+        type=str,
+        metavar='C30',
+        default=None,
+        help='C30 Product to use in file',
+    )
     # keep commented lines
-    parser.add_argument('--comments','-C',
-        default=False, action='store_true',
-        help='Keep commented lines in parameter file')
+    parser.add_argument(
+        '--comments',
+        '-C',
+        default=False,
+        action='store_true',
+        help='Keep commented lines in parameter file',
+    )
     # keep commented lines
-    parser.add_argument('--overwrite','-O',
-        default=False, action='store_true',
-        help='Remove previous version of parameter file')
+    parser.add_argument(
+        '--overwrite',
+        '-O',
+        default=False,
+        action='store_true',
+        help='Remove previous version of parameter file',
+    )
     # print information about each input and output file
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of run',
+    )
     # permissions mode of the output files (octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger for verbosity level
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -366,8 +453,13 @@ def main():
 
     # run directly for file
     for f in args.parameters:
-        copy_parameter_files(args.directory, f, args.start, args.end,
-            args.release, args.product,
+        copy_parameter_files(
+            args.directory,
+            f,
+            args.start,
+            args.end,
+            args.release,
+            args.product,
             LMAX=args.lmax,
             MMAX=args.mmax,
             DEG1=args.geocenter,
@@ -375,7 +467,9 @@ def main():
             SLR_C30=args.slr_c30,
             COMMENTS=args.comments,
             OVERWRITE=args.overwrite,
-            MODE=args.mode)
+            MODE=args.mode,
+        )
+
 
 # run main program
 if __name__ == '__main__':

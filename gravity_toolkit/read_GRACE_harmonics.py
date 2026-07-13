@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 read_GRACE_harmonics.py
 Written by Tyler Sutterley (11/2024)
 Contributions by Hugo Lecomte
@@ -67,6 +67,7 @@ UPDATE HISTORY:
         output file headers and parse new YAML headers for RL06 and GRACE-FO
     Written 10/2017 for public release
 """
+
 import re
 import io
 import gzip
@@ -74,6 +75,7 @@ import yaml
 import pathlib
 import numpy as np
 import gravity_toolkit.time
+
 
 # PURPOSE: read Level-2 GRACE and GRACE-FO spherical harmonic files
 def read_GRACE_harmonics(input_file, LMAX, **kwargs):
@@ -119,9 +121,9 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
     kwargs.setdefault('POLE_TIDE', False)
 
     # parse filename
-    PFX,SY,SD,EY,ED,N,PRC,F1,DRL,F2,SFX = parse_file(input_file)
+    PFX, SY, SD, EY, ED, N, PRC, F1, DRL, F2, SFX = parse_file(input_file)
     # check if file is compressed
-    compressed = (SFX == '.gz')
+    compressed = SFX == '.gz'
     # extract file contents
     file_contents = extract_file(input_file, compressed)
 
@@ -141,12 +143,12 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
     # GFC solutions from the GFZ ICGEM
     # https://icgem.gfz-potsdam.de/sl/temporal
     elif PRC in ('COSTG',) or SFX in ('.gfc',):
-        DSET, = re.findall(r'(GSM|GAA|GAB|GAC|GAD)', PFX)
+        (DSET,) = re.findall(r'(GSM|GAA|GAB|GAC|GAD)', PFX)
         DREL = np.int64(DRL)
         FLAG = r'gfc'
     # Standard GRACE/GRACE-FO Level-2 solutions
     else:
-        DSET, = re.findall(r'(GSM|GAA|GAB|GAC|GAD)', PFX)
+        (DSET,) = re.findall(r'(GSM|GAA|GAB|GAC|GAD)', PFX)
         DREL = np.int64(DRL)
         FLAG = r'GRCOF2'
 
@@ -162,51 +164,71 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
     dpy = gravity_toolkit.time.calendar_days(start_yr).sum()
 
     # For data that crosses years (end_yr - start_yr should be at most 1)
-    end_cyclic = ((end_yr - start_yr)*dpy+end_day)
+    end_cyclic = (end_yr - start_yr) * dpy + end_day
     # Calculate mid-month value
     mid_day = np.mean([start_day, end_cyclic])
     # Calculating the mid-month date in decimal form
-    grace_L2_input['time'] = start_yr + mid_day/dpy
+    grace_L2_input['time'] = start_yr + mid_day / dpy
     # Calculating the Julian dates of the start and end date
-    grace_L2_input['start'] = 2400000.5 + \
-        gravity_toolkit.time.convert_calendar_dates(start_yr,1.0,start_day,
-        epoch=(1858,11,17,0,0,0))
-    grace_L2_input['end'] = 2400000.5 + \
-        gravity_toolkit.time.convert_calendar_dates(end_yr,1.0,end_day,
-        epoch=(1858,11,17,0,0,0))
+    grace_L2_input['start'] = (
+        2400000.5
+        + gravity_toolkit.time.convert_calendar_dates(
+            start_yr, 1.0, start_day, epoch=(1858, 11, 17, 0, 0, 0)
+        )
+    )
+    grace_L2_input['end'] = (
+        2400000.5
+        + gravity_toolkit.time.convert_calendar_dates(
+            end_yr, 1.0, end_day, epoch=(1858, 11, 17, 0, 0, 0)
+        )
+    )
 
     # set maximum spherical harmonic order
-    MMAX = np.copy(LMAX) if (kwargs['MMAX'] is None) else np.copy(kwargs['MMAX'])
+    MMAX = (
+        np.copy(LMAX) if (kwargs['MMAX'] is None) else np.copy(kwargs['MMAX'])
+    )
     # output dimensions
-    grace_L2_input['l'] = np.arange(LMAX+1)
-    grace_L2_input['m'] = np.arange(MMAX+1)
+    grace_L2_input['l'] = np.arange(LMAX + 1)
+    grace_L2_input['m'] = np.arange(MMAX + 1)
     # Spherical harmonic coefficient matrices to be filled from data file
-    grace_L2_input['clm'] = np.zeros((LMAX+1, MMAX+1))
-    grace_L2_input['slm'] = np.zeros((LMAX+1, MMAX+1))
+    grace_L2_input['clm'] = np.zeros((LMAX + 1, MMAX + 1))
+    grace_L2_input['slm'] = np.zeros((LMAX + 1, MMAX + 1))
     # spherical harmonic uncalibrated standard deviations
-    grace_L2_input['eclm'] = np.zeros((LMAX+1, MMAX+1))
-    grace_L2_input['eslm'] = np.zeros((LMAX+1, MMAX+1))
-    if ((DREL == 4) and (DSET == 'GSM')):
+    grace_L2_input['eclm'] = np.zeros((LMAX + 1, MMAX + 1))
+    grace_L2_input['eslm'] = np.zeros((LMAX + 1, MMAX + 1))
+    if (DREL == 4) and (DSET == 'GSM'):
         # clm and slm drift rates for RL04
-        drift_c = np.zeros((LMAX+1, MMAX+1))
-        drift_s = np.zeros((LMAX+1, MMAX+1))
+        drift_c = np.zeros((LMAX + 1, MMAX + 1))
+        drift_s = np.zeros((LMAX + 1, MMAX + 1))
     # set default degree 0 harmonics for intercomparability between centers
     grace_L2_input['clm'][0, 0] = 1.0
 
     # extract GRACE and GRACE-FO file headers
     # replace colons in header if within quotations
-    head = [re.sub(r'\"(.*?)\:\s(.*?)\"',r'"\1, \2"',l) for l in file_contents
-        if not re.match(rf'{FLAG}|GRDOTA',l)]
+    head = [
+        re.sub(r'\"(.*?)\:\s(.*?)\"', r'"\1, \2"', l)
+        for l in file_contents
+        if not re.match(rf'{FLAG}|GRDOTA', l)
+    ]
     if SFX in ('.gfc',):
         # extract parameters from header
-        header_parameters = ['modelname','earth_gravity_constant','radius',
-            'max_degree','errors','norm','tide_system']
+        header_parameters = [
+            'modelname',
+            'earth_gravity_constant',
+            'radius',
+            'max_degree',
+            'errors',
+            'norm',
+            'tide_system',
+        ]
         header_regex = re.compile(r'(' + r'|'.join(header_parameters) + r')')
         header = [l.split(maxsplit=1) for l in head if header_regex.match(l)]
-        grace_L2_input['header'] = {i[0]:i[1] for i in header}
+        grace_L2_input['header'] = {i[0]: i[1] for i in header}
     elif ((N == 'GRAC') and (DREL >= 6)) or (N == 'GRFO'):
         # parse the YAML header for RL06 or GRACE-FO (specifying yaml loader)
-        grace_L2_input.update(yaml.load('\n'.join(head),Loader=yaml.BaseLoader))
+        grace_L2_input.update(
+            yaml.load('\n'.join(head), Loader=yaml.BaseLoader)
+        )
     else:
         # save lines of the GRACE file header removing empty lines
         grace_L2_input['header'] = [l.rstrip() for l in head if l]
@@ -214,79 +236,84 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
     # for each line in the GRACE/GRACE-FO file
     for line in file_contents:
         # find if line starts with data marker flag (e.g. GRCOF2)
-        if bool(re.match(FLAG,line)):
+        if bool(re.match(FLAG, line)):
             # split the line into individual components
             line_contents = line.split()
             # degree and order for the line
             l1 = np.int64(line_contents[1])
             m1 = np.int64(line_contents[2])
             # if degree and order are below the truncation limits
-            if ((l1 <= LMAX) and (m1 <= MMAX)):
-                grace_L2_input['clm'][l1,m1] = np.float64(line_contents[3])
-                grace_L2_input['slm'][l1,m1] = np.float64(line_contents[4])
-                grace_L2_input['eclm'][l1,m1] = np.float64(line_contents[5])
-                grace_L2_input['eslm'][l1,m1] = np.float64(line_contents[6])
+            if (l1 <= LMAX) and (m1 <= MMAX):
+                grace_L2_input['clm'][l1, m1] = np.float64(line_contents[3])
+                grace_L2_input['slm'][l1, m1] = np.float64(line_contents[4])
+                grace_L2_input['eclm'][l1, m1] = np.float64(line_contents[5])
+                grace_L2_input['eslm'][l1, m1] = np.float64(line_contents[6])
         # find if line starts with drift rate flag
-        elif bool(re.match(r'GRDOTA',line)):
+        elif bool(re.match(r'GRDOTA', line)):
             # split the line into individual components
             line_contents = line.split()
             l1 = np.int64(line_contents[1])
             m1 = np.int64(line_contents[2])
             # Reading Drift rates for low degree harmonics
-            drift_c[l1,m1] = np.float64(line_contents[3])
-            drift_s[l1,m1] = np.float64(line_contents[4])
+            drift_c[l1, m1] = np.float64(line_contents[3])
+            drift_s[l1, m1] = np.float64(line_contents[4])
 
     # Adding drift rates to clm and slm for RL04
     # if drift rates exist at any time, will add to harmonics
     # Will convert the secular rates into a stokes contribution
     # Currently removes 2003.3 to get the temporal average close to 0.
-    if ((DREL == 4) and (DSET == 'GSM')):
+    if (DREL == 4) and (DSET == 'GSM'):
         # time since 2003.3
-        dt = (grace_L2_input['time'] - 2003.3)
-        grace_L2_input['clm'][:,:] += dt*drift_c[:,:]
-        grace_L2_input['slm'][:,:] += dt*drift_s[:,:]
+        dt = grace_L2_input['time'] - 2003.3
+        grace_L2_input['clm'][:, :] += dt * drift_c[:, :]
+        grace_L2_input['slm'][:, :] += dt * drift_s[:, :]
 
     # Correct Pole Tide following Wahr et al. (2015) 10.1002/2015JB011986
     if kwargs['POLE_TIDE'] and (DSET == 'GSM'):
         # time since 2000.0
-        dt = (grace_L2_input['time']-2000.0)
+        dt = grace_L2_input['time'] - 2000.0
         # CSR and JPL Pole Tide Correction
-        if PRC in ('UTCSR','JPLEM','JPLMSC'):
+        if PRC in ('UTCSR', 'JPLEM', 'JPLMSC'):
             # values for IERS mean pole [2010]
-            if (grace_L2_input['time'] < 2010.0):
-                a = np.array([0.055974,1.8243e-3,1.8413e-4,7.024e-6])
-                b = np.array([-0.346346,-1.7896e-3,1.0729e-4,0.908e-6])
-            elif (grace_L2_input['time'] >= 2010.0):
-                a = np.array([0.023513,7.6141e-3,0.0,0.0])
-                b = np.array([-0.358891,0.6287e-3,0.0,0.0])
+            if grace_L2_input['time'] < 2010.0:
+                a = np.array([0.055974, 1.8243e-3, 1.8413e-4, 7.024e-6])
+                b = np.array([-0.346346, -1.7896e-3, 1.0729e-4, 0.908e-6])
+            elif grace_L2_input['time'] >= 2010.0:
+                a = np.array([0.023513, 7.6141e-3, 0.0, 0.0])
+                b = np.array([-0.358891, 0.6287e-3, 0.0, 0.0])
             # calculate m1 and m2 values
             m1 = np.copy(a[0])
             m2 = np.copy(b[0])
-            for x in range(1,4):
-                m1 += a[x]*dt**x
-                m2 += b[x]*dt**x
+            for x in range(1, 4):
+                m1 += a[x] * dt**x
+                m2 += b[x] * dt**x
             # pole tide values for CSR and JPL
             # CSR and JPL both remove the IERS mean pole from m1 and m2
             # before computing their harmonic solutions
-            C21_PT = -1.551e-9*(m1 - 0.62e-3*dt) - 0.012e-9*(m2 + 3.48e-3*dt)
-            S21_PT = 0.021e-9*(m1 - 0.62e-3*dt) - 1.505e-9*(m2 + 3.48e-3*dt)
+            C21_PT = -1.551e-9 * (m1 - 0.62e-3 * dt) - 0.012e-9 * (
+                m2 + 3.48e-3 * dt
+            )
+            S21_PT = 0.021e-9 * (m1 - 0.62e-3 * dt) - 1.505e-9 * (
+                m2 + 3.48e-3 * dt
+            )
             # correct GRACE/GRACE-FO spherical harmonics for pole tide
-            grace_L2_input['clm'][2,1] -= C21_PT
-            grace_L2_input['slm'][2,1] -= S21_PT
+            grace_L2_input['clm'][2, 1] -= C21_PT
+            grace_L2_input['slm'][2, 1] -= S21_PT
         # GFZ Pole Tide Correction
-        elif PRC in ('EIGEN','GFZOP'):
+        elif PRC in ('EIGEN', 'GFZOP'):
             # pole tide values for GFZ
             # GFZ removes only a constant pole position
-            C21_PT = -1.551e-9*(-0.62e-3*dt) - 0.012e-9*(3.48e-3*dt)
-            S21_PT = 0.021e-9*(-0.62e-3*dt) - 1.505e-9*(3.48e-3*dt)
+            C21_PT = -1.551e-9 * (-0.62e-3 * dt) - 0.012e-9 * (3.48e-3 * dt)
+            S21_PT = 0.021e-9 * (-0.62e-3 * dt) - 1.505e-9 * (3.48e-3 * dt)
             # correct GRACE/GRACE-FO spherical harmonics for pole tide
-            grace_L2_input['clm'][2,1] -= C21_PT
-            grace_L2_input['slm'][2,1] -= S21_PT
+            grace_L2_input['clm'][2, 1] -= C21_PT
+            grace_L2_input['slm'][2, 1] -= S21_PT
 
     # return the header data, GRACE/GRACE-FO data
     # GRACE/GRACE-FO date (mid-month in decimal)
     # and the start and end days as Julian dates
     return grace_L2_input
+
 
 # PURPOSE: extract parameters from filename
 def parse_file(input_file):
@@ -309,14 +336,17 @@ def parse_file(input_file):
     # GRGS: CNES Groupe de Recherche de Geodesie Spatiale
     centers = r'UTCSR|EIGEN|GFZOP|JPLEM|JPLMSC|GRGS|COSTG|GRGS'
     suffixes = r'\.gz|\.gfc|\.txt'
-    regex_pattern = (r'(.*?)-2_(\d{4})(\d{3})-(\d{4})(\d{3})_'
-        rf'(.*?)_({centers})_(.*?)_(\d+)(.*?)({suffixes})?$')
+    regex_pattern = (
+        r'(.*?)-2_(\d{4})(\d{3})-(\d{4})(\d{3})_'
+        rf'(.*?)_({centers})_(.*?)_(\d+)(.*?)({suffixes})?$'
+    )
     rx = re.compile(regex_pattern, re.VERBOSE)
     # extract parameters from input filename
     if isinstance(input_file, io.IOBase):
         return rx.findall(input_file.filename).pop()
     else:
         return rx.findall(pathlib.Path(input_file).name).pop()
+
 
 # PURPOSE: read input file and extract contents
 def extract_file(input_file, compressed):

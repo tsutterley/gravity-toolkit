@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 calc_mascon.py
 Written by Tyler Sutterley (05/2023)
 
@@ -247,6 +247,7 @@ UPDATE HISTORY:
     Updated 02/2012: Added sensitivity kernels
     Written 02/2012
 """
+
 from __future__ import print_function, division
 
 import sys
@@ -261,6 +262,7 @@ import numpy as np
 import scipy.linalg
 import gravity_toolkit as gravtk
 
+
 # PURPOSE: keep track of threads
 def info(args):
     logging.info(pathlib.Path(sys.argv[0]).name)
@@ -270,9 +272,16 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
+
 # PURPOSE: calculate a regional time-series through a least
 # squares mascon process
-def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
+def calc_mascon(
+    base_dir,
+    PROC,
+    DREL,
+    DSET,
+    LMAX,
+    RAD,
     START=None,
     END=None,
     MISSING=None,
@@ -309,8 +318,8 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     RECONSTRUCT_FILE=None,
     LANDMASK=None,
     OUTPUT_DIRECTORY=None,
-    MODE=0o775):
-
+    MODE=0o775,
+):
     # directory setup
     base_dir = pathlib.Path(base_dir).expanduser().absolute()
     # recursively create output directory if not currently existing
@@ -329,8 +338,9 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     parser = re.compile(r'^(?!\#|\%|$)', re.VERBOSE)
 
     # read arrays of kl, hl, and ll Love Numbers
-    LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
-        REFERENCE=REFERENCE, FORMAT='class')
+    LOVE = gravtk.load_love_numbers(
+        LMAX, LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE=REFERENCE, FORMAT='class'
+    )
 
     # Earth Parameters
     factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
@@ -348,19 +358,18 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
 
     # Calculating the Gaussian smoothing for radius RAD
-    if (RAD != 0):
-        wt = 2.0*np.pi*gravtk.gauss_weights(RAD,LMAX)
+    if RAD != 0:
+        wt = 2.0 * np.pi * gravtk.gauss_weights(RAD, LMAX)
         gw_str = f'_r{RAD:0.0f}km'
     else:
         # else = 1
-        wt = np.ones((LMAX+1))
+        wt = np.ones((LMAX + 1))
         gw_str = ''
 
     # Read Ocean function and convert to Ylms for redistribution
-    if (REDISTRIBUTE_MASCONS | REDISTRIBUTE_REMOVED):
+    if REDISTRIBUTE_MASCONS | REDISTRIBUTE_REMOVED:
         # read Land-Sea Mask and convert to spherical harmonics
-        ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX,
-            MMAX=MMAX, LOVE=LOVE)
+        ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX, MMAX=MMAX, LOVE=LOVE)
         ocean_str = '_OCN'
     else:
         # not distributing uniformly over ocean
@@ -370,18 +379,36 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # replacing low-degree harmonics with SLR values if specified
     # include degree 1 (geocenter) harmonics if specified
     # correcting for Pole-Tide and Atmospheric Jumps if specified
-    Ylms = gravtk.grace_input_months(base_dir, PROC, DREL, DSET, LMAX,
-        START, END, MISSING, SLR_C20, DEG1, MMAX=MMAX, SLR_21=SLR_21,
-        SLR_22=SLR_22, SLR_C30=SLR_C30, SLR_C40=SLR_C40, SLR_C50=SLR_C50,
-        DEG1_FILE=DEG1_FILE, MODEL_DEG1=MODEL_DEG1, ATM=ATM,
-        POLE_TIDE=POLE_TIDE)
+    Ylms = gravtk.grace_input_months(
+        base_dir,
+        PROC,
+        DREL,
+        DSET,
+        LMAX,
+        START,
+        END,
+        MISSING,
+        SLR_C20,
+        DEG1,
+        MMAX=MMAX,
+        SLR_21=SLR_21,
+        SLR_22=SLR_22,
+        SLR_C30=SLR_C30,
+        SLR_C40=SLR_C40,
+        SLR_C50=SLR_C50,
+        DEG1_FILE=DEG1_FILE,
+        MODEL_DEG1=MODEL_DEG1,
+        ATM=ATM,
+        POLE_TIDE=POLE_TIDE,
+    )
     # create harmonics object from GRACE/GRACE-FO data
     GRACE_Ylms = gravtk.harmonics().from_dict(Ylms)
     # use a mean file for the static field to remove
     if MEAN_FILE:
         # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
-        mean_Ylms = gravtk.harmonics().from_file(MEAN_FILE,
-            format=MEANFORM, date=False)
+        mean_Ylms = gravtk.harmonics().from_file(
+            MEAN_FILE, format=MEANFORM, date=False
+        )
         # remove the input mean
         GRACE_Ylms.subtract(mean_Ylms)
     else:
@@ -395,7 +422,9 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         # using standard GRACE/GRACE-FO harmonics
         ds_str = ''
     # full path to directory for specific GRACE/GRACE-FO product
-    GRACE_Ylms.directory = pathlib.Path(Ylms['directory']).expanduser().absolute()
+    GRACE_Ylms.directory = (
+        pathlib.Path(Ylms['directory']).expanduser().absolute()
+    )
     # date information of GRACE/GRACE-FO coefficients
     n_files = len(GRACE_Ylms.time)
 
@@ -415,35 +444,37 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     if REMOVE_FILES:
         # extend list if a single format was entered for all files
         if len(REMOVE_FORMAT) < len(REMOVE_FILES):
-            REMOVE_FORMAT = REMOVE_FORMAT*len(REMOVE_FILES)
+            REMOVE_FORMAT = REMOVE_FORMAT * len(REMOVE_FILES)
         # for each file to be removed
-        for REMOVE_FILE,REMOVEFORM in zip(REMOVE_FILES,REMOVE_FORMAT):
-            if REMOVEFORM in ('ascii','netCDF4','HDF5'):
+        for REMOVE_FILE, REMOVEFORM in zip(REMOVE_FILES, REMOVE_FORMAT):
+            if REMOVEFORM in ('ascii', 'netCDF4', 'HDF5'):
                 # ascii (.txt)
                 # netCDF4 (.nc)
                 # HDF5 (.H5)
-                Ylms = gravtk.harmonics().from_file(REMOVE_FILE,
-                    format=REMOVEFORM)
-            elif REMOVEFORM in ('index-ascii','index-netCDF4','index-HDF5'):
+                Ylms = gravtk.harmonics().from_file(
+                    REMOVE_FILE, format=REMOVEFORM
+                )
+            elif REMOVEFORM in ('index-ascii', 'index-netCDF4', 'index-HDF5'):
                 # read from index file
-                _,removeform = REMOVEFORM.split('-')
+                _, removeform = REMOVEFORM.split('-')
                 # index containing files in data format
-                Ylms = gravtk.harmonics().from_index(REMOVE_FILE,
-                    format=removeform)
+                Ylms = gravtk.harmonics().from_index(
+                    REMOVE_FILE, format=removeform
+                )
             # reduce to GRACE/GRACE-FO months and truncate to degree and order
-            Ylms = Ylms.subset(GRACE_Ylms.month).truncate(lmax=LMAX,mmax=MMAX)
+            Ylms = Ylms.subset(GRACE_Ylms.month).truncate(lmax=LMAX, mmax=MMAX)
             # distribute removed Ylms uniformly over the ocean
             if REDISTRIBUTE_REMOVED:
                 # calculate ratio between total removed mass and
                 # a uniformly distributed cm of water over the ocean
-                ratio = Ylms.clm[0,0,:]/ocean_Ylms.clm[0,0]
+                ratio = Ylms.clm[0, 0, :] / ocean_Ylms.clm[0, 0]
                 # for each spherical harmonic
-                for m in range(0,MMAX+1):# MMAX+1 to include MMAX
-                    for l in range(m,LMAX+1):# LMAX+1 to include LMAX
+                for m in range(0, MMAX + 1):  # MMAX+1 to include MMAX
+                    for l in range(m, LMAX + 1):  # LMAX+1 to include LMAX
                         # remove the ratio*ocean Ylms from Ylms
                         # note: x -= y is equivalent to x = x - y
-                        Ylms.clm[l,m,:] -= ratio*ocean_Ylms.clm[l,m]
-                        Ylms.slm[l,m,:] -= ratio*ocean_Ylms.slm[l,m]
+                        Ylms.clm[l, m, :] -= ratio * ocean_Ylms.clm[l, m]
+                        Ylms.slm[l, m, :] -= ratio * ocean_Ylms.slm[l, m]
             # filter removed coefficients
             if DESTRIPE:
                 Ylms = Ylms.destripe()
@@ -458,14 +489,17 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     construct_Ylms.month[:] = np.copy(GRACE_Ylms.month)
     if RECONSTRUCT:
         # input index for reconstructed spherical harmonic datafiles
-        RECONSTRUCT_FILE = pathlib.Path(RECONSTRUCT_FILE).expanduser().absolute()
+        RECONSTRUCT_FILE = (
+            pathlib.Path(RECONSTRUCT_FILE).expanduser().absolute()
+        )
         with RECONSTRUCT_FILE.open(mode='r', encoding='utf8') as f:
             file_list = [l for l in f.read().splitlines() if parser.match(l)]
         # for each valid file in the index (iterate over mascons)
         for reconstruct_file in file_list:
             # read reconstructed spherical harmonics
-            Ylms = gravtk.harmonics().from_file(reconstruct_file,
-                format=DATAFORM)
+            Ylms = gravtk.harmonics().from_file(
+                reconstruct_file, format=DATAFORM
+            )
             # truncate clm and slm matrices to LMAX/MMAX
             # add harmonics object to total
             construct_Ylms.add(Ylms.truncate(lmax=LMAX, mmax=MMAX))
@@ -490,24 +524,25 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     mascon_name = []
     # for each valid file in the index (iterate over mascons)
     mascon_list = []
-    for k,fi in enumerate(mascon_files):
+    for k, fi in enumerate(mascon_files):
         # read mascon spherical harmonics
-        Ylms = gravtk.harmonics().from_file(fi,
-            format=MASCON_FORMAT, date=False)
+        Ylms = gravtk.harmonics().from_file(
+            fi, format=MASCON_FORMAT, date=False
+        )
         # Calculating the total mass of each mascon (1 cmwe uniform)
-        total_area[k] = 4.0*np.pi*(rad_e**3)*rho_e*Ylms.clm[0,0]/3.0
+        total_area[k] = 4.0 * np.pi * (rad_e**3) * rho_e * Ylms.clm[0, 0] / 3.0
         # distribute mascon mass uniformly over the ocean
         if REDISTRIBUTE_MASCONS:
             # calculate ratio between total mascon mass and
             # a uniformly distributed cm of water over the ocean
-            ratio = Ylms.clm[0,0]/ocean_Ylms.clm[0,0]
+            ratio = Ylms.clm[0, 0] / ocean_Ylms.clm[0, 0]
             # for each spherical harmonic
-            for m in range(0,MMAX+1):# MMAX+1 to include MMAX
-                for l in range(m,LMAX+1):# LMAX+1 to include LMAX
+            for m in range(0, MMAX + 1):  # MMAX+1 to include MMAX
+                for l in range(m, LMAX + 1):  # LMAX+1 to include LMAX
                     # remove ratio*ocean Ylms from mascon Ylms
                     # note: x -= y is equivalent to x = x - y
-                    Ylms.clm[l,m] -= ratio*ocean_Ylms.clm[l,m]
-                    Ylms.slm[l,m] -= ratio*ocean_Ylms.slm[l,m]
+                    Ylms.clm[l, m] -= ratio * ocean_Ylms.clm[l, m]
+                    Ylms.slm[l, m] -= ratio * ocean_Ylms.slm[l, m]
         # truncate mascon spherical harmonics to d/o LMAX/MMAX and add to list
         mascon_list.append(Ylms.truncate(lmax=LMAX, mmax=MMAX))
         # stem is the mascon file without directory or suffix
@@ -522,8 +557,18 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
 
     # calculating GRACE/GRACE-FO error (Wahr et al. 2006)
     # output GRACE error file (for both LMAX==MMAX and LMAX != MMAX cases)
-    fargs = (PROC,DREL,DSET,LMAX,order_str,ds_str,atm_str,GRACE_Ylms.month[0],
-        GRACE_Ylms.month[-1], suffix[DATAFORM])
+    fargs = (
+        PROC,
+        DREL,
+        DSET,
+        LMAX,
+        order_str,
+        ds_str,
+        atm_str,
+        GRACE_Ylms.month[0],
+        GRACE_Ylms.month[-1],
+        suffix[DATAFORM],
+    )
     delta_format = '{0}_{1}_{2}_DELTA_CLM_L{3:d}{4}{5}{6}_{7:03d}-{8:03d}.{9}'
     DELTA_FILE = GRACE_Ylms.directory.joinpath(delta_format.format(*fargs))
     # check full path of the GRACE directory for delta file
@@ -535,38 +580,41 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
 
         # Delta coefficients of GRACE time series (Error components)
         delta_Ylms = gravtk.harmonics(lmax=LMAX, mmax=MMAX)
-        delta_Ylms.clm = np.zeros((LMAX+1, MMAX+1))
-        delta_Ylms.slm = np.zeros((LMAX+1, MMAX+1))
+        delta_Ylms.clm = np.zeros((LMAX + 1, MMAX + 1))
+        delta_Ylms.slm = np.zeros((LMAX + 1, MMAX + 1))
         # Smoothing Half-Width (CNES is a 10-day solution)
         # All other solutions are monthly solutions (HFWTH for annual = 6)
-        if ((PROC == 'CNES') and (DREL in ('RL01','RL02'))):
+        if (PROC == 'CNES') and (DREL in ('RL01', 'RL02')):
             HFWTH = 19
         else:
             HFWTH = 6
         # Equal to the noise of the smoothed time-series
         # for each spherical harmonic order
-        for m in range(0,MMAX+1):# MMAX+1 to include MMAX
+        for m in range(0, MMAX + 1):  # MMAX+1 to include MMAX
             # for each spherical harmonic degree
-            for l in range(m,LMAX+1):# LMAX+1 to include LMAX
+            for l in range(m, LMAX + 1):  # LMAX+1 to include LMAX
                 # Delta coefficients of GRACE time series
-                for cs,csharm in enumerate(['clm','slm']):
+                for cs, csharm in enumerate(['clm', 'slm']):
                     # calculate GRACE Error (Noise of smoothed time-series)
                     # With Annual and Semi-Annual Terms
                     val1 = getattr(GRACE_Ylms, csharm)
-                    smth = gravtk.time_series.smooth(GRACE_Ylms.time,
-                        val1[l,m,:], HFWTH=HFWTH)
+                    smth = gravtk.time_series.smooth(
+                        GRACE_Ylms.time, val1[l, m, :], HFWTH=HFWTH
+                    )
                     # number of smoothed points
                     nsmth = len(smth['data'])
                     tsmth = np.mean(smth['time'])
                     # GRACE/GRACE-FO delta Ylms
                     # variance of data-(smoothed+annual+semi)
                     val2 = getattr(delta_Ylms, csharm)
-                    val2[l,m] = np.sqrt(np.sum(smth['noise']**2)/nsmth)
+                    val2[l, m] = np.sqrt(np.sum(smth['noise'] ** 2) / nsmth)
 
         # attributes for output files
         attributes = {}
         attributes['title'] = 'GRACE/GRACE-FO Spherical Harmonic Errors'
-        attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
+        attributes['reference'] = (
+            f'Output from {pathlib.Path(sys.argv[0]).name}'
+        )
         # save GRACE/GRACE-FO delta harmonics to file
         delta_Ylms.time = np.copy(tsmth)
         delta_Ylms.month = np.int64(nsmth)
@@ -577,8 +625,7 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         output_files.append(DELTA_FILE)
     else:
         # read GRACE/GRACE-FO delta harmonics from file
-        delta_Ylms = gravtk.harmonics().from_file(DELTA_FILE,
-            format=DATAFORM)
+        delta_Ylms = gravtk.harmonics().from_file(DELTA_FILE, format=DATAFORM)
         # truncate GRACE/GRACE-FO delta clm and slm to d/o LMAX/MMAX
         delta_Ylms = delta_Ylms.truncate(lmax=LMAX, mmax=MMAX)
         tsmth = np.squeeze(delta_Ylms.time)
@@ -586,7 +633,9 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
 
     # Calculating the number of cos and sin harmonics between LMIN and LMAX
     # taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
-    n_harm=np.int64(LMAX**2 - LMIN**2 + 2*LMAX + 1 - (LMAX-MMAX)**2 - (LMAX-MMAX))
+    n_harm = np.int64(
+        LMAX**2 - LMIN**2 + 2 * LMAX + 1 - (LMAX - MMAX) ** 2 - (LMAX - MMAX)
+    )
 
     # Initialing harmonics for least squares fitting
     # mascon kernel
@@ -614,7 +663,7 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # Creating column array of clm/slm coefficients
     # Order is [C00...C6060,S11...S6060]
     # Switching between Cosine and Sine Stokes
-    for cs,csharm in enumerate(['clm','slm']):
+    for cs, csharm in enumerate(['clm', 'slm']):
         # copy cosine and sin harmonics
         mascon_harm = getattr(mascon_Ylms, csharm)
         grace_harm = getattr(GRACE_Ylms, csharm)
@@ -624,72 +673,87 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         delta_harm = getattr(delta_Ylms, csharm)
         # for each spherical harmonic degree
         # +1 to include LMAX
-        for l in range(LMIN,LMAX+1):
+        for l in range(LMIN, LMAX + 1):
             # for each spherical harmonic order
             # Sine Stokes for (m=0) = 0
-            mm = np.min([MMAX,l])
+            mm = np.min([MMAX, l])
             # +1 to include l or MMAX (whichever is smaller)
-            for m in range(cs,mm+1):
+            for m in range(cs, mm + 1):
                 # Mascon Spherical Harmonics
-                M_lm[ii,:] = np.copy(mascon_harm[l,m,:])
+                M_lm[ii, :] = np.copy(mascon_harm[l, m, :])
                 # GRACE Spherical Harmonics
                 # Correcting GRACE Harmonics for GIA and Removed Terms
-                Y_lm[ii,:] = grace_harm[l,m,:] - GIA_harm[l,m,:] - \
-                    remove_harm[l,m,:] - construct_harm[l,m,:]
+                Y_lm[ii, :] = (
+                    grace_harm[l, m, :]
+                    - GIA_harm[l, m, :]
+                    - remove_harm[l, m, :]
+                    - construct_harm[l, m, :]
+                )
                 # GRACE delta spherical harmonics
-                delta_lm[ii] = np.copy(delta_harm[l,m])
+                delta_lm[ii] = np.copy(delta_harm[l, m])
                 # degree dependent factor to convert to mass
-                fact[ii] = (2.0*l + 1.0)/(1.0 + LOVE.kl[l])
+                fact[ii] = (2.0 * l + 1.0) / (1.0 + LOVE.kl[l])
                 # degree dependent smoothing
                 wt_lm[ii] = np.copy(wt[l])
                 # add 1 to counter
                 ii += 1
 
     # Converting mascon coefficients to fit method
-    if (FIT_METHOD == 1):
+    if FIT_METHOD == 1:
         # Fitting Sensitivity Kernel as mass coefficients
         # converting M_lm to mass coefficients of the kernel
         for i in range(n_harm):
-            MA_lm[i,:] = M_lm[i,:]*wt_lm[i]*fact[i]
-        fit_factor = wt_lm*fact
-    elif (FIT_METHOD == 2):
+            MA_lm[i, :] = M_lm[i, :] * wt_lm[i] * fact[i]
+        fit_factor = wt_lm * fact
+    elif FIT_METHOD == 2:
         # Fitting Sensitivity Kernel as geoid coefficients
         for i in range(n_harm):
-            MA_lm[:,:] = M_lm[i,:]*wt_lm[i]
-        fit_factor = wt_lm*np.ones((n_harm))
+            MA_lm[:, :] = M_lm[i, :] * wt_lm[i]
+        fit_factor = wt_lm * np.ones((n_harm))
 
     # Fitting the sensitivity kernel from the input kernel
     for i in range(n_harm):
         # setting kern_i equal to 1 for d/o
         kern_i = np.zeros((n_harm))
         # converting to mass coefficients if specified
-        kern_i[i] = 1.0*fit_factor[i]
+        kern_i[i] = 1.0 * fit_factor[i]
         # spherical harmonics solution for the
         # mascon sensitivity kernels
-        if (SOLVER == 'inv'):
+        if SOLVER == 'inv':
             kern_lm = np.dot(np.linalg.inv(MA_lm), kern_i)
-        elif (SOLVER == 'lstsq'):
+        elif SOLVER == 'lstsq':
             kern_lm = np.linalg.lstsq(MA_lm, kern_i, rcond=-1)[0]
         elif SOLVER in ('gelsd', 'gelsy', 'gelss'):
-            kern_lm, res, rnk, s = scipy.linalg.lstsq(MA_lm, kern_i,
-                lapack_driver=SOLVER)
+            kern_lm, res, rnk, s = scipy.linalg.lstsq(
+                MA_lm, kern_i, lapack_driver=SOLVER
+            )
         # calculate the sensitivity kernel for each mascon
         for k in range(n_mas):
-            A_lm[i,k] = kern_lm[k]*total_area[k]
+            A_lm[i, k] = kern_lm[k] * total_area[k]
 
     # for each mascon
     for k in range(n_mas):
         # Multiply the Satellite error (noise of a smoothed time-series
         # with annual and semi-annual components) by the sensitivity kernel
         # Converting to Gigatonnes
-        M_delta[k] = np.sqrt(np.sum((delta_lm*A_lm[:,k])**2))/1e15
+        M_delta[k] = np.sqrt(np.sum((delta_lm * A_lm[:, k]) ** 2)) / 1e15
 
         # output filename format (for both LMAX==MMAX and LMAX != MMAX cases):
         # mascon name, GRACE dataset, GIA model, LMAX, (MMAX,)
         # Gaussian smoothing, filter flag, remove reconstructed fields flag
         # output GRACE error file
-        fargs = (mascon_name[k], dset_str, gia_str.upper(), atm_str, ocean_str,
-            LMAX, order_str, gw_str, ds_str, construct_str)
+        fargs = (
+            mascon_name[k],
+            dset_str,
+            gia_str.upper(),
+            atm_str,
+            ocean_str,
+            LMAX,
+            order_str,
+            gw_str,
+            ds_str,
+            construct_str,
+        )
         file_format = '{0}{1}{2}{3}{4}_L{5:d}{6}{7}{8}{9}.txt'
         output_file = OUTPUT_DIRECTORY.joinpath(file_format.format(*fargs))
 
@@ -700,14 +764,20 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
         fid = output_file.open(mode='w', encoding='utf8')
         # for each date
         formatting_string = '{0:03d} {1:12.4f} {2:16.10f} {3:16.10f} {4:16.5f}'
-        for t,mon in enumerate(GRACE_Ylms.month):
+        for t, mon in enumerate(GRACE_Ylms.month):
             # Summing over all spherical harmonics for mascon k, and time t
             # multiplies by the degree dependent factor to convert
             # the harmonics into mass coefficients
             # Converting mascon mass time-series from g to gigatonnes
-            mascon[k,t] = np.sum(A_lm[:,k]*Y_lm[:,t])/1e15
+            mascon[k, t] = np.sum(A_lm[:, k] * Y_lm[:, t]) / 1e15
             # output to file
-            args=(mon,GRACE_Ylms.time[t],mascon[k,t],M_delta[k],total_area[k]/1e10)
+            args = (
+                mon,
+                GRACE_Ylms.time[t],
+                mascon[k, t],
+                M_delta[k],
+                total_area[k] / 1e10,
+            )
             print(formatting_string.format(*args), file=fid)
         # close the output file
         fid.close()
@@ -719,10 +789,11 @@ def calc_mascon(base_dir, PROC, DREL, DSET, LMAX, RAD,
     # return the list of output files
     return output_files
 
+
 # PURPOSE: print a file log for the GRACE mascon analysis
 def output_log_file(input_arguments, output_files):
     # format: calc_mascon_run_2002-04-01_PID-70335.log
-    args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
+    args = (time.strftime('%Y-%m-%d', time.localtime()), os.getpid())
     LOGFILE = 'calc_mascon_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
     DIRECTORY = pathlib.Path(input_arguments.output_directory)
@@ -739,10 +810,11 @@ def output_log_file(input_arguments, output_files):
     # close the log file
     fid.close()
 
+
 # PURPOSE: print a error file log for the GRACE mascon analysis
 def output_error_log_file(input_arguments):
     # format: calc_mascon_failed_run_2002-04-01_PID-70335.log
-    args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
+    args = (time.strftime('%Y-%m-%d', time.localtime()), os.getpid())
     LOGFILE = 'calc_mascon_failed_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
     DIRECTORY = pathlib.Path(input_arguments.output_directory)
@@ -758,6 +830,7 @@ def output_error_log_file(input_arguments):
     # close the log file
     fid.close()
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
@@ -765,76 +838,165 @@ def arguments():
             through a least-squares mascon procedure from GRACE/GRACE-FO
             time-variable gravity data
             """,
-        fromfile_prefix_chars="@"
+        fromfile_prefix_chars='@',
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # working data directory
-    parser.add_argument('--directory','-D',
+    parser.add_argument(
+        '--directory',
+        '-D',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Working data directory')
-    parser.add_argument('--output-directory','-O',
+        help='Working data directory',
+    )
+    parser.add_argument(
+        '--output-directory',
+        '-O',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Output directory for mascon files')
+        help='Output directory for mascon files',
+    )
     # Data processing center or satellite mission
-    parser.add_argument('--center','-c',
-        metavar='PROC', type=str, required=True,
-        help='GRACE/GRACE-FO Processing Center')
+    parser.add_argument(
+        '--center',
+        '-c',
+        metavar='PROC',
+        type=str,
+        required=True,
+        help='GRACE/GRACE-FO Processing Center',
+    )
     # GRACE/GRACE-FO data release
-    parser.add_argument('--release','-r',
-        metavar='DREL', type=str, default='RL06',
-        help='GRACE/GRACE-FO Data Release')
+    parser.add_argument(
+        '--release',
+        '-r',
+        metavar='DREL',
+        type=str,
+        default='RL06',
+        help='GRACE/GRACE-FO Data Release',
+    )
     # GRACE/GRACE-FO Level-2 data product
-    parser.add_argument('--product','-p',
-        metavar='DSET', type=str, default='GSM',
-        help='GRACE/GRACE-FO Level-2 data product')
+    parser.add_argument(
+        '--product',
+        '-p',
+        metavar='DSET',
+        type=str,
+        default='GSM',
+        help='GRACE/GRACE-FO Level-2 data product',
+    )
     # minimum spherical harmonic degree
-    parser.add_argument('--lmin',
-        type=int, default=1,
-        help='Minimum spherical harmonic degree')
+    parser.add_argument(
+        '--lmin', type=int, default=1, help='Minimum spherical harmonic degree'
+    )
     # maximum spherical harmonic degree and order
-    parser.add_argument('--lmax','-l',
-        type=int, default=60,
-        help='Maximum spherical harmonic degree')
-    parser.add_argument('--mmax','-m',
-        type=int, default=None,
-        help='Maximum spherical harmonic order')
+    parser.add_argument(
+        '--lmax',
+        '-l',
+        type=int,
+        default=60,
+        help='Maximum spherical harmonic degree',
+    )
+    parser.add_argument(
+        '--mmax',
+        '-m',
+        type=int,
+        default=None,
+        help='Maximum spherical harmonic order',
+    )
     # start and end GRACE/GRACE-FO months
-    parser.add_argument('--start','-S',
-        type=int, default=4,
-        help='Starting GRACE/GRACE-FO month')
-    parser.add_argument('--end','-E',
-        type=int, default=232,
-        help='Ending GRACE/GRACE-FO month')
-    MISSING = [6,7,18,109,114,125,130,135,140,141,146,151,156,162,166,167,
-        172,177,178,182,187,188,189,190,191,192,193,194,195,196,197,200,201]
-    parser.add_argument('--missing','-N',
-        metavar='MISSING', type=int, nargs='+', default=MISSING,
-        help='Missing GRACE/GRACE-FO months')
+    parser.add_argument(
+        '--start',
+        '-S',
+        type=int,
+        default=4,
+        help='Starting GRACE/GRACE-FO month',
+    )
+    parser.add_argument(
+        '--end', '-E', type=int, default=232, help='Ending GRACE/GRACE-FO month'
+    )
+    MISSING = [
+        6,
+        7,
+        18,
+        109,
+        114,
+        125,
+        130,
+        135,
+        140,
+        141,
+        146,
+        151,
+        156,
+        162,
+        166,
+        167,
+        172,
+        177,
+        178,
+        182,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        200,
+        201,
+    ]
+    parser.add_argument(
+        '--missing',
+        '-N',
+        metavar='MISSING',
+        type=int,
+        nargs='+',
+        default=MISSING,
+        help='Missing GRACE/GRACE-FO months',
+    )
     # different treatments of the load Love numbers
     # 0: Han and Wahr (1995) values from PREM
     # 1: Gegout (2005) values from PREM
     # 2: Wang et al. (2012) values from PREM
     # 3: Wang et al. (2012) values from PREM with hard sediment
     # 4: Wang et al. (2012) values from PREM with soft sediment
-    parser.add_argument('--love','-n',
-        type=int, default=0, choices=[0,1,2,3,4],
-        help='Treatment of the Load Love numbers')
+    parser.add_argument(
+        '--love',
+        '-n',
+        type=int,
+        default=0,
+        choices=[0, 1, 2, 3, 4],
+        help='Treatment of the Load Love numbers',
+    )
     # option for setting reference frame for gravitational load love number
     # reference frame options (CF, CM, CE)
-    parser.add_argument('--reference',
-        type=str.upper, default='CF', choices=['CF','CM','CE'],
-        help='Reference frame for load Love numbers')
+    parser.add_argument(
+        '--reference',
+        type=str.upper,
+        default='CF',
+        choices=['CF', 'CM', 'CE'],
+        help='Reference frame for load Love numbers',
+    )
     # Gaussian smoothing radius (km)
-    parser.add_argument('--radius','-R',
-        type=float, default=0,
-        help='Gaussian smoothing radius (km)')
+    parser.add_argument(
+        '--radius',
+        '-R',
+        type=float,
+        default=0,
+        help='Gaussian smoothing radius (km)',
+    )
     # Use a decorrelation (destriping) filter
-    parser.add_argument('--destripe','-d',
-        default=False, action='store_true',
-        help='Use decorrelation (destriping) filter')
+    parser.add_argument(
+        '--destripe',
+        '-d',
+        default=False,
+        action='store_true',
+        help='Use decorrelation (destriping) filter',
+    )
     # GIA model type list
     models = {}
     models['IJ05-R2'] = 'Ivins R2 GIA Models'
@@ -850,21 +1012,32 @@ def arguments():
     models['netCDF4'] = 'reformatted GIA in netCDF4 format'
     models['HDF5'] = 'reformatted GIA in HDF5 format'
     # GIA model type
-    parser.add_argument('--gia','-G',
-        type=str, metavar='GIA', choices=models.keys(),
-        help='GIA model type to read')
+    parser.add_argument(
+        '--gia',
+        '-G',
+        type=str,
+        metavar='GIA',
+        choices=models.keys(),
+        help='GIA model type to read',
+    )
     # full path to GIA file
-    parser.add_argument('--gia-file',
-        type=pathlib.Path,
-        help='GIA file to read')
+    parser.add_argument(
+        '--gia-file', type=pathlib.Path, help='GIA file to read'
+    )
     # use atmospheric jump corrections from Fagiolini et al. (2015)
-    parser.add_argument('--atm-correction',
-        default=False, action='store_true',
-        help='Apply atmospheric jump correction coefficients')
+    parser.add_argument(
+        '--atm-correction',
+        default=False,
+        action='store_true',
+        help='Apply atmospheric jump correction coefficients',
+    )
     # correct for pole tide drift follow Wahr et al. (2015)
-    parser.add_argument('--pole-tide',
-        default=False, action='store_true',
-        help='Correct for pole tide drift')
+    parser.add_argument(
+        '--pole-tide',
+        default=False,
+        action='store_true',
+        help='Correct for pole tide drift',
+    )
     # Update Degree 1 coefficients with SLR or derived values
     # Tellus: GRACE/GRACE-FO TN-13 from PO.DAAC
     #     https://grace.jpl.nasa.gov/data/get-data/geocenter/
@@ -876,114 +1049,205 @@ def arguments():
     #     https://doi.org/10.1029/2007JB005338
     # GFZ: GRACE/GRACE-FO coefficients from GFZ GravIS
     #     http://gravis.gfz-potsdam.de/corrections
-    parser.add_argument('--geocenter',
-        metavar='DEG1', type=str,
-        choices=['Tellus','SLR','SLF','UCI','Swenson','GFZ'],
-        help='Update Degree 1 coefficients with SLR or derived values')
-    parser.add_argument('--geocenter-file',
+    parser.add_argument(
+        '--geocenter',
+        metavar='DEG1',
+        type=str,
+        choices=['Tellus', 'SLR', 'SLF', 'UCI', 'Swenson', 'GFZ'],
+        help='Update Degree 1 coefficients with SLR or derived values',
+    )
+    parser.add_argument(
+        '--geocenter-file',
         type=pathlib.Path,
-        help='Specific geocenter file if not default')
-    parser.add_argument('--interpolate-geocenter',
-        default=False, action='store_true',
-        help='Least-squares model missing Degree 1 coefficients')
+        help='Specific geocenter file if not default',
+    )
+    parser.add_argument(
+        '--interpolate-geocenter',
+        default=False,
+        action='store_true',
+        help='Least-squares model missing Degree 1 coefficients',
+    )
     # replace low degree harmonics with values from Satellite Laser Ranging
-    parser.add_argument('--slr-c20',
-        type=str, default=None, choices=['CSR','GFZ','GSFC'],
-        help='Replace C20 coefficients with SLR values')
-    parser.add_argument('--slr-21',
-        type=str, default=None, choices=['CSR','GFZ','GSFC'],
-        help='Replace C21 and S21 coefficients with SLR values')
-    parser.add_argument('--slr-22',
-        type=str, default=None, choices=['CSR','GSFC'],
-        help='Replace C22 and S22 coefficients with SLR values')
-    parser.add_argument('--slr-c30',
-        type=str, default=None, choices=['CSR','GFZ','GSFC','LARES'],
-        help='Replace C30 coefficients with SLR values')
-    parser.add_argument('--slr-c40',
-        type=str, default=None, choices=['CSR','GSFC','LARES'],
-        help='Replace C40 coefficients with SLR values')
-    parser.add_argument('--slr-c50',
-        type=str, default=None, choices=['CSR','GSFC','LARES'],
-        help='Replace C50 coefficients with SLR values')
+    parser.add_argument(
+        '--slr-c20',
+        type=str,
+        default=None,
+        choices=['CSR', 'GFZ', 'GSFC'],
+        help='Replace C20 coefficients with SLR values',
+    )
+    parser.add_argument(
+        '--slr-21',
+        type=str,
+        default=None,
+        choices=['CSR', 'GFZ', 'GSFC'],
+        help='Replace C21 and S21 coefficients with SLR values',
+    )
+    parser.add_argument(
+        '--slr-22',
+        type=str,
+        default=None,
+        choices=['CSR', 'GSFC'],
+        help='Replace C22 and S22 coefficients with SLR values',
+    )
+    parser.add_argument(
+        '--slr-c30',
+        type=str,
+        default=None,
+        choices=['CSR', 'GFZ', 'GSFC', 'LARES'],
+        help='Replace C30 coefficients with SLR values',
+    )
+    parser.add_argument(
+        '--slr-c40',
+        type=str,
+        default=None,
+        choices=['CSR', 'GSFC', 'LARES'],
+        help='Replace C40 coefficients with SLR values',
+    )
+    parser.add_argument(
+        '--slr-c50',
+        type=str,
+        default=None,
+        choices=['CSR', 'GSFC', 'LARES'],
+        help='Replace C50 coefficients with SLR values',
+    )
     # input data format (ascii, netCDF4, HDF5)
-    parser.add_argument('--format','-F',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
-        help='Input data format for auxiliary files')
+    parser.add_argument(
+        '--format',
+        '-F',
+        type=str,
+        default='netCDF4',
+        choices=['ascii', 'netCDF4', 'HDF5'],
+        help='Input data format for auxiliary files',
+    )
     # mean file to remove
-    parser.add_argument('--mean-file',
+    parser.add_argument(
+        '--mean-file',
         type=pathlib.Path,
-        help='GRACE/GRACE-FO mean file to remove from the harmonic data')
+        help='GRACE/GRACE-FO mean file to remove from the harmonic data',
+    )
     # input data format (ascii, netCDF4, HDF5)
-    parser.add_argument('--mean-format',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5','gfc'],
-        help='Input data format for GRACE/GRACE-FO mean file')
+    parser.add_argument(
+        '--mean-format',
+        type=str,
+        default='netCDF4',
+        choices=['ascii', 'netCDF4', 'HDF5', 'gfc'],
+        help='Input data format for GRACE/GRACE-FO mean file',
+    )
     # mascon index file and parameters
-    parser.add_argument('--mascon-file',
+    parser.add_argument(
+        '--mascon-file',
         type=pathlib.Path,
-        help='Index file of mascons spherical harmonics')
-    parser.add_argument('--mascon-format',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
-        help='Input data format for mascon files')
-    parser.add_argument('--redistribute-mascons',
-        default=False, action='store_true',
-        help='Redistribute mascon mass over the ocean')
+        help='Index file of mascons spherical harmonics',
+    )
+    parser.add_argument(
+        '--mascon-format',
+        type=str,
+        default='netCDF4',
+        choices=['ascii', 'netCDF4', 'HDF5'],
+        help='Input data format for mascon files',
+    )
+    parser.add_argument(
+        '--redistribute-mascons',
+        default=False,
+        action='store_true',
+        help='Redistribute mascon mass over the ocean',
+    )
     # 1: mass coefficients
     # 2: geoid coefficients
-    parser.add_argument('--fit-method',
-        type=int, default=1, choices=(1,2),
-        help='Method for fitting sensitivity kernel to harmonics')
+    parser.add_argument(
+        '--fit-method',
+        type=int,
+        default=1,
+        choices=(1, 2),
+        help='Method for fitting sensitivity kernel to harmonics',
+    )
     # least squares solver
-    choices = ('inv','lstsq','gelsd', 'gelsy', 'gelss')
-    parser.add_argument('--solver','-s',
-        type=str, default='lstsq', choices=choices,
-        help='Least squares solver for sensitivity kernel solutions')
+    choices = ('inv', 'lstsq', 'gelsd', 'gelsy', 'gelss')
+    parser.add_argument(
+        '--solver',
+        '-s',
+        type=str,
+        default='lstsq',
+        choices=choices,
+        help='Least squares solver for sensitivity kernel solutions',
+    )
     # monthly files to be removed from the GRACE/GRACE-FO data
-    parser.add_argument('--remove-file',
-        type=pathlib.Path, nargs='+',
-        help='Monthly files to be removed from the GRACE/GRACE-FO data')
-    choices = []
-    choices.extend(['ascii','netCDF4','HDF5'])
-    choices.extend(['index-ascii','index-netCDF4','index-HDF5'])
-    parser.add_argument('--remove-format',
-        type=str, nargs='+', choices=choices,
-        help='Input data format for files to be removed')
-    parser.add_argument('--redistribute-removed',
-        default=False, action='store_true',
-        help='Redistribute removed mass fields over the ocean')
-    # mascon reconstruct parameters
-    parser.add_argument('--remove-reconstruct',
-        default=False, action='store_true',
-        help='Remove reconstructed mascon time series fields')
-    parser.add_argument('--reconstruct-file',
+    parser.add_argument(
+        '--remove-file',
         type=pathlib.Path,
-        help='Reconstructed mascon time series file to be removed')
+        nargs='+',
+        help='Monthly files to be removed from the GRACE/GRACE-FO data',
+    )
+    choices = []
+    choices.extend(['ascii', 'netCDF4', 'HDF5'])
+    choices.extend(['index-ascii', 'index-netCDF4', 'index-HDF5'])
+    parser.add_argument(
+        '--remove-format',
+        type=str,
+        nargs='+',
+        choices=choices,
+        help='Input data format for files to be removed',
+    )
+    parser.add_argument(
+        '--redistribute-removed',
+        default=False,
+        action='store_true',
+        help='Redistribute removed mass fields over the ocean',
+    )
+    # mascon reconstruct parameters
+    parser.add_argument(
+        '--remove-reconstruct',
+        default=False,
+        action='store_true',
+        help='Remove reconstructed mascon time series fields',
+    )
+    parser.add_argument(
+        '--reconstruct-file',
+        type=pathlib.Path,
+        help='Reconstructed mascon time series file to be removed',
+    )
     # land-sea mask for redistributing mascon mass and land water flux
-    lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
-    parser.add_argument('--mask',
-        type=pathlib.Path, default=lsmask,
-        help='Land-sea mask for redistributing mascon mass and land water flux')
+    lsmask = gravtk.utilities.get_data_path(['data', 'landsea_hd.nc'])
+    parser.add_argument(
+        '--mask',
+        type=pathlib.Path,
+        default=lsmask,
+        help='Land-sea mask for redistributing mascon mass and land water flux',
+    )
     # Output log file for each job in forms
     # calc_mascon_run_2002-04-01_PID-00000.log
     # calc_mascon_failed_run_2002-04-01_PID-00000.log
-    parser.add_argument('--log',
-        default=False, action='store_true',
-        help='Output log file for each job')
+    parser.add_argument(
+        '--log',
+        default=False,
+        action='store_true',
+        help='Output log file for each job',
+    )
     # print information about processing run
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of processing run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of processing run',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -1036,18 +1300,20 @@ def main():
             RECONSTRUCT_FILE=args.reconstruct_file,
             LANDMASK=args.mask,
             OUTPUT_DIRECTORY=args.output_directory,
-            MODE=args.mode)
+            MODE=args.mode,
+        )
     except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
-        if args.log:# write failed job completion log file
+        if args.log:  # write failed job completion log file
             output_error_log_file(args)
     else:
-        if args.log:# write successful job completion log file
-            output_log_file(args,output_files)
+        if args.log:  # write successful job completion log file
+            output_log_file(args, output_files)
+
 
 # run main program
 if __name__ == '__main__':

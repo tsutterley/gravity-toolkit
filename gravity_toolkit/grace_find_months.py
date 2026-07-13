@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 grace_find_months.py
 Written by Tyler Sutterley (05/2023)
 
@@ -51,9 +51,11 @@ UPDATE HISTORY:
     Updated 09/2013: missing periods for for CNES
     Written 05/2013
 """
+
 import pathlib
 import numpy as np
 from gravity_toolkit.grace_date import grace_date
+
 
 def grace_find_months(base_dir, PROC, DREL, DSET='GSM'):
     """
@@ -113,9 +115,9 @@ def grace_find_months(base_dir, PROC, DREL, DSET='GSM'):
         grace_date(base_dir, PROC=PROC, DREL=DREL, DSET=DSET, OUTPUT=True)
 
     # names and formats of GRACE/GRACE-FO date ascii file
-    names = ('t','mon','styr','stday','endyr','endday','total')
-    formats = ('f','i','i','i','i','i','i')
-    dtype = np.dtype({'names':names, 'formats':formats})
+    names = ('t', 'mon', 'styr', 'stday', 'endyr', 'endday', 'total')
+    formats = ('f', 'i', 'i', 'i', 'i', 'i', 'i')
+    dtype = np.dtype({'names': names, 'formats': formats})
     # read GRACE/GRACE-FO date ascii file
     # skip the header row and extract dates (decimal format) and months
     date_input = np.loadtxt(grace_date_file, skiprows=1, dtype=dtype)
@@ -132,7 +134,7 @@ def grace_find_months(base_dir, PROC, DREL, DSET='GSM'):
     var_info['missing'] = sorted(set(all_months) - set(date_input['mon']))
     # If CNES RL01/2: simply convert into numpy array
     # else: remove months 1-3 and convert into numpy array
-    if ((PROC == 'CNES') & (DREL in ('RL01','RL02'))):
+    if (PROC == 'CNES') & (DREL in ('RL01', 'RL02')):
         var_info['missing'] = np.array(var_info['missing'], dtype=np.int64)
     else:
         var_info['missing'] = np.array(var_info['missing'][3:], dtype=np.int64)

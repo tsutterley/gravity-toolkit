@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 gfz_icgem_costg_ftp.py
 Written by Tyler Sutterley (05/2023)
 Syncs GRACE/GRACE-FO/Swarm COST-G data from the GFZ International
@@ -45,6 +45,7 @@ UPDATE HISTORY:
     Updated 10/2021: using python logging for handling verbose output
     Written 09/2021
 """
+
 from __future__ import print_function
 
 import sys
@@ -60,31 +61,41 @@ import argparse
 import posixpath
 import gravity_toolkit as gravtk
 
+
 # PURPOSE: create and compile regular expression operator to find files
 def compile_regex_pattern(MISSION, DSET):
-    if ((DSET == 'GSM') and (MISSION == 'Swarm')):
+    if (DSET == 'GSM') and (MISSION == 'Swarm'):
         # regular expression operators for Swarm data
-        regex=r'(SW)_(.*?)_(EGF_SHA_2)__(.*?)_(.*?)_(.*?)(\.gfc|\.ZIP)'
-    elif ((DSET != 'GSM') and (MISSION == 'Swarm')):
-        regex=r'(GAA|GAB|GAC|GAD)_Swarm_(\d+)_(\d{2})_(\d{4})(\.gfc|\.ZIP)'
+        regex = r'(SW)_(.*?)_(EGF_SHA_2)__(.*?)_(.*?)_(.*?)(\.gfc|\.ZIP)'
+    elif (DSET != 'GSM') and (MISSION == 'Swarm'):
+        regex = r'(GAA|GAB|GAC|GAD)_Swarm_(\d+)_(\d{2})_(\d{4})(\.gfc|\.ZIP)'
     else:
-        regex=rf'{DSET}-2_(.*?)\.gfc$'
+        regex = rf'{DSET}-2_(.*?)\.gfc$'
     # return the compiled regular expression operator used to find files
     return re.compile(regex, re.VERBOSE)
 
-# PURPOSE: sync local GRACE/GRACE-FO/Swarm files with GFZ ICGEM server
-def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], RELEASE=None, TIMEOUT=None,
-    LOG=False, LIST=False, CLOBBER=False, CHECKSUM=False, MODE=None):
 
+# PURPOSE: sync local GRACE/GRACE-FO/Swarm files with GFZ ICGEM server
+def gfz_icgem_costg_ftp(
+    DIRECTORY,
+    MISSION=[],
+    RELEASE=None,
+    TIMEOUT=None,
+    LOG=False,
+    LIST=False,
+    CLOBBER=False,
+    CHECKSUM=False,
+    MODE=None,
+):
     # check if directory exists and recursively create if not
     DIRECTORY = pathlib.Path(DIRECTORY).expanduser().absolute()
     DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
 
     # dealiasing datasets for each mission
     DSET = {}
-    DSET['Grace'] = ['GAC','GSM']
+    DSET['Grace'] = ['GAC', 'GSM']
     DSET['Grace-FO'] = ['GSM']
-    DSET['Swarm'] = ['GAA','GAB','GAC','GAD','GSM']
+    DSET['Swarm'] = ['GAA', 'GAB', 'GAC', 'GAD', 'GSM']
     # local subdirectory for data
     LOCAL = {}
     LOCAL['Grace'] = 'COSTG'
@@ -95,7 +106,7 @@ def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], RELEASE=None, TIMEOUT=None,
     if LOG:
         # output to log file
         # format: GFZ_ICGEM_COST-G_sync_2002-04-01.log
-        today = time.strftime('%Y-%m-%d',time.localtime())
+        today = time.strftime('%Y-%m-%d', time.localtime())
         LOGFILE = DIRECTORY.joinpath(f'GFZ_ICGEM_COST-G_sync_{today}.log')
         logging.basicConfig(filename=LOGFILE, level=logging.INFO)
         logging.info(f'GFZ ICGEM COST-G Sync Log ({today})')
@@ -121,33 +132,42 @@ def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], RELEASE=None, TIMEOUT=None,
         # compile the regular expression operator to find files
         R1 = compile_regex_pattern(MISSION, ds)
         # set the remote path to download files
-        if ds in ('GAA','GAB','GAC','GAD') and (MISSION == 'Swarm'):
-            remote_path = [ftp.host,'02_COST-G',MISSION,'GAX_products',ds]
-        elif ds in ('GAA','GAB','GAC','GAD') and (MISSION != 'Swarm'):
-            remote_path = [ftp.host,'02_COST-G',MISSION,'GAX_products']
-        elif (MISSION == 'Swarm'):
-            remote_path = [ftp.host,'02_COST-G',MISSION,'40x40']
-        elif (MISSION == 'Grace'):
-            remote_path = [ftp.host,'02_COST-G',MISSION,'unfiltered']
-        elif (MISSION == 'Grace-FO'):
-            remote_path = [ftp.host,'02_COST-G',MISSION]
+        if ds in ('GAA', 'GAB', 'GAC', 'GAD') and (MISSION == 'Swarm'):
+            remote_path = [ftp.host, '02_COST-G', MISSION, 'GAX_products', ds]
+        elif ds in ('GAA', 'GAB', 'GAC', 'GAD') and (MISSION != 'Swarm'):
+            remote_path = [ftp.host, '02_COST-G', MISSION, 'GAX_products']
+        elif MISSION == 'Swarm':
+            remote_path = [ftp.host, '02_COST-G', MISSION, '40x40']
+        elif MISSION == 'Grace':
+            remote_path = [ftp.host, '02_COST-G', MISSION, 'unfiltered']
+        elif MISSION == 'Grace-FO':
+            remote_path = [ftp.host, '02_COST-G', MISSION]
         # get filenames from remote directory
-        remote_files,remote_mtimes = gravtk.utilities.ftp_list(
-            remote_path, timeout=TIMEOUT, basename=True, pattern=R1,
-            sort=True)
+        remote_files, remote_mtimes = gravtk.utilities.ftp_list(
+            remote_path, timeout=TIMEOUT, basename=True, pattern=R1, sort=True
+        )
         # download the file from the ftp server
-        for fi,remote_mtime in zip(remote_files,remote_mtimes):
+        for fi, remote_mtime in zip(remote_files, remote_mtimes):
             # remote and local versions of the file
             remote_path.append(fi)
             local_file = local_dir.joinpath(fi)
-            ftp_mirror_file(ftp, remote_path, remote_mtime,
-                local_file, TIMEOUT=TIMEOUT, LIST=LIST,
-                CLOBBER=CLOBBER, CHECKSUM=CHECKSUM, MODE=MODE)
+            ftp_mirror_file(
+                ftp,
+                remote_path,
+                remote_mtime,
+                local_file,
+                TIMEOUT=TIMEOUT,
+                LIST=LIST,
+                CLOBBER=CLOBBER,
+                CHECKSUM=CHECKSUM,
+                MODE=MODE,
+            )
             # remove the file from the remote path list
             remote_path.remove(fi)
         # find local GRACE/GRACE-FO/Swarm files to create index
-        grace_files = sorted([f.name for f in local_dir.iterdir()
-            if R1.match(f.name)])
+        grace_files = sorted(
+            [f.name for f in local_dir.iterdir() if R1.match(f.name)]
+        )
         # write each file to an index
         index_file = local_dir.joinpath('index.txt')
         with index_file.open(mode='w', encoding='utf8') as fid:
@@ -163,10 +183,20 @@ def gfz_icgem_costg_ftp(DIRECTORY, MISSION=[], RELEASE=None, TIMEOUT=None,
     if LOG:
         LOGFILE.chmod(mode=MODE)
 
+
 # PURPOSE: pull file from a remote host checking if file exists locally
 # and if the remote file is newer than the local file
-def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
-    TIMEOUT=None,LIST=False,CLOBBER=False,CHECKSUM=False,MODE=0o775):
+def ftp_mirror_file(
+    ftp,
+    remote_path,
+    remote_mtime,
+    local_file,
+    TIMEOUT=None,
+    LIST=False,
+    CLOBBER=False,
+    CHECKSUM=False,
+    MODE=0o775,
+):
     # if file exists in file system: check if remote file is newer
     TEST = False
     OVERWRITE = ' (clobber)'
@@ -177,20 +207,20 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
         # open the local_file in binary read mode
         local_hash = gravtk.utilities.get_hash(local_file)
         # copy remote file contents to bytesIO object
-        remote_buffer = gravtk.utilities.from_ftp(remote_path,
-            timeout=TIMEOUT)
+        remote_buffer = gravtk.utilities.from_ftp(remote_path, timeout=TIMEOUT)
         # generate checksum hash for remote file
         remote_hash = hashlib.md5(remote_buffer.getvalue()).hexdigest()
         # compare checksums
-        if (local_hash != remote_hash):
+        if local_hash != remote_hash:
             TEST = True
             OVERWRITE = f' (checksums: {local_hash} {remote_hash})'
     elif local_file.exists():
         # check last modification time of local file
         local_mtime = local_file.stat().st_mtime
         # if remote file is newer: overwrite the local file
-        if (gravtk.utilities.even(remote_mtime) >
-            gravtk.utilities.even(local_mtime)):
+        if gravtk.utilities.even(remote_mtime) > gravtk.utilities.even(
+            local_mtime
+        ):
             TEST = True
             OVERWRITE = ' (overwrite)'
     else:
@@ -199,7 +229,7 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
     # if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         # Printing files transferred
-        remote_ftp_url = posixpath.join('ftp://',*remote_path)
+        remote_ftp_url = posixpath.join('ftp://', *remote_path)
         logging.info(f'{remote_ftp_url} -->')
         logging.info(f'\t{str(local_file)}{OVERWRITE}\n')
         # if executing copy command (not only printing the files)
@@ -220,6 +250,7 @@ def ftp_mirror_file(ftp,remote_path,remote_mtime,local_file,
             os.utime(local_file, (local_file.stat().st_atime, remote_mtime))
             local_file.chmod(mode=MODE)
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
@@ -229,62 +260,107 @@ def arguments():
     )
     # command line parameters
     # working data directory
-    parser.add_argument('--directory','-D',
+    parser.add_argument(
+        '--directory',
+        '-D',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Working data directory')
+        help='Working data directory',
+    )
     # mission (GRACE, GRACE Follow-On or Swarm)
-    choices = ['Grace','Grace-FO','Swarm']
-    parser.add_argument('--mission','-m',
-        type=str, nargs='+',
-        default=['Grace','Grace-FO','Swarm'], choices=choices,
-        help='Mission to sync between GRACE, GRACE-FO and Swarm')
+    choices = ['Grace', 'Grace-FO', 'Swarm']
+    parser.add_argument(
+        '--mission',
+        '-m',
+        type=str,
+        nargs='+',
+        default=['Grace', 'Grace-FO', 'Swarm'],
+        choices=choices,
+        help='Mission to sync between GRACE, GRACE-FO and Swarm',
+    )
     # data release
-    parser.add_argument('--release','-r',
-        type=str, default='RL01', choices=['RL01'],
-        help='Data release to sync')
+    parser.add_argument(
+        '--release',
+        '-r',
+        type=str,
+        default='RL01',
+        choices=['RL01'],
+        help='Data release to sync',
+    )
     # connection timeout
-    parser.add_argument('--timeout','-t',
-        type=int, default=360,
-        help='Timeout in seconds for blocking operations')
+    parser.add_argument(
+        '--timeout',
+        '-t',
+        type=int,
+        default=360,
+        help='Timeout in seconds for blocking operations',
+    )
     # Output log file in form
     # GFZ_ICGEM_COST-G_sync_2002-04-01.log
-    parser.add_argument('--log','-l',
-        default=False, action='store_true',
-        help='Output log file')
+    parser.add_argument(
+        '--log',
+        '-l',
+        default=False,
+        action='store_true',
+        help='Output log file',
+    )
     # sync options
-    parser.add_argument('--list','-L',
-        default=False, action='store_true',
-        help='Only print files that could be transferred')
-    parser.add_argument('--checksum',
-        default=False, action='store_true',
-        help='Compare hashes to check for overwriting existing data')
-    parser.add_argument('--clobber','-C',
-        default=False, action='store_true',
-        help='Overwrite existing data in transfer')
+    parser.add_argument(
+        '--list',
+        '-L',
+        default=False,
+        action='store_true',
+        help='Only print files that could be transferred',
+    )
+    parser.add_argument(
+        '--checksum',
+        default=False,
+        action='store_true',
+        help='Compare hashes to check for overwriting existing data',
+    )
+    parser.add_argument(
+        '--clobber',
+        '-C',
+        default=False,
+        action='store_true',
+        help='Overwrite existing data in transfer',
+    )
     # permissions mode of the directories and files synced (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permission mode of directories and files synced')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permission mode of directories and files synced',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # check internet connection before attempting to run program
     HOST = 'icgem.gfz-potsdam.de'
     if gravtk.utilities.check_ftp_connection(HOST):
         for m in args.mission:
-            gfz_icgem_costg_ftp(args.directory, MISSION=m,
-                RELEASE=args.release, TIMEOUT=args.timeout,
-                LIST=args.list, LOG=args.log, CLOBBER=args.clobber,
-                CHECKSUM=args.checksum, MODE=args.mode)
+            gfz_icgem_costg_ftp(
+                args.directory,
+                MISSION=m,
+                RELEASE=args.release,
+                TIMEOUT=args.timeout,
+                LIST=args.list,
+                LOG=args.log,
+                CLOBBER=args.clobber,
+                CHECKSUM=args.checksum,
+                MODE=args.mode,
+            )
     else:
         raise RuntimeError('Check internet connection')
+
 
 # run main program
 if __name__ == '__main__':

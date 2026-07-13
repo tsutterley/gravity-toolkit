@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 remove_mascon_reconstruct.py
 Written by Tyler Sutterley (05/2023)
 Removes reconstructed mascon files from the index file after running program
@@ -23,6 +23,7 @@ UPDATE HISTORY:
     Updated 08/2020: flake8 compatible regular expression strings
     Written 12/2019
 """
+
 from __future__ import print_function
 
 import sys
@@ -34,6 +35,7 @@ import argparse
 import traceback
 import gravity_toolkit as gravtk
 
+
 # PURPOSE: keep track of threads
 def info(args):
     logging.info(pathlib.Path(sys.argv[0]).name)
@@ -42,6 +44,7 @@ def info(args):
     if hasattr(os, 'getppid'):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
+
 
 # PURPOSE: Remove reconstructed spherical harmonic fields to free space
 def remove_mascon_reconstruct(RECONSTRUCT_FILE):
@@ -59,31 +62,39 @@ def remove_mascon_reconstruct(RECONSTRUCT_FILE):
         fi = pathlib.Path(fi).expanduser().absolute()
         fi.unlink()
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Removes reconstructed mascon files from the index file
             after running program
             """,
-        fromfile_prefix_chars="@"
+        fromfile_prefix_chars='@',
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # mascon reconstruct parameters
-    parser.add_argument('--reconstruct-file',
+    parser.add_argument(
+        '--reconstruct-file',
         type=pathlib.Path,
-        help='Reconstructed mascon time series file')
+        help='Reconstructed mascon time series file',
+    )
     # print information about processing run
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of processing run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of processing run',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -100,6 +111,7 @@ def main():
         # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
+
 
 # run main program
 if __name__ == '__main__':

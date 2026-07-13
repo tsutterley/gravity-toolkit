@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 tools.py
 Written by Tyler Sutterley (07/2026)
 Jupyter notebook, user interface and plotting tools
@@ -30,7 +30,7 @@ UPDATE HISTORY:
     Updated 07/2026: use np.radians and np.degrees for angle conversions
     Updated 11/2024: fix deprecated widget object copies
     Updated 04/2024: add widget for setting endpoint for accessing PODAAC data
-    	place colormap registration within try/except to check for existing
+        place colormap registration within try/except to check for existing
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: add wrap longitudes function to change convention
         improve typing for variables in docstrings
@@ -42,6 +42,7 @@ UPDATE HISTORY:
     Updated 12/2021: added custom colormap function for some common scales
     Written 09/2021
 """
+
 import os
 import re
 import copy
@@ -58,32 +59,32 @@ from gravity_toolkit.grace_find_months import grace_find_months
 try:
     import ipywidgets
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("ipywidgets not available", ImportWarning)
+    warnings.warn('ipywidgets not available', ImportWarning)
 try:
     import matplotlib.cm as cm
     import matplotlib.colors as colors
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("matplotlib not available", ImportWarning)
+    warnings.warn('matplotlib not available', ImportWarning)
 try:
     from tkinter import Tk, filedialog
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("tkinter not available", ImportWarning)
+    warnings.warn('tkinter not available', ImportWarning)
     filedialog = None
 try:
     import IPython.display
 except (AttributeError, ImportError, ModuleNotFoundError) as exc:
-    warnings.warn("IPython.display not available", ImportWarning)
+    warnings.warn('IPython.display not available', ImportWarning)
 # ignore warnings
 warnings.filterwarnings('ignore')
+
 
 # widgets for Jupyter notebooks
 class widgets:
     def __init__(self, **kwargs):
-        """Widgets and functions for running GRACE/GRACE-FO analyses
-        """
+        """Widgets and functions for running GRACE/GRACE-FO analyses"""
         # set default keyword arguments
         kwargs.setdefault('directory', pathlib.Path.cwd())
-        kwargs.setdefault('defaults', ['CSR','RL06','GSM',60])
+        kwargs.setdefault('defaults', ['CSR', 'RL06', 'GSM', 60])
         kwargs.setdefault('style', {})
         # set style
         self.style = copy.copy(kwargs['style'])
@@ -114,16 +115,15 @@ class widgets:
         )
         # button and label for directory selection
         self.directory_button = ipywidgets.Button(
-            description="Directory select",
-            mustexist="False",
-            width="30%",
+            description='Directory select',
+            mustexist='False',
+            width='30%',
         )
         # create hbox of directory selection
-        if os.environ.get("DISPLAY") and (filedialog is not None):
-            self.directory = ipywidgets.HBox([
-                self.directory_label,
-                self.directory_button
-            ])
+        if os.environ.get('DISPLAY') and (filedialog is not None):
+            self.directory = ipywidgets.HBox(
+                [self.directory_label, self.directory_button]
+            )
         else:
             self.directory = self.directory_label
         # connect directory select button with action
@@ -149,8 +149,7 @@ class widgets:
         )
 
     def set_directory(self, b):
-        """function for directory selection
-        """
+        """function for directory selection"""
         IPython.display.clear_output()
         root = Tk()
         root.withdraw()
@@ -208,12 +207,15 @@ class widgets:
         )
 
         # find available months for data product
-        total_months = grace_find_months(self.base_directory,
-            self.center.value, self.release.value,
-            DSET=self.product.value)
+        total_months = grace_find_months(
+            self.base_directory,
+            self.center.value,
+            self.release.value,
+            DSET=self.product.value,
+        )
         # select months to run
         # https://tsutterley.github.io/data/GRACE-Months.html
-        options=[str(m).zfill(3) for m in total_months['months']]
+        options = [str(m).zfill(3) for m in total_months['months']]
         self.months = ipywidgets.SelectMultiple(
             options=options,
             value=options,
@@ -229,23 +231,20 @@ class widgets:
         self.center.observe(self.update_months)
         self.release.observe(self.update_months)
 
-
     # function for setting the data release
     def set_release(self, sender):
-        """function for updating available releases
-        """
-        if (self.center.value == 'CNES'):
-            releases = ['RL01','RL02','RL03', 'RL04', 'RL05']
+        """function for updating available releases"""
+        if self.center.value == 'CNES':
+            releases = ['RL01', 'RL02', 'RL03', 'RL04', 'RL05']
         else:
             releases = ['RL04', 'RL05', 'RL06']
-        self.release.options=releases
-        self.release.value=releases[-1]
+        self.release.options = releases
+        self.release.value = releases[-1]
 
     # function for setting the data product
     def set_product(self, sender):
-        """function for updating available products
-        """
-        if (self.center.value == 'CNES'):
+        """function for updating available products"""
+        if self.center.value == 'CNES':
             products = {}
             products['RL01'] = ['GAC', 'GSM']
             products['RL02'] = ['GAA', 'GAB', 'GSM']
@@ -253,24 +252,26 @@ class widgets:
             products['RL04'] = ['GSM']
             products['RL05'] = ['GAA', 'GAB', 'GSM']
             valid_products = products[self.release.value]
-        elif (self.center.value == 'CSR'):
+        elif self.center.value == 'CSR':
             valid_products = ['GAC', 'GAD', 'GSM']
-        elif (self.center.value in ('GFZ','JPL')):
+        elif self.center.value in ('GFZ', 'JPL'):
             valid_products = ['GAA', 'GAB', 'GAC', 'GAD', 'GSM']
-        self.product.options=valid_products
-        self.product.value=self.defaults[2]
+        self.product.options = valid_products
+        self.product.value = self.defaults[2]
 
     # function for updating the available months
     def update_months(self, sender):
-        """function for updating available months
-        """
+        """function for updating available months"""
         # https://tsutterley.github.io/data/GRACE-Months.html
-        total_months = grace_find_months(self.base_directory,
-            self.center.value, self.release.value,
-            DSET=self.product.value)
-        options=[str(m).zfill(3) for m in total_months['months']]
-        self.months.options=options
-        self.months.value=options
+        total_months = grace_find_months(
+            self.base_directory,
+            self.center.value,
+            self.release.value,
+            DSET=self.product.value,
+        )
+        options = [str(m).zfill(3) for m in total_months['months']]
+        self.months.options = options
+        self.months.value = options
 
     def select_options(self, **kwargs):
         r"""
@@ -341,7 +342,7 @@ class widgets:
         # SLR C20
         C20_default = 'GSFC' if (self.product.value == 'GSM') else '[none]'
         self.C20 = ipywidgets.Dropdown(
-            options=['[none]','CSR','GSFC'],
+            options=['[none]', 'CSR', 'GSFC'],
             value=C20_default,
             description='SLR C20:',
             disabled=False,
@@ -350,7 +351,7 @@ class widgets:
 
         # SLR C21 and S21
         self.CS21 = ipywidgets.Dropdown(
-            options=['[none]','CSR'],
+            options=['[none]', 'CSR'],
             value='[none]',
             description='SLR CS21:',
             disabled=False,
@@ -359,7 +360,7 @@ class widgets:
 
         # SLR C22 and S22
         self.CS22 = ipywidgets.Dropdown(
-            options=['[none]','CSR'],
+            options=['[none]', 'CSR'],
             value='[none]',
             description='SLR CS22:',
             disabled=False,
@@ -369,7 +370,7 @@ class widgets:
         # SLR C30
         C30_default = 'GSFC' if (self.product.value == 'GSM') else '[none]'
         self.C30 = ipywidgets.Dropdown(
-            options=['[none]','CSR','GSFC'],
+            options=['[none]', 'CSR', 'GSFC'],
             value=C30_default,
             description='SLR C30:',
             disabled=False,
@@ -378,7 +379,7 @@ class widgets:
 
         # SLR C40
         self.C40 = ipywidgets.Dropdown(
-            options=['[none]','CSR','GSFC'],
+            options=['[none]', 'CSR', 'GSFC'],
             value='[none]',
             description='SLR C40:',
             disabled=False,
@@ -387,7 +388,7 @@ class widgets:
 
         # SLR C50
         self.C50 = ipywidgets.Dropdown(
-            options=['[none]','CSR','GSFC'],
+            options=['[none]', 'CSR', 'GSFC'],
             value='[none]',
             description='SLR C50:',
             disabled=False,
@@ -395,8 +396,13 @@ class widgets:
         )
 
         # Pole Tide Drift (Wahr et al., 2015) for Release-5
-        poletide_default = True if ((self.release.value == 'RL05')
-            and (self.product.value == 'GSM')) else False
+        poletide_default = (
+            True
+            if (
+                (self.release.value == 'RL05') and (self.product.value == 'GSM')
+            )
+            else False
+        )
         self.pole_tide = ipywidgets.Checkbox(
             value=poletide_default,
             description='Pole Tide Corrections',
@@ -426,39 +432,40 @@ class widgets:
 
     # function for setting the spherical harmonic degree
     def set_max_degree(self, sender):
-        """function for setting max degree of a product
-        """
-        if (self.center == 'CNES'):
-            LMAX = dict(RL01=50,RL02=50,RL03=80,RL04=90,RL05=90)
-        elif (self.center in ('CSR','JPL')):
+        """function for setting max degree of a product"""
+        if self.center == 'CNES':
+            LMAX = dict(RL01=50, RL02=50, RL03=80, RL04=90, RL05=90)
+        elif self.center in ('CSR', 'JPL'):
             # CSR RL04/5/6 at LMAX 60
             # JPL RL04/5/6 at LMAX 60
-            LMAX = dict(RL04=60,RL05=60,RL06=60)
-        elif (self.center == 'GFZ'):
+            LMAX = dict(RL04=60, RL05=60, RL06=60)
+        elif self.center == 'GFZ':
             # GFZ RL04/5 at LMAX 90
             # GFZ RL06 at LMAX 60
-            LMAX = dict(RL04=90,RL05=90,RL06=60)
-        self.lmax.max=LMAX[self.release.value]
-        self.lmax.value=LMAX[self.release.value]
+            LMAX = dict(RL04=90, RL05=90, RL06=60)
+        self.lmax.max = LMAX[self.release.value]
+        self.lmax.value = LMAX[self.release.value]
 
     # function for setting the spherical harmonic order
     def set_max_order(self, sender):
-        """function for setting default max order
-        """
-        self.mmax.max=self.lmax.value
-        self.mmax.value=self.lmax.value
+        """function for setting default max order"""
+        self.mmax.max = self.lmax.value
+        self.mmax.value = self.lmax.value
 
     # function for setting pole tide drift corrections for Release-5
     def set_pole_tide(self, sender):
-        """function for setting default pole tide correction for a release
-        """
-        self.pole_tide.value = True if ((self.release.value == 'RL05')
-            and (self.product.value == 'GSM')) else False
+        """function for setting default pole tide correction for a release"""
+        self.pole_tide.value = (
+            True
+            if (
+                (self.release.value == 'RL05') and (self.product.value == 'GSM')
+            )
+            else False
+        )
 
     # function for setting atmospheric jump corrections for Release-5
     def set_atm_corr(self, sender):
-        """function for setting default ATM correction for a release
-        """
+        """function for setting default ATM correction for a release"""
         self.atm.value = True if (self.release.value == 'RL05') else False
 
     def select_corrections(self, **kwargs):
@@ -500,7 +507,9 @@ class widgets:
             Dropdown menu widget for setting output units
         """
         # set default keyword arguments
-        kwargs.setdefault('units', ['cmwe','mmGH','mmCU',u'\u03BCGal','mbar'])
+        kwargs.setdefault(
+            'units', ['cmwe', 'mmGH', 'mmCU', '\u03bcGal', 'mbar']
+        )
 
         # set the GIA file
         # files come in different formats depending on the group
@@ -512,15 +521,12 @@ class widgets:
         )
         # button and label for input file selection
         self.GIA_button = ipywidgets.Button(
-            description="File select",
-            width="30%",
+            description='File select',
+            width='30%',
         )
         # create hbox of GIA file selection
-        if os.environ.get("DISPLAY") and (filedialog is not None):
-            self.GIA_file = ipywidgets.HBox([
-                self.GIA_label,
-                self.GIA_button
-            ])
+        if os.environ.get('DISPLAY') and (filedialog is not None):
+            self.GIA_file = ipywidgets.HBox([self.GIA_label, self.GIA_button])
         else:
             self.GIA_file = self.GIA_label
         # connect fileselect button with action
@@ -539,9 +545,21 @@ class widgets:
         # ascii: GIA reformatted to ascii
         # netCDF4: GIA reformatted to netCDF4
         # HDF5: GIA reformatted to HDF5
-        gia_list = ['[None]','IJ05-R2','W12a','SM09','ICE6G',
-            'Wu10','AW13-ICE6G','AW13-IJ05','Caron','ICE6G-D',
-            'ascii','netCDF4','HDF5']
+        gia_list = [
+            '[None]',
+            'IJ05-R2',
+            'W12a',
+            'SM09',
+            'ICE6G',
+            'Wu10',
+            'AW13-ICE6G',
+            'AW13-IJ05',
+            'Caron',
+            'ICE6G-D',
+            'ascii',
+            'netCDF4',
+            'HDF5',
+        ]
         self.GIA = ipywidgets.Dropdown(
             options=gia_list,
             value='[None]',
@@ -560,14 +578,13 @@ class widgets:
         )
         # button and label for input file selection
         self.remove_button = ipywidgets.Button(
-            description="File select",
+            description='File select',
         )
         # create hbox of remove file selection
-        if os.environ.get("DISPLAY") and (filedialog is not None):
-            self.remove_file = ipywidgets.HBox([
-                self.remove_label,
-                self.remove_button
-            ])
+        if os.environ.get('DISPLAY') and (filedialog is not None):
+            self.remove_file = ipywidgets.HBox(
+                [self.remove_label, self.remove_button]
+            )
         else:
             self.remove_file = self.remove_label
         # connect fileselect button with action
@@ -580,8 +597,14 @@ class widgets:
         # index (ascii): index of monthly ascii files
         # index (netCDF4): index of monthly netCDF4 files
         # index (HDF5): index of monthly HDF5 files
-        remove_list = ['[None]','netCDF4','HDF5',
-            'index (ascii)','index (netCDF4)','index (HDF5)']
+        remove_list = [
+            '[None]',
+            'netCDF4',
+            'HDF5',
+            'index (ascii)',
+            'index (netCDF4)',
+            'index (HDF5)',
+        ]
         self.remove_format = ipywidgets.Dropdown(
             options=remove_list,
             value='[None]',
@@ -607,15 +630,12 @@ class widgets:
         )
         # button and label for input file selection
         self.mask_button = ipywidgets.Button(
-            description="File select",
-            width="30%",
+            description='File select',
+            width='30%',
         )
         # create hbox of remove file selection
-        if os.environ.get("DISPLAY") and (filedialog is not None):
-            self.mask = ipywidgets.HBox([
-                self.mask_label,
-                self.mask_button
-            ])
+        if os.environ.get('DISPLAY') and (filedialog is not None):
+            self.mask = ipywidgets.HBox([self.mask_label, self.mask_button])
         else:
             self.mask = self.mask_label
         # connect fileselect button with action
@@ -676,62 +696,56 @@ class widgets:
         )
 
     def select_GIA_file(self, b):
-        """function for GIA file selection
-        """
+        """function for GIA file selection"""
         IPython.display.clear_output()
         root = Tk()
         root.withdraw()
         root.call('wm', 'attributes', '.', '-topmost', True)
-        filetypes = (("All Files", "*.*"))
+        filetypes = ('All Files', '*.*')
         b.files = filedialog.askopenfilename(
-            filetypes=filetypes,
-            multiple=False)
+            filetypes=filetypes, multiple=False
+        )
         self.GIA_label.value = b.files
 
     def select_remove_file(self, b):
-        """function for removed file selection
-        """
+        """function for removed file selection"""
         IPython.display.clear_output()
         root = Tk()
         root.withdraw()
         root.call('wm', 'attributes', '.', '-topmost', True)
-        filetypes = (("ascii file", "*.txt"),
-            ("HDF5 file", "*.h5"),
-            ("netCDF file", "*.nc"),
-            ("All Files", "*.*"))
+        filetypes = (
+            ('ascii file', '*.txt'),
+            ('HDF5 file', '*.h5'),
+            ('netCDF file', '*.nc'),
+            ('All Files', '*.*'),
+        )
         b.files = filedialog.askopenfilename(
-            defaultextension='nc',
-            filetypes=filetypes,
-            multiple=True)
+            defaultextension='nc', filetypes=filetypes, multiple=True
+        )
         self.remove_files.extend(b.files)
         self.set_removelabel()
 
     def set_removefile(self, sender):
-        """function for updating removed file list
-        """
+        """function for updating removed file list"""
         if self.remove_label.value:
             self.remove_files = self.remove_label.value.split(',')
         else:
             self.remove_files = []
 
     def set_removelabel(self):
-        """function for updating removed file label
-        """
+        """function for updating removed file label"""
         self.remove_label.value = ','.join(self.remove_files)
 
     def select_mask_file(self, b):
-        """function for mask file selection
-        """
+        """function for mask file selection"""
         IPython.display.clear_output()
         root = Tk()
         root.withdraw()
         root.call('wm', 'attributes', '.', '-topmost', True)
-        filetypes = (("netCDF file", "*.nc"),
-            ("All Files", "*.*"))
+        filetypes = (('netCDF file', '*.nc'), ('All Files', '*.*'))
         b.files = filedialog.askopenfilename(
-            defaultextension='nc',
-            filetypes=filetypes,
-            multiple=False)
+            defaultextension='nc', filetypes=filetypes, multiple=False
+        )
         self.mask_label.value = b.files
 
     def select_output(self, **kwargs):
@@ -746,7 +760,7 @@ class widgets:
         # set default keyword arguments
         # dropdown menu for setting output data format
         self.output_format = ipywidgets.Dropdown(
-            options=['[None]','netCDF4', 'HDF5'],
+            options=['[None]', 'netCDF4', 'HDF5'],
             value='[None]',
             description='Output:',
             disabled=False,
@@ -755,33 +769,29 @@ class widgets:
 
     @property
     def base_directory(self):
-        """Returns the data directory
-        """
+        """Returns the data directory"""
         return pathlib.Path(self.directory_label.value).expanduser().absolute()
 
     @property
     def GIA_model(self):
-        """Returns the GIA model file
-        """
+        """Returns the GIA model file"""
         return pathlib.Path(self.GIA_label.value).expanduser().absolute()
 
     @property
     def landmask(self):
-        """Returns the land-sea mask file
-        """
+        """Returns the land-sea mask file"""
         return pathlib.Path(self.mask_label.value).expanduser().absolute()
 
     @property
     def unit_index(self):
-        """Returns the index for output spatial units
-        """
+        """Returns the index for output spatial units"""
         return self.units.index + 1
 
     @property
     def format(self):
-        """Returns the output format string
-        """
+        """Returns the output format string"""
         return self.output_format.value
+
 
 class colormap:
     """
@@ -799,6 +809,7 @@ class colormap:
     reverse
         Checkbox widget for reversing the output colormap
     """
+
     def __init__(self, **kwargs):
         # set default keyword arguments
         kwargs.setdefault('vmin', None)
@@ -813,7 +824,7 @@ class colormap:
         self.vmax = copy.copy(kwargs['vmax'])
         # slider for range of color bar
         self.range = ipywidgets.IntRangeSlider(
-            value=[self.vmin,self.vmax],
+            value=[self.vmin, self.vmax],
             min=self.vmin,
             max=self.vmax,
             step=1,
@@ -826,11 +837,11 @@ class colormap:
         )
 
         # slider for steps in color bar
-        step = (self.vmax-self.vmin)//kwargs['steps']
+        step = (self.vmax - self.vmin) // kwargs['steps']
         self.step = ipywidgets.IntSlider(
             value=step,
             min=0,
-            max=self.vmax-self.vmin,
+            max=self.vmax - self.vmin,
             step=1,
             description='Plot Step:',
             disabled=False,
@@ -846,20 +857,65 @@ class colormap:
         # (no reversed, qualitative or miscellaneous)
         self.cmaps_listed = copy.copy(kwargs['cmaps_listed'])
         self.cmaps_listed['Perceptually Uniform Sequential'] = [
-            'viridis','plasma','inferno','magma','cividis']
-        self.cmaps_listed['Sequential'] = ['Greys','Purples',
-            'Blues','Greens','Oranges','Reds','YlOrBr','YlOrRd',
-            'OrRd','PuRd','RdPu','BuPu','GnBu','PuBu','YlGnBu',
-            'PuBuGn','BuGn','YlGn']
-        self.cmaps_listed['Sequential (2)'] = ['binary','gist_yarg',
-            'gist_gray','gray','bone','pink','spring','summer',
-            'autumn','winter','cool','Wistia','hot','afmhot',
-            'gist_heat','copper']
-        self.cmaps_listed['Diverging'] = ['PiYG','PRGn','BrBG',
-            'PuOr','RdGy','RdBu','RdYlBu','RdYlGn','Spectral',
-            'coolwarm', 'bwr','seismic']
-        self.cmaps_listed['Cyclic'] = ['twilight',
-            'twilight_shifted','hsv']
+            'viridis',
+            'plasma',
+            'inferno',
+            'magma',
+            'cividis',
+        ]
+        self.cmaps_listed['Sequential'] = [
+            'Greys',
+            'Purples',
+            'Blues',
+            'Greens',
+            'Oranges',
+            'Reds',
+            'YlOrBr',
+            'YlOrRd',
+            'OrRd',
+            'PuRd',
+            'RdPu',
+            'BuPu',
+            'GnBu',
+            'PuBu',
+            'YlGnBu',
+            'PuBuGn',
+            'BuGn',
+            'YlGn',
+        ]
+        self.cmaps_listed['Sequential (2)'] = [
+            'binary',
+            'gist_yarg',
+            'gist_gray',
+            'gray',
+            'bone',
+            'pink',
+            'spring',
+            'summer',
+            'autumn',
+            'winter',
+            'cool',
+            'Wistia',
+            'hot',
+            'afmhot',
+            'gist_heat',
+            'copper',
+        ]
+        self.cmaps_listed['Diverging'] = [
+            'PiYG',
+            'PRGn',
+            'BrBG',
+            'PuOr',
+            'RdGy',
+            'RdBu',
+            'RdYlBu',
+            'RdYlGn',
+            'Spectral',
+            'coolwarm',
+            'bwr',
+            'seismic',
+        ]
+        self.cmaps_listed['Cyclic'] = ['twilight', 'twilight_shifted', 'hsv']
         # create list of available colormaps in program
         cmap_list = []
         for val in self.cmaps_listed.values():
@@ -885,36 +941,32 @@ class colormap:
 
     @property
     def _r(self):
-        """return string for reversed Matplotlib colormaps
-        """
+        """return string for reversed Matplotlib colormaps"""
         cmap_reverse_flag = '_r' if self.reverse.value else ''
         return cmap_reverse_flag
 
     @property
     def value(self):
-        """return string for Matplotlib colormaps
-        """
+        """return string for Matplotlib colormaps"""
         return copy.copy(cm.get_cmap(self.name.value + self._r))
 
     @property
     def norm(self):
-        """return normalization for Matplotlib
-        """
-        cmin,cmax = self.range.value
-        return colors.Normalize(vmin=cmin,vmax=cmax)
+        """return normalization for Matplotlib"""
+        cmin, cmax = self.range.value
+        return colors.Normalize(vmin=cmin, vmax=cmax)
 
     @property
     def levels(self):
-        """return tick steps for Matplotlib colorbars
-        """
-        cmin,cmax = self.range.value
-        return [l for l in range(cmin,cmax+self.step.value,self.step.value)]
+        """return tick steps for Matplotlib colorbars"""
+        cmin, cmax = self.range.value
+        return [l for l in range(cmin, cmax + self.step.value, self.step.value)]
 
     @property
     def label(self):
-        """return tick labels for Matplotlib colorbars
-        """
+        """return tick labels for Matplotlib colorbars"""
         return [f'{ct:0.0f}' for ct in self.levels]
+
 
 def from_cpt(filename, use_extremes=True, **kwargs):
     """
@@ -944,15 +996,15 @@ def from_cpt(filename, use_extremes=True, **kwargs):
     rx = re.compile(r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?')
 
     # create list objects for x, r, g, b
-    x,r,g,b = ([],[],[],[])
+    x, r, g, b = ([], [], [], [])
     # assume RGB color model
-    colorModel = "RGB"
+    colorModel = 'RGB'
     # back, forward and no data flags
-    flags = dict(B=None,F=None,N=None)
+    flags = dict(B=None, F=None, N=None)
     for line in file_contents:
         # find back, forward and no-data flags
-        model = re.search(r'COLOR_MODEL.*(HSV|RGB)',line,re.I)
-        BFN = re.match(r'[BFN]',line,re.I)
+        model = re.search(r'COLOR_MODEL.*(HSV|RGB)', line, re.I)
+        BFN = re.match(r'[BFN]', line, re.I)
         # parse non-color data lines
         if model:
             # find color model
@@ -961,11 +1013,11 @@ def from_cpt(filename, use_extremes=True, **kwargs):
         elif BFN:
             flags[BFN.group(0)] = [float(i) for i in rx.findall(line)]
             continue
-        elif re.search(r"#",line):
+        elif re.search(r'#', line):
             # skip over commented header text
             continue
         # find numerical instances within line
-        x1,r1,g1,b1,x2,r2,g2,b2 = rx.findall(line)
+        x1, r1, g1, b1, x2, r2, g2, b2 = rx.findall(line)
         # append colors and locations to lists
         x.append(float(x1))
         r.append(float(r1))
@@ -978,47 +1030,49 @@ def from_cpt(filename, use_extremes=True, **kwargs):
     b.append(float(b2))
 
     # convert input colormap to output
-    xNorm = [None]*len(x)
-    if (colorModel == "HSV"):
+    xNorm = [None] * len(x)
+    if colorModel == 'HSV':
         # convert HSV (hue-saturation-value) to RGB
         # calculate normalized locations (0:1)
-        for i,xi in enumerate(x):
-            rr,gg,bb = colorsys.hsv_to_rgb(r[i]/360.,g[i],b[i])
+        for i, xi in enumerate(x):
+            rr, gg, bb = colorsys.hsv_to_rgb(r[i] / 360.0, g[i], b[i])
             r[i] = rr
             g[i] = gg
             b[i] = bb
-            xNorm[i] = (xi - x[0])/(x[-1] - x[0])
-    elif (colorModel == "RGB"):
+            xNorm[i] = (xi - x[0]) / (x[-1] - x[0])
+    elif colorModel == 'RGB':
         # normalize hexadecimal RGB triple from (0:255) to (0:1)
         # calculate normalized locations (0:1)
-        for i,xi in enumerate(x):
+        for i, xi in enumerate(x):
             r[i] /= 255.0
             g[i] /= 255.0
             b[i] /= 255.0
-            xNorm[i] = (xi - x[0])/(x[-1] - x[0])
+            xNorm[i] = (xi - x[0]) / (x[-1] - x[0])
 
     # output RGB lists containing normalized location and colors
-    cdict = dict(red=[None]*len(x),green=[None]*len(x),blue=[None]*len(x))
-    for i,xi in enumerate(x):
-        cdict['red'][i] = [xNorm[i],r[i],r[i]]
-        cdict['green'][i] = [xNorm[i],g[i],g[i]]
-        cdict['blue'][i] = [xNorm[i],b[i],b[i]]
+    cdict = dict(
+        red=[None] * len(x), green=[None] * len(x), blue=[None] * len(x)
+    )
+    for i, xi in enumerate(x):
+        cdict['red'][i] = [xNorm[i], r[i], r[i]]
+        cdict['green'][i] = [xNorm[i], g[i], g[i]]
+        cdict['blue'][i] = [xNorm[i], b[i], b[i]]
 
     # create colormap for use in matplotlib
     cmap = colors.LinearSegmentedColormap(name, cdict, **kwargs)
     # set flags for under, over and bad values
-    extremes = dict(under=None,over=None,bad=None)
-    for key,attr in zip(['B','F','N'],['under','over','bad']):
+    extremes = dict(under=None, over=None, bad=None)
+    for key, attr in zip(['B', 'F', 'N'], ['under', 'over', 'bad']):
         if flags[key] is not None:
-            r,g,b = flags[key]
-            if (colorModel == "HSV"):
+            r, g, b = flags[key]
+            if colorModel == 'HSV':
                 # convert HSV (hue-saturation-value) to RGB
-                r,g,b = colorsys.hsv_to_rgb(r/360.,g,b)
-            elif (colorModel == 'RGB'):
+                r, g, b = colorsys.hsv_to_rgb(r / 360.0, g, b)
+            elif colorModel == 'RGB':
                 # normalize hexadecimal RGB triple from (0:255) to (0:1)
-                r,g,b = (r/255.0,g/255.0,b/255.0)
+                r, g, b = (r / 255.0, g / 255.0, b / 255.0)
             # set attribute for under, over and bad values
-            extremes[attr] = (r,g,b)
+            extremes[attr] = (r, g, b)
     # create copy of colormap with extremes
     if use_extremes:
         cmap = cmap.with_extremes(**extremes)
@@ -1029,6 +1083,7 @@ def from_cpt(filename, use_extremes=True, **kwargs):
         pass
     # return the colormap
     return cmap
+
 
 def custom_colormap(N, map_name, **kwargs):
     """
@@ -1051,58 +1106,60 @@ def custom_colormap(N, map_name, **kwargs):
 
     # make sure map_name is properly formatted
     map_name = map_name.capitalize()
-    if (map_name == 'Joughin'):
+    if map_name == 'Joughin':
         # calculate initial HSV for Ian Joughin's color map
-        h = np.linspace(0.1,1,N)
+        h = np.linspace(0.1, 1, N)
         s = np.ones((N))
         v = np.ones((N))
         # calculate RGB color map from HSV
-        color_map = np.zeros((N,3))
+        color_map = np.zeros((N, 3))
         for i in range(N):
-            color_map[i,:] = colorsys.hsv_to_rgb(h[i],s[i],v[i])
-    elif (map_name == 'Seroussi'):
+            color_map[i, :] = colorsys.hsv_to_rgb(h[i], s[i], v[i])
+    elif map_name == 'Seroussi':
         # calculate initial HSV for Helene Seroussi's color map
-        h = np.linspace(0,1,N)
+        h = np.linspace(0, 1, N)
         s = np.ones((N))
         v = np.ones((N))
         # calculate RGB color map from HSV
-        RGB = np.zeros((N,3))
+        RGB = np.zeros((N, 3))
         for i in range(N):
-            RGB[i,:] = colorsys.hsv_to_rgb(h[i],s[i],v[i])
+            RGB[i, :] = colorsys.hsv_to_rgb(h[i], s[i], v[i])
         # reverse color order and trim to range
-        RGB = RGB[::-1,:]
-        RGB = RGB[1:np.floor(0.7*N).astype('i'),:]
+        RGB = RGB[::-1, :]
+        RGB = RGB[1 : np.floor(0.7 * N).astype('i'), :]
         # calculate HSV color map from RGB
         HSV = np.zeros_like(RGB)
-        for i,val in enumerate(RGB):
-            HSV[i,:] = colorsys.rgb_to_hsv(val[0],val[1],val[2])
+        for i, val in enumerate(RGB):
+            HSV[i, :] = colorsys.rgb_to_hsv(val[0], val[1], val[2])
         # calculate saturation as a function of hue
-        HSV[:,1] = np.clip(0.1 + HSV[:,0], 0, 1)
+        HSV[:, 1] = np.clip(0.1 + HSV[:, 0], 0, 1)
         # calculate RGB color map from HSV
         color_map = np.zeros_like(HSV)
-        for i,val in enumerate(HSV):
-            color_map[i,:] = colorsys.hsv_to_rgb(val[0],val[1],val[2])
-    elif (map_name == 'Rignot'):
+        for i, val in enumerate(HSV):
+            color_map[i, :] = colorsys.hsv_to_rgb(val[0], val[1], val[2])
+    elif map_name == 'Rignot':
         # calculate initial HSV for Eric Rignot's color map
-        h = np.linspace(0,1,N)
+        h = np.linspace(0, 1, N)
         s = np.clip(0.1 + h, 0, 1)
         v = np.ones((N))
         # calculate RGB color map from HSV
-        color_map = np.zeros((N,3))
+        color_map = np.zeros((N, 3))
         for i in range(N):
-            color_map[i,:] = colorsys.hsv_to_rgb(h[i],s[i],v[i])
+            color_map[i, :] = colorsys.hsv_to_rgb(h[i], s[i], v[i])
     else:
         raise ValueError(f'Incorrect color map specified ({map_name})')
 
     # output RGB lists containing normalized location and colors
     Xnorm = len(color_map) - 1.0
-    cdict = dict(red=[None]*len(color_map),
-        green=[None]*len(color_map),
-        blue=[None]*len(color_map))
-    for i,rgb in enumerate(color_map):
-        cdict['red'][i] = [float(i)/Xnorm,rgb[0],rgb[0]]
-        cdict['green'][i] = [float(i)/Xnorm,rgb[1],rgb[1]]
-        cdict['blue'][i] = [float(i)/Xnorm,rgb[2],rgb[2]]
+    cdict = dict(
+        red=[None] * len(color_map),
+        green=[None] * len(color_map),
+        blue=[None] * len(color_map),
+    )
+    for i, rgb in enumerate(color_map):
+        cdict['red'][i] = [float(i) / Xnorm, rgb[0], rgb[0]]
+        cdict['green'][i] = [float(i) / Xnorm, rgb[1], rgb[1]]
+        cdict['blue'][i] = [float(i) / Xnorm, rgb[2], rgb[2]]
 
     # create colormap for use in matplotlib
     cmap = colors.LinearSegmentedColormap(map_name, cdict, **kwargs)
@@ -1113,6 +1170,7 @@ def custom_colormap(N, map_name, **kwargs):
         pass
     # return the colormap
     return cmap
+
 
 # PURPOSE: adjusts longitudes to be -180:180
 def wrap_longitudes(lon):
@@ -1127,6 +1185,7 @@ def wrap_longitudes(lon):
     phi = np.arctan2(np.sin(np.radians(lon)), np.cos(np.radians(lon)))
     # convert phi from radians to degrees
     return np.degrees(phi)
+
 
 # PURPOSE: parallels the matplotlib basemap shiftgrid function
 def shift_grid(lon0, data, lon, CYCLIC=360.0):
@@ -1154,24 +1213,25 @@ def shift_grid(lon0, data, lon, CYCLIC=360.0):
     shift_lon: np.ndarray
         shifted longitude array
     """
-    start_idx = 0 if (np.fabs(lon[-1]-lon[0]-CYCLIC) > 1.e-4) else 1
-    i0 = np.argmin(np.fabs(lon-lon0))
+    start_idx = 0 if (np.fabs(lon[-1] - lon[0] - CYCLIC) > 1.0e-4) else 1
+    i0 = np.argmin(np.fabs(lon - lon0))
     # shift longitudinal values
     if np.ma.isMA(lon):
-        shift_lon = np.ma.zeros(lon.shape,lon.dtype)
+        shift_lon = np.ma.zeros(lon.shape, lon.dtype)
     else:
-        shift_lon = np.zeros(lon.shape,lon.dtype)
+        shift_lon = np.zeros(lon.shape, lon.dtype)
     shift_lon[0:-i0] = lon[i0:] - CYCLIC
-    shift_lon[-i0:] = lon[start_idx:i0+start_idx]
+    shift_lon[-i0:] = lon[start_idx : i0 + start_idx]
     # shift data values
     if np.ma.isMA(data):
-        shift_data = np.ma.zeros(data.shape,data.dtype)
+        shift_data = np.ma.zeros(data.shape, data.dtype)
     else:
-        shift_data = np.zeros(data.shape,data.dtype)
-    shift_data[:,:-i0] = data[:,i0:]
-    shift_data[:,-i0:] = data[:,start_idx:i0+start_idx]
+        shift_data = np.zeros(data.shape, data.dtype)
+    shift_data[:, :-i0] = data[:, i0:]
+    shift_data[:, -i0:] = data[:, start_idx : i0 + start_idx]
     # return the shifted values
     return (shift_data, shift_lon)
+
 
 # PURPOSE: parallels the matplotlib basemap interp function with scipy splines
 def interp_grid(data, xin, yin, xout, yout, order=0):
@@ -1203,27 +1263,30 @@ def interp_grid(data, xin, yin, xout, yout, order=0):
     interp_data: np.ndarray
         interpolated data grid
     """
-    if (order == 0):
+    if order == 0:
         # interpolate with nearest-neighbors
-        xcoords = (len(xin)-1)*(xout-xin[0])/(xin[-1]-xin[0])
-        ycoords = (len(yin)-1)*(yout-yin[0])/(yin[-1]-yin[0])
-        xcoords = np.clip(xcoords,0,len(xin)-1)
-        ycoords = np.clip(ycoords,0,len(yin)-1)
+        xcoords = (len(xin) - 1) * (xout - xin[0]) / (xin[-1] - xin[0])
+        ycoords = (len(yin) - 1) * (yout - yin[0]) / (yin[-1] - yin[0])
+        xcoords = np.clip(xcoords, 0, len(xin) - 1)
+        ycoords = np.clip(ycoords, 0, len(yin) - 1)
         xcoordsi = np.around(xcoords).astype(np.int32)
         ycoordsi = np.around(ycoords).astype(np.int32)
-        interp_data = data[ycoordsi,xcoordsi]
+        interp_data = data[ycoordsi, xcoordsi]
     else:
         # interpolate with bivariate spline approximations
-        spl = scipy.interpolate.RectBivariateSpline(xin, yin,
-            data.T, kx=order, ky=order)
-        interp_data = spl.ev(xout,yout)
+        spl = scipy.interpolate.RectBivariateSpline(
+            xin, yin, data.T, kx=order, ky=order
+        )
+        interp_data = spl.ev(xout, yout)
     # return the interpolated data on the output grid
     return interp_data
 
+
 # PURPOSE: parallels the matplotlib basemap maskoceans function but with
 # updated Greenland coastlines (G250) and Rignot (2017) Antarctic grounded ice
-def mask_oceans(xin, yin, data=None, order=0, lakes=False,
-    iceshelves=True, resolution='qd'):
+def mask_oceans(
+    xin, yin, data=None, order=0, lakes=False, iceshelves=True, resolution='qd'
+):
     """
     Mask a data grid over global ocean and water points
 
@@ -1261,28 +1324,34 @@ def mask_oceans(xin, yin, data=None, order=0, lakes=False,
         masked data grid
     """
     # read in land/sea mask
-    lsmask = get_data_path(['data',f'landsea_{resolution}.nc'])
+    lsmask = get_data_path(['data', f'landsea_{resolution}.nc'])
     # Land-Sea Mask with Antarctica from Rignot (2017) and Greenland from GEUS
     # 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
     # Open the land-sea NetCDF file for reading
     landsea = spatial().from_netCDF4(lsmask, date=False, varname='LSMASK')
     # create land function
-    nth,nphi = landsea.shape
-    land_function = np.zeros((nth,nphi),dtype=bool)
+    nth, nphi = landsea.shape
+    land_function = np.zeros((nth, nphi), dtype=bool)
     # extract land function from file
     # find land values (1)
-    land_function |= (landsea.data == 1)
+    land_function |= landsea.data == 1
     # find lake values (2)
     if lakes:
-        land_function |= (landsea.data == 2)
+        land_function |= landsea.data == 2
     # find small island values (3)
-    land_function |= (landsea.data == 3)
+    land_function |= landsea.data == 3
     # find Greenland and Antarctic ice shelf values (4)
     if iceshelves:
-        land_function |= (landsea.data == 4)
+        land_function |= landsea.data == 4
     # interpolate to output grid
-    mask = interp_grid(land_function.astype(np.int32),
-        landsea.lon, landsea.lat, xin, yin, order)
+    mask = interp_grid(
+        land_function.astype(np.int32),
+        landsea.lon,
+        landsea.lat,
+        xin,
+        yin,
+        order,
+    )
     # mask input data or return the interpolated mask
     if data is not None:
         # update data mask with interpolated mask

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 sea_level_mean.py
 Written by Tyler Sutterley (05/2023)
 
@@ -62,6 +62,7 @@ UPDATE HISTORY:
         calculate mean for different sea level iterations
     Written 08/2017
 """
+
 import sys
 import os
 import copy
@@ -85,6 +86,7 @@ gia_mean_str['ICE6G'] = '_ICE6G_VM5_mean'
 # A et al. (2013)
 gia_mean_str['AW13-ICE6G'] = '_AW13_ICE6G_mean'
 
+
 # PURPOSE: keep track of threads
 def info(args):
     logging.info(pathlib.Path(sys.argv[0]).name)
@@ -94,8 +96,12 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
+
 # PURPOSE: calculate the mean SLF map for each GIA model
-def sea_level_mean(PROC, DREL, DSET,
+def sea_level_mean(
+    PROC,
+    DREL,
+    DSET,
     START=None,
     END=None,
     GIA=None,
@@ -107,8 +113,8 @@ def sea_level_mean(PROC, DREL, DSET,
     EXPANSION=None,
     LANDMASK=None,
     VERBOSE=0,
-    MODE=0o775):
-
+    MODE=0o775,
+):
     # output directory setup
     OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
     if not OUTPUT_DIRECTORY.exists():
@@ -131,15 +137,16 @@ def sea_level_mean(PROC, DREL, DSET,
     # Land-Sea Mask with Antarctica from Rignot (2017) and Greenland from GEUS
     # 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
     # Open the land-sea NetCDF4 file for reading
-    landsea = gravtk.spatial().from_netCDF4(LANDMASK, date=False,
-        varname='LSMASK')
-    dlon,dlat = landsea.spacing
+    landsea = gravtk.spatial().from_netCDF4(
+        LANDMASK, date=False, varname='LSMASK'
+    )
+    dlon, dlat = landsea.spacing
     nlat, nlon = landsea.shape
     # create land function
-    land_function = np.zeros((nlat, nlon),dtype=np.float64)
+    land_function = np.zeros((nlat, nlon), dtype=np.float64)
     # combine land and island levels for land function
-    indy,indx = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))
-    land_function[indy,indx] = 1.0
+    indy, indx = np.nonzero((landsea.data >= 1) & (landsea.data <= 3))
+    land_function[indy, indx] = 1.0
 
     # allocate lists for input variables
     dinput = {}
@@ -151,89 +158,154 @@ def sea_level_mean(PROC, DREL, DSET,
     # number of rheologies and ice histories to run
     N = len(GIA_FILES)
     # iterate GIA models
-    for h,GIA_FILE in enumerate(GIA_FILES):
+    for h, GIA_FILE in enumerate(GIA_FILES):
         # input GIA spherical harmonic datafiles
         GIA_Ylms_rate = gravtk.gia().from_GIA(GIA_FILE, GIA=GIA)
         gia_str = f'_{GIA_Ylms_rate.title}'
         # read mass trend files
-        for key in ['x1','x2']:
-            F1 = file_format.format(ITERATION, dset_str, gia_str,
-                ocean_str, EXPANSION, key, START, END, suffix[DATAFORM])
+        for key in ['x1', 'x2']:
+            F1 = file_format.format(
+                ITERATION,
+                dset_str,
+                gia_str,
+                ocean_str,
+                EXPANSION,
+                key,
+                START,
+                END,
+                suffix[DATAFORM],
+            )
             INPUT_FILE = OUTPUT_DIRECTORY.joinpath(F1)
-            field_mapping = dict(lon='lon', lat='lat', data='data', error='error')
-            temp = gravtk.spatial().from_file(INPUT_FILE,
-                format=DATAFORM, date=False, field_mapping=field_mapping,
-                spacing=[dlon,dlat], nlon=nlon, nlat=nlat)
+            field_mapping = dict(
+                lon='lon', lat='lat', data='data', error='error'
+            )
+            temp = gravtk.spatial().from_file(
+                INPUT_FILE,
+                format=DATAFORM,
+                date=False,
+                field_mapping=field_mapping,
+                spacing=[dlon, dlat],
+                nlon=nlon,
+                nlat=nlat,
+            )
             dinput[key].append(temp)
         # read AIC files
-        for key in ['AIC_x0','AIC_x1','AIC_x2']:
-            F1 = file_format.format(ITERATION, dset_str, gia_str,
-                ocean_str, EXPANSION, key, START, END, suffix[DATAFORM])
+        for key in ['AIC_x0', 'AIC_x1', 'AIC_x2']:
+            F1 = file_format.format(
+                ITERATION,
+                dset_str,
+                gia_str,
+                ocean_str,
+                EXPANSION,
+                key,
+                START,
+                END,
+                suffix[DATAFORM],
+            )
             INPUT_FILE = OUTPUT_DIRECTORY.joinpath(F1)
             field_mapping = dict(lon='lon', lat='lat', data='data')
-            temp = gravtk.spatial().from_file(INPUT_FILE,
-                format=DATAFORM, date=False, field_mapping=field_mapping,
-                spacing=[dlon,dlat], nlon=nlon, nlat=nlat)
+            temp = gravtk.spatial().from_file(
+                INPUT_FILE,
+                format=DATAFORM,
+                date=False,
+                field_mapping=field_mapping,
+                spacing=[dlon, dlat],
+                nlon=nlon,
+                nlat=nlat,
+            )
             dinput[key].append(temp)
 
     # create combined spatial objects
     output = {}
     units = {}
     # calculate mean GIA-corrected x1 change (for all Earth rheologies)
-    x1 = gravtk.spatial().from_list(dinput['x1'],date=False)
+    x1 = gravtk.spatial().from_list(dinput['x1'], date=False)
     output['x1'] = x1.mean()
-    units['x1'] = '{0} yr^{1:d}'.format('centimeters',-1)
+    units['x1'] = '{0} yr^{1:d}'.format('centimeters', -1)
     # calculate mean acceleration x2 change (for all Earth rheologies)
-    x2 = gravtk.spatial().from_list(dinput['x2'],date=False)
+    x2 = gravtk.spatial().from_list(dinput['x2'], date=False)
     output['x2'] = x2.mean().scale(2.0)
-    units['x2'] = '{0} yr^{1:d}'.format('centimeters',-2)
+    units['x2'] = '{0} yr^{1:d}'.format('centimeters', -2)
     # GRACE satellite error component
-    e1 = x1.copy(); e1.data = np.copy(x1.error)
-    output['x1'].error = e1.sum(power=2.0).scale(1.0/N).power(0.5).data
+    e1 = x1.copy()
+    e1.data = np.copy(x1.error)
+    output['x1'].error = e1.sum(power=2.0).scale(1.0 / N).power(0.5).data
     output['x1'].update_mask()
-    e2 = x2.copy(); e2.data = np.copy(x2.error)
-    output['x2'].error = e2.sum(power=2.0).scale(4.0/N).power(0.5).data
+    e2 = x2.copy()
+    e2.data = np.copy(x2.error)
+    output['x2'].error = e2.sum(power=2.0).scale(4.0 / N).power(0.5).data
     output['x2'].update_mask()
     # significance means
-    AICx0 = gravtk.spatial().from_list(dinput['AIC_x0'],date=False).mean()
-    AICx1 = gravtk.spatial().from_list(dinput['AIC_x1'],date=False).mean()
-    AICx2 = gravtk.spatial().from_list(dinput['AIC_x2'],date=False).mean()
+    AICx0 = gravtk.spatial().from_list(dinput['AIC_x0'], date=False).mean()
+    AICx1 = gravtk.spatial().from_list(dinput['AIC_x1'], date=False).mean()
+    AICx2 = gravtk.spatial().from_list(dinput['AIC_x2'], date=False).mean()
 
     # masked trend values
-    ii,jj = np.nonzero((np.abs(output['x1'].data) <= output['x1'].error) |
-        (AICx1.data >= AICx0.data))
+    ii, jj = np.nonzero(
+        (np.abs(output['x1'].data) <= output['x1'].error)
+        | (AICx1.data >= AICx0.data)
+    )
     output['MASKED_x1'] = output['x1'].copy()
-    output['MASKED_x1'].mask[ii,jj] = True
+    output['MASKED_x1'].mask[ii, jj] = True
     output['MASKED_x1'].update_mask()
-    units['MASKED_x1'] = '{0} yr^{1:d}'.format('centimeters',-1)
+    units['MASKED_x1'] = '{0} yr^{1:d}'.format('centimeters', -1)
     # write masked acceleration values to file
-    ii,jj = np.nonzero((np.abs(output['x2'].data) <= output['x2'].error) |
-        (AICx2.data >= AICx1.data))
+    ii, jj = np.nonzero(
+        (np.abs(output['x2'].data) <= output['x2'].error)
+        | (AICx2.data >= AICx1.data)
+    )
     output['MASKED_x2'] = output['x2'].copy()
-    output['MASKED_x2'].mask[ii,jj] = True
+    output['MASKED_x2'].mask[ii, jj] = True
     output['MASKED_x2'].update_mask()
-    units['MASKED_x2'] = '{0} yr^{1:d}'.format('centimeters',-2)
+    units['MASKED_x2'] = '{0} yr^{1:d}'.format('centimeters', -2)
 
     # attributes for output files
     longname = 'Equivalent_Water_Thickness'
     title = 'Sea_Level_Fingerprint'
     # output data to file
-    for key,val in output.items():
-        F2 = file_format.format(ITERATION, dset_str, gia_mean_str[GIA],
-            ocean_str, EXPANSION, key, START, END, suffix[DATAFORM])
+    for key, val in output.items():
+        F2 = file_format.format(
+            ITERATION,
+            dset_str,
+            gia_mean_str[GIA],
+            ocean_str,
+            EXPANSION,
+            key,
+            START,
+            END,
+            suffix[DATAFORM],
+        )
         OUTPUT_FILE = OUTPUT_DIRECTORY.joinpath(F2)
-        output_data(val, FILENAME=OUTPUT_FILE, DATAFORM=DATAFORM,
-            UNITS=units[key], LONGNAME=longname, TITLE=title,
-            CONF=0.95, VERBOSE=VERBOSE, MODE=MODE)
+        output_data(
+            val,
+            FILENAME=OUTPUT_FILE,
+            DATAFORM=DATAFORM,
+            UNITS=units[key],
+            LONGNAME=longname,
+            TITLE=title,
+            CONF=0.95,
+            VERBOSE=VERBOSE,
+            MODE=MODE,
+        )
         # add to output file list
         output_files.append(OUTPUT_FILE)
 
     # return the list of output files
     return output_files
 
+
 # PURPOSE: wrapper function for outputting data to file
-def output_data(data, FILENAME=None, DATAFORM=None, UNITS=None,
-    LONGNAME=None, TITLE=None, CONF=0, VERBOSE=0, MODE=0o775):
+def output_data(
+    data,
+    FILENAME=None,
+    DATAFORM=None,
+    UNITS=None,
+    LONGNAME=None,
+    TITLE=None,
+    CONF=0,
+    VERBOSE=0,
+    MODE=0o775,
+):
     # field mapping for output regression data
     field_mapping = {}
     field_mapping['lat'] = 'lat'
@@ -258,25 +330,38 @@ def output_data(data, FILENAME=None, DATAFORM=None, UNITS=None,
     attributes['error']['description'] = 'Uncertainty_in_model_fit'
     attributes['error']['long_name'] = LONGNAME
     attributes['error']['units'] = UNITS
-    attributes['error']['confidence'] = 100*CONF
+    attributes['error']['confidence'] = 100 * CONF
     # output global attributes
     REFERENCE = f'Output from {pathlib.Path(sys.argv[0]).name}'
     # write to output file
-    if (DATAFORM == 'ascii'):
+    if DATAFORM == 'ascii':
         # ascii (.txt)
         data.to_ascii(FILENAME, date=False, verbose=VERBOSE)
-    elif (DATAFORM == 'netCDF4'):
+    elif DATAFORM == 'netCDF4':
         # netcdf (.nc)
-        data.to_netCDF4(FILENAME, date=False, verbose=VERBOSE,
-            field_mapping=field_mapping, attributes=attributes,
-            title=TITLE, reference=REFERENCE)
-    elif (DATAFORM == 'HDF5'):
+        data.to_netCDF4(
+            FILENAME,
+            date=False,
+            verbose=VERBOSE,
+            field_mapping=field_mapping,
+            attributes=attributes,
+            title=TITLE,
+            reference=REFERENCE,
+        )
+    elif DATAFORM == 'HDF5':
         # HDF5 (.H5)
-        data.to_HDF5(FILENAME, date=False, verbose=VERBOSE,
-            field_mapping=field_mapping, attributes=attributes,
-            title=TITLE, reference=REFERENCE)
+        data.to_HDF5(
+            FILENAME,
+            date=False,
+            verbose=VERBOSE,
+            field_mapping=field_mapping,
+            attributes=attributes,
+            title=TITLE,
+            reference=REFERENCE,
+        )
     # change the permissions mode of the output file
     FILENAME.chmod(mode=MODE)
+
 
 # PURPOSE: create argument parser
 def arguments():
@@ -284,34 +369,56 @@ def arguments():
         description="""Calculates the mean sea level fingerprint map for
             each glacial isostatic adjustment model
             """,
-        fromfile_prefix_chars="@"
+        fromfile_prefix_chars='@',
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # working data directory
-    parser.add_argument('--output-directory','-O',
+    parser.add_argument(
+        '--output-directory',
+        '-O',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Output directory for spatial files')
+        help='Output directory for spatial files',
+    )
     # GRACE/GRACE-FO data processing center
-    parser.add_argument('--center','-c',
-        metavar='PROC', type=str, required=True,
-        help='GRACE/GRACE-FO Processing Center')
+    parser.add_argument(
+        '--center',
+        '-c',
+        metavar='PROC',
+        type=str,
+        required=True,
+        help='GRACE/GRACE-FO Processing Center',
+    )
     # GRACE/GRACE-FO data release
-    parser.add_argument('--release','-r',
-        metavar='DREL', type=str, default='RL06',
-        help='GRACE/GRACE-FO Data Release')
+    parser.add_argument(
+        '--release',
+        '-r',
+        metavar='DREL',
+        type=str,
+        default='RL06',
+        help='GRACE/GRACE-FO Data Release',
+    )
     # GRACE/GRACE-FO Level-2 data product
-    parser.add_argument('--product','-p',
-        metavar='DSET', type=str, default='GSM',
-        help='GRACE/GRACE-FO Level-2 data product')
+    parser.add_argument(
+        '--product',
+        '-p',
+        metavar='DSET',
+        type=str,
+        default='GSM',
+        help='GRACE/GRACE-FO Level-2 data product',
+    )
     # start and end GRACE/GRACE-FO months
-    parser.add_argument('--start','-S',
-        type=int, default=4,
-        help='Starting GRACE/GRACE-FO month')
-    parser.add_argument('--end','-E',
-        type=int, default=232,
-        help='Ending GRACE/GRACE-FO month')
+    parser.add_argument(
+        '--start',
+        '-S',
+        type=int,
+        default=4,
+        help='Starting GRACE/GRACE-FO month',
+    )
+    parser.add_argument(
+        '--end', '-E', type=int, default=232, help='Ending GRACE/GRACE-FO month'
+    )
     # GIA model type list
     models = {}
     models['IJ05-R2'] = 'Ivins R2 GIA Models'
@@ -327,49 +434,82 @@ def arguments():
     models['netCDF4'] = 'reformatted GIA in netCDF4 format'
     models['HDF5'] = 'reformatted GIA in HDF5 format'
     # GIA model type
-    parser.add_argument('--gia','-G',
-        type=str, metavar='GIA', choices=models.keys(),
-        help='GIA model type to read')
+    parser.add_argument(
+        '--gia',
+        '-G',
+        type=str,
+        metavar='GIA',
+        choices=models.keys(),
+        help='GIA model type to read',
+    )
     # full path to GIA file
-    parser.add_argument('--gia-file',
-        type=pathlib.Path,
-        nargs='+', help='GIA files to read')
+    parser.add_argument(
+        '--gia-file', type=pathlib.Path, nargs='+', help='GIA files to read'
+    )
     # input data format (ascii, netCDF4, HDF5)
-    parser.add_argument('--format','-F',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
-        help='Input/output data format')
+    parser.add_argument(
+        '--format',
+        '-F',
+        type=str,
+        default='netCDF4',
+        choices=['ascii', 'netCDF4', 'HDF5'],
+        help='Input/output data format',
+    )
     # mascon parameters
-    parser.add_argument('--redistribute-mascons',
-        default=False, action='store_true',
-        help='Redistribute mascon mass over the ocean')
+    parser.add_argument(
+        '--redistribute-mascons',
+        default=False,
+        action='store_true',
+        help='Redistribute mascon mass over the ocean',
+    )
     # sea level fingerprint parameters
-    parser.add_argument('--iteration','-I',
-        type=int, default=1,
-        help='Sea level fingerprint iteration')
-    parser.add_argument('--expansion','-e',
-        type=int, default=240,
-        help='Spherical harmonic expansion for sea level fingerprints')
+    parser.add_argument(
+        '--iteration',
+        '-I',
+        type=int,
+        default=1,
+        help='Sea level fingerprint iteration',
+    )
+    parser.add_argument(
+        '--expansion',
+        '-e',
+        type=int,
+        default=240,
+        help='Spherical harmonic expansion for sea level fingerprints',
+    )
     # land-sea mask for redistributing mascon mass and land water flux
-    lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
-    parser.add_argument('--mask',
-        type=pathlib.Path, default=lsmask,
-        help='Land-sea mask for redistributing mascon mass and land water flux')
+    lsmask = gravtk.utilities.get_data_path(['data', 'landsea_hd.nc'])
+    parser.add_argument(
+        '--mask',
+        type=pathlib.Path,
+        default=lsmask,
+        help='Land-sea mask for redistributing mascon mass and land water flux',
+    )
     # print information about each input and output file
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of run',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -394,13 +534,15 @@ def main():
             LANDMASK=args.mask,
             OUTPUT_DIRECTORY=args.output_directory,
             VERBOSE=args.verbose,
-            MODE=args.mode)
+            MODE=args.mode,
+        )
     except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
+
 
 # run main program
 if __name__ == '__main__':

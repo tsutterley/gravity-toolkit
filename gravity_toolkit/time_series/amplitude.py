@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 amplitude.py
 Written by Tyler Sutterley (07/2026)
 
@@ -29,7 +29,9 @@ UPDATE HISTORY:
     Updated 05/2013: converted to python
     Written 07/2012:
 """
+
 import numpy as np
+
 
 def amplitude(bsin, bcos):
     """

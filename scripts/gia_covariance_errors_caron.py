@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 gia_covariance_errors_caron.py
 Written by Yara Mohajerani (05/2019)
 Updated by Tyler Sutterley (05/2023)
@@ -98,6 +98,7 @@ UPDATE HISTORY:
         add up kernel for given cap numbers and output 1 error
     Written 05/2019
 """
+
 from __future__ import print_function, division
 
 import sys
@@ -111,6 +112,7 @@ import numpy as np
 import scipy.linalg
 import gravity_toolkit as gravtk
 
+
 # PURPOSE: keep track of threads
 def info(args):
     logging.info(pathlib.Path(sys.argv[0]).name)
@@ -119,6 +121,7 @@ def info(args):
     if hasattr(os, 'getppid'):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
+
 
 # PURPOSE: read GIA covariance matrix file and flatten to mascon form
 def read_covariance_file(infile, LMAX, LMIN=None, MMAX=None):
@@ -133,46 +136,95 @@ def read_covariance_file(infile, LMAX, LMIN=None, MMAX=None):
         contents = [i for i in fid.read().splitlines() if parser.match(i)]
     # Calculating the number of cos and sin harmonics between LMIN and LMAX
     # taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
-    n_clm = (LMAX**2 - LMIN**2 + 3*LMAX - (LMAX-MMAX)**2 - (LMAX-MMAX))//2 + 1
-    n_harm = int(LMAX**2 - LMIN**2 + 2*LMAX - (LMAX-MMAX)**2 - (LMAX-MMAX)) + 1
+    n_clm = (
+        LMAX**2 - LMIN**2 + 3 * LMAX - (LMAX - MMAX) ** 2 - (LMAX - MMAX)
+    ) // 2 + 1
+    n_harm = (
+        int(LMAX**2 - LMIN**2 + 2 * LMAX - (LMAX - MMAX) ** 2 - (LMAX - MMAX))
+        + 1
+    )
     # flattened covariance matrix
-    cov = np.zeros((n_harm,n_harm))
+    cov = np.zeros((n_harm, n_harm))
     # for each line in the file
     for line in contents:
         # note clm orders are +ve and slm orders are -ve
-        l1,m1,l2,m2,Ylms = line.split()
-        l1,m1,l2,m2 = np.array([l1,m1,l2,m2],dtype=np.int64)
+        l1, m1, l2, m2, Ylms = line.split()
+        l1, m1, l2, m2 = np.array([l1, m1, l2, m2], dtype=np.int64)
         # indice for filling flattened covariance matrix for lm harmonics
         if (m1 >= 0) and (l1 >= LMIN) and (l1 <= LMAX) and (m1 <= MMAX):
             # cosine harmonics
-            i1 = m1 + ((l1-1)**2 - LMIN**2 + 3*(l1-1) - \
-                np.max([l1-MMAX-1,0])**2 - np.max([l1-MMAX-1,0]))//2 + 1
+            i1 = (
+                m1
+                + (
+                    (l1 - 1) ** 2
+                    - LMIN**2
+                    + 3 * (l1 - 1)
+                    - np.max([l1 - MMAX - 1, 0]) ** 2
+                    - np.max([l1 - MMAX - 1, 0])
+                )
+                // 2
+                + 1
+            )
         elif (l1 >= LMIN) and (l1 <= LMAX) and (np.abs(m1) <= MMAX):
             # sine harmonics
-            i1 = n_clm + np.abs(m1) + ((l1-1)**2 - LMIN**2 + (l1-1) - \
-                np.max([l1-MMAX-1,0])**2 - np.max([l1-MMAX-1,0]))//2
+            i1 = (
+                n_clm
+                + np.abs(m1)
+                + (
+                    (l1 - 1) ** 2
+                    - LMIN**2
+                    + (l1 - 1)
+                    - np.max([l1 - MMAX - 1, 0]) ** 2
+                    - np.max([l1 - MMAX - 1, 0])
+                )
+                // 2
+            )
         else:
             i1 = None
         # indice for filling flattened covariance matrix for pq harmonics
         if (m2 >= 0) and (l2 >= LMIN) and (l2 <= LMAX) and (m2 <= MMAX):
             # cosine harmonics
-            i2 = m2 + ((l2-1)**2 - LMIN**2 + 3*(l2-1) - \
-                np.max([l2-MMAX-1,0])**2 - np.max([l2-MMAX-1,0]))//2 + 1
+            i2 = (
+                m2
+                + (
+                    (l2 - 1) ** 2
+                    - LMIN**2
+                    + 3 * (l2 - 1)
+                    - np.max([l2 - MMAX - 1, 0]) ** 2
+                    - np.max([l2 - MMAX - 1, 0])
+                )
+                // 2
+                + 1
+            )
         elif (l2 >= LMIN) and (l2 <= LMAX) and (np.abs(m2) <= MMAX):
             # sine harmonics
-            i2 = n_clm + np.abs(m2) + ((l2-1)**2 - LMIN**2 + (l2-1) - \
-                np.max([l2-MMAX-1,0])**2 - np.max([l2-MMAX-1,0]))//2
+            i2 = (
+                n_clm
+                + np.abs(m2)
+                + (
+                    (l2 - 1) ** 2
+                    - LMIN**2
+                    + (l2 - 1)
+                    - np.max([l2 - MMAX - 1, 0]) ** 2
+                    - np.max([l2 - MMAX - 1, 0])
+                )
+                // 2
+            )
         else:
             i2 = None
         # add data to flattened covariance matrix
-        if (i1 and i2):
-            cov[i1,i2] = np.float64(Ylms)
+        if i1 and i2:
+            cov[i1, i2] = np.float64(Ylms)
     # free up memory
     contents = None
     return cov
 
+
 # calculate GIA error for given mascon configuration
-def gia_covariance_errors_caron(base_dir, LMAX, RAD,
+def gia_covariance_errors_caron(
+    base_dir,
+    LMAX,
+    RAD,
     LMIN=None,
     MMAX=None,
     DESTRIPE=False,
@@ -185,8 +237,8 @@ def gia_covariance_errors_caron(base_dir, LMAX, RAD,
     SOLVER=None,
     LANDMASK=None,
     OUTPUT_DIRECTORY=None,
-    MODE=0o775):
-
+    MODE=0o775,
+):
     # input directory setup
     base_dir = pathlib.Path(base_dir).expanduser().absolute()
     # output directory setup
@@ -202,8 +254,9 @@ def gia_covariance_errors_caron(base_dir, LMAX, RAD,
     parser = re.compile(r'^(?!\#|\%|$)', re.VERBOSE)
 
     # read arrays of kl, hl, and ll Love Numbers
-    LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
-        REFERENCE=REFERENCE, FORMAT='class')
+    LOVE = gravtk.load_love_numbers(
+        LMAX, LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE=REFERENCE, FORMAT='class'
+    )
 
     # Earth Parameters
     factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
@@ -213,12 +266,12 @@ def gia_covariance_errors_caron(base_dir, LMAX, RAD,
     rad_e = factors.rad_e
 
     # Calculating the Gaussian smoothing for radius RAD
-    if (RAD != 0):
-        wt = 2.0*np.pi*gravtk.gauss_weights(RAD,LMAX)
+    if RAD != 0:
+        wt = 2.0 * np.pi * gravtk.gauss_weights(RAD, LMAX)
         gw_str = f'_r{RAD:0.0f}km'
     else:
         # else = 1
-        wt = np.ones((LMAX+1))
+        wt = np.ones((LMAX + 1))
         gw_str = ''
 
     # output string for both LMAX==MMAX and LMAX != MMAX cases
@@ -228,8 +281,7 @@ def gia_covariance_errors_caron(base_dir, LMAX, RAD,
     # Read Ocean function and convert to Ylms for redistribution
     if REDISTRIBUTE_MASCONS:
         # read Land-Sea Mask and convert to spherical harmonics
-        ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX, MMAX=MMAX,
-            LOVE=LOVE)
+        ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX, MMAX=MMAX, LOVE=LOVE)
         ocean_str = '_OCN'
     else:
         # not distributing uniformly over ocean
@@ -249,22 +301,23 @@ def gia_covariance_errors_caron(base_dir, LMAX, RAD,
     mascon_list = []
     for k in range(n_mas):
         # read mascon spherical harmonics
-        Ylms = gravtk.harmonics().from_file(mascon_files[k],
-            format=MASCON_FORMAT, date=False)
+        Ylms = gravtk.harmonics().from_file(
+            mascon_files[k], format=MASCON_FORMAT, date=False
+        )
         # Calculating the total mass of each mascon (1 cmwe uniform)
-        area_tot[k] = 4.0*np.pi*(rad_e**3)*rho_e*Ylms.clm[0,0]/3.0
+        area_tot[k] = 4.0 * np.pi * (rad_e**3) * rho_e * Ylms.clm[0, 0] / 3.0
         # distribute mascon mass uniformly over the ocean
         if REDISTRIBUTE_MASCONS:
             # calculate ratio between total mascon mass and
             # a uniformly distributed cm of water over the ocean
-            ratio = Ylms.clm[0,0]/ocean_Ylms.clm[0,0]
+            ratio = Ylms.clm[0, 0] / ocean_Ylms.clm[0, 0]
             # for each spherical harmonic
-            for m in range(0,MMAX+1):# MMAX+1 to include MMAX
-                for l in range(m,LMAX+1):# LMAX+1 to include LMAX
+            for m in range(0, MMAX + 1):  # MMAX+1 to include MMAX
+                for l in range(m, LMAX + 1):  # LMAX+1 to include LMAX
                     # remove ratio*ocean Ylms from mascon Ylms
                     # note: x -= y is equivalent to x = x - y
-                    Ylms.clm[l,m] -= ratio*ocean_Ylms.clm[l,m]
-                    Ylms.slm[l,m] -= ratio*ocean_Ylms.slm[l,m]
+                    Ylms.clm[l, m] -= ratio * ocean_Ylms.clm[l, m]
+                    Ylms.slm[l, m] -= ratio * ocean_Ylms.slm[l, m]
         # truncate mascon spherical harmonics to d/o LMAX/MMAX and add to list
         mascon_list.append(Ylms.truncate(lmax=LMAX, mmax=MMAX))
         # stem is the mascon file without directory or suffix
@@ -279,24 +332,27 @@ def gia_covariance_errors_caron(base_dir, LMAX, RAD,
 
     # Calculating the number of cos and sin harmonics between LMIN and LMAX
     # taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
-    n_harm=np.int64(LMAX**2 - LMIN**2 + 2*LMAX + 1 - (LMAX-MMAX)**2 - (LMAX-MMAX))
+    n_harm = np.int64(
+        LMAX**2 - LMIN**2 + 2 * LMAX + 1 - (LMAX - MMAX) ** 2 - (LMAX - MMAX)
+    )
 
     # read Caron et al. (2018) GIA covariance matrix files
     # list containing files to read based on spherical harmonic degree range
     gia_files = []
     gia_files.append('covStokes_GIA_deg_2_to_60.txt')
-    if (LMAX > 60):
+    if LMAX > 60:
         gia_files.append('covStokes_GIA_deg_61_to_75.txt')
-    if (LMAX > 75):
+    if LMAX > 75:
         gia_files.append('covStokes_GIA_deg_76_to_83.txt')
-    if (LMAX > 83):
+    if LMAX > 83:
         gia_files.append('covStokes_GIA_deg_84_to_89.txt')
     # flattened combined covariance matrix
     gia_cov = np.zeros((n_harm, n_harm))
     # for each GIA covariance file
     for fi in gia_files:
-        gia_cov[:,:] += read_covariance_file(base_dir.joinpath(fi), LMAX,
-            LMIN=LMIN, MMAX=MMAX)
+        gia_cov[:, :] += read_covariance_file(
+            base_dir.joinpath(fi), LMAX, LMIN=LMIN, MMAX=MMAX
+        )
     # GIA title string for covariance-derived errors
     gia_str = '_Caron_Error'
 
@@ -321,59 +377,60 @@ def gia_covariance_errors_caron(base_dir, LMAX, RAD,
     # Order is [C00...C6060,S11...S6060]
     # Calculating factor to convert geoid spherical harmonic coefficients
     # to coefficients of mass (Wahr, 1998)
-    coeff = rho_e*rad_e/3.0
+    coeff = rho_e * rad_e / 3.0
     # Switching between Cosine and Sine Stokes
-    for cs,csharm in enumerate(['clm','slm']):
+    for cs, csharm in enumerate(['clm', 'slm']):
         # copy cosine and sin harmonics
         mascon_harm = getattr(mascon_Ylms, csharm)
         # for each spherical harmonic degree
         # +1 to include LMAX
-        for l in range(LMIN,LMAX+1):
+        for l in range(LMIN, LMAX + 1):
             # for each spherical harmonic order
             # Sine Stokes for (m=0) = 0
-            mn = np.min([MMAX,l])
+            mn = np.min([MMAX, l])
             # +1 to include l or MMAX (whichever is smaller)
-            for m in range(cs,mn+1):
+            for m in range(cs, mn + 1):
                 # Mascon Spherical Harmonics
-                M_lm[ii,:] = np.copy(mascon_harm[l,m,:])
+                M_lm[ii, :] = np.copy(mascon_harm[l, m, :])
                 # degree dependent factor to convert to mass
-                fact[ii] = (2.0*l + 1.0)/(1.0 + LOVE.kl[l])
+                fact[ii] = (2.0 * l + 1.0) / (1.0 + LOVE.kl[l])
                 # degree dependent smoothing
                 wt_lm[ii] = np.copy(wt[l])
                 # add 1 to counter
                 ii += 1
 
     # Converting mascon coefficients to fit method
-    if (FIT_METHOD == 1):
+    if FIT_METHOD == 1:
         # Fitting Sensitivity Kernel as mass coefficients
         # converting M_lm to mass coefficients of the kernel
         for i in range(n_harm):
-            MA_lm[i,:] = M_lm[i,:]*wt_lm[i]*fact[i]
-        fit_factor = wt_lm*fact
-    elif (FIT_METHOD == 2):
+            MA_lm[i, :] = M_lm[i, :] * wt_lm[i] * fact[i]
+        fit_factor = wt_lm * fact
+    elif FIT_METHOD == 2:
         # Fitting Sensitivity Kernel as geoid coefficients
         for i in range(n_harm):
-            MA_lm[:,:] = M_lm[i,:]*wt_lm[i]
-        fit_factor = wt_lm*np.ones((n_harm))
+            MA_lm[:, :] = M_lm[i, :] * wt_lm[i]
+        fit_factor = wt_lm * np.ones((n_harm))
 
     # Fitting the sensitivity kernel from the input kernel
     for i in range(n_harm):
         # setting kern_i equal to 1 for d/o
         kern_i = np.zeros((n_harm))
         # converting to mass coefficients if specified
-        kern_i[i] = 1.0*fit_factor[i]
+        kern_i[i] = 1.0 * fit_factor[i]
         # spherical harmonics solution for the
         # mascon sensitivity kernels
-        if (SOLVER == 'inv'):
+        if SOLVER == 'inv':
             kern_lm = np.dot(np.linalg.inv(MA_lm), kern_i)
-        elif (SOLVER == 'lstsq'):
+        elif SOLVER == 'lstsq':
             kern_lm = np.linalg.lstsq(MA_lm, kern_i, rcond=-1)[0]
         elif SOLVER in ('gelsd', 'gelsy', 'gelss'):
-            kern_lm, res, rnk, s = scipy.linalg.lstsq(MA_lm, kern_i,
-                lapack_driver=SOLVER)
+            kern_lm, res, rnk, s = scipy.linalg.lstsq(
+                MA_lm, kern_i, lapack_driver=SOLVER
+            )
         # calculate the sensitivity kernel for each mascon
         for k in range(n_mas):
-            A_lm[i,k] = kern_lm[k]*area_tot[k]
+            A_lm[i, k] = kern_lm[k] * area_tot[k]
 
     # calculate total error for each kernel
     # for each spherical harmonic lm (order is [C00...Clm,S11...Slm])
@@ -381,17 +438,24 @@ def gia_covariance_errors_caron(base_dir, LMAX, RAD,
         # for each spherical harmonic pq (order is [C00...Cpq,S11...Spq])
         for j in range(n_harm):
             # add to total mascon errors
-            M_err[:] += (A_lm[i,:]*A_lm[j,:]*gia_cov[i,j])
+            M_err[:] += A_lm[i, :] * A_lm[j, :] * gia_cov[i, j]
 
     # for each mascon
     for k in range(n_mas):
         # output filename format (for both LMAX==MMAX and LMAX != MMAX cases):
         # mascon name, GIA model, LMAX, (MMAX,), Gaussian smoothing, filter
-        fargs = (mascon_name[k],gia_str.upper(),ocean_str,LMAX,order_str,gw_str)
+        fargs = (
+            mascon_name[k],
+            gia_str.upper(),
+            ocean_str,
+            LMAX,
+            order_str,
+            gw_str,
+        )
         file_format = '{0}{1}{2}_L{3:d}{4}{5}.txt'
         output_file = OUTPUT_DIRECTORY.joinpath(file_format.format(*fargs))
         # take sqrt and convert from from g to gigatonnes
-        args = (np.sqrt(M_err[k])/1e15, area_tot[k]/1e10)
+        args = (np.sqrt(M_err[k]) / 1e15, area_tot[k] / 1e10)
         with output_file.open(mode='w', encoding='utf8') as fid1:
             print('{0:16.10f} {1:16.10f}'.format(*args), file=fid1)
         # change the permissions mode
@@ -402,98 +466,160 @@ def gia_covariance_errors_caron(base_dir, LMAX, RAD,
     # return the list of output files
     return output_files
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Calculate GIA errors based on full covariance matrix
             """,
-        fromfile_prefix_chars="@"
+        fromfile_prefix_chars='@',
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
     # working data directory
-    parser.add_argument('--directory','-D',
+    parser.add_argument(
+        '--directory',
+        '-D',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Working data directory')
-    parser.add_argument('--output-directory','-O',
+        help='Working data directory',
+    )
+    parser.add_argument(
+        '--output-directory',
+        '-O',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Output directory for mascon files')
+        help='Output directory for mascon files',
+    )
     # minimum spherical harmonic degree
-    parser.add_argument('--lmin',
-        type=int, default=1,
-        help='Minimum spherical harmonic degree')
+    parser.add_argument(
+        '--lmin', type=int, default=1, help='Minimum spherical harmonic degree'
+    )
     # maximum spherical harmonic degree and order
-    parser.add_argument('--lmax','-l',
-        type=int, default=60,
-        help='Maximum spherical harmonic degree')
-    parser.add_argument('--mmax','-m',
-        type=int, default=None,
-        help='Maximum spherical harmonic order')
+    parser.add_argument(
+        '--lmax',
+        '-l',
+        type=int,
+        default=60,
+        help='Maximum spherical harmonic degree',
+    )
+    parser.add_argument(
+        '--mmax',
+        '-m',
+        type=int,
+        default=None,
+        help='Maximum spherical harmonic order',
+    )
     # different treatments of the load Love numbers
     # 0: Han and Wahr (1995) values from PREM
     # 1: Gegout (2005) values from PREM
     # 2: Wang et al. (2012) values from PREM
     # 3: Wang et al. (2012) values from PREM with hard sediment
     # 4: Wang et al. (2012) values from PREM with soft sediment
-    parser.add_argument('--love','-n',
-        type=int, default=0, choices=[0,1,2,3,4],
-        help='Treatment of the Load Love numbers')
+    parser.add_argument(
+        '--love',
+        '-n',
+        type=int,
+        default=0,
+        choices=[0, 1, 2, 3, 4],
+        help='Treatment of the Load Love numbers',
+    )
     # option for setting reference frame for gravitational load love number
     # reference frame options (CF, CM, CE)
-    parser.add_argument('--reference',
-        type=str.upper, default='CF', choices=['CF','CM','CE'],
-        help='Reference frame for load Love numbers')
+    parser.add_argument(
+        '--reference',
+        type=str.upper,
+        default='CF',
+        choices=['CF', 'CM', 'CE'],
+        help='Reference frame for load Love numbers',
+    )
     # Gaussian smoothing radius (km)
-    parser.add_argument('--radius','-R',
-        type=float, default=0,
-        help='Gaussian smoothing radius (km)')
+    parser.add_argument(
+        '--radius',
+        '-R',
+        type=float,
+        default=0,
+        help='Gaussian smoothing radius (km)',
+    )
     # Use a decorrelation (destriping) filter
-    parser.add_argument('--destripe','-d',
-        default=False, action='store_true',
-        help='Use decorrelation (destriping) filter')
+    parser.add_argument(
+        '--destripe',
+        '-d',
+        default=False,
+        action='store_true',
+        help='Use decorrelation (destriping) filter',
+    )
     # mascon index file and parameters
-    parser.add_argument('--mascon-file',
+    parser.add_argument(
+        '--mascon-file',
         type=pathlib.Path,
-        help='Index file of mascons spherical harmonics')
-    parser.add_argument('--mascon-format',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
-        help='Input data format for mascon files')
-    parser.add_argument('--redistribute-mascons',
-        default=False, action='store_true',
-        help='Redistribute mascon mass over the ocean')
+        help='Index file of mascons spherical harmonics',
+    )
+    parser.add_argument(
+        '--mascon-format',
+        type=str,
+        default='netCDF4',
+        choices=['ascii', 'netCDF4', 'HDF5'],
+        help='Input data format for mascon files',
+    )
+    parser.add_argument(
+        '--redistribute-mascons',
+        default=False,
+        action='store_true',
+        help='Redistribute mascon mass over the ocean',
+    )
     # 1: mass coefficients
     # 2: geoid coefficients
-    parser.add_argument('--fit-method',
-        type=int, default=1, choices=(1,2),
-        help='Method for fitting sensitivity kernel to harmonics')
+    parser.add_argument(
+        '--fit-method',
+        type=int,
+        default=1,
+        choices=(1, 2),
+        help='Method for fitting sensitivity kernel to harmonics',
+    )
     # least squares solver
-    choices = ('inv','lstsq','gelsd', 'gelsy', 'gelss')
-    parser.add_argument('--solver','-s',
-        type=str, default='lstsq', choices=choices,
-        help='Least squares solver for sensitivity kernel solutions')
+    choices = ('inv', 'lstsq', 'gelsd', 'gelsy', 'gelss')
+    parser.add_argument(
+        '--solver',
+        '-s',
+        type=str,
+        default='lstsq',
+        choices=choices,
+        help='Least squares solver for sensitivity kernel solutions',
+    )
     # land-sea mask for redistributing mascon mass and land water flux
-    lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
-    parser.add_argument('--mask',
-        type=pathlib.Path, default=lsmask,
-        help='Land-sea mask for redistributing mascon mass')
+    lsmask = gravtk.utilities.get_data_path(['data', 'landsea_hd.nc'])
+    parser.add_argument(
+        '--mask',
+        type=pathlib.Path,
+        default=lsmask,
+        help='Land-sea mask for redistributing mascon mass',
+    )
     # print information about processing run
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of processing run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of processing run',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -519,13 +645,15 @@ def main():
             SOLVER=args.solver,
             LANDMASK=args.mask,
             OUTPUT_DIRECTORY=args.output_directory,
-            MODE=args.mode)
+            MODE=args.mode,
+        )
     except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
+
 
 # run main program
 if __name__ == '__main__':

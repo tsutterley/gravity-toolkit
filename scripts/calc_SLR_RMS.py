@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 calc_SLR_RMS.py (05/2023)
 Reads low-degree zonal harmonics from Satellite Laser Ranging (SLR)
 and estimates the uncertainty as the RMS off the monthly mean field
@@ -29,6 +29,7 @@ UPDATE HISTORY:
     Updated 12/2021: can use variable loglevels for verbose output
     Written 11/2021
 """
+
 from __future__ import print_function, division
 
 import sys
@@ -38,25 +39,27 @@ import argparse
 import numpy as np
 import gravity_toolkit as gravtk
 
-# PURPOSE: read SLR low-degree coefficients and calculate RMS
-def calc_SLR_RMS(base_dir, START_MON, END_MON, MISSING, DATAFORM=None,
-    MODE=0o775):
 
+# PURPOSE: read SLR low-degree coefficients and calculate RMS
+def calc_SLR_RMS(
+    base_dir, START_MON, END_MON, MISSING, DATAFORM=None, MODE=0o775
+):
     # directory setup
     base_dir = pathlib.Path(base_dir).expanduser().absolute()
     # output data file format
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
 
     # GRACE/GRACE-FO mission gap
-    GAP = [187,188,189,190,191,192,193,194,195,196,197]
+    GAP = [187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197]
     missing = sorted(set(MISSING) | set(GAP))
     # CSR 5x5 monthly harmonics
     SLR_file = base_dir.joinpath('CSR_Monthly_5x5_Gravity_Harmonics.txt')
     CSR55 = gravtk.read_SLR_harmonics(SLR_file, HEADER=True)
     # converting from MJD into month, day and year to calculate GRACE month
-    YY,MM,*_ = gravtk.time.convert_julian(CSR55['MJD'] + 2400000.5,
-        format='tuple')
-    CSR55['month'] = gravtk.time.calendar_to_grace(YY,month=MM)
+    YY, MM, *_ = gravtk.time.convert_julian(
+        CSR55['MJD'] + 2400000.5, format='tuple'
+    )
+    CSR55['month'] = gravtk.time.calendar_to_grace(YY, month=MM)
     CSR55['month'] = gravtk.time.adjust_months(CSR55['month'])
     # CSR TN-11 coefficients
     # SLR_file = base_dir.joinpath('TN-11_C20_SLR.txt')
@@ -74,17 +77,29 @@ def calc_SLR_RMS(base_dir, START_MON, END_MON, MISSING, DATAFORM=None,
     # GFZ GravIS coefficients
     SLR_file = base_dir.joinpath('GFZ_RL06_C20_SLR.dat')
     GFZ_C20 = gravtk.SLR.C20(SLR_file)
-    SLR_file = base_dir.joinpath('GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat')
+    SLR_file = base_dir.joinpath(
+        'GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat'
+    )
     GFZ_C30 = gravtk.SLR.C30(SLR_file)
     GFZ_CS21 = gravtk.SLR.CS2(SLR_file)
     # GFZ GRACE coefficients to d/o 5
-    GFZ55 = gravtk.grace_input_months(base_dir, 'GFZ', 'RL06', 'GSM', 5,
-        START_MON, END_MON, missing, None, None)
+    GFZ55 = gravtk.grace_input_months(
+        base_dir,
+        'GFZ',
+        'RL06',
+        'GSM',
+        5,
+        START_MON,
+        END_MON,
+        missing,
+        None,
+        None,
+    )
 
     # calculate common months
-    month = sorted(set(np.arange(START_MON,END_MON+1)) - set(MISSING))
+    month = sorted(set(np.arange(START_MON, END_MON + 1)) - set(MISSING))
     common_months = np.copy(month)
-    for v in [CSR55,GSFC_C30,GFZ_C30]:
+    for v in [CSR55, GSFC_C30, GFZ_C30]:
         common_months = sorted(set(common_months) & set(v['month']))
     # number of common months
     nt = len(common_months)
@@ -96,77 +111,87 @@ def calc_SLR_RMS(base_dir, START_MON, END_MON, MISSING, DATAFORM=None,
     variance_Ylms = gravtk.harmonics().zeros(lmax=5, mmax=5, nt=nt)
     variance_Ylms.month[:] = np.copy(common_months)
     # for each set of parameters
-    parameters = [('clm',2,0),('clm',3,0),
-                  ('clm',4,0),('clm',5,0),
-                  ('clm',2,1),('slm',2,1),
-                  ('clm',2,2),('slm',2,2)]
+    parameters = [
+        ('clm', 2, 0),
+        ('clm', 3, 0),
+        ('clm', 4, 0),
+        ('clm', 5, 0),
+        ('clm', 2, 1),
+        ('slm', 2, 1),
+        ('clm', 2, 2),
+        ('slm', 2, 2),
+    ]
     # parameters for degree and order
     for a, (cs, l, m) in enumerate(parameters):
-        if (a == 0):
+        if a == 0:
             # C20
-            centers = [CSR_C20,GSFC_C20,GFZ_C20]
-        elif (a == 1):
+            centers = [CSR_C20, GSFC_C20, GFZ_C20]
+        elif a == 1:
             # C30
-            CSR55['data'] = CSR55[cs][l,m,:].copy()
-            centers = [CSR55,GSFC_C30,GFZ_C30]
-        elif (a == 2):
+            CSR55['data'] = CSR55[cs][l, m, :].copy()
+            centers = [CSR55, GSFC_C30, GFZ_C30]
+        elif a == 2:
             # C40
-            CSR55['data'] = CSR55[cs][l,m,:].copy()
-            GFZ55['data'] = GFZ55[cs][l,m,:].copy()
-            centers = [CSR55,GSFC_C40,GFZ55]
-        elif (a == 3):
+            CSR55['data'] = CSR55[cs][l, m, :].copy()
+            GFZ55['data'] = GFZ55[cs][l, m, :].copy()
+            centers = [CSR55, GSFC_C40, GFZ55]
+        elif a == 3:
             # C50
-            CSR55['data'] = CSR55[cs][l,m,:].copy()
-            GFZ55['data'] = GFZ55[cs][l,m,:].copy()
-            centers = [CSR55,GSFC_C50,GFZ55]
-        elif (a == 4):
+            CSR55['data'] = CSR55[cs][l, m, :].copy()
+            GFZ55['data'] = GFZ55[cs][l, m, :].copy()
+            centers = [CSR55, GSFC_C50, GFZ55]
+        elif a == 4:
             # C21
-            CSR55['data'] = CSR55[cs][l,m,:].copy()
+            CSR55['data'] = CSR55[cs][l, m, :].copy()
             GSFC_CS21['data'] = GSFC_CS21['C2m'].copy()
             GFZ_CS21['data'] = GFZ_CS21['C2m'].copy()
-            centers = [CSR55,GSFC_CS21,GFZ_CS21]
-        elif (a == 5):
+            centers = [CSR55, GSFC_CS21, GFZ_CS21]
+        elif a == 5:
             # S21
-            CSR55['data'] = CSR55[cs][l,m,:].copy()
+            CSR55['data'] = CSR55[cs][l, m, :].copy()
             GSFC_CS21['data'] = GSFC_CS21['S2m'].copy()
             GFZ_CS21['data'] = GFZ_CS21['S2m'].copy()
-            centers = [CSR55,GFZ_CS21,GFZ_CS21]
-        elif (a == 6):
+            centers = [CSR55, GFZ_CS21, GFZ_CS21]
+        elif a == 6:
             # C22
-            CSR55['data'] = CSR55[cs][l,m,:].copy()
+            CSR55['data'] = CSR55[cs][l, m, :].copy()
             GSFC_CS22['data'] = GSFC_CS22['C2m'].copy()
-            GFZ55['data'] = GFZ55[cs][l,m,:].copy()
-            centers = [CSR55,GSFC_CS22,GFZ55]
-        elif (a == 7):
+            GFZ55['data'] = GFZ55[cs][l, m, :].copy()
+            centers = [CSR55, GSFC_CS22, GFZ55]
+        elif a == 7:
             # S22
-            CSR55['data'] = CSR55[cs][l,m,:].copy()
+            CSR55['data'] = CSR55[cs][l, m, :].copy()
             GSFC_CS22['data'] = GSFC_CS22['S2m'].copy()
-            GFZ55['data'] = GFZ55[cs][l,m,:].copy()
-            centers = [CSR55,GSFC_CS22,GFZ55]
+            GFZ55['data'] = GFZ55[cs][l, m, :].copy()
+            centers = [CSR55, GSFC_CS22, GFZ55]
 
         # calculate the mean field for degree and order
-        for i,v in enumerate(centers):
-            ii = [i for i,m in enumerate(v['month']) if m in common_months]
-            tmp = v['data'][ii]-v['data'][ii].mean()
+        for i, v in enumerate(centers):
+            ii = [i for i, m in enumerate(v['month']) if m in common_months]
+            tmp = v['data'][ii] - v['data'][ii].mean()
             mean_Ylms.time[:] = v['time'][ii].copy()
-            if (cs == 'clm'):
-                mean_Ylms.clm[l,m,:] += tmp
-            elif (cs == 'slm'):
-                mean_Ylms.slm[l,m,:] += tmp
+            if cs == 'clm':
+                mean_Ylms.clm[l, m, :] += tmp
+            elif cs == 'slm':
+                mean_Ylms.slm[l, m, :] += tmp
 
         # calculate variance off mean harmonics for degree and order
-        for i,v in enumerate(centers):
-            ii = [i for i,m in enumerate(v['month']) if m in common_months]
-            tmp = v['data'][ii]-v['data'][ii].mean()
+        for i, v in enumerate(centers):
+            ii = [i for i, m in enumerate(v['month']) if m in common_months]
+            tmp = v['data'][ii] - v['data'][ii].mean()
             variance_Ylms.time[:] = v['time'][ii].copy()
-            if (cs == 'clm'):
-                variance_Ylms.clm[l,m,:] += (tmp - mean_Ylms.clm[l,m,:]/3.0)**2
-            elif (cs == 'slm'):
-                variance_Ylms.slm[l,m,:] += (tmp - mean_Ylms.slm[l,m,:]/3.0)**2
+            if cs == 'clm':
+                variance_Ylms.clm[l, m, :] += (
+                    tmp - mean_Ylms.clm[l, m, :] / 3.0
+                ) ** 2
+            elif cs == 'slm':
+                variance_Ylms.slm[l, m, :] += (
+                    tmp - mean_Ylms.slm[l, m, :] / 3.0
+                ) ** 2
 
     # calculate mean of harmonics
-    mean_Ylms = mean_Ylms.scale(1.0/3.0)
-    variance_Ylms = variance_Ylms.scale(1.0/3.0).power(0.5)
+    mean_Ylms = mean_Ylms.scale(1.0 / 3.0)
+    variance_Ylms = variance_Ylms.scale(1.0 / 3.0).power(0.5)
     # calculate RMS
     RMS_Ylms = gravtk.harmonics().zeros(lmax=5, mmax=5)
     RMS_Ylms.time = np.mean(variance_Ylms.time)
@@ -174,7 +199,7 @@ def calc_SLR_RMS(base_dir, START_MON, END_MON, MISSING, DATAFORM=None,
     for Ylms in variance_Ylms:
         RMS_Ylms.add(Ylms.power(2.0))
     # convert from variance to RMS
-    RMS_Ylms = RMS_Ylms.scale(1.0/nt).power(0.5)
+    RMS_Ylms = RMS_Ylms.scale(1.0 / nt).power(0.5)
     # attributes for output files
     attributes = {}
     attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
@@ -185,6 +210,7 @@ def calc_SLR_RMS(base_dir, START_MON, END_MON, MISSING, DATAFORM=None,
     # change the permissions mode
     FILE.chmod(mode=MODE)
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
@@ -194,50 +220,109 @@ def arguments():
             """
     )
     # working data directory
-    parser.add_argument('--directory','-D',
+    parser.add_argument(
+        '--directory',
+        '-D',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Working data directory')
+        help='Working data directory',
+    )
     # start and end GRACE/GRACE-FO months
-    parser.add_argument('--start','-S',
-        type=int, default=4,
-        help='Starting GRACE/GRACE-FO month for time series')
-    parser.add_argument('--end','-E',
-        type=int, default=231,
-        help='Ending GRACE/GRACE-FO month for time series')
-    MISSING = [6,7,18,109,114,125,130,135,140,141,146,151,156,162,166,167,172,
-        177,178,182,200,201]
-    parser.add_argument('--missing',
-        metavar='MISSING', type=int, nargs='+', default=MISSING,
-        help='Missing GRACE/GRACE-FO months in time series')
+    parser.add_argument(
+        '--start',
+        '-S',
+        type=int,
+        default=4,
+        help='Starting GRACE/GRACE-FO month for time series',
+    )
+    parser.add_argument(
+        '--end',
+        '-E',
+        type=int,
+        default=231,
+        help='Ending GRACE/GRACE-FO month for time series',
+    )
+    MISSING = [
+        6,
+        7,
+        18,
+        109,
+        114,
+        125,
+        130,
+        135,
+        140,
+        141,
+        146,
+        151,
+        156,
+        162,
+        166,
+        167,
+        172,
+        177,
+        178,
+        182,
+        200,
+        201,
+    ]
+    parser.add_argument(
+        '--missing',
+        metavar='MISSING',
+        type=int,
+        nargs='+',
+        default=MISSING,
+        help='Missing GRACE/GRACE-FO months in time series',
+    )
     # output data format
-    parser.add_argument('--format','-F',
-        type=str, default='netCDF4', choices=('ascii','netCDF4','HDF5'),
-        help='Output data format')
+    parser.add_argument(
+        '--format',
+        '-F',
+        type=str,
+        default='netCDF4',
+        choices=('ascii', 'netCDF4', 'HDF5'),
+        help='Output data format',
+    )
     # print information about each output file
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of run',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permission mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permission mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger for verbosity level
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=loglevels[args.verbose])
 
     # run program with parameters
-    calc_SLR_RMS(args.directory, args.start, args.end, args.missing,
-        DATAFORM=args.format, MODE=args.mode)
+    calc_SLR_RMS(
+        args.directory,
+        args.start,
+        args.end,
+        args.missing,
+        DATAFORM=args.format,
+        MODE=args.mode,
+    )
+
 
 # run main program
 if __name__ == '__main__':

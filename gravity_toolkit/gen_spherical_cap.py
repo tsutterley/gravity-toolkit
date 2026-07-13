@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 gen_spherical_cap.py
 Written by Tyler Sutterley (07/2026)
 Calculates gravitational spherical harmonic coefficients for a spherical cap
@@ -94,14 +94,27 @@ UPDATE HISTORY:
     Updated 06/2012: major revision to code organizzation
     Written 04/2012
 """
+
 import numpy as np
 import gravity_toolkit.units
 import gravity_toolkit.harmonics
 from gravity_toolkit.associated_legendre import plm_holmes
 from gravity_toolkit.legendre_polynomials import legendre_polynomials
 
-def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
-    AREA=0, RAD_CAP=0, RAD_KM=0, UNITS=1, PLM=None, LOVE=None):
+
+def gen_spherical_cap(
+    data,
+    lon,
+    lat,
+    LMAX=60,
+    MMAX=None,
+    AREA=0,
+    RAD_CAP=0,
+    RAD_KM=0,
+    UNITS=1,
+    PLM=None,
+    LOVE=None,
+):
     r"""
     Calculates spherical harmonic coefficients for a spherical cap
     :cite:p:`Holmes:2002ff,Longman:1962ev,Farrell:1972cm,Pollack:1973gi,Jacob:2012eo`
@@ -149,8 +162,8 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
         MMAX = np.copy(LMAX)
 
     # convert lon and lat to radians
-    phi = np.radians(lon)# Longitude in radians
-    th = np.radians(90.0 - lat)# Colatitude in radians
+    phi = np.radians(lon)  # Longitude in radians
+    th = np.radians(90.0 - lat)  # Colatitude in radians
 
     # Earth Parameters
     factors = gravity_toolkit.units(lmax=LMAX)
@@ -159,20 +172,20 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     # Following Jacob et al. (2012) Equation 4 and 5
     # alpha is the vertical semi-angle subtending a cone at the
     # center of the earth
-    if (RAD_CAP != 0):
+    if RAD_CAP != 0:
         # if given spherical cap radius in degrees
         # converting to radians
         alpha = np.radians(RAD_CAP)
-    elif (AREA != 0):
+    elif AREA != 0:
         # if given spherical cap area in cm^2
         # radius in centimeters
-        radius_cm = np.sqrt(AREA/np.pi)
+        radius_cm = np.sqrt(AREA / np.pi)
         # Calculating angular radius of spherical cap
-        alpha = (radius_cm/factors.rad_e)
-    elif (RAD_KM != 0):
+        alpha = radius_cm / factors.rad_e
+    elif RAD_KM != 0:
         # if given spherical cap radius in kilometers
         # Calculating angular radius of spherical cap
-        alpha = (1e5*RAD_KM)/factors.rad_e
+        alpha = (1e5 * RAD_KM) / factors.rad_e
     else:
         raise ValueError('Input RAD_CAP, AREA or RAD_KM of spherical cap')
 
@@ -181,31 +194,37 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
         # custom units
         unit_conv = 1.0
         dfactor = np.copy(UNITS)
-    elif (UNITS == 1):
+    elif UNITS == 1:
         # Input data is in cm water equivalent (cmwe)
         unit_conv = 1.0
         # degree dependent factors to convert from coefficients
         # of mass into normalized geoid coefficients
-        dfactor = 4.0*np.pi*factors.spatial(*LOVE).cmwe/(1.0 + 2.0*factors.l)
-    elif (UNITS == 2):
+        dfactor = (
+            4.0 * np.pi * factors.spatial(*LOVE).cmwe / (1.0 + 2.0 * factors.l)
+        )
+    elif UNITS == 2:
         # Input data is in gigatonnes (Gt)
         # calculate spherical cap area from angular radius
-        area = np.pi*(alpha*factors.rad_e)**2
+        area = np.pi * (alpha * factors.rad_e) ** 2
         # the 1.e15 converts from gigatons/cm^2 to cm of water
         # 1 g/cm^3 = 1000 kg/m^3 = density water
         # 1 Gt = 1 Pg = 1.e15 g
-        unit_conv = 1.e15/area
+        unit_conv = 1.0e15 / area
         # degree dependent factors to convert from coefficients
         # of mass into normalized geoid coefficients
-        dfactor = 4.0*np.pi*factors.spatial(*LOVE).cmwe/(1.0 + 2.0*factors.l)
-    elif (UNITS == 3):
+        dfactor = (
+            4.0 * np.pi * factors.spatial(*LOVE).cmwe / (1.0 + 2.0 * factors.l)
+        )
+    elif UNITS == 3:
         # Input data is in kg/m^2
         # 1 kg = 1000 g
         # 1 m^2 = 100*100 cm^2 = 1e4 cm^2
         unit_conv = 0.1
         # degree dependent factors to convert from coefficients
         # of mass into normalized geoid coefficients
-        dfactor = 4.0*np.pi*factors.spatial(*LOVE).cmwe/(1.0 + 2.0*factors.l)
+        dfactor = (
+            4.0 * np.pi * factors.spatial(*LOVE).cmwe / (1.0 + 2.0 * factors.l)
+        )
     else:
         raise ValueError(f'Unknown units {UNITS}')
 
@@ -214,19 +233,19 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
     # pl_alpha = F(alpha) from Jacob 2011
     # pl_alpha is purely zonal and depends only on the size of the cap
     # allocating for constructed array
-    pl_alpha = np.zeros((LMAX+1))
+    pl_alpha = np.zeros((LMAX + 1))
     # l=0 is a special case (P(-1) = 1, P(1) = cos(alpha))
-    pl_alpha[0] = (1.0 - np.cos(alpha))/2.0
+    pl_alpha[0] = (1.0 - np.cos(alpha)) / 2.0
     # for all other degrees: calculate the legendre polynomials up to LMAX+1
-    pl_matrix,_ = legendre_polynomials(LMAX+1,np.cos(alpha))
-    for l in range(1, LMAX+1):# LMAX+1 to include LMAX
+    pl_matrix, _ = legendre_polynomials(LMAX + 1, np.cos(alpha))
+    for l in range(1, LMAX + 1):  # LMAX+1 to include LMAX
         # from Longman (1962) and Jacob et al (2012)
         # unnormalizing Legendre polynomials
         # sqrt(2*l - 1) == sqrt(2*(l-1) + 1)
         # sqrt(2*l + 3) == sqrt(2*(l+1) + 1)
-        pl_lower = pl_matrix[l-1]/np.sqrt(2.0*l-1.0)
-        pl_upper = pl_matrix[l+1]/np.sqrt(2.0*l+3.0)
-        pl_alpha[l] = (pl_lower - pl_upper)/2.0
+        pl_lower = pl_matrix[l - 1] / np.sqrt(2.0 * l - 1.0)
+        pl_upper = pl_matrix[l + 1] / np.sqrt(2.0 * l + 3.0)
+        pl_alpha[l] = (pl_lower - pl_upper) / 2.0
 
     # Calculating Legendre Polynomials
     # added option to precompute plms to improve computational speed
@@ -237,27 +256,27 @@ def gen_spherical_cap(data, lon, lat, LMAX=60, MMAX=None,
 
     # calculate array of m values ranging from 0 to MMAX (harmonic orders)
     # MMAX+1 as there are MMAX+1 elements between 0 and MMAX
-    m = np.arange(MMAX+1)
+    m = np.arange(MMAX + 1)
     # Multiplying by the units conversion factor (unit_conv) to
     # convert from the input units into cmwe
     # Multiplying point mass data (converted to cmwe) with sin/cos of m*phis
     # data normally is 1 for a uniform 1cm water equivalent layer
     # but can be a mass point if reconstructing a spherical harmonic field
     # NOTE: NOT a matrix multiplication as data (and phi) is a single point
-    d = unit_conv*data*np.exp(1j*m*phi)
+    d = unit_conv * data * np.exp(1j * m * phi)
 
     # Multiplying by plm_alpha (F_l from Jacob 2012)
-    plm = np.zeros((LMAX+1, MMAX+1))
+    plm = np.zeros((LMAX + 1, MMAX + 1))
     # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
     # rotate spherical cap to be centered at lat/lon
-    plm = np.einsum("lm...,l...->lm...", PLM[:LMAX+1,:MMAX+1], pl_alpha)
+    plm = np.einsum('lm...,l...->lm...', PLM[: LMAX + 1, : MMAX + 1], pl_alpha)
     # multiplying clm by cos(m*phi) and slm by sin(m*phi)
     # to get a field of spherical harmonics
-    ylm = np.einsum("lm...,m...->lm...", plm, d)
+    ylm = np.einsum('lm...,m...->lm...', plm, d)
     # Multiplying by factors to convert to fully normalized coefficients
-    Ylms.clm = np.einsum("l...,lm...->lm...", dfactor, ylm.real)
-    Ylms.slm = np.einsum("l...,lm...->lm...", dfactor, ylm.imag)
+    Ylms.clm = np.einsum('l...,lm...->lm...', dfactor, ylm.real)
+    Ylms.slm = np.einsum('l...,lm...->lm...', dfactor, ylm.imag)
 
     # return the output spherical harmonics object
     return Ylms

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 combine_sea_level_data.py
 Written by Tyler Sutterley (05/2023)
 Combines the sea level fingerprint data with the input load harmonics
@@ -64,6 +64,7 @@ UPDATE HISTORY:
     Updated 11/2018: can vary the land-sea mask for ascii files
     Written 09/2018
 """
+
 from __future__ import print_function
 
 import sys
@@ -75,6 +76,7 @@ import traceback
 import numpy as np
 import gravity_toolkit as gravtk
 
+
 # PURPOSE: keep track of threads
 def info(args):
     logging.info(pathlib.Path(sys.argv[0]).name)
@@ -84,8 +86,10 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
+
 # PURPOSE: combine the sea level data with the input dataset
-def combine_sea_level_data(index_file,
+def combine_sea_level_data(
+    index_file,
     LMAX=None,
     LOVE_NUMBERS=0,
     REFERENCE=None,
@@ -93,8 +97,8 @@ def combine_sea_level_data(index_file,
     LANDMASK=None,
     DIRECTORY=None,
     FILE_PREFIX=None,
-    MODE=0o775):
-
+    MODE=0o775,
+):
     # output filename suffix
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')[DATAFORM]
     # input and output file format
@@ -103,10 +107,11 @@ def combine_sea_level_data(index_file,
     # Land-Sea Mask with Antarctica from Rignot (2017) and Greenland from GEUS
     # 0=Ocean, 1=Land, 2=Lake, 3=Small Island, 4=Ice Shelf
     # Open the land-sea NetCDF file for reading
-    landsea = gravtk.spatial().from_netCDF4(LANDMASK, date=False,
-        varname='LSMASK')
+    landsea = gravtk.spatial().from_netCDF4(
+        LANDMASK, date=False, varname='LSMASK'
+    )
     # degree spacing and grid dimensions
-    dlon,dlat = landsea.spacing
+    dlon, dlat = landsea.spacing
     nlat, nlon = landsea.shape
     # longitude and colatitude in radians
     th = np.radians(90.0 - np.squeeze(landsea.lat))
@@ -114,13 +119,14 @@ def combine_sea_level_data(index_file,
     # Calculating Legendre Polynomials using Holmes and Featherstone relation
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(th))
     # read load Love numbers
-    LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
-        REFERENCE=REFERENCE)
+    LOVE = gravtk.load_love_numbers(
+        LMAX, LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE=REFERENCE
+    )
 
     # input spherical harmonic datafile index
     data_Ylms = gravtk.harmonics().from_index(index_file, format=DATAFORM)
     # truncate to degree and order
-    data_Ylms.truncate(lmax=LMAX,mmax=LMAX)
+    data_Ylms.truncate(lmax=LMAX, mmax=LMAX)
 
     # index file listing all output spherical harmonic files
     DIRECTORY = pathlib.Path(DIRECTORY).expanduser().absolute()
@@ -132,27 +138,38 @@ def combine_sea_level_data(index_file,
     # for each grace month and input file
     for Ylms in data_Ylms:
         # read sea level file
-        SLF = file_format.format(FILE_PREFIX,'',LMAX,Ylms.month,suffix)
+        SLF = file_format.format(FILE_PREFIX, '', LMAX, Ylms.month, suffix)
         input_file = DIRECTORY.joinpath(SLF)
-        if (DATAFORM == 'ascii'):
-            dinput = gravtk.spatial(spacing=[dlon,dlat],
-                nlon=nlon, nlat=nlat).from_ascii(input_file, date=False)
-        elif (DATAFORM == 'netCDF4'):
+        if DATAFORM == 'ascii':
+            dinput = gravtk.spatial(
+                spacing=[dlon, dlat], nlon=nlon, nlat=nlat
+            ).from_ascii(input_file, date=False)
+        elif DATAFORM == 'netCDF4':
             dinput = gravtk.spatial().from_netCDF4(input_file, date=False)
-        elif (DATAFORM == 'HDF5'):
+        elif DATAFORM == 'HDF5':
             dinput = gravtk.spatial().from_HDF5(input_file, date=False)
 
         # Converting sea level field into spherical harmonics
-        slf_Ylms = gravtk.gen_stokes(dinput.data, dinput.lon, dinput.lat,
-            UNITS=1, LMIN=0, LMAX=LMAX, PLM=PLM, LOVE=LOVE)
+        slf_Ylms = gravtk.gen_stokes(
+            dinput.data,
+            dinput.lon,
+            dinput.lat,
+            UNITS=1,
+            LMIN=0,
+            LMAX=LMAX,
+            PLM=PLM,
+            LOVE=LOVE,
+        )
         # add sea level harmonics to input harmonics
         Ylms.add(slf_Ylms)
 
         # attributes for output files
         attributes = {}
-        attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
+        attributes['reference'] = (
+            f'Output from {pathlib.Path(sys.argv[0]).name}'
+        )
         # output combined sea level harmonics
-        fargs = (FILE_PREFIX,'CLM_',LMAX,Ylms.month,suffix)
+        fargs = (FILE_PREFIX, 'CLM_', LMAX, Ylms.month, suffix)
         output_file = DIRECTORY.joinpath(file_format.format(*fargs))
         Ylms.to_file(output_file, format=DATAFORM, **attributes)
         # change output file permissions mode to MODE
@@ -164,69 +181,108 @@ def combine_sea_level_data(index_file,
     # change the permissions mode of the output index file
     output_index_file.chmod(mode=MODE)
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Calculates spatial sensitivity kernels through a
             least-squares mascon procedure
             """,
-        fromfile_prefix_chars="@"
+        fromfile_prefix_chars='@',
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
-    parser.add_argument('infile',
+    parser.add_argument(
+        'infile',
         type=pathlib.Path,
-        help='Input index file with spherical harmonic data files')
-    parser.add_argument('--output-directory','-O',
+        help='Input index file with spherical harmonic data files',
+    )
+    parser.add_argument(
+        '--output-directory',
+        '-O',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Output directory for files')
-    parser.add_argument('--file-prefix','-P',
+        help='Output directory for files',
+    )
+    parser.add_argument(
+        '--file-prefix',
+        '-P',
         type=str,
-        help='Prefix string for input and output files')
+        help='Prefix string for input and output files',
+    )
     # input data format (ascii, netCDF4, HDF5)
-    parser.add_argument('--format','-F',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
-        help='Input and output data format')
+    parser.add_argument(
+        '--format',
+        '-F',
+        type=str,
+        default='netCDF4',
+        choices=['ascii', 'netCDF4', 'HDF5'],
+        help='Input and output data format',
+    )
     # land-sea mask
-    lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
-    parser.add_argument('--mask',
-        type=pathlib.Path, default=lsmask,
-        help='Land-sea mask for sea level fingerprints')
+    lsmask = gravtk.utilities.get_data_path(['data', 'landsea_hd.nc'])
+    parser.add_argument(
+        '--mask',
+        type=pathlib.Path,
+        default=lsmask,
+        help='Land-sea mask for sea level fingerprints',
+    )
     # maximum spherical harmonic degree and order
-    parser.add_argument('--lmax','-l',
-        type=int, default=60,
-        help='Maximum spherical harmonic degree')
+    parser.add_argument(
+        '--lmax',
+        '-l',
+        type=int,
+        default=60,
+        help='Maximum spherical harmonic degree',
+    )
     # different treatments of the load Love numbers
     # 0: Han and Wahr (1995) values from PREM
     # 1: Gegout (2005) values from PREM
     # 2: Wang et al. (2012) values from PREM
     # 3: Wang et al. (2012) values from PREM with hard sediment
     # 4: Wang et al. (2012) values from PREM with soft sediment
-    parser.add_argument('--love','-n',
-        type=int, default=0, choices=[0,1,2,3,4],
-        help='Treatment of the Load Love numbers')
+    parser.add_argument(
+        '--love',
+        '-n',
+        type=int,
+        default=0,
+        choices=[0, 1, 2, 3, 4],
+        help='Treatment of the Load Love numbers',
+    )
     # option for setting reference frame for gravitational load love number
     # reference frame options (CF, CM, CE)
-    parser.add_argument('--reference',
-        type=str.upper, default='CF', choices=['CF','CM','CE'],
-        help='Reference frame for load Love numbers')
+    parser.add_argument(
+        '--reference',
+        type=str.upper,
+        default='CF',
+        choices=['CF', 'CM', 'CE'],
+        help='Reference frame for load Love numbers',
+    )
     # print information about processing run
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of processing run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of processing run',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger for verbosity level
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -236,7 +292,8 @@ def main():
     try:
         info(args)
         # run calc_sensitivity_kernel algorithm with parameters
-        combine_sea_level_data(args.infile,
+        combine_sea_level_data(
+            args.infile,
             LMAX=args.lmax,
             LOVE_NUMBERS=args.love,
             REFERENCE=args.reference,
@@ -244,13 +301,15 @@ def main():
             LANDMASK=args.mask,
             DIRECTORY=args.output_directory,
             FILE_PREFIX=args.file_prefix,
-            MODE=args.mode)
+            MODE=args.mode,
+        )
     except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
+
 
 # run main program
 if __name__ == '__main__':

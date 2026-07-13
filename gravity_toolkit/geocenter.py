@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 geocenter.py
 Written by Tyler Sutterley (07/2026)
 Data class for reading and processing geocenter data
@@ -43,6 +43,7 @@ UPDATE HISTORY:
     Updated 02/2014: minor update to if statement
     Updated 03/2013: converted to python
 """
+
 import re
 import io
 import copy
@@ -57,6 +58,7 @@ from gravity_toolkit.utilities import import_dependency
 
 # attempt imports
 netCDF4 = import_dependency('netCDF4')
+
 
 class geocenter(object):
     """
@@ -83,29 +85,33 @@ class geocenter(object):
     radius: float, default 6371000790.009159
         Average Radius of the Earth [mm]
     """
+
     np.seterr(invalid='ignore')
+
     def __init__(self, **kwargs):
         # WGS84 ellipsoid parameters
-        a_axis = 6378137.0# [m] semimajor axis of the ellipsoid
-        flat = 1.0/298.257223563# flattening of the ellipsoid
+        a_axis = 6378137.0  # [m] semimajor axis of the ellipsoid
+        flat = 1.0 / 298.257223563  # flattening of the ellipsoid
         # Mean Earth's Radius in mm having the same volume as WGS84 ellipsoid
-        kwargs.setdefault('radius', 1000.0*a_axis*(1.0 - flat)**(1.0/3.0))
+        kwargs.setdefault(
+            'radius', 1000.0 * a_axis * (1.0 - flat) ** (1.0 / 3.0)
+        )
         # cartesian coordinates
-        kwargs.setdefault('X',None)
-        kwargs.setdefault('Y',None)
-        kwargs.setdefault('Z',None)
+        kwargs.setdefault('X', None)
+        kwargs.setdefault('Y', None)
+        kwargs.setdefault('Z', None)
         # set default class attributes
-        self.C10=None
-        self.C11=None
-        self.S11=None
-        self.X=copy.copy(kwargs['X'])
-        self.Y=copy.copy(kwargs['Y'])
-        self.Z=copy.copy(kwargs['Z'])
-        self.time=None
-        self.month=None
-        self.filename=None
+        self.C10 = None
+        self.C11 = None
+        self.S11 = None
+        self.X = copy.copy(kwargs['X'])
+        self.Y = copy.copy(kwargs['Y'])
+        self.Z = copy.copy(kwargs['Z'])
+        self.time = None
+        self.month = None
+        self.filename = None
         # Average Radius of the Earth [mm]
-        self.radius=copy.copy(kwargs['radius'])
+        self.radius = copy.copy(kwargs['radius'])
         # iterator
         self.__index__ = 0
 
@@ -129,8 +135,11 @@ class geocenter(object):
             # check if file presently exists with input case
             if not self.filename.exists():
                 # search for filename without case dependence
-                f = [f.name for f in self.filename.parent.iterdir() if
-                    re.match(self.filename.name, f.name, re.I)]
+                f = [
+                    f.name
+                    for f in self.filename.parent.iterdir()
+                    if re.match(self.filename.name, f.name, re.I)
+                ]
                 if not f:
                     msg = f'{filename} not found in file system'
                     raise FileNotFoundError(msg)
@@ -165,22 +174,26 @@ class geocenter(object):
             raise FileNotFoundError(msg)
         # read AOD1b geocenter skipping over commented header text
         with AOD1B_file.open(mode='r', encoding='utf8') as f:
-            file_contents=[i for i in f.read().splitlines() if not re.match(r'#',i)]
+            file_contents = [
+                i for i in f.read().splitlines() if not re.match(r'#', i)
+            ]
         # extract X,Y,Z from each line in the file
         n_lines = len(file_contents)
         temp = geocenter()
         temp.X = np.zeros((n_lines))
         temp.Y = np.zeros((n_lines))
         temp.Z = np.zeros((n_lines))
-        for i,line in enumerate(file_contents):
+        for i, line in enumerate(file_contents):
             line_contents = line.split()
             # first column: ISO-formatted date and time
-            cal_date = time.strptime(line_contents[0],r'%Y-%m-%dT%H:%M:%S')
+            cal_date = time.strptime(line_contents[0], r'%Y-%m-%dT%H:%M:%S')
             # verify that dates are within year and month
-            assert (cal_date.tm_year == year)
-            assert (cal_date.tm_mon == month)
+            assert cal_date.tm_year == year
+            assert cal_date.tm_mon == month
             # second-fourth columns: X, Y and Z geocenter variations
-            temp.X[i],temp.Y[i],temp.Z[i] = np.array(line_contents[1:],dtype='f')
+            temp.X[i], temp.Y[i], temp.Z[i] = np.array(
+                line_contents[1:], dtype='f'
+            )
         # convert X,Y,Z into spherical harmonics
         temp.from_cartesian()
         # return the spherical harmonic coefficients
@@ -203,7 +216,7 @@ class geocenter(object):
         # set filename
         self.case_insensitive_filename(geocenter_file)
         # set default keyword arguments
-        kwargs.setdefault('header',True)
+        kwargs.setdefault('header', True)
 
         # Combined GRACE/SLR geocenter solution file produced by GFZ GravIS
         # Column  1: MJD of BEGINNING of solution data span
@@ -230,7 +243,7 @@ class geocenter(object):
             # file line at count
             line = file_contents[count]
             # find PRODUCT: within line to set HEADER flag to False when found
-            kwargs['header'] = not bool(re.match(r'PRODUCT:+',line))
+            kwargs['header'] = not bool(re.match(r'PRODUCT:+', line))
             # add 1 to counter
             count += 1
 
@@ -255,10 +268,10 @@ class geocenter(object):
         for line in file_contents[count:]:
             # find numerical instances in line including exponents,
             # decimal points and negatives
-            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
+            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?', line)
             count = len(line_contents)
             # check for empty lines
-            if (count > 0):
+            if count > 0:
                 # reading decimal year for start of span
                 dinput['time'][t] = np.float64(line_contents[1])
                 # Spherical Harmonic data for line
@@ -266,16 +279,17 @@ class geocenter(object):
                 dinput['C11'][t] = np.float64(line_contents[5])
                 dinput['S11'][t] = np.float64(line_contents[8])
                 # monthly spherical harmonic formal standard deviations
-                dinput['eC10'][t] = np.float64(line_contents[4])*1e-10
-                dinput['eC11'][t] = np.float64(line_contents[7])*1e-10
-                dinput['eS11'][t] = np.float64(line_contents[10])*1e-10
+                dinput['eC10'][t] = np.float64(line_contents[4]) * 1e-10
+                dinput['eC11'][t] = np.float64(line_contents[7]) * 1e-10
+                dinput['eS11'][t] = np.float64(line_contents[10]) * 1e-10
                 # GRACE/GRACE-FO month of geocenter solutions
                 dinput['month'][t] = gravity_toolkit.time.calendar_to_grace(
-                    dinput['time'][t], around=np.round)
+                    dinput['time'][t], around=np.round
+                )
                 # add to t count
                 t += 1
         # truncate variables if necessary
-        for key,val in dinput.items():
+        for key, val in dinput.items():
             dinput[key] = val[:t]
 
         # The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
@@ -334,10 +348,10 @@ class geocenter(object):
         # set filename
         self.case_insensitive_filename(geocenter_file)
         # set default keyword arguments
-        kwargs.setdefault('AOD',False)
-        kwargs.setdefault('columns',[])
-        kwargs.setdefault('header',0)
-        kwargs.setdefault('release',None)
+        kwargs.setdefault('AOD', False)
+        kwargs.setdefault('columns', [])
+        kwargs.setdefault('header', 0)
+        kwargs.setdefault('release', None)
         # copy keyword arguments to variables
         COLUMNS = copy.copy(kwargs['columns'])
         HEADER = copy.copy(kwargs['header'])
@@ -345,7 +359,9 @@ class geocenter(object):
         # directory setup for AOD1b data starting with input degree 1 file
         # this will verify that the input paths work
         base_dir = self.filename.parent.parent
-        self.directory = base_dir.joinpath('AOD1B', kwargs['release'], 'geocenter')
+        self.directory = base_dir.joinpath(
+            'AOD1B', kwargs['release'], 'geocenter'
+        )
         # check that AOD1B directory exists
         if not self.directory.exists():
             msg = f'{str(self.directory)} not found in file system'
@@ -375,10 +391,10 @@ class geocenter(object):
         JD = np.zeros((ndate))
 
         # for each date
-        for t,file_line in enumerate(file_contents[HEADER:]):
+        for t, file_line in enumerate(file_contents[HEADER:]):
             # find numerical instances in line
             # replacing fortran double precision exponential
-            line_contents = rx.findall(file_line.replace('D','E'))
+            line_contents = rx.findall(file_line.replace('D', 'E'))
             # extract date
             self.time[t] = np.float64(line_contents[COLUMNS.index('time')])
 
@@ -407,8 +423,9 @@ class geocenter(object):
             # Calculation of the Julian date from calendar date
             JD[t] = gravity_toolkit.time.calendar_to_julian(self.time[t])
             # convert the julian date into calendar dates
-            YY, MM, DD, hh, mm, ss = gravity_toolkit.time.convert_julian(JD[t],
-                FORMAT='tuple')
+            YY, MM, DD, hh, mm, ss = gravity_toolkit.time.convert_julian(
+                JD[t], FORMAT='tuple'
+            )
             # calculate the GRACE/GRACE-FO month (Apr02 == 004)
             # https://grace.jpl.nasa.gov/data/grace-months/
             self.month[t] = gravity_toolkit.time.calendar_to_grace(YY, month=MM)
@@ -459,8 +476,8 @@ class geocenter(object):
         while (HEADER is False) and (count < file_lines):
             # file line at count
             line = file_contents[count]
-            #if End of YAML Header is found: set HEADER flag
-            HEADER = bool(re.search(r"\# End of YAML header",line))
+            # if End of YAML Header is found: set HEADER flag
+            HEADER = bool(re.search(r'\# End of YAML header', line))
             # add 1 to counter
             count += 1
 
@@ -476,8 +493,9 @@ class geocenter(object):
         DEG1['JD'] = np.zeros((n_mon))
         DEG1['month'] = np.zeros((n_mon), dtype=np.int64)
         # parse the YAML header (specifying yaml loader)
-        DEG1.update(yaml.load('\n'.join(file_contents[:count]),
-            Loader=yaml.BaseLoader))
+        DEG1.update(
+            yaml.load('\n'.join(file_contents[:count]), Loader=yaml.BaseLoader)
+        )
 
         # compile numerical expression operator
         regex_pattern = r'[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[Ee][+-]?\d+)?'
@@ -491,7 +509,7 @@ class geocenter(object):
         # for each output data variable
         for key in variables:
             DEG1[key] = np.zeros((n_mon))
-            comment_text, = rx.findall(variables[key]['comment'])
+            (comment_text,) = rx.findall(variables[key]['comment'])
             columns[key] = int(comment_text) - 1
 
         # for every other line:
@@ -508,13 +526,20 @@ class geocenter(object):
             # check if year is a leap year
             days_per_year = np.sum(gravity_toolkit.time.calendar_days(year))
             # calculation of day of the year
-            day_of_the_year = days_per_year*(DEG1['time'][t] % 1)
+            day_of_the_year = days_per_year * (DEG1['time'][t] % 1)
             # calculate Julian day
-            DEG1['JD'][t] = np.float64(367.0*year - np.floor(7.0*(year)/4.0) -
-                np.floor(3.0*(np.floor((year - 8.0/7.0)/100.0) + 1.0)/4.0) +
-                np.floor(275.0/9.0) + day_of_the_year + 1721028.5)
+            DEG1['JD'][t] = np.float64(
+                367.0 * year
+                - np.floor(7.0 * (year) / 4.0)
+                - np.floor(
+                    3.0 * (np.floor((year - 8.0 / 7.0) / 100.0) + 1.0) / 4.0
+                )
+                + np.floor(275.0 / 9.0)
+                + day_of_the_year
+                + 1721028.5
+            )
             # extract fully-normalized degree one spherical harmonics
-            for key,val in columns.items():
+            for key, val in columns.items():
                 DEG1[key][t] = np.float64(line_contents[val])
 
         # return the geocenter harmonics
@@ -537,7 +562,7 @@ class geocenter(object):
         # set filename
         self.case_insensitive_filename(geocenter_file)
         # set default keyword arguments
-        kwargs.setdefault('header',True)
+        kwargs.setdefault('header', True)
 
         # read degree 1 file and get contents
         with self.filename.open(mode='r', encoding='utf8') as f:
@@ -552,7 +577,7 @@ class geocenter(object):
             # file line at count
             line = file_contents[count]
             # find Time within line to set HEADER flag to False when found
-            kwargs['header'] = not bool(re.search(r"Time",line))
+            kwargs['header'] = not bool(re.search(r'Time', line))
             # add 1 to counter
             count += 1
 
@@ -580,14 +605,14 @@ class geocenter(object):
             line_contents = rx.findall(line)
 
             # extracting time
-            self.time[t]=np.float64(line_contents[0])
+            self.time[t] = np.float64(line_contents[0])
             # extracting spherical harmonics and convert to cmwe
-            self.C10[t]=0.1*np.float64(line_contents[1])
-            self.C11[t]=0.1*np.float64(line_contents[2])
-            self.S11[t]=0.1*np.float64(line_contents[3])
+            self.C10[t] = 0.1 * np.float64(line_contents[1])
+            self.C11[t] = 0.1 * np.float64(line_contents[2])
+            self.S11[t] = 0.1 * np.float64(line_contents[3])
 
             # calculate the GRACE months
-            if (len(line_contents) == 5):
+            if len(line_contents) == 5:
                 # months are included as last column
                 self.month[t] = np.int64(line_contents[4])
             else:
@@ -600,7 +625,8 @@ class geocenter(object):
                 # https://grace.jpl.nasa.gov/data/grace-months/
                 # Notes on special months (e.g. 119, 120) below
                 self.month[t] = gravity_toolkit.time.calendar_to_grace(
-                    cal_date['year'], month=cal_date['month'])
+                    cal_date['year'], month=cal_date['month']
+                )
 
         # The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
         # Accelerometer shutoffs make the relation between month number
@@ -638,8 +664,8 @@ class geocenter(object):
         # set filename
         self.case_insensitive_filename(geocenter_file)
         # set default keyword arguments
-        kwargs.setdefault('header',True)
-        kwargs.setdefault('JPL',True)
+        kwargs.setdefault('header', True)
+        kwargs.setdefault('JPL', True)
 
         # read degree 1 file and get contents
         with self.filename.open(mode='r', encoding='utf8') as f:
@@ -650,19 +676,19 @@ class geocenter(object):
         # counts the number of lines in the header
         count = 0
         # Reading over header text
-        header_flag = r"end\sof\sheader" if kwargs['JPL'] else r"'\(a6,"
+        header_flag = r'end\sof\sheader' if kwargs['JPL'] else r"'\(a6,"
         while kwargs['header']:
             # file line at count
             line = file_contents[count]
             # find header_flag within line to set HEADER flag to False when found
-            kwargs['header'] = not bool(re.match(header_flag,line))
+            kwargs['header'] = not bool(re.match(header_flag, line))
             # add 1 to counter
             count += 1
 
         # number of months within the file
-        n_mon = (file_lines - count)//2
+        n_mon = (file_lines - count) // 2
         # GRACE/GRACE-FO months
-        self.month = np.zeros((n_mon),dtype=np.int64)
+        self.month = np.zeros((n_mon), dtype=np.int64)
         # calendar dates in year-decimal
         self.time = np.zeros((n_mon))
         # spherical harmonic data
@@ -689,10 +715,10 @@ class geocenter(object):
             # spherical harmonic order
             m = np.int64(line_contents[2])
             # extract spherical harmonic data for order
-            if (m == 0):
+            if m == 0:
                 self.C10[t] = np.float64(line_contents[3])
                 self.eC10[t] = np.float64(line_contents[5])
-            elif (m == 1):
+            elif m == 1:
                 self.C11[t] = np.float64(line_contents[3])
                 self.S11[t] = np.float64(line_contents[4])
                 self.eC11[t] = np.float64(line_contents[5])
@@ -703,30 +729,35 @@ class geocenter(object):
             # calendar year and month
             if kwargs['JPL']:
                 # start and end date of month
-                start_date = time.strptime(line_contents[7][:8],r'%Y%m%d')
-                end_date = time.strptime(line_contents[8][:8],r'%Y%m%d')
+                start_date = time.strptime(line_contents[7][:8], r'%Y%m%d')
+                end_date = time.strptime(line_contents[8][:8], r'%Y%m%d')
                 # convert date to year decimal
-                ts = gravity_toolkit.time.convert_calendar_decimal(start_date.tm_year,
-                    start_date.tm_mon, day=start_date.tm_mday)
-                te = gravity_toolkit.time.convert_calendar_decimal(end_date.tm_year,
-                    end_date.tm_mon, day=end_date.tm_mday)
+                ts = gravity_toolkit.time.convert_calendar_decimal(
+                    start_date.tm_year,
+                    start_date.tm_mon,
+                    day=start_date.tm_mday,
+                )
+                te = gravity_toolkit.time.convert_calendar_decimal(
+                    end_date.tm_year, end_date.tm_mon, day=end_date.tm_mday
+                )
                 # calculate mean time
-                self.time[t] = np.mean([ts,te])
+                self.time[t] = np.mean([ts, te])
                 # calculate year and month for estimating GRACE/GRACE-FO month
                 year = np.floor(self.time[t])
-                month = np.int64(12*(self.time[t] % 1) + 1)
+                month = np.int64(12 * (self.time[t] % 1) + 1)
             else:
                 # dates of month
-                cal_date = time.strptime(line_contents[0][:6],r'%Y%m')
+                cal_date = time.strptime(line_contents[0][:6], r'%Y%m')
                 # calculate year and month for estimating GRACE/GRACE-FO month
                 year = cal_date.tm_year
                 month = cal_date.tm_mon
                 # convert date to year decimal
-                self.time[t], = gravity_toolkit.time.convert_calendar_decimal(
-                    cal_date.tm_year, cal_date.tm_mon)
+                (self.time[t],) = gravity_toolkit.time.convert_calendar_decimal(
+                    cal_date.tm_year, cal_date.tm_mon
+                )
             # estimated GRACE/GRACE-FO month
             # Accelerometer shutoffs complicate the month number calculation
-            self.month[t] = gravity_toolkit.time.calendar_to_grace(year,month)
+            self.month[t] = gravity_toolkit.time.calendar_to_grace(year, month)
 
             # will only advance in time after reading the
             # order 1 coefficients (t+0=t)
@@ -757,15 +788,15 @@ class geocenter(object):
         # set filename
         self.case_insensitive_filename(geocenter_file)
         # Open the netCDF4 file for reading
-        if (kwargs['compression'] == 'gzip'):
+        if kwargs['compression'] == 'gzip':
             # read gzipped file as in-memory (diskless) netCDF4 dataset
             with gzip.open(self.filename, mode='r') as f:
-                fileID = netCDF4.Dataset(uuid.uuid4().hex,
-                    memory=f.read())
-        elif (kwargs['compression'] == 'bytes'):
+                fileID = netCDF4.Dataset(uuid.uuid4().hex, memory=f.read())
+        elif kwargs['compression'] == 'bytes':
             # read as in-memory (diskless) netCDF4 dataset
-            fileID = netCDF4.Dataset(uuid.uuid4().hex,
-                memory=self.filename.read())
+            fileID = netCDF4.Dataset(
+                uuid.uuid4().hex, memory=self.filename.read()
+            )
         else:
             fileID = netCDF4.Dataset(self.filename, mode='r')
         # check if reading from root group or sub-group
@@ -790,9 +821,22 @@ class geocenter(object):
                 default keys in ``geocenter`` object
         """
         # set default keyword arguments
-        kwargs.setdefault('fields',['time','month',
-            'C10','C11','S11','eC10','eC11','eS11',
-            'X','Y','Z'])
+        kwargs.setdefault(
+            'fields',
+            [
+                'time',
+                'month',
+                'C10',
+                'C11',
+                'S11',
+                'eC10',
+                'eC11',
+                'eS11',
+                'X',
+                'Y',
+                'Z',
+            ],
+        )
         temp = geocenter()
         # try to assign variables to self
         for key in kwargs['fields']:
@@ -815,9 +859,25 @@ class geocenter(object):
             default keys in dictionary
         """
         # set default keyword arguments
-        kwargs.setdefault('fields',['time','month',
-            'C10','C11','S11','eC10','eC11','eS11',
-            'X','Y','Z','X_sigma','Y_sigma','Z_sigma'])
+        kwargs.setdefault(
+            'fields',
+            [
+                'time',
+                'month',
+                'C10',
+                'C11',
+                'S11',
+                'eC10',
+                'eC11',
+                'eS11',
+                'X',
+                'Y',
+                'Z',
+                'X_sigma',
+                'Y_sigma',
+                'Z_sigma',
+            ],
+        )
         # assign dictionary variables to self
         for key in kwargs['fields']:
             try:
@@ -840,7 +900,7 @@ class geocenter(object):
         # assign degree and order fields
         temp.update_dimensions()
         # set default keyword arguments
-        kwargs.setdefault('fields',['time','month','filename'])
+        kwargs.setdefault('fields', ['time', 'month', 'filename'])
         # try to assign variables to self
         for key in kwargs['fields']:
             try:
@@ -849,14 +909,14 @@ class geocenter(object):
             except AttributeError:
                 pass
         # get spherical harmonic objects
-        if (temp.ndim == 2):
-            self.C10 = np.copy(temp.clm[1,0])
-            self.C11 = np.copy(temp.clm[1,1])
-            self.S11 = np.copy(temp.slm[1,1])
-        elif (temp.ndim == 3):
-            self.C10 = np.copy(temp.clm[1,0,:])
-            self.C11 = np.copy(temp.clm[1,1,:])
-            self.S11 = np.copy(temp.slm[1,1,:])
+        if temp.ndim == 2:
+            self.C10 = np.copy(temp.clm[1, 0])
+            self.C11 = np.copy(temp.clm[1, 1])
+            self.S11 = np.copy(temp.slm[1, 1])
+        elif temp.ndim == 3:
+            self.C10 = np.copy(temp.clm[1, 0, :])
+            self.C11 = np.copy(temp.clm[1, 1, :])
+            self.S11 = np.copy(temp.slm[1, 1, :])
         # return the geocenter object
         return self
 
@@ -875,9 +935,9 @@ class geocenter(object):
         clm = np.atleast_3d(clm)
         slm = np.atleast_3d(slm)
         # output geocenter object
-        self.C10 = np.copy(clm[1,0,:])
-        self.C11 = np.copy(clm[1,1,:])
-        self.S11 = np.copy(slm[1,1,:])
+        self.C10 = np.copy(clm[1, 0, :])
+        self.C11 = np.copy(clm[1, 1, :])
+        self.S11 = np.copy(slm[1, 1, :])
         return self
 
     def to_dict(self, **kwargs):
@@ -892,9 +952,25 @@ class geocenter(object):
         # output dictionary
         temp = {}
         # set default keyword arguments
-        kwargs.setdefault('fields',['time','month',
-            'C10','C11','S11','eC10','eC11','eS11',
-            'X','Y','Z','X_sigma','Y_sigma','Z_sigma'])
+        kwargs.setdefault(
+            'fields',
+            [
+                'time',
+                'month',
+                'C10',
+                'C11',
+                'S11',
+                'eC10',
+                'eC11',
+                'eS11',
+                'X',
+                'Y',
+                'Z',
+                'X_sigma',
+                'Y_sigma',
+                'Z_sigma',
+            ],
+        )
         # assign dictionary variables to self
         for key in kwargs['fields']:
             try:
@@ -911,14 +987,14 @@ class geocenter(object):
         Converts a ``geocenter`` object to spherical harmonic matrices
         """
         # verify dimensions
-        _,nt = np.shape(np.atleast_2d(self.C10))
+        _, nt = np.shape(np.atleast_2d(self.C10))
         # output spherical harmonics
-        clm = np.zeros((2,2,nt))
-        slm = np.zeros((2,2,nt))
+        clm = np.zeros((2, 2, nt))
+        slm = np.zeros((2, 2, nt))
         # copy geocenter harmonics to matrices
-        clm[1,0,:] = np.atleast_2d(self.C10)
-        clm[1,1,:] = np.atleast_2d(self.C11)
-        slm[1,1,:] = np.atleast_2d(self.S11)
+        clm[1, 0, :] = np.atleast_2d(self.C10)
+        clm[1, 1, :] = np.atleast_2d(self.C11)
+        slm[1, 1, :] = np.atleast_2d(self.S11)
         return dict(clm=clm, slm=slm)
 
     def to_cartesian(self, kl=0.0):
@@ -932,16 +1008,16 @@ class geocenter(object):
         """
         # Stokes Coefficients to cartesian geocenter
         try:
-            self.Z = self.C10*self.radius*np.sqrt(3.0)/(1.0 + kl)
-            self.X = self.C11*self.radius*np.sqrt(3.0)/(1.0 + kl)
-            self.Y = self.S11*self.radius*np.sqrt(3.0)/(1.0 + kl)
+            self.Z = self.C10 * self.radius * np.sqrt(3.0) / (1.0 + kl)
+            self.X = self.C11 * self.radius * np.sqrt(3.0) / (1.0 + kl)
+            self.Y = self.S11 * self.radius * np.sqrt(3.0) / (1.0 + kl)
         except Exception as exc:
             pass
         # convert errors to cartesian geocenter
         try:
-            self.Z_sigma = self.eC10*self.radius*np.sqrt(3.0)/(1.0 + kl)
-            self.X_sigma = self.eC11*self.radius*np.sqrt(3.0)/(1.0 + kl)
-            self.Y_sigma = self.eS11*self.radius*np.sqrt(3.0)/(1.0 + kl)
+            self.Z_sigma = self.eC10 * self.radius * np.sqrt(3.0) / (1.0 + kl)
+            self.X_sigma = self.eC11 * self.radius * np.sqrt(3.0) / (1.0 + kl)
+            self.Y_sigma = self.eS11 * self.radius * np.sqrt(3.0) / (1.0 + kl)
         except Exception as exc:
             pass
         return self
@@ -960,14 +1036,14 @@ class geocenter(object):
         # Average Radius of the Earth [cm]
         rad_e = 6.371e8
         # convert to centimeters water equivalent
-        self.C10 *= (rho_e*rad_e)/(1.0 + kl)
-        self.C11 *= (rho_e*rad_e)/(1.0 + kl)
-        self.S11 *= (rho_e*rad_e)/(1.0 + kl)
+        self.C10 *= (rho_e * rad_e) / (1.0 + kl)
+        self.C11 *= (rho_e * rad_e) / (1.0 + kl)
+        self.S11 *= (rho_e * rad_e) / (1.0 + kl)
         # convert errors to centimeters water equivalent
         try:
-            self.eC10 *= (rho_e*rad_e)/(1.0 + kl)
-            self.eC11 *= (rho_e*rad_e)/(1.0 + kl)
-            self.eS11 *= (rho_e*rad_e)/(1.0 + kl)
+            self.eC10 *= (rho_e * rad_e) / (1.0 + kl)
+            self.eC11 *= (rho_e * rad_e) / (1.0 + kl)
+            self.eS11 *= (rho_e * rad_e) / (1.0 + kl)
         except Exception as exc:
             pass
         return self
@@ -1005,14 +1081,14 @@ class geocenter(object):
             gravitational load love number of degree 1
         """
         # cartesian geocenter to Stokes Coefficients
-        self.C10 = (1.0 + kl)*self.Z/(self.radius*np.sqrt(3.0))
-        self.C11 = (1.0 + kl)*self.X/(self.radius*np.sqrt(3.0))
-        self.S11 = (1.0 + kl)*self.Y/(self.radius*np.sqrt(3.0))
+        self.C10 = (1.0 + kl) * self.Z / (self.radius * np.sqrt(3.0))
+        self.C11 = (1.0 + kl) * self.X / (self.radius * np.sqrt(3.0))
+        self.S11 = (1.0 + kl) * self.Y / (self.radius * np.sqrt(3.0))
         # convert cartesian geocenter to stokes coefficients
         try:
-            self.eC10 = (1.0 + kl)*self.Z_sigma/(self.radius*np.sqrt(3.0))
-            self.eC11 = (1.0 + kl)*self.X_sigma/(self.radius*np.sqrt(3.0))
-            self.eS11 = (1.0 + kl)*self.Y_sigma/(self.radius*np.sqrt(3.0))
+            self.eC10 = (1.0 + kl) * self.Z_sigma / (self.radius * np.sqrt(3.0))
+            self.eC11 = (1.0 + kl) * self.X_sigma / (self.radius * np.sqrt(3.0))
+            self.eS11 = (1.0 + kl) * self.Y_sigma / (self.radius * np.sqrt(3.0))
         except Exception as exc:
             pass
         return self
@@ -1031,14 +1107,14 @@ class geocenter(object):
         # Average Radius of the Earth [cm]
         rad_e = 6.371e8
         # convert from centimeters water equivalent
-        self.C10 *= (1.0 + kl)/(rho_e*rad_e)
-        self.C11 *= (1.0 + kl)/(rho_e*rad_e)
-        self.S11 *= (1.0 + kl)/(rho_e*rad_e)
+        self.C10 *= (1.0 + kl) / (rho_e * rad_e)
+        self.C11 *= (1.0 + kl) / (rho_e * rad_e)
+        self.S11 *= (1.0 + kl) / (rho_e * rad_e)
         # convert errors from centimeters water equivalent
         try:
-            self.eC10 *= (1.0 + kl)/(rho_e*rad_e)
-            self.eC11 *= (1.0 + kl)/(rho_e*rad_e)
-            self.eS11 *= (1.0 + kl)/(rho_e*rad_e)
+            self.eC10 *= (1.0 + kl) / (rho_e * rad_e)
+            self.eC11 *= (1.0 + kl) / (rho_e * rad_e)
+            self.eS11 *= (1.0 + kl) / (rho_e * rad_e)
         except Exception as exc:
             pass
         return self
@@ -1089,7 +1165,7 @@ class geocenter(object):
             self.C11 -= temp.C11
             self.S11 -= temp.S11
         # calculate mean of temporal variables
-        for key in ['time','month']:
+        for key in ['time', 'month']:
             try:
                 val = getattr(self, key)
                 setattr(temp, key, np.mean(val[indices]))
@@ -1167,9 +1243,9 @@ class geocenter(object):
         temp.time = np.copy(self.time)
         temp.month = np.copy(self.month)
         # multiply by a single constant or a time-variable scalar
-        temp.C10 = var*self.C10
-        temp.C11 = var*self.C11
-        temp.S11 = var*self.S11
+        temp.C10 = var * self.C10
+        temp.C11 = var * self.C11
+        temp.S11 = var * self.S11
         return temp
 
     def power(self, power):
@@ -1184,9 +1260,9 @@ class geocenter(object):
         temp = geocenter()
         temp.time = np.copy(self.time)
         temp.month = np.copy(self.month)
-        temp.C10 = np.power(self.C10,power)
-        temp.C11 = np.power(self.C11,power)
-        temp.S11 = np.power(self.S11,power)
+        temp.C10 = np.power(self.C10, power)
+        temp.C11 = np.power(self.C11, power)
+        temp.S11 = np.power(self.S11, power)
         return temp
 
     def get(self, field: str):
@@ -1211,12 +1287,11 @@ class geocenter(object):
         return ['C10', 'C11', 'S11']
 
     def __str__(self):
-        """String representation of the ``geocenter`` object
-        """
+        """String representation of the ``geocenter`` object"""
         properties = ['gravity_toolkit.geocenter']
         if self.month:
-            properties.append(f"    start_month: {min(self.month)}")
-            properties.append(f"    end_month: {max(self.month)}")
+            properties.append(f'    start_month: {min(self.month)}')
+            properties.append(f'    end_month: {max(self.month)}')
         return '\n'.join(properties)
 
     def __add__(self, other):
@@ -1265,12 +1340,12 @@ class geocenter(object):
             return temp.scale(other)
         else:
             return temp.multiply(other)
-    
+
     def __pow__(self, other):
         """Raise values from a ``geocenter`` object to a power"""
         temp = self.copy()
         return temp.power(other)
-    
+
     def __sub__(self, other):
         """Subtract values from a ``geocenter`` object"""
         temp = self.copy()
@@ -1285,19 +1360,16 @@ class geocenter(object):
             return temp.divide(other)
 
     def __len__(self):
-        """Number of months
-        """
+        """Number of months"""
         return len(self.month) if np.any(self.month) else 0
 
     def __iter__(self):
-        """Iterate over GRACE/GRACE-FO months
-        """
+        """Iterate over GRACE/GRACE-FO months"""
         self.__index__ = 0
         return self
 
     def __next__(self):
-        """Get the next month of data
-        """
+        """Get the next month of data"""
         temp = geocenter()
         try:
             temp.time = self.time[self.__index__].copy()
