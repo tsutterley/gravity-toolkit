@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 legendre_polynomials.py
 Written by Tyler Sutterley (11/2024)
 
@@ -44,7 +44,9 @@ UPDATE HISTORY:
         added option ASTYPE to output as different variable types e.g. np.float64
     Written 03/2013
 """
+
 import numpy as np
+
 
 def legendre_polynomials(lmax, x, ASTYPE=np.float64):
     """
@@ -76,36 +78,38 @@ def legendre_polynomials(lmax, x, ASTYPE=np.float64):
     # verify data type of spherical harmonic truncation
     lmax = np.int64(lmax)
     # output matrix of normalized legendre polynomials
-    pl = np.zeros((lmax+1,nx),dtype=ASTYPE)
+    pl = np.zeros((lmax + 1, nx), dtype=ASTYPE)
     # output matrix of First derivative of Legendre polynomials
-    dpl = np.zeros((lmax+1,nx),dtype=ASTYPE)
+    dpl = np.zeros((lmax + 1, nx), dtype=ASTYPE)
     # dummy matrix for the recurrence relation
-    ptemp = np.zeros((lmax+1,nx),dtype=ASTYPE)
+    ptemp = np.zeros((lmax + 1, nx), dtype=ASTYPE)
 
     # u is sine of colatitude (cosine of latitude) so that 0 <= s <= 1
     # for x=cos(th): u=sin(th)
     u = np.sqrt(1.0 - x**2)
     # update where u==0 to eps of data type to prevent invalid divisions
-    u0, = np.nonzero(u == 0)
+    (u0,) = np.nonzero(u == 0)
     u[u0] = np.finfo(u.dtype).eps
 
     # Initialize the recurrence relation
-    ptemp[0,:] = 1.0
-    ptemp[1,:] = x
+    ptemp[0, :] = 1.0
+    ptemp[1, :] = x
     # Normalization is geodesy convention
-    pl[0,:] = ptemp[0,:]
-    pl[1,:] = np.sqrt(3.0)*ptemp[1,:]
-    for l in range(2,lmax+1):
-        ptemp[l,:] = (((2.0*l)-1.0)/l)*x*ptemp[l-1,:] - ((l-1.0)/l)*ptemp[l-2,:]
+    pl[0, :] = ptemp[0, :]
+    pl[1, :] = np.sqrt(3.0) * ptemp[1, :]
+    for l in range(2, lmax + 1):
+        ptemp[l, :] = (((2.0 * l) - 1.0) / l) * x * ptemp[l - 1, :] - (
+            (l - 1.0) / l
+        ) * ptemp[l - 2, :]
         # Normalization is geodesy convention
-        pl[l,:] = np.sqrt((2.0*l)+1.0)*ptemp[l,:]
+        pl[l, :] = np.sqrt((2.0 * l) + 1.0) * ptemp[l, :]
         # Overwrite polar case (x == +/-1)
-        pl[l,u0] = np.sqrt((2.0*l)+1.0)*x[u0]**l
+        pl[l, u0] = np.sqrt((2.0 * l) + 1.0) * x[u0] ** l
 
     # First derivative of Legendre polynomials
-    for l in range(1,lmax+1):
-        fl = np.sqrt(((l**2.0) * (2.0*l + 1.0)) / (2.0*l - 1.0))
-        dpl[l,:] = (1.0/u)*(l*x*pl[l,:] - fl*pl[l-1,:])
+    for l in range(1, lmax + 1):
+        fl = np.sqrt(((l**2.0) * (2.0 * l + 1.0)) / (2.0 * l - 1.0))
+        dpl[l, :] = (1.0 / u) * (l * x * pl[l, :] - fl * pl[l - 1, :])
 
     # return the legendre polynomials and their first derivative
     return (pl, dpl)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 harmonic_gradients.py
 Original IDL code calc_grad.pro written by Sean Swenson
 Adapted by Tyler Sutterley (07/2026)
@@ -39,6 +39,7 @@ UPDATE HISTORY:
     Updated 05/2015: code updates
     Written 05/2013
 """
+
 from __future__ import division
 import numpy as np
 from gravity_toolkit.fourier_legendre import legendre_gradient
@@ -46,8 +47,8 @@ from gravity_toolkit.associated_legendre import plm_holmes
 from gravity_toolkit.gauss_weights import gauss_weights
 from gravity_toolkit.units import units
 
-def harmonic_gradients(clm1, slm1, lon, lat,
-    LMIN=0, LMAX=60, MMAX=None):
+
+def harmonic_gradients(clm1, slm1, lon, lat, LMIN=0, LMAX=60, MMAX=None):
     """
     Calculates the gradient of a scalar field from a series of
     spherical harmonics :cite:p:`Driscoll:1994bp`
@@ -76,8 +77,8 @@ def harmonic_gradients(clm1, slm1, lon, lat,
     """
 
     # if LMAX is not specified, will use the size of the input harmonics
-    if (LMAX == 0):
-        LMAX = np.shape(clm1)[0]-1
+    if LMAX == 0:
+        LMAX = np.shape(clm1)[0] - 1
     # upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:
         MMAX = np.copy(LMAX)
@@ -89,41 +90,56 @@ def harmonic_gradients(clm1, slm1, lon, lat,
     thmax = len(th)
 
     # spherical harmonic degree and order
-    ll = np.arange(0,LMAX+1)# lmax+1 to include lmax
-    mm = np.arange(0,MMAX+1)# mmax+1 to include mmax
+    ll = np.arange(0, LMAX + 1)  # lmax+1 to include lmax
+    mm = np.arange(0, MMAX + 1)  # mmax+1 to include mmax
     # real (cosine) and imaginary (sine) components
-    Ylm = np.zeros((LMAX+1, MMAX+1), dtype=np.complex128)
+    Ylm = np.zeros((LMAX + 1, MMAX + 1), dtype=np.complex128)
     # Truncating harmonics to degree and order LMAX
     # removing coefficients below LMIN and above MMAX
-    Ylm.real[LMIN:LMAX+1,:MMAX+1] = clm1[LMIN:LMAX+1,:MMAX+1].copy()
-    Ylm.imag[LMIN:LMAX+1,:MMAX+1] = -slm1[LMIN:LMAX+1,:MMAX+1].copy()
-    dlm = np.einsum("l...,lm...->lm", np.sqrt((ll+1.0)*ll), -1j*Ylm)
+    Ylm.real[LMIN : LMAX + 1, : MMAX + 1] = clm1[
+        LMIN : LMAX + 1, : MMAX + 1
+    ].copy()
+    Ylm.imag[LMIN : LMAX + 1, : MMAX + 1] = -slm1[
+        LMIN : LMAX + 1, : MMAX + 1
+    ].copy()
+    dlm = np.einsum('l...,lm...->lm', np.sqrt((ll + 1.0) * ll), -1j * Ylm)
 
     # generate Vlm coefficients (vlm and wlm)
     Vlmk, Wlmk = legendre_gradient(LMAX, MMAX)
     # even and odd spherical harmonic orders
-    m_even = np.arange(0, MMAX+2, 2)
+    m_even = np.arange(0, MMAX + 2, 2)
     m_odd = np.arange(1, MMAX, 2)
 
     # Euler's formula for theta * k and m * phi
-    k_th = np.exp(1j * np.einsum("h...,k...->kh...", th, ll))
-    m_phi = np.exp(1j * np.einsum("m...,p...->mp...", mm, phi))
+    k_th = np.exp(1j * np.einsum('h...,k...->kh...', th, ll))
+    m_phi = np.exp(1j * np.einsum('m...,p...->mp...', mm, phi))
     # Calculate fourier coefficients from legendre coefficients
-    d = np.zeros((LMAX+1, thmax, 2), dtype=np.complex128)
-    wtmp = np.einsum("lmk...,lm...->mk", Wlmk[:,:MMAX+1,:], dlm)
-    vtmp = np.einsum("lmk...,lm...->mk", Vlmk[:,:MMAX+1,:], dlm)
-    d[m_even,:,0] = np.einsum("mk...,kh...->mh", wtmp[m_even,:], k_th.imag)
-    d[m_even,:,1] = np.einsum("mk...,kh...->mh", vtmp[m_even,:], k_th.imag)
-    d[m_odd,:,0] = np.einsum("mk...,kh...->mh", wtmp[m_odd,:], k_th.real)
-    d[m_odd,:,1] = np.einsum("mk...,kh...->mh", vtmp[m_odd,:], k_th.real)
+    d = np.zeros((LMAX + 1, thmax, 2), dtype=np.complex128)
+    wtmp = np.einsum('lmk...,lm...->mk', Wlmk[:, : MMAX + 1, :], dlm)
+    vtmp = np.einsum('lmk...,lm...->mk', Vlmk[:, : MMAX + 1, :], dlm)
+    d[m_even, :, 0] = np.einsum('mk...,kh...->mh', wtmp[m_even, :], k_th.imag)
+    d[m_even, :, 1] = np.einsum('mk...,kh...->mh', vtmp[m_even, :], k_th.imag)
+    d[m_odd, :, 0] = np.einsum('mk...,kh...->mh', wtmp[m_odd, :], k_th.real)
+    d[m_odd, :, 1] = np.einsum('mk...,kh...->mh', vtmp[m_odd, :], k_th.real)
     # calculate the zonal and meridional gradients of the scalar field
-    gradients = np.einsum("mp...,mhd...->phd...", m_phi, d)
+    gradients = np.einsum('mp...,mhd...->phd...', m_phi, d)
     # return the gradient fields and drop imaginary component
     return gradients.real
 
-def geostrophic_currents(clm1, slm1, lon, lat,
-    LMIN=0, LMAX=60, MMAX=None, RAD=0,
-    DENSITY=1.035, LOVE=None, PLM=None):
+
+def geostrophic_currents(
+    clm1,
+    slm1,
+    lon,
+    lat,
+    LMIN=0,
+    LMAX=60,
+    MMAX=None,
+    RAD=0,
+    DENSITY=1.035,
+    LOVE=None,
+    PLM=None,
+):
     r"""
     Converts data from spherical harmonic coefficients to spatial
     fields of approximate ocean geostrophic currents following
@@ -163,8 +179,8 @@ def geostrophic_currents(clm1, slm1, lon, lat,
     """
 
     # if LMAX is not specified, will use the size of the input harmonics
-    if (LMAX == 0):
-        LMAX = np.shape(clm1)[0]-1
+    if LMAX == 0:
+        LMAX = np.shape(clm1)[0] - 1
     # upper bound of spherical harmonic orders (default = LMAX)
     if MMAX is None:
         MMAX = np.copy(LMAX)
@@ -177,61 +193,76 @@ def geostrophic_currents(clm1, slm1, lon, lat,
     thmax = len(th)
 
     # Gaussian Smoothing
-    if (RAD != 0):
-        wl = 2.0*np.pi*gauss_weights(RAD, LMAX)
+    if RAD != 0:
+        wl = 2.0 * np.pi * gauss_weights(RAD, LMAX)
     else:
         # else = 1
-        wl = np.ones((LMAX+1))
+        wl = np.ones((LMAX + 1))
 
     # Setting units factor for output
     # extract arrays of kl, hl, and ll Love Numbers
     factors = units(lmax=LMAX).harmonic(*LOVE)
-    coeff = factors.g_wmo*factors.rho_e/(6.0*factors.omega*DENSITY)
+    coeff = factors.g_wmo * factors.rho_e / (6.0 * factors.omega * DENSITY)
 
     # if plms are not pre-computed: calculate Legendre polynomials
     if PLM is None:
         PLM, dPLM = plm_holmes(LMAX, np.cos(th))
 
     # smooth harmonics and convert to output units
-    clm = np.zeros((LMAX+1, MMAX+1, 2))
-    slm = np.zeros((LMAX+1, MMAX+1, 2))
+    clm = np.zeros((LMAX + 1, MMAX + 1, 2))
+    slm = np.zeros((LMAX + 1, MMAX + 1, 2))
     # zonal flow harmonics (equation 3)
     # differentiating Legendre polynomials with respect to longitude
     for l in range(1, LMAX):
         # truncate to degree and order
-        mm = np.arange(0, np.min([l,MMAX])+1)
-        temp1 = (l - 1.0)/(1.0 + LOVE.kl[l-1]) * \
-            np.sqrt((l**2 - mm**2)*(2.0*l - 1.0)/(2.0*l + 1))
-        temp2 = (l + 2.0)/(1.0 + LOVE.kl[l+1]) * \
-            np.sqrt(((l+1)**2 - mm**2)*(2.0*l + 3.0)/(2.0*l + 1))
-        clm[l,mm,0] = coeff*wl[l]*(temp1*clm1[l-1,mm] - temp2*clm1[l+1,mm])
-        slm[l,mm,0] = coeff*wl[l]*(temp1*slm1[l-1,mm] - temp2*slm1[l+1,mm])
+        mm = np.arange(0, np.min([l, MMAX]) + 1)
+        temp1 = (
+            (l - 1.0)
+            / (1.0 + LOVE.kl[l - 1])
+            * np.sqrt((l**2 - mm**2) * (2.0 * l - 1.0) / (2.0 * l + 1))
+        )
+        temp2 = (
+            (l + 2.0)
+            / (1.0 + LOVE.kl[l + 1])
+            * np.sqrt(((l + 1) ** 2 - mm**2) * (2.0 * l + 3.0) / (2.0 * l + 1))
+        )
+        clm[l, mm, 0] = (
+            coeff * wl[l] * (temp1 * clm1[l - 1, mm] - temp2 * clm1[l + 1, mm])
+        )
+        slm[l, mm, 0] = (
+            coeff * wl[l] * (temp1 * slm1[l - 1, mm] - temp2 * slm1[l + 1, mm])
+        )
     # meridional flow harmonics (equation 4)
     # differentiating Legendre polynomials with respect to colatitude
-    for l in range(0, LMAX+1):
+    for l in range(0, LMAX + 1):
         # truncate to degree and order
-        mm = np.arange(0, np.min([l,MMAX])+1)
-        temp = mm*(2.0*l + 1.0)/(1.0 + LOVE.kl[l])
-        clm[l,mm,1] = -coeff*wl[l]*temp*slm1[l,mm]
-        slm[l,mm,1] = coeff*wl[l]*temp*clm1[l,mm]
+        mm = np.arange(0, np.min([l, MMAX]) + 1)
+        temp = mm * (2.0 * l + 1.0) / (1.0 + LOVE.kl[l])
+        clm[l, mm, 1] = -coeff * wl[l] * temp * slm1[l, mm]
+        slm[l, mm, 1] = coeff * wl[l] * temp * clm1[l, mm]
 
     # Truncating harmonics to degree and order LMAX
     # removing coefficients below LMIN and above MMAX
-    mm = np.arange(0, MMAX+1)
+    mm = np.arange(0, MMAX + 1)
     # real (cosine) and imaginary (sine) components
-    Ylm = clm[LMIN:LMAX+1,:MMAX+1,:] - 1j * slm[LMIN:LMAX+1,:MMAX+1,:]
+    Ylm = (
+        clm[LMIN : LMAX + 1, : MMAX + 1, :]
+        - 1j * slm[LMIN : LMAX + 1, : MMAX + 1, :]
+    )
     # convolve legendre polynomials and truncate to degree and order
-    iint = 1.0/(np.cos(th)*np.sin(th))
-    plm = np.einsum("h...,lmh...->lmh...", iint, PLM[LMIN:LMAX+1,:MMAX+1,:])
+    iint = 1.0 / (np.cos(th) * np.sin(th))
+    plm = np.einsum(
+        'h...,lmh...->lmh...', iint, PLM[LMIN : LMAX + 1, : MMAX + 1, :]
+    )
     # summation over all spherical harmonic degrees
-    pconv = np.einsum("lmh...,lmd...->mhd...", plm, Ylm)
+    pconv = np.einsum('lmh...,lmd...->mhd...', plm, Ylm)
 
     # calculating cos(m*phi) and sin(m*phi) using Euler's formula
-    m_phi = np.exp(1j * np.einsum("m...,p...->mp...", mm, phi))
+    m_phi = np.exp(1j * np.einsum('m...,p...->mp...', mm, phi))
     # output geostrophic current fields
-    currents = np.empty((phmax,thmax,2))
+    currents = np.empty((phmax, thmax, 2))
     # summation of cosine and sine harmonics
-    currents[:] = np.einsum("mp...,mhd...->phd...", m_phi, pconv)
+    currents[:] = np.einsum('mp...,mhd...->phd...', m_phi, pconv)
 
     # return the current fields and drop imaginary component
     return currents.real

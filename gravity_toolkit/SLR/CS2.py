@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 CS2.py
 Written by Hugo Lecomte and Tyler Sutterley (05/2023)
 
@@ -77,11 +77,13 @@ UPDATE HISTORY:
     Updated 04/2021: use adjust_months function to fix special months cases
     Written 11/2020
 """
+
 import re
 import pathlib
 import numpy as np
 import gravity_toolkit.time
 import gravity_toolkit.read_SLR_harmonics
+
 
 # PURPOSE: read Degree 2,m data from Satellite Laser Ranging (SLR)
 def CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
@@ -128,30 +130,30 @@ def CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
         # 7-day arc SLR file produced by GSFC
         # input variable names and types
         dtype = {}
-        dtype['names'] = ('time','C2','S2')
-        dtype['formats'] = ('f','f8','f8')
+        dtype['names'] = ('time', 'C2', 'S2')
+        dtype['formats'] = ('f', 'f8', 'f8')
         # read SLR 2,1 file from GSFC
         # Column 1: Approximate mid-point of 7-day solution (years)
         # Column 2: Solution from SLR (normalized)
         # Column 3: Solution from SLR (normalized)
         content = np.loadtxt(SLR_file, dtype=dtype)
         # duplicate time and harmonics
-        tdec = np.repeat(content['time'],7)
-        c2m = np.repeat(content['C2'],7)
-        s2m = np.repeat(content['S2'],7)
+        tdec = np.repeat(content['time'], 7)
+        c2m = np.repeat(content['C2'], 7)
+        s2m = np.repeat(content['S2'], 7)
         # calculate daily dates to use in centered moving average
-        tdec += (np.mod(np.arange(len(tdec)),7) - 3.5)/365.25
+        tdec += (np.mod(np.arange(len(tdec)), 7) - 3.5) / 365.25
         # number of dates to use in average
         n_neighbors = 28
         # calculate 28-day moving-average solution from 7-day arcs
         dinput['time'] = np.zeros_like(DATE)
-        dinput['C2m'] = np.zeros_like(DATE,dtype='f8')
-        dinput['S2m'] = np.zeros_like(DATE,dtype='f8')
+        dinput['C2m'] = np.zeros_like(DATE, dtype='f8')
+        dinput['S2m'] = np.zeros_like(DATE, dtype='f8')
         # no estimated spherical harmonic errors
-        dinput['eC2m'] = np.zeros_like(DATE,dtype='f8')
-        dinput['eS2m'] = np.zeros_like(DATE,dtype='f8')
-        for i,D in enumerate(DATE):
-            isort = np.argsort((tdec - D)**2)[:n_neighbors]
+        dinput['eC2m'] = np.zeros_like(DATE, dtype='f8')
+        dinput['eS2m'] = np.zeros_like(DATE, dtype='f8')
+        for i, D in enumerate(DATE):
+            isort = np.argsort((tdec - D) ** 2)[:n_neighbors]
             dinput['time'][i] = np.mean(tdec[isort])
             dinput['C2m'][i] = np.mean(c2m[isort])
             dinput['S2m'][i] = np.mean(s2m[isort])
@@ -161,22 +163,22 @@ def CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
         # read 5x5 + 6,1 file from GSFC and extract coefficients
         Ylms = gravity_toolkit.read_SLR_harmonics(SLR_file, HEADER=True)
         # duplicate time and harmonics
-        tdec = np.repeat(Ylms['time'],7)
-        c2m = np.repeat(Ylms['clm'][2,ORDER],7)
-        s2m = np.repeat(Ylms['slm'][2,ORDER],7)
+        tdec = np.repeat(Ylms['time'], 7)
+        c2m = np.repeat(Ylms['clm'][2, ORDER], 7)
+        s2m = np.repeat(Ylms['slm'][2, ORDER], 7)
         # calculate daily dates to use in centered moving average
-        tdec += (np.mod(np.arange(len(tdec)),7) - 3.5)/365.25
+        tdec += (np.mod(np.arange(len(tdec)), 7) - 3.5) / 365.25
         # number of dates to use in average
         n_neighbors = 28
         # calculate 28-day moving-average solution from 7-day arcs
         dinput['time'] = np.zeros_like(DATE)
-        dinput['C2m'] = np.zeros_like(DATE,dtype='f8')
-        dinput['S2m'] = np.zeros_like(DATE,dtype='f8')
+        dinput['C2m'] = np.zeros_like(DATE, dtype='f8')
+        dinput['S2m'] = np.zeros_like(DATE, dtype='f8')
         # no estimated spherical harmonic errors
-        dinput['eC2m'] = np.zeros_like(DATE,dtype='f8')
-        dinput['eS2m'] = np.zeros_like(DATE,dtype='f8')
-        for i,D in enumerate(DATE):
-            isort = np.argsort((tdec - D)**2)[:n_neighbors]
+        dinput['eC2m'] = np.zeros_like(DATE, dtype='f8')
+        dinput['eS2m'] = np.zeros_like(DATE, dtype='f8')
+        for i, D in enumerate(DATE):
+            isort = np.argsort((tdec - D) ** 2)[:n_neighbors]
             dinput['time'][i] = np.mean(tdec[isort])
             dinput['C2m'][i] = np.mean(c2m[isort])
             dinput['S2m'][i] = np.mean(s2m[isort])
@@ -186,9 +188,18 @@ def CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
         # SLR RL06 file produced by CSR
         # input variable names and types
         dtype = {}
-        dtype['names'] = ('time','C2','S2','eC2','eS2',
-            'C2aod','S2aod','start','end')
-        dtype['formats'] = ('f','f8','f8','f','f','f','f','f','f')
+        dtype['names'] = (
+            'time',
+            'C2',
+            'S2',
+            'eC2',
+            'eS2',
+            'C2aod',
+            'S2aod',
+            'start',
+            'end',
+        )
+        dtype['formats'] = ('f', 'f8', 'f8', 'f', 'f', 'f', 'f', 'f', 'f')
         # read SLR 2,1 or 2,2 RL06 file from CSR
         # header text is commented and won't be read
         # Column 1: Approximate mid-point of monthly solution (years)
@@ -204,11 +215,11 @@ def CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
         dinput['time'] = content['time'].copy()
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
         # remove the monthly mean of the AOD model
-        dinput['C2m'] = content['C2'] - content['C2aod']*10**-10
-        dinput['S2m'] = content['S2'] - content['S2aod']*10**-10
+        dinput['C2m'] = content['C2'] - content['C2aod'] * 10**-10
+        dinput['S2m'] = content['S2'] - content['S2aod'] * 10**-10
         # scale SLR solution sigmas
-        dinput['eC2m'] = content['eC2']*10**-10
-        dinput['eS2m'] = content['eS2']*10**-10
+        dinput['eC2m'] = content['eC2'] * 10**-10
+        dinput['eS2m'] = content['eS2'] * 10**-10
     elif bool(re.search(r'GRAVIS-2B_GFZOP', SLR_file.name, re.I)):
         # Combined GRACE/SLR solution file produced by GFZ
         # Column  1: MJD of BEGINNING of solution data span
@@ -231,7 +242,7 @@ def CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
             # file line at count
             line = file_contents[count]
             # find PRODUCT: within line to set HEADER flag to False when found
-            HEADER = not bool(re.match(r'PRODUCT:+',line))
+            HEADER = not bool(re.match(r'PRODUCT:+', line))
             # add 1 to counter
             count += 1
 
@@ -252,24 +263,25 @@ def CS2(SLR_file, ORDER=1, DATE=None, HEADER=True):
         for line in file_contents[count:]:
             # find numerical instances in line including exponents,
             # decimal points and negatives
-            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
+            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?', line)
             count = len(line_contents)
             # check for empty lines
-            if (count > 0):
+            if count > 0:
                 # reading decimal year for start of span
                 dinput['time'][t] = np.float64(line_contents[1])
                 # Spherical Harmonic data for line
                 dinput['C2m'][t] = np.float64(line_contents[8])
-                dinput['eC2m'][t] = np.float64(line_contents[10])*1e-10
+                dinput['eC2m'][t] = np.float64(line_contents[10]) * 1e-10
                 dinput['S2m'][t] = np.float64(line_contents[11])
-                dinput['eS2m'][t] = np.float64(line_contents[13])*1e-10
+                dinput['eS2m'][t] = np.float64(line_contents[13]) * 1e-10
                 # GRACE/GRACE-FO month of SLR solutions
                 dinput['month'][t] = gravity_toolkit.time.calendar_to_grace(
-                    dinput['time'][t], around=np.round)
+                    dinput['time'][t], around=np.round
+                )
                 # add to t count
                 t += 1
         # truncate variables if necessary
-        for key,val in dinput.items():
+        for key, val in dinput.items():
             dinput[key] = val[:t]
 
     # The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with

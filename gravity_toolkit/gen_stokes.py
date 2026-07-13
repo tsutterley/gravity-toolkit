@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 gen_stokes.py
 Written by Tyler Sutterley (07/2026)
 
@@ -74,13 +74,16 @@ UPDATE HISTORY:
         revised structure of mathematics to improve computational efficiency
     Written 09/2011
 """
+
 import numpy as np
 import gravity_toolkit.units
 import gravity_toolkit.harmonics
 from gravity_toolkit.associated_legendre import plm_holmes
 
-def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
-    PLM=None, LOVE=None):
+
+def gen_stokes(
+    data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1, PLM=None, LOVE=None
+):
     r"""
     Converts data from the spatial domain to spherical harmonic
     coefficients :cite:p:`Wahr:1998hy`
@@ -134,7 +137,7 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     # Longitude in radians
     phi = np.radians(np.squeeze(lon.copy()))
     # reformatting longitudes to range 0:360 (if previously -180:180)
-    phi = np.where(phi < 0, phi + 2.0*np.pi, phi)
+    phi = np.where(phi < 0, phi + 2.0 * np.pi, phi)
     # colatitude in radians
     th = np.radians(90.0 - np.squeeze(lat.copy()))
     # grid step in radians
@@ -154,50 +157,52 @@ def gen_stokes(data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1,
     if isinstance(UNITS, (list, np.ndarray)):
         # custom units
         dfactor = np.copy(UNITS)
-        int_fact[:] = np.sin(th)*dphi*dth
-    elif (UNITS == 1):
+        int_fact[:] = np.sin(th) * dphi * dth
+    elif UNITS == 1:
         # Default Parameter: Input in cm w.e. (g/cm^2)
         dfactor = factors.spatial(*LOVE).cmwe
-        int_fact[:] = np.sin(th)*dphi*dth
-    elif (UNITS == 2):
+        int_fact[:] = np.sin(th) * dphi * dth
+    elif UNITS == 2:
         # Input in gigatonnes (Gt)
         dfactor = factors.spatial(*LOVE).cmwe
         # rad_e: Average Radius of the Earth [cm]
-        int_fact[:] = 1e15/(factors.rad_e**2)
-    elif (UNITS == 3):
+        int_fact[:] = 1e15 / (factors.rad_e**2)
+    elif UNITS == 3:
         # Input in kg/m^2 (mm w.e.)
         dfactor = factors.spatial(*LOVE).mmwe
-        int_fact[:] = np.sin(th)*dphi*dth
+        int_fact[:] = np.sin(th) * dphi * dth
     else:
         raise ValueError(f'Unknown units {UNITS}')
 
     # Calculating cos/sin of phi arrays
     # output [m,phi]
-    mm = np.arange(MMAX+1)
-    m_phi = np.exp(1j * np.einsum("m...,p...->mp...", mm, phi))
+    mm = np.arange(MMAX + 1)
+    m_phi = np.exp(1j * np.einsum('m...,p...->mp...', mm, phi))
 
     # Calculating fully-normalized Legendre Polynomials
     # Output is plm[l,m,th]
-    plm = np.zeros((LMAX+1, MMAX+1, nlat))
+    plm = np.zeros((LMAX + 1, MMAX + 1, nlat))
     # added option to precompute plms to improve computational speed
     if PLM is None:
         # if plms are not pre-computed: calculate Legendre polynomials
         PLM, dPLM = plm_holmes(LMAX, np.cos(th))
 
     # truncate legendre polynomials to degree and order
-    plm = np.einsum("lmh...,h...->lmh...", PLM[:LMAX+1,:MMAX+1,:], int_fact)
+    plm = np.einsum(
+        'lmh...,h...->lmh...', PLM[: LMAX + 1, : MMAX + 1, :], int_fact
+    )
 
     # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
     # Multiplying gridded data with sin/cos of m#phis
     # This will sum through all phis in the dot product
     # output [m,theta]
-    d = np.einsum("mp...,ph...->mh...", m_phi, data)
+    d = np.einsum('mp...,ph...->mh...', m_phi, data)
     # Summing product of plms and data over all latitudes
-    ylm = np.einsum("lmh...,mh...->lm...", plm, d)
+    ylm = np.einsum('lmh...,mh...->lm...', plm, d)
     # Multiplying by factors to convert to fully normalized coefficients
-    Ylms.clm = np.einsum("l...,lm...->lm...", dfactor, ylm.real)
-    Ylms.slm = np.einsum("l...,lm...->lm...", dfactor, ylm.imag)
+    Ylms.clm = np.einsum('l...,lm...->lm...', dfactor, ylm.real)
+    Ylms.slm = np.einsum('l...,lm...->lm...', dfactor, ylm.imag)
 
     # return the output spherical harmonics object
     return Ylms

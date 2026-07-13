@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 gauss_weights.py
 Original IDL code gauss_weights.pro written by Sean Swenson
 Adapted by Tyler Sutterley (03/2023)
@@ -47,7 +47,9 @@ UPDATE HISTORY:
     Updated 02/2014: changed variables from ints to floats to prevent truncation
     Written 05/2013
 """
+
 import numpy as np
+
 
 def gauss_weights(hw, LMAX, CUTOFF=1e-10):
     """
@@ -69,32 +71,34 @@ def gauss_weights(hw, LMAX, CUTOFF=1e-10):
         degree dependent weighting function
     """
     # allocate for output weights
-    wl = np.zeros((LMAX+1))
+    wl = np.zeros((LMAX + 1))
     # radius of the Earth in km
     rad_e = 6371.0
-    if (hw < CUTOFF):
+    if hw < CUTOFF:
         # distance is smaller than cutoff
-        wl[:] = 1.0/(2.0*np.pi)
+        wl[:] = 1.0 / (2.0 * np.pi)
     else:
         # calculate gaussian weights using recursion
-        b = np.log(2.0)/(1.0 - np.cos(hw/rad_e))
+        b = np.log(2.0) / (1.0 - np.cos(hw / rad_e))
         # weight for degree 0
-        wl[0] = 1.0/(2.0*np.pi)
+        wl[0] = 1.0 / (2.0 * np.pi)
         # weight for degree 1
-        wl[1] = wl[0]*((1.0+np.exp(-2.0*b))/(1.0-np.exp(-2.0*b))-1.0/b)
+        wl[1] = wl[0] * (
+            (1.0 + np.exp(-2.0 * b)) / (1.0 - np.exp(-2.0 * b)) - 1.0 / b
+        )
         # valid flag
         valid = True
         # spherical harmonic degree
         l = 2
         # while valid (within cutoff)
         # and spherical harmonic degree is less than LMAX
-        while (valid and (l <= LMAX)):
+        while valid and (l <= LMAX):
             # calculate weight with recursion
-            wl[l] = (1.0-2.0*l)/b*wl[l-1]+wl[l-2]
+            wl[l] = (1.0 - 2.0 * l) / b * wl[l - 1] + wl[l - 2]
             # weight is less than cutoff
-            if (wl[l] < CUTOFF):
+            if wl[l] < CUTOFF:
                 # set all weights to cutoff
-                wl[l:LMAX+1] = CUTOFF
+                wl[l : LMAX + 1] = CUTOFF
                 # set valid flag
                 valid = False
             # add 1 to l

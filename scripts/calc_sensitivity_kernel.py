@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 calc_sensitivity_kernel.py
 Written by Tyler Sutterley (05/2023)
 
@@ -145,6 +145,7 @@ UPDATE HISTORY:
     Updated 03/2012: edited to use new gen_stokes time-series option
     Written 02/2012
 """
+
 from __future__ import print_function, division
 
 import sys
@@ -159,6 +160,7 @@ import numpy as np
 import scipy.linalg
 import gravity_toolkit as gravtk
 
+
 # PURPOSE: keep track of threads
 def info(args):
     logging.info(pathlib.Path(sys.argv[0]).name)
@@ -168,9 +170,12 @@ def info(args):
         logging.info(f'parent process: {os.getppid():d}')
     logging.info(f'process id: {os.getpid():d}')
 
+
 # PURPOSE: calculate a regional time-series through a least
 # squares mascon process
-def calc_sensitivity_kernel(LMAX, RAD,
+def calc_sensitivity_kernel(
+    LMAX,
+    RAD,
     LMIN=None,
     MMAX=None,
     LOVE_NUMBERS=0,
@@ -186,8 +191,8 @@ def calc_sensitivity_kernel(LMAX, RAD,
     INTERVAL=None,
     BOUNDS=None,
     OUTPUT_DIRECTORY=None,
-    MODE=0o775):
-
+    MODE=0o775,
+):
     # file information
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')[DATAFORM]
     # file parser for reading index files
@@ -204,8 +209,9 @@ def calc_sensitivity_kernel(LMAX, RAD,
     output_files = []
 
     # read arrays of kl, hl, and ll Love Numbers
-    LOVE = gravtk.load_love_numbers(LMAX, LOVE_NUMBERS=LOVE_NUMBERS,
-        REFERENCE=REFERENCE, FORMAT='class')
+    LOVE = gravtk.load_love_numbers(
+        LMAX, LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE=REFERENCE, FORMAT='class'
+    )
 
     # Earth Parameters
     factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
@@ -219,19 +225,18 @@ def calc_sensitivity_kernel(LMAX, RAD,
     order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
 
     # Calculating the Gaussian smoothing for radius RAD
-    if (RAD != 0):
-        wt = 2.0*np.pi*gravtk.gauss_weights(RAD,LMAX)
+    if RAD != 0:
+        wt = 2.0 * np.pi * gravtk.gauss_weights(RAD, LMAX)
         gw_str = f'_r{RAD:0.0f}km'
     else:
         # else = 1
-        wt = np.ones((LMAX+1))
+        wt = np.ones((LMAX + 1))
         gw_str = ''
 
     # Read Ocean function and convert to Ylms for redistribution
     if REDISTRIBUTE_MASCONS:
         # read Land-Sea Mask and convert to spherical harmonics
-        ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX,
-            MMAX=MMAX, LOVE=LOVE)
+        ocean_Ylms = gravtk.ocean_stokes(LANDMASK, LMAX, MMAX=MMAX, LOVE=LOVE)
         ocean_str = '_OCN'
     else:
         # not distributing uniformly over ocean
@@ -249,24 +254,23 @@ def calc_sensitivity_kernel(LMAX, RAD,
     mascon_name = []
     # for each valid file in the index (iterate over mascons)
     mascon_list = []
-    for k,fi in enumerate(mascon_files):
+    for k, fi in enumerate(mascon_files):
         # read mascon spherical harmonics
-        Ylms = gravtk.harmonics().from_file(fi,
-            format=DATAFORM, date=False)
+        Ylms = gravtk.harmonics().from_file(fi, format=DATAFORM, date=False)
         # Calculating the total mass of each mascon (1 cmwe uniform)
-        total_area[k] = 4.0*np.pi*(rad_e**3)*rho_e*Ylms.clm[0,0]/3.0
+        total_area[k] = 4.0 * np.pi * (rad_e**3) * rho_e * Ylms.clm[0, 0] / 3.0
         # distribute mascon mass uniformly over the ocean
         if REDISTRIBUTE_MASCONS:
             # calculate ratio between total mascon mass and
             # a uniformly distributed cm of water over the ocean
-            ratio = Ylms.clm[0,0]/ocean_Ylms.clm[0,0]
+            ratio = Ylms.clm[0, 0] / ocean_Ylms.clm[0, 0]
             # for each spherical harmonic
-            for m in range(0,MMAX+1):# MMAX+1 to include MMAX
-                for l in range(m,LMAX+1):# LMAX+1 to include LMAX
+            for m in range(0, MMAX + 1):  # MMAX+1 to include MMAX
+                for l in range(m, LMAX + 1):  # LMAX+1 to include LMAX
                     # remove ratio*ocean Ylms from mascon Ylms
                     # note: x -= y is equivalent to x = x - y
-                    Ylms.clm[l,m] -= ratio*ocean_Ylms.clm[l,m]
-                    Ylms.slm[l,m] -= ratio*ocean_Ylms.slm[l,m]
+                    Ylms.clm[l, m] -= ratio * ocean_Ylms.clm[l, m]
+                    Ylms.slm[l, m] -= ratio * ocean_Ylms.slm[l, m]
         # truncate mascon spherical harmonics to d/o LMAX/MMAX and add to list
         mascon_list.append(Ylms.truncate(lmax=LMAX, mmax=MMAX))
         # stem is the mascon file without directory or suffix
@@ -281,7 +285,9 @@ def calc_sensitivity_kernel(LMAX, RAD,
 
     # Calculating the number of cos and sin harmonics between LMIN and LMAX
     # taking into account MMAX (if MMAX == LMAX then LMAX-MMAX=0)
-    n_harm=np.int64(LMAX**2 - LMIN**2 + 2*LMAX + 1 - (LMAX-MMAX)**2 - (LMAX-MMAX))
+    n_harm = np.int64(
+        LMAX**2 - LMIN**2 + 2 * LMAX + 1 - (LMAX - MMAX) ** 2 - (LMAX - MMAX)
+    )
 
     # Initialing harmonics for least squares fitting
     # mascon kernel
@@ -303,42 +309,42 @@ def calc_sensitivity_kernel(LMAX, RAD,
     # Creating column array of clm/slm coefficients
     # Order is [C00...C6060,S11...S6060]
     # Switching between Cosine and Sine Stokes
-    for cs,csharm in enumerate(['clm','slm']):
+    for cs, csharm in enumerate(['clm', 'slm']):
         # copy cosine and sin harmonics
         mascon_harm = getattr(mascon_Ylms, csharm)
         # for each spherical harmonic degree
         # +1 to include LMAX
-        for l in range(LMIN,LMAX+1):
+        for l in range(LMIN, LMAX + 1):
             # for each spherical harmonic order
             # Sine Stokes for (m=0) = 0
-            mm = np.min([MMAX,l])
+            mm = np.min([MMAX, l])
             # +1 to include l or MMAX (whichever is smaller)
-            for m in range(cs,mm+1):
+            for m in range(cs, mm + 1):
                 # Mascon Spherical Harmonics
-                M_lm[ii,:] = np.copy(mascon_harm[l,m,:])
+                M_lm[ii, :] = np.copy(mascon_harm[l, m, :])
                 # degree dependent factor to convert to mass
-                fact[ii] = (2.0*l + 1.0)/(1.0 + LOVE.kl[l])
+                fact[ii] = (2.0 * l + 1.0) / (1.0 + LOVE.kl[l])
                 # degree dependent factor to convert from mass
-                coeff_inv = 0.75/(np.pi*rho_e*rad_e**3)
-                fact_inv[ii] = coeff_inv*(1.0 + LOVE.kl[l])/(2.0*l + 1.0)
+                coeff_inv = 0.75 / (np.pi * rho_e * rad_e**3)
+                fact_inv[ii] = coeff_inv * (1.0 + LOVE.kl[l]) / (2.0 * l + 1.0)
                 # degree dependent smoothing
                 wt_lm[ii] = np.copy(wt[l])
                 # add 1 to counter
                 ii += 1
 
     # Converting mascon coefficients to fit method
-    if (FIT_METHOD == 1):
+    if FIT_METHOD == 1:
         # Fitting Sensitivity Kernel as mass coefficients
         # converting M_lm to mass coefficients of the kernel
         for i in range(n_harm):
-            MA_lm[i,:] = M_lm[i,:]*wt_lm[i]*fact[i]
-        fit_factor = wt_lm*fact
+            MA_lm[i, :] = M_lm[i, :] * wt_lm[i] * fact[i]
+        fit_factor = wt_lm * fact
         inv_fit_factor = np.copy(fact_inv)
-    elif (FIT_METHOD == 2):
+    elif FIT_METHOD == 2:
         # Fitting Sensitivity Kernel as geoid coefficients
         for i in range(n_harm):
-            MA_lm[:,:] = M_lm[i,:]*wt_lm[i]
-        fit_factor = wt_lm*np.ones((n_harm))
+            MA_lm[:, :] = M_lm[i, :] * wt_lm[i]
+        fit_factor = wt_lm * np.ones((n_harm))
         inv_fit_factor = np.ones((n_harm))
 
     # Fitting the sensitivity kernel from the input kernel
@@ -346,19 +352,20 @@ def calc_sensitivity_kernel(LMAX, RAD,
         # setting kern_i equal to 1 for d/o
         kern_i = np.zeros((n_harm))
         # converting to mass coefficients if specified
-        kern_i[i] = 1.0*fit_factor[i]
+        kern_i[i] = 1.0 * fit_factor[i]
         # spherical harmonics solution for the
         # mascon sensitivity kernels
-        if (SOLVER == 'inv'):
+        if SOLVER == 'inv':
             kern_lm = np.dot(np.linalg.inv(MA_lm), kern_i)
-        elif (SOLVER == 'lstsq'):
+        elif SOLVER == 'lstsq':
             kern_lm = np.linalg.lstsq(MA_lm, kern_i, rcond=-1)[0]
         elif SOLVER in ('gelsd', 'gelsy', 'gelss'):
-            kern_lm, res, rnk, s = scipy.linalg.lstsq(MA_lm, kern_i,
-                lapack_driver=SOLVER)
+            kern_lm, res, rnk, s = scipy.linalg.lstsq(
+                MA_lm, kern_i, lapack_driver=SOLVER
+            )
         # calculate the sensitivity kernel for each mascon
         for k in range(n_mas):
-            A_lm[i,k] = kern_lm[k]*total_area[k]
+            A_lm[i, k] = kern_lm[k] * total_area[k]
     # free up larger variables
     del M_lm, MA_lm, wt_lm, fact, fact_inv, fit_factor
 
@@ -367,24 +374,24 @@ def calc_sensitivity_kernel(LMAX, RAD,
     # kernel calculated as outlined in Tiwari (2009) and Jacobs (2012)
     # Initializing output sensitivity kernel (both spatial and Ylms)
     kern_Ylms = gravtk.harmonics(lmax=LMAX, mmax=MMAX)
-    kern_Ylms.clm = np.zeros((LMAX+1, MMAX+1, n_mas))
-    kern_Ylms.slm = np.zeros((LMAX+1, MMAX+1, n_mas))
+    kern_Ylms.clm = np.zeros((LMAX + 1, MMAX + 1, n_mas))
+    kern_Ylms.slm = np.zeros((LMAX + 1, MMAX + 1, n_mas))
     kern_Ylms.time = np.copy(total_area)
     # counter variable for deconstructing the mascon column arrays
     ii = 0
     # Switching between Cosine and Sine Stokes
-    for cs,csharm in enumerate(['clm','slm']):
+    for cs, csharm in enumerate(['clm', 'slm']):
         # for each spherical harmonic degree
         # +1 to include LMAX
-        for l in range(LMIN,LMAX+1):
+        for l in range(LMIN, LMAX + 1):
             # for each spherical harmonic order
             # Sine Stokes for (m=0) = 0
-            mm = np.min([MMAX,l])
+            mm = np.min([MMAX, l])
             # +1 to include l or MMAX (whichever is smaller)
-            for m in range(cs,mm+1):
+            for m in range(cs, mm + 1):
                 # inv_fit_factor: normalize from mass harmonics
                 temp = getattr(kern_Ylms, csharm)
-                temp[l,m,:] = inv_fit_factor[ii]*A_lm[ii,:]
+                temp[l, m, :] = inv_fit_factor[ii] * A_lm[ii, :]
                 # add 1 to counter
                 ii += 1
     # free up larger variables
@@ -398,11 +405,10 @@ def calc_sensitivity_kernel(LMAX, RAD,
         # get harmonics for mascon
         Ylms = kern_Ylms.index(k, date=False)
         # output sensitivity kernel to file
-        args = (mascon_name[k],ocean_str,LMAX,order_str,gw_str,suffix)
+        args = (mascon_name[k], ocean_str, LMAX, order_str, gw_str, suffix)
         FILE1 = '{0}_SKERNEL_CLM{1}_L{2:d}{3}{4}.{5}'.format(*args)
         output_file = OUTPUT_DIRECTORY.joinpath(FILE1)
-        Ylms.to_file(output_file, format=DATAFORM,
-            date=False, **attributes)
+        Ylms.to_file(output_file, format=DATAFORM, date=False, **attributes)
         # change the permissions mode
         output_file.chmod(mode=MODE)
         # add output files to list object
@@ -418,25 +424,29 @@ def calc_sensitivity_kernel(LMAX, RAD,
         # Output spatial data object
         grid = gravtk.spatial()
         # Output Degree Spacing
-        dlon,dlat = (DDEG[0],DDEG[0]) if (len(DDEG) == 1) else (DDEG[0],DDEG[1])
+        dlon, dlat = (
+            (DDEG[0], DDEG[0]) if (len(DDEG) == 1) else (DDEG[0], DDEG[1])
+        )
         # Output Degree Interval
-        if (INTERVAL == 1):
+        if INTERVAL == 1:
             # (-180:180,90:-90)
-            n_lon = np.int64((360.0/dlon)+1.0)
-            n_lat = np.int64((180.0/dlat)+1.0)
-            grid.lon = -180 + dlon*np.arange(0,n_lon)
-            grid.lat = 90.0 - dlat*np.arange(0,n_lat)
-        elif (INTERVAL == 2):
+            n_lon = np.int64((360.0 / dlon) + 1.0)
+            n_lat = np.int64((180.0 / dlat) + 1.0)
+            grid.lon = -180 + dlon * np.arange(0, n_lon)
+            grid.lat = 90.0 - dlat * np.arange(0, n_lat)
+        elif INTERVAL == 2:
             # (Degree spacing)/2
-            grid.lon = np.arange(-180+dlon/2.0,180+dlon/2.0,dlon)
-            grid.lat = np.arange(90.0-dlat/2.0,-90.0-dlat/2.0,-dlat)
+            grid.lon = np.arange(-180 + dlon / 2.0, 180 + dlon / 2.0, dlon)
+            grid.lat = np.arange(90.0 - dlat / 2.0, -90.0 - dlat / 2.0, -dlat)
             n_lon = len(grid.lon)
             n_lat = len(grid.lat)
-        elif (INTERVAL == 3):
+        elif INTERVAL == 3:
             # non-global grid set with BOUNDS parameter
-            minlon,maxlon,minlat,maxlat = BOUNDS.copy()
-            grid.lon = np.arange(minlon+dlon/2.0, maxlon+dlon/2.0, dlon)
-            grid.lat = np.arange(maxlat-dlat/2.0, minlat-dlat/2.0, -dlat)
+            minlon, maxlon, minlat, maxlat = BOUNDS.copy()
+            grid.lon = np.arange(minlon + dlon / 2.0, maxlon + dlon / 2.0, dlon)
+            grid.lat = np.arange(
+                maxlat - dlat / 2.0, minlat - dlat / 2.0, -dlat
+            )
             n_lon = len(grid.lon)
             n_lat = len(grid.lat)
 
@@ -449,15 +459,21 @@ def calc_sensitivity_kernel(LMAX, RAD,
             # get harmonics for mascon
             Ylms = kern_Ylms.index(k, date=False)
             # convert spherical harmonics to output spatial grid
-            grid.data = gravtk.harmonic_summation(Ylms.clm, Ylms.slm,
-                grid.lon, grid.lat, LMAX=LMAX, MMAX=MMAX, PLM=PLM).T
+            grid.data = gravtk.harmonic_summation(
+                Ylms.clm,
+                Ylms.slm,
+                grid.lon,
+                grid.lat,
+                LMAX=LMAX,
+                MMAX=MMAX,
+                PLM=PLM,
+            ).T
             grid.mask = np.zeros_like(grid.data, dtype=bool)
             # output sensitivity kernel to file
-            args = (mascon_name[k],ocean_str,LMAX,order_str,gw_str,suffix)
+            args = (mascon_name[k], ocean_str, LMAX, order_str, gw_str, suffix)
             FILE2 = '{0}_SKERNEL{1}_L{2:d}{3}{4}.{5}'.format(*args)
             output_file = OUTPUT_DIRECTORY.joinpath(FILE2)
-            grid.to_file(output_file, format=DATAFORM,
-                date=False, **attributes)
+            grid.to_file(output_file, format=DATAFORM, date=False, **attributes)
             # change the permissions mode
             output_file.chmod(mode=MODE)
             # add output files to list object
@@ -466,10 +482,11 @@ def calc_sensitivity_kernel(LMAX, RAD,
     # return the list of output files
     return output_files
 
+
 # PURPOSE: print a file log for the mascon sensitivity kernel analysis
 def output_log_file(input_arguments, output_files):
     # format: calc_skernel_run_2002-04-01_PID-70335.log
-    args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
+    args = (time.strftime('%Y-%m-%d', time.localtime()), os.getpid())
     LOGFILE = 'calc_skernel_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
     DIRECTORY = pathlib.Path(input_arguments.output_directory)
@@ -486,10 +503,11 @@ def output_log_file(input_arguments, output_files):
     # close the log file
     fid.close()
 
+
 # PURPOSE: print a error file log for the mascon sensitivity kernel analysis
 def output_error_log_file(input_arguments):
     # format: calc_skernel_failed_run_2002-04-01_PID-70335.log
-    args = (time.strftime('%Y-%m-%d',time.localtime()), os.getpid())
+    args = (time.strftime('%Y-%m-%d', time.localtime()), os.getpid())
     LOGFILE = 'calc_skernel_failed_run_{0}_PID-{1:d}.log'.format(*args)
     # create a unique log and open the log file
     DIRECTORY = pathlib.Path(input_arguments.output_directory)
@@ -505,112 +523,193 @@ def output_error_log_file(input_arguments):
     # close the log file
     fid.close()
 
+
 # PURPOSE: create argument parser
 def arguments():
     parser = argparse.ArgumentParser(
         description="""Calculates spatial sensitivity kernels through a
             least-squares mascon procedure
             """,
-        fromfile_prefix_chars="@"
+        fromfile_prefix_chars='@',
     )
     parser.convert_arg_line_to_args = gravtk.utilities.convert_arg_line_to_args
     # command line parameters
-    parser.add_argument('--output-directory','-O',
+    parser.add_argument(
+        '--output-directory',
+        '-O',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Output directory for mascon files')
+        help='Output directory for mascon files',
+    )
     # minimum spherical harmonic degree
-    parser.add_argument('--lmin',
-        type=int, default=1,
-        help='Minimum spherical harmonic degree')
+    parser.add_argument(
+        '--lmin', type=int, default=1, help='Minimum spherical harmonic degree'
+    )
     # maximum spherical harmonic degree and order
-    parser.add_argument('--lmax','-l',
-        type=int, default=60,
-        help='Maximum spherical harmonic degree')
-    parser.add_argument('--mmax','-m',
-        type=int, default=None,
-        help='Maximum spherical harmonic order')
+    parser.add_argument(
+        '--lmax',
+        '-l',
+        type=int,
+        default=60,
+        help='Maximum spherical harmonic degree',
+    )
+    parser.add_argument(
+        '--mmax',
+        '-m',
+        type=int,
+        default=None,
+        help='Maximum spherical harmonic order',
+    )
     # different treatments of the load Love numbers
     # 0: Han and Wahr (1995) values from PREM
     # 1: Gegout (2005) values from PREM
     # 2: Wang et al. (2012) values from PREM
     # 3: Wang et al. (2012) values from PREM with hard sediment
     # 4: Wang et al. (2012) values from PREM with soft sediment
-    parser.add_argument('--love','-n',
-        type=int, default=0, choices=[0,1,2,3,4],
-        help='Treatment of the Load Love numbers')
+    parser.add_argument(
+        '--love',
+        '-n',
+        type=int,
+        default=0,
+        choices=[0, 1, 2, 3, 4],
+        help='Treatment of the Load Love numbers',
+    )
     # option for setting reference frame for gravitational load love number
     # reference frame options (CF, CM, CE)
-    parser.add_argument('--reference',
-        type=str.upper, default='CF', choices=['CF','CM','CE'],
-        help='Reference frame for load Love numbers')
+    parser.add_argument(
+        '--reference',
+        type=str.upper,
+        default='CF',
+        choices=['CF', 'CM', 'CE'],
+        help='Reference frame for load Love numbers',
+    )
     # Gaussian smoothing radius (km)
-    parser.add_argument('--radius','-R',
-        type=float, default=0,
-        help='Gaussian smoothing radius (km)')
+    parser.add_argument(
+        '--radius',
+        '-R',
+        type=float,
+        default=0,
+        help='Gaussian smoothing radius (km)',
+    )
     # input data format (ascii, netCDF4, HDF5)
-    parser.add_argument('--format','-F',
-        type=str, default='netCDF4', choices=['ascii','netCDF4','HDF5'],
-        help='Input data format for auxiliary files')
+    parser.add_argument(
+        '--format',
+        '-F',
+        type=str,
+        default='netCDF4',
+        choices=['ascii', 'netCDF4', 'HDF5'],
+        help='Input data format for auxiliary files',
+    )
     # mascon index file and parameters
-    parser.add_argument('--mascon-file',
+    parser.add_argument(
+        '--mascon-file',
         type=pathlib.Path,
-        help='Index file of mascons spherical harmonics')
-    parser.add_argument('--redistribute-mascons',
-        default=False, action='store_true',
-        help='Redistribute mascon mass over the ocean')
+        help='Index file of mascons spherical harmonics',
+    )
+    parser.add_argument(
+        '--redistribute-mascons',
+        default=False,
+        action='store_true',
+        help='Redistribute mascon mass over the ocean',
+    )
     # 1: mass coefficients
     # 2: geoid coefficients
-    parser.add_argument('--fit-method',
-        type=int, default=1, choices=(1,2),
-        help='Method for fitting sensitivity kernel to harmonics')
+    parser.add_argument(
+        '--fit-method',
+        type=int,
+        default=1,
+        choices=(1, 2),
+        help='Method for fitting sensitivity kernel to harmonics',
+    )
     # least squares solver
-    choices = ('inv','lstsq','gelsd', 'gelsy', 'gelss')
-    parser.add_argument('--solver','-s',
-        type=str, default='lstsq', choices=choices,
-        help='Least squares solver for sensitivity kernel solutions')
+    choices = ('inv', 'lstsq', 'gelsd', 'gelsy', 'gelss')
+    parser.add_argument(
+        '--solver',
+        '-s',
+        type=str,
+        default='lstsq',
+        choices=choices,
+        help='Least squares solver for sensitivity kernel solutions',
+    )
     # land-sea mask for redistributing mascon mass
-    lsmask = gravtk.utilities.get_data_path(['data','landsea_hd.nc'])
-    parser.add_argument('--mask',
-        type=pathlib.Path, default=lsmask,
-        help='Land-sea mask for redistributing mascon mass')
+    lsmask = gravtk.utilities.get_data_path(['data', 'landsea_hd.nc'])
+    parser.add_argument(
+        '--mask',
+        type=pathlib.Path,
+        default=lsmask,
+        help='Land-sea mask for redistributing mascon mass',
+    )
     # output spatial grid
-    parser.add_argument('--spatial','-o',
-        default=False, action='store_true',
-        help='Output spatial grid file for each mascon')
+    parser.add_argument(
+        '--spatial',
+        '-o',
+        default=False,
+        action='store_true',
+        help='Output spatial grid file for each mascon',
+    )
     # output grid parameters
-    parser.add_argument('--spacing','-S',
-        type=float, nargs='+', default=[0.5,0.5], metavar=('dlon','dlat'),
-        help='Spatial resolution of output data')
-    parser.add_argument('--interval','-I',
-        type=int, default=2, choices=[1,2,3],
-        help=('Output grid interval '
-            '(1: global, 2: centered global, 3: non-global)'))
-    parser.add_argument('--bounds','-B',
-        type=float, nargs=4, metavar=('lon_min','lon_max','lat_min','lat_max'),
-        help='Bounding box for non-global grid')
+    parser.add_argument(
+        '--spacing',
+        '-S',
+        type=float,
+        nargs='+',
+        default=[0.5, 0.5],
+        metavar=('dlon', 'dlat'),
+        help='Spatial resolution of output data',
+    )
+    parser.add_argument(
+        '--interval',
+        '-I',
+        type=int,
+        default=2,
+        choices=[1, 2, 3],
+        help=(
+            'Output grid interval '
+            '(1: global, 2: centered global, 3: non-global)'
+        ),
+    )
+    parser.add_argument(
+        '--bounds',
+        '-B',
+        type=float,
+        nargs=4,
+        metavar=('lon_min', 'lon_max', 'lat_min', 'lat_max'),
+        help='Bounding box for non-global grid',
+    )
     # Output log file for each job in forms
     # calc_skernel_run_2002-04-01_PID-00000.log
     # calc_skernel_failed_run_2002-04-01_PID-00000.log
-    parser.add_argument('--log',
-        default=False, action='store_true',
-        help='Output log file for each job')
+    parser.add_argument(
+        '--log',
+        default=False,
+        action='store_true',
+        help='Output log file for each job',
+    )
     # print information about processing run
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of processing run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of processing run',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
@@ -638,18 +737,20 @@ def main():
             INTERVAL=args.interval,
             BOUNDS=args.bounds,
             OUTPUT_DIRECTORY=args.output_directory,
-            MODE=args.mode)
+            MODE=args.mode,
+        )
     except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
         logging.critical(f'process id {os.getpid():d} failed')
         logging.error(traceback.format_exc())
-        if args.log:# write failed job completion log file
+        if args.log:  # write failed job completion log file
             output_error_log_file(args)
     else:
-        if args.log:# write successful job completion log file
-            output_log_file(args,output_files)
+        if args.log:  # write successful job completion log file
+            output_log_file(args, output_files)
+
 
 # run main program
 if __name__ == '__main__':

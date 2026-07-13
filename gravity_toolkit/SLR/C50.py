@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 C50.py
 Written by Yara Mohajerani and Tyler Sutterley (05/2023)
 
@@ -57,11 +57,13 @@ UPDATE HISTORY:
     Updated 07/2020: added function docstrings
     Written 11/2019
 """
+
 import re
 import pathlib
 import numpy as np
 import gravity_toolkit.time
 import gravity_toolkit.read_SLR_harmonics
+
 
 # PURPOSE: read Degree 5 zonal data from Satellite Laser Ranging (SLR)
 def C50(SLR_file, C50_MEAN=0.0, DATE=None, HEADER=True):
@@ -100,7 +102,6 @@ def C50(SLR_file, C50_MEAN=0.0, DATE=None, HEADER=True):
     dinput = {}
     # determine source of input file
     if bool(re.search(r'GSFC_SLR_C(20)_C(30)_C(50)', SLR_file.name, re.I)):
-
         # SLR C50 RL06 file from GSFC
         with SLR_file.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
@@ -114,7 +115,7 @@ def C50(SLR_file, C50_MEAN=0.0, DATE=None, HEADER=True):
             # file line at count
             line = file_contents[count]
             # find PRODUCT: within line to set HEADER flag to False when found
-            HEADER = not bool(re.match(r'Product:+',line))
+            HEADER = not bool(re.match(r'Product:+', line))
             # add 1 to counter
             count += 1
 
@@ -133,48 +134,56 @@ def C50(SLR_file, C50_MEAN=0.0, DATE=None, HEADER=True):
         for line in file_contents[count:]:
             # find numerical instances in line including exponents,
             # decimal points and negatives
-            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?',line)
+            line_contents = re.findall(r'[-+]?\d*\.\d*(?:[eE][-+]?\d+)?', line)
             count = len(line_contents)
             # only read lines where C50 data exists (don't read NaN lines)
-            if (count > 7):
+            if count > 7:
                 # modified julian date for line
                 MJD = np.float64(line_contents[0])
                 # converting from MJD into month, day and year
-                YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
-                    MJD+2400000.5, format='tuple')
+                YY, MM, DD, hh, mm, ss = gravity_toolkit.time.convert_julian(
+                    MJD + 2400000.5, format='tuple'
+                )
                 # converting from month, day, year into decimal year
-                dinput['time'][t], = gravity_toolkit.time.convert_calendar_decimal(
-                    YY, MM, day=DD, hour=hh)
+                (dinput['time'][t],) = (
+                    gravity_toolkit.time.convert_calendar_decimal(
+                        YY, MM, day=DD, hour=hh
+                    )
+                )
                 # Spherical Harmonic data for line
                 dinput['data'][t] = np.float64(line_contents[10])
-                dinput['error'][t] = np.float64(line_contents[12])*1e-10
+                dinput['error'][t] = np.float64(line_contents[12]) * 1e-10
                 # GRACE/GRACE-FO month of SLR solutions
                 dinput['month'][t] = gravity_toolkit.time.calendar_to_grace(
-                    dinput['time'][t], around=np.round)
+                    dinput['time'][t], around=np.round
+                )
                 # add to t count
                 t += 1
         # verify that there imported C50 solutions
-        if (t == 0):
+        if t == 0:
             raise Exception('No GSFC C50 data imported')
         # truncate variables if necessary
-        for key,val in dinput.items():
+        for key, val in dinput.items():
             dinput[key] = val[:t]
     elif bool(re.search(r'gsfc_slr_5x5c61s61', SLR_file.name, re.I)):
         # read 5x5 + 6,1 file from GSFC and extract coefficients
         Ylms = gravity_toolkit.read_SLR_harmonics(SLR_file, HEADER=True)
         # calculate 28-day moving-average solution from 7-day arcs
-        dinput.update(gravity_toolkit.convert_weekly(Ylms['time'],
-            Ylms['clm'][5,0,:], DATE=DATE, NEIGHBORS=28))
+        dinput.update(
+            gravity_toolkit.convert_weekly(
+                Ylms['time'], Ylms['clm'][5, 0, :], DATE=DATE, NEIGHBORS=28
+            )
+        )
         # no estimated spherical harmonic errors
-        dinput['error'] = np.zeros_like(DATE,dtype='f8')
+        dinput['error'] = np.zeros_like(DATE, dtype='f8')
     elif bool(re.search(r'C50_LARES', SLR_file.name, re.I)):
         # read LARES filtered values
         LARES_input = np.loadtxt(SLR_file, skiprows=1)
-        dinput['time'] = LARES_input[:,0].copy()
+        dinput['time'] = LARES_input[:, 0].copy()
         # convert C50 from anomalies to absolute
-        dinput['data'] = 1e-10*LARES_input[:,1] + C50_MEAN
+        dinput['data'] = 1e-10 * LARES_input[:, 1] + C50_MEAN
         # filtered data does not have errors
-        dinput['error'] = np.zeros_like(LARES_input[:,1])
+        dinput['error'] = np.zeros_like(LARES_input[:, 1])
         # calculate GRACE/GRACE-FO month
         dinput['month'] = gravity_toolkit.time.calendar_to_grace(dinput['time'])
     else:
@@ -182,13 +191,14 @@ def C50(SLR_file, C50_MEAN=0.0, DATE=None, HEADER=True):
         Ylms = gravity_toolkit.read_SLR_harmonics(SLR_file, HEADER=True)
         # extract dates, C50 harmonics and errors
         dinput['time'] = Ylms['time'].copy()
-        dinput['data'] = Ylms['clm'][5,0,:].copy()
-        dinput['error'] = Ylms['error']['clm'][5,0,:].copy()
+        dinput['data'] = Ylms['clm'][5, 0, :].copy()
+        dinput['error'] = Ylms['error']['clm'][5, 0, :].copy()
         # converting from MJD into month, day and year
-        YY,MM,DD,hh,mm,ss = gravity_toolkit.time.convert_julian(
-            Ylms['MJD']+2400000.5, format='tuple')
+        YY, MM, DD, hh, mm, ss = gravity_toolkit.time.convert_julian(
+            Ylms['MJD'] + 2400000.5, format='tuple'
+        )
         # calculate GRACE/GRACE-FO month
-        dinput['month'] = gravity_toolkit.time.calendar_to_grace(YY,MM)
+        dinput['month'] = gravity_toolkit.time.calendar_to_grace(YY, MM)
 
     # The 'Special Months' (Nov 2011, Dec 2011 and April 2012) with
     # Accelerometer shutoffs make the relation between month number

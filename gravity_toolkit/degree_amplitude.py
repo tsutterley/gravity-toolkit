@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 degree_amplitude.py
 Written Tyler Sutterley (03/2023)
 
@@ -28,14 +28,16 @@ UPDATE HISTORY:
     Updated 05/2015: added parameter MMAX for MMAX != LMAX
     Written 07/2013
 """
+
 import numpy as np
 
+
 def degree_amplitude(
-        clm,
-        slm,
-        LMAX=None,
-        MMAX=None,
-    ):
+    clm,
+    slm,
+    LMAX=None,
+    MMAX=None,
+):
     """
     Calculates the amplitude of each spherical harmonic degree
 
@@ -59,7 +61,7 @@ def degree_amplitude(
     clm = np.atleast_3d(clm)
     slm = np.atleast_3d(slm)
     # check shape
-    LMp1,MMp1,nt = np.shape(clm)
+    LMp1, MMp1, nt = np.shape(clm)
 
     # upper bound of spherical harmonic degrees
     if LMAX is None:
@@ -69,11 +71,13 @@ def degree_amplitude(
         MMAX = MMp1 - 1
 
     # allocating for output array
-    amp = np.zeros((LMAX+1,nt))
-    for l in range(LMAX+1):
-        m = np.arange(0,MMAX+1)
+    amp = np.zeros((LMAX + 1, nt))
+    for l in range(LMAX + 1):
+        m = np.arange(0, MMAX + 1)
         # degree amplitude of spherical harmonic degree
-        amp[l,:] = np.sqrt(np.sum(clm[l,m,:]**2 + slm[l,m,:]**2,axis=0))
+        amp[l, :] = np.sqrt(
+            np.sum(clm[l, m, :] ** 2 + slm[l, m, :] ** 2, axis=0)
+        )
 
     # return the degree amplitude with singleton dimensions removed
     return np.squeeze(amp)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-u"""
+"""
 run_grace_date.py
 Written by Tyler Sutterley (05/2023)
 
@@ -68,6 +68,7 @@ UPDATE HISTORY:
     Updated 02/2014: minor update to if statements
     Written 07/2012
 """
+
 from __future__ import print_function
 
 import sys
@@ -75,6 +76,7 @@ import logging
 import pathlib
 import argparse
 import gravity_toolkit as gravtk
+
 
 def run_grace_date(base_dir, PROC, DREL, VERBOSE=0, MODE=0o775):
     # create logger
@@ -85,20 +87,27 @@ def run_grace_date(base_dir, PROC, DREL, VERBOSE=0, MODE=0o775):
     DSET = {}
     VALID = {}
     # CSR RL04/5/6 at LMAX 60
-    DSET['CSR'] = {'RL04':['GAC', 'GAD', 'GSM'], 'RL05':['GAC', 'GAD', 'GSM'],
-        'RL06':['GAC', 'GAD', 'GSM']}
-    VALID['CSR'] = ['RL04','RL05','RL06']
+    DSET['CSR'] = {
+        'RL04': ['GAC', 'GAD', 'GSM'],
+        'RL05': ['GAC', 'GAD', 'GSM'],
+        'RL06': ['GAC', 'GAD', 'GSM'],
+    }
+    VALID['CSR'] = ['RL04', 'RL05', 'RL06']
     # GFZ RL04/5 at LMAX 90
     # GFZ RL06 at LMAX 60
-    DSET['GFZ'] = {'RL04':['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
-        'RL05':['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
-        'RL06':['GAA', 'GAB', 'GAC', 'GAD', 'GSM']}
-    VALID['GFZ'] = ['RL04','RL05','RL06']
+    DSET['GFZ'] = {
+        'RL04': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
+        'RL05': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
+        'RL06': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
+    }
+    VALID['GFZ'] = ['RL04', 'RL05', 'RL06']
     # JPL RL04/5/6 at LMAX 60
-    DSET['JPL'] = {'RL04':['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
-        'RL05':['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
-        'RL06':['GAA', 'GAB', 'GAC', 'GAD', 'GSM']}
-    VALID['JPL'] = ['RL04','RL05','RL06']
+    DSET['JPL'] = {
+        'RL04': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
+        'RL05': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
+        'RL06': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
+    }
+    VALID['JPL'] = ['RL04', 'RL05', 'RL06']
 
     # for each processing center
     for p in PROC:
@@ -109,12 +118,14 @@ def run_grace_date(base_dir, PROC, DREL, VERBOSE=0, MODE=0o775):
             for d in DSET[p][r]:
                 logging.info(f'GRACE Date Program: {p} {r} {d}')
                 # create GRACE/GRACE-FO date index file
-                gravtk.grace_date(base_dir, PROC=p, DREL=r, DSET=d,
-                    OUTPUT=True, MODE=MODE)
+                gravtk.grace_date(
+                    base_dir, PROC=p, DREL=r, DSET=d, OUTPUT=True, MODE=MODE
+                )
 
     # run GRACE/GRACE-FO months program for data releases
     logging.info('GRACE Months Program')
     gravtk.grace_months_index(base_dir, DREL=DREL, MODE=MODE)
+
 
 # PURPOSE: create argument parser
 def arguments():
@@ -125,41 +136,69 @@ def arguments():
     )
     # command line parameters
     # working data directory
-    parser.add_argument('--directory','-D',
+    parser.add_argument(
+        '--directory',
+        '-D',
         type=pathlib.Path,
         default=gravtk.utilities.get_cache_path(ensure_exists=False),
-        help='Working data directory')
+        help='Working data directory',
+    )
     # Data processing center or satellite mission
-    parser.add_argument('--center','-c',
-        metavar='PROC', type=str, nargs='+',
-        default=['CSR','GFZ','JPL'],
-        choices=['CSR','GFZ','JPL'],
-        help='GRACE/GRACE-FO Processing Center')
+    parser.add_argument(
+        '--center',
+        '-c',
+        metavar='PROC',
+        type=str,
+        nargs='+',
+        default=['CSR', 'GFZ', 'JPL'],
+        choices=['CSR', 'GFZ', 'JPL'],
+        help='GRACE/GRACE-FO Processing Center',
+    )
     # GRACE/GRACE-FO data release
-    parser.add_argument('--release','-r',
-        metavar='DREL', type=str, nargs='+',
-        default=['RL06','v02.4'],
-        help='GRACE/GRACE-FO Data Release')
+    parser.add_argument(
+        '--release',
+        '-r',
+        metavar='DREL',
+        type=str,
+        nargs='+',
+        default=['RL06', 'v02.4'],
+        help='GRACE/GRACE-FO Data Release',
+    )
     # print information about each input and output file
-    parser.add_argument('--verbose','-V',
-        action='count', default=0,
-        help='Verbose output of run')
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of run',
+    )
     # permissions mode of the local directories and files (number in octal)
-    parser.add_argument('--mode','-M',
-        type=lambda x: int(x,base=8), default=0o775,
-        help='Permissions mode of output files')
+    parser.add_argument(
+        '--mode',
+        '-M',
+        type=lambda x: int(x, base=8),
+        default=0o775,
+        help='Permissions mode of output files',
+    )
     # return the parser
     return parser
+
 
 # This is the main part of the program that calls the individual functions
 def main():
     # Read the system arguments listed after the program
     parser = arguments()
-    args,_ = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     # run GRACE preliminary date program
-    run_grace_date(args.directory, args.center, args.release,
-        VERBOSE=args.verbose, MODE=args.mode)
+    run_grace_date(
+        args.directory,
+        args.center,
+        args.release,
+        VERBOSE=args.verbose,
+        MODE=args.mode,
+    )
+
 
 # run main program
 if __name__ == '__main__':
