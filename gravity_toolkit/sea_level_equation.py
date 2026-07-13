@@ -324,6 +324,10 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
     loadYlms = loadClm - 1j*loadSlm
     # distribute sea height over ocean harmonics
     height_Ylms = ocean_Ylms * sea_height
+    # calculating cos(m*phi) and sin(m*phi) using Euler's formula
+    mm = np.arange(0, LMAX+1)
+    m_phi = np.exp(1j * np.einsum("m...,p...->pm...", mm, phi))
+
     # iterate solutions until convergence or reaching total iterations
     n_iter = 1
     # use maximum eps values from Mitrovica and Peltier (1991)
@@ -340,13 +344,6 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
         for m in range(LMAX, -1, -1):
             cs_m[:,m] = _clenshaw(np.cos(th), m, Ylm1, LMAX, SCALE=SCALE)
 
-        # calculate cos(phi)
-        cos_phi_2 = 2.0*np.cos(phi)
-        # matrix of cos/sin m*phi summation
-        m_phi = np.zeros((nphi, LMAX+2), dtype=np.clongdouble)
-        # initialize matrix with values at lmax+1 and lmax
-        m_phi[:,LMAX+1] = np.exp(1j * (LMAX + 1) * phi)
-        m_phi[:,LMAX] = np.exp(1j * LMAX*phi)
         # calculate summation
         g = np.einsum("h...,p...->ph...", cs_m[:,LMAX], m_phi[:,LMAX])
         # discard imaginary component
@@ -354,7 +351,6 @@ def sea_level_equation(loadClm, loadSlm, glon, glat, land_function, LMAX=0,
         # iterate to calculate complete summation
         for m in range(LMAX-1, 0, -1):
             # calculate summation for order m
-            m_phi[:,m] = cos_phi_2*m_phi[:,m+1] - m_phi[:,m+2]
             a_m = np.sqrt((2.0*m + 3.0)/(2.0*m + 2.0))
             g = np.einsum("h...,p...->ph...", cs_m[:,m], m_phi[:,m])
             # update summation and discard imaginary component

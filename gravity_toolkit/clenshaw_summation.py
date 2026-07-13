@@ -166,23 +166,18 @@ def clenshaw_summation(clm, slm, lon, lat,
         # convolve harmonics with unit factors and smoothing
         cs_m[:, m] = _clenshaw(t, f, m, ylm, LMAX, SCALE=SCALE)
 
-    # calculate cos(phi)
-    cos_phi_2 = 2.0*np.cos(phi)
-    # matrix of cos/sin m*phi summation (Euler's form)
-    m_phi = np.zeros((npts, LMAX+2), dtype=np.clongdouble)
-    # initialize matrix with values at lmax+1 and lmax
-    m_phi[:,LMAX+1] = np.exp(1j * (LMAX + 1) * phi)
-    m_phi[:,LMAX] = np.exp(1j * LMAX*phi)
+    # calculating cos(m*phi) and sin(m*phi) using Euler's formula
+    mm = np.arange(0, LMAX+1)
+    m_phi = np.exp(1j * np.einsum("m...,p...->pm...", mm, phi))
     # calculate summation for order LMAX
-    s_m = (cs_m[:,LMAX]*m_phi[:,LMAX]).real
+    s_m = (cs_m[:,LMAX] * m_phi[:,LMAX]).real
     # iterate to calculate complete summation
     for m in range(LMAX-1, 0, -1):
         # calculate summation for order m
-        m_phi[:,m] = cos_phi_2*m_phi[:,m+1] - m_phi[:,m+2]
         a_m = np.sqrt((2.0*m + 3.0)/(2.0*m + 2.0))
         # update summation and discard imaginary component
-        s_m = a_m*u*s_m + (cs_m[:,m]*m_phi[:,m]).real
-    # calculate spatial field
+        s_m = a_m*u*s_m + (cs_m[:,m] * m_phi[:,m]).real
+    # add the final terms to calculate spatial field
     spatial = np.sqrt(3.0)*u*s_m + cs_m[:,0].real
     # return the calculated spatial field
     return spatial
@@ -211,22 +206,22 @@ def _clenshaw(t, f, m, Ylm1, lmax, SCALE=1e-280):
 
     Returns
     -------
-    s_m_c: np.ndarray
+    cs_m: np.ndarray
         conditioned array for clenshaw summation
     """
     # allocate for output matrix
     N = len(t)
-    s_m = np.zeros((N), dtype=np.clongdouble)
+    cs_m = np.zeros((N), dtype=np.clongdouble)
     # scaling to prevent overflow
     ylm = SCALE*Ylm1.astype(np.clongdouble)
     # convert lmax and m to float
     lm = np.float64(lmax)
     mm = np.float64(m)
     if (m == lmax):
-        s_m[:] = f[lmax]*ylm[lmax,lmax]
+        cs_m[:] = f[lmax]*ylm[lmax,lmax]
     elif (m == (lmax-1)):
         a_lm = np.sqrt(((2.0*lm-1.0)*(2.0*lm+1.0))/((lm-mm)*(lm+mm)))*t
-        s_m[:] = a_lm*f[lmax]*ylm[lmax,lmax-1] + f[lmax-1]*ylm[lmax-1,lmax-1]
+        cs_m[:] = a_lm*f[lmax]*ylm[lmax,lmax-1] + f[lmax-1]*ylm[lmax-1,lmax-1]
     elif ((m <= (lmax-2)) and (m >= 1)):
         s_mm_minus_2 = f[lmax]*ylm[lmax,m]
         a_lm = np.sqrt(((2.0*lm-1.0)*(2.0*lm+1.0))/((lm-mm)*(lm+mm)))*t
@@ -238,7 +233,7 @@ def _clenshaw(t, f, m, Ylm1, lmax, SCALE=1e-280):
             s_mm_l = a_lm * s_mm_minus_1 - b_lm * s_mm_minus_2 + f[l]*ylm[l,m]
             s_mm_minus_2 = np.copy(s_mm_minus_1)
             s_mm_minus_1 = np.copy(s_mm_l)
-        s_m[:] = np.copy(s_mm_l)
+        cs_m[:] = np.copy(s_mm_l)
     elif (m == 0):
         s_mm_minus_2 = f[lmax]*ylm[lmax,0]
         a_lm = np.sqrt(((2.0*lm-1.0)*(2.0*lm+1.0))/(lm*lm))*t
@@ -250,6 +245,6 @@ def _clenshaw(t, f, m, Ylm1, lmax, SCALE=1e-280):
             s_mm_l = a_lm * s_mm_minus_1 - b_lm * s_mm_minus_2 + f[l]*ylm[l,0]
             s_mm_minus_2 = np.copy(s_mm_minus_1)
             s_mm_minus_1 = np.copy(s_mm_l)
-        s_m[:] = np.copy(s_mm_l)
-    # return rescaled s_m
-    return s_m/SCALE
+        cs_m[:] = np.copy(s_mm_l)
+    # return rescaled cs_m
+    return cs_m/SCALE
