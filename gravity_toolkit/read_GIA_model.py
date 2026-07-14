@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 read_GIA_model.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (07/2026)
 
 Reads GIA data files that can come in various formats depending on the group
 Outputs spherical harmonics for the GIA rates and the GIA model parameters
@@ -96,6 +96,7 @@ REFERENCES:
     https://doi.org/10.1002/2016JB013844
 
 UPDATE HISTORY:
+    Updated 07/2026: add string and HTML representations of gia class
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: case insensitive searching for HDF5 and netCDF4 attributes
         convert shape and ndim to harmonic class properties
@@ -148,6 +149,7 @@ import logging
 import pathlib
 import numpy as np
 from gravity_toolkit.harmonics import harmonics
+from gravity_toolkit.utilities import html_repr
 
 _known_gia_types = [
     'IJ05-R2',
@@ -785,3 +787,32 @@ class gia(harmonics):
         # assign degree and order fields
         self.update_dimensions()
         return self
+
+    def __str__(self):
+        """String representation of the ``gia`` object"""
+        properties = ['gravity_toolkit.gia']
+        properties.append(f'    title: {self.title}')
+        properties.append(f'    citation: {self.citation}')
+        properties.append(f'    max_degree: {self.lmax}')
+        if self.mmax and (self.mmax != self.lmax):
+            properties.append(f'    max_order: {self.mmax}')
+        properties.append(f'    reference: {self.reference}')
+        properties.append(f'    url: {self.url}')
+        return '\n'.join(properties)
+
+    def __repr__(self):
+        """Representation of the ``gia`` object"""
+        return self.__str__()
+
+    def _repr_html_(self):
+        """HTML representation of the ``gia`` object"""
+        header = 'gravity_toolkit.gia'
+        properties = {}
+        properties['title'] = self.title
+        properties['citation'] = self.citation
+        properties['max_degree'] = self.lmax
+        if self.mmax and (self.mmax != self.lmax):
+            properties['max_order'] = self.mmax
+        properties['reference'] = self.reference
+        properties['url'] = self.url
+        return html_repr(header, properties)

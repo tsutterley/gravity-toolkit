@@ -28,6 +28,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 07/2026: use np.radians and np.degrees for angle conversions
+        set the default path for widgets to the cache path
     Updated 11/2024: fix deprecated widget object copies
     Updated 04/2024: add widget for setting endpoint for accessing PODAAC data
         place colormap registration within try/except to check for existing
@@ -52,7 +53,7 @@ import warnings
 import numpy as np
 import scipy.interpolate
 from gravity_toolkit.spatial import spatial
-from gravity_toolkit.utilities import get_data_path
+from gravity_toolkit.utilities import get_data_path, get_cache_path
 from gravity_toolkit.grace_find_months import grace_find_months
 
 # imports with warnings if not present
@@ -83,7 +84,7 @@ class widgets:
     def __init__(self, **kwargs):
         """Widgets and functions for running GRACE/GRACE-FO analyses"""
         # set default keyword arguments
-        kwargs.setdefault('directory', pathlib.Path.cwd())
+        kwargs.setdefault('directory', get_cache_path(ensure_exists=False))
         kwargs.setdefault('defaults', ['CSR', 'RL06', 'GSM', 60])
         kwargs.setdefault('style', {})
         # set style
@@ -131,7 +132,7 @@ class widgets:
 
         # update local data with PO.DAAC https servers
         self.update = ipywidgets.Checkbox(
-            value=True,
+            value=False,
             description='Update data?',
             disabled=False,
             style=self.style,
@@ -307,7 +308,7 @@ class widgets:
             max=self.defaults[3],
             value=self.defaults[3],
             step=1,
-            description='<i>&#8467;</i><sub>max</sub>:',
+            description=r'<i>&#8467;</i><sub>max</sub>:',
             disabled=False,
             style=self.style,
         )
@@ -318,7 +319,7 @@ class widgets:
             max=self.defaults[3],
             value=self.defaults[3],
             step=1,
-            description='<i>m</i><sub>max</sub>:',
+            description=r'<i>m</i><sub>max</sub>:',
             disabled=False,
             style=self.style,
         )
