@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 units.py
-Written by Tyler Sutterley (05/2024)
+Written by Tyler Sutterley (07/2026)
 Contributions by Hugo Lecomte
 
 Class for converting GRACE/GRACE-FO Level-2 data to specific units
@@ -10,6 +10,7 @@ PYTHON DEPENDENCIES:
     numpy: Scientific Computing Tools For Python (https://numpy.org)
 
 UPDATE HISTORY:
+    Updated 07/2026: add string and HTML representations of units class
     Updated 05/2024: make subscriptable and allow item assignment
     Updated 09/2023: added property for the approximate mass of the Earth
     Updated 03/2023: include option to not compensate for elastic deformation
@@ -30,6 +31,7 @@ UPDATE HISTORY:
 from __future__ import annotations
 
 import numpy as np
+from gravity_toolkit.utilities import html_repr
 
 
 class units(object):
@@ -346,6 +348,25 @@ class units(object):
             return named_attributes[var]
         except Exception as exc:
             raise ValueError(f'Unknown units {var}') from exc
+
+    def __str__(self):
+        """String representation of the ``units`` object"""
+        properties = ['gravity_toolkit.units']
+        if self.lmax is not None:
+            properties.append(f'    max_degree: {self.lmax}')
+        return '\n'.join(properties)
+
+    def __repr__(self):
+        """Representation of the ``units`` object"""
+        return self.__str__()
+
+    def _repr_html_(self):
+        """HTML representation of the ``units`` object"""
+        header = 'gravity_toolkit.units'
+        properties = {}
+        if self.lmax is not None:
+            properties['max_degree'] = str(self.lmax)
+        return html_repr(header, properties)
 
     def __getitem__(self, key):
         return getattr(self, key)

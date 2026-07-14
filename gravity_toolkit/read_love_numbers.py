@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 read_love_numbers.py
-Written by Tyler Sutterley (11/2024)
+Written by Tyler Sutterley (07/2026)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
 Linearly interpolates load Love/Shida numbers for missing degrees
@@ -56,6 +56,7 @@ REFERENCES:
         103(B12), 30205-30229, (1998)
 
 UPDATE HISTORY:
+    Updated 07/2026: add HTML representation of love_numbers class
     Updated 11/2024: allow reading where degree is infinite
     Updated 05/2024: make subscriptable and allow item assignment
     Updated 08/2023: add string representation of the love_numbers class
@@ -94,7 +95,7 @@ import re
 import logging
 import pathlib
 import numpy as np
-from gravity_toolkit.utilities import get_data_path
+from gravity_toolkit.utilities import get_data_path, html_repr
 
 # default maximum degree and order in case of infinite
 _default_max_degree = 100000
@@ -581,6 +582,20 @@ class love_numbers(object):
         properties.append(f'    max_degree: {self.lmax}')
         properties.append(f'    reference: {self.reference}')
         return '\n'.join(properties)
+
+    def __repr__(self):
+        """Representation of the ``love_numbers`` object"""
+        return self.__str__()
+
+    def _repr_html_(self):
+        """HTML representation of the ``love_numbers`` object"""
+        header = 'gravity_toolkit.love_numbers'
+        properties = {}
+        properties['citation'] = self.citation
+        properties['earth_model'] = self.model
+        properties['max_degree'] = self.lmax
+        properties['reference'] = self.reference
+        return html_repr(header, properties)
 
     def __len__(self):
         """Number of degrees"""
