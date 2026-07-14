@@ -16,6 +16,7 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 07/2026: add dunder (magic) methods for mathematical operations
+        add HTML representation of geocenter class
     Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 05/2024: make subscriptable and allow item assignment
     Updated 09/2023: add group option to netCDF read function
@@ -54,7 +55,7 @@ import yaml
 import pathlib
 import numpy as np
 import gravity_toolkit.time
-from gravity_toolkit.utilities import import_dependency
+from gravity_toolkit.utilities import import_dependency, html_repr
 
 # attempt imports
 netCDF4 = import_dependency('netCDF4')
@@ -1289,10 +1290,24 @@ class geocenter(object):
     def __str__(self):
         """String representation of the ``geocenter`` object"""
         properties = ['gravity_toolkit.geocenter']
-        if self.month:
+        if any(self.month):
             properties.append(f'    start_month: {min(self.month)}')
             properties.append(f'    end_month: {max(self.month)}')
         return '\n'.join(properties)
+
+    def __repr__(self):
+        """Representation of the ``geocenter`` object"""
+        return self.__str__()
+
+    def _repr_html_(self):
+        """HTML representation of the ``geocenter`` object"""
+        header = 'gravity_toolkit.geocenter'
+        properties = {}
+        if any(self.month):
+            properties['start_month'] = min(self.month)
+            properties['end_month'] = max(self.month)
+        properties['slices'] = self.__len__()
+        return html_repr(header, properties)
 
     def __add__(self, other):
         """Add values to a ``geocenter`` object"""

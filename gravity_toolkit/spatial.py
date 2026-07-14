@@ -22,6 +22,7 @@ PROGRAM DEPENDENCIES:
 UPDATE HISTORY:
     Updated 07/2026: add dunder (magic) methods for mathematical operations
         add option to change the output format for ascii files
+        add HTML representation of spatial class
     Updated 10/2024: allow 2D and 3D arrays in output netCDF4 files
     Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 05/2024: make subscriptable and allow item assignment
@@ -89,7 +90,7 @@ import zipfile
 import numpy as np
 import gravity_toolkit.version
 from gravity_toolkit.time import adjust_months, calendar_to_grace
-from gravity_toolkit.utilities import import_dependency
+from gravity_toolkit.utilities import import_dependency, html_repr
 
 # attempt imports
 h5py = import_dependency('h5py')
@@ -1822,10 +1823,28 @@ class spatial(object):
         properties.append(f'    extent: {extent}')
         shape = ', '.join(map(str, self.shape))
         properties.append(f'    shape: {shape}')
-        if self.month:
+        if any(self.month):
             properties.append(f'    start_month: {min(self.month)}')
             properties.append(f'    end_month: {max(self.month)}')
         return '\n'.join(properties)
+
+    def __repr__(self):
+        """Representation of the ``spatial`` object"""
+        return self.__str__()
+
+    def _repr_html_(self):
+        """HTML representation of the ``spatial`` object"""
+        header = 'gravity_toolkit.spatial'
+        properties = {}
+        extent = ', '.join(map(str, self.extent))
+        properties['extent'] = f'[{extent}]'
+        shape = ', '.join(map(str, self.shape))
+        properties['shape'] = f'({shape})'
+        if any(self.month):
+            properties['start_month'] = min(self.month)
+            properties['end_month'] = max(self.month)
+        properties['slices'] = self.__len__()
+        return html_repr(header, properties)
 
     def __add__(self, other):
         """Add values to a ``spatial`` object"""

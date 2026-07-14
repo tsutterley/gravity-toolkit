@@ -26,6 +26,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 07/2026: add dunder (magic) methods for mathematical operations
+        add HTML representation of spatial class
     Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 05/2024: make subscriptable and allow item assignment
     Updated 10/2023: place time and month variables in try/except block
@@ -110,7 +111,7 @@ from gravity_toolkit.time import adjust_months, calendar_to_grace
 from gravity_toolkit.destripe_harmonics import destripe_harmonics
 from gravity_toolkit.read_gfc_harmonics import read_gfc_harmonics
 from gravity_toolkit.read_GRACE_harmonics import read_GRACE_harmonics
-from gravity_toolkit.utilities import import_dependency, reify
+from gravity_toolkit.utilities import import_dependency, reify, html_repr
 
 # attempt imports
 geoidtk = import_dependency('geoid_toolkit')
@@ -1976,10 +1977,27 @@ class harmonics(object):
         properties.append(f'    max_degree: {self.lmax}')
         if self.mmax and (self.mmax != self.lmax):
             properties.append(f'    max_order: {self.mmax}')
-        if self.month:
+        if any(self.month):
             properties.append(f'    start_month: {min(self.month)}')
             properties.append(f'    end_month: {max(self.month)}')
         return '\n'.join(properties)
+
+    def __repr__(self):
+        """Representation of the ``harmonics`` object"""
+        return self.__str__()
+
+    def _repr_html_(self):
+        """HTML representation of the ``harmonics`` object"""
+        header = 'gravity_toolkit.harmonics'
+        properties = {}
+        properties['max_degree'] = self.lmax
+        if self.mmax and (self.mmax != self.lmax):
+            properties['max_order'] = self.mmax
+        if any(self.month):
+            properties['start_month'] = min(self.month)
+            properties['end_month'] = max(self.month)
+        properties['slices'] = self.__len__()
+        return html_repr(header, properties)
 
     def __add__(self, other):
         """Add values to a ``harmonics`` object"""
