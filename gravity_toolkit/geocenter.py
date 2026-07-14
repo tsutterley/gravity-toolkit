@@ -1290,9 +1290,9 @@ class geocenter(object):
     def __str__(self):
         """String representation of the ``geocenter`` object"""
         properties = ['gravity_toolkit.geocenter']
-        if any(self.month):
-            properties.append(f'    start_month: {min(self.month)}')
-            properties.append(f'    end_month: {max(self.month)}')
+        if np.any(self.month):
+            properties.append(f'    start_month: {np.min(self.month)}')
+            properties.append(f'    end_month: {np.max(self.month)}')
         return '\n'.join(properties)
 
     def __repr__(self):
@@ -1303,10 +1303,10 @@ class geocenter(object):
         """HTML representation of the ``geocenter`` object"""
         header = 'gravity_toolkit.geocenter'
         properties = {}
-        if any(self.month):
-            properties['start_month'] = min(self.month)
-            properties['end_month'] = max(self.month)
-        properties['slices'] = self.__len__()
+        if np.any(self.month):
+            properties['start_month'] = np.min(self.month)
+            properties['end_month'] = np.max(self.month)
+            properties['slices'] = self.__len__()
         return html_repr(header, properties)
 
     def __add__(self, other):
@@ -1376,7 +1376,7 @@ class geocenter(object):
 
     def __len__(self):
         """Number of months"""
-        return len(self.month) if np.any(self.month) else 0
+        return len(np.atleast_1d(self.month)) if np.any(self.month) else 0
 
     def __iter__(self):
         """Iterate over GRACE/GRACE-FO months"""

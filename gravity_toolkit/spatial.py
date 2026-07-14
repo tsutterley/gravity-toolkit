@@ -1823,9 +1823,9 @@ class spatial(object):
         properties.append(f'    extent: {extent}')
         shape = ', '.join(map(str, self.shape))
         properties.append(f'    shape: {shape}')
-        if any(self.month):
-            properties.append(f'    start_month: {min(self.month)}')
-            properties.append(f'    end_month: {max(self.month)}')
+        if np.any(self.month):
+            properties.append(f'    start_month: {np.min(self.month)}')
+            properties.append(f'    end_month: {np.max(self.month)}')
         return '\n'.join(properties)
 
     def __repr__(self):
@@ -1840,10 +1840,10 @@ class spatial(object):
         properties['extent'] = f'[{extent}]'
         shape = ', '.join(map(str, self.shape))
         properties['shape'] = f'({shape})'
-        if any(self.month):
-            properties['start_month'] = min(self.month)
-            properties['end_month'] = max(self.month)
-        properties['slices'] = self.__len__()
+        if np.any(self.month):
+            properties['start_month'] = np.min(self.month)
+            properties['end_month'] = np.max(self.month)
+            properties['slices'] = self.__len__()
         return html_repr(header, properties)
 
     def __add__(self, other):
@@ -1901,7 +1901,7 @@ class spatial(object):
 
     def __len__(self):
         """Number of months"""
-        return len(self.month) if np.any(self.month) else 0
+        return len(np.atleast_1d(self.month)) if np.any(self.month) else 0
 
     def __iter__(self):
         """Iterate over GRACE/GRACE-FO months"""

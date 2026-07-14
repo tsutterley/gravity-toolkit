@@ -26,7 +26,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 07/2026: add dunder (magic) methods for mathematical operations
-        add HTML representation of spatial class
+        add HTML representation of harmonics class
     Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 05/2024: make subscriptable and allow item assignment
     Updated 10/2023: place time and month variables in try/except block
@@ -1977,9 +1977,9 @@ class harmonics(object):
         properties.append(f'    max_degree: {self.lmax}')
         if self.mmax and (self.mmax != self.lmax):
             properties.append(f'    max_order: {self.mmax}')
-        if any(self.month):
-            properties.append(f'    start_month: {min(self.month)}')
-            properties.append(f'    end_month: {max(self.month)}')
+        if np.any(self.month):
+            properties.append(f'    start_month: {np.min(self.month)}')
+            properties.append(f'    end_month: {np.max(self.month)}')
         return '\n'.join(properties)
 
     def __repr__(self):
@@ -1993,10 +1993,10 @@ class harmonics(object):
         properties['max_degree'] = self.lmax
         if self.mmax and (self.mmax != self.lmax):
             properties['max_order'] = self.mmax
-        if any(self.month):
-            properties['start_month'] = min(self.month)
-            properties['end_month'] = max(self.month)
-        properties['slices'] = self.__len__()
+        if np.any(self.month):
+            properties['start_month'] = np.min(self.month)
+            properties['end_month'] = np.max(self.month)
+            properties['slices'] = self.__len__()
         return html_repr(header, properties)
 
     def __add__(self, other):
@@ -2066,7 +2066,7 @@ class harmonics(object):
 
     def __len__(self):
         """Number of months"""
-        return len(self.month) if np.any(self.month) else 0
+        return len(np.atleast_1d(self.month)) if np.any(self.month) else 0
 
     def __iter__(self):
         """Iterate over GRACE/GRACE-FO months"""
