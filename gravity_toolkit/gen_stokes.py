@@ -29,6 +29,7 @@ OPTIONS:
         2: Gigatonnes of mass
         3: kg/m^2
         list: custom degree-dependent unit conversion factor
+    WEIGHT: custom latitudinal weighting function for gridded data
     PLM: input Legendre polynomials
     LOVE: input load Love numbers up to degree LMAX (hl,kl,ll)
 
@@ -45,6 +46,7 @@ PROGRAM DEPENDENCIES:
 UPDATE HISTORY:
     Updated 07/2026: use np.einsum for spherical harmonic summations
         use np.radians to convert from degrees to radians
+        added custom weighting function for gridded data
     Updated 06/2025: copy latitude and longitude as float64 for numpy 2.0 stability
     Updated 04/2023: allow love numbers to be None for custom units case
     Updated 03/2023: improve typing for variables in docstrings
@@ -82,7 +84,16 @@ from gravity_toolkit.associated_legendre import plm_holmes
 
 
 def gen_stokes(
-    data, lon, lat, LMIN=0, LMAX=60, MMAX=None, UNITS=1, PLM=None, LOVE=None
+    data,
+    lon,
+    lat,
+    LMIN=0,
+    LMAX=60,
+    MMAX=None,
+    UNITS=1,
+    WEIGHT=None,
+    PLM=None,
+    LOVE=None,
 ):
     r"""
     Converts data from the spatial domain to spherical harmonic
@@ -109,6 +120,8 @@ def gen_stokes(
             - ``2``: gigatonnes of mass (Gt)
             - ``3``:  mm water equivalent thickness (mm w.e., kg/m\ :sup:`2`)
             - list: custom degree-dependent unit conversion factor
+    WEIGHT: np.ndarray or NoneType, default None
+        Custom latitudinal weighting function for gridded data
     PLM: np.ndarray or NoneType, default None
         Input Legendre polynomials
     LOVE: tuple or NoneType, default None
@@ -132,8 +145,6 @@ def gen_stokes(
     # upper bound of spherical harmonic orders (default = LMAX)
     MMAX = np.copy(LMAX) if (MMAX is None) else MMAX
 
-    # grid dimensions
-    nlat = np.int64(len(lat))
     # Longitude in radians
     phi = np.radians(np.squeeze(lon.copy()))
     # reformatting longitudes to range 0:360 (if previously -180:180)
@@ -143,6 +154,8 @@ def gen_stokes(
     # grid step in radians
     dphi = np.abs(phi[1] - phi[0])
     dth = np.abs(th[1] - th[0])
+    # grid dimensions
+    nlat = np.int64(len(th))
 
     # reforming data to lonXlat if input latXlon
     sz = np.shape(data)
@@ -173,6 +186,10 @@ def gen_stokes(
         int_fact[:] = np.sin(th) * dphi * dth
     else:
         raise ValueError(f'Unknown units {UNITS}')
+    # use a custom weighting function for gridded data if provided
+    if WEIGHT is not None:
+        # Weighting function for integrating gridded data
+        int_fact[:] = np.broadcast_to(np.atleast_1d(WEIGHT), nlat)
 
     # Calculating cos/sin of phi arrays
     # output [m,phi]
