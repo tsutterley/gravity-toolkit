@@ -112,7 +112,9 @@ numpydoc_show_class_members = False
 pygments_style = 'native'
 bibtex_bibfiles = ['_assets/gravity-refs.bib']
 bibtex_default_style = 'plain'
+plot_formats = ['png']
 plot_html_show_formats = False
+plot_html_show_source_link = False
 numfig = True
 numfig_secnum_depth = 1
 
