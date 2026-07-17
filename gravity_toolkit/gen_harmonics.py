@@ -49,6 +49,7 @@ REFERENCES:
 UPDATE HISTORY:
     Updated 07/2026: use np.einsum for spherical harmonic summations
         use np.radians to convert from degrees to radians
+        added custom weighting function for gridded data
     Updated 03/2023: improve typing for variables in docstrings
     Updated 01/2023: refactored associated legendre polynomials
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -129,7 +130,16 @@ def gen_harmonics(data, lon, lat, **kwargs):
     return Ylms
 
 
-def integration(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
+def integration(
+    data,
+    lon,
+    lat,
+    LMAX=60,
+    MMAX=None,
+    WEIGHT=None,
+    PLM=0,
+    **kwargs,
+):
     """
     Converts data from the spatial domain to spherical harmonic coefficients
 
@@ -145,6 +155,8 @@ def integration(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
         Upper bound of Spherical Harmonic Degrees
     MMAX: int or NoneType, default None
         Upper bound of Spherical Harmonic Orders
+    WEIGHT: np.ndarray or NoneType, default None
+        Custom latitudinal weighting function for gridded data
     PLM: float, default 0
         input Legendre polynomials
 
@@ -164,9 +176,8 @@ def integration(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
     th = np.radians(90.0 - np.squeeze(lat))
     # reformatting longitudes to range 0:360 (if previously -180:180)
     phi = np.where(phi < 0, phi + 2.0 * np.pi, phi)
-    # grid step in radians
-    dphi = np.abs(phi[1] - phi[0])
-    dth = np.abs(th[1] - th[0])
+    # grid dimensions
+    nlat = np.int64(len(th))
 
     # LMAX+1 as there are LMAX+1 elements between 0 and LMAX
     ll = np.arange(LMAX + 1)
@@ -174,9 +185,19 @@ def integration(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
     # Calculating cos/sin of phi arrays (output [m,phi])
     m_phi = np.exp(1j * np.einsum('m...,p...->mp...', mm, phi))
 
-    # Multiplying sin(th) with differentials of theta and phi
-    # to calculate the integration factor at each latitude
-    int_fact = np.sin(th) * dphi * dth
+    # use an integration factor for gridded data or
+    # calculate from sin(theta)*dtheta*dphi
+    int_fact = np.zeros((nlat))
+    if WEIGHT is not None:
+        # Weighting function for integrating gridded data
+        int_fact[:] = np.broadcast_to(np.atleast_1d(WEIGHT), nlat)
+    else:
+        # Multiplying sin(th) with differentials of theta and phi
+        # to calculate the integration factor at each latitude
+        dphi = np.abs(phi[1] - phi[0])
+        dth = np.abs(th[1] - th[0])
+        int_fact[:] = np.sin(th) * dphi * dth
+    # normalizing coefficients
     coeff = 1.0 / (4.0 * np.pi)
 
     # Calculate polynomials using Holmes and Featherstone (2002) relation
@@ -204,7 +225,15 @@ def integration(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
     return Ylms
 
 
-def fourier(data, lon, lat, LMAX=60, MMAX=None, PLM=0, **kwargs):
+def fourier(
+    data,
+    lon,
+    lat,
+    LMAX=60,
+    MMAX=None,
+    PLM=0,
+    **kwargs,
+):
     """
     Computes the spherical harmonic coefficients of a spatial field
 
