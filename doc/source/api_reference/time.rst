@@ -57,6 +57,10 @@ General Methods
 
 .. autofunction:: gravity_toolkit.time.datetime_to_list
 
+.. autofunction:: gravity_toolkit.time.to_datetime
+
+.. autofunction:: gravity_toolkit.time.to_string
+
 .. autofunction:: gravity_toolkit.time.parse_grace_file
 
 .. autofunction:: gravity_toolkit.time.parse_gfc_file
