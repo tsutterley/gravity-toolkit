@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 time.py
-Written by Tyler Sutterley (06/2024)
+Written by Tyler Sutterley (07/2026)
 Contributions by Hugo Lecomte
 
 Utilities for calculating time operations
@@ -13,6 +13,7 @@ PYTHON DEPENDENCIES:
         https://dateutil.readthedocs.io/en/stable/
 
 UPDATE HISTORY:
+    Updated 07/2026: added function to convert times to numpy datetimes
     Updated 06/2024: remove timescale class and leap second calculations
     Updated 06/2023: add timescale class for converting between time scales
         add functions for retrieving leap seconds from NIST or IERF servers
@@ -201,6 +202,74 @@ def datetime_to_list(date):
         date.minute,
         date.second,
     ]
+
+
+def to_datetime(timedelta: np.ndarray, attributes: str, unit: str = 's'):
+    """
+    Convert an array into ``numpy.datetime64`` objects
+
+    Parameters
+    ----------
+    timedelta: np.ndarray
+        array of time deltas
+    attributes: str
+        compatible time attributes for
+        :py:func:`parse_date_string <gravity_toolkit.time.parse_date_string>`
+    unit: str, default 's'
+        datetime unit for output datetime array
+
+    Returns
+    -------
+    dtime: np.ndarray
+        ``numpy.datetime64`` array
+    """
+    # verify that units are numpy datetime compatible
+    assert unit in ['D', 'h', 'm', 's', 'ms', 'us', 'ns']
+    # get the epoch and units from the attributes
+    epoch, to_secs = parse_date_string(attributes)
+    # convert epoch to datetime variable
+    epoch = np.datetime64(datetime.datetime(*epoch))
+    # calculate the delta time in seconds
+    delta_time = np.atleast_1d(timedelta * to_secs).astype(np.int64)
+    # return the datetime array
+    return np.array(epoch + delta_time.astype(f'timedelta64[{unit}]'))
+
+
+def to_string(
+    timedelta: np.ndarray,
+    attributes: str,
+    unit: str = 'D',
+    strftime: str | None = None,
+):
+    """
+    Convert an array into string representations of dates
+
+    Parameters
+    ----------
+    timedelta: np.ndarray
+        array of time deltas
+    attributes: str
+        compatible time attributes for
+        :py:func:`parse_date_string <gravity_toolkit.time.parse_date_string>`
+    unit: str, default 'D'
+        datetime unit for output string array
+    strftime: str, default None
+        alternative formatting string for output string array
+
+    Returns
+    -------
+    timestring: str
+        string representations of dates
+    """
+    # convert to datetime objects
+    dtime = to_datetime(timedelta, attributes, unit=unit)
+    # return the string representations of the datetime objects
+    if strftime is not None:
+        # convert to datetime objects and use strftime formatting
+        dtime = dtime.astype(datetime.datetime)
+        return np.array([d.strftime(strftime) for d in dtime])
+    else:
+        return np.datetime_as_string(dtime, unit=unit)
 
 
 # PURPOSE: extract parameters from filename
