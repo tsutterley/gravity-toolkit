@@ -238,7 +238,7 @@ def to_datetime(timedelta: np.ndarray, attributes: str, unit: str = 's'):
 def to_string(
     timedelta: np.ndarray,
     attributes: str,
-    unit: str = 'D',
+    unit: str = 's',
     strftime: str | None = None,
 ):
     """
@@ -251,7 +251,7 @@ def to_string(
     attributes: str
         compatible time attributes for
         :py:func:`parse_date_string <gravity_toolkit.time.parse_date_string>`
-    unit: str, default 'D'
+    unit: str, default 's'
         datetime unit for output string array
     strftime: str, default None
         alternative formatting string for output string array
